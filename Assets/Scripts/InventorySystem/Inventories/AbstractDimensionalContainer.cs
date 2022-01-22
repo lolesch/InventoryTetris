@@ -57,6 +57,9 @@ namespace ToolSmiths.InventorySystem.Inventories
             if (!package.Item)
                 return package;
 
+            if (this is PlayerEquipment && package.Item is Equipment)
+                position = (this as PlayerEquipment).GetEquipmentTypePosition(package.Item as Equipment);
+
             if (CanAddAtPosition(position, package.Item.Dimensions, out List<Vector2Int> otherItems))
             {
                 if (0 == otherItems.Count)
@@ -99,30 +102,6 @@ namespace ToolSmiths.InventorySystem.Inventories
                     }
                 }
             }
-        }
-
-        internal void Sort()
-        {
-            List<Vector2Int> storedKeys = storedPackages.Keys.ToList();
-            List<Vector2Int> storedDimensions = new();
-
-            for (int i = 0; i < storedKeys.Count; i++)
-                storedDimensions.Add(storedPackages[storedKeys[i]].Item.Dimensions);
-
-            List<Vector2Int> distinct = storedDimensions.Distinct().ToList();
-
-            List<Vector2Int> order = distinct.OrderByDescending(v => v.sqrMagnitude).ToList();
-
-            List<Package> storedValues = storedPackages.Values.ToList();
-            storedPackages.Clear();
-
-            for (int i = 0; i < order.Count; i++)
-                for (int j = 0; j < storedValues.Count; j++)
-                    if (storedValues[j].Item.Dimensions == order[i])
-                    {
-                        AddToContainer(storedValues[j]);
-                        //storedValues.Remove(storedValues[j]);
-                    }
         }
 
         public Package RemoveFromContainer(Package package)
@@ -202,6 +181,27 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         /// A List of all positions that are required to add this item to the container
         protected abstract List<Vector2Int> CalculateRequiredPositions(Vector2Int position, Vector2Int dimension);
+
+        internal void Sort()
+        {
+            List<Vector2Int> storedKeys = storedPackages.Keys.ToList();
+            List<Vector2Int> storedDimensions = new();
+
+            for (int i = 0; i < storedKeys.Count; i++)
+                storedDimensions.Add(storedPackages[storedKeys[i]].Item.Dimensions);
+
+            storedDimensions = storedDimensions.Distinct().OrderByDescending(v => v.sqrMagnitude).ToList();
+
+            List<Package> storedValues = storedPackages.Values.ToList();
+            storedPackages.Clear();
+
+            for (int i = 0; i < storedDimensions.Count; i++)
+                for (int j = 0; j < storedValues.Count; j++)
+                    if (storedValues[j].Item.Dimensions == storedDimensions[i])
+                    {
+                        AddToContainer(storedValues[j]);
+                    }
+        }
 
         protected internal void InvokeRefresh() => OnContentChanged?.Invoke(storedPackages);
     }

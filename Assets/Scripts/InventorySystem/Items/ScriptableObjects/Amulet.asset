@@ -10,15 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6f309e7fa52d3224a9ca8bdb9762ab39, type: 3}
-  m_Name: NewBoots
+  m_Name: Amulet
   m_EditorClassIdentifier: 
-  dimensions: {x: 2, y: 2}
+  dimensions: {x: 1, y: 1}
   stackLimit: 1
-  Icon: {fileID: 21300000, guid: f0394939e473a419b9b647625315fe3c, type: 3}
-  stats:
-  - stat: 2
-    modifier:
-      value: 20
-      type: 200
-      duration: -1
-  equipmentType: 1
+  Icon: {fileID: 21300000, guid: 30101268cbdfb4676bdaa81d17143048, type: 3}
+  stats: []
+  equipmentType: 10

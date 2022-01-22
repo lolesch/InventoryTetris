@@ -70,7 +70,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_Sprite: {fileID: 21300000, guid: 147d3e174b605e24fb0d9941b31596e1, type: 3}
-  m_Type: 0
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -94,7 +94,8 @@ MonoBehaviour:
   itemDisplay: {fileID: 4027984796521102475}
   icon: {fileID: 1176954156055016542}
   amount: {fileID: 1750711888921296693}
-  containerDisplay: {fileID: 0}
+  Position: {x: 0, y: 0}
+  allowedEquipmentTypes: 
 --- !u!1 &4253099238647935454
 GameObject:
   m_ObjectHideFlags: 0
@@ -131,7 +132,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_SizeDelta: {x: -14, y: -14}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1323616941754253763
 CanvasRenderer:
@@ -273,27 +274,27 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7856935647508189773, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 0.5
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7856935647508189773, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0.5
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7856935647508189773, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
       propertyPath: m_AnchorMin.x
-      value: 0.5
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7856935647508189773, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
       propertyPath: m_AnchorMin.y
-      value: 0.5
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7856935647508189773, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 100
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7856935647508189773, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 100
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7856935647508189773, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
       propertyPath: m_LocalPosition.x
@@ -325,7 +326,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7856935647508189773, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 0
+      value: 0.000015258789
       objectReference: {fileID: 0}
     - target: {fileID: 7856935647508189773, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
       propertyPath: m_AnchoredPosition.y

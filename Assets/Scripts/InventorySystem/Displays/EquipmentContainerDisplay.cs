@@ -1,4 +1,5 @@
-﻿using ToolSmiths.InventorySystem.Inventories;
+﻿using TeppichsTools.Logging;
+using ToolSmiths.InventorySystem.Inventories;
 
 namespace ToolSmiths.InventorySystem.Displays
 {
@@ -9,6 +10,8 @@ namespace ToolSmiths.InventorySystem.Displays
         {
             foreach (var slotDisplay in containerSlotDisplays)
                 slotDisplay.container = Container;
+            if (containerSlotDisplays.Count != container.Capacity)
+                EditorDebug.LogError($"equipmentSlotDisplays {containerSlotDisplays.Count} of {container.Capacity}");
         }
     }
 }

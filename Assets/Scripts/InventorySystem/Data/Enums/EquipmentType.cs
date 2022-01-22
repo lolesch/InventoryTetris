@@ -15,8 +15,8 @@
         Shoulders = 8,
         Ring = 9,
         Amulet = 10,
-        Weapon_1H = 11,
-        Weapon_2H = 12,
-        Offhand = 13
+        MainHand = 11,
+        Offhand = 12,
+        Weapon_2H = 13,
     }
 }

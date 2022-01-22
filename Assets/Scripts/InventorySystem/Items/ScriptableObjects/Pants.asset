@@ -10,15 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6f309e7fa52d3224a9ca8bdb9762ab39, type: 3}
-  m_Name: Boots
+  m_Name: Pants
   m_EditorClassIdentifier: 
   dimensions: {x: 2, y: 2}
   stackLimit: 1
-  Icon: {fileID: 21300000, guid: f0394939e473a419b9b647625315fe3c, type: 3}
+  Icon: {fileID: 21300000, guid: 263f77b252bb74a5ba72e0f1df535843, type: 3}
   stats:
-  - stat: 2
+  - stat: 0
     modifier:
-      value: 20
-      type: 200
+      value: 10
+      type: 100
       duration: -1
-  equipmentType: 1
+  equipmentType: 2

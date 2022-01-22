@@ -25,13 +25,21 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         [Space]
         [SerializeField] private EquipmentContainerDisplay playerEquipmentDisplay;
-        [SerializeField] private Vector2Int playerEquipmentSize = new(13, 0);
+        [SerializeField] private Vector2Int playerEquipmentSize = new(13, 1);
 
         [Header("Items")]
-        [SerializeField] private Item potion;
-        [SerializeField] private Item boots;
-        [SerializeField] private Item sword;
-        [SerializeField] private Item chestArmor;
+        [SerializeField] private Item Amulet;
+        [SerializeField] private Item Belt;
+        [SerializeField] private Item Boots;
+        [SerializeField] private Item Bracers;
+        [SerializeField] private Item Chest;
+        [SerializeField] private Item Gloves;
+        [SerializeField] private Item Helm;
+        [SerializeField] private Item OffHand;
+        [SerializeField] private Item Pants;
+        [SerializeField] private Item Potion;
+        [SerializeField] private Item Ring;
+        [SerializeField] private Item Weapon1H;
 
         private Slider amountSlider;
         private Item itemToAdd;
@@ -58,7 +66,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             PlayerStash = new(playerStashSize);
             PlayerEquipment = new(playerEquipmentSize);
 
-            itemToAdd = potion;
+            itemToAdd = Amulet;
             containerToAddTo = PlayerInventory;
 
             SetInventories();
@@ -84,12 +92,22 @@ namespace ToolSmiths.InventorySystem.Inventories
         public void AddToPlayerEquipment() => containerToAddTo = PlayerEquipment;
         public void AddToPlayerStash() => containerToAddTo = PlayerStash;
 
-        public void SetItemToPotion() => itemToAdd = potion;
-        public void SetItemToBoots() => itemToAdd = boots;
-        public void SetItemToSword() => itemToAdd = sword;
-        public void SetItemToChestArmor() => itemToAdd = chestArmor;
+        public void SetItemToAmulet() => itemToAdd = Amulet;
+        public void SetItemToBelt() => itemToAdd = Belt;
+        public void SetItemToBoots() => itemToAdd = Boots;
+        public void SetItemToBracers() => itemToAdd = Bracers;
+        public void SetItemToChest() => itemToAdd = Chest;
+        public void SetItemToGloves() => itemToAdd = Gloves;
+        public void SetItemToHelm() => itemToAdd = Helm;
+        public void SetItemToOffHand() => itemToAdd = OffHand;
+        public void SetItemToPants() => itemToAdd = Pants;
+        public void SetItemToPotion() => itemToAdd = Potion;
+        public void SetItemToRing() => itemToAdd = Ring;
+        public void SetItemToSword() => itemToAdd = Weapon1H;
 
         public void SortInventory() => containerToAddTo.Sort();
+
+        public static Package EquipItem(Package package) => PlayerEquipment.AddToContainer(package);
 
     }
 

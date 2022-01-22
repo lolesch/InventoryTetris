@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.CompilerServices;
 using TMPro;
 using ToolSmiths.InventorySystem.Data;
@@ -20,21 +21,45 @@ namespace ToolSmiths.InventorySystem.Displays
 
         public Vector2Int Position;
 
+        protected static Package packageToMove;
+
         protected internal AbstractDimensionalContainer container;
 
-        public abstract void OnPointerClick(PointerEventData eventData);
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            // if shift clicking try add to other container
 
-        public abstract void OnBeginDrag(PointerEventData eventData);
+            // handle picking up one/all from a stack
 
-        public abstract void OnDrag(PointerEventData eventData);
+            if (!StaticDragDisplay.Instance.IsDragging)
+                if (eventData.button == PointerEventData.InputButton.Right)
+                    if (this is not EquipmentSlotDisplay)
+                        EquipItem();
+                    else
+                        UnequipItem();
+                else PickUpItem();
+            else
+                // raycast through center top position of drag display to check if over slotDisplay to add at, or to revert, or to drop item at floor
+                DropItem();
+        }
 
-        public abstract void OnDrop(PointerEventData eventData);
+        internal protected abstract void UnequipItem();
+
+        public void OnBeginDrag(PointerEventData eventData) => OnPointerClick(eventData);
+
+        public void OnDrag(PointerEventData eventData) { }
+
+        public void OnDrop(PointerEventData eventData) => DropItem();
+
+        // OnEndDrag
+        // raycast through center top position of drag display to check if over slotDisplay to add at, or to revert, or to drop item at floor
 
         internal protected abstract void PickUpItem();
 
         internal protected abstract void DropItem();
 
-        internal protected abstract void RefreshSlotDisplay(Package package);
+        internal protected abstract void EquipItem();
 
+        internal protected abstract void RefreshSlotDisplay(Package package);
     }
 }

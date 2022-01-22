@@ -1,4 +1,5 @@
-﻿using ToolSmiths.InventorySystem.Data.Enums;
+﻿using System.Collections.Generic;
+using ToolSmiths.InventorySystem.Data.Enums;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Items
