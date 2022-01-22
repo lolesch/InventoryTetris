@@ -57,7 +57,7 @@ namespace ToolSmiths.InventorySystem.Displays
 #if UNITY_EDITOR
                         DestroyImmediate(slotDisplays[i].gameObject);
 #else
-                Destroy(children[i].gameObject);
+                        Destroy(slotDisplays[i].gameObject);
 #endif
                         slotDisplays.RemoveAt(i);
                     }

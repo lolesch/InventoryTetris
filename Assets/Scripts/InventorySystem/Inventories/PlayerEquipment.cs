@@ -64,9 +64,8 @@ namespace ToolSmiths.InventorySystem.Inventories
                     return new(11, 0);
 
                 default:
-                    return new Vector2Int(-1, -1);
+                    return new(-1, -1);
             }
-            return new Vector2Int();
         }
 
         protected internal override bool IsWithinDimensions(Vector2Int position) =>
