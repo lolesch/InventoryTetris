@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_PixelRect:
     serializedVersion: 2
-    x: 0
+    x: 1920
     y: 43
     width: 1920
     height: 1007
   m_ShowMode: 4
-  m_Title: Hierarchy
+  m_Title: Console
   m_RootView: {fileID: 2}
-  m_MinSize: {x: 875, y: 300}
+  m_MinSize: {x: 875, y: 321}
   m_MaxSize: {x: 10000, y: 10000}
   m_Maximized: 1
 --- !u!114 &2
@@ -46,7 +46,7 @@ MonoBehaviour:
     y: 0
     width: 1920
     height: 1007
-  m_MinSize: {x: 875, y: 300}
+  m_MinSize: {x: 875, y: 321}
   m_MaxSize: {x: 10000, y: 10000}
   m_UseTopView: 1
   m_TopViewHeight: 30
@@ -118,10 +118,10 @@ MonoBehaviour:
     y: 30
     width: 1920
     height: 957
-  m_MinSize: {x: 400, y: 200}
-  m_MaxSize: {x: 32384, y: 16192}
+  m_MinSize: {x: 810, y: 271}
+  m_MaxSize: {x: 22005, y: 10021}
   vertical: 0
-  controlID: 91
+  controlID: 125
 --- !u!114 &6
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -141,12 +141,12 @@ MonoBehaviour:
     serializedVersion: 2
     x: 0
     y: 0
-    width: 1016
+    width: 884
     height: 957
-  m_MinSize: {x: 100, y: 200}
-  m_MaxSize: {x: 8096, y: 16192}
+  m_MinSize: {x: 101, y: 242}
+  m_MaxSize: {x: 4001, y: 8042}
   vertical: 1
-  controlID: 29
+  controlID: 19
 --- !u!114 &7
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -164,16 +164,15 @@ MonoBehaviour:
     serializedVersion: 2
     x: 0
     y: 0
-    width: 1016
-    height: 625
+    width: 884
+    height: 501
   m_MinSize: {x: 101, y: 121}
   m_MaxSize: {x: 4001, y: 4021}
   m_ActualView: {fileID: 12}
   m_Panes:
   - {fileID: 13}
-  - {fileID: 14}
   - {fileID: 12}
-  m_Selected: 2
+  m_Selected: 1
   m_LastSelected: 1
 --- !u!114 &8
 MonoBehaviour:
@@ -191,18 +190,19 @@ MonoBehaviour:
   m_Position:
     serializedVersion: 2
     x: 0
-    y: 625
-    width: 1016
-    height: 332
-  m_MinSize: {x: 101, y: 121}
-  m_MaxSize: {x: 4001, y: 4021}
+    y: 501
+    width: 884
+    height: 456
+  m_MinSize: {x: 100, y: 100}
+  m_MaxSize: {x: 4000, y: 4000}
   m_ActualView: {fileID: 17}
   m_Panes:
   - {fileID: 15}
   - {fileID: 16}
   - {fileID: 17}
+  - {fileID: 14}
   m_Selected: 2
-  m_LastSelected: 2
+  m_LastSelected: 3
 --- !u!114 &9
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -218,9 +218,9 @@ MonoBehaviour:
   m_Children: []
   m_Position:
     serializedVersion: 2
-    x: 1016
+    x: 884
     y: 0
-    width: 210
+    width: 232
     height: 957
   m_MinSize: {x: 232, y: 271}
   m_MaxSize: {x: 10002, y: 10021}
@@ -244,9 +244,9 @@ MonoBehaviour:
   m_Children: []
   m_Position:
     serializedVersion: 2
-    x: 1226
+    x: 1116
     y: 0
-    width: 276
+    width: 327
     height: 957
   m_MinSize: {x: 202, y: 221}
   m_MaxSize: {x: 4002, y: 4021}
@@ -270,12 +270,12 @@ MonoBehaviour:
   m_Children: []
   m_Position:
     serializedVersion: 2
-    x: 1502
+    x: 1443
     y: 0
-    width: 418
+    width: 477
     height: 957
-  m_MinSize: {x: 276, y: 121}
-  m_MaxSize: {x: 4001, y: 4021}
+  m_MinSize: {x: 275, y: 100}
+  m_MaxSize: {x: 4000, y: 4000}
   m_ActualView: {fileID: 20}
   m_Panes:
   - {fileID: 20}
@@ -303,10 +303,10 @@ MonoBehaviour:
     m_Tooltip: 
   m_Pos:
     serializedVersion: 2
-    x: 0
+    x: 1920
     y: 73
-    width: 1015
-    height: 604
+    width: 883
+    height: 480
   m_ViewDataDictionary: {fileID: 0}
   m_OverlayCanvas:
     m_LastAppliedPresetName: Default
@@ -317,7 +317,7 @@ MonoBehaviour:
   m_ShowGizmos: 0
   m_TargetDisplay: 0
   m_ClearColor: {r: 0, g: 0, b: 0, a: 0}
-  m_TargetSize: {x: 1015, y: 571}
+  m_TargetSize: {x: 816, y: 459}
   m_TextureFilterMode: 0
   m_TextureHideFlags: 61
   m_RenderIMGUI: 1
@@ -332,10 +332,10 @@ MonoBehaviour:
     m_VRangeLocked: 0
     hZoomLockedByDefault: 0
     vZoomLockedByDefault: 0
-    m_HBaseRangeMin: -507.5
-    m_HBaseRangeMax: 507.5
-    m_VBaseRangeMin: -285.5
-    m_VBaseRangeMax: 285.5
+    m_HBaseRangeMin: -408
+    m_HBaseRangeMax: 408
+    m_VBaseRangeMin: -229.5
+    m_VBaseRangeMax: 229.5
     m_HAllowExceedBaseRangeMin: 1
     m_HAllowExceedBaseRangeMax: 1
     m_VAllowExceedBaseRangeMin: 1
@@ -353,23 +353,23 @@ MonoBehaviour:
       serializedVersion: 2
       x: 0
       y: 21
-      width: 1015
-      height: 583
+      width: 883
+      height: 459
     m_Scale: {x: 1, y: 1}
-    m_Translation: {x: 507.5, y: 291.5}
+    m_Translation: {x: 441.5, y: 229.5}
     m_MarginLeft: 0
     m_MarginRight: 0
     m_MarginTop: 0
     m_MarginBottom: 0
     m_LastShownAreaInsideMargins:
       serializedVersion: 2
-      x: -507.5
-      y: -291.5
-      width: 1015
-      height: 583
+      x: -441.5
+      y: -229.5
+      width: 883
+      height: 459
     m_MinimalGUI: 1
   m_defaultScale: 1
-  m_LastWindowPixelSize: {x: 1015, y: 604}
+  m_LastWindowPixelSize: {x: 883, y: 480}
   m_ClearInEditMode: 1
   m_NoCameraWarning: 1
   m_LowResolutionForAspectRatios: 00000000000000000000
@@ -445,10 +445,10 @@ MonoBehaviour:
     m_Tooltip: 
   m_Pos:
     serializedVersion: 2
-    x: 0
-    y: 73
-    width: 1015
-    height: 604
+    x: 1920
+    y: 569
+    width: 883
+    height: 470
   m_ViewDataDictionary: {fileID: 0}
   m_OverlayCanvas:
     m_LastAppliedPresetName: Default
@@ -645,14 +645,14 @@ MonoBehaviour:
   m_OverrideSceneCullingMask: 6917529027641081856
   m_SceneIsLit: 1
   m_SceneLighting: 1
-  m_2DMode: 0
+  m_2DMode: 1
   m_isRotationLocked: 0
   m_PlayAudio: 0
   m_AudioPlay: 0
   m_Position:
-    m_Target: {x: 1336.829, y: 131.6769, z: 561.56244}
+    m_Target: {x: 451.2886, y: 228.22629, z: -1.1920397}
     speed: 2
-    m_Value: {x: 1336.829, y: 131.6769, z: 561.56244}
+    m_Value: {x: 451.2886, y: 228.22629, z: -1.1920397}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -699,17 +699,17 @@ MonoBehaviour:
     m_GridAxis: 1
     m_gridOpacity: 0.5
   m_Rotation:
-    m_Target: {x: -0.025354225, y: -0.3711551, z: 0.010138732, w: -0.92816734}
+    m_Target: {x: 0, y: 0, z: 0, w: 1}
     speed: 2
-    m_Value: {x: -0.025354272, y: -0.3711558, z: 0.010138751, w: -0.9281691}
+    m_Value: {x: 0, y: 0, z: 0, w: 1}
   m_Size:
-    m_Target: 534.58435
+    m_Target: 108.43106
     speed: 2
-    m_Value: 534.58435
+    m_Value: 108.43106
   m_Ortho:
-    m_Target: 0
+    m_Target: 1
     speed: 2
-    m_Value: 0
+    m_Value: 1
   m_CameraSettings:
     m_Speed: 2
     m_SpeedNormalized: 1
@@ -761,28 +761,28 @@ MonoBehaviour:
   m_Recording: 1
   m_ActiveNativePlatformSupportModuleName: 
   m_AllModules:
-  - rid: 3941696832892568130
-  - rid: 3941696832892568131
-  - rid: 3941696832892568132
-  - rid: 3941696832892568133
-  - rid: 3941696832892568134
-  - rid: 3941696832892568135
-  - rid: 3941696832892568136
-  - rid: 3941696832892568137
-  - rid: 3941696832892568138
-  - rid: 3941696832892568139
-  - rid: 3941696832892568140
-  - rid: 3941696832892568141
-  - rid: 3941696832892568142
-  - rid: 3941696832892568143
-  - rid: 3941696832892568144
-  - rid: 3941696832892568145
+  - rid: 3941696914178965721
+  - rid: 3941696914178965722
+  - rid: 3941696914178965723
+  - rid: 3941696914178965724
+  - rid: 3941696914178965725
+  - rid: 3941696914178965726
+  - rid: 3941696914178965727
+  - rid: 3941696914178965728
+  - rid: 3941696914178965729
+  - rid: 3941696914178965730
+  - rid: 3941696914178965731
+  - rid: 3941696914178965732
+  - rid: 3941696914178965733
+  - rid: 3941696914178965734
+  - rid: 3941696914178965735
+  - rid: 3941696914178965736
   m_CallstackRecordMode: 1
   m_ClearOnPlay: 0
   references:
     version: 2
     RefIds:
-    - rid: 3941696832892568130
+    - rid: 3941696914178965721
       type: {class: CPUProfilerModule, ns: UnityEditorInternal.Profiling, asm: UnityEditor.CoreModule}
       data:
         m_Identifier: UnityEditorInternal.Profiling.CPUProfilerModule, UnityEditor.CoreModule,
@@ -1120,7 +1120,7 @@ MonoBehaviour:
           <threadId>k__BackingField: 0
           <threadIndex>k__BackingField: -1
           m_GroupName: 
-    - rid: 3941696832892568131
+    - rid: 3941696914178965722
       type: {class: GPUProfilerModule, ns: UnityEditorInternal.Profiling, asm: UnityEditor.CoreModule}
       data:
         m_Identifier: UnityEditorInternal.Profiling.GPUProfilerModule, UnityEditor.CoreModule,
@@ -1458,13 +1458,13 @@ MonoBehaviour:
           <threadId>k__BackingField: 0
           <threadIndex>k__BackingField: -1
           m_GroupName: 
-    - rid: 3941696832892568132
+    - rid: 3941696914178965723
       type: {class: RenderingProfilerModule, ns: UnityEditorInternal.Profiling, asm: UnityEditor.CoreModule}
       data:
         m_Identifier: UnityEditorInternal.Profiling.RenderingProfilerModule, UnityEditor.CoreModule,
           Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
         m_PaneScroll: {x: 0, y: 0}
-    - rid: 3941696832892568133
+    - rid: 3941696914178965724
       type: {class: MemoryProfilerModule, ns: UnityEditorInternal.Profiling, asm: UnityEditor.CoreModule}
       data:
         m_Identifier: UnityEditorInternal.Profiling.MemoryProfilerModule, UnityEditor.CoreModule,
@@ -1494,7 +1494,7 @@ MonoBehaviour:
           oldMinSizes: 
           oldMaxSizes: 
           oldSplitSize: 0
-    - rid: 3941696832892568134
+    - rid: 3941696914178965725
       type: {class: AudioProfilerModule, ns: UnityEditorInternal.Profiling, asm: UnityEditor.CoreModule}
       data:
         m_Identifier: UnityEditorInternal.Profiling.AudioProfilerModule, UnityEditor.CoreModule,
@@ -1503,31 +1503,31 @@ MonoBehaviour:
         m_ShowInactiveDSPChains: 0
         m_HighlightAudibleDSPChains: 1
         m_DSPGraphZoomFactor: 1
-    - rid: 3941696832892568135
+    - rid: 3941696914178965726
       type: {class: VideoProfilerModule, ns: UnityEditorInternal.Profiling, asm: UnityEditor.CoreModule}
       data:
         m_Identifier: UnityEditorInternal.Profiling.VideoProfilerModule, UnityEditor.CoreModule,
           Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
         m_PaneScroll: {x: 0, y: 0}
-    - rid: 3941696832892568136
+    - rid: 3941696914178965727
       type: {class: PhysicsProfilerModule, ns: UnityEditorInternal.Profiling, asm: UnityEditor.CoreModule}
       data:
         m_Identifier: UnityEditorInternal.Profiling.PhysicsProfilerModule, UnityEditor.CoreModule,
           Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
         m_PaneScroll: {x: 0, y: 0}
-    - rid: 3941696832892568137
+    - rid: 3941696914178965728
       type: {class: Physics2DProfilerModule, ns: UnityEditorInternal.Profiling, asm: UnityEditor.CoreModule}
       data:
         m_Identifier: UnityEditorInternal.Profiling.Physics2DProfilerModule, UnityEditor.CoreModule,
           Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
         m_PaneScroll: {x: 0, y: 0}
-    - rid: 3941696832892568138
+    - rid: 3941696914178965729
       type: {class: NetworkingMessagesProfilerModule, ns: UnityEditorInternal.Profiling, asm: UnityEditor.CoreModule}
       data:
         m_Identifier: UnityEditorInternal.Profiling.NetworkingMessagesProfilerModule,
           UnityEditor.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
         m_PaneScroll: {x: 0, y: 0}
-    - rid: 3941696832892568139
+    - rid: 3941696914178965730
       type: {class: NetworkingOperationsProfilerModule, ns: UnityEditorInternal.Profiling, asm: UnityEditor.CoreModule}
       data:
         m_Identifier: UnityEditorInternal.Profiling.NetworkingOperationsProfilerModule,
@@ -1574,45 +1574,45 @@ MonoBehaviour:
         - ObjectHide
         - CRC
         - ClientAuthority
-    - rid: 3941696832892568140
+    - rid: 3941696914178965731
       type: {class: UIProfilerModule, ns: UnityEditorInternal.Profiling, asm: UnityEditor.CoreModule}
       data:
         m_Identifier: UnityEditorInternal.Profiling.UIProfilerModule, UnityEditor.CoreModule,
           Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
         m_PaneScroll: {x: 0, y: 0}
-    - rid: 3941696832892568141
+    - rid: 3941696914178965732
       type: {class: UIDetailsProfilerModule, ns: UnityEditorInternal.Profiling, asm: UnityEditor.CoreModule}
       data:
         m_Identifier: UnityEditorInternal.Profiling.UIDetailsProfilerModule, UnityEditor.CoreModule,
           Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
         m_PaneScroll: {x: 0, y: 0}
-    - rid: 3941696832892568142
+    - rid: 3941696914178965733
       type: {class: GlobalIlluminationProfilerModule, ns: UnityEditorInternal.Profiling, asm: UnityEditor.CoreModule}
       data:
         m_Identifier: UnityEditorInternal.Profiling.GlobalIlluminationProfilerModule,
           UnityEditor.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
         m_PaneScroll: {x: 0, y: 0}
-    - rid: 3941696832892568143
+    - rid: 3941696914178965734
       type: {class: VirtualTexturingProfilerModule, ns: UnityEditorInternal.Profiling, asm: UnityEditor.CoreModule}
       data:
         m_Identifier: UnityEditorInternal.Profiling.VirtualTexturingProfilerModule,
           UnityEditor.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
         m_PaneScroll: {x: 0, y: 0}
         m_VTProfilerView:
-          rid: 3941696832892568146
-    - rid: 3941696832892568144
+          rid: 3941696914178965737
+    - rid: 3941696914178965735
       type: {class: FileIOProfilerModule, ns: UnityEditorInternal.Profiling, asm: UnityEditor.CoreModule}
       data:
         m_Identifier: UnityEditorInternal.Profiling.FileIOProfilerModule, UnityEditor.CoreModule,
           Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
         m_PaneScroll: {x: 0, y: 0}
-    - rid: 3941696832892568145
+    - rid: 3941696914178965736
       type: {class: AssetLoadingProfilerModule, ns: UnityEditorInternal.Profiling, asm: UnityEditor.CoreModule}
       data:
         m_Identifier: UnityEditorInternal.Profiling.AssetLoadingProfilerModule, UnityEditor.CoreModule,
           Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
         m_PaneScroll: {x: 0, y: 0}
-    - rid: 3941696832892568146
+    - rid: 3941696914178965737
       type: {class: VirtualTexturingProfilerView, ns: UnityEditor, asm: UnityEditor.CoreModule}
       data:
         m_SortAscending: 0
@@ -1665,10 +1665,10 @@ MonoBehaviour:
     m_Tooltip: 
   m_Pos:
     serializedVersion: 2
-    x: 0
-    y: 698
-    width: 1015
-    height: 311
+    x: 1920
+    y: 574
+    width: 883
+    height: 435
   m_ViewDataDictionary: {fileID: 0}
   m_OverlayCanvas:
     m_LastAppliedPresetName: Default
@@ -1693,9 +1693,9 @@ MonoBehaviour:
     m_Tooltip: 
   m_Pos:
     serializedVersion: 2
-    x: 1016
+    x: 2804
     y: 73
-    width: 208
+    width: 230
     height: 936
   m_ViewDataDictionary: {fileID: 0}
   m_OverlayCanvas:
@@ -1714,7 +1714,7 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets/Prefabs
+    - Assets/Scripts/InventorySystem/Inventories
     m_Globs: []
     m_OriginalText: 
   m_ViewMode: 0
@@ -1728,7 +1728,7 @@ MonoBehaviour:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs: 28440000
     m_LastClickedID: 17448
-    m_ExpandedIDs: 00000000a4470000a6470000a8470000aa470000ac470000ae470000b0470000b2470000b4470000b6470000b8470000ba470000bc470000be470000c0470000c2470000c4470000c6470000c8470000
+    m_ExpandedIDs: 00000000500c00005a0c000070470000d64b0000d84b0000da4b0000dc4b0000de4b0000e04b0000e24b0000e44b0000e64b0000e84b0000ea4b0000ec4b0000ee4b0000f04b0000f24b0000f44b0000f64b0000f84b0000fa4b0000fc4b0000fe4b0000004c0000024c0000044c0000064c0000084c00000a4c0000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -1756,18 +1756,18 @@ MonoBehaviour:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs: 
     m_LastClickedID: 0
-    m_ExpandedIDs: ffffffff00000000a4470000a6470000a8470000aa470000ac470000ae470000b0470000b2470000b4470000b6470000b8470000ba470000bc470000be470000c0470000c2470000c4470000c6470000c8470000
+    m_ExpandedIDs: ffffffff00000000500c00005a0c000070470000d64b0000d84b0000da4b0000dc4b0000de4b0000e04b0000e24b0000e44b0000e64b0000e84b0000ea4b0000ec4b0000ee4b0000f04b0000f24b0000f44b0000f64b0000f84b0000fa4b0000fc4b0000fe4b0000004c0000024c0000044c0000064c0000084c00000a4c0000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
-      m_Name: ItemDisplay
-      m_OriginalName: ItemDisplay
+      m_Name: PlayerInventory
+      m_OriginalName: PlayerInventory
       m_EditFieldRect:
         serializedVersion: 2
         x: 0
         y: 0
         width: 0
         height: 0
-      m_UserData: 18222
+      m_UserData: 2506
       m_IsWaitingForDelay: 0
       m_IsRenaming: 0
       m_OriginalEventType: 0
@@ -1832,9 +1832,9 @@ MonoBehaviour:
     m_Tooltip: 
   m_Pos:
     serializedVersion: 2
-    x: 1226
+    x: 3036
     y: 73
-    width: 274
+    width: 325
     height: 936
   m_ViewDataDictionary: {fileID: 0}
   m_OverlayCanvas:
@@ -1843,9 +1843,9 @@ MonoBehaviour:
   m_SceneHierarchy:
     m_TreeViewState:
       scrollPos: {x: 0, y: 0}
-      m_SelectedIDs: 
-      m_LastClickedID: 0
-      m_ExpandedIDs: 8004fafffa2ffbff0430fbffba61fbff28b9fbff7cc6fbffacecfbffb6ecfbff4669feff3a5effff2c67ffff3667ffff0afbffff28fbffff9c45000012460000
+      m_SelectedIDs: e4c10000
+      m_LastClickedID: 49636
+      m_ExpandedIDs: f600fdffee01fdff8650fdff7eb1feff9ab1feffcab1feffc0b2feff0cb8feffc8bcfeff28c2feff4c41fffff646ffffaa4bffff5e50ffff2655fffffc59fffffcb0ffff44b6ffff90bbffff5cc0ffff18c5ffff24caffffdaceffff28fbffff908600001287000060c10000e4c1000080c20000d8c20000
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -1889,9 +1889,9 @@ MonoBehaviour:
     m_Tooltip: 
   m_Pos:
     serializedVersion: 2
-    x: 1502
+    x: 3363
     y: 73
-    width: 417
+    width: 476
     height: 936
   m_ViewDataDictionary: {fileID: 0}
   m_OverlayCanvas:
@@ -1930,21 +1930,21 @@ MonoBehaviour:
     m_Tooltip: 
   m_Pos:
     serializedVersion: 2
-    x: 1502
-    y: 73
-    width: 417
-    height: 936
+    x: 3363
+    y: 30
+    width: 476
+    height: 1009
   m_ViewDataDictionary: {fileID: 0}
   m_OverlayCanvas:
     m_LastAppliedPresetName: Default
     m_SaveData: []
   m_Spl:
-    ID: 185
+    ID: 1262
     splitterInitialOffset: 730
     currentActiveSplitter: -1
     realSizes:
-    - 639
-    - 227
+    - 693
+    - 246
     relativeSizes:
     - 0.73772323
     - 0.26227677
@@ -1954,7 +1954,7 @@ MonoBehaviour:
     maxSizes:
     - 0
     - 0
-    lastTotalSize: 866
+    lastTotalSize: 939
     splitSize: 6
     xOffset: 0
     m_Version: 1
@@ -2022,9 +2022,9 @@ MonoBehaviour:
       uniqueId: '[InventoryTetris][suite]'
       name: InventoryTetris
       fullName: InventoryTetris
-      resultStatus: 2
-      duration: 0.1430509
-      messages: One or more child tests had errors
+      resultStatus: 1
+      duration: 0.1332219
+      messages: 
       output: 
       stacktrace: 
       notRunnable: 0
@@ -2038,9 +2038,9 @@ MonoBehaviour:
       uniqueId: '[Tests.dll][suite]'
       name: Tests.dll
       fullName: D:/Projects/Unity/InventoryTetris/Library/ScriptAssemblies/Tests.dll
-      resultStatus: 2
-      duration: 0.1087154
-      messages: One or more child tests had errors
+      resultStatus: 1
+      duration: 0.1000141
+      messages: 
       output: 
       stacktrace: 
       notRunnable: 0
@@ -2054,9 +2054,9 @@ MonoBehaviour:
       uniqueId: Tests.dll/[ToolSmiths][suite]
       name: ToolSmiths
       fullName: ToolSmiths
-      resultStatus: 2
-      duration: 0.1068044
-      messages: One or more child tests had errors
+      resultStatus: 1
+      duration: 0.0986864
+      messages: 
       output: 
       stacktrace: 
       notRunnable: 0
@@ -2070,9 +2070,9 @@ MonoBehaviour:
       uniqueId: Tests.dll/ToolSmiths/[InventorySystem][suite]
       name: InventorySystem
       fullName: ToolSmiths.InventorySystem
-      resultStatus: 2
-      duration: 0.1058439
-      messages: One or more child tests had errors
+      resultStatus: 1
+      duration: 0.0977709
+      messages: 
       output: 
       stacktrace: 
       notRunnable: 0
@@ -2086,9 +2086,9 @@ MonoBehaviour:
       uniqueId: Tests.dll/ToolSmiths/InventorySystem/[Tests][suite]
       name: Tests
       fullName: ToolSmiths.InventorySystem.Tests
-      resultStatus: 2
-      duration: 0.1015901
-      messages: One or more child tests had errors
+      resultStatus: 1
+      duration: 0.0902807
+      messages: 
       output: 
       stacktrace: 
       notRunnable: 0
@@ -2098,58 +2098,12 @@ MonoBehaviour:
       categories: []
       parentId: 1028
       parentUniqueId: Tests.dll/ToolSmiths/[InventorySystem][suite]
-    - id: 1001
-      uniqueId: Tests.dll/ToolSmiths/InventorySystem/Tests/[Tests][ToolSmiths.InventorySystem.Tests.ContainerDisplayTest][suite]
-      name: ContainerDisplayTest
-      fullName: ToolSmiths.InventorySystem.Tests.ContainerDisplayTest
-      resultStatus: 2
-      duration: 0.0221336
-      messages: One or more child tests had errors
-      output: 
-      stacktrace: 
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 1
-      categories: []
-      parentId: 1029
-      parentUniqueId: Tests.dll/ToolSmiths/InventorySystem/[Tests][suite]
-    - id: 1002
-      uniqueId: Tests.dll/ToolSmiths/InventorySystem/Tests/ContainerDisplayTest/[Tests][ToolSmiths.InventorySystem.Tests.ContainerDisplayTest.ShouldRecieveAnInventoryToDisplay]
-      name: ShouldRecieveAnInventoryToDisplay
-      fullName: ToolSmiths.InventorySystem.Tests.ContainerDisplayTest.ShouldRecieveAnInventoryToDisplay
-      resultStatus: 2
-      duration: 0.0099146
-      messages: 'System.Collections.Generic.KeyNotFoundException : The given key
-        ''(0, 0)'' was not present in the dictionary.'
-      output: 
-      stacktrace: "  at System.Collections.Generic.Dictionary`2[TKey,TValue].get_Item
-        (TKey key) [0x0001e] in <7b5f9a2f7db343a4ab54846ed680277b>:0 \r\n  at ToolSmiths.InventorySystem.Displays.InventoryDisplay.Refresh
-        (System.Collections.Generic.Dictionary`2[TKey,TValue] storedPackages) [0x0001a]
-        in D:\\Projects\\Unity\\InventoryTetris\\Assets\\Scripts\\InventorySystem\\Displays\\InventoryDisplay.cs:103
-        \r\n  at ToolSmiths.InventorySystem.Displays.InventoryDisplay.SetInventory
-        (ToolSmiths.InventorySystem.Inventories.AbstractContainer container) [0x00080]
-        in D:\\Projects\\Unity\\InventoryTetris\\Assets\\Scripts\\InventorySystem\\Displays\\InventoryDisplay.cs:57
-        \r\n  at ToolSmiths.InventorySystem.Tests.ContainerDisplayTest.ShouldRecieveAnInventoryToDisplay
-        () [0x0000f] in D:\\Projects\\Unity\\InventoryTetris\\Assets\\Scripts\\InventorySystem\\Tests\\ContainerDisplayTest.cs:28
-        \r\n  at (wrapper managed-to-native) System.Reflection.RuntimeMethodInfo.InternalInvoke(System.Reflection.RuntimeMethodInfo,object,object[],System.Exception&)\r\n 
-        at System.Reflection.RuntimeMethodInfo.Invoke (System.Object obj, System.Reflection.BindingFlags
-        invokeAttr, System.Reflection.Binder binder, System.Object[] parameters,
-        System.Globalization.CultureInfo culture) [0x0006a] in <7b5f9a2f7db343a4ab54846ed680277b>:0 "
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 0
-      categories:
-      - Uncategorized
-      parentId: 1001
-      parentUniqueId: Tests.dll/ToolSmiths/InventorySystem/Tests/[Tests][ToolSmiths.InventorySystem.Tests.ContainerDisplayTest][suite]
     - id: 1004
       uniqueId: Tests.dll/ToolSmiths/InventorySystem/Tests/[Tests][ToolSmiths.InventorySystem.Tests.ContainerTest][suite]
       name: ContainerTest
       fullName: ToolSmiths.InventorySystem.Tests.ContainerTest
       resultStatus: 1
-      duration: 0.0601001
+      duration: 0.0718365
       messages: 
       output: 
       stacktrace: 
@@ -2165,7 +2119,7 @@ MonoBehaviour:
       name: CanAddAtPosition
       fullName: ToolSmiths.InventorySystem.Tests.ContainerTest.CanAddAtPosition
       resultStatus: 1
-      duration: 0.0134609
+      duration: 0.0135626
       messages: 
       output: 
       stacktrace: 
@@ -2182,7 +2136,7 @@ MonoBehaviour:
       name: CanAddMultipleItems
       fullName: ToolSmiths.InventorySystem.Tests.ContainerTest.CanAddMultipleItems
       resultStatus: 1
-      duration: 0.0037159
+      duration: 0.0022555
       messages: 
       output: "Package \t The Package you constructed contains more items than the
         item's stacking limit!\r\n"
@@ -2200,7 +2154,7 @@ MonoBehaviour:
       name: CanAddToContainer
       fullName: ToolSmiths.InventorySystem.Tests.ContainerTest.CanAddToContainer
       resultStatus: 1
-      duration: 0.0009185
+      duration: 0.0009724
       messages: 
       output: 
       stacktrace: 
@@ -2217,7 +2171,7 @@ MonoBehaviour:
       name: CanAddToMultipleOpenedStacks
       fullName: ToolSmiths.InventorySystem.Tests.ContainerTest.CanAddToMultipleOpenedStacks
       resultStatus: 1
-      duration: 0.0020272
+      duration: 0.0015965
       messages: 
       output: 
       stacktrace: 
@@ -2234,7 +2188,7 @@ MonoBehaviour:
       name: CanAddToOpenedStacks
       fullName: ToolSmiths.InventorySystem.Tests.ContainerTest.CanAddToOpenedStacks
       resultStatus: 1
-      duration: 0.0001994
+      duration: 0.0001989
       messages: 
       output: 
       stacktrace: 
@@ -2251,7 +2205,7 @@ MonoBehaviour:
       name: CanAddToStacksBeforeEmpltyPositions
       fullName: ToolSmiths.InventorySystem.Tests.ContainerTest.CanAddToStacksBeforeEmpltyPositions
       resultStatus: 1
-      duration: 0.0002116
+      duration: 0.0002212
       messages: 
       output: 
       stacktrace: 
@@ -2263,29 +2217,12 @@ MonoBehaviour:
       - Uncategorized
       parentId: 1003
       parentUniqueId: Tests.dll/ToolSmiths/InventorySystem/Tests/[Tests][ToolSmiths.InventorySystem.Tests.ContainerTest][suite]
-    - id: 1011
-      uniqueId: Tests.dll/ToolSmiths/InventorySystem/Tests/ContainerTest/[Tests][ToolSmiths.InventorySystem.Tests.ContainerTest.CanRemoveAtPosition]
-      name: CanRemoveAtPosition
-      fullName: ToolSmiths.InventorySystem.Tests.ContainerTest.CanRemoveAtPosition
-      resultStatus: 1
-      duration: 0.0008636
-      messages: 
-      output: 
-      stacktrace: 
-      notRunnable: 0
-      ignoredOrSkipped: 0
-      description: 
-      isSuite: 0
-      categories:
-      - Uncategorized
-      parentId: 1004
-      parentUniqueId: Tests.dll/ToolSmiths/InventorySystem/Tests/[Tests][ToolSmiths.InventorySystem.Tests.ContainerTest][suite]
     - id: 1026
       uniqueId: Tests.dll/ToolSmiths/InventorySystem/Tests/ContainerTest/[Tests][ToolSmiths.InventorySystem.Tests.ContainerTest.CanRemoveFromMultipleStacks]
       name: CanRemoveFromMultipleStacks
       fullName: ToolSmiths.InventorySystem.Tests.ContainerTest.CanRemoveFromMultipleStacks
       resultStatus: 1
-      duration: 0.0013436
+      duration: 0.0020001
       messages: 
       output: "Package \t The Package you constructed contains more items than the
         item's stacking limit!\r\nPackage \t The Package you constructed contains
@@ -2304,7 +2241,7 @@ MonoBehaviour:
       name: CanRemoveFromStack
       fullName: ToolSmiths.InventorySystem.Tests.ContainerTest.CanRemoveFromStack
       resultStatus: 1
-      duration: 0.000217
+      duration: 0.0002186
       messages: 
       output: 
       stacktrace: 
@@ -2321,7 +2258,7 @@ MonoBehaviour:
       name: CanRemoveItemsFromContainer
       fullName: ToolSmiths.InventorySystem.Tests.ContainerTest.CanRemoveItemsFromContainer
       resultStatus: 1
-      duration: 0.0001816
+      duration: 0.0001847
       messages: 
       output: 
       stacktrace: 
@@ -2338,7 +2275,7 @@ MonoBehaviour:
       name: CanStackItems
       fullName: ToolSmiths.InventorySystem.Tests.ContainerTest.CanStackItems
       resultStatus: 1
-      duration: 0.0071894
+      duration: 0.0094837
       messages: 
       output: 
       stacktrace: 
@@ -2354,7 +2291,7 @@ MonoBehaviour:
       name: CanStackItems(uint.MinValue)
       fullName: ToolSmiths.InventorySystem.Tests.ContainerTest.CanStackItems(uint.MinValue)
       resultStatus: 1
-      duration: 0.0005458
+      duration: 0.0005903
       messages: 
       output: 
       stacktrace: 
@@ -2371,7 +2308,7 @@ MonoBehaviour:
       name: CanStackItems(1)
       fullName: ToolSmiths.InventorySystem.Tests.ContainerTest.CanStackItems(1)
       resultStatus: 1
-      duration: 0.0001135
+      duration: 0.0001171
       messages: 
       output: 
       stacktrace: 
@@ -2388,7 +2325,7 @@ MonoBehaviour:
       name: CanStackItems(5)
       fullName: ToolSmiths.InventorySystem.Tests.ContainerTest.CanStackItems(5)
       resultStatus: 1
-      duration: 0.0001073
+      duration: 0.0001125
       messages: 
       output: 
       stacktrace: 
@@ -2405,7 +2342,7 @@ MonoBehaviour:
       name: CanStackItems(99)
       fullName: ToolSmiths.InventorySystem.Tests.ContainerTest.CanStackItems(99)
       resultStatus: 1
-      duration: 0.0001108
+      duration: 0.0001121
       messages: 
       output: 
       stacktrace: 
@@ -2422,7 +2359,7 @@ MonoBehaviour:
       name: CanSwapItems
       fullName: ToolSmiths.InventorySystem.Tests.ContainerTest.CanSwapItems
       resultStatus: 1
-      duration: 0.0003548
+      duration: 0.0003615
       messages: 
       output: 
       stacktrace: 
@@ -2439,7 +2376,7 @@ MonoBehaviour:
       name: CanSwapWithFullStacks
       fullName: ToolSmiths.InventorySystem.Tests.ContainerTest.CanSwapWithFullStacks
       resultStatus: 1
-      duration: 0.0058507
+      duration: 0.0080788
       messages: 
       output: 
       stacktrace: 
@@ -2455,7 +2392,7 @@ MonoBehaviour:
       name: CanSwapWithFullStacks(1)
       fullName: ToolSmiths.InventorySystem.Tests.ContainerTest.CanSwapWithFullStacks(1)
       resultStatus: 1
-      duration: 0.0003089
+      duration: 0.0003637
       messages: 
       output: 
       stacktrace: 
@@ -2472,7 +2409,7 @@ MonoBehaviour:
       name: CanSwapWithFullStacks(5)
       fullName: ToolSmiths.InventorySystem.Tests.ContainerTest.CanSwapWithFullStacks(5)
       resultStatus: 1
-      duration: 0.0000981
+      duration: 0.0000973
       messages: 
       output: 
       stacktrace: 
@@ -2489,7 +2426,7 @@ MonoBehaviour:
       name: CanSwapWithFullStacks(99)
       fullName: ToolSmiths.InventorySystem.Tests.ContainerTest.CanSwapWithFullStacks(99)
       resultStatus: 1
-      duration: 0.000093
+      duration: 0.0000972
       messages: 
       output: 
       stacktrace: 
@@ -2506,7 +2443,7 @@ MonoBehaviour:
       name: HasEmptyDimensions
       fullName: ToolSmiths.InventorySystem.Tests.ContainerTest.HasEmptyDimensions
       resultStatus: 1
-      duration: 0.0002507
+      duration: 0.0003565
       messages: 
       output: 
       stacktrace: 
@@ -2523,7 +2460,7 @@ MonoBehaviour:
       name: IsFull
       fullName: ToolSmiths.InventorySystem.Tests.ContainerTest.IsFull
       resultStatus: 1
-      duration: 0.0003362
+      duration: 0.0016133
       messages: 
       output: 
       stacktrace: 
@@ -2540,7 +2477,7 @@ MonoBehaviour:
       name: IsOccupiedAtPosition
       fullName: ToolSmiths.InventorySystem.Tests.ContainerTest.IsOccupiedAtPosition
       resultStatus: 1
-      duration: 0.0005889
+      duration: 0.0013512
       messages: 
       output: 
       stacktrace: 
@@ -2557,7 +2494,7 @@ MonoBehaviour:
       name: IsWithinDimensions
       fullName: ToolSmiths.InventorySystem.Tests.ContainerTest.IsWithinDimensions
       resultStatus: 1
-      duration: 0.0002259
+      duration: 0.0002276
       messages: 
       output: 
       stacktrace: 
@@ -2574,7 +2511,7 @@ MonoBehaviour:
       name: ReturnOriginalWhenAddingToFullContainer
       fullName: ToolSmiths.InventorySystem.Tests.ContainerTest.ReturnOriginalWhenAddingToFullContainer
       resultStatus: 1
-      duration: 0.0003728
+      duration: 0.0015899
       messages: 
       output: 
       stacktrace: 
@@ -2591,7 +2528,7 @@ MonoBehaviour:
       name: ReturnPreviousWhenAddingToOccupiedSlot
       fullName: ToolSmiths.InventorySystem.Tests.ContainerTest.ReturnPreviousWhenAddingToOccupiedSlot
       resultStatus: 1
-      duration: 0.0002319
+      duration: 0.0003191
       messages: 
       output: 
       stacktrace: 
@@ -2608,7 +2545,7 @@ MonoBehaviour:
       name: ReturnRemainingWhenAddingToOpenedStack
       fullName: ToolSmiths.InventorySystem.Tests.ContainerTest.ReturnRemainingWhenAddingToOpenedStack
       resultStatus: 1
-      duration: 0.0071041
+      duration: 0.0083831
       messages: 
       output: 
       stacktrace: 
@@ -2624,7 +2561,7 @@ MonoBehaviour:
       name: ReturnRemainingWhenAddingToOpenedStack(1)
       fullName: ToolSmiths.InventorySystem.Tests.ContainerTest.ReturnRemainingWhenAddingToOpenedStack(1)
       resultStatus: 1
-      duration: 0.0003475
+      duration: 0.0003667
       messages: 
       output: 
       stacktrace: 
@@ -2641,7 +2578,7 @@ MonoBehaviour:
       name: ReturnRemainingWhenAddingToOpenedStack(4)
       fullName: ToolSmiths.InventorySystem.Tests.ContainerTest.ReturnRemainingWhenAddingToOpenedStack(4)
       resultStatus: 1
-      duration: 0.0001007
+      duration: 0.0001006
       messages: 
       output: 
       stacktrace: 
@@ -2658,7 +2595,7 @@ MonoBehaviour:
       name: ReturnRemainingWhenAddingToOpenedStack(5)
       fullName: ToolSmiths.InventorySystem.Tests.ContainerTest.ReturnRemainingWhenAddingToOpenedStack(5)
       resultStatus: 1
-      duration: 0.0000978
+      duration: 0.0000968
       messages: 
       output: 
       stacktrace: 
@@ -2675,7 +2612,7 @@ MonoBehaviour:
       name: ReturnRemainingWhenAddingToOpenedStack(10)
       fullName: ToolSmiths.InventorySystem.Tests.ContainerTest.ReturnRemainingWhenAddingToOpenedStack(10)
       resultStatus: 1
-      duration: 0.0006616
+      duration: 0.0006627
       messages: 
       output: "Package \t The Package you constructed contains more items than the
         item's stacking limit!\r\n"
@@ -2693,7 +2630,7 @@ MonoBehaviour:
       name: ReturnStackWhenAddingToFullStack
       fullName: ToolSmiths.InventorySystem.Tests.ContainerTest.ReturnStackWhenAddingToFullStack
       resultStatus: 1
-      duration: 0.0002489
+      duration: 0.0002705
       messages: 
       output: 
       stacktrace: 
@@ -2710,7 +2647,7 @@ MonoBehaviour:
       name: ReturnZeroWhenAddingToEmpty
       fullName: ToolSmiths.InventorySystem.Tests.ContainerTest.ReturnZeroWhenAddingToEmpty
       resultStatus: 1
-      duration: 0.000207
+      duration: 0.0002072
       messages: 
       output: 
       stacktrace: 
@@ -2727,7 +2664,7 @@ MonoBehaviour:
       name: ReturnZeroWhenAddingZero
       fullName: ToolSmiths.InventorySystem.Tests.ContainerTest.ReturnZeroWhenAddingZero
       resultStatus: 1
-      duration: 0.0002006
+      duration: 0.0001884
       messages: 
       output: 
       stacktrace: 
@@ -2744,7 +2681,7 @@ MonoBehaviour:
       name: ReturnZetoWhenRemovingLastItemFromStack
       fullName: ToolSmiths.InventorySystem.Tests.ContainerTest.ReturnZetoWhenRemovingLastItemFromStack
       resultStatus: 1
-      duration: 0.0002046
+      duration: 0.0002003
       messages: 
       output: 
       stacktrace: 
@@ -2761,7 +2698,7 @@ MonoBehaviour:
       name: ItemTests
       fullName: ToolSmiths.InventorySystem.Tests.ItemTests
       resultStatus: 1
-      duration: 0.0078043
+      duration: 0.0085
       messages: 
       output: 
       stacktrace: 
@@ -2777,7 +2714,7 @@ MonoBehaviour:
       name: CanSetItemStackLimit
       fullName: ToolSmiths.InventorySystem.Tests.ItemTests.CanSetItemStackLimit
       resultStatus: 1
-      duration: 0.0017369
+      duration: 0.0016547
       messages: 
       output: 
       stacktrace: 
@@ -2793,7 +2730,7 @@ MonoBehaviour:
       name: CanSetItemStackLimit(uint.MinValue)
       fullName: ToolSmiths.InventorySystem.Tests.ItemTests.CanSetItemStackLimit(uint.MinValue)
       resultStatus: 1
-      duration: 0.0003012
+      duration: 0.0003085
       messages: 
       output: 
       stacktrace: 
@@ -2810,7 +2747,7 @@ MonoBehaviour:
       name: CanSetItemStackLimit(1)
       fullName: ToolSmiths.InventorySystem.Tests.ItemTests.CanSetItemStackLimit(1)
       resultStatus: 1
-      duration: 0.000087
+      duration: 0.0000862
       messages: 
       output: 
       stacktrace: 
@@ -2827,7 +2764,7 @@ MonoBehaviour:
       name: CanSetItemStackLimit(99)
       fullName: ToolSmiths.InventorySystem.Tests.ItemTests.CanSetItemStackLimit(99)
       resultStatus: 1
-      duration: 0.0000854
+      duration: 0.0000844
       messages: 
       output: 
       stacktrace: 
@@ -2844,7 +2781,7 @@ MonoBehaviour:
       name: StatModifierTests
       fullName: ToolSmiths.InventorySystem.Tests.StatModifierTests
       resultStatus: 1
-      duration: 0.0060585
+      duration: 0.0074382
       messages: 
       output: 
       stacktrace: 
@@ -2860,7 +2797,7 @@ MonoBehaviour:
       name: CanSetOrigin
       fullName: ToolSmiths.InventorySystem.Tests.StatModifierTests.CanSetOrigin
       resultStatus: 1
-      duration: 0.001078
+      duration: 0.001134
       messages: 
       output: 
       stacktrace: 
@@ -2872,15 +2809,13 @@ MonoBehaviour:
       - Uncategorized
       parentId: 1031
       parentUniqueId: Tests.dll/ToolSmiths/InventorySystem/Tests/[Tests][ToolSmiths.InventorySystem.Tests.StatModifierTests][suite]
-    m_ResultText: "ReturnRemainingWhenAddingToOpenedStack(10) (0.001s)\n---\nPackage
-      \t The Package you constructed contains more items than the item's stacking
-      limit!"
+    m_ResultText: IsFull (0.002s)
     m_ResultStacktrace: 
     m_TestListState:
       scrollPos: {x: 0, y: 0}
-      m_SelectedIDs: a2f1a7d1
-      m_LastClickedID: -777522782
-      m_ExpandedIDs: 7e2d0584112e83877dd51c8f95dc7c949289189ab2d5a29dfaa0a3a2c43eb1a9885b51b50ea210b6b990b6c0b6e6cbc06b3fc2c19a2276c5dabbc6c55f56a8c9461b95cd380d53cf46887ddb0ee109e0bae293e0b3c3d7e0ca608de3555215e5e093afea264db7ecc853f3f17ca842f324d893f7e557abf7b7e0df0947e17f0d03f18e12668a7c187e9daf190cf6601ce136ac1c4986b41dacb58e280ba2c72f4ae25f320eaa8d331972553c9de56a4642ff234e75f0ec559da8da56891762655363fd6d27991f6f4076487425326e75dd5d0976bd592b7dffffff7f
+      m_SelectedIDs: 6e9160a0
+      m_LastClickedID: -1604284050
+      m_ExpandedIDs: 7e2d0584112e83877dd51c8f95dc7c949289189a0d441c9cb2d5a29dfaa0a3a2c43eb1a9885b51b50ea210b6b990b6c0b6e6cbc06b3fc2c19a2276c5dabbc6c55f56a8c9461b95cd380d53cf46887ddb0ee109e0bae293e0b3c3d7e0ca608de3555215e5e093afea264db7ecc853f3f17ca842f324d893f7e557abf7b7e0df0947e17f0d03f18e12668a7c187e9daf190cf6601ce136ac1c4986b41dacb58e280ba2c72f4ae25f320eaa8d331972553c9de56a4642ff234e75f0ec559da8da56891762655363fd6d27991f6f4076487425326e75dd5d0976bd592b7dffffff7f
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -2926,10 +2861,10 @@ MonoBehaviour:
     m_Tooltip: 
   m_Pos:
     serializedVersion: 2
-    x: 3267
+    x: 1502
     y: 73
-    width: 572
-    height: 966
+    width: 417
+    height: 936
   m_ViewDataDictionary: {fileID: 0}
   m_OverlayCanvas:
     m_LastAppliedPresetName: Default

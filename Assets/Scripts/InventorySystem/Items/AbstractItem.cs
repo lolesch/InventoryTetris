@@ -7,12 +7,13 @@ namespace ToolSmiths.InventorySystem.Items
     [System.Serializable]
     public abstract class AbstractItem : ScriptableObject
     {
-        [SerializeField] protected internal Vector2Int dimensions = Vector2Int.one;
+        [SerializeField] private Vector2Int dimensions = Vector2Int.one;
         public Vector2Int Dimensions => dimensions;
-        public int Slots => Dimensions.x * Dimensions.y;
 
-        [SerializeField] protected internal uint stackLimit = 1u;
-        public uint Stacklimit => stackLimit;
+        //public int Slots => Dimensions.x * Dimensions.y;
+
+        [SerializeField] private uint stackLimit = 1u;
+        public uint StackLimit => stackLimit;
 
         [SerializeField] protected internal Sprite Icon;
 

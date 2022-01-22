@@ -15,7 +15,7 @@ namespace ToolSmiths.InventorySystem.Tests
 
             item.SetStackLimit(amount);
 
-            Assert.AreEqual(amount, item.stackLimit);
+            Assert.AreEqual(amount, item.StackLimit);
 
             Release(item);
         }

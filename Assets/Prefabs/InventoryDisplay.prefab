@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 759432216187712585}
   - component: {fileID: 998310529523775894}
   - component: {fileID: 759432216187712584}
-  - component: {fileID: 759432216187712587}
+  - component: {fileID: 2041717577405286291}
   m_Layer: 5
   m_Name: InventoryDisplay
   m_TagString: Untagged
@@ -118,7 +118,7 @@ MonoBehaviour:
   m_Spacing: {x: 0, y: 0}
   m_Constraint: 1
   m_ConstraintCount: 10
---- !u!114 &759432216187712587
+--- !u!114 &2041717577405286291
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -127,20 +127,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 759432216187712589}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4575531a37265ee4f8105411e4f6fa7e, type: 3}
+  m_Script: {fileID: 11500000, guid: 7cdf599b83bc1334e8a00ab8fa17cfd3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  TestSerialization:
-    Item: {fileID: 0}
-  Inventory:
-    StoredPackages:
-      m_keys: []
-      m_values: []
-    OccupiedSlots:
-      m_keys: []
-      m_values: []
   slotDisplayPrefab: {fileID: 3613886384109497563, guid: 2287cac91a7c16e479ee377613d24cd7, type: 3}
-  itemToAdd: {fileID: 11400000, guid: 548edb934b8460641bc786ac8f52349b, type: 2}
 --- !u!1001 &2618862128002854537
 PrefabInstance:
   m_ObjectHideFlags: 0

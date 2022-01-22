@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Linq;
 using TeppichsTools.Creation;
 using TMPro;
@@ -12,21 +11,21 @@ namespace ToolSmiths.InventorySystem.Inventories
 {
     public class InventoryProvider : MonoSingleton<InventoryProvider>
     {
-        public static Inventory PlayerInventory;
+        public static PlayerInventory PlayerInventory;
+        public static PlayerInventory PlayerStash;
         public static PlayerEquipment PlayerEquipment;
-        public static Inventory PlayerStash;
 
         [Space]
-        [SerializeField] private InventoryDisplay playerInventoryDisplay;
+        [SerializeField] private InventoryContainerDisplay playerInventoryDisplay;
         [SerializeField] private Vector2Int playerInventorySize = new(10, 6);
 
         [Space]
-        [SerializeField] private InventoryDisplay playerEquipmentDisplay;
-        [SerializeField] private Vector2Int playerEquipmentSize = new(2, 6);
+        [SerializeField] private InventoryContainerDisplay playerStashDisplay;
+        [SerializeField] private Vector2Int playerStashSize = new(10, 15);
 
         [Space]
-        [SerializeField] private InventoryDisplay playerStashDisplay;
-        [SerializeField] private Vector2Int playerStashSize = new(10, 15);
+        [SerializeField] private EquipmentContainerDisplay playerEquipmentDisplay;
+        [SerializeField] private Vector2Int playerEquipmentSize = new(13, 0);
 
         [Header("Items")]
         [SerializeField] private Item potion;
@@ -38,14 +37,14 @@ namespace ToolSmiths.InventorySystem.Inventories
         private Item itemToAdd;
         private uint amount => (uint)amountSlider?.value;
         private TextMeshProUGUI amountText;
-        private AbstractContainer containerToAddTo;
+        private AbstractDimensionalContainer containerToAddTo;
 
 
         void SetInventories()
         {
-            playerInventoryDisplay.SetupInventory(PlayerInventory);
-            playerEquipmentDisplay.SetupInventory(PlayerEquipment);
-            playerStashDisplay.SetupInventory(PlayerStash);
+            playerInventoryDisplay.SetupDisplay(PlayerInventory);
+            playerStashDisplay.SetupDisplay(PlayerStash);
+            playerEquipmentDisplay.SetupDisplay(PlayerEquipment);
         }
 
         [ContextMenu("Awake")]
@@ -56,8 +55,8 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             // serialize inventories here
             PlayerInventory = new(playerInventorySize);
-            PlayerEquipment = new(playerEquipmentSize);
             PlayerStash = new(playerStashSize);
+            PlayerEquipment = new(playerEquipmentSize);
 
             itemToAdd = potion;
             containerToAddTo = PlayerInventory;
@@ -74,9 +73,9 @@ namespace ToolSmiths.InventorySystem.Inventories
         [ContextMenu("RemoveAllItems")]
         public void RemoveAllItems()
         {
-            List<Vector2Int> positions = containerToAddTo?.StoredPackages.Keys.ToList();
-            foreach (var position in positions)
-                containerToAddTo.RemoveAtPosition(position);
+            var storedPackages = containerToAddTo?.storedPackages.ToList();
+            for (int i = 0; i < storedPackages.Count; i++)
+                containerToAddTo.RemoveItemAtPosition(storedPackages[i].Key, storedPackages[i].Value);
         }
 
         public void SetAmountText() => amountText.text = amountSlider.value.ToString();
@@ -89,6 +88,8 @@ namespace ToolSmiths.InventorySystem.Inventories
         public void SetItemToBoots() => itemToAdd = boots;
         public void SetItemToSword() => itemToAdd = sword;
         public void SetItemToChestArmor() => itemToAdd = chestArmor;
+
+        public void SortInventory() => containerToAddTo.Sort();
 
     }
 
