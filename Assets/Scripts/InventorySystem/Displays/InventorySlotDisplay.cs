@@ -34,33 +34,36 @@ namespace ToolSmiths.InventorySystem.Displays
 
         internal protected override void DropItem()
         {
-            var positionOffset = StaticDragDisplay.Instance.Package.Item.Dimensions / 2;
-            Vector2 mousePositionOffset = (Input.mousePosition - transform.position) / transform.root.GetComponent<Canvas>().scaleFactor;
-            var relativeMouseOffset = (mousePositionOffset - (transform as RectTransform).rect.size / 2) / (transform as RectTransform).rect.size;
-            var mouseOffset = new Vector2Int(Mathf.CeilToInt(relativeMouseOffset.x), -Mathf.CeilToInt(relativeMouseOffset.y));
-
-            var positionToAdd = Position - positionOffset + mouseOffset;
-
-            if (container.CanAddAtPosition(positionToAdd, StaticDragDisplay.Instance.Package.Item.Dimensions, out List<Vector2Int> otherItems))
+            if (StaticDragDisplay.Instance.Package.Item)
             {
-                Package remaining;
+                var positionOffset = StaticDragDisplay.Instance.Package.Item.Dimensions / 2;
+                Vector2 mousePositionOffset = (Input.mousePosition - transform.position) / transform.root.GetComponent<Canvas>().scaleFactor;
+                var relativeMouseOffset = (mousePositionOffset - (transform as RectTransform).rect.size / 2) / (transform as RectTransform).rect.size;
+                var mouseOffset = new Vector2Int(Mathf.CeilToInt(relativeMouseOffset.x), -Mathf.CeilToInt(relativeMouseOffset.y));
 
-                remaining = container.AddAtPosition(positionToAdd, packageToMove);
+                var positionToAdd = Position - positionOffset + mouseOffset;
 
-                if (0 < remaining.Amount)
+                if (container.CanAddAtPosition(positionToAdd, StaticDragDisplay.Instance.Package.Item.Dimensions, out List<Vector2Int> otherItems))
                 {
-                    packageToMove = remaining;
-                    StaticDragDisplay.Instance.SetPackage(this, remaining);
-                }
-                else
-                {
-                    packageToMove = new Package();
+                    Package remaining;
 
-                    StaticDragDisplay.Instance.SetPackage(this, packageToMove);
-                }
+                    remaining = container.AddAtPosition(positionToAdd, packageToMove);
 
-                container.InvokeRefresh();
-                StaticDragDisplay.Instance.packageOrigin.container.InvokeRefresh();
+                    if (0 < remaining.Amount)
+                    {
+                        packageToMove = remaining;
+                        StaticDragDisplay.Instance.SetPackage(this, remaining);
+                    }
+                    else
+                    {
+                        packageToMove = new Package();
+
+                        StaticDragDisplay.Instance.SetPackage(this, packageToMove);
+                    }
+
+                    container.InvokeRefresh();
+                    StaticDragDisplay.Instance.packageOrigin.container.InvokeRefresh();
+                }
             }
         }
 
