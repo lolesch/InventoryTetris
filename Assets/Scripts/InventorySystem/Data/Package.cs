@@ -22,12 +22,7 @@ namespace ToolSmiths.InventorySystem.Data
             Amount = amount;
             if (item.StackLimit < amount)
                 EditorDebug.LogWarning($"{nameof(Package)} \t The Package you constructed contains more items than the item's stacking limit!");
-
-            randomColor = UnityEngine.Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
         }
-
-        // remove me later
-        public Color randomColor;
 
         /// <summary>
         /// The package's item

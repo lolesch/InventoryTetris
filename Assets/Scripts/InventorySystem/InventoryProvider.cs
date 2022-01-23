@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using TeppichsTools.Creation;
 using TMPro;
@@ -28,25 +29,26 @@ namespace ToolSmiths.InventorySystem.Inventories
         [SerializeField] private Vector2Int playerEquipmentSize = new(13, 1);
 
         [Header("Items")]
-        [SerializeField] private Item Amulet;
-        [SerializeField] private Item Belt;
-        [SerializeField] private Item Boots;
-        [SerializeField] private Item Bracers;
-        [SerializeField] private Item Chest;
-        [SerializeField] private Item Gloves;
-        [SerializeField] private Item Helm;
-        [SerializeField] private Item OffHand;
-        [SerializeField] private Item Pants;
-        [SerializeField] private Item Potion;
-        [SerializeField] private Item Ring;
-        [SerializeField] private Item Weapon1H;
+        [SerializeField] private List<Item> Amulet;
+        [SerializeField] private List<Item> Belt;
+        [SerializeField] private List<Item> Boots;
+        [SerializeField] private List<Item> Bracers;
+        [SerializeField] private List<Item> Chest;
+        [SerializeField] private List<Item> Gloves;
+        [SerializeField] private List<Item> Helm;
+        [SerializeField] private List<Item> OffHand;
+        [SerializeField] private List<Item> Pants;
+        [SerializeField] private List<Item> Potion;
+        [SerializeField] private List<Item> Ring;
+        [SerializeField] private List<Item> Weapon1H;
 
         private Slider amountSlider;
-        private Item itemToAdd;
+        private List<Item> itemToAdd;
         private uint amount => (uint)amountSlider?.value;
         private TextMeshProUGUI amountText;
         private AbstractDimensionalContainer containerToAddTo;
 
+        private int current;
 
         void SetInventories()
         {
@@ -73,10 +75,17 @@ namespace ToolSmiths.InventorySystem.Inventories
         }
 
         [ContextMenu("AddItem")]
-        public void AddItem() => containerToAddTo?.AddToContainer(new Package(itemToAdd, amount));
+        public void AddItem()
+        {
+            for (int i = 0; i < amount; i++)
+            {
+                containerToAddTo?.AddToContainer(new Package(itemToAdd[current % itemToAdd.Count], 1));
+                current++;
+            }
+        }
 
         [ContextMenu("RemoveItem")]
-        public void RemoveItem() => containerToAddTo?.RemoveFromContainer(new Package(itemToAdd, amount));
+        public void RemoveItem() => containerToAddTo?.RemoveFromContainer(new Package(itemToAdd[current % itemToAdd.Count], amount));
 
         [ContextMenu("RemoveAllItems")]
         public void RemoveAllItems()

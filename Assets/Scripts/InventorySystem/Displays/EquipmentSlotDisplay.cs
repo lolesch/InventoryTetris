@@ -75,11 +75,7 @@ namespace ToolSmiths.InventorySystem.Displays
                     SetDisplaySize(itemDisplay, package);
 
                     if (icon)
-                    {
                         icon.sprite = package.Item.Icon;
-                        if (package.Item is Equipment)
-                            icon.color = package.randomColor;
-                    }
 
                     if (amount)
                         amount.text = 1 < package.Amount ? package.Amount.ToString() : string.Empty;

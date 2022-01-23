@@ -33,11 +33,12 @@ namespace ToolSmiths.InventorySystem.Displays
 
         internal protected override void DropItem()
         {
-            if (container.CanAddAtPosition(Position, StaticDragDisplay.Instance.Package.Item.Dimensions, out List<Vector2Int> otherItems))
+            var positionOffset = StaticDragDisplay.Instance.Package.Item.Dimensions / 2;
+            if (container.CanAddAtPosition(Position - positionOffset, StaticDragDisplay.Instance.Package.Item.Dimensions, out List<Vector2Int> otherItems))
             {
                 Package remaining;
 
-                remaining = container.AddAtPosition(Position, packageToMove);
+                remaining = container.AddAtPosition(Position - positionOffset, packageToMove);
 
                 if (0 < remaining.Amount)
                 {
@@ -75,11 +76,7 @@ namespace ToolSmiths.InventorySystem.Displays
                     SetDisplaySize(itemDisplay, package);
 
                     if (icon)
-                    {
                         icon.sprite = package.Item.Icon;
-                        if (package.Item is Equipment)
-                            icon.color = package.randomColor;
-                    }
 
                     if (amount)
                         amount.text = 1 < package.Amount ? package.Amount.ToString() : string.Empty;
@@ -110,31 +107,34 @@ namespace ToolSmiths.InventorySystem.Displays
 
             if (otherItems.Count == 1)
             {
-                packageToMove = container.storedPackages[otherItems[0]];
-
-                container.RemoveItemAtPosition(otherItems[0], packageToMove);
-
-                Package remaining;
-
-                remaining = InventoryProvider.PlayerEquipment.AddAtPosition(Position, packageToMove);
-
-                if (0 < remaining.Amount)
-                    remaining = container.AddAtPosition(otherItems[0], remaining);
-
-                if (0 < remaining.Amount)
+                if (container.storedPackages[otherItems[0]].Item is Equipment)
                 {
-                    packageToMove = remaining;
-                    StaticDragDisplay.Instance.SetPackage(this, remaining);
-                }
-                else
-                {
-                    packageToMove = new Package();
+                    packageToMove = container.storedPackages[otherItems[0]];
 
-                    StaticDragDisplay.Instance.SetPackage(this, packageToMove);
-                }
+                    container.RemoveItemAtPosition(otherItems[0], packageToMove);
 
-                container.InvokeRefresh();
-                StaticDragDisplay.Instance.packageOrigin.container.InvokeRefresh();
+                    Package remaining;
+
+                    remaining = InventoryProvider.PlayerEquipment.AddAtPosition(Position, packageToMove);
+
+                    if (0 < remaining.Amount)
+                        remaining = container.AddAtPosition(otherItems[0], remaining);
+
+                    if (0 < remaining.Amount)
+                    {
+                        packageToMove = remaining;
+                        StaticDragDisplay.Instance.SetPackage(this, remaining);
+                    }
+                    else
+                    {
+                        packageToMove = new Package();
+
+                        StaticDragDisplay.Instance.SetPackage(this, packageToMove);
+                    }
+
+                    container.InvokeRefresh();
+                    StaticDragDisplay.Instance.packageOrigin.container.InvokeRefresh();
+                }
             }
         }
 
