@@ -45,7 +45,7 @@ public class StaticDragDisplay : MonoSingleton<StaticDragDisplay>, IPointerClick
         {
             var pos = Input.GetTouch(0).position / rootCanvas.scaleFactor;
 
-            if (Screen.width < Screen.height)
+            if (Screen.orientation == ScreenOrientation.LandscapeRight)
                 pos = new Vector2(pos.y, pos.x);
             return pos;
         }
