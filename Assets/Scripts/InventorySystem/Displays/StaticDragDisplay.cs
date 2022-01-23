@@ -37,10 +37,10 @@ public class StaticDragDisplay : MonoSingleton<StaticDragDisplay>, IPointerClick
             MoveDragDisplay();
     }
 
-    private void MoveDragDisplay()
-    {
-        itemDisplay.anchoredPosition = SystemInfo.deviceType == DeviceType.Handheld ? Input.GetTouch(0).position / rootCanvas.scaleFactor : Input.mousePosition / rootCanvas.scaleFactor;
-    }
+    private void MoveDragDisplay() => itemDisplay.anchoredPosition = GetInputPosition();
+
+    private Vector2 GetInputPosition() => SystemInfo.deviceType == DeviceType.Handheld ? Input.GetTouch(0).position / rootCanvas.scaleFactor : Input.mousePosition / rootCanvas.scaleFactor;
+
 
     private void RefreshDragDisplay()
     {
@@ -55,7 +55,7 @@ public class StaticDragDisplay : MonoSingleton<StaticDragDisplay>, IPointerClick
         /// align with mousePosition coordinates
         itemDisplay.anchorMin = Vector2.zero;
         itemDisplay.anchorMax = Vector2.zero;
-        itemDisplay.anchoredPosition = SystemInfo.deviceType == DeviceType.Handheld ? Input.GetTouch(0).position / rootCanvas.scaleFactor : Input.mousePosition / rootCanvas.scaleFactor;
+        itemDisplay.anchoredPosition = GetInputPosition();
 
         itemDisplay.gameObject.SetActive(true);
 
