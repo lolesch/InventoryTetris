@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Inventories;
@@ -34,11 +35,17 @@ namespace ToolSmiths.InventorySystem.Displays
         internal protected override void DropItem()
         {
             var positionOffset = StaticDragDisplay.Instance.Package.Item.Dimensions / 2;
-            if (container.CanAddAtPosition(Position - positionOffset, StaticDragDisplay.Instance.Package.Item.Dimensions, out List<Vector2Int> otherItems))
+            Vector2 mousePositionOffset = (Input.mousePosition - transform.position) / transform.root.GetComponent<Canvas>().scaleFactor;
+            var relativeMouseOffset = (mousePositionOffset - (transform as RectTransform).rect.size / 2) / (transform as RectTransform).rect.size;
+            var mouseOffset = new Vector2Int(Mathf.CeilToInt(relativeMouseOffset.x), -Mathf.CeilToInt(relativeMouseOffset.y));
+
+            var positionToAdd = Position - positionOffset + mouseOffset;
+
+            if (container.CanAddAtPosition(positionToAdd, StaticDragDisplay.Instance.Package.Item.Dimensions, out List<Vector2Int> otherItems))
             {
                 Package remaining;
 
-                remaining = container.AddAtPosition(Position - positionOffset, packageToMove);
+                remaining = container.AddAtPosition(positionToAdd, packageToMove);
 
                 if (0 < remaining.Amount)
                 {
