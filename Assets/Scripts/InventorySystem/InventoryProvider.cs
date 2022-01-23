@@ -85,7 +85,14 @@ namespace ToolSmiths.InventorySystem.Inventories
         }
 
         [ContextMenu("RemoveItem")]
-        public void RemoveItem() => containerToAddTo?.RemoveFromContainer(new Package(itemToAdd[current % itemToAdd.Count], amount));
+        public void RemoveItem()
+        {
+            for (int i = 0; i < amount; i++)
+            {
+                current--;
+                containerToAddTo?.RemoveFromContainer(new Package(itemToAdd[current % itemToAdd.Count], amount));
+            }
+        }
 
         [ContextMenu("RemoveAllItems")]
         public void RemoveAllItems()
