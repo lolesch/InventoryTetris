@@ -24,24 +24,21 @@ public class ScreenRotator : MonoSingleton<ScreenRotator>
 
     private void Update()
     {
-        if (SystemInfo.deviceType == DeviceType.Handheld)
+        screenWidth = Screen.width / canvas.scaleFactor;
+        screenHeight = Screen.height / canvas.scaleFactor;
+
+        landscape = Screen.height < Screen.width;
+        canvasScaler.matchWidthOrHeight = landscape ? 1 : .5f;
+
+        if (landscape)
         {
-            screenWidth = Screen.width / canvas.scaleFactor;
-            screenHeight = Screen.height / canvas.scaleFactor;
-
-            landscape = Screen.height < Screen.width;
-            canvasScaler.matchWidthOrHeight = landscape ? 1 : .5f;
-
-            if (landscape)
-            {
-                transform.rotation = Quaternion.Euler(0, 0, 0);
-                transform.sizeDelta = new(screenWidth, screenHeight);
-            }
-            else
-            {
-                transform.rotation = Quaternion.Euler(0, 0, 90);
-                transform.sizeDelta = new(screenHeight, screenWidth);
-            }
+            transform.rotation = Quaternion.Euler(0, 0, 0);
+            transform.sizeDelta = new(screenWidth, screenHeight);
+        }
+        else
+        {
+            transform.rotation = Quaternion.Euler(0, 0, 90);
+            transform.sizeDelta = new(screenHeight, screenWidth);
         }
     }
 }
