@@ -41,14 +41,14 @@ public class StaticDragDisplay : MonoSingleton<StaticDragDisplay>, IPointerClick
 
     private Vector2 GetInputPosition()
     {
-        if (SystemInfo.deviceType == DeviceType.Handheld)
-        {
-            var pos = Input.mousePosition / rootCanvas.scaleFactor;
-
-            if (Screen.orientation == ScreenOrientation.LandscapeRight)
-                pos = new Vector2(pos.y, pos.x);
-            return pos;
-        }
+        //if (SystemInfo.deviceType == DeviceType.Handheld)
+        //{
+        //    var pos = Input.mousePosition / rootCanvas.scaleFactor;
+        //
+        //    //if (Screen.orientation == ScreenOrientation.LandscapeRight)
+        //    //    pos = new Vector2(pos.y, pos.x);
+        //    return pos;
+        //}
         return Input.mousePosition / rootCanvas.scaleFactor;
     }
 
