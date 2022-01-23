@@ -39,8 +39,19 @@ public class StaticDragDisplay : MonoSingleton<StaticDragDisplay>, IPointerClick
 
     private void MoveDragDisplay() => itemDisplay.anchoredPosition = GetInputPosition();
 
-    private Vector2 GetInputPosition() => SystemInfo.deviceType == DeviceType.Handheld ? Input.GetTouch(0).position / rootCanvas.scaleFactor : Input.mousePosition / rootCanvas.scaleFactor;
+    private Vector2 GetInputPosition()
+    {
+        if (SystemInfo.deviceType == DeviceType.Handheld)
+        {
+            var pos = Input.GetTouch(0).position / rootCanvas.scaleFactor;
 
+            if (Screen.width < Screen.height)
+                pos = new Vector2(pos.y, pos.x);
+            return pos;
+        }
+        else
+            return Input.mousePosition / rootCanvas.scaleFactor;
+    }
 
     private void RefreshDragDisplay()
     {
