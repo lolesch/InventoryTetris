@@ -48,7 +48,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         private TextMeshProUGUI amountText;
         private AbstractDimensionalContainer containerToAddTo;
 
-        private int current;
+        private int current = 0;
 
         void SetInventories()
         {
@@ -79,7 +79,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         {
             for (int i = 0; i < amount; i++)
             {
-                containerToAddTo?.AddToContainer(new Package(itemToAdd[current % itemToAdd.Count], 1));
+                containerToAddTo?.AddToContainer(new Package(itemToAdd[Mathf.Abs(current % itemToAdd.Count)], 1));
                 current++;
             }
         }
@@ -90,7 +90,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             for (int i = 0; i < amount; i++)
             {
                 current--;
-                containerToAddTo?.RemoveFromContainer(new Package(itemToAdd[current % itemToAdd.Count], amount));
+                containerToAddTo?.RemoveFromContainer(new Package(itemToAdd[Mathf.Abs(current % itemToAdd.Count)], 1));
             }
         }
 
