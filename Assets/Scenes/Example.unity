@@ -3448,6 +3448,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f231c4fb786f3946a6b90b886c48677, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_SendPointerHoverToParent: 1
   m_HorizontalAxis: Horizontal
   m_VerticalAxis: Vertical
   m_SubmitButton: Submit
@@ -3783,9 +3784,9 @@ MonoBehaviour:
   m_MinWidth: -1
   m_MinHeight: -1
   m_PreferredWidth: -1
-  m_PreferredHeight: 1080
+  m_PreferredHeight: -1
   m_FlexibleWidth: -1
-  m_FlexibleHeight: -1
+  m_FlexibleHeight: 1
   m_LayoutPriority: 1
 --- !u!1 &711695013
 GameObject:
@@ -9976,6 +9977,38 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 588621198066680598, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 588621198066680598, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 588621198066680598, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 588621198066680598, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 588621198066680598, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 588621198066680598, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1141628726790606186, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1141628726790606186, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -0.000030517578
+      objectReference: {fileID: 0}
     - target: {fileID: 1354870548283535607, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
       propertyPath: m_IsActive
       value: 0
@@ -9996,12 +10029,56 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2134850018881118305, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3011972220310586691, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
       propertyPath: m_PreserveAspect
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3610794443297273111, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3610794443297273111, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3610794443297273111, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3610794443297273111, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3610794443297273111, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3610794443297273111, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3659530471309362494, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
       propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3677882925760495411, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_Size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3733454611501315460, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3733454611501315460, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3733454611501315460, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchorMin.x
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
@@ -10009,12 +10086,640 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 998310528992184647}
     - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.size
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
       propertyPath: equipmentDisplays.Array.size
       value: 13
       objectReference: {fileID: 0}
     - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[1].name
+      value: HealthPerSecond
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[2].name
+      value: MovementSpeed
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[3].name
+      value: Damage
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[4].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[5].name
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[6].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[7].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[8].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[10].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[11].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[12].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[14].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[15].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[16].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[18].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[19].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[20].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[22].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[23].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[24].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[26].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[27].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[28].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[30].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[31].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[32].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[34].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[35].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[36].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[38].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[39].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[40].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[42].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[43].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[44].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[46].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[47].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[48].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[50].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[51].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[52].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[54].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[55].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[56].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[58].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[59].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[60].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[62].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[63].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[64].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[66].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[67].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[68].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[70].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[71].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[72].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[74].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[75].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[76].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[78].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[79].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[80].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[82].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[83].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[84].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[86].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[87].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[88].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[90].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[91].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[92].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[94].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[95].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[96].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[98].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[99].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
       propertyPath: containerSlotDisplays.Array.size
       value: 13
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[100].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[102].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[103].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[104].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[106].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[107].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[108].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[110].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[111].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[112].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[114].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[115].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[116].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[118].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[119].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[120].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[122].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[123].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[124].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[126].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[127].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[128].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[130].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[131].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[132].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[134].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[135].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[136].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[138].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[139].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[140].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[142].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[143].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[144].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[146].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[147].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[148].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[150].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[151].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[152].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[154].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[155].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[156].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[158].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[159].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[160].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[162].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[163].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[164].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[166].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[167].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[168].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[170].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[171].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[172].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[174].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[175].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[176].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[178].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[179].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[180].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[182].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[183].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[184].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[186].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[187].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[188].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[190].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[191].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[192].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[194].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[195].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[196].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[198].name
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[199].name
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[200].name
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[1].statName
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[2].statName
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[3].statName
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[4].statName
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
       propertyPath: containerSlotDisplays.Array.data[0]
@@ -10056,6 +10761,26 @@ PrefabInstance:
       propertyPath: containerSlotDisplays.Array.data[9]
       value: 
       objectReference: {fileID: 863038512}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[0].baseValue
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[1].baseValue
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[2].baseValue
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[3].baseValue
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[4].baseValue
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
       propertyPath: containerSlotDisplays.Array.data[10]
       value: 
@@ -10225,6 +10950,10 @@ PrefabInstance:
       value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[4].statModifiers.Array.size
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
       propertyPath: equipmentDisplays.Array.data[0].AllowedTypes.Array.size
       value: 1
       objectReference: {fileID: 0}
@@ -10232,8 +10961,52 @@ PrefabInstance:
       propertyPath: equipmentDisplays.Array.data[0].AllowedTypes.Array.data[0]
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[4].statModifiers.Array.data[0].type
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 3768307858155279272, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: playerStats.Array.data[4].statModifiers.Array.data[0].duration
+      value: -1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4266949590012850633, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4266949590012850633, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4266949590012850633, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5416090934924308120, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
       propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5556675647136024711, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5556675647136024711, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5556675647136024711, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5556675647136024711, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5556675647136024711, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5556675647136024711, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5724736437121186964, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
@@ -10252,6 +11025,30 @@ PrefabInstance:
       propertyPath: allowedEquipmentTypes.Array.size
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 5993493814497172337, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5993493814497172337, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5993493814497172337, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5993493814497172337, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5993493814497172337, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5993493814497172337, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6156049294907853716, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
       propertyPath: m_AnchoredPosition.x
       value: 220
@@ -10262,6 +11059,34 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6156049294907853717, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
       propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6275205918193929950, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6601961159501487431, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6601961159501487431, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6601961159501487431, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6601961159501487431, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6601961159501487431, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6601961159501487431, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6710603046912445379, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
@@ -10364,6 +11189,42 @@ PrefabInstance:
       propertyPath: allowedEquipmentTypes.Array.size
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 7993918765248676433, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7993918765248676433, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7993918765248676433, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7993918765248676433, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7993918765248676433, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 71.9
+      objectReference: {fileID: 0}
+    - target: {fileID: 7993918765248676433, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8183235012115119045, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8183235012115119045, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8183235012115119045, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8302195549964334760, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
       propertyPath: m_IsActive
       value: 0
@@ -10376,8 +11237,36 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: -108.99997
       objectReference: {fileID: 0}
+    - target: {fileID: 8422516409153298734, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8422516409153298734, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8422516409153298734, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8422516409153298734, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8422516409153298734, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8422516409153298734, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8787723719512616132, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
       propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9017137482292525893, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 9030147501991866274, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}

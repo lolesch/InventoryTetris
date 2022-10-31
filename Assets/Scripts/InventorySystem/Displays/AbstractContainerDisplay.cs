@@ -35,7 +35,7 @@ public abstract class AbstractContainerDisplay : MonoBehaviour
         }
     }
 
-    private void Refresh(Dictionary<Vector2Int, Package> storedPackages)
+    protected virtual void Refresh(Dictionary<Vector2Int, Package> storedPackages)
     {
         int current = 0;
         for (int x = 0; x < Container?.Dimensions.x; x++)

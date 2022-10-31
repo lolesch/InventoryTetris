@@ -1,4 +1,3 @@
-using System;
 using System.Runtime.CompilerServices;
 using TMPro;
 using ToolSmiths.InventorySystem.Data;
@@ -37,13 +36,12 @@ namespace ToolSmiths.InventorySystem.Displays
                         EquipItem();
                     else
                         UnequipItem();
-                else PickUpItem();
+                else
+                    PickUpItem();
             else
                 // raycast through center top position of drag display to check if over slotDisplay to add at, or to revert, or to drop item at floor
                 DropItem();
         }
-
-        internal protected abstract void UnequipItem();
 
         public void OnBeginDrag(PointerEventData eventData) => OnPointerClick(eventData);
 
@@ -57,6 +55,8 @@ namespace ToolSmiths.InventorySystem.Displays
         internal protected abstract void PickUpItem();
 
         internal protected abstract void DropItem();
+
+        internal protected abstract void UnequipItem();
 
         internal protected abstract void EquipItem();
 

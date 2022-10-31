@@ -1,11 +1,14 @@
-﻿using ToolSmiths.InventorySystem.Data.Enums;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
+using ToolSmiths.InventorySystem.Data.Enums;
 using UnityEngine;
 
 [assembly: InternalsVisibleTo("Tests")]
 
 namespace ToolSmiths.InventorySystem.Data
 {
+    /// <summary>
+    /// ItemStats will modify the corresponding playerStat on item equip/unequip.
+    /// </summary>
     [System.Serializable]
     public struct ItemStat
     {
