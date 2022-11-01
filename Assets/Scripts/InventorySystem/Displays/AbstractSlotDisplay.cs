@@ -12,7 +12,7 @@ namespace ToolSmiths.InventorySystem.Displays
 {
     [System.Serializable]
     [RequireComponent(typeof(RectTransform))]
-    public abstract class AbstractSlotDisplay : MonoBehaviour, IPointerClickHandler, IBeginDragHandler, IDragHandler, IDropHandler
+    public abstract class AbstractSlotDisplay : MonoBehaviour, IPointerClickHandler, IBeginDragHandler, IDragHandler, IDropHandler, IPointerEnterHandler, IPointerExitHandler
     {
         [SerializeField] internal protected RectTransform itemDisplay;
         [SerializeField] internal protected Image icon;
@@ -50,6 +50,17 @@ namespace ToolSmiths.InventorySystem.Displays
         public void OnDrag(PointerEventData eventData) { }
 
         public void OnDrop(PointerEventData eventData) => DropItem();
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            // TODO: hide static popUp
+        }
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            // TODO: wait for delay
+            // fade in static popUp
+        }
 
         // OnEndDrag
         // raycast through center top position of drag display to check if over slotDisplay to add at, or to revert, or to drop item at floor

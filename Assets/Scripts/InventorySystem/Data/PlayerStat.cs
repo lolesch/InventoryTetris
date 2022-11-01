@@ -43,7 +43,6 @@ namespace ToolSmiths.InventorySystem.Data
 
             StatModifiers.Sort((x, y) => x.SortByType(y));
 
-
             foreach (var mod in StatModifiers)
             //result = mod.Modify(result);
             { }

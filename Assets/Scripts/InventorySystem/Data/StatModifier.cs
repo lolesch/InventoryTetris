@@ -25,6 +25,8 @@ namespace ToolSmiths.InventorySystem.Data
         //[Range(-100, 100)]
         [SerializeField] internal float value;
 
+        // This struct might need to be converted into an abstract class to provide an abstract method "public floar Modify(float previous)"
+        // and instead of using the StatModifierType each inheriting class has an int "Order" that serves as the sorting index to apply the modifier
         /// <summary>
         /// The stat's modifyer type - defines how and in what order it is applied .
         /// </summary>
