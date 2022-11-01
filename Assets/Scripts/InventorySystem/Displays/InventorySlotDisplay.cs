@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 [assembly: InternalsVisibleTo("Tests")]
@@ -145,6 +143,8 @@ namespace ToolSmiths.InventorySystem.Displays
                     container.InvokeRefresh();
                     StaticDragDisplay.Instance.packageOrigin.container.InvokeRefresh();
                 }
+                // if is consumable
+                //  consume item
             }
         }
 

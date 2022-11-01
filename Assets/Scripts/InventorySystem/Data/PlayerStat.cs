@@ -12,7 +12,7 @@ namespace ToolSmiths.InventorySystem.Data
         [SerializeField] private float modifiedValue;
         [field: SerializeField] public uint BaseValue { get; private set; }
 
-        public StatName Stat { get; private set; }
+        [field: SerializeField, HideInInspector] public StatName Stat { get; private set; }
         [field: SerializeField] public List<StatModifier> StatModifiers { get; private set; }
 
         public PlayerStat(StatName statName, uint baseValue = 0)
@@ -46,10 +46,7 @@ namespace ToolSmiths.InventorySystem.Data
 
             foreach (var mod in StatModifiers)
             //result = mod.Modify(result);
-            {
-                Debug.Log($"Order:\t{(int)mod.type} = {mod.type}");
-                // 
-            }
+            { }
 
             modifiedValue = result;
         }

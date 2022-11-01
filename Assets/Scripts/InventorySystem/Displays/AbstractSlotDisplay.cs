@@ -2,7 +2,6 @@ using System.Runtime.CompilerServices;
 using TMPro;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Inventories;
-using ToolSmiths.InventorySystem.Items;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -34,15 +33,10 @@ namespace ToolSmiths.InventorySystem.Displays
             if (!StaticDragDisplay.Instance.IsDragging)
                 if (eventData.button == PointerEventData.InputButton.Right)
                 {
-                    if (packageToMove.Item is Equipment)
-                    {
-                        if (this is not EquipmentSlotDisplay)
-                            EquipItem();
-                        else
-                            UnequipItem();
-                    }
-                    // if consumable
-                    // Consume();
+                    if (this is not EquipmentSlotDisplay)
+                        EquipItem();
+                    else
+                        UnequipItem();
                 }
                 else
                     PickUpItem();
