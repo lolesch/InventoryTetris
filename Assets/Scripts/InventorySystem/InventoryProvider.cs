@@ -121,7 +121,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         public void SetItemToRing() => itemToAdd = Ring;
         public void SetItemToSword() => itemToAdd = Weapon1H;
 
-        public void SortInventory() => containerToAddTo.Sort();
+        public void SortInventory() => containerToAddTo.SortByItemDimension();
 
         public static Package EquipItem(Package package) => PlayerEquipment.AddToContainer(package);
 

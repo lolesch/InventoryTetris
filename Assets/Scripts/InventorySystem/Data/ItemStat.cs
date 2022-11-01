@@ -23,13 +23,13 @@ namespace ToolSmiths.InventorySystem.Data
         /// </summary>
         public readonly StatName Stat => stat;
         [Tooltip("The identifyer of the stat.")]
-        [SerializeField] internal StatName stat;
+        [SerializeField] private StatName stat;
 
         /// <summary>
-        /// The stat's values on this item.
+        /// The stat's modifier on this item.
         /// </summary>
         public readonly StatModifier Modifier => modifier;
-        [Tooltip("The stat's values on this item.")]
-        [SerializeField] internal StatModifier modifier;
+        [Tooltip("The stat's modifier on this item.")]
+        [SerializeField] private StatModifier modifier;
     }
 }

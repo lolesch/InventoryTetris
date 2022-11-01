@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
 using UnityEngine;
@@ -11,7 +12,7 @@ namespace ToolSmiths.InventorySystem.Displays
 
     public class EquipmentSlotDisplay : AbstractSlotDisplay
     {
-        [SerializeField] protected internal List<Equipment.EquipmentType> allowedEquipmentTypes;
+        [SerializeField] protected internal List<EquipmentType> allowedEquipmentTypes;
 
         protected internal override void PickUpItem()
         {

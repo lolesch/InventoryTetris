@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Items;
 using UnityEngine;
 
@@ -34,35 +35,37 @@ namespace ToolSmiths.InventorySystem.Inventories
             /// this is my first switch I've ever written... after what, 3 years of programming? funny
             switch (equipment.equipmentType)
             {
-                case Equipment.EquipmentType.Boots:
+                case EquipmentType.Boots:
                     return new(0, 0);
-                case Equipment.EquipmentType.Pants:
+                case EquipmentType.Pants:
                     return new(1, 0);
-                case Equipment.EquipmentType.Belt:
+                case EquipmentType.Belt:
                     return new(2, 0);
-                case Equipment.EquipmentType.Chest:
+                case EquipmentType.Chest:
                     return new(3, 0);
-                case Equipment.EquipmentType.Helm:
+                case EquipmentType.Helm:
                     return new(4, 0);
-                case Equipment.EquipmentType.Gloves:
+                case EquipmentType.Gloves:
                     return new(5, 0);
-                case Equipment.EquipmentType.Bracers:
+                case EquipmentType.Bracers:
                     return new(6, 0);
-                case Equipment.EquipmentType.Shoulders:
+                case EquipmentType.Shoulders:
                     return new(7, 0);
-                case Equipment.EquipmentType.Ring:
+                case EquipmentType.Ring:
                     if (IsEmptyPosition(new(8, 0), new(1, 1)))
                         return new(8, 0);
-                    return new(9, 0);
-                case Equipment.EquipmentType.Amulet:
+                    else
+                        return new(9, 0);
+                case EquipmentType.Amulet:
                     return new(10, 0);
-                case Equipment.EquipmentType.MainHand:
+                case EquipmentType.MainHand:
                     return new(11, 0);
-                case Equipment.EquipmentType.Offhand:
+                case EquipmentType.Offhand:
                     return new(12, 0);
-                case Equipment.EquipmentType.Weapon_2H:
+                case EquipmentType.Weapon_2H:
                     return new(11, 0);
-
+                case EquipmentType.None:
+                    return new(-1, -1);
                 default:
                     return new(-1, -1);
             }

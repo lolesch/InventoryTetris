@@ -18,6 +18,7 @@ namespace ToolSmiths.InventorySystem.Items
         [SerializeField] protected internal Sprite Icon;
 
         [SerializeField] protected internal List<ItemStat> stats = new List<ItemStat>();
+        public List<ItemStat> Stats => stats;
 
         protected internal void SetStackLimit(uint newLimit) => stackLimit = newLimit;
     }

@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Items;
-using System.Linq;
 using UnityEngine;
 
 [assembly: InternalsVisibleTo("Tests")]
@@ -57,8 +57,11 @@ namespace ToolSmiths.InventorySystem.Inventories
             if (!package.Item)
                 return package;
 
-            if (this is PlayerEquipment && package.Item is Equipment)
-                position = (this as PlayerEquipment).GetEquipmentTypePosition(package.Item as Equipment);
+            if (this is PlayerEquipment)
+                if (package.Item is Equipment)
+                    position = (this as PlayerEquipment).GetEquipmentTypePosition(package.Item as Equipment);
+                else
+                    return package;
 
             if (CanAddAtPosition(position, package.Item.Dimensions, out List<Vector2Int> otherItems))
             {
@@ -79,6 +82,9 @@ namespace ToolSmiths.InventorySystem.Inventories
 
                 if (storedPackages.TryAdd(position, new Package(package.Item, amount)))
                     package.ReduceAmount(amount);
+
+                if (this is PlayerEquipment && package.Item is Equipment)
+                    Character.Instance.AddItemStats(package.Item.Stats);
             }
 
             void TryStackOrSwap(Vector2Int position)
@@ -138,7 +144,12 @@ namespace ToolSmiths.InventorySystem.Inventories
                     if (0 < storedPackage.Amount)
                         storedPackages[storedPositions[0]] = storedPackage;
                     else
+                    {
                         storedPackages.Remove(storedPositions[0]);
+
+                        if (this is PlayerEquipment)// && storedPackage.Item is Equipment) // must have been an Equipment if it was in the Equipment container
+                            Character.Instance.RemoveItemStats(storedPackage.Item.Stats);
+                    }
                 }
 
             OnContentChanged?.Invoke(storedPackages);
@@ -182,7 +193,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// A List of all positions that are required to add this item to the container
         protected abstract List<Vector2Int> CalculateRequiredPositions(Vector2Int position, Vector2Int dimension);
 
-        internal void Sort()
+        internal void SortByItemDimension()
         {
             List<Vector2Int> storedKeys = storedPackages.Keys.ToList();
             List<Vector2Int> storedDimensions = new();
