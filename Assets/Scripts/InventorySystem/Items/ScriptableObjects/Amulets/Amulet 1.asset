@@ -18,7 +18,7 @@ MonoBehaviour:
   stats:
   - stat: 0
     modifier:
-      value: 20
+      value: 10
       type: 100
       duration: 0
   equipmentType: 10

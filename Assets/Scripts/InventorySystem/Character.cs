@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using TeppichsTools.Creation;
+using TMPro;
 using ToolSmiths.InventorySystem.Data.Enums;
 using UnityEngine;
 
@@ -7,8 +8,10 @@ namespace ToolSmiths.InventorySystem.Data
 {
     public class Character : MonoSingleton<Character>
     {
-        // TODO: decide if list or arrey based on the usecases
-        [SerializeField] private List<PlayerStat> mainStats = new List<PlayerStat>();
+        [SerializeField] private PlayerStat[] mainStats = new PlayerStat[(System.Enum.GetValues(typeof(StatName)) as StatName[]).Length]; // TODO: decide if list or arrey based on the usecases
+
+        private List<TextMeshProUGUI> mainStatDisplays = new();
+        [SerializeField] private TextMeshProUGUI statPrefab;
 
         //[SerializeField] private PlayerStat[] derivedStats = new PlayerStat[0];
         // TODO: define and calculate derived values
@@ -17,49 +20,60 @@ namespace ToolSmiths.InventorySystem.Data
         {
             var stats = System.Enum.GetValues(typeof(StatName)) as StatName[];
 
-            if (mainStats.Count != stats.Length)
+            if (mainStats.Length != stats.Length)
             {
-                mainStats.Clear();
-                for (int iStats = 0; iStats < stats.Length; iStats++)
+                mainStats = new PlayerStat[(System.Enum.GetValues(typeof(StatName)) as StatName[]).Length];
+                for (var i = 0; i < stats.Length; i++)
                 {
-                    mainStats.Add(new PlayerStat(stats[iStats]));
+                    mainStats[i] = new PlayerStat(stats[i]);
                     // feed in base values from a scriptable object?
                 }
             }
         }
 
+        private void OnEnable()
+        {
+            if (statPrefab != null)
+            {
+                for (var i = 0; i < mainStats.Length; i++)
+                {
+                    var display = Instantiate(statPrefab, statPrefab.transform.parent);
+                    display.gameObject.SetActive(true);
+                    mainStatDisplays.Add(display);
+                    display.text = $"{mainStats[i].Stat}:\t{mainStats[i].ModifiedValue}";
+                }
+            }
+            UpdateStatDisplays();
+        }
+
+        private void UpdateStatDisplays()
+        {
+            for (var i = 0; i < mainStatDisplays.Count; i++)
+                mainStatDisplays[i].text = $"{mainStats[i].Stat}:\t{mainStats[i].ModifiedValue}";
+        }
+
         public void AddItemStats(List<ItemStat> stats)
         {
             foreach (var itemStat in stats)
-                for (int i = 0; i < mainStats.Count; i++)
+                for (var i = 0; i < mainStats.Length; i++)
                     if (mainStats[i].Stat == itemStat.Stat)
                     {
                         mainStats[i].AddModifier(itemStat.Modifier);
                         break;
                     }
+            UpdateStatDisplays();
         }
 
         public void RemoveItemStats(List<ItemStat> stats)
         {
             foreach (var itemStat in stats)
-                for (int i = mainStats.Count; i-- > 0;)
+                for (var i = mainStats.Length; i-- > 0;)
                     if (mainStats[i].Stat == itemStat.Stat)
                     {
                         mainStats[i].RemoveModifier(itemStat.Modifier);
                         break;
                     }
+            UpdateStatDisplays();
         }
-
-        /// ContainerDisplayLogic
-        //   foreach (var package in storedPackages)
-        //   {
-        //       foreach (var stat in package.Value.Item.stats)
-        //       {
-        //           // TODO:
-        //           // find the corresponding stat and add it to the modifier list
-        //           // sort the list by modifierType and apply the mods to the base value
-        //           // then display this value in a UI Reference
-        //       }
-        //   }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using ToolSmiths.InventorySystem.Data.Enums;
 using UnityEngine;
 
@@ -9,7 +10,7 @@ namespace ToolSmiths.InventorySystem.Data
     {
         [HideInInspector, SerializeField] private string name;
 
-        [SerializeField] private float modifiedValue;
+        [field: SerializeField] public float ModifiedValue { get; private set; }
         [field: SerializeField] public uint BaseValue { get; private set; }
 
         [field: SerializeField, HideInInspector] public StatName Stat { get; private set; }
@@ -19,13 +20,17 @@ namespace ToolSmiths.InventorySystem.Data
         {
             Stat = statName;
             BaseValue = baseValue;
+            ModifiedValue = BaseValue;
         }
 
         public void RemoveModifier(StatModifier modifier)
         {
-            for (int i = StatModifiers.Count; i-- > 0;)
+            for (var i = StatModifiers.Count; i-- > 0;)
                 if (StatModifiers[i].Equals(modifier))
+                {
                     StatModifiers.RemoveAt(i);
+                    break;
+                }
 
             CalculateModifiedValue();
         }
@@ -39,15 +44,61 @@ namespace ToolSmiths.InventorySystem.Data
 
         private void CalculateModifiedValue()
         {
-            var result = BaseValue;
+            if (StatModifiers == null)
+            {
+                ModifiedValue = BaseValue;
+                return;
+            }
 
             StatModifiers.Sort((x, y) => x.SortByType(y));
 
-            foreach (var mod in StatModifiers)
-            //result = mod.Modify(result);
-            { }
+            var result = (float)BaseValue;
+            var index = 0;
 
-            modifiedValue = result;
+            /// Overrides
+            var highestOverride = result;
+            var hasOverrides = false;
+
+            for (var i = index; i < StatModifiers.Count; i++)
+                if (StatModifiers[i].Type == StatModifierType.Override)
+                {
+                    index++;
+                    hasOverrides = true;
+
+                    if (highestOverride < StatModifiers[i].Value)
+                        highestOverride = StatModifiers[i].Value;
+                }
+
+            if (hasOverrides)
+            {
+                ModifiedValue = (float)Math.Round(highestOverride, 4);
+                return;
+            }
+
+            /// FlatAdd
+            for (var i = index; i < StatModifiers.Count; i++)
+                if (StatModifiers[i].Type == StatModifierType.FlatAdd)
+                {
+                    index++;
+                    result += StatModifiers[i].Value;
+                }
+
+            /// PercentAdd
+            var sumPercentAdd = 0f;
+            for (var i = index; i < StatModifiers.Count; i++)
+                if (StatModifiers[i].Type == StatModifierType.PercentAdd)
+                {
+                    index++;
+                    sumPercentAdd += StatModifiers[i].Value / 100;
+                }
+            result *= 1 + sumPercentAdd;
+
+            /// PercentMult
+            for (var i = index; i < StatModifiers.Count; i++, index++)
+                if (StatModifiers[i].Type == StatModifierType.PercentMult)
+                    result *= 1 + StatModifiers[i].Value / 100;
+
+            ModifiedValue = (float)Math.Round(result, 4);
         }
 
         public void OnBeforeSerialize() => name = Stat.ToString();

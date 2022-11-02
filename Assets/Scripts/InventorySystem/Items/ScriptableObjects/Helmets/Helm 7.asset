@@ -15,5 +15,10 @@ MonoBehaviour:
   dimensions: {x: 2, y: 2}
   stackLimit: 1
   Icon: {fileID: 21300000, guid: eee23794509cf41438016e41ba7edc77, type: 3}
-  stats: []
+  stats:
+  - stat: 1
+    modifier:
+      value: 1.3
+      type: 200
+      duration: 0
   equipmentType: 5
