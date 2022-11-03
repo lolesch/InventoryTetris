@@ -8,7 +8,7 @@ namespace ToolSmiths.InventorySystem.Data
 {
     public class Character : MonoSingleton<Character>
     {
-        [SerializeField] private PlayerStat[] mainStats = new PlayerStat[(System.Enum.GetValues(typeof(StatName)) as StatName[]).Length]; // TODO: decide if list or arrey based on the usecases
+        [SerializeField] private PlayerStat[] mainStats = new PlayerStat[(System.Enum.GetValues(typeof(StatName)) as StatName[]).Length];
 
         private List<TextMeshProUGUI> mainStatDisplays = new();
         [SerializeField] private TextMeshProUGUI statPrefab;

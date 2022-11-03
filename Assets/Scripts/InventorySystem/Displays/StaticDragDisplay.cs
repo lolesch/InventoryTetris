@@ -95,7 +95,7 @@ namespace ToolSmiths.InventorySystem.Displays
         public void SetPackage(AbstractSlotDisplay origin, Package package)
         {
             packageOrigin = origin;
-            this.Package = package;
+            Package = package;
 
             RefreshDragDisplay();
         }
@@ -112,17 +112,13 @@ namespace ToolSmiths.InventorySystem.Displays
             // then tell the target to add the package
         }
 
-        public void OnEndDrag(PointerEventData eventData)
-        {
+        public void OnEndDrag(PointerEventData eventData) =>
             // raycast through center top position of drag display to check if over slotDisplay to add at, or to revert, or to drop item at floor
             throw new System.NotImplementedException();
-        }
 
-        public void OnPointerClick(PointerEventData eventData)
-        {
+        public void OnPointerClick(PointerEventData eventData) =>
             // raycast through center top position of drag display to check if over slotDisplay to add at, or to revert, or to drop item at floor
             throw new System.NotImplementedException();
-        }
 
     }
 }

@@ -20,7 +20,8 @@ namespace ToolSmiths.InventorySystem.Data
         {
             Item = item;
             Amount = amount;
-            if (item.StackLimit < amount)
+
+            if (item != null && item.StackLimit < amount)
                 EditorDebug.LogWarning($"{nameof(Package)} \t The Package you constructed contains more items than the item's stacking limit!");
         }
 

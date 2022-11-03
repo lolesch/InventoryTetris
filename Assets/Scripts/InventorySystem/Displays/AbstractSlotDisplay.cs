@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Runtime.CompilerServices;
 using TMPro;
 using ToolSmiths.InventorySystem.Data;
@@ -14,15 +15,16 @@ namespace ToolSmiths.InventorySystem.Displays
     [RequireComponent(typeof(RectTransform))]
     public abstract class AbstractSlotDisplay : MonoBehaviour, IPointerClickHandler, IBeginDragHandler, IDragHandler, IDropHandler, IPointerEnterHandler, IPointerExitHandler
     {
-        [SerializeField] internal protected RectTransform itemDisplay;
-        [SerializeField] internal protected Image icon;
-        [SerializeField] internal protected TextMeshProUGUI amount;
+        [SerializeField] protected internal RectTransform itemDisplay;
+        [SerializeField] protected internal Image icon;
+        [SerializeField] protected internal TextMeshProUGUI amount;
 
         public Vector2Int Position;
 
         protected static Package packageToMove;
 
         protected internal AbstractDimensionalContainer container;
+        private bool hovering;
 
         public void OnPointerClick(PointerEventData eventData)
         {
@@ -53,26 +55,48 @@ namespace ToolSmiths.InventorySystem.Displays
 
         public void OnPointerExit(PointerEventData eventData)
         {
-            // TODO: hide static popUp
+            hovering = false;
+            StaticPrevievDisplay.Instance.SetPackage(new Package(null, 0));
+
+            if (container.storedPackages.TryGetValue(Position, out var hoveredIten))
+                StopCoroutine(FadeInPreview(hoveredIten));
         }
 
         public void OnPointerEnter(PointerEventData eventData)
         {
-            // TODO: wait for delay
-            // fade in static popUp
+            hovering = true;
+
+            if (container.storedPackages.TryGetValue(Position, out var hoveredIten))
+                if (hoveredIten.Item != null && 0 < hoveredIten.Amount)
+                    StartCoroutine(FadeInPreview(hoveredIten));
+        }
+
+        private IEnumerator FadeInPreview(Package package)
+        {
+            var timeStamp = Time.time;
+
+            while (hovering)
+            {
+                yield return null;
+
+                var canFadeIn = 0.5f < Time.time - timeStamp;
+
+                if (canFadeIn && hovering)
+                    StaticPrevievDisplay.Instance.SetPackage(package);
+            }
         }
 
         // OnEndDrag
         // raycast through center top position of drag display to check if over slotDisplay to add at, or to revert, or to drop item at floor
 
-        internal protected abstract void PickUpItem();
+        protected internal abstract void PickUpItem();
 
-        internal protected abstract void DropItem();
+        protected internal abstract void DropItem();
 
-        internal protected abstract void UnequipItem();
+        protected internal abstract void UnequipItem();
 
-        internal protected abstract void EquipItem();
+        protected internal abstract void EquipItem();
 
-        internal protected abstract void RefreshSlotDisplay(Package package);
+        protected internal abstract void RefreshSlotDisplay(Package package);
     }
 }
