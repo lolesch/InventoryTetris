@@ -82,7 +82,10 @@ namespace ToolSmiths.InventorySystem.Displays
                 var canFadeIn = 0.5f < Time.time - timeStamp;
 
                 if (canFadeIn && hovering)
+                {
                     StaticPrevievDisplay.Instance.SetPackage(package);
+                    hovering = false;
+                }
             }
         }
 

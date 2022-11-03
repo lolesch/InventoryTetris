@@ -5,8 +5,8 @@
     public enum StatName
     {
         Health = 0,
-        HealthPerSecond = 1,
-        MovementSpeed = 2,
+        HealthRegen = 1,
+        MoveSpeed = 2,
         Damage = 3,
     }
 }

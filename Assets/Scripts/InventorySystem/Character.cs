@@ -40,7 +40,7 @@ namespace ToolSmiths.InventorySystem.Data
                     var display = Instantiate(statPrefab, statPrefab.transform.parent);
                     display.gameObject.SetActive(true);
                     mainStatDisplays.Add(display);
-                    display.text = $"{mainStats[i].Stat}:\t{mainStats[i].ModifiedValue}";
+                    display.text = $"{mainStats[i].Stat}: {mainStats[i].ModifiedValue}";
                 }
             }
             UpdateStatDisplays();
@@ -49,7 +49,7 @@ namespace ToolSmiths.InventorySystem.Data
         private void UpdateStatDisplays()
         {
             for (var i = 0; i < mainStatDisplays.Count; i++)
-                mainStatDisplays[i].text = $"{mainStats[i].Stat}:\t{mainStats[i].ModifiedValue}";
+                mainStatDisplays[i].text = $"{mainStats[i].Stat}: {mainStats[i].ModifiedValue}";
         }
 
         public void AddItemStats(List<ItemStat> stats)

@@ -1,6 +1,8 @@
-﻿using TeppichsTools.Creation;
+﻿using System.Collections.Generic;
+using TeppichsTools.Creation;
 using TMPro;
 using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Items;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -10,11 +12,18 @@ namespace ToolSmiths.InventorySystem.Displays
     [RequireComponent(typeof(RectTransform))]
     public class StaticPrevievDisplay : MonoSingleton<StaticPrevievDisplay>
     {
+        // TODO: handle comparison with equipped items
+
         public bool IsPreviewing => itemDisplay.gameObject.activeSelf;
 
         [SerializeField] private RectTransform itemDisplay;
         [SerializeField] private Image icon;
+        [SerializeField] private List<Image> frameAndHorizontalLines;
+        [SerializeField] private Image background;
+        [SerializeField] private TextMeshProUGUI itemName;
+        [SerializeField] private TextMeshProUGUI itemType;
         [SerializeField] private TextMeshProUGUI amount;
+        [SerializeField] private TextMeshProUGUI itemStatPrefab;
 
         private Canvas rootCanvas;
 
@@ -27,36 +36,16 @@ namespace ToolSmiths.InventorySystem.Displays
             itemDisplay.gameObject.SetActive(false);
         }
 
-        private void Update()
-        {
-            if (IsPreviewing)
-                MoveDragDisplay();
-        }
-
-        private void MoveDragDisplay() => itemDisplay.anchoredPosition = Input.mousePosition / rootCanvas.scaleFactor;
+        //private void Update()
+        //{
+        //    if (IsPreviewing)
+        //        MoveDisplay();
+        //}
+        //
+        //private void MoveDisplay() => itemDisplay.anchoredPosition = Input.mousePosition / rootCanvas.scaleFactor;
 
         private void RefreshDragDisplay(Package package)
         {
-            /* AbstractSlotLogic: 
-             * hovering the slot for an amount of time will call the SetPackage() => enabeling this display
-             * onPointerExit it should reset the package to null => disabling this display
-            /* 
-             * DisplayLogic:
-             * The display has a Frame/Background colored in the items rarity
-             * Show the items 
-             *  name
-             *  icon
-             *  itemType
-             *  list of itemStats
-             *  if (it is stackable)
-             *      amount/StackLimit
-             *  itemValue / sellValue
-             *  durability?
-             *  flavor text?
-             *  
-             *  All these need to be set when setting the package
-             */
-
             if (package.Amount < 1)
             {
                 itemDisplay.gameObject.SetActive(false);
@@ -65,7 +54,8 @@ namespace ToolSmiths.InventorySystem.Displays
 
             SetDisplay(package);
 
-            /// align with mousePosition coordinates
+            // TODO: choose on what side to display when aligning with screen border
+            // and align next to the items dimensions
             itemDisplay.anchorMin = Vector2.zero;
             itemDisplay.anchorMax = Vector2.zero;
             itemDisplay.anchoredPosition = Input.mousePosition / rootCanvas.scaleFactor;
@@ -74,7 +64,11 @@ namespace ToolSmiths.InventorySystem.Displays
 
             void SetDisplay(Package package)
             {
-                //SetDisplaySize(package);
+                if (itemName)
+                    itemName.text = package.Item.name;
+
+                if (itemType)
+                    itemType.text = package.Item is Equipment ? (package.Item as Equipment).equipmentType.ToString() : string.Empty;
 
                 if (icon)
                     icon.sprite = package.Item.Icon;
@@ -82,15 +76,36 @@ namespace ToolSmiths.InventorySystem.Displays
                 if (amount)
                     amount.text = 1 < package.Amount ? $"{package.Amount}/{package.Item.StackLimit}" : string.Empty;
 
-                void SetDisplaySize(Package package)
-                {
-                    itemDisplay.sizeDelta = new Vector2(60, 60) * package.Item.Dimensions;
+                // TODO: how to derive rarity
+                //if (frameAndHorizontalLines != null && 0 < frameAndHorizontalLines.Count)
+                //    for (var i = 0; i < frameAndHorizontalLines.Count; i++)
+                //        frameAndHorizontalLines[i].color = rarityFrameColor;
+                //
+                //if (background)
+                //    background.color = rarityBackgroudColor;
 
-                    itemDisplay.anchoredPosition = new Vector2(itemDisplay.sizeDelta.x * .5f, itemDisplay.sizeDelta.y * -.5f);
-                    itemDisplay.pivot = new Vector2(.5f, .5f);
-                    itemDisplay.anchorMin = new Vector2(0, 1);
-                    itemDisplay.anchorMax = new Vector2(0, 1);
+                // TODO: make this poolable
+                if (itemStatPrefab)
+                {
+                    for (var i = itemStatPrefab.transform.parent.childCount; i-- > 1;)
+                    {
+                        Destroy(itemStatPrefab.transform.parent.GetChild(i).gameObject);
+                        DestroyImmediate(itemStatPrefab.transform.parent.GetChild(i).gameObject);
+                    }
+
+                    var stats = package.Item.Stats;
+                    for (var i = 0; i < stats.Count; i++)
+                    {
+                        var itemStat = Instantiate(itemStatPrefab, itemStatPrefab.transform.parent);
+                        itemStat.text = $"{stats[i].Stat}\t+ {stats[i].Modifier.Value}";
+                        itemStat.gameObject.SetActive(true);
+                    }
                 }
+
+                /*  itemValue / sellValue
+                 *  durability?
+                 *  flavor text?
+                 */
             }
         }
 
