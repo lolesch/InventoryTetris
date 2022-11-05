@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Items;
 using UnityEngine;
 
@@ -6,12 +7,12 @@ namespace ToolSmiths.InventorySystem.Tests
 {
     public class ItemTests
     {
-        static void Release(Object obj) => Object.DestroyImmediate(obj);
+        private static void Release(Object obj) => Object.DestroyImmediate(obj);
 
         [Test]
-        public void CanSetItemStackLimit([Values(0u, 1u, 99u)] uint amount)
+        public void CanSetItemStackLimit([Values(ItemStackType.NONE, ItemStackType.Single, ItemStackType.StackOfTen, ItemStackType.StackOfHundred)] ItemStackType amount)
         {
-            Item item = ScriptableObject.CreateInstance<Item>();
+            var item = ScriptableObject.CreateInstance<Item>();
 
             item.SetStackLimit(amount);
 

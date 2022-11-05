@@ -53,25 +53,38 @@ namespace ToolSmiths.InventorySystem.Displays
 
         public void OnDrop(PointerEventData eventData) => DropItem();
 
-        public void OnPointerExit(PointerEventData eventData)
+        public void OnPointerExit(PointerEventData eventData) => FadeOutPreview();
+
+        public void OnPointerEnter(PointerEventData eventData) => FadeInPreview();
+
+        private void FadeInPreview()
         {
+            hovering = true;
+
+            var itemToDisplay = container.GetStoredPackagesAtPosition(Position, new(1, 1));
+            if (itemToDisplay.Count == 1)
+                if (container.storedPackages.TryGetValue(itemToDisplay[0], out var hoveredIten))
+                {
+                    // store position
+                    if (hoveredIten.Item != null && 0 < hoveredIten.Amount)
+                        StartCoroutine(FadeIn(hoveredIten));
+                }
+        }
+
+        private void FadeOutPreview()
+        {
+            //TODO: store position that is previewed
+            //      if GetStoredPackagesAtPosition(Position, new(1, 1)) != stored position
+            //      => fade out
+
             hovering = false;
             StaticPrevievDisplay.Instance.SetPackage(new Package(null, 0));
 
             if (container.storedPackages.TryGetValue(Position, out var hoveredIten))
-                StopCoroutine(FadeInPreview(hoveredIten));
+                StopCoroutine(FadeIn(hoveredIten));
         }
 
-        public void OnPointerEnter(PointerEventData eventData)
-        {
-            hovering = true;
-
-            if (container.storedPackages.TryGetValue(Position, out var hoveredIten))
-                if (hoveredIten.Item != null && 0 < hoveredIten.Amount)
-                    StartCoroutine(FadeInPreview(hoveredIten));
-        }
-
-        private IEnumerator FadeInPreview(Package package)
+        private IEnumerator FadeIn(Package package)
         {
             var timeStamp = Time.time;
 
@@ -92,13 +105,13 @@ namespace ToolSmiths.InventorySystem.Displays
         // OnEndDrag
         // raycast through center top position of drag display to check if over slotDisplay to add at, or to revert, or to drop item at floor
 
-        protected internal abstract void PickUpItem();
+        protected internal virtual void PickUpItem() => FadeOutPreview();
 
-        protected internal abstract void DropItem();
+        protected internal virtual void DropItem() => FadeInPreview();
 
-        protected internal abstract void UnequipItem();
+        protected internal virtual void UnequipItem() => FadeOutPreview();
 
-        protected internal abstract void EquipItem();
+        protected internal virtual void EquipItem() => FadeOutPreview();
 
         protected internal abstract void RefreshSlotDisplay(Package package);
     }

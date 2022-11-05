@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
@@ -16,8 +15,10 @@ namespace ToolSmiths.InventorySystem.Displays
     {
         private GridLayoutGroup gridLayout;
 
-        internal protected override void PickUpItem()
+        protected internal override void PickUpItem()
         {
+            base.PickUpItem();
+
             var otherItems = container.GetStoredPackagesAtPosition(Position, new(1, 1));
 
             if (otherItems.Count == 1)
@@ -30,7 +31,7 @@ namespace ToolSmiths.InventorySystem.Displays
             }
         }
 
-        internal protected override void DropItem()
+        protected internal override void DropItem()
         {
             if (StaticDragDisplay.Instance.Package.Item)
             {
@@ -41,7 +42,7 @@ namespace ToolSmiths.InventorySystem.Displays
 
                 var positionToAdd = Position - positionOffset + mouseOffset;
 
-                if (container.CanAddAtPosition(positionToAdd, StaticDragDisplay.Instance.Package.Item.Dimensions, out List<Vector2Int> otherItems))
+                if (container.CanAddAtPosition(positionToAdd, StaticDragDisplay.Instance.Package.Item.Dimensions, out var otherItems))
                 {
                     Package remaining;
 
@@ -63,6 +64,9 @@ namespace ToolSmiths.InventorySystem.Displays
                     StaticDragDisplay.Instance.packageOrigin.container.InvokeRefresh();
                 }
             }
+
+            // must come after adding items to the container to have something to preview
+            base.DropItem();
         }
 
         protected internal override void RefreshSlotDisplay(Package package)
@@ -95,7 +99,7 @@ namespace ToolSmiths.InventorySystem.Displays
                             gridLayout = GetComponentInParent<GridLayoutGroup>();
                         if (gridLayout)
                         {
-                            Vector2 additionalSpacing = gridLayout.spacing * new Vector2(package.Item.Dimensions.x - 1, package.Item.Dimensions.y - 1);
+                            var additionalSpacing = gridLayout.spacing * new Vector2(package.Item.Dimensions.x - 1, package.Item.Dimensions.y - 1);
 
                             display.sizeDelta = gridLayout.cellSize * package.Item.Dimensions + additionalSpacing;
                         }
@@ -111,6 +115,8 @@ namespace ToolSmiths.InventorySystem.Displays
 
         protected internal override void EquipItem()
         {
+            base.EquipItem();
+
             var otherItems = container.GetStoredPackagesAtPosition(Position, new(1, 1));
 
             if (otherItems.Count == 1)
@@ -146,11 +152,6 @@ namespace ToolSmiths.InventorySystem.Displays
                 // if is consumable
                 //  consume item
             }
-        }
-
-        protected internal override void UnequipItem()
-        {
-            throw new System.NotImplementedException();
         }
     }
 }

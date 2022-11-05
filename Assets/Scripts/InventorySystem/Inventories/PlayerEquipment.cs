@@ -30,46 +30,26 @@ namespace ToolSmiths.InventorySystem.Inventories
             return otherPackagePositions;
         }
 
-        public Vector2Int GetEquipmentTypePosition(Equipment equipment)
+        public Vector2Int GetEquipmentTypePosition(Equipment equipment) => equipment.equipmentType switch
         {
-            /// this is my first switch I've ever written... after what, 3 years of programming? funny
-            switch (equipment.equipmentType)
-            {
-                case EquipmentType.Boots:
-                    return new(0, 0);
-                case EquipmentType.Pants:
-                    return new(1, 0);
-                case EquipmentType.Belt:
-                    return new(2, 0);
-                case EquipmentType.Chest:
-                    return new(3, 0);
-                case EquipmentType.Helm:
-                    return new(4, 0);
-                case EquipmentType.Gloves:
-                    return new(5, 0);
-                case EquipmentType.Bracers:
-                    return new(6, 0);
-                case EquipmentType.Shoulders:
-                    return new(7, 0);
-                case EquipmentType.Ring:
-                    if (IsEmptyPosition(new(8, 0), new(1, 1)))
-                        return new(8, 0);
-                    else
-                        return new(9, 0);
-                case EquipmentType.Amulet:
-                    return new(10, 0);
-                case EquipmentType.MainHand:
-                    return new(11, 0);
-                case EquipmentType.Offhand:
-                    return new(12, 0);
-                case EquipmentType.Weapon_2H:
-                    return new(11, 0);
-                case EquipmentType.None:
-                    return new(-1, -1);
-                default:
-                    return new(-1, -1);
-            }
-        }
+            EquipmentType.Amulet => new(0, 0),
+            EquipmentType.Belt => new(1, 0),
+            EquipmentType.Boots => new(2, 0),
+            EquipmentType.Bracers => new(3, 0),
+            EquipmentType.Chest => new(4, 0),
+            EquipmentType.Cloak => new(5, 0),
+            EquipmentType.Gloves => new(6, 0),
+            EquipmentType.Helm => new(7, 0),
+            EquipmentType.Pants => new(8, 0),
+            EquipmentType.Shoulders => new(9, 0),
+            EquipmentType.Ring => IsEmptyPosition(new(10, 0), new(1, 1)) ? (new(10, 0)) : (new(11, 0)),
+            EquipmentType.Weapon_1H => IsEmptyPosition(new(12, 0), new(1, 1)) ? (new(12, 0)) : (new(13, 0)),
+            EquipmentType.Weapon_2H => new(12, 0),
+            EquipmentType.Shield => new(13, 0),
+            EquipmentType.Quiver => new(13, 0),
+            EquipmentType.None => new(-1, -1),
+            _ => new(-1, -1),
+        };
 
         protected internal override bool IsWithinDimensions(Vector2Int position) =>
            -1 < position.x && position.x < Dimensions.x &&

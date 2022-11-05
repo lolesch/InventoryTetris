@@ -20,14 +20,14 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         public event Action<Dictionary<Vector2Int, Package>> OnContentChanged;
 
-        protected internal Dictionary<Vector2Int, Package> storedPackages = new Dictionary<Vector2Int, Package>();
+        protected internal Dictionary<Vector2Int, Package> storedPackages = new();
 
         public Package AddToContainer(Package package)
         {
             if (!package.Item)
                 return package;
 
-            if (1 < package.Item.StackLimit)
+            if (1 < (uint)package.Item.StackLimit)
                 AddToOpenStacks();
 
             AddToEmptyPositions();
@@ -38,15 +38,15 @@ namespace ToolSmiths.InventorySystem.Inventories
             {
                 var positions = storedPackages.Keys.ToList();
 
-                for (int i = 0; i < positions.Count && 0 < package.Amount; i++)
+                for (var i = 0; i < positions.Count && 0 < package.Amount; i++)
                     if (storedPackages[positions[i]].Item == package.Item && 0 < storedPackages[positions[i]].SpaceLeft)
                         package = AddAtPosition(positions[i], package);
             }
 
             void AddToEmptyPositions()
             {
-                for (int x = 0; x < Dimensions.x && 0 < package.Amount; x++)
-                    for (int y = 0; y < Dimensions.y && 0 < package.Amount; y++)
+                for (var x = 0; x < Dimensions.x && 0 < package.Amount; x++)
+                    for (var y = 0; y < Dimensions.y && 0 < package.Amount; y++)
                         if (IsEmptyPosition(new(x, y), package.Item.Dimensions)) // this might need to be abstract and with a dimension of (1,1) for equipment
                             package = AddAtPosition(new(x, y), package);
             }
@@ -63,7 +63,7 @@ namespace ToolSmiths.InventorySystem.Inventories
                 else
                     return package;
 
-            if (CanAddAtPosition(position, package.Item.Dimensions, out List<Vector2Int> otherItems))
+            if (CanAddAtPosition(position, package.Item.Dimensions, out var otherItems))
             {
                 if (0 == otherItems.Count)
                     TryAddToInventory();
@@ -78,22 +78,24 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             void TryAddToInventory()
             {
-                uint amount = Math.Min(package.Amount, package.Item.StackLimit);
+                var amount = Math.Min(package.Amount, (uint)package.Item.StackLimit);
 
                 if (storedPackages.TryAdd(position, new Package(package.Item, amount)))
                     package.ReduceAmount(amount);
 
                 if (this is PlayerEquipment && package.Item is Equipment)
                     Character.Instance.AddItemStats(package.Item.Stats);
+
+                OnContentChanged?.Invoke(storedPackages);
             }
 
             void TryStackOrSwap(Vector2Int position)
             {
-                if (storedPackages.TryGetValue(position, out Package storedPackage))
+                if (storedPackages.TryGetValue(position, out var storedPackage))
                 {
-                    if (1 < package.Item.StackLimit && package.Item == storedPackage.Item && 0 < storedPackage.SpaceLeft)
+                    if (1 < (uint)package.Item.StackLimit && package.Item == storedPackage.Item && 0 < storedPackage.SpaceLeft)
                     {
-                        uint addedAmount = storedPackage.IncreaseAmount(package.Amount);
+                        var addedAmount = storedPackage.IncreaseAmount(package.Amount);
                         storedPackages[position] = storedPackage;
                         package.ReduceAmount(addedAmount);
                     }
@@ -112,9 +114,9 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         public Package RemoveFromContainer(Package package)
         {
-            FindAllEqualItems(package.Item, out List<Vector2Int> positions);
+            FindAllEqualItems(package.Item, out var positions);
 
-            for (int i = positions.Count - 1; 0 <= i && 0 < package.Amount; i--)
+            for (var i = positions.Count - 1; 0 <= i && 0 < package.Amount; i--)
                 package = RemoveItemAtPosition(positions[i], package);
 
             return package;
@@ -136,9 +138,9 @@ namespace ToolSmiths.InventorySystem.Inventories
             var storedPositions = GetStoredPackagesAtPosition(position, new(1, 1));
 
             if (storedPositions.Count == 1)
-                if (storedPackages.TryGetValue(storedPositions[0], out Package storedPackage))
+                if (storedPackages.TryGetValue(storedPositions[0], out var storedPackage))
                 {
-                    uint removed = storedPackage.ReduceAmount(package.Amount);
+                    var removed = storedPackage.ReduceAmount(package.Amount);
                     package.ReduceAmount(removed);
 
                     if (0 < storedPackage.Amount)
@@ -195,19 +197,19 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         internal void SortByItemDimension()
         {
-            List<Vector2Int> storedKeys = storedPackages.Keys.ToList();
+            var storedKeys = storedPackages.Keys.ToList();
             List<Vector2Int> storedDimensions = new();
 
-            for (int i = 0; i < storedKeys.Count; i++)
+            for (var i = 0; i < storedKeys.Count; i++)
                 storedDimensions.Add(storedPackages[storedKeys[i]].Item.Dimensions);
 
             storedDimensions = storedDimensions.Distinct().OrderByDescending(v => v.sqrMagnitude).ToList();
 
-            List<Package> storedValues = storedPackages.Values.ToList();
+            var storedValues = storedPackages.Values.ToList();
             storedPackages.Clear();
 
-            for (int i = 0; i < storedDimensions.Count; i++)
-                for (int j = 0; j < storedValues.Count; j++)
+            for (var i = 0; i < storedDimensions.Count; i++)
+                for (var j = 0; j < storedValues.Count; j++)
                     if (storedValues[j].Item.Dimensions == storedDimensions[i])
                     {
                         AddToContainer(storedValues[j]);

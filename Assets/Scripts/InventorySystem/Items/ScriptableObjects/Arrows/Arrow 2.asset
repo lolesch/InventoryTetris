@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b1e12fd1e1584b842bc5c4c347a197bb, type: 3}
   m_Name: Arrow 2
   m_EditorClassIdentifier: 
-  dimensions: {x: 1, y: 1}
-  stackLimit: 20
   Icon: {fileID: 21300000, guid: d9409ed54fa6651488f5f36f53bc6d8b, type: 3}
+  dimensions: {x: 1, y: 1}
+  stackLimit: 50
   stats:
   - stat: 0
     modifier:

@@ -5,18 +5,28 @@
     public enum EquipmentType
     {
         None = 0,
-        Boots = 1,
-        Pants = 2,
-        Belt = 3,
-        Chest = 4,
-        Helm = 5,
-        Gloves = 6,
-        Bracers = 7,
-        Shoulders = 8,
-        Ring = 9,
         Amulet = 10,
-        MainHand = 11,
-        Offhand = 12,
+        Belt = 3,
+        Boots = 1,
+        Bracers = 7,
+        Chest = 4,
+        Cloak = 14,
+        Gloves = 6,
+        Helm = 5,
+        Pants = 2,
+        Quiver = 15,
+        Ring = 9,
+        Shield = 12,
+        Shoulders = 8,
+        Weapon_1H = 11,
         Weapon_2H = 13,
+    }
+
+    public enum ConsumableType
+    {
+        NONE = 0,
+        Arrows = 1,
+        Books = 2,
+        Potions = 3,
     }
 }

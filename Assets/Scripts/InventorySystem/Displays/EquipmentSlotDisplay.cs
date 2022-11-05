@@ -16,6 +16,8 @@ namespace ToolSmiths.InventorySystem.Displays
 
         protected internal override void PickUpItem()
         {
+            base.PickUpItem();
+
             var otherItems = container.GetStoredPackagesAtPosition(Position, new(1, 1));
 
             if (otherItems.Count == 1)
@@ -32,7 +34,7 @@ namespace ToolSmiths.InventorySystem.Displays
         {
             if (StaticDragDisplay.Instance.Package.Item is Equipment)
                 if (allowedEquipmentTypes.Contains((StaticDragDisplay.Instance.Package.Item as Equipment).equipmentType))
-                    if (container.CanAddAtPosition(Position, StaticDragDisplay.Instance.Package.Item.Dimensions, out List<Vector2Int> otherItems))
+                    if (container.CanAddAtPosition(Position, StaticDragDisplay.Instance.Package.Item.Dimensions, out var otherItems))
                     {
                         Package remaining;
 
@@ -53,6 +55,9 @@ namespace ToolSmiths.InventorySystem.Displays
                         container.InvokeRefresh();
                         StaticDragDisplay.Instance.packageOrigin.container.InvokeRefresh();
                     }
+
+            // must come after adding items to the container to have something to preview
+            base.DropItem();
         }
 
         protected internal override void RefreshSlotDisplay(Package package)
@@ -100,13 +105,10 @@ namespace ToolSmiths.InventorySystem.Displays
             }
         }
 
-        protected internal override void EquipItem()
-        {
-            throw new System.NotImplementedException();
-        }
-
         protected internal override void UnequipItem()
         {
+            base.UnequipItem();
+
             var otherItems = container.GetStoredPackagesAtPosition(Position, new(1, 1));
 
             if (otherItems.Count == 1)

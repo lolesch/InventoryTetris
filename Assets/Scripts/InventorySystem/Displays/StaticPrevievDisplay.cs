@@ -68,13 +68,16 @@ namespace ToolSmiths.InventorySystem.Displays
                     itemName.text = package.Item.name;
 
                 if (itemType)
+                {
                     itemType.text = package.Item is Equipment ? (package.Item as Equipment).equipmentType.ToString() : string.Empty;
+                    //itemType.color = rarityTypeColor;
+                }
 
                 if (icon)
                     icon.sprite = package.Item.Icon;
 
                 if (amount)
-                    amount.text = 1 < package.Amount ? $"{package.Amount}/{package.Item.StackLimit}" : string.Empty;
+                    amount.text = 1 < package.Amount ? $"{package.Amount}/{(int)package.Item.StackLimit}" : string.Empty;
 
                 // TODO: how to derive rarity
                 //if (frameAndHorizontalLines != null && 0 < frameAndHorizontalLines.Count)

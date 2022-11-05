@@ -8,5 +8,6 @@
         HealthRegen = 1,
         MoveSpeed = 2,
         Damage = 3,
+        CurrentHealth = 4,
     }
 }

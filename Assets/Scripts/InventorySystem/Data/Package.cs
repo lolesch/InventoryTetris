@@ -21,7 +21,7 @@ namespace ToolSmiths.InventorySystem.Data
             Item = item;
             Amount = amount;
 
-            if (item != null && item.StackLimit < amount)
+            if (item != null && (uint)item.StackLimit < amount)
                 EditorDebug.LogWarning($"{nameof(Package)} \t The Package you constructed contains more items than the item's stacking limit!");
         }
 
@@ -35,7 +35,7 @@ namespace ToolSmiths.InventorySystem.Data
         /// </summary>
         [SerializeField] internal uint Amount;
 
-        [SerializeField] internal uint SpaceLeft => Item.StackLimit - Amount;
+        [SerializeField] internal uint SpaceLeft => (uint)Item.StackLimit - Amount;
 
         /// <summary>
         /// Tries to add to the amount (within stacking limit).
@@ -48,7 +48,7 @@ namespace ToolSmiths.InventorySystem.Data
             if (null == Item || 0 == amountToAdd)
                 return 0;
 
-            var added = Math.Min(Item.StackLimit - Amount, amountToAdd);
+            var added = Math.Min((uint)Item.StackLimit - Amount, amountToAdd);
             Amount += added;
 
             return added;
