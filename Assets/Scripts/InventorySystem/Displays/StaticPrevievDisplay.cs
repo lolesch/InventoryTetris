@@ -2,6 +2,7 @@
 using TeppichsTools.Creation;
 using TMPro;
 using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
 using UnityEngine;
 using UnityEngine.UI;
@@ -25,6 +26,7 @@ namespace ToolSmiths.InventorySystem.Displays
         [SerializeField] private TextMeshProUGUI amount;
         [SerializeField] private TextMeshProUGUI itemStatPrefab;
 
+        public Vector2Int StoredPosition { get; private set; } = new(-1, -1);
         private Canvas rootCanvas;
 
         private void Awake()
@@ -52,7 +54,11 @@ namespace ToolSmiths.InventorySystem.Displays
                 return;
             }
 
-            SetDisplay(package);
+            var equipmentPosition = InventoryProvider.Instance.PlayerEquipment.GetEquipmentTypePosition((package.Item as Equipment).equipmentType);
+            //var currentEquipped = InventoryProvider.Instance.PlayerEquipment.GetStoredPackagesAtPosition(equipmentPosition, new(1, 1));
+            InventoryProvider.Instance.PlayerEquipment.storedPackages.TryGetValue(equipmentPosition, out var compareTo);
+
+            SetDisplay(package, compareTo);
 
             // TODO: choose on what side to display when aligning with screen border
             // and align next to the items dimensions
@@ -62,8 +68,11 @@ namespace ToolSmiths.InventorySystem.Displays
 
             itemDisplay.gameObject.SetActive(true);
 
-            void SetDisplay(Package package)
+            void SetDisplay(Package package, Package compareTo)
             {
+                if (compareTo.Item != null && 0 < compareTo.Amount)
+                { } // => SetCompareDisplay(compareTo, package)
+
                 if (itemName)
                     itemName.text = package.Item.name;
 
@@ -100,8 +109,28 @@ namespace ToolSmiths.InventorySystem.Displays
                     for (var i = 0; i < stats.Count; i++)
                     {
                         var itemStat = Instantiate(itemStatPrefab, itemStatPrefab.transform.parent);
-                        itemStat.text = $"{stats[i].Stat}\t+ {stats[i].Modifier.Value}";
+
+                        var compareToValue = CompareStatValues(stats[i]);
+                        var color = Color.white;
+
+                        if (compareToValue != 0)
+                            color = compareToValue < 0 ? Color.red : Color.green;
+
+                        itemStat.text = $"{stats[i].Stat}\t+ {Colored(stats[i].Modifier.Value.ToString(), color)}";
+
                         itemStat.gameObject.SetActive(true);
+
+                        string Colored(string text, Color color) => $"<color=#{ColorUtility.ToHtmlStringRGBA(color)}>{text}</color>";
+                    }
+
+                    int CompareStatValues(ItemStat stat)
+                    {
+                        if (compareTo.Item != null)
+                            for (var i = 0; i < compareTo.Item.Stats.Count; i++)
+                                if (compareTo.Item.Stats[i].Stat == stat.Stat)
+                                    return compareTo.Item.Stats[i].Modifier.Value.CompareTo(stat.Modifier.Value);
+
+                        return 0 < stat.Modifier.Value ? 1 : -1;
                     }
                 }
 
@@ -112,6 +141,10 @@ namespace ToolSmiths.InventorySystem.Displays
             }
         }
 
-        public void SetPackage(Package package) => RefreshDragDisplay(package);
+        public void SetPackage(Package package, Vector2Int storedPosition)
+        {
+            RefreshDragDisplay(package);
+            StoredPosition = storedPosition;
+        }
     }
 }

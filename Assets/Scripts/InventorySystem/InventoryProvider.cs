@@ -12,9 +12,9 @@ namespace ToolSmiths.InventorySystem.Inventories
 {
     public class InventoryProvider : MonoSingleton<InventoryProvider>
     {
-        public static PlayerInventory PlayerInventory;
-        public static PlayerInventory PlayerStash;
-        public static PlayerEquipment PlayerEquipment;
+        public PlayerInventory PlayerInventory;
+        public PlayerInventory PlayerStash;
+        public PlayerEquipment PlayerEquipment;
 
         [Space]
         [SerializeField] private InventoryContainerDisplay playerInventoryDisplay;
@@ -135,7 +135,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         public void SortInventory() => containerToAddTo.SortByItemDimension();
 
-        public static Package EquipItem(Package package) => PlayerEquipment.AddToContainer(package);
+        public Package EquipItem(Package package) => PlayerEquipment.AddToContainer(package);
 
     }
 

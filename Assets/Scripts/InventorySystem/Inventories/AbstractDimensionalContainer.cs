@@ -59,7 +59,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             if (this is PlayerEquipment)
                 if (package.Item is Equipment)
-                    position = (this as PlayerEquipment).GetEquipmentTypePosition(package.Item as Equipment);
+                    position = (this as PlayerEquipment).GetEquipmentTypePosition((package.Item as Equipment).equipmentType);
                 else
                     return package;
 

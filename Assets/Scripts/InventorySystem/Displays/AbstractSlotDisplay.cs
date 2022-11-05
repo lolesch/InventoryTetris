@@ -64,27 +64,24 @@ namespace ToolSmiths.InventorySystem.Displays
             var itemToDisplay = container.GetStoredPackagesAtPosition(Position, new(1, 1));
             if (itemToDisplay.Count == 1)
                 if (container.storedPackages.TryGetValue(itemToDisplay[0], out var hoveredIten))
-                {
-                    // store position
                     if (hoveredIten.Item != null && 0 < hoveredIten.Amount)
-                        StartCoroutine(FadeIn(hoveredIten));
-                }
+                        StartCoroutine(FadeIn(hoveredIten, itemToDisplay[0]));
         }
 
         private void FadeOutPreview()
         {
-            //TODO: store position that is previewed
-            //      if GetStoredPackagesAtPosition(Position, new(1, 1)) != stored position
-            //      => fade out
+            var storedPositions = container.GetStoredPackagesAtPosition(Position, new(1, 1));
 
-            hovering = false;
-            StaticPrevievDisplay.Instance.SetPackage(new Package(null, 0));
-
-            if (container.storedPackages.TryGetValue(Position, out var hoveredIten))
-                StopCoroutine(FadeIn(hoveredIten));
+            //if (0 < storedPositions.Count && storedPositions[0] != StaticPrevievDisplay.Instance.StoredPosition)
+            {
+                hovering = false;
+                StaticPrevievDisplay.Instance.SetPackage(new Package(null, 0), new(-1, -1));
+            }
+            //if (container.storedPackages.TryGetValue(Position, out var hoveredIten))
+            //    StopCoroutine(FadeIn(hoveredIten, storedPositions[0]));
         }
 
-        private IEnumerator FadeIn(Package package)
+        private IEnumerator FadeIn(Package package, Vector2Int storedPosition)
         {
             var timeStamp = Time.time;
 
@@ -96,7 +93,7 @@ namespace ToolSmiths.InventorySystem.Displays
 
                 if (canFadeIn && hovering)
                 {
-                    StaticPrevievDisplay.Instance.SetPackage(package);
+                    StaticPrevievDisplay.Instance.SetPackage(package, storedPosition);
                     hovering = false;
                 }
             }

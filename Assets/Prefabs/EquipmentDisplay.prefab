@@ -465,7 +465,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -0.000030517578}
+  m_AnchoredPosition: {x: 0, y: 0.000030517578}
   m_SizeDelta: {x: -20, y: -10.000002}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &4745071996144970725
@@ -660,27 +660,27 @@ MonoBehaviour:
   mainStats:
   - name: Health
     <ModifiedValue>k__BackingField: 0
-    <BaseValue>k__BackingField: 0
+    <BaseValue>k__BackingField: 100
     <Stat>k__BackingField: 0
     <StatModifiers>k__BackingField: []
   - name: HealthRegen
     <ModifiedValue>k__BackingField: 0
-    <BaseValue>k__BackingField: 0
+    <BaseValue>k__BackingField: 2
     <Stat>k__BackingField: 1
     <StatModifiers>k__BackingField: []
   - name: MoveSpeed
     <ModifiedValue>k__BackingField: 0
-    <BaseValue>k__BackingField: 0
+    <BaseValue>k__BackingField: 6
     <Stat>k__BackingField: 2
     <StatModifiers>k__BackingField: []
   - name: Damage
     <ModifiedValue>k__BackingField: 0
-    <BaseValue>k__BackingField: 0
+    <BaseValue>k__BackingField: 1
     <Stat>k__BackingField: 3
     <StatModifiers>k__BackingField: []
   - name: CurrentHealth
     <ModifiedValue>k__BackingField: 0
-    <BaseValue>k__BackingField: 0
+    <BaseValue>k__BackingField: 100
     <Stat>k__BackingField: 4
     <StatModifiers>k__BackingField: []
   statPrefab: {fileID: 3966431505955093578}
@@ -946,8 +946,8 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 6024013811301611008}
   m_HandleRect: {fileID: 8183235012115119045}
   m_Direction: 2
-  m_Value: 1
-  m_Size: 1
+  m_Value: 0
+  m_Size: 0.9891303
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:

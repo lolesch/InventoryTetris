@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using ToolSmiths.InventorySystem.Data.Enums;
-using ToolSmiths.InventorySystem.Items;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Inventories
@@ -30,7 +29,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             return otherPackagePositions;
         }
 
-        public Vector2Int GetEquipmentTypePosition(Equipment equipment) => equipment.equipmentType switch
+        public Vector2Int GetEquipmentTypePosition(EquipmentType equipment) => equipment switch
         {
             EquipmentType.Amulet => new(0, 0),
             EquipmentType.Belt => new(1, 0),

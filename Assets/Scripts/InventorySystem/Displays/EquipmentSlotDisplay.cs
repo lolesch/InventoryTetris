@@ -119,7 +119,7 @@ namespace ToolSmiths.InventorySystem.Displays
 
                 Package remaining;
 
-                remaining = InventoryProvider.PlayerInventory.AddToContainer(packageToMove);
+                remaining = InventoryProvider.Instance.PlayerInventory.AddToContainer(packageToMove);
 
                 if (0 < remaining.Amount)
                 {

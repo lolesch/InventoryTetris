@@ -19,7 +19,7 @@ namespace ToolSmiths.InventorySystem.Items
         [SerializeField] private ItemStackType stackLimit = ItemStackType.Single;
         public ItemStackType StackLimit => stackLimit;
 
-        [SerializeField] protected internal List<ItemStat> stats = new();
+        [SerializeField] protected List<ItemStat> stats = new();
         public List<ItemStat> Stats => stats;
 
         protected internal void SetStackLimit(ItemStackType newLimit) => stackLimit = newLimit;
