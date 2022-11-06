@@ -18,7 +18,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             return requiredPositions;
         }
 
-        protected internal override List<Vector2Int> GetStoredPackagesAtPosition(Vector2Int position, Vector2Int dimension)
+        protected internal override List<Vector2Int> GetStoredPackagePositionsAt(Vector2Int position, Vector2Int dimension)
         {
             List<Vector2Int> otherPackagePositions = new();
 
@@ -41,8 +41,8 @@ namespace ToolSmiths.InventorySystem.Inventories
             EquipmentType.Helm => new(7, 0),
             EquipmentType.Pants => new(8, 0),
             EquipmentType.Shoulders => new(9, 0),
-            EquipmentType.Ring => IsEmptyPosition(new(10, 0), new(1, 1)) ? (new(10, 0)) : (new(11, 0)),
-            EquipmentType.Weapon_1H => IsEmptyPosition(new(12, 0), new(1, 1)) ? (new(12, 0)) : (new(13, 0)),
+            EquipmentType.Ring => IsEmptyPosition(new(10, 0), new(1, 1)) ? new(10, 0) : (IsEmptyPosition(new(11, 0), new(1, 1)) ? new(11, 0) : new(10, 0)),
+            EquipmentType.Weapon_1H => IsEmptyPosition(new(12, 0), new(1, 1)) ? (new(12, 0)) : (IsEmptyPosition(new(13, 0), new(1, 1)) ? (new(13, 0)) : new(12, 0)),
             EquipmentType.Weapon_2H => new(12, 0),
             EquipmentType.Shield => new(13, 0),
             EquipmentType.Quiver => new(13, 0),

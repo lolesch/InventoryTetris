@@ -35,10 +35,12 @@ namespace ToolSmiths.InventorySystem.Displays
             if (!StaticDragDisplay.Instance.IsDragging)
                 if (eventData.button == PointerEventData.InputButton.Right)
                 {
-                    if (this is not EquipmentSlotDisplay)
-                        EquipItem();
-                    else
+                    // TODO: item.UseItem();
+
+                    if (this is EquipmentSlotDisplay)
                         UnequipItem();
+                    else
+                        EquipItem();
                 }
                 else
                     PickUpItem();
@@ -61,7 +63,7 @@ namespace ToolSmiths.InventorySystem.Displays
         {
             hovering = true;
 
-            var itemToDisplay = container.GetStoredPackagesAtPosition(Position, new(1, 1));
+            var itemToDisplay = container.GetStoredPackagePositionsAt(Position, new(1, 1));
             if (itemToDisplay.Count == 1)
                 if (container.storedPackages.TryGetValue(itemToDisplay[0], out var hoveredIten))
                     if (hoveredIten.Item != null && 0 < hoveredIten.Amount)
@@ -70,7 +72,7 @@ namespace ToolSmiths.InventorySystem.Displays
 
         private void FadeOutPreview()
         {
-            var storedPositions = container.GetStoredPackagesAtPosition(Position, new(1, 1));
+            var storedPositions = container.GetStoredPackagePositionsAt(Position, new(1, 1));
 
             //if (0 < storedPositions.Count && storedPositions[0] != StaticPrevievDisplay.Instance.StoredPosition)
             {

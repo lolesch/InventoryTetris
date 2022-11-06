@@ -63,7 +63,9 @@ namespace ToolSmiths.InventorySystem.Inventories
                 else
                     return package;
 
-            if (CanAddAtPosition(position, package.Item.Dimensions, out var otherItems))
+            var dimensions = this is PlayerEquipment ? new(1, 1) : package.Item.Dimensions;
+
+            if (CanAddAtPosition(position, dimensions, out var otherItems))
             {
                 if (0 == otherItems.Count)
                     TryAddToInventory();
@@ -135,7 +137,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         public Package RemoveItemAtPosition(Vector2Int position, Package package)
         {
-            var storedPositions = GetStoredPackagesAtPosition(position, new(1, 1));
+            var storedPositions = GetStoredPackagePositionsAt(position, new(1, 1));
 
             if (storedPositions.Count == 1)
                 if (storedPackages.TryGetValue(storedPositions[0], out var storedPackage))
@@ -162,7 +164,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         protected internal bool IsEmptyPosition(Vector2Int position, Vector2Int dimension)
         {
             if (IsValidPosition(position, dimension))
-                return GetStoredPackagesAtPosition(position, dimension).Count < 1;
+                return GetStoredPackagePositionsAt(position, dimension).Count < 1;
             return false;
         }
 
@@ -172,7 +174,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             if (IsValidPosition(position, dimension))
             {
-                otherItems = GetStoredPackagesAtPosition(position, dimension);
+                otherItems = GetStoredPackagePositionsAt(position, dimension);
                 return otherItems.Count < 2;
             }
 
@@ -190,13 +192,15 @@ namespace ToolSmiths.InventorySystem.Inventories
         protected internal abstract bool IsWithinDimensions(Vector2Int position);
 
         /// A List of all storedPackages positions that overlap with the requiredPositions
-        protected internal abstract List<Vector2Int> GetStoredPackagesAtPosition(Vector2Int position, Vector2Int dimension);
+        protected internal abstract List<Vector2Int> GetStoredPackagePositionsAt(Vector2Int position, Vector2Int dimension);
 
         /// A List of all positions that are required to add this item to the container
         protected abstract List<Vector2Int> CalculateRequiredPositions(Vector2Int position, Vector2Int dimension);
 
         internal void SortByItemDimension()
         {
+            SortAlphabetically();
+
             var storedKeys = storedPackages.Keys.ToList();
             List<Vector2Int> storedDimensions = new();
 
@@ -211,9 +215,22 @@ namespace ToolSmiths.InventorySystem.Inventories
             for (var i = 0; i < storedDimensions.Count; i++)
                 for (var j = 0; j < storedValues.Count; j++)
                     if (storedValues[j].Item.Dimensions == storedDimensions[i])
-                    {
                         AddToContainer(storedValues[j]);
-                    }
+        }
+
+        private void SortAlphabetically()
+        {
+            var storedNames = storedPackages.Values.Select(x => x.Item.name).ToList();
+
+            storedNames = storedNames.Distinct().OrderBy(x => x).ToList();
+
+            var storedValues = storedPackages.Values.ToList();
+            storedPackages.Clear();
+
+            for (var i = 0; i < storedNames.Count; i++)
+                for (var j = 0; j < storedValues.Count; j++)
+                    if (storedValues[j].Item.name == storedNames[i])
+                        AddToContainer(storedValues[j]);
         }
 
         protected internal void InvokeRefresh() => OnContentChanged?.Invoke(storedPackages);

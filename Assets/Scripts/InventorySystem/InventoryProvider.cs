@@ -29,32 +29,34 @@ namespace ToolSmiths.InventorySystem.Inventories
         [SerializeField] private Vector2Int playerEquipmentSize = new(13, 1);
 
         [Header("Items")]
-        [SerializeField] private List<Item> Amulets;
-        [SerializeField] private List<Item> Arrows;
-        [SerializeField] private List<Item> Belts;
-        [SerializeField] private List<Item> Books;
-        [SerializeField] private List<Item> Boots;
-        [SerializeField] private List<Item> Bracers;
-        [SerializeField] private List<Item> Chests;
-        [SerializeField] private List<Item> Cloaks;
-        [SerializeField] private List<Item> Gloves;
-        [SerializeField] private List<Item> Helmets;
-        [SerializeField] private List<Item> Pants;
-        [SerializeField] private List<Item> Quiver;
-        [SerializeField] private List<Item> Rings;
-        [SerializeField] private List<Item> Shields;
-        [SerializeField] private List<Item> Shoulder;
-        [SerializeField] private List<Item> Potions;
-        [SerializeField] private List<Item> Weapon1H;
-        [SerializeField] private List<Item> Weapon2H;
+        [SerializeField] private List<AbstractItem> Amulets;
+        [SerializeField] private List<AbstractItem> Arrows;
+        [SerializeField] private List<AbstractItem> Belts;
+        [SerializeField] private List<AbstractItem> Books;
+        [SerializeField] private List<AbstractItem> Boots;
+        [SerializeField] private List<AbstractItem> Bracers;
+        [SerializeField] private List<AbstractItem> Chests;
+        [SerializeField] private List<AbstractItem> Cloaks;
+        [SerializeField] private List<AbstractItem> Gloves;
+        [SerializeField] private List<AbstractItem> Helmets;
+        [SerializeField] private List<AbstractItem> Pants;
+        [SerializeField] private List<AbstractItem> Quiver;
+        [SerializeField] private List<AbstractItem> Rings;
+        [SerializeField] private List<AbstractItem> Shields;
+        [SerializeField] private List<AbstractItem> Shoulder;
+        [SerializeField] private List<AbstractItem> Potions;
+        [SerializeField] private List<AbstractItem> Weapon1H;
+        [SerializeField] private List<AbstractItem> Weapon2H;
 
         private Slider amountSlider;
-        private List<Item> itemToAdd;
+        //private List<Item> itemToAdd;
+        [SerializeField] private bool add = true;
+
         private uint amount => (uint)amountSlider?.value;
         private TextMeshProUGUI amountText;
         private AbstractDimensionalContainer containerToAddTo;
 
-        private int current = 0;
+        private int random = 0;
 
         private void SetInventories()
         {
@@ -74,31 +76,55 @@ namespace ToolSmiths.InventorySystem.Inventories
             PlayerStash = new(playerStashSize);
             PlayerEquipment = new(playerEquipmentSize);
 
-            itemToAdd = Belts; // should get the current active toggle instead
-            containerToAddTo = PlayerInventory;
+            //itemToAdd = Belts; // should get the current active toggle instead
+            containerToAddTo = PlayerEquipment; // should get the current active toggle instead
+            add = true;
 
             SetInventories();
         }
 
-        [ContextMenu("AddItem")]
-        public void AddItem()
+        // new add/remove toggle
+        private void AddRemoveItem(List<AbstractItem> items)
         {
             for (var i = 0; i < amount; i++)
             {
-                containerToAddTo?.AddToContainer(new Package(itemToAdd[Mathf.Abs(current % itemToAdd.Count)], 1));
-                current++;
+                if (add)
+                {
+                    random = Random.Range(0, items.Count);
+                    containerToAddTo?.AddToContainer(new Package(items[random], 1));
+                }
+                else
+                {
+                    for (var x = items.Count; x-- > 0;)
+                    {
+                        var removedPackage = containerToAddTo.RemoveFromContainer(new Package(items[x], 1));
+
+                        if (removedPackage.Amount == 0)
+                            break;
+                    }
+                }
             }
         }
 
-        [ContextMenu("RemoveItem")]
-        public void RemoveItem()
-        {
-            for (var i = 0; i < amount; i++)
-            {
-                current--;
-                containerToAddTo?.RemoveFromContainer(new Package(itemToAdd[Mathf.Abs(current % itemToAdd.Count)], 1));
-            }
-        }
+        //[ContextMenu("AddItem")]
+        //public void AddItem()
+        //{
+        //    for (var i = 0; i < amount; i++)
+        //    {
+        //        containerToAddTo?.AddToContainer(new Package(itemToAdd[Mathf.Abs(random % itemToAdd.Count)], 1));
+        //        random = Random.Range(0, itemToAdd.Count);
+        //    }
+        //}
+        //
+        //[ContextMenu("RemoveItem")]
+        //public void RemoveItem()
+        //{
+        //    for (var i = 0; i < amount; i++)
+        //    {
+        //        random = Random.Range(0, itemToAdd.Count);
+        //        containerToAddTo?.RemoveFromContainer(new Package(itemToAdd[Mathf.Abs(random % itemToAdd.Count)], 1));
+        //    }
+        //}
 
         [ContextMenu("RemoveAllItems")]
         public void RemoveAllItems()
@@ -114,24 +140,27 @@ namespace ToolSmiths.InventorySystem.Inventories
         public void AddToPlayerEquipment() => containerToAddTo = PlayerEquipment;
         public void AddToPlayerStash() => containerToAddTo = PlayerStash;
 
-        public void SetItemToAmulets() => itemToAdd = Amulets;
-        public void SetItemToArrows() => itemToAdd = Arrows;
-        public void SetItemToBelts() => itemToAdd = Belts;
-        public void SetItemToBooks() => itemToAdd = Books;
-        public void SetItemToBoots() => itemToAdd = Boots;
-        public void SetItemToBracers() => itemToAdd = Bracers;
-        public void SetItemToChests() => itemToAdd = Chests;
-        public void SetItemToCloaks() => itemToAdd = Cloaks;
-        public void SetItemToGloves() => itemToAdd = Gloves;
-        public void SetItemToHelmets() => itemToAdd = Helmets;
-        public void SetItemToPants() => itemToAdd = Pants;
-        public void SetItemToQuiver() => itemToAdd = Quiver;
-        public void SetItemToRings() => itemToAdd = Rings;
-        public void SetItemToShields() => itemToAdd = Shields;
-        public void SetItemToShoulders() => itemToAdd = Shoulder;
-        public void SetItemToPotions() => itemToAdd = Potions;
-        public void SetItemToWeapon1H() => itemToAdd = Weapon1H;
-        public void SetItemToWeapon2H() => itemToAdd = Weapon2H;
+        public void SetItemToAmulets() => AddRemoveItem(Amulets);
+        public void SetItemToArrows() => AddRemoveItem(Arrows);
+        public void SetItemToBelts() => AddRemoveItem(Belts);
+        public void SetItemToBooks() => AddRemoveItem(Books);
+        public void SetItemToBoots() => AddRemoveItem(Boots);
+        public void SetItemToBracers() => AddRemoveItem(Bracers);
+        public void SetItemToChests() => AddRemoveItem(Chests);
+        public void SetItemToCloaks() => AddRemoveItem(Cloaks);
+        public void SetItemToGloves() => AddRemoveItem(Gloves);
+        public void SetItemToHelmets() => AddRemoveItem(Helmets);
+        public void SetItemToPants() => AddRemoveItem(Pants);
+        public void SetItemToQuiver() => AddRemoveItem(Quiver);
+        public void SetItemToRings() => AddRemoveItem(Rings);
+        public void SetItemToShields() => AddRemoveItem(Shields);
+        public void SetItemToShoulders() => AddRemoveItem(Shoulder);
+        public void SetItemToPotions() => AddRemoveItem(Potions);
+        public void SetItemToWeapon1H() => AddRemoveItem(Weapon1H);
+        public void SetItemToWeapon2H() => AddRemoveItem(Weapon2H);
+
+        public void SetToAddItems() => add = true;
+        public void SetToRemoveItems() => add = false;
 
         public void SortInventory() => containerToAddTo.SortByItemDimension();
 

@@ -19,7 +19,7 @@ namespace ToolSmiths.InventorySystem.Displays
         {
             base.PickUpItem();
 
-            var otherItems = container.GetStoredPackagesAtPosition(Position, new(1, 1));
+            var otherItems = container.GetStoredPackagePositionsAt(Position, new(1, 1));
 
             if (otherItems.Count == 1)
             {
@@ -117,7 +117,7 @@ namespace ToolSmiths.InventorySystem.Displays
         {
             base.EquipItem();
 
-            var otherItems = container.GetStoredPackagesAtPosition(Position, new(1, 1));
+            var otherItems = container.GetStoredPackagePositionsAt(Position, new(1, 1));
 
             if (otherItems.Count == 1)
             {

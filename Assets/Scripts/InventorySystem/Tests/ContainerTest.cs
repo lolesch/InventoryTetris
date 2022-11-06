@@ -153,7 +153,7 @@ namespace ToolSmiths.InventorySystem.Tests
             for (var i = 0; i < container.Capacity; i++)
                 container.AddToContainer(package);
 
-            var others = container.GetStoredPackagesAtPosition(Vector2Int.zero, new(2, 2)).Count;
+            var others = container.GetStoredPackagePositionsAt(Vector2Int.zero, new(2, 2)).Count;
 
             Assert.IsTrue(0 < others);
             Release(package.Item);

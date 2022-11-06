@@ -19,9 +19,12 @@ namespace ToolSmiths.InventorySystem.Items
         [SerializeField] private ItemStackType stackLimit = ItemStackType.Single;
         public ItemStackType StackLimit => stackLimit;
 
+        // TODO: handle overTime effects => Stats != Effects => see ARPG_Combat for DoT_effects
         [SerializeField] protected List<ItemStat> stats = new();
         public List<ItemStat> Stats => stats;
 
         protected internal void SetStackLimit(ItemStackType newLimit) => stackLimit = newLimit;
+
+        public abstract void UseItem();
     }
 }
