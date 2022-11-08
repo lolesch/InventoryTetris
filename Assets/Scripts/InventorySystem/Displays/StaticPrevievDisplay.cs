@@ -86,7 +86,7 @@ namespace ToolSmiths.InventorySystem.Displays
                     icon.sprite = package.Item.Icon;
 
                 if (amount)
-                    amount.text = 1 < package.Amount ? $"{package.Amount}/{(int)package.Item.StackLimit}" : string.Empty;
+                    amount.text = 1 < package.Amount && package.Item is Consumable ? $"{package.Amount}/{(int)(package.Item as Consumable).StackLimit}" : string.Empty;
 
                 // TODO: how to derive rarity
                 //if (frameAndHorizontalLines != null && 0 < frameAndHorizontalLines.Count)

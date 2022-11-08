@@ -15,22 +15,6 @@ namespace ToolSmiths.InventorySystem.Displays
     {
         private GridLayoutGroup gridLayout;
 
-        protected internal override void PickUpItem()
-        {
-            base.PickUpItem();
-
-            var otherItems = container.GetStoredPackagePositionsAt(Position, new(1, 1));
-
-            if (otherItems.Count == 1)
-            {
-                packageToMove = container.storedPackages[otherItems[0]];
-
-                StaticDragDisplay.Instance.SetPackage(this, packageToMove);
-
-                container.RemoveItemAtPosition(otherItems[0], packageToMove);
-            }
-        }
-
         protected internal override void DropItem()
         {
             if (StaticDragDisplay.Instance.Package.Item)
@@ -61,7 +45,7 @@ namespace ToolSmiths.InventorySystem.Displays
                     }
 
                     container.InvokeRefresh();
-                    StaticDragDisplay.Instance.packageOrigin.container.InvokeRefresh();
+                    StaticDragDisplay.Instance.Origin.container.InvokeRefresh();
                 }
             }
 
@@ -147,7 +131,7 @@ namespace ToolSmiths.InventorySystem.Displays
                     }
 
                     container.InvokeRefresh();
-                    StaticDragDisplay.Instance.packageOrigin.container.InvokeRefresh();
+                    StaticDragDisplay.Instance.Origin.container.InvokeRefresh();
                 }
                 // if is consumable
                 //  consume item

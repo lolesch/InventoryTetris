@@ -4,7 +4,7 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.Items
 {
     [CreateAssetMenu(fileName = "New Equipment Object", menuName = "Inventory System/Equipment")]
-    public class Equipment : AbstractItem
+    public class Equipment : AbstractItemObject
     {
         // define equipment type to match equipment slots
         [SerializeField] protected internal EquipmentType equipmentType;

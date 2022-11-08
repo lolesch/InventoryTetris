@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using ToolSmiths.InventorySystem.Inventories;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -15,7 +14,7 @@ namespace ToolSmiths.InventorySystem.Displays
 
         private void Awake()
         {
-            GridLayoutGroup gridLayout = GetComponent<GridLayoutGroup>();
+            var gridLayout = GetComponent<GridLayoutGroup>();
             if (gridLayout)
             {
                 gridLayout.startAxis = GridLayoutGroup.Axis.Vertical;
@@ -24,7 +23,7 @@ namespace ToolSmiths.InventorySystem.Displays
             }
         }
 
-        protected override void SetupSlotDisplays(AbstractDimensionalContainer container)
+        protected override void SetupSlotDisplays()
         {
             if (slotDisplayPrefab)
                 InstantiateNewSlots(slotDisplayPrefab);
@@ -33,26 +32,24 @@ namespace ToolSmiths.InventorySystem.Displays
             {
                 var slotDisplays = DestroyInvalidSlotDisplays();
 
-                int current = 0;
+                var current = 0;
                 containerSlotDisplays.Clear();
-                for (int x = 0; x < Container?.Dimensions.x; x++)
-                    for (int y = 0; y < Container?.Dimensions.y; y++, current++)
+                for (var x = 0; x < Container?.Dimensions.x; x++)
+                    for (var y = 0; y < Container?.Dimensions.y; y++, current++)
                     {
                         if (current < slotDisplays.Count)
                             containerSlotDisplays.Add(slotDisplays[current]);
                         else
                             containerSlotDisplays.Add(Instantiate(slot, transform));
 
-                        containerSlotDisplays[current].Position = new(x, y);
-                        containerSlotDisplays[current].name = $" {x} | {y}";
-                        containerSlotDisplays[current].container = Container;
+                        containerSlotDisplays[current].SetupSlot(Container, new(x, y));
                     }
 
                 List<InventorySlotDisplay> DestroyInvalidSlotDisplays()
                 {
-                    List<InventorySlotDisplay> slotDisplays = GetComponentsInChildren<InventorySlotDisplay>().ToList();
+                    var slotDisplays = GetComponentsInChildren<InventorySlotDisplay>().ToList();
 
-                    for (int i = slotDisplays.Count - 1; Container?.Capacity <= i; i--)
+                    for (var i = slotDisplays.Count - 1; Container?.Capacity <= i; i--)
                     {
 #if UNITY_EDITOR
                         DestroyImmediate(slotDisplays[i].gameObject);

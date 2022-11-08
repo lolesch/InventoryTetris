@@ -123,7 +123,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             return package;
 
-            void FindAllEqualItems(AbstractItem item, out List<Vector2Int> positions)
+            void FindAllEqualItems(AbstractItemObject item, out List<Vector2Int> positions)
             {
                 positions = new List<Vector2Int>();
 

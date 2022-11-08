@@ -16,58 +16,51 @@ namespace ToolSmiths.InventorySystem.Data
         /// </summary>
         /// <param name="item"></param>
         /// <param name="amount"></param>
-        public Package(AbstractItem item, uint amount = 1)
+        public Package(AbstractItemObject item, uint amount = 1)
         {
             Item = item;
             Amount = amount;
 
             if (item != null && (uint)item.StackLimit < amount)
-                EditorDebug.LogWarning($"{nameof(Package)} \t The Package you constructed contains more items than the item's stacking limit!");
+                EditorDebug.LogWarning($"The Package you constructed contains more items than the item's stacking limit!");
         }
 
-        /// <summary>
-        /// The package's item
-        /// </summary>
-        [SerializeField] internal AbstractItem Item;
+        /// <summary>The package's item.</summary>
+        [field: SerializeField] public AbstractItemObject Item { get; private set; }
 
-        /// <summary>
-        /// The amount of items inside this package
-        /// </summary>
-        [SerializeField] internal uint Amount;
+        /// <summary>The amount of items inside this package.</summary>
+        [field: SerializeField] internal uint Amount { get; private set; }
 
         [SerializeField] internal uint SpaceLeft => (uint)Item.StackLimit - Amount;
 
         /// <summary>
         /// Tries to add to the amount (within stacking limit).
         /// </summary>
-        /// <param name="itemToAdd"></param>
-        /// <param name="amountToAdd"></param>
         /// <returns>The amount that was added</returns>
         public uint IncreaseAmount(uint amountToAdd)
         {
             if (null == Item || 0 == amountToAdd)
                 return 0;
 
-            var added = Math.Min((uint)Item.StackLimit - Amount, amountToAdd);
-            Amount += added;
+            amountToAdd = Math.Min(SpaceLeft, amountToAdd);
+            Amount += amountToAdd;
 
-            return added;
+            return amountToAdd;
         }
 
         /// <summary>
         /// Tries to remove the amount from the current stack
         /// </summary>
-        /// <param name="amountToRemove"></param>
         /// <returns>The amount that was removed</returns>
         public uint ReduceAmount(uint amountToRemove)
         {
             if (null == Item || 0 == amountToRemove)
                 return 0;
 
-            var removed = Math.Min(Amount, amountToRemove);
-            Amount -= removed;
+            amountToRemove = Math.Min(Amount, amountToRemove);
+            Amount -= amountToRemove;
 
-            return removed;
+            return amountToRemove;
         }
     }
 }

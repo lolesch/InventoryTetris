@@ -15,12 +15,12 @@ namespace ToolSmiths.InventorySystem.Displays
         {
             SetContainer(container);
 
-            SetupSlotDisplays(container);
+            SetupSlotDisplays();
 
             Refresh(Container?.storedPackages);
         }
 
-        protected abstract void SetupSlotDisplays(AbstractDimensionalContainer container);
+        protected abstract void SetupSlotDisplays();
 
         private void SetContainer(AbstractDimensionalContainer container)
         {
@@ -38,11 +38,11 @@ namespace ToolSmiths.InventorySystem.Displays
 
         private void Refresh(Dictionary<Vector2Int, Package> storedPackages)
         {
-            int current = 0;
-            for (int x = 0; x < Container?.Dimensions.x; x++)
-                for (int y = 0; y < Container?.Dimensions.y; y++)
+            var current = 0;
+            for (var x = 0; x < Container?.Dimensions.x; x++)
+                for (var y = 0; y < Container?.Dimensions.y; y++)
                 {
-                    storedPackages.TryGetValue(new(x, y), out Package package);
+                    storedPackages.TryGetValue(new(x, y), out var package);
 
                     containerSlotDisplays[current].RefreshSlotDisplay(package);
 

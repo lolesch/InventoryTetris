@@ -14,22 +14,6 @@ namespace ToolSmiths.InventorySystem.Displays
     {
         [SerializeField] protected internal List<EquipmentType> allowedEquipmentTypes;
 
-        protected internal override void PickUpItem()
-        {
-            base.PickUpItem();
-
-            var otherItems = container.GetStoredPackagePositionsAt(Position, new(1, 1));
-
-            if (otherItems.Count == 1)
-            {
-                packageToMove = container.storedPackages[otherItems[0]];
-
-                StaticDragDisplay.Instance.SetPackage(this, packageToMove);
-
-                container.RemoveItemAtPosition(otherItems[0], packageToMove);
-            }
-        }
-
         protected internal override void DropItem()
         {
             if (StaticDragDisplay.Instance.Package.Item is Equipment)
@@ -53,7 +37,7 @@ namespace ToolSmiths.InventorySystem.Displays
                         }
 
                         container.InvokeRefresh();
-                        StaticDragDisplay.Instance.packageOrigin.container.InvokeRefresh();
+                        StaticDragDisplay.Instance.Origin.container.InvokeRefresh();
                     }
 
             // must come after adding items to the container to have something to preview
@@ -134,7 +118,7 @@ namespace ToolSmiths.InventorySystem.Displays
                 }
 
                 container.InvokeRefresh();
-                StaticDragDisplay.Instance.packageOrigin.container.InvokeRefresh();
+                StaticDragDisplay.Instance.Origin.container.InvokeRefresh();
             }
         }
     }

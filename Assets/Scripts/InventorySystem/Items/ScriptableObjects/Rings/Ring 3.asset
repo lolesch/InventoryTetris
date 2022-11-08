@@ -12,18 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6f309e7fa52d3224a9ca8bdb9762ab39, type: 3}
   m_Name: Ring 3
   m_EditorClassIdentifier: 
-  dimensions: {x: 1, y: 1}
-  stackLimit: 1
-  Icon: {fileID: 21300000, guid: 37d888e1e3db0f745a41e632aa317a27, type: 3}
-  stats:
-  - stat: 1
-    modifier:
-      value: 20
-      type: 0
-      duration: 0
-  - stat: 2
-    modifier:
-      value: 7
-      type: 200
-      duration: 0
+  <Icon>k__BackingField: {fileID: 21300000, guid: d23c0612cd4915e45b187592965ed0fb, type: 3}
+  <Dimensions>k__BackingField: {x: 1, y: 1}
+  <StackLimit>k__BackingField: 1
+  <Stats>k__BackingField: []
   equipmentType: 9

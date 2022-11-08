@@ -7,29 +7,23 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.Data
 {
     /// <summary>
-    /// ItemStats will modify the corresponding playerStat on item equip/unequip.
+    /// ItemStats will modify the corresponding playerStat.
     /// </summary>
     [System.Serializable]
     public struct ItemStat
     {
         public ItemStat(StatName stat, StatModifier modifier)
         {
-            this.stat = stat;
-            this.modifier = modifier;
+            Stat = stat;
+            Modifier = modifier;
         }
 
-        /// <summary>
-        /// The identiryer of the stat.
-        /// </summary>
-        public readonly StatName Stat => stat;
+        /// <summary>The identiryer of the stat.</summary>
         [Tooltip("The identifyer of the stat.")]
-        [SerializeField] private StatName stat;
+        [field: SerializeField] public StatName Stat { get; private set; }
 
-        /// <summary>
-        /// The stat's modifier on this item.
-        /// </summary>
-        public readonly StatModifier Modifier => modifier;
+        /// <summary>The stat's modifier on this item.</summary>
         [Tooltip("The stat's modifier on this item.")]
-        [SerializeField] private StatModifier modifier;
+        [field: SerializeField] public StatModifier Modifier { get; private set; }
     }
 }

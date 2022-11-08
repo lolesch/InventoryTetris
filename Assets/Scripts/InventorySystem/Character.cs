@@ -14,7 +14,7 @@ namespace ToolSmiths.InventorySystem.Data
         [SerializeField] private TextMeshProUGUI statPrefab;
 
         //[SerializeField] private PlayerStat[] derivedStats = new PlayerStat[0];
-        // TODO: define and calculate derived values
+        // TODO: DERIVED STATS => define and calculate derived values
 
         private void OnValidate()
         {

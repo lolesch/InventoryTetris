@@ -7,41 +7,30 @@ using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Data
 {
+    /// <summary>
+    /// StatModifier have a type to determine how they apply their modifier value.
+    /// </summary>
     [Serializable]
     public struct StatModifier
     {
-        public StatModifier(float value, uint duration, StatModifierType type = StatModifierType.FlatAdd)
+        public StatModifier(float value, StatModifierType type = StatModifierType.FlatAdd)
         {
-            this.value = value;
-            this.duration = duration;
-            this.type = type;
+            Value = value;
+            Type = type;
         }
 
-        /// <summary>
-        /// The stat's value.
-        /// </summary>
-        public readonly float Value => value;
-        [Tooltip("The stat's value.")]
-        //[Range(-100, 100)]
-        [SerializeField] private float value;
+        /// <summary>The modifier's value.</summary>
+        [Tooltip("The modifier's value.")]
+        [field: SerializeField] public float Value { get; private set; }
 
-        // This struct might need to be converted into an abstract class to provide an abstract method "public float Modify(float previous)"
-        // and instead of using the StatModifierType each inheriting class has an int "Order" that serves as the sorting index to apply the modifier
-        /// <summary>
-        /// The stat's modifyer type - defines how and in what order it is applied .
-        /// </summary>
-        public readonly StatModifierType Type => type;
-        [Tooltip("The stat's modifyer type - defines how and in what order it is applied.")]
-        [SerializeField] private StatModifierType type;
+        /// <summary>The modifyer type - defines how and in what order it is applied.</summary>
+        [Tooltip("The modifyer type - defines how and in what order it is applied.")]
+        [field: SerializeField] public StatModifierType Type { get; private set; }
 
-        /// <summary>
-        /// The stat's duration in seconds: 0 = instant ; 60 = 1 minute;
-        /// </summary>
-        public readonly uint Duration => duration;
-        [Tooltip("The stat's duration in seconds.\n 0 = instant, 60 = 1 minute")]
-        [Range(0, 600)]
-        [SerializeField] private uint duration;
+        ///// <summary>The stat's duration in seconds: 0 = instant ; 60 = 1 minute;</summary>
+        //[Tooltip("The stat's duration in seconds.\n 0 = instant, 60 = 1 minute")]
+        //[field: SerializeField] public uint Duration {get; private set;}
 
-        public int SortByType(StatModifier other) => type.CompareTo(other.type);
+        public int SortByType(StatModifier other) => Type.CompareTo(other.Type);
     }
 }

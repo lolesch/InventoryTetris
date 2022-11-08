@@ -12,12 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b1e12fd1e1584b842bc5c4c347a197bb, type: 3}
   m_Name: Arrow 3
   m_EditorClassIdentifier: 
-  Icon: {fileID: 21300000, guid: 1c3026a96570f2646a17442b21553e73, type: 3}
-  dimensions: {x: 1, y: 1}
-  stackLimit: 50
-  stats:
-  - stat: 0
-    modifier:
-      value: 100
-      type: 100
-      duration: 3
+  <Icon>k__BackingField: {fileID: 21300000, guid: 01819f568865a8f4a93ab674f59b3e1a, type: 3}
+  <Dimensions>k__BackingField: {x: 1, y: 1}
+  <StackLimit>k__BackingField: 1
+  <Stats>k__BackingField: []

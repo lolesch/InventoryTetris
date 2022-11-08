@@ -1,12 +1,11 @@
-﻿using ToolSmiths.InventorySystem.Data.Enums;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Items
 {
     [CreateAssetMenu(fileName = "New Consumable Object", menuName = "Inventory System/Consumable")]
-    public class Consumable : AbstractItem
+    public class Consumable : AbstractItemObject
     {
-        [SerializeField] protected internal ConsumableType consumableType;
+        //[SerializeField] protected internal ConsumableType consumableType;
 
         public override void UseItem() => ConsumeItem();
 

@@ -6,24 +6,15 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.Items
 {
     [System.Serializable]
-    public abstract class AbstractItem : ScriptableObject
+    public abstract class AbstractItemObject : ScriptableObject
     {
-        [SerializeField] protected internal Sprite Icon;
-
-        [SerializeField] private Vector2Int dimensions = Vector2Int.one;
-        public Vector2Int Dimensions => dimensions;
-
-        //public int Slots => Dimensions.x * Dimensions.y;
-
-        // convert to enum to use stackLimit chategories instead of individual numbers
-        [SerializeField] private ItemStackType stackLimit = ItemStackType.Single;
-        public ItemStackType StackLimit => stackLimit;
-
+        [field: SerializeField] public Sprite Icon { get; private set; }
+        [field: SerializeField] public Vector2Int Dimensions { get; private set; } = Vector2Int.one;
+        [field: SerializeField] public ItemStackType StackLimit { get; private set; } = ItemStackType.Single;
+        [field: SerializeField] public List<ItemStat> Stats { get; private set; } = new();
         // TODO: handle overTime effects => Stats != Effects => see ARPG_Combat for DoT_effects
-        [SerializeField] protected List<ItemStat> stats = new();
-        public List<ItemStat> Stats => stats;
 
-        protected internal void SetStackLimit(ItemStackType newLimit) => stackLimit = newLimit;
+        internal void SetStackLimit(ItemStackType newLimit) => StackLimit = newLimit;
 
         public abstract void UseItem();
     }

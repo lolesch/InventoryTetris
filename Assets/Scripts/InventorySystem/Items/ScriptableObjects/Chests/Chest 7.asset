@@ -12,13 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6f309e7fa52d3224a9ca8bdb9762ab39, type: 3}
   m_Name: Chest 7
   m_EditorClassIdentifier: 
-  dimensions: {x: 2, y: 3}
-  stackLimit: 1
-  Icon: {fileID: 21300000, guid: b402f77e37cf46442aacc7ce8de15a65, type: 3}
-  stats:
-  - stat: 0
-    modifier:
-      value: 500
-      type: 0
-      duration: 0
+  <Icon>k__BackingField: {fileID: 21300000, guid: b54b529b07e51bf45aa9db857c781b7f, type: 3}
+  <Dimensions>k__BackingField: {x: 2, y: 3}
+  <StackLimit>k__BackingField: 1
+  <Stats>k__BackingField: []
   equipmentType: 4

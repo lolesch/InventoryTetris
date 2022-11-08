@@ -12,18 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6f309e7fa52d3224a9ca8bdb9762ab39, type: 3}
   m_Name: OffHand 5
   m_EditorClassIdentifier: 
-  dimensions: {x: 2, y: 3}
-  stackLimit: 1
-  Icon: {fileID: 21300000, guid: fe4082da42c0bdf44b9bcc2d7c33323f, type: 3}
-  stats:
-  - stat: 0
-    modifier:
-      value: 5
-      type: 300
-      duration: 0
-  - stat: 0
-    modifier:
-      value: 20
-      type: 100
-      duration: 0
+  <Icon>k__BackingField: {fileID: 21300000, guid: a60d09cccf43c8f4c873d4b7a1fb7bca, type: 3}
+  <Dimensions>k__BackingField: {x: 2, y: 3}
+  <StackLimit>k__BackingField: 1
+  <Stats>k__BackingField: []
   equipmentType: 12

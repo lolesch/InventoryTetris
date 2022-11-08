@@ -16,6 +16,8 @@ namespace ToolSmiths.InventorySystem.Inventories
         public PlayerInventory PlayerStash;
         public PlayerEquipment PlayerEquipment;
 
+        [field: SerializeField] public bool Debug { get; private set; }
+
         [Space]
         [SerializeField] private InventoryContainerDisplay playerInventoryDisplay;
         [SerializeField] private Vector2Int playerInventorySize = new(10, 6);
@@ -29,24 +31,24 @@ namespace ToolSmiths.InventorySystem.Inventories
         [SerializeField] private Vector2Int playerEquipmentSize = new(13, 1);
 
         [Header("Items")]
-        [SerializeField] private List<AbstractItem> Amulets;
-        [SerializeField] private List<AbstractItem> Arrows;
-        [SerializeField] private List<AbstractItem> Belts;
-        [SerializeField] private List<AbstractItem> Books;
-        [SerializeField] private List<AbstractItem> Boots;
-        [SerializeField] private List<AbstractItem> Bracers;
-        [SerializeField] private List<AbstractItem> Chests;
-        [SerializeField] private List<AbstractItem> Cloaks;
-        [SerializeField] private List<AbstractItem> Gloves;
-        [SerializeField] private List<AbstractItem> Helmets;
-        [SerializeField] private List<AbstractItem> Pants;
-        [SerializeField] private List<AbstractItem> Quiver;
-        [SerializeField] private List<AbstractItem> Rings;
-        [SerializeField] private List<AbstractItem> Shields;
-        [SerializeField] private List<AbstractItem> Shoulder;
-        [SerializeField] private List<AbstractItem> Potions;
-        [SerializeField] private List<AbstractItem> Weapon1H;
-        [SerializeField] private List<AbstractItem> Weapon2H;
+        [SerializeField] private List<AbstractItemObject> Amulets;
+        [SerializeField] private List<AbstractItemObject> Arrows;
+        [SerializeField] private List<AbstractItemObject> Belts;
+        [SerializeField] private List<AbstractItemObject> Books;
+        [SerializeField] private List<AbstractItemObject> Boots;
+        [SerializeField] private List<AbstractItemObject> Bracers;
+        [SerializeField] private List<AbstractItemObject> Chests;
+        [SerializeField] private List<AbstractItemObject> Cloaks;
+        [SerializeField] private List<AbstractItemObject> Gloves;
+        [SerializeField] private List<AbstractItemObject> Helmets;
+        [SerializeField] private List<AbstractItemObject> Pants;
+        [SerializeField] private List<AbstractItemObject> Quiver;
+        [SerializeField] private List<AbstractItemObject> Rings;
+        [SerializeField] private List<AbstractItemObject> Shields;
+        [SerializeField] private List<AbstractItemObject> Shoulder;
+        [SerializeField] private List<AbstractItemObject> Potions;
+        [SerializeField] private List<AbstractItemObject> Weapon1H;
+        [SerializeField] private List<AbstractItemObject> Weapon2H;
 
         private Slider amountSlider;
         //private List<Item> itemToAdd;
@@ -84,7 +86,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         }
 
         // new add/remove toggle
-        private void AddRemoveItem(List<AbstractItem> items)
+        private void AddRemoveItem(List<AbstractItemObject> items)
         {
             for (var i = 0; i < amount; i++)
             {

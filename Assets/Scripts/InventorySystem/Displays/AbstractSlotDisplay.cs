@@ -15,27 +15,76 @@ namespace ToolSmiths.InventorySystem.Displays
     [RequireComponent(typeof(RectTransform))]
     public abstract class AbstractSlotDisplay : MonoBehaviour, IPointerClickHandler, IBeginDragHandler, IDragHandler, IDropHandler, IPointerEnterHandler, IPointerExitHandler
     {
+        [field: SerializeField, ReadOnly] public Vector2Int Position { get; private set; }
+        [Space]
         [SerializeField] protected internal RectTransform itemDisplay;
         [SerializeField] protected internal Image icon;
         [SerializeField] protected internal TextMeshProUGUI amount;
 
-        public Vector2Int Position;
+        [SerializeField] protected internal TextMeshProUGUI debugPosition;
 
         protected static Package packageToMove;
 
         protected internal AbstractDimensionalContainer container;
         private bool hovering;
 
-        public void OnPointerClick(PointerEventData eventData)
+        private void OnEnable()
         {
-            // if shift clicking try add to other container
+            if (debugPosition != null)
+                debugPosition.text = InventoryProvider.Instance.Debug ? Position.ToString() : "";
+        }
 
+        public void SetupSlot(AbstractDimensionalContainer container, Vector2Int position)
+        {
+            name = $"{position.x} | {position.y}";
+            Position = position;
+            this.container = container;
+
+            if (debugPosition != null)
+                debugPosition.text = InventoryProvider.Instance.Debug ? Position.ToString() : "";
+        }
+
+        public void OnPointerClick(PointerEventData eventData) =>
+            // TODO: if shift clicking try add to other container
+
+            HandleItem(eventData);
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            StaticDragDisplay.Instance.SetHoveredSlot(null);
+
+            FadeOutPreview();
+        }
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            StaticDragDisplay.Instance.SetHoveredSlot(this);
+
+            FadeInPreview();
+        }
+
+        public void OnBeginDrag(PointerEventData eventData) => HandleItem(eventData);
+
+        /// required for OnBeginDrag() to work... #ThanksUnity
+        public void OnDrag(PointerEventData eventData) { }
+
+        // OnEndDrag
+        // raycast through center top position of drag display to check if over slotDisplay to add at, or to revert, or to drop item at floor
+
+        public void OnDrop(PointerEventData eventData) => DropItem();
+
+        private void HandleItem(PointerEventData eventData)
+        {
             // handle picking up one/all from a stack
 
-            if (!StaticDragDisplay.Instance.IsDragging)
+            if (StaticDragDisplay.Instance.IsDragging)
+                // raycast through center top position of drag display to check if over slotDisplay to add at, or to revert, or to drop item at floor
+                DropItem();
+            else
+            {
                 if (eventData.button == PointerEventData.InputButton.Right)
                 {
-                    // TODO: item.UseItem();
+                    // TODO: implement item.UseItem(); and move the following in there
 
                     if (this is EquipmentSlotDisplay)
                         UnequipItem();
@@ -44,20 +93,24 @@ namespace ToolSmiths.InventorySystem.Displays
                 }
                 else
                     PickUpItem();
-            else
-                // raycast through center top position of drag display to check if over slotDisplay to add at, or to revert, or to drop item at floor
-                DropItem();
+
+                void PickUpItem()
+                {
+                    var storedPositions = container.GetStoredPackagePositionsAt(Position, new(1, 1));
+
+                    if (storedPositions.Count == 1)
+                    {
+                        packageToMove = container.storedPackages[storedPositions[0]];
+
+                        StaticDragDisplay.Instance.SetPackage(this, packageToMove);
+
+                        container.RemoveItemAtPosition(storedPositions[0], packageToMove);
+                    }
+
+                    FadeOutPreview();
+                }
+            }
         }
-
-        public void OnBeginDrag(PointerEventData eventData) => OnPointerClick(eventData);
-
-        public void OnDrag(PointerEventData eventData) { }
-
-        public void OnDrop(PointerEventData eventData) => DropItem();
-
-        public void OnPointerExit(PointerEventData eventData) => FadeOutPreview();
-
-        public void OnPointerEnter(PointerEventData eventData) => FadeInPreview();
 
         private void FadeInPreview()
         {
@@ -68,6 +121,24 @@ namespace ToolSmiths.InventorySystem.Displays
                 if (container.storedPackages.TryGetValue(itemToDisplay[0], out var hoveredIten))
                     if (hoveredIten.Item != null && 0 < hoveredIten.Amount)
                         StartCoroutine(FadeIn(hoveredIten, itemToDisplay[0]));
+
+            IEnumerator FadeIn(Package package, Vector2Int storedPosition)
+            {
+                var timeStamp = Time.time;
+
+                while (hovering)
+                {
+                    yield return null;
+
+                    var canFadeIn = 0.5f < Time.time - timeStamp;
+
+                    if (canFadeIn && hovering)
+                    {
+                        StaticPrevievDisplay.Instance.SetPackage(package, storedPosition);
+                        hovering = false;
+                    }
+                }
+            }
         }
 
         private void FadeOutPreview()
@@ -83,28 +154,6 @@ namespace ToolSmiths.InventorySystem.Displays
             //    StopCoroutine(FadeIn(hoveredIten, storedPositions[0]));
         }
 
-        private IEnumerator FadeIn(Package package, Vector2Int storedPosition)
-        {
-            var timeStamp = Time.time;
-
-            while (hovering)
-            {
-                yield return null;
-
-                var canFadeIn = 0.5f < Time.time - timeStamp;
-
-                if (canFadeIn && hovering)
-                {
-                    StaticPrevievDisplay.Instance.SetPackage(package, storedPosition);
-                    hovering = false;
-                }
-            }
-        }
-
-        // OnEndDrag
-        // raycast through center top position of drag display to check if over slotDisplay to add at, or to revert, or to drop item at floor
-
-        protected internal virtual void PickUpItem() => FadeOutPreview();
 
         protected internal virtual void DropItem() => FadeInPreview();
 
