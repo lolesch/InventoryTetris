@@ -59,11 +59,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0e1e135a5c9dbb04598909ea416565ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  hoveredPosition: {x: 0, y: 0}
   itemDisplay: {fileID: 7748516843441596596}
   icon: {fileID: 5493094402936266849}
+  background: {fileID: 5062772906587210717}
   amount: {fileID: 4910545370180954890}
-  packageOrigin: {fileID: 0}
+  Origin: {fileID: 0}
+  Hovered: {fileID: 0}
   Package:
     <Item>k__BackingField: {fileID: 0}
     <Amount>k__BackingField: 0
@@ -130,6 +131,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &5062772906587210717 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4666757744575494436, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
+  m_PrefabInstance: {fileID: 468711172340972281}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!114 &5493094402936266849 stripped

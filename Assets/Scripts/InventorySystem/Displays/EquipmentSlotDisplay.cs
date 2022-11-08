@@ -18,11 +18,11 @@ namespace ToolSmiths.InventorySystem.Displays
         {
             if (StaticDragDisplay.Instance.Package.Item is Equipment)
                 if (allowedEquipmentTypes.Contains((StaticDragDisplay.Instance.Package.Item as Equipment).equipmentType))
-                    if (container.CanAddAtPosition(Position, StaticDragDisplay.Instance.Package.Item.Dimensions, out var otherItems))
+                    if (Container.CanAddAtPosition(Position, StaticDragDisplay.Instance.Package.Item.Dimensions, out var otherItems))
                     {
                         Package remaining;
 
-                        remaining = container.AddAtPosition(Position, packageToMove);
+                        remaining = Container.AddAtPosition(Position, packageToMove);
 
                         if (0 < remaining.Amount)
                         {
@@ -36,8 +36,8 @@ namespace ToolSmiths.InventorySystem.Displays
                             StaticDragDisplay.Instance.SetPackage(this, packageToMove);
                         }
 
-                        container.InvokeRefresh();
-                        StaticDragDisplay.Instance.Origin.container.InvokeRefresh();
+                        Container.InvokeRefresh();
+                        StaticDragDisplay.Instance.Origin.Container?.InvokeRefresh();
                     }
 
             // must come after adding items to the container to have something to preview
@@ -93,13 +93,13 @@ namespace ToolSmiths.InventorySystem.Displays
         {
             base.UnequipItem();
 
-            var otherItems = container.GetStoredPackagePositionsAt(Position, new(1, 1));
+            var otherItems = Container.GetStoredPackagePositionsAt(Position, new(1, 1));
 
             if (otherItems.Count == 1)
             {
-                packageToMove = container.storedPackages[otherItems[0]];
+                packageToMove = Container.storedPackages[otherItems[0]];
 
-                container.RemoveItemAtPosition(otherItems[0], packageToMove);
+                Container.RemoveItemAtPosition(otherItems[0], packageToMove);
 
                 Package remaining;
 
@@ -117,8 +117,8 @@ namespace ToolSmiths.InventorySystem.Displays
                     StaticDragDisplay.Instance.SetPackage(this, packageToMove);
                 }
 
-                container.InvokeRefresh();
-                StaticDragDisplay.Instance.Origin.container.InvokeRefresh();
+                Container.InvokeRefresh();
+                StaticDragDisplay.Instance.Origin.Container?.InvokeRefresh();
             }
         }
     }

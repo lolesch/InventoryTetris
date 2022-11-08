@@ -161,12 +161,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             return package;
         }
 
-        protected internal bool IsEmptyPosition(Vector2Int position, Vector2Int dimension)
-        {
-            if (IsValidPosition(position, dimension))
-                return GetStoredPackagePositionsAt(position, dimension).Count < 1;
-            return false;
-        }
+        protected internal bool IsEmptyPosition(Vector2Int position, Vector2Int dimension) => IsValidPosition(position, dimension) && GetStoredPackagePositionsAt(position, dimension).Count == 0;
 
         protected internal bool CanAddAtPosition(Vector2Int position, Vector2Int dimension, out List<Vector2Int> otherItems)
         {
@@ -175,7 +170,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             if (IsValidPosition(position, dimension))
             {
                 otherItems = GetStoredPackagePositionsAt(position, dimension);
-                return otherItems.Count < 2;
+                return otherItems.Count <= 1;
             }
 
             return false;

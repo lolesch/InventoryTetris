@@ -15,6 +15,7 @@ namespace ToolSmiths.InventorySystem.Displays
     [RequireComponent(typeof(RectTransform))]
     public abstract class AbstractSlotDisplay : MonoBehaviour, IPointerClickHandler, IBeginDragHandler, IDragHandler, IDropHandler, IPointerEnterHandler, IPointerExitHandler
     {
+        [field: SerializeField, ReadOnly] public AbstractDimensionalContainer Container { get; private set; }
         [field: SerializeField, ReadOnly] public Vector2Int Position { get; private set; }
         [Space]
         [SerializeField] protected internal RectTransform itemDisplay;
@@ -25,7 +26,6 @@ namespace ToolSmiths.InventorySystem.Displays
 
         protected static Package packageToMove;
 
-        protected internal AbstractDimensionalContainer container;
         private bool hovering;
 
         private void OnEnable()
@@ -38,7 +38,7 @@ namespace ToolSmiths.InventorySystem.Displays
         {
             name = $"{position.x} | {position.y}";
             Position = position;
-            this.container = container;
+            Container = container;
 
             if (debugPosition != null)
                 debugPosition.text = InventoryProvider.Instance.Debug ? Position.ToString() : "";
@@ -96,15 +96,15 @@ namespace ToolSmiths.InventorySystem.Displays
 
                 void PickUpItem()
                 {
-                    var storedPositions = container.GetStoredPackagePositionsAt(Position, new(1, 1));
+                    var storedPositions = Container.GetStoredPackagePositionsAt(Position, new(1, 1));
 
                     if (storedPositions.Count == 1)
                     {
-                        packageToMove = container.storedPackages[storedPositions[0]];
+                        packageToMove = Container.storedPackages[storedPositions[0]];
 
                         StaticDragDisplay.Instance.SetPackage(this, packageToMove);
 
-                        container.RemoveItemAtPosition(storedPositions[0], packageToMove);
+                        Container.RemoveItemAtPosition(storedPositions[0], packageToMove);
                     }
 
                     FadeOutPreview();
@@ -116,9 +116,9 @@ namespace ToolSmiths.InventorySystem.Displays
         {
             hovering = true;
 
-            var itemToDisplay = container.GetStoredPackagePositionsAt(Position, new(1, 1));
+            var itemToDisplay = Container.GetStoredPackagePositionsAt(Position, new(1, 1));
             if (itemToDisplay.Count == 1)
-                if (container.storedPackages.TryGetValue(itemToDisplay[0], out var hoveredIten))
+                if (Container.storedPackages.TryGetValue(itemToDisplay[0], out var hoveredIten))
                     if (hoveredIten.Item != null && 0 < hoveredIten.Amount)
                         StartCoroutine(FadeIn(hoveredIten, itemToDisplay[0]));
 
@@ -143,7 +143,7 @@ namespace ToolSmiths.InventorySystem.Displays
 
         private void FadeOutPreview()
         {
-            var storedPositions = container.GetStoredPackagePositionsAt(Position, new(1, 1));
+            var storedPositions = Container.GetStoredPackagePositionsAt(Position, new(1, 1));
 
             //if (0 < storedPositions.Count && storedPositions[0] != StaticPrevievDisplay.Instance.StoredPosition)
             {
