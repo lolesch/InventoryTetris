@@ -15,6 +15,7 @@ namespace ToolSmiths.InventorySystem.Displays
         [SerializeField] private RectTransform itemDisplay;
         [SerializeField] private Image icon;
         [SerializeField] private Image background;
+        [SerializeField] private Color initialColor;
         [SerializeField] private TextMeshProUGUI amount;
 
         private Canvas rootCanvas;
@@ -32,12 +33,19 @@ namespace ToolSmiths.InventorySystem.Displays
             transform.root.TryGetComponent(out rootCanvas);
 
             itemDisplay.gameObject.SetActive(false);
+
+            if (background)
+                initialColor = background.color;
         }
 
         private void Update()
         {
             if (IsDragging)
+            {
                 MoveDragDisplay();
+
+                HighlightOverlappingSlots();
+            }
 
             void MoveDragDisplay()
             {
@@ -46,6 +54,46 @@ namespace ToolSmiths.InventorySystem.Displays
                 itemDisplay.anchorMax = Vector2.zero;
 
                 itemDisplay.anchoredPosition = (Vector2)Input.mousePosition / rootCanvas.scaleFactor;
+            }
+
+            void HighlightOverlappingSlots()
+            {
+                if (Hovered == null || Origin == null || Package.Item == null)
+                    return;
+
+                var positionPivot = itemDisplay.pivot;
+                positionPivot.x *= Package.Item.Dimensions.x;
+                positionPivot.y *= Package.Item.Dimensions.y;
+
+                var positionDiff = new Vector2Int(Mathf.FloorToInt(positionPivot.x), Mathf.FloorToInt(positionPivot.y));
+                positionDiff -= new Vector2Int(0, Package.Item.Dimensions.y - 1);
+                positionDiff.y *= -1;
+
+                var positionToAdd = Hovered.Position - positionDiff;
+
+                var storedPositions = Hovered.Container.GetStoredPackagePositionsAt(positionToAdd, Package.Item.Dimensions);
+
+                if (storedPositions.Count <= 0)
+                {
+                    if (background)
+                        background.color = initialColor;
+                    return;
+                }
+
+                if (background)
+                    background.color = (storedPositions.Count == 1) ? initialColor * Color.yellow : initialColor * Color.red;
+
+                //var requiredPositions = Hovered.Container.CalculateRequiredPositions(positionToAdd, Package.Item.Dimensions);
+                //
+                //var usedPositions = new List<Vector2Int>();
+                //for (var i = 0; i < storedPositions.Count; i++)
+                //    for (var x = 0; x < Package.Item.Dimensions.x; x++)
+                //        for (var y = 0; y < Package.Item.Dimensions.y; y++)
+                //            usedPositions.Add(new Vector2Int(x, y));
+
+                //var emptyPositions = requiredPositions.Except(usedPositions);
+
+                //var overlappingPositions = requiredPositions.Intersect(usedPositions);
             }
         }
 
@@ -116,67 +164,7 @@ namespace ToolSmiths.InventorySystem.Displays
             }
         }
 
-        public void SetHoveredSlot(AbstractSlotDisplay slot)
-        {
-            Hovered = slot;
-
-            HighlightOverlappingSlots();
-
-            void HighlightOverlappingSlots()//Package package)
-            {
-                /// Do slotHighlighting here
-                //Hovered.Position
-                /* 
-                 * get the position diff
-                 * convert the hoveredPosition into a hypothetic positionToAddTo
-                 * calculate all positions required if adding at positionToAddTo 
-                 * Hovered.Container -> highlight all overlapping slots
-                 */
-
-                if (Hovered == null || Origin == null || Package.Item == null)
-                {
-                    if (background)
-                        background.color = Color.white;
-                    return;
-                }
-
-                if (background)
-                    background.color = Color.green;
-
-                var storedPositions = Hovered.Container.GetStoredPackagePositionsAt(Hovered.Position, Package.Item.Dimensions);
-
-                if (storedPositions.Count <= 0)
-                    return;
-
-                var originPositions = Origin.Container.GetStoredPackagePositionsAt(Origin.Position, Package.Item.Dimensions);
-
-                if (originPositions.Count <= 0)
-                    return;
-
-                var positionDiff = Origin.Position - originPositions[0];
-                var positionToAdd = Hovered.Position - positionDiff;
-
-                Hovered.Container.CanAddAtPosition(positionToAdd, Package.Item.Dimensions, out var otherItems);
-
-                //var requiredPositions = new List<Vector2Int>();
-                //for (var x = 0; x < Package.Item.Dimensions.x; x++)
-                //    for (var y = 0; y < Package.Item.Dimensions.y; y++)
-                //        requiredPositions.Add(new Vector2Int(x, y));
-
-                //var usedPositions = new List<Vector2Int>();
-                //for (var i = 0; i < otherItems.Count; i++)
-                //    for (var x = 0; x < Package.Item.Dimensions.x; x++)
-                //        for (var y = 0; y < Package.Item.Dimensions.y; y++)
-                //            usedPositions.Add(new Vector2Int(x, y));
-
-                //var emptyPositions = requiredPositions.Except(usedPositions);
-
-                //var overlappingPositions = requiredPositions.Intersect(usedPositions);
-
-                if (background)
-                    background.color = (otherItems.Count == 1) ? Color.yellow : Color.red;
-            }
-        }
+        public void SetHoveredSlot(AbstractSlotDisplay slot) => Hovered = slot;
 
         //public void ReturnToOrigin(Package package)
         //{
