@@ -14,10 +14,23 @@ namespace ToolSmiths.InventorySystem.Displays
     {
         [SerializeField] protected internal List<EquipmentType> allowedEquipmentTypes;
 
-        protected internal override void DropItem()
+        private bool IsAllowedEquipmentType(EquipmentType type)
+        {
+            if (allowedEquipmentTypes.Count <= 0)
+                return true;
+
+            for (var i = 0; i < allowedEquipmentTypes.Count; i++)
+                if (allowedEquipmentTypes[i] == type)
+                    return true;
+
+            return false;
+        }
+
+        protected override void DropItem()
         {
             if (StaticDragDisplay.Instance.Package.Item is Equipment)
-                if (allowedEquipmentTypes.Contains((StaticDragDisplay.Instance.Package.Item as Equipment).equipmentType))
+                //if (allowedEquipmentTypes.Contains((StaticDragDisplay.Instance.Package.Item as Equipment).equipmentType))
+                if (IsAllowedEquipmentType((StaticDragDisplay.Instance.Package.Item as Equipment).equipmentType))
                     if (Container.CanAddAtPosition(Position, StaticDragDisplay.Instance.Package.Item.Dimensions, out var otherItems))
                     {
                         Package remaining;
@@ -44,7 +57,7 @@ namespace ToolSmiths.InventorySystem.Displays
             base.DropItem();
         }
 
-        protected internal override void RefreshSlotDisplay(Package package)
+        public override void RefreshSlotDisplay(Package package)
         {
             if (itemDisplay)
             {
@@ -89,17 +102,17 @@ namespace ToolSmiths.InventorySystem.Displays
             }
         }
 
-        protected internal override void UnequipItem()
+        protected override void UnequipItem()
         {
             base.UnequipItem();
 
-            var otherItems = Container.GetStoredPackagePositionsAt(Position, new(1, 1));
+            var otherItems = Container.GetOverlappingPositionsAt(Position, new(1, 1));
 
             if (otherItems.Count == 1)
             {
                 packageToMove = Container.storedPackages[otherItems[0]];
 
-                Container.RemoveItemAtPosition(otherItems[0], packageToMove);
+                Container.RemoveAtPosition(otherItems[0], packageToMove);
 
                 Package remaining;
 

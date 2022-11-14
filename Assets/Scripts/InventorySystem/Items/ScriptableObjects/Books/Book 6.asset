@@ -12,7 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 20c829f3cde0c1049b16f82a4d2fbd43, type: 3}
   m_Name: Book 6
   m_EditorClassIdentifier: 
-  <Icon>k__BackingField: {fileID: 21300000, guid: 1c7a41a89b8e36a4cb18a4946c66c3a8, type: 3}
+  <Icon>k__BackingField: {fileID: 21300000, guid: d814ca8cbf7a1aa41b65f8265c98a773, type: 3}
   <Dimensions>k__BackingField: {x: 2, y: 2}
   <StackLimit>k__BackingField: 1
-  <Stats>k__BackingField: []
+  <Stats>k__BackingField:
+  - <Stat>k__BackingField: 4
+    <Modifier>k__BackingField:
+      <Value>k__BackingField: 20
+      <Type>k__BackingField: 200

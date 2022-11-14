@@ -18,6 +18,6 @@ MonoBehaviour:
   <Stats>k__BackingField:
   - <Stat>k__BackingField: 1
     <Modifier>k__BackingField:
-      <Value>k__BackingField: 12
-      <Type>k__BackingField: 200
+      <Value>k__BackingField: 1
+      <Type>k__BackingField: 100
   equipmentType: 10

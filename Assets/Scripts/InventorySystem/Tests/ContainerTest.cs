@@ -153,7 +153,7 @@ namespace ToolSmiths.InventorySystem.Tests
             for (var i = 0; i < container.Capacity; i++)
                 container.AddToContainer(package);
 
-            var others = container.GetStoredPackagePositionsAt(Vector2Int.zero, new(2, 2)).Count;
+            var others = container.GetOverlappingPositionsAt(Vector2Int.zero, new(2, 2)).Count;
 
             Assert.IsTrue(0 < others);
             Release(package.Item);
@@ -212,7 +212,7 @@ namespace ToolSmiths.InventorySystem.Tests
             container.AddToContainer(package);
             container.AddToContainer(other);
 
-            var packageToMove = container.RemoveItemAtPosition(Vector2Int.zero, package);
+            var packageToMove = container.RemoveAtPosition(Vector2Int.zero, package);
             var returned = container.AddAtPosition(new(0, 1), packageToMove);
             var previous = container.AddAtPosition(Vector2Int.zero, returned);
 
@@ -370,7 +370,7 @@ namespace ToolSmiths.InventorySystem.Tests
 
             container.AddToContainer(stackable);
 
-            var remaining = container.RemoveItemAtPosition(Vector2Int.zero, stackable);
+            var remaining = container.RemoveAtPosition(Vector2Int.zero, stackable);
 
             Assert.AreEqual(0, remaining.Amount);
             Release(stackable.Item);

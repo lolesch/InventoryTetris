@@ -12,12 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6f309e7fa52d3224a9ca8bdb9762ab39, type: 3}
   m_Name: Amulet 12
   m_EditorClassIdentifier: 
-  <Icon>k__BackingField: {fileID: 21300000, guid: 5eb1bfd4090be3646aa87db557647c0a, type: 3}
+  <Icon>k__BackingField: {fileID: 21300000, guid: c818fca5108c6e748a59723f9d1e4d66, type: 3}
   <Dimensions>k__BackingField: {x: 1, y: 1}
   <StackLimit>k__BackingField: 1
   <Stats>k__BackingField:
   - <Stat>k__BackingField: 1
     <Modifier>k__BackingField:
       <Value>k__BackingField: 12
-      <Type>k__BackingField: 200
+      <Type>k__BackingField: 100
   equipmentType: 10

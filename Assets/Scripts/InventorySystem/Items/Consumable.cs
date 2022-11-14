@@ -7,8 +7,6 @@ namespace ToolSmiths.InventorySystem.Items
     {
         //[SerializeField] protected internal ConsumableType consumableType;
 
-        public override void UseItem() => ConsumeItem();
-
-        private void ConsumeItem() { }
+        public void Consume() { }
     }
 }

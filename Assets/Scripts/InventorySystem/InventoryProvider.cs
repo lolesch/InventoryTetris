@@ -79,7 +79,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             PlayerEquipment = new(playerEquipmentSize);
 
             //itemToAdd = Belts; // should get the current active toggle instead
-            containerToAddTo = PlayerEquipment; // should get the current active toggle instead
+            containerToAddTo = PlayerInventory; // should get the current active toggle instead
             add = true;
 
             SetInventories();
@@ -133,7 +133,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         {
             var storedPackages = containerToAddTo?.storedPackages.ToList();
             for (var i = 0; i < storedPackages.Count; i++)
-                containerToAddTo.RemoveItemAtPosition(storedPackages[i].Key, storedPackages[i].Value);
+                containerToAddTo.RemoveAtPosition(storedPackages[i].Key, storedPackages[i].Value);
         }
 
         public void SetAmountText() => amountText.text = amountSlider.value.ToString();
@@ -161,8 +161,11 @@ namespace ToolSmiths.InventorySystem.Inventories
         public void SetItemToWeapon1H() => AddRemoveItem(Weapon1H);
         public void SetItemToWeapon2H() => AddRemoveItem(Weapon2H);
 
-        public void SetToAddItems() => add = true;
-        public void SetToRemoveItems() => add = false;
+        //public void SetToAddItems() => add = true;
+        //public void SetToRemoveItems() => add = false;
+        public void SetAddRemove() => add = !add;
+
+        public void SetAutoEquip() => PlayerEquipment.autoEquip = !PlayerEquipment.autoEquip;
 
         public void SortInventory() => containerToAddTo.SortByItemDimension();
 

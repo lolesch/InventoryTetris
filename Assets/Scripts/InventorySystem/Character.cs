@@ -9,6 +9,7 @@ namespace ToolSmiths.InventorySystem.Data
     public class Character : MonoSingleton<Character>
     {
         [SerializeField] private PlayerStat[] mainStats = new PlayerStat[(System.Enum.GetValues(typeof(StatName)) as StatName[]).Length];
+        public PlayerStat[] MainStats => mainStats;
 
         private List<TextMeshProUGUI> mainStatDisplays = new();
         [SerializeField] private TextMeshProUGUI statPrefab;
@@ -49,7 +50,7 @@ namespace ToolSmiths.InventorySystem.Data
         private void UpdateStatDisplays()
         {
             for (var i = 0; i < mainStatDisplays.Count; i++)
-                mainStatDisplays[i].text = $"{mainStats[i].Stat}: {mainStats[i].ModifiedValue}";
+                mainStatDisplays[i].text = $"{MainStats[i].Stat}: {MainStats[i].ModifiedValue:#.###}";
         }
 
         public void AddItemStats(List<ItemStat> stats)

@@ -665,7 +665,7 @@ MonoBehaviour:
     <StatModifiers>k__BackingField: []
   - name: HealthRegen
     <ModifiedValue>k__BackingField: 0
-    <BaseValue>k__BackingField: 2
+    <BaseValue>k__BackingField: 5
     <Stat>k__BackingField: 1
     <StatModifiers>k__BackingField: []
   - name: MoveSpeed
@@ -682,6 +682,11 @@ MonoBehaviour:
     <ModifiedValue>k__BackingField: 0
     <BaseValue>k__BackingField: 100
     <Stat>k__BackingField: 4
+    <StatModifiers>k__BackingField: []
+  - name: AttackSpeed
+    <ModifiedValue>k__BackingField: 0
+    <BaseValue>k__BackingField: 1
+    <Stat>k__BackingField: 5
     <StatModifiers>k__BackingField: []
   statPrefab: {fileID: 3966431505955093578}
 --- !u!1 &6710603046912445379

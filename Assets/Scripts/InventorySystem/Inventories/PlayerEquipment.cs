@@ -9,6 +9,8 @@ namespace ToolSmiths.InventorySystem.Inventories
     {
         public PlayerEquipment(Vector2Int dimensions) : base(dimensions) { }
 
+        [SerializeField] public bool autoEquip = true;
+
         protected override List<Vector2Int> CalculateRequiredPositions(Vector2Int position, Vector2Int dimension)
         {
             List<Vector2Int> requiredPositions = new();
@@ -18,7 +20,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             return requiredPositions;
         }
 
-        protected internal override List<Vector2Int> GetStoredPackagePositionsAt(Vector2Int position, Vector2Int dimension)
+        protected internal override List<Vector2Int> GetOverlappingPositionsAt(Vector2Int position, Vector2Int dimension)
         {
             List<Vector2Int> otherPackagePositions = new();
 

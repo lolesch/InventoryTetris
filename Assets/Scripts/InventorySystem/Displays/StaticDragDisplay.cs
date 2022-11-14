@@ -71,7 +71,7 @@ namespace ToolSmiths.InventorySystem.Displays
 
                 var positionToAdd = Hovered.Position - positionDiff;
 
-                var storedPositions = Hovered.Container.GetStoredPackagePositionsAt(positionToAdd, Package.Item.Dimensions);
+                var storedPositions = Hovered.Container.GetOverlappingPositionsAt(positionToAdd, Package.Item.Dimensions);
 
                 if (storedPositions.Count <= 0)
                 {
@@ -141,10 +141,10 @@ namespace ToolSmiths.InventorySystem.Displays
                     slotPivot.x /= package.Item.Dimensions.x;
                     slotPivot.y /= package.Item.Dimensions.y;
 
-                    var storedPositions = Origin.Container.GetStoredPackagePositionsAt(Origin.Position, new(1, 1));
+                    var storedPositions = Origin.Container.GetOverlappingPositionsAt(Origin.Position, new(1, 1));
 
-                    // TODO: handle storedPositions[0] == null
-                    var positionDiff = Origin.Position - storedPositions[0];
+                    // TODO: CONTINUE HERE => handle storedPositions[0] == null
+                    var positionDiff = 0 < storedPositions.Count ? Origin.Position - storedPositions[0] : Vector2Int.zero;
 
                     // NOTE: this is derived from the GridLayoutComponent => get GridLayoutGroup.Corner to implement for all possible cases
                     /// storedPositions[0] is TopLeft so we subtract the DimensionHeight-1 to get to the BottomLeft position

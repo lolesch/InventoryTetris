@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Items;
 using UnityEngine;
 
@@ -27,7 +28,20 @@ namespace ToolSmiths.InventorySystem.Inventories
             if (!package.Item)
                 return package;
 
-            if (1 < (uint)package.Item.StackLimit)
+            if (this is PlayerInventory)
+            {
+                var equipment = InventoryProvider.Instance.PlayerEquipment;
+
+                if (package.Item is Equipment && equipment.autoEquip)
+                {
+                    var equipmentPosition = equipment.GetEquipmentTypePosition((package.Item as Equipment).equipmentType);
+
+                    if (equipment.IsEmptyPosition(equipmentPosition, new(1, 1)))
+                        return equipment.AddToContainer(package);
+                }
+            }
+
+            if (ItemStackType.Single < package.Item.StackLimit)
                 AddToOpenStacks();
 
             AddToEmptyPositions();
@@ -62,6 +76,7 @@ namespace ToolSmiths.InventorySystem.Inventories
                     position = (this as PlayerEquipment).GetEquipmentTypePosition((package.Item as Equipment).equipmentType);
                 else
                     return package;
+
 
             var dimensions = this is PlayerEquipment ? new(1, 1) : package.Item.Dimensions;
 
@@ -103,7 +118,7 @@ namespace ToolSmiths.InventorySystem.Inventories
                     }
                     else /// swap items
                     {
-                        RemoveItemAtPosition(position, storedPackage);
+                        RemoveAtPosition(position, storedPackage);
 
                         TryAddToInventory();
 
@@ -119,7 +134,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             FindAllEqualItems(package.Item, out var positions);
 
             for (var i = positions.Count - 1; 0 <= i && 0 < package.Amount; i--)
-                package = RemoveItemAtPosition(positions[i], package);
+                package = RemoveAtPosition(positions[i], package);
 
             return package;
 
@@ -135,9 +150,9 @@ namespace ToolSmiths.InventorySystem.Inventories
             }
         }
 
-        public Package RemoveItemAtPosition(Vector2Int position, Package package)
+        public Package RemoveAtPosition(Vector2Int position, Package package)
         {
-            var storedPositions = GetStoredPackagePositionsAt(position, new(1, 1));
+            var storedPositions = GetOverlappingPositionsAt(position, new(1, 1));
 
             if (storedPositions.Count == 1)
                 if (storedPackages.TryGetValue(storedPositions[0], out var storedPackage))
@@ -161,7 +176,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             return package;
         }
 
-        protected internal bool IsEmptyPosition(Vector2Int position, Vector2Int dimension) => IsValidPosition(position, dimension) && GetStoredPackagePositionsAt(position, dimension).Count == 0;
+        protected internal bool IsEmptyPosition(Vector2Int position, Vector2Int dimension) => IsValidPosition(position, dimension) && GetOverlappingPositionsAt(position, dimension).Count == 0;
 
         protected internal bool CanAddAtPosition(Vector2Int position, Vector2Int dimension, out List<Vector2Int> otherItems)
         {
@@ -169,7 +184,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             if (IsValidPosition(position, dimension))
             {
-                otherItems = GetStoredPackagePositionsAt(position, dimension);
+                otherItems = GetOverlappingPositionsAt(position, dimension);
                 return otherItems.Count <= 1;
             }
 
@@ -187,7 +202,8 @@ namespace ToolSmiths.InventorySystem.Inventories
         protected internal abstract bool IsWithinDimensions(Vector2Int position);
 
         /// A List of all storedPackages positions that overlap with the requiredPositions
-        protected internal abstract List<Vector2Int> GetStoredPackagePositionsAt(Vector2Int position, Vector2Int dimension);
+        protected internal abstract List<Vector2Int> GetOverlappingPositionsAt(Vector2Int position, Vector2Int dimension);
+        public bool TryGetPackageAt(Vector2Int position, out Package package) => storedPackages.TryGetValue(position, out package);
 
         /// A List of all positions that are required to add this item to the container
         protected abstract List<Vector2Int> CalculateRequiredPositions(Vector2Int position, Vector2Int dimension);
@@ -202,7 +218,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             for (var i = 0; i < storedKeys.Count; i++)
                 storedDimensions.Add(storedPackages[storedKeys[i]].Item.Dimensions);
 
-            storedDimensions = storedDimensions.Distinct().OrderByDescending(v => v.sqrMagnitude).ToList();
+            storedDimensions = storedDimensions.Distinct().OrderByDescending(v => v.x * v.y/*v.sqrMagnitude*/).ToList();
 
             var storedValues = storedPackages.Values.ToList();
             storedPackages.Clear();

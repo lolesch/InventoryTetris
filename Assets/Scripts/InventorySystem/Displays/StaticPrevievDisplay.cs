@@ -2,6 +2,7 @@
 using TeppichsTools.Creation;
 using TMPro;
 using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
 using UnityEngine;
@@ -106,30 +107,58 @@ namespace ToolSmiths.InventorySystem.Displays
                     }
 
                     var stats = package.Item.Stats;
+
+
                     for (var i = 0; i < stats.Count; i++)
                     {
                         var itemStat = Instantiate(itemStatPrefab, itemStatPrefab.transform.parent);
 
-                        var compareToValue = CompareStatValues(stats[i]);
-                        var color = Color.white;
+                        float? other = null;
+                        var comparison = CompareStatValues(stats[i], ref other);
 
-                        if (compareToValue != 0)
-                            color = compareToValue < 0 ? Color.red : Color.green;
+                        var color = comparison == 0 ? Color.white : (comparison < 0 ? Color.green : Color.red);
+                        var increaseString = $"{stats[i].Modifier.Value - other:+#;-#;#}";
 
-                        itemStat.text = $"{stats[i].Stat}\t+ {Colored(stats[i].Modifier.Value.ToString(), color)}";
+
+                        itemStat.text = stats[i].Modifier.Type switch
+                        {
+                            StatModifierType.Override => $"{stats[i].Stat}\t{stats[i].Modifier.Value:#.###} {Colored(increaseString, color)}",
+                            StatModifierType.FlatAdd => $"{stats[i].Stat}\t{stats[i].Modifier.Value:#.###} {Colored(increaseString, color)}",
+                            StatModifierType.PercentAdd => $"{stats[i].Stat}\t{stats[i].Modifier.Value:#.###}% {Colored(increaseString, color)}",
+                            StatModifierType.PercentMult => $"{stats[i].Stat}\t{stats[i].Modifier.Value:#.###}% {Colored(increaseString, color)}",
+                            _ => $"{stats[i].Stat}\t{stats[i].Modifier.Value}",
+                        };
+
+
 
                         itemStat.gameObject.SetActive(true);
 
                         string Colored(string text, Color color) => $"<color=#{ColorUtility.ToHtmlStringRGBA(color)}>{text}</color>";
                     }
 
-                    int CompareStatValues(ItemStat stat)
-                    {
-                        if (compareTo.Item != null)
-                            for (var i = 0; i < compareTo.Item.Stats.Count; i++)
-                                if (compareTo.Item.Stats[i].Stat == stat.Stat)
-                                    return compareTo.Item.Stats[i].Modifier.Value.CompareTo(stat.Modifier.Value);
 
+
+                    int CompareStatValues(ItemStat stat, ref float? other)
+                    {
+                        if (stat.Modifier.Type == StatModifierType.Override) // => compare to total
+                        {
+                            for (var i = 0; i < Character.Instance.MainStats.Length; i++)
+                                if (Character.Instance.MainStats[i].Stat == stat.Stat) // find a corresponding stat
+                                {
+                                    other = Character.Instance.MainStats[i].ModifiedValue;
+                                    return Character.Instance.MainStats[i].ModifiedValue.CompareTo(stat.Modifier.Value);
+                                }
+                        }
+                        else
+                        if (compareTo.Item != null)
+                            for (var i = 0; i < compareTo.Item.Stats.Count; i++) // foreach stat of the other item
+                                if (compareTo.Item.Stats[i].Stat == stat.Stat) // find a corresponding stat
+                                {
+                                    other = compareTo.Item.Stats[i].Modifier.Value;
+                                    return compareTo.Item.Stats[i].Modifier.Value.CompareTo(stat.Modifier.Value);
+                                }
+
+                        other = null;
                         return 0 < stat.Modifier.Value ? 1 : -1;
                     }
                 }

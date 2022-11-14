@@ -15,7 +15,7 @@ namespace ToolSmiths.InventorySystem.Displays
     {
         private GridLayoutGroup gridLayout;
 
-        protected internal override void DropItem()
+        protected override void DropItem()
         {
             if (StaticDragDisplay.Instance.Package.Item)
             {
@@ -53,11 +53,11 @@ namespace ToolSmiths.InventorySystem.Displays
             base.DropItem();
         }
 
-        protected internal override void RefreshSlotDisplay(Package package)
+        public override void RefreshSlotDisplay(Package package)
         {
             if (itemDisplay)
             {
-                if (package.Amount < 1)
+                if (package.Amount <= 0)
                 {
                     itemDisplay.gameObject.SetActive(false);
                     return;
@@ -97,9 +97,9 @@ namespace ToolSmiths.InventorySystem.Displays
             }
         }
 
-        protected internal override void EquipItem()
+        protected override void EquipItem()
         {
-            var otherItems = Container.GetStoredPackagePositionsAt(Position, new(1, 1));
+            var otherItems = Container.GetOverlappingPositionsAt(Position, new(1, 1));
 
             if (otherItems.Count == 1)
             {
@@ -107,7 +107,7 @@ namespace ToolSmiths.InventorySystem.Displays
                 {
                     packageToMove = Container.storedPackages[otherItems[0]];
 
-                    Container.RemoveItemAtPosition(otherItems[0], packageToMove);
+                    Container.RemoveAtPosition(otherItems[0], packageToMove);
 
                     Package remaining;
 
