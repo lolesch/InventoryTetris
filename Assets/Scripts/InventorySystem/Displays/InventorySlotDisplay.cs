@@ -20,7 +20,7 @@ namespace ToolSmiths.InventorySystem.Displays
             if (StaticDragDisplay.Instance.Package.Item)
             {
                 var positionOffset = StaticDragDisplay.Instance.Package.Item.Dimensions / 2;
-                Vector2 mousePositionOffset = (Input.mousePosition - transform.position) / transform.root.GetComponent<Canvas>().scaleFactor;
+                var mousePositionOffset = (Vector2)(Input.mousePosition - transform.position) / transform.lossyScale; //transform.root.GetComponent<Canvas>().scaleFactor;
                 var relativeMouseOffset = (mousePositionOffset - (transform as RectTransform).rect.size / 2) / (transform as RectTransform).rect.size;
                 var mouseOffset = new Vector2Int(Mathf.CeilToInt(relativeMouseOffset.x), -Mathf.CeilToInt(relativeMouseOffset.y));
 

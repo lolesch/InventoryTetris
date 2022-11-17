@@ -131,6 +131,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   containerSlotDisplays: []
+  Icon: {fileID: 1004794052237909385}
   slotDisplayPrefab: {fileID: 3613886384109497563, guid: 2287cac91a7c16e479ee377613d24cd7, type: 3}
 --- !u!1001 &2618862128002854537
 PrefabInstance:
@@ -237,6 +238,17 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4c87773b3288fa943a37ac271c0ffbaf, type: 3}
+--- !u!114 &1004794052237909385 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3002124033480569600, guid: 4c87773b3288fa943a37ac271c0ffbaf, type: 3}
+  m_PrefabInstance: {fileID: 2618862128002854537}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!224 &7705405327472974782 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 5672011502311748919, guid: 4c87773b3288fa943a37ac271c0ffbaf, type: 3}

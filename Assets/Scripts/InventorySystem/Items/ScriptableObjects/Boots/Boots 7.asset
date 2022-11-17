@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6f309e7fa52d3224a9ca8bdb9762ab39, type: 3}
   m_Name: Boots 7
   m_EditorClassIdentifier: 
-  <Icon>k__BackingField: {fileID: 21300000, guid: 856de6be49117524ab0e7627dd24e789, type: 3}
+  <Icon>k__BackingField: {fileID: 21300000, guid: 77ebf8d12a13bd44283368ad95cd82c8, type: 3}
   <Dimensions>k__BackingField: {x: 2, y: 2}
   <StackLimit>k__BackingField: 1
   <Stats>k__BackingField:

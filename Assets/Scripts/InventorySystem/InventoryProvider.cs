@@ -56,7 +56,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         private uint amount => (uint)amountSlider?.value;
         private TextMeshProUGUI amountText;
-        private AbstractDimensionalContainer containerToAddTo;
+        public AbstractDimensionalContainer ContainerToAddTo { get; private set; }
 
         private int random = 0;
 
@@ -79,7 +79,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             PlayerEquipment = new(playerEquipmentSize);
 
             //itemToAdd = Belts; // should get the current active toggle instead
-            containerToAddTo = PlayerInventory; // should get the current active toggle instead
+            ContainerToAddTo = PlayerInventory; // should get the current active toggle instead
             add = true;
 
             SetInventories();
@@ -93,13 +93,13 @@ namespace ToolSmiths.InventorySystem.Inventories
                 if (add)
                 {
                     random = Random.Range(0, items.Count);
-                    containerToAddTo?.AddToContainer(new Package(items[random], 1));
+                    ContainerToAddTo?.AddToContainer(new Package(items[random], 1));
                 }
                 else
                 {
                     for (var x = items.Count; x-- > 0;)
                     {
-                        var removedPackage = containerToAddTo.RemoveFromContainer(new Package(items[x], 1));
+                        var removedPackage = ContainerToAddTo.RemoveFromContainer(new Package(items[x], 1));
 
                         if (removedPackage.Amount == 0)
                             break;
@@ -131,16 +131,28 @@ namespace ToolSmiths.InventorySystem.Inventories
         [ContextMenu("RemoveAllItems")]
         public void RemoveAllItems()
         {
-            var storedPackages = containerToAddTo?.storedPackages.ToList();
+            var storedPackages = ContainerToAddTo?.storedPackages.ToList();
             for (var i = 0; i < storedPackages.Count; i++)
-                containerToAddTo.RemoveAtPosition(storedPackages[i].Key, storedPackages[i].Value);
+                ContainerToAddTo.RemoveAtPosition(storedPackages[i].Key, storedPackages[i].Value);
         }
 
         public void SetAmountText() => amountText.text = amountSlider.value.ToString();
 
-        public void AddToPlayerInventory() => containerToAddTo = PlayerInventory;
-        public void AddToPlayerEquipment() => containerToAddTo = PlayerEquipment;
-        public void AddToPlayerStash() => containerToAddTo = PlayerStash;
+        public void AddToPlayerInventory() 
+        {
+            ContainerToAddTo = PlayerInventory;
+        SetInventories();    
+        }
+        public void AddToPlayerEquipment() 
+        {
+            ContainerToAddTo = PlayerEquipment;
+        SetInventories();    
+        }
+        public void AddToPlayerStash() 
+        {
+            ContainerToAddTo = PlayerStash;
+        SetInventories();    
+        }
 
         public void SetItemToAmulets() => AddRemoveItem(Amulets);
         public void SetItemToArrows() => AddRemoveItem(Arrows);
@@ -167,10 +179,8 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         public void SetAutoEquip() => PlayerEquipment.autoEquip = !PlayerEquipment.autoEquip;
 
-        public void SortInventory() => containerToAddTo.SortByItemDimension();
+        public void SortInventory() => ContainerToAddTo.SortByItemDimension();
 
         public Package EquipItem(Package package) => PlayerEquipment.AddToContainer(package);
-
     }
-
 }
