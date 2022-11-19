@@ -1,5 +1,4 @@
-﻿using TeppichsTools.Logging;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace TeppichsTools.Creation
 {
@@ -24,7 +23,7 @@ namespace TeppichsTools.Creation
 
                     for (int i = 1; i < candidates.Length; i++)
                     {
-                        EditorDebug.LogWarning("Found multiple instances of the MonoSingleton of type " + typeof(T));
+                        Debug.LogWarning("Found multiple instances of the MonoSingleton of type " + typeof(T));
 #if UNITY_EDITOR
                         DestroyImmediate(candidates[i]);
 #else
