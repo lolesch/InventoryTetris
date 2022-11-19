@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Items
 {
+    [System.Serializable]
     [CreateAssetMenu(fileName = "New Equipment Object", menuName = "Inventory System/Equipment")]
     public class Equipment : AbstractItemObject
     {
