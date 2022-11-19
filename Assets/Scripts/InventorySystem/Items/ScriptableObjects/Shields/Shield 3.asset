@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6f309e7fa52d3224a9ca8bdb9762ab39, type: 3}
   m_Name: Shield 3
   m_EditorClassIdentifier: 
-  <Icon>k__BackingField: {fileID: 21300000, guid: a60d09cccf43c8f4c873d4b7a1fb7bca, type: 3}
+  <Icon>k__BackingField: {fileID: 21300000, guid: e499a69d1c6d5514eb344e0e6e92588f, type: 3}
   <Dimensions>k__BackingField: {x: 2, y: 3}
   <StackLimit>k__BackingField: 1
   <Stats>k__BackingField: []

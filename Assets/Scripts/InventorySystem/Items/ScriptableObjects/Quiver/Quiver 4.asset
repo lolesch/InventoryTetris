@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6f309e7fa52d3224a9ca8bdb9762ab39, type: 3}
   m_Name: Quiver 4
   m_EditorClassIdentifier: 
-  <Icon>k__BackingField: {fileID: 21300000, guid: e2e5975a0ccb1ed42a3fc7585d2e339e, type: 3}
-  <Dimensions>k__BackingField: {x: 2, y: 3}
+  <Icon>k__BackingField: {fileID: 21300000, guid: 7d11968faf48f7d4186c3a99de1d31a6, type: 3}
+  <Dimensions>k__BackingField: {x: 1, y: 3}
   <StackLimit>k__BackingField: 1
   <Stats>k__BackingField:
   - <Stat>k__BackingField: 3

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6f309e7fa52d3224a9ca8bdb9762ab39, type: 3}
   m_Name: Helm 6
   m_EditorClassIdentifier: 
-  <Icon>k__BackingField: {fileID: 21300000, guid: ecd306c1ebecc844085426dcf98c81b4, type: 3}
+  <Icon>k__BackingField: {fileID: 21300000, guid: 9f6955af27cefd948b085be85aa1731a, type: 3}
   <Dimensions>k__BackingField: {x: 2, y: 2}
   <StackLimit>k__BackingField: 1
   <Stats>k__BackingField: []
