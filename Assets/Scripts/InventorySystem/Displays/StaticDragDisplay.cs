@@ -62,9 +62,11 @@ namespace ToolSmiths.InventorySystem.Displays
 
             void HighlightOverlappingSlots()
             {
-                if (Hovered == null || Origin == null || Package.Item == null)
+                if (Hovered == null || Package.Item == null)
                     return;
 
+                ///NOTE: the display has the Package.Item's dimensions and the pivot is the mouse position within these dimensions
+                /// get the displays pivot
                 var positionPivot = itemDisplay.pivot;
                 positionPivot.x *= Package.Item.Dimensions.x;
                 positionPivot.y *= Package.Item.Dimensions.y;
@@ -105,7 +107,7 @@ namespace ToolSmiths.InventorySystem.Displays
             }
         }
 
-        public void SetPackage(AbstractSlotDisplay slot, Package package)
+        public void SetPackage(AbstractSlotDisplay slot, Package package, Vector2Int positionOffset)
         {
             Origin = slot;
             Package = package;
@@ -149,18 +151,13 @@ namespace ToolSmiths.InventorySystem.Displays
                     slotPivot.x /= package.Item.Dimensions.x;
                     slotPivot.y /= package.Item.Dimensions.y;
 
-                    var storedPositions = Origin.Container.GetOtherItemsAt(Origin.Position, new(1, 1));
-
-                    // TODO: CONTINUE HERE => handle storedPositions[0] == null
-                    var positionDiff = 0 < storedPositions.Count ? Origin.Position - storedPositions[0] : Vector2Int.zero;
-
                     // NOTE: this is derived from the GridLayoutComponent => get GridLayoutGroup.Corner to implement for all possible cases
-                    /// storedPositions[0] is TopLeft so we subtract the DimensionHeight-1 to get to the BottomLeft position
-                    positionDiff -= new Vector2Int(0, package.Item.Dimensions.y - 1);
+                    /// THe positionOffset was calculated in InventorySpace (anchored TopLeft) so we subtract the DimensionHeight-1 to get to the BottomLeft position
+                    positionOffset -= new Vector2Int(0, package.Item.Dimensions.y - 1);
                     /// and convert it to screenCoordinates
-                    positionDiff.y *= -1;
+                    positionOffset.y *= -1;
 
-                    var positionPivot = (Vector2)positionDiff;
+                    var positionPivot = (Vector2)positionOffset;
                     positionPivot.x /= package.Item.Dimensions.x;
                     positionPivot.y /= package.Item.Dimensions.y;
 

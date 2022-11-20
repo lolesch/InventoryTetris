@@ -40,13 +40,13 @@ namespace ToolSmiths.InventorySystem.Displays
                         if (0 < remaining.Amount)
                         {
                             packageToMove = remaining;
-                            StaticDragDisplay.Instance.SetPackage(this, remaining);
+                            StaticDragDisplay.Instance.SetPackage(this, remaining, Vector2Int.zero);
                         }
                         else
                         {
                             packageToMove = new Package();
 
-                            StaticDragDisplay.Instance.SetPackage(this, packageToMove);
+                            StaticDragDisplay.Instance.SetPackage(this, packageToMove, Vector2Int.zero);
                         }
 
                         Container.InvokeRefresh();
@@ -121,13 +121,13 @@ namespace ToolSmiths.InventorySystem.Displays
                 if (0 < remaining.Amount)
                 {
                     packageToMove = remaining;
-                    StaticDragDisplay.Instance.SetPackage(this, remaining);
+                    StaticDragDisplay.Instance.SetPackage(this, remaining, Vector2Int.zero);
                 }
                 else
                 {
                     packageToMove = new Package();
 
-                    StaticDragDisplay.Instance.SetPackage(this, packageToMove);
+                    StaticDragDisplay.Instance.SetPackage(this, packageToMove, Vector2Int.zero);
                 }
 
                 Container.InvokeRefresh();

@@ -35,13 +35,13 @@ namespace ToolSmiths.InventorySystem.Displays
                     if (0 < remaining.Amount)
                     {
                         packageToMove = remaining;
-                        StaticDragDisplay.Instance.SetPackage(this, remaining);
+                        StaticDragDisplay.Instance.SetPackage(this, remaining, positionOffset);
                     }
                     else
                     {
                         packageToMove = new Package();
 
-                        StaticDragDisplay.Instance.SetPackage(this, packageToMove);
+                        StaticDragDisplay.Instance.SetPackage(this, packageToMove, positionOffset);
                     }
 
                     Container.InvokeRefresh();
@@ -107,6 +107,8 @@ namespace ToolSmiths.InventorySystem.Displays
                 {
                     packageToMove = Container.StoredPackages[otherItems[0]];
 
+                    var positionOffset = Position - otherItems[0];
+
                     _ = Container.RemoveAtPosition(otherItems[0], packageToMove);
 
                     Package remaining;
@@ -119,20 +121,18 @@ namespace ToolSmiths.InventorySystem.Displays
                     if (0 < remaining.Amount)
                     {
                         packageToMove = remaining;
-                        StaticDragDisplay.Instance.SetPackage(this, remaining);
+                        StaticDragDisplay.Instance.SetPackage(this, remaining, positionOffset);
                     }
                     else
                     {
                         packageToMove = new Package();
 
-                        StaticDragDisplay.Instance.SetPackage(this, packageToMove);
+                        StaticDragDisplay.Instance.SetPackage(this, packageToMove, positionOffset);
                     }
 
                     Container.InvokeRefresh();
                     StaticDragDisplay.Instance.Origin.Container?.InvokeRefresh();
                 }
-                // if is consumable
-                //  consume item
             }
 
             base.EquipItem();

@@ -15,8 +15,9 @@ namespace ToolSmiths.InventorySystem.Inventories
         public PlayerInventory PlayerInventory;
         public PlayerInventory PlayerStash;
         public PlayerEquipment PlayerEquipment;
+        public AbstractDimensionalContainer ContainerToAddTo { get; private set; }
 
-        [field: SerializeField] public bool Debug { get; private set; }
+        [field: SerializeField] public bool ShowDebugPositions { get; private set; }
 
         [Space]
         public InventoryContainerDisplay PlayerInventoryDisplay;
@@ -50,13 +51,11 @@ namespace ToolSmiths.InventorySystem.Inventories
         [SerializeField] private List<AbstractItemObject> Weapon1H;
         [SerializeField] private List<AbstractItemObject> Weapon2H;
 
-        private Slider amountSlider;
-        //private List<Item> itemToAdd;
         [SerializeField] private bool add = true;
 
-        private uint amount => (uint)amountSlider?.value;
+        private Slider amountSlider;
         private TextMeshProUGUI amountText;
-        public AbstractDimensionalContainer ContainerToAddTo { get; private set; }
+        private uint Amount => amountSlider != null ? (uint)amountSlider.value : 1;
 
         private int random = 0;
 
@@ -73,27 +72,25 @@ namespace ToolSmiths.InventorySystem.Inventories
             amountSlider = GetComponentInChildren<Slider>();
             amountText = amountSlider?.GetComponentInChildren<TextMeshProUGUI>();
 
-            // serialize inventories here
+            // serialize inventories
             PlayerInventory = new(playerInventorySize);
             PlayerStash = new(playerStashSize);
             PlayerEquipment = new(playerEquipmentSize);
 
-            //itemToAdd = Belts; // should get the current active toggle instead
             ContainerToAddTo = PlayerInventory; // should get the current active toggle instead
             add = true;
 
             SetInventories();
         }
 
-        // new add/remove toggle
         private void AddRemoveItem(List<AbstractItemObject> items)
         {
-            for (var i = 0; i < amount; i++)
+            for (var i = 0; i < Amount; i++)
             {
                 if (add)
                 {
                     random = Random.Range(0, items.Count);
-                    ContainerToAddTo?.AddToContainer(new Package(items[random], 1));
+                    _ = ContainerToAddTo?.AddToContainer(new Package(items[random], 1));
                 }
                 else
                 {
@@ -108,32 +105,12 @@ namespace ToolSmiths.InventorySystem.Inventories
             }
         }
 
-        //[ContextMenu("AddItem")]
-        //public void AddItem()
-        //{
-        //    for (var i = 0; i < amount; i++)
-        //    {
-        //        containerToAddTo?.AddToContainer(new Package(itemToAdd[Mathf.Abs(random % itemToAdd.Count)], 1));
-        //        random = Random.Range(0, itemToAdd.Count);
-        //    }
-        //}
-        //
-        //[ContextMenu("RemoveItem")]
-        //public void RemoveItem()
-        //{
-        //    for (var i = 0; i < amount; i++)
-        //    {
-        //        random = Random.Range(0, itemToAdd.Count);
-        //        containerToAddTo?.RemoveFromContainer(new Package(itemToAdd[Mathf.Abs(random % itemToAdd.Count)], 1));
-        //    }
-        //}
-
         [ContextMenu("RemoveAllItems")]
         public void RemoveAllItems()
         {
             var storedPackages = ContainerToAddTo?.StoredPackages.ToList();
             for (var i = 0; i < storedPackages.Count; i++)
-                ContainerToAddTo.RemoveAtPosition(storedPackages[i].Key, storedPackages[i].Value);
+                _ = ContainerToAddTo.RemoveAtPosition(storedPackages[i].Key, storedPackages[i].Value);
         }
 
         public void SetAmountText() => amountText.text = amountSlider.value.ToString();

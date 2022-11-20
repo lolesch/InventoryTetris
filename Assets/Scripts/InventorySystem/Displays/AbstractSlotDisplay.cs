@@ -34,16 +34,13 @@ namespace ToolSmiths.InventorySystem.Displays
         private void OnEnable()
         {
             if (debugPosition != null)
-                debugPosition.text = InventoryProvider.Instance.Debug ? Position.ToString() : "";
+                debugPosition.text = InventoryProvider.Instance.ShowDebugPositions ? Position.ToString() : "";
 
             StaticDragDisplay.Instance.OnOverlapping -= SetBackgroundColor;
             StaticDragDisplay.Instance.OnOverlapping += SetBackgroundColor;
         }
 
-        void OnDisable()
-        {
-            StaticDragDisplay.Instance.OnOverlapping -= SetBackgroundColor;
-        }
+        private void OnDisable() => StaticDragDisplay.Instance.OnOverlapping -= SetBackgroundColor;
 
         public void SetupSlot(AbstractDimensionalContainer container, Vector2Int position)
         {
@@ -52,7 +49,7 @@ namespace ToolSmiths.InventorySystem.Displays
             Container = container;
 
             if (debugPosition != null)
-                debugPosition.text = InventoryProvider.Instance.Debug ? Position.ToString() : "";
+                debugPosition.text = InventoryProvider.Instance.ShowDebugPositions ? Position.ToString() : "";
         }
 
         public void OnPointerClick(PointerEventData eventData) =>
@@ -99,17 +96,18 @@ namespace ToolSmiths.InventorySystem.Displays
 
                     if (item is Consumable)
                         (item as Consumable).Consume();
+
                     else if (item is Equipment)
                         if (this is EquipmentSlotDisplay)
                             UnequipItem();
                         else
                             EquipItem();
+
                     else if (item is Item)
                     { }
                 }
                 else
                     PickUpItem();
-
 
                 void PickUpItem()
                 {
@@ -119,9 +117,11 @@ namespace ToolSmiths.InventorySystem.Displays
                     {
                         packageToMove = Container.StoredPackages[storedPositions[0]];
 
-                        Container.RemoveAtPosition(storedPositions[0], packageToMove);
+                        var positionOffset = Position - storedPositions[0];
 
-                        StaticDragDisplay.Instance.SetPackage(this, packageToMove);
+                        _ = Container.RemoveAtPosition(storedPositions[0], packageToMove);
+
+                        StaticDragDisplay.Instance.SetPackage(this, packageToMove, positionOffset);
                     }
 
                     FadeOutPreview();
@@ -137,7 +137,7 @@ namespace ToolSmiths.InventorySystem.Displays
             if (itemToDisplay.Count == 1)
                 if (Container.StoredPackages.TryGetValue(itemToDisplay[0], out var hoveredIten))
                     if (hoveredIten.Item != null && 0 < hoveredIten.Amount)
-                        StartCoroutine(FadeIn(hoveredIten, itemToDisplay[0]));
+                        _ = StartCoroutine(FadeIn(hoveredIten, itemToDisplay[0]));
 
             IEnumerator FadeIn(Package package, Vector2Int storedPosition)
             {

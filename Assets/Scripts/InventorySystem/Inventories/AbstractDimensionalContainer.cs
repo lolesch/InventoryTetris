@@ -68,10 +68,13 @@ namespace ToolSmiths.InventorySystem.Inventories
             if (!package.Item)
                 return package;
 
-            if (this is PlayerEquipment && package.Item is Equipment)
-                position = (this as PlayerEquipment).GetEquipmentTypePosition((package.Item as Equipment).equipmentType);
-            else
-                return package;
+            if (this is PlayerEquipment)
+            {
+                if (package.Item is Equipment)
+                    position = (this as PlayerEquipment).GetEquipmentTypePosition((package.Item as Equipment).equipmentType);
+                else
+                    return package;
+            }
 
             var dimensions = this is PlayerEquipment ? new(1, 1) : package.Item.Dimensions;
 
@@ -213,7 +216,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             }
         }
 
-        public bool CanAddAtPosition(Vector2Int position, Vector2Int dimension, out List<Vector2Int> otherItems) => !IsEmptyPosition(position, dimension, out otherItems) && otherItems.Count <= 1;
+        public bool CanAddAtPosition(Vector2Int position, Vector2Int dimension, out List<Vector2Int> otherItems) => IsEmptyPosition(position, dimension, out otherItems) || otherItems.Count <= 1;
 
         /// A List of all storedPackages positions that overlap with the requiredPositions
         public abstract List<Vector2Int> GetOtherItemsAt(Vector2Int position, Vector2Int dimension);
@@ -237,7 +240,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             storedDimensions = storedDimensions.Distinct().OrderByDescending(v => v.x * v.y/*v.sqrMagnitude*/).ToList();
 
             var storedValues = StoredPackages.Values.ToList();
-            StoredPackages.Clear();
+            StoredPackages.Clear(); // This won't unequip => stats not removed from character
 
             for (var i = 0; i < storedDimensions.Count; i++)
             {
@@ -258,7 +261,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             storedNames = storedNames.Distinct().OrderBy(x => x).ToList();
 
             var storedValues = StoredPackages.Values.ToList();
-            StoredPackages.Clear();
+            StoredPackages.Clear(); // This won't unequip => stats not removed from character
 
             for (var i = 0; i < storedNames.Count; i++)
             {
