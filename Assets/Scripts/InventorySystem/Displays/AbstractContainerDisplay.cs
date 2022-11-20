@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Inventories;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace ToolSmiths.InventorySystem.Displays
 {
@@ -10,6 +11,7 @@ namespace ToolSmiths.InventorySystem.Displays
         protected AbstractDimensionalContainer Container;
 
         [SerializeField] protected List<AbstractSlotDisplay> containerSlotDisplays = new();
+        [SerializeField] protected Image Icon;
 
         public void SetupDisplay(AbstractDimensionalContainer container)
         {
@@ -50,6 +52,10 @@ namespace ToolSmiths.InventorySystem.Displays
 
                     current++;
                 }
+
+            Icon.color = InventoryProvider.Instance.ContainerToAddTo == this.Container ?
+            new Color(1, .84f, 0, 1) :
+            Color.white;
         }
     }
 }

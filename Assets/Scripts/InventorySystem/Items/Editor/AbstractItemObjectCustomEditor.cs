@@ -7,16 +7,13 @@ namespace ToolSmiths.InventorySystem.Items
     public class AbstractItemObjectCustomEditor : Editor
     {
         private AbstractItemObject item;
-
+    
         private void OnEnable() => item = target as AbstractItemObject;
-
+    
         public override void OnInspectorGUI()
         {
-            if (item.Icon != null)
-            {
-                var _ = EditorGUILayout.ObjectField(item.Icon, typeof(Sprite), true, GUILayout.Height(80), GUILayout.Width(80)) as Sprite;
-            }
-
+            item.Icon = EditorGUILayout.ObjectField(item.Icon, typeof(Sprite), true, GUILayout.Height(80), GUILayout.Width(80)) as Sprite;
+                
             base.OnInspectorGUI();
         }
     }

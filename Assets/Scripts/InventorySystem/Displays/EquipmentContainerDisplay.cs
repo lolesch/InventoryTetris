@@ -1,5 +1,5 @@
-﻿using TeppichsTools.Logging;
-using ToolSmiths.InventorySystem.Inventories;
+﻿using ToolSmiths.InventorySystem.Inventories;
+using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Displays
 {
@@ -15,7 +15,7 @@ namespace ToolSmiths.InventorySystem.Displays
             }
 
             if (containerSlotDisplays.Count != Container.Capacity)
-                EditorDebug.LogError($"equipmentSlotDisplays {containerSlotDisplays.Count} of {Container.Capacity}");
+                Debug.LogError($"equipmentSlotDisplays {containerSlotDisplays.Count} of {Container.Capacity}");
         }
     }
 }

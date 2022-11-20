@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6f309e7fa52d3224a9ca8bdb9762ab39, type: 3}
   m_Name: Ring 5
   m_EditorClassIdentifier: 
-  <Icon>k__BackingField: {fileID: 21300000, guid: d23c0612cd4915e45b187592965ed0fb, type: 3}
+  <Icon>k__BackingField: {fileID: 21300000, guid: 6c151105e18430945ad53eede119c0ad, type: 3}
   <Dimensions>k__BackingField: {x: 1, y: 1}
   <StackLimit>k__BackingField: 1
   <Stats>k__BackingField: []

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
-using TeppichsTools.Logging;
 using ToolSmiths.InventorySystem.Items;
 using UnityEngine;
 
@@ -22,7 +21,7 @@ namespace ToolSmiths.InventorySystem.Data
             Amount = amount;
 
             if (item != null && (uint)item.StackLimit < amount)
-                EditorDebug.LogWarning($"The Package you constructed contains more items than the item's stacking limit!");
+                Debug.LogWarning($"The Package you constructed contains more items than the item's stacking limit!");
         }
 
         /// <summary>The package's item.</summary>
