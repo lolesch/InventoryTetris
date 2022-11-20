@@ -21,12 +21,12 @@ namespace ToolSmiths.InventorySystem.Displays
             {
                 var positionOffset = StaticDragDisplay.Instance.Package.Item.Dimensions / 2;
                 var mousePositionOffset = (Vector2)(Input.mousePosition - transform.position) / transform.lossyScale; //transform.root.GetComponent<Canvas>().scaleFactor;
-                var relativeMouseOffset = (mousePositionOffset - (transform as RectTransform).rect.size / 2) / (transform as RectTransform).rect.size;
+                var relativeMouseOffset = (mousePositionOffset - ((transform as RectTransform).rect.size / 2)) / (transform as RectTransform).rect.size;
                 var mouseOffset = new Vector2Int(Mathf.CeilToInt(relativeMouseOffset.x), -Mathf.CeilToInt(relativeMouseOffset.y));
 
                 var positionToAdd = Position - positionOffset + mouseOffset;
 
-                if (Container.CanAddAtPosition(positionToAdd, StaticDragDisplay.Instance.Package.Item.Dimensions, out var otherItems))
+                if (Container.CanAddAtPosition(positionToAdd, StaticDragDisplay.Instance.Package.Item.Dimensions, out _))
                 {
                     Package remaining;
 
@@ -85,7 +85,7 @@ namespace ToolSmiths.InventorySystem.Displays
                         {
                             var additionalSpacing = gridLayout.spacing * new Vector2(package.Item.Dimensions.x - 1, package.Item.Dimensions.y - 1);
 
-                            display.sizeDelta = gridLayout.cellSize * package.Item.Dimensions + additionalSpacing;
+                            display.sizeDelta = (gridLayout.cellSize * package.Item.Dimensions) + additionalSpacing;
                         }
 
                         display.anchoredPosition = new Vector2(display.sizeDelta.x * .5f, display.sizeDelta.y * -.5f);
@@ -99,15 +99,15 @@ namespace ToolSmiths.InventorySystem.Displays
 
         protected override void EquipItem()
         {
-            var otherItems = Container.GetOverlappingPositionsAt(Position, new(1, 1));
+            var otherItems = Container.GetOtherItemsAt(Position, new(1, 1));
 
             if (otherItems.Count == 1)
             {
-                if (Container.storedPackages[otherItems[0]].Item is Equipment)
+                if (Container.StoredPackages[otherItems[0]].Item is Equipment)
                 {
-                    packageToMove = Container.storedPackages[otherItems[0]];
+                    packageToMove = Container.StoredPackages[otherItems[0]];
 
-                    Container.RemoveAtPosition(otherItems[0], packageToMove);
+                    _ = Container.RemoveAtPosition(otherItems[0], packageToMove);
 
                     Package remaining;
 

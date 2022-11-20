@@ -19,15 +19,15 @@ namespace ToolSmiths.InventorySystem.Inventories
         [field: SerializeField] public bool Debug { get; private set; }
 
         [Space]
-        [SerializeField] private InventoryContainerDisplay playerInventoryDisplay;
+        public InventoryContainerDisplay PlayerInventoryDisplay;
         [SerializeField] private Vector2Int playerInventorySize = new(10, 6);
 
         [Space]
-        [SerializeField] private InventoryContainerDisplay playerStashDisplay;
+        public InventoryContainerDisplay PlayerStashDisplay;
         [SerializeField] private Vector2Int playerStashSize = new(10, 15);
 
         [Space]
-        [SerializeField] private EquipmentContainerDisplay playerEquipmentDisplay;
+        public EquipmentContainerDisplay PlayerEquipmentDisplay;
         [SerializeField] private Vector2Int playerEquipmentSize = new(13, 1);
 
         [Header("Items")]
@@ -62,9 +62,9 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         private void SetInventories()
         {
-            playerInventoryDisplay.SetupDisplay(PlayerInventory);
-            playerStashDisplay.SetupDisplay(PlayerStash);
-            playerEquipmentDisplay.SetupDisplay(PlayerEquipment);
+            PlayerInventoryDisplay.SetupDisplay(PlayerInventory);
+            PlayerStashDisplay.SetupDisplay(PlayerStash);
+            PlayerEquipmentDisplay.SetupDisplay(PlayerEquipment);
         }
 
         [ContextMenu("Awake")]
@@ -131,27 +131,27 @@ namespace ToolSmiths.InventorySystem.Inventories
         [ContextMenu("RemoveAllItems")]
         public void RemoveAllItems()
         {
-            var storedPackages = ContainerToAddTo?.storedPackages.ToList();
+            var storedPackages = ContainerToAddTo?.StoredPackages.ToList();
             for (var i = 0; i < storedPackages.Count; i++)
                 ContainerToAddTo.RemoveAtPosition(storedPackages[i].Key, storedPackages[i].Value);
         }
 
         public void SetAmountText() => amountText.text = amountSlider.value.ToString();
 
-        public void AddToPlayerInventory() 
+        public void AddToPlayerInventory()
         {
             ContainerToAddTo = PlayerInventory;
-        SetInventories();    
+            SetInventories();
         }
-        public void AddToPlayerEquipment() 
+        public void AddToPlayerEquipment()
         {
             ContainerToAddTo = PlayerEquipment;
-        SetInventories();    
+            SetInventories();
         }
-        public void AddToPlayerStash() 
+        public void AddToPlayerStash()
         {
             ContainerToAddTo = PlayerStash;
-        SetInventories();    
+            SetInventories();
         }
 
         public void SetItemToAmulets() => AddRemoveItem(Amulets);

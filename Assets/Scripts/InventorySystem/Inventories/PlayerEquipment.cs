@@ -11,20 +11,13 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         [SerializeField] public bool autoEquip = true;
 
-        protected override List<Vector2Int> CalculateRequiredPositions(Vector2Int position, Vector2Int dimension)
-        {
-            List<Vector2Int> requiredPositions = new();
+        protected override List<Vector2Int> CalculateRequiredPositions(Vector2Int position, Vector2Int dimension) => new() { position };
 
-            requiredPositions.Add(position);
-
-            return requiredPositions;
-        }
-
-        protected internal override List<Vector2Int> GetOverlappingPositionsAt(Vector2Int position, Vector2Int dimension)
+        public override List<Vector2Int> GetOtherItemsAt(Vector2Int position, Vector2Int dimension)
         {
             List<Vector2Int> otherPackagePositions = new();
 
-            foreach (var package in storedPackages)
+            foreach (var package in StoredPackages)
                 if (package.Key == position)
                     otherPackagePositions.Add(package.Key);
 
@@ -43,17 +36,13 @@ namespace ToolSmiths.InventorySystem.Inventories
             EquipmentType.Helm => new(7, 0),
             EquipmentType.Pants => new(8, 0),
             EquipmentType.Shoulders => new(9, 0),
-            EquipmentType.Ring => IsEmptyPosition(new(10, 0), new(1, 1)) ? new(10, 0) : (IsEmptyPosition(new(11, 0), new(1, 1)) ? new(11, 0) : new(10, 0)),
-            EquipmentType.Weapon_1H => IsEmptyPosition(new(12, 0), new(1, 1)) ? (new(12, 0)) : (IsEmptyPosition(new(13, 0), new(1, 1)) ? (new(13, 0)) : new(12, 0)),
+            EquipmentType.Ring => IsEmptyPosition(new(10, 0), new(1, 1), out _) ? new(10, 0) : (IsEmptyPosition(new(11, 0), new(1, 1), out _) ? new(11, 0) : new(10, 0)),
+            EquipmentType.Weapon_1H => IsEmptyPosition(new(12, 0), new(1, 1), out _) ? (new(12, 0)) : (IsEmptyPosition(new(13, 0), new(1, 1), out _) ? (new(13, 0)) : new(12, 0)),
             EquipmentType.Weapon_2H => new(12, 0),
             EquipmentType.Shield => new(13, 0),
             EquipmentType.Quiver => new(13, 0),
             EquipmentType.None => new(-1, -1),
             _ => new(-1, -1),
         };
-
-        protected internal override bool IsWithinDimensions(Vector2Int position) =>
-           -1 < position.x && position.x < Dimensions.x &&
-           -1 < position.y && position.y < Dimensions.y;
     }
 }

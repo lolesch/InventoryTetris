@@ -20,12 +20,12 @@ namespace ToolSmiths.InventorySystem.Inventories
             return requiredPositions;
         }
 
-        protected internal override List<Vector2Int> GetOverlappingPositionsAt(Vector2Int position, Vector2Int dimension)
+        public override List<Vector2Int> GetOtherItemsAt(Vector2Int position, Vector2Int dimension)
         {
             List<Vector2Int> otherPackagePositions = new();
             var requiredPositions = CalculateRequiredPositions(position, dimension);
 
-            foreach (var package in storedPackages)
+            foreach (var package in StoredPackages)
                 for (var x = package.Key.x; x < package.Key.x + package.Value.Item.Dimensions.x; x++)
                     for (var y = package.Key.y; y < package.Key.y + package.Value.Item.Dimensions.y; y++)
                         foreach (var requiredPosition in requiredPositions)
@@ -34,9 +34,5 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             return otherPackagePositions.Distinct().ToList();
         }
-
-        protected internal override bool IsWithinDimensions(Vector2Int position) =>
-           -1 < position.x && position.x < Dimensions.x &&
-           -1 < position.y && position.y < Dimensions.y;
     }
 }

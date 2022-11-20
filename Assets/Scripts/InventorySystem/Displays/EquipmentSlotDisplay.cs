@@ -31,7 +31,7 @@ namespace ToolSmiths.InventorySystem.Displays
             if (StaticDragDisplay.Instance.Package.Item is Equipment)
                 //if (allowedEquipmentTypes.Contains((StaticDragDisplay.Instance.Package.Item as Equipment).equipmentType))
                 if (IsAllowedEquipmentType((StaticDragDisplay.Instance.Package.Item as Equipment).equipmentType))
-                    if (Container.CanAddAtPosition(Position, StaticDragDisplay.Instance.Package.Item.Dimensions, out var otherItems))
+                    if (Container.CanAddAtPosition(Position, StaticDragDisplay.Instance.Package.Item.Dimensions, out _))
                     {
                         Package remaining;
 
@@ -106,13 +106,13 @@ namespace ToolSmiths.InventorySystem.Displays
         {
             base.UnequipItem();
 
-            var otherItems = Container.GetOverlappingPositionsAt(Position, new(1, 1));
+            var otherItems = Container.GetOtherItemsAt(Position, new(1, 1));
 
             if (otherItems.Count == 1)
             {
-                packageToMove = Container.storedPackages[otherItems[0]];
+                packageToMove = Container.StoredPackages[otherItems[0]];
 
-                Container.RemoveAtPosition(otherItems[0], packageToMove);
+                _ = Container.RemoveAtPosition(otherItems[0], packageToMove);
 
                 Package remaining;
 

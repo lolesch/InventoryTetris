@@ -57,7 +57,7 @@ namespace ToolSmiths.InventorySystem.Displays
 
             var equipmentPosition = InventoryProvider.Instance.PlayerEquipment.GetEquipmentTypePosition((package.Item as Equipment).equipmentType);
             //var currentEquipped = InventoryProvider.Instance.PlayerEquipment.GetStoredPackagesAtPosition(equipmentPosition, new(1, 1));
-            InventoryProvider.Instance.PlayerEquipment.storedPackages.TryGetValue(equipmentPosition, out var compareTo);
+            InventoryProvider.Instance.PlayerEquipment.StoredPackages.TryGetValue(equipmentPosition, out var compareTo);
 
             SetDisplay(package, compareTo);
 

@@ -725,11 +725,11 @@ MonoBehaviour:
   PlayerEquipment:
     autoEquip: 0
   <Debug>k__BackingField: 0
-  playerInventoryDisplay: {fileID: 1485550229}
+  PlayerInventoryDisplay: {fileID: 1485550229}
   playerInventorySize: {x: 10, y: 5}
-  playerStashDisplay: {fileID: 1370558871}
+  PlayerStashDisplay: {fileID: 1370558871}
   playerStashSize: {x: 10, y: 16}
-  playerEquipmentDisplay: {fileID: 998310528992184647}
+  PlayerEquipmentDisplay: {fileID: 998310528992184647}
   playerEquipmentSize: {x: 14, y: 1}
   Amulets:
   - {fileID: 11400000, guid: b19d9e41f7a59ae44946a83314ef6a55, type: 2}

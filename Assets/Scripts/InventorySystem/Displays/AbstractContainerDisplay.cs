@@ -19,7 +19,7 @@ namespace ToolSmiths.InventorySystem.Displays
 
             SetupSlotDisplays();
 
-            Refresh(Container?.storedPackages);
+            Refresh(Container?.StoredPackages);
         }
 
         protected abstract void SetupSlotDisplays();
@@ -44,7 +44,7 @@ namespace ToolSmiths.InventorySystem.Displays
             for (var x = 0; x < Container?.Dimensions.x; x++)
                 for (var y = 0; y < Container?.Dimensions.y; y++)
                 {
-                    storedPackages.TryGetValue(new(x, y), out var package);
+                    _ = storedPackages.TryGetValue(new(x, y), out var package);
 
                     containerSlotDisplays[current].RefreshSlotDisplay(package);
 
@@ -53,7 +53,7 @@ namespace ToolSmiths.InventorySystem.Displays
                     current++;
                 }
 
-            Icon.color = InventoryProvider.Instance.ContainerToAddTo == this.Container ?
+            Icon.color = InventoryProvider.Instance.ContainerToAddTo == Container ?
             new Color(1, .84f, 0, 1) :
             Color.white;
         }

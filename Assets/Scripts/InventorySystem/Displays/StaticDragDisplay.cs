@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using TeppichsTools.Creation;
 using TMPro;
 using ToolSmiths.InventorySystem.Data;
@@ -23,6 +25,8 @@ namespace ToolSmiths.InventorySystem.Displays
         public AbstractSlotDisplay Origin;
         public AbstractSlotDisplay Hovered;
 
+        public event Action<List<Vector2Int>> OnOverlapping;
+
         // might not need this after reworking the dropItem();
         public Package Package;
 
@@ -30,7 +34,7 @@ namespace ToolSmiths.InventorySystem.Displays
         {
             name = "StaticDragDisplay";
 
-            transform.root.TryGetComponent(out rootCanvas);
+            _ = transform.root.TryGetComponent(out rootCanvas);
 
             itemDisplay.gameObject.SetActive(false);
 
@@ -71,7 +75,7 @@ namespace ToolSmiths.InventorySystem.Displays
 
                 var positionToAdd = Hovered.Position - positionDiff;
 
-                var storedPositions = Hovered.Container.GetOverlappingPositionsAt(positionToAdd, Package.Item.Dimensions);
+                var storedPositions = Hovered.Container.GetOtherItemsAt(positionToAdd, Package.Item.Dimensions);
 
                 if (storedPositions.Count <= 0)
                 {
@@ -82,6 +86,10 @@ namespace ToolSmiths.InventorySystem.Displays
 
                 if (background)
                     background.color = (storedPositions.Count == 1) ? initialColor * Color.yellow : initialColor * Color.red;
+
+                //TODO: invoke an event each time the drag display is entering new overlapping positions
+                // each slotDisplay will listen to this event and color its background based on the overlapping result
+                OnOverlapping?.Invoke(storedPositions);
 
                 //var requiredPositions = Hovered.Container.CalculateRequiredPositions(positionToAdd, Package.Item.Dimensions);
                 //
@@ -141,7 +149,7 @@ namespace ToolSmiths.InventorySystem.Displays
                     slotPivot.x /= package.Item.Dimensions.x;
                     slotPivot.y /= package.Item.Dimensions.y;
 
-                    var storedPositions = Origin.Container.GetOverlappingPositionsAt(Origin.Position, new(1, 1));
+                    var storedPositions = Origin.Container.GetOtherItemsAt(Origin.Position, new(1, 1));
 
                     // TODO: CONTINUE HERE => handle storedPositions[0] == null
                     var positionDiff = 0 < storedPositions.Count ? Origin.Position - storedPositions[0] : Vector2Int.zero;

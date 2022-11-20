@@ -53,11 +53,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c317ac7461d60a84f978629d9713d0d6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  <Position>k__BackingField: {x: 0, y: 0}
   itemDisplay: {fileID: 8458286531088978991}
   icon: {fileID: 5968106837114084602}
   amount: {fileID: 6542709027021985681}
+  slotBackground: {fileID: 7395715520113642860}
   debugPosition: {fileID: 4296905458669515810}
-  Position: {x: 0, y: 0}
 --- !u!222 &930519027155081275
 CanvasRenderer:
   m_ObjectHideFlags: 0

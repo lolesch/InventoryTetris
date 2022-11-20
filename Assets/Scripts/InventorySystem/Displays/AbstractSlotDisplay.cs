@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using TMPro;
 using ToolSmiths.InventorySystem.Data;
@@ -22,6 +23,7 @@ namespace ToolSmiths.InventorySystem.Displays
         [SerializeField] protected internal RectTransform itemDisplay;
         [SerializeField] protected internal Image icon;
         [SerializeField] protected internal TextMeshProUGUI amount;
+        [SerializeField] protected internal Image slotBackground;
 
         [SerializeField] protected internal TextMeshProUGUI debugPosition;
 
@@ -33,6 +35,14 @@ namespace ToolSmiths.InventorySystem.Displays
         {
             if (debugPosition != null)
                 debugPosition.text = InventoryProvider.Instance.Debug ? Position.ToString() : "";
+
+            StaticDragDisplay.Instance.OnOverlapping -= SetBackgroundColor;
+            StaticDragDisplay.Instance.OnOverlapping += SetBackgroundColor;
+        }
+
+        void OnDisable()
+        {
+            StaticDragDisplay.Instance.OnOverlapping -= SetBackgroundColor;
         }
 
         public void SetupSlot(AbstractDimensionalContainer container, Vector2Int position)
@@ -84,8 +94,8 @@ namespace ToolSmiths.InventorySystem.Displays
             {
                 if (eventData.button == PointerEventData.InputButton.Right)
                 {
-                    var packagePosition = Container.GetOverlappingPositionsAt(Position, new(1, 1))[0];
-                    var item = Container.storedPackages[packagePosition].Item;
+                    var packagePosition = Container.GetOtherItemsAt(Position, new(1, 1))[0];
+                    var item = Container.StoredPackages[packagePosition].Item;
 
                     if (item is Consumable)
                         (item as Consumable).Consume();
@@ -103,11 +113,11 @@ namespace ToolSmiths.InventorySystem.Displays
 
                 void PickUpItem()
                 {
-                    var storedPositions = Container.GetOverlappingPositionsAt(Position, new(1, 1));
+                    var storedPositions = Container.GetOtherItemsAt(Position, new(1, 1));
 
                     if (storedPositions.Count == 1)
                     {
-                        packageToMove = Container.storedPackages[storedPositions[0]];
+                        packageToMove = Container.StoredPackages[storedPositions[0]];
 
                         Container.RemoveAtPosition(storedPositions[0], packageToMove);
 
@@ -123,9 +133,9 @@ namespace ToolSmiths.InventorySystem.Displays
         {
             hovering = true;
 
-            var itemToDisplay = Container.GetOverlappingPositionsAt(Position, new(1, 1));
+            var itemToDisplay = Container.GetOtherItemsAt(Position, new(1, 1));
             if (itemToDisplay.Count == 1)
-                if (Container.storedPackages.TryGetValue(itemToDisplay[0], out var hoveredIten))
+                if (Container.StoredPackages.TryGetValue(itemToDisplay[0], out var hoveredIten))
                     if (hoveredIten.Item != null && 0 < hoveredIten.Amount)
                         StartCoroutine(FadeIn(hoveredIten, itemToDisplay[0]));
 
@@ -163,5 +173,24 @@ namespace ToolSmiths.InventorySystem.Displays
 
         // TODO: see if we can extract base behavior in here
         public abstract void RefreshSlotDisplay(Package package);
+
+        public void SetBackgroundColor(List<Vector2Int> overlappingPositions)
+        {
+            if (slotBackground)
+            {
+                var alpha = slotBackground.color.a;
+
+                if (0 <= overlappingPositions.Count) // OR if not containing any item
+                    slotBackground.color = Color.white;
+                else
+                {
+                    foreach (var item in overlappingPositions)
+                        if (item == Position)
+                            slotBackground.color = (overlappingPositions.Count == 1) ? Color.yellow : Color.red;
+                }
+
+                slotBackground.color *= new Vector4(1, 1, 1, alpha);
+            }
+        }
     }
 }
