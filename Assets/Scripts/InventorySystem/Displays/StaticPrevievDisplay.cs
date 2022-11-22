@@ -55,9 +55,15 @@ namespace ToolSmiths.InventorySystem.Displays
                 return;
             }
 
-            var equipmentPosition = InventoryProvider.Instance.PlayerEquipment.GetEquipmentTypePosition((package.Item as Equipment).equipmentType);
-            //var currentEquipped = InventoryProvider.Instance.PlayerEquipment.GetStoredPackagesAtPosition(equipmentPosition, new(1, 1));
-            InventoryProvider.Instance.PlayerEquipment.StoredPackages.TryGetValue(equipmentPosition, out var compareTo);
+            var compareTo = new Package();
+
+            if (package.Item is Equipment)
+            {
+                var equipmentPosition = InventoryProvider.Instance.PlayerEquipment.GetEquipmentTypePosition((package.Item as Equipment).equipmentType);
+
+                //var currentEquipped = InventoryProvider.Instance.PlayerEquipment.GetStoredPackagesAtPosition(equipmentPosition, new(1, 1));
+                InventoryProvider.Instance.PlayerEquipment.StoredPackages.TryGetValue(equipmentPosition, out compareTo);
+            }
 
             SetDisplay(package, compareTo);
 
@@ -128,8 +134,6 @@ namespace ToolSmiths.InventorySystem.Displays
                             StatModifierType.PercentMult => $"{stats[i].Stat}\t{stats[i].Modifier.Value:#.###}% {Colored(increaseString, color)}",
                             _ => $"{stats[i].Stat}\t{stats[i].Modifier.Value}",
                         };
-
-
 
                         itemStat.gameObject.SetActive(true);
 
