@@ -5259,6 +5259,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1980660185}
   - component: {fileID: 1980660186}
+  - component: {fileID: 1980660187}
   m_Layer: 5
   m_Name: ScreenRotator
   m_TagString: Untagged
@@ -5303,6 +5304,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 89e606f9896f5bf4ea066f88add483c1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!222 &1980660187
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1980660184}
+  m_CullTransparentMesh: 1
 --- !u!1 &1985151295
 GameObject:
   m_ObjectHideFlags: 0
@@ -6284,18 +6293,6 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 731816623131027193, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
-      propertyPath: m_fontColor.b
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 731816623131027193, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
-      propertyPath: m_fontColor.g
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 731816623131027193, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
-      propertyPath: m_fontColor.r
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 731816623131027193, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
       propertyPath: m_fontColor32.rgba
       value: 4294967295
       objectReference: {fileID: 0}
@@ -6370,6 +6367,10 @@ PrefabInstance:
     - target: {fileID: 1787611738787772072, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1819821925508572199, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
+      propertyPath: m_Enabled
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2902535465197701590, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
       propertyPath: m_AnchorMax.y
@@ -6728,7 +6729,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1141628726790606186, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0
+      value: -0.000030517578
       objectReference: {fileID: 0}
     - target: {fileID: 1168866829102530351, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
       propertyPath: m_Pivot.x

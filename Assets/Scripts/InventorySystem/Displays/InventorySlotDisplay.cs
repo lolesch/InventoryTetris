@@ -21,7 +21,7 @@ namespace ToolSmiths.InventorySystem.Displays
             {
                 var positionOffset = StaticDragDisplay.Instance.Package.Item.Dimensions / 2;
                 var mousePositionOffset = (Vector2)(Input.mousePosition - transform.position) / transform.lossyScale; //transform.root.GetComponent<Canvas>().scaleFactor;
-                var relativeMouseOffset = (mousePositionOffset - ((transform as RectTransform).rect.size / 2)) / (transform as RectTransform).rect.size;
+                var relativeMouseOffset = (mousePositionOffset - (transform as RectTransform).rect.size / 2) / (transform as RectTransform).rect.size;
                 var mouseOffset = new Vector2Int(Mathf.CeilToInt(relativeMouseOffset.x), -Mathf.CeilToInt(relativeMouseOffset.y));
 
                 var positionToAdd = Position - positionOffset + mouseOffset;
@@ -53,48 +53,23 @@ namespace ToolSmiths.InventorySystem.Displays
             base.DropItem();
         }
 
-        public override void RefreshSlotDisplay(Package package)
+        protected override void SetDisplaySize(RectTransform display, Package package)
         {
-            if (itemDisplay)
+            base.SetDisplaySize(display, package);
+
+            if (!gridLayout)
+                gridLayout = GetComponentInParent<GridLayoutGroup>();
+            if (gridLayout)
             {
-                if (package.Amount <= 0)
-                {
-                    itemDisplay.gameObject.SetActive(false);
-                    return;
-                }
+                var additionalSpacing = gridLayout.spacing * new Vector2(package.Item.Dimensions.x - 1, package.Item.Dimensions.y - 1);
 
-                SetDisplay(package);
-
-                itemDisplay.gameObject.SetActive(true);
-
-                void SetDisplay(Package package) // move this into AbstractSlotDisplay?
-                {
-                    SetDisplaySize(itemDisplay, package);
-
-                    if (icon)
-                        icon.sprite = package.Item.Icon;
-
-                    if (amount)
-                        amount.text = 1 < package.Amount ? package.Amount.ToString() : string.Empty;
-
-                    void SetDisplaySize(RectTransform display, Package package)
-                    {
-                        if (!gridLayout)
-                            gridLayout = GetComponentInParent<GridLayoutGroup>();
-                        if (gridLayout)
-                        {
-                            var additionalSpacing = gridLayout.spacing * new Vector2(package.Item.Dimensions.x - 1, package.Item.Dimensions.y - 1);
-
-                            display.sizeDelta = (gridLayout.cellSize * package.Item.Dimensions) + additionalSpacing;
-                        }
-
-                        display.anchoredPosition = new Vector2(display.sizeDelta.x * .5f, display.sizeDelta.y * -.5f);
-                        display.pivot = new Vector2(.5f, .5f);
-                        display.anchorMin = new Vector2(0, 1);
-                        display.anchorMax = new Vector2(0, 1);
-                    }
-                }
+                display.sizeDelta = gridLayout.cellSize * package.Item.Dimensions + additionalSpacing;
             }
+
+            display.anchoredPosition = new Vector2(display.sizeDelta.x * .5f, display.sizeDelta.y * -.5f);
+            display.pivot = new Vector2(.5f, .5f);
+            display.anchorMin = new Vector2(0, 1);
+            display.anchorMax = new Vector2(0, 1);
         }
 
         protected override void EquipItem()

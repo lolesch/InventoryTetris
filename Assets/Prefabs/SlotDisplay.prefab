@@ -56,6 +56,8 @@ MonoBehaviour:
   <Position>k__BackingField: {x: 0, y: 0}
   itemDisplay: {fileID: 8458286531088978991}
   icon: {fileID: 5968106837114084602}
+  frame: {fileID: 1310718993614611789}
+  background: {fileID: 6389210322047762246}
   amount: {fileID: 6542709027021985681}
   slotBackground: {fileID: 7395715520113642860}
   debugPosition: {fileID: 4296905458669515810}
@@ -337,9 +339,31 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
+--- !u!114 &1310718993614611789 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 745403343036375855, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
+  m_PrefabInstance: {fileID: 1758848751030748770}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &5968106837114084602 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 5384710942150892184, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
+  m_PrefabInstance: {fileID: 1758848751030748770}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &6389210322047762246 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4666757744575494436, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
   m_PrefabInstance: {fileID: 1758848751030748770}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}

@@ -77,16 +77,21 @@ namespace ToolSmiths.InventorySystem.Displays
 
             void SetDisplay(Package package, Package compareTo)
             {
+                var rarityColor = AbstractItemObject.GetRarityColor(package.Item);
+
                 if (compareTo.Item != null && 0 < compareTo.Amount)
-                { } // => SetCompareDisplay(compareTo, package)
+                { } // TODO => SetCompareDisplay(compareTo, package)
 
                 if (itemName)
+                {
                     itemName.text = package.Item.name;
+                    itemName.color = rarityColor;
+                }
 
                 if (itemType)
                 {
                     itemType.text = package.Item is Equipment ? (package.Item as Equipment).equipmentType.ToString() : string.Empty;
-                    //itemType.color = rarityTypeColor;
+                    itemType.color = rarityColor;
                 }
 
                 if (icon)
@@ -95,13 +100,12 @@ namespace ToolSmiths.InventorySystem.Displays
                 if (amount)
                     amount.text = 1 < package.Amount && package.Item is Consumable ? $"{package.Amount}/{(int)(package.Item as Consumable).StackLimit}" : string.Empty;
 
-                // TODO: how to derive rarity
-                //if (frameAndHorizontalLines != null && 0 < frameAndHorizontalLines.Count)
-                //    for (var i = 0; i < frameAndHorizontalLines.Count; i++)
-                //        frameAndHorizontalLines[i].color = rarityFrameColor;
-                //
-                //if (background)
-                //    background.color = rarityBackgroudColor;
+                if (frameAndHorizontalLines != null && 0 < frameAndHorizontalLines.Count)
+                    for (var i = 0; i < frameAndHorizontalLines.Count; i++)
+                        frameAndHorizontalLines[i].color = rarityColor;
+
+                if (background)
+                    background.color = rarityColor * Color.gray * Color.gray;
 
                 // TODO: make this poolable
                 if (itemStatPrefab)

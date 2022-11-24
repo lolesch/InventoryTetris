@@ -22,6 +22,8 @@ namespace ToolSmiths.InventorySystem.Displays
         [Space]
         [SerializeField] protected internal RectTransform itemDisplay;
         [SerializeField] protected internal Image icon;
+        [SerializeField] private Image frame;
+        [SerializeField] private Image background;
         [SerializeField] protected internal TextMeshProUGUI amount;
         [SerializeField] protected internal Image slotBackground;
 
@@ -171,8 +173,42 @@ namespace ToolSmiths.InventorySystem.Displays
 
         protected virtual void EquipItem() => FadeOutPreview();
 
-        // TODO: see if we can extract base behavior in here
-        public abstract void RefreshSlotDisplay(Package package);
+        protected virtual void SetDisplaySize(RectTransform display, Package package) { }
+
+        public void RefreshSlotDisplay(Package package)
+        {
+            if (itemDisplay)
+            {
+                if (package.Amount < 1)
+                {
+                    itemDisplay.gameObject.SetActive(false);
+                    return;
+                }
+
+                SetDisplay(package);
+
+                itemDisplay.gameObject.SetActive(true);
+
+                void SetDisplay(Package package)
+                {
+                    SetDisplaySize(itemDisplay, package);
+
+                    if (icon)
+                        icon.sprite = package.Item.Icon;
+
+                    if (amount)
+                        amount.text = 1 < package.Amount ? package.Amount.ToString() : string.Empty;
+
+                    var rarityColor = AbstractItemObject.GetRarityColor(package.Item);
+
+                    if (frame)
+                        frame.color = rarityColor;
+
+                    if (background)
+                        background.color = rarityColor * Color.gray * Color.gray;
+                }
+            }
+        }
 
         public void SetBackgroundColor(List<Vector2Int> overlappingPositions)
         {
