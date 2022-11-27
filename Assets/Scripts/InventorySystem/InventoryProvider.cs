@@ -3,6 +3,7 @@ using System.Linq;
 using TeppichsTools.Creation;
 using TMPro;
 using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Displays;
 using ToolSmiths.InventorySystem.Items;
 using UnityEngine;
@@ -150,8 +151,6 @@ namespace ToolSmiths.InventorySystem.Inventories
         public void SetItemToWeapon1H() => AddRemoveItem(Weapon1H);
         public void SetItemToWeapon2H() => AddRemoveItem(Weapon2H);
 
-        //public void SetToAddItems() => add = true;
-        //public void SetToRemoveItems() => add = false;
         public void SetAddRemove() => add = !add;
 
         public void SetAutoEquip() => PlayerEquipment.autoEquip = !PlayerEquipment.autoEquip;
@@ -159,5 +158,150 @@ namespace ToolSmiths.InventorySystem.Inventories
         public void SortInventory() => ContainerToAddTo.SortByItemDimension();
 
         public Package EquipItem(Package package) => PlayerEquipment.AddToContainer(package);
+
+        #region LOOT GENERATION
+
+
+        // when there is a loot drop event (enemy died, destructable destroyed, chest opened, etc)
+        // calculate an amount of loot to drop
+        // this could be based on character level, enemy level, area level...
+        // ...
+        // => adjust amount of drops by magic find?
+        // => defines weighted rarity => chests more likely to drop rare/legendary...
+        // weighted LOOT TYPE
+        // => consumables, equipment, crafting materials, skill, gold...
+
+        [SerializeField] private int dropChanceConsumable;
+        [SerializeField] private int dropChanceEquipment;
+        private int Sum => dropChanceConsumable + dropChanceEquipment;
+
+        public List<AbstractItemObject> GenerateRandomLoot(int amount = 1)
+        {
+            #region GENERAL
+            // => get the list of all attributes in the game
+            var allAttributes = new List<AbstractItemObject>();
+            // => exclude non valid attributes down the loot creation
+            #endregion
+
+            #region LOOT LEVEL
+            // => character level sensitive
+            // => define min/max range
+            var lootLevel = Character.Instance.CharacterLevel;
+            #endregion
+
+            #region LOOT TYPE
+            var randomLootType = Random.Range(0, Sum);
+            // => exclusion of non relevant attributes
+            #endregion
+
+            #region weighted RARITY / QUALITY
+            // => adjust rarity selection by magic find ?
+            var randomRarity = GetRandomRarity(0);
+            // => rarity defines the amount of attributes on an item
+            var attributeAmount = randomRarity switch
+            {
+                ItemRarity.NONE => 0,
+                ItemRarity.Crafted => 0,
+                ItemRarity.Common => 1,
+                ItemRarity.Uncommon => 1,
+                ItemRarity.Magic => 2,
+                ItemRarity.Rare => 3,
+                ItemRarity.Set => 2,    // plus set attributes
+                ItemRarity.Unique => 3, // plus unique stats
+                _ => 0,
+            };
+            // => exclusion of non relevant attributes ???
+            var rarityAllowedAttributes = new List<AbstractItemObject>();
+
+            foreach (var item in allAttributes)
+                if (!rarityAllowedAttributes.Contains(item))
+                    allAttributes.Remove(item);
+
+            // allAttributes.RemoveAt(0);
+            // => modifies the min/max range of attributes
+            var rangeModifier = randomRarity switch
+            {
+                ItemRarity.NONE => 0f,
+                ItemRarity.Crafted => 1f,
+                ItemRarity.Common => 1f,
+                ItemRarity.Uncommon => 1f,
+                ItemRarity.Magic => .9f,
+                ItemRarity.Rare => .8f,
+                ItemRarity.Set => .8f,
+                ItemRarity.Unique => .7f,
+                _ => 0f,
+            };
+            #endregion
+
+            #region weighted EQUIPMENT TYPE
+            // => further exclusion of non relevant attributes
+            // => character class sensitive
+            #endregion
+
+            #region weighted LEGENDARIES
+            // => weighted lookup table for each item type
+            // => apply/add predefined attributes
+            // => player level sensitive ?
+            #endregion
+
+            #region
+            // => add item type predefined attributes
+            // => weighting of remaining possible attributes
+            #endregion
+
+            #region
+            // get a random number between 0 and the sum of all rarity chances
+            // return the highest rarity thats chance <= to the random roll
+            #endregion
+
+            #region weighted ATTRIBUTES
+            // break things down to keep modifiers impactfull -> noone needs +1% block chance...
+            // => double-rolled attributes?
+            // -> requires further design
+            // => primary/secondary attributes
+            // -> requires further design
+            #endregion
+
+            #region weighted RANDOM ROLL
+            // => more likey to randomly roll a lower range value within min and max
+            // => modified by rarity
+            // => modified by character level?
+            #endregion
+
+            #region REQUIREMENTS / ITEM VALUE
+            // => these are derived values from the random modifiers
+            #endregion
+
+            return new List<AbstractItemObject> { };
+
+            static ItemRarity GetRandomRarity(int magicFind = 0)
+            {
+                var randomRoll = Random.Range(0, (int)ItemRarity.Unique); // get rarity dispribution
+                randomRoll += magicFind;
+
+                var rarity = ItemRarity.NONE;
+
+                if (randomRoll <= (int)ItemRarity.Common)
+                    rarity = ItemRarity.Common;
+                else
+                if (randomRoll <= (int)ItemRarity.Uncommon)
+                    rarity = ItemRarity.Uncommon;
+                else
+                if (randomRoll <= (int)ItemRarity.Magic)
+                    rarity = ItemRarity.Magic;
+                else
+                if (randomRoll <= (int)ItemRarity.Rare)
+                    rarity = ItemRarity.Rare;
+                else
+                if (randomRoll <= (int)ItemRarity.Set)
+                    rarity = ItemRarity.Set;
+                else
+                if (randomRoll <= (int)ItemRarity.Unique)
+                    rarity = ItemRarity.Unique;
+
+                return rarity;
+            }
+        }
+        #endregion
     }
 }

@@ -8,6 +8,9 @@ namespace ToolSmiths.InventorySystem.Data
 {
     public class Character : MonoSingleton<Character>
     {
+        [SerializeField] private int characterLevel = 0;
+        public int CharacterLevel => characterLevel;
+
         [SerializeField] private PlayerStat[] mainStats = new PlayerStat[(System.Enum.GetValues(typeof(StatName)) as StatName[]).Length];
         public PlayerStat[] MainStats => mainStats;
 
