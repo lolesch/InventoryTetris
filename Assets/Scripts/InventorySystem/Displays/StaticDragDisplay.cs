@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using TeppichsTools.Creation;
 using TMPro;
 using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Items;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -68,16 +69,16 @@ namespace ToolSmiths.InventorySystem.Displays
                 ///NOTE: the display has the Package.Item's dimensions and the pivot is the mouse position within these dimensions
                 /// get the displays pivot
                 var positionPivot = itemDisplay.pivot;
-                positionPivot.x *= Package.Item.Dimensions.x;
-                positionPivot.y *= Package.Item.Dimensions.y;
+                positionPivot.x *= AbstractItem.GetDimensions(Package.Item.Dimensions).x;
+                positionPivot.y *= AbstractItem.GetDimensions(Package.Item.Dimensions).y;
 
                 var positionDiff = new Vector2Int(Mathf.FloorToInt(positionPivot.x), Mathf.FloorToInt(positionPivot.y));
-                positionDiff -= new Vector2Int(0, Package.Item.Dimensions.y - 1);
+                positionDiff -= new Vector2Int(0, AbstractItem.GetDimensions(Package.Item.Dimensions).y - 1);
                 positionDiff.y *= -1;
 
                 var positionToAdd = Hovered.Position - positionDiff;
 
-                var storedPositions = Hovered.Container.GetOtherItemsAt(positionToAdd, Package.Item.Dimensions);
+                var storedPositions = Hovered.Container.GetOtherItemsAt(positionToAdd, AbstractItem.GetDimensions(Package.Item.Dimensions));
 
                 if (storedPositions.Count <= 0)
                 {
@@ -136,7 +137,7 @@ namespace ToolSmiths.InventorySystem.Displays
 
                 void SetPosition(Package package)
                 {
-                    itemDisplay.sizeDelta = package.Item.Dimensions * 60; // * slotSize
+                    itemDisplay.sizeDelta = AbstractItem.GetDimensions(package.Item.Dimensions) * 60; // * slotSize
 
                     /// anchor to BottomLeft to match screen/mouse coordinates
                     itemDisplay.anchorMin = new Vector2(0, 0);
@@ -148,18 +149,18 @@ namespace ToolSmiths.InventorySystem.Displays
                     slotPosition -= (Origin.transform as RectTransform).pivot * 60;
 
                     var slotPivot = (mousePosition - slotPosition) / 60;
-                    slotPivot.x /= package.Item.Dimensions.x;
-                    slotPivot.y /= package.Item.Dimensions.y;
+                    slotPivot.x /= AbstractItem.GetDimensions(package.Item.Dimensions).x;
+                    slotPivot.y /= AbstractItem.GetDimensions(package.Item.Dimensions).y;
 
                     // NOTE: this is derived from the GridLayoutComponent => get GridLayoutGroup.Corner to implement for all possible cases
                     /// THe positionOffset was calculated in InventorySpace (anchored TopLeft) so we subtract the DimensionHeight-1 to get to the BottomLeft position
-                    positionOffset -= new Vector2Int(0, package.Item.Dimensions.y - 1);
+                    positionOffset -= new Vector2Int(0, AbstractItem.GetDimensions(package.Item.Dimensions).y - 1);
                     /// and convert it to screenCoordinates
                     positionOffset.y *= -1;
 
                     var positionPivot = (Vector2)positionOffset;
-                    positionPivot.x /= package.Item.Dimensions.x;
-                    positionPivot.y /= package.Item.Dimensions.y;
+                    positionPivot.x /= AbstractItem.GetDimensions(package.Item.Dimensions).x;
+                    positionPivot.y /= AbstractItem.GetDimensions(package.Item.Dimensions).y;
 
                     // TODO: slightly offset this to simulate pickup OR do this by color change
                     itemDisplay.pivot = slotPivot + positionPivot;

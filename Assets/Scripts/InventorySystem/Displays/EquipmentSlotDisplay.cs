@@ -28,10 +28,10 @@ namespace ToolSmiths.InventorySystem.Displays
 
         protected override void DropItem()
         {
-            if (StaticDragDisplay.Instance.Package.Item is Equipment)
+            if (StaticDragDisplay.Instance.Package.Item is EquipmentItem)
                 //if (allowedEquipmentTypes.Contains((StaticDragDisplay.Instance.Package.Item as Equipment).equipmentType))
-                if (IsAllowedEquipmentType((StaticDragDisplay.Instance.Package.Item as Equipment).equipmentType))
-                    if (Container.CanAddAtPosition(Position, StaticDragDisplay.Instance.Package.Item.Dimensions, out _))
+                if (IsAllowedEquipmentType((StaticDragDisplay.Instance.Package.Item as EquipmentItem).EquipmentType))
+                    if (Container.CanAddAtPosition(Position, AbstractItem.GetDimensions(StaticDragDisplay.Instance.Package.Item.Dimensions), out _))
                     {
                         Package remaining;
 

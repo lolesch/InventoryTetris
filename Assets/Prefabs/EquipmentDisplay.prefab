@@ -465,7 +465,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.000030517578}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: -20, y: -10.000002}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &4745071996144970725
@@ -657,37 +657,228 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8647e8ca895ed14596f672120bb86da, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mainStats:
+  characterLevel: 0
+  stats:
   - name: Health
     <Stat>k__BackingField: 0
-    <BaseValue>k__BackingField: 100
+    <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 100
+    <ModifiedValue>k__BackingField: 0
   - name: HealthRegen
     <Stat>k__BackingField: 1
-    <BaseValue>k__BackingField: 5
+    <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 5
+    <ModifiedValue>k__BackingField: 0
   - name: MoveSpeed
     <Stat>k__BackingField: 2
-    <BaseValue>k__BackingField: 6
+    <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 6
+    <ModifiedValue>k__BackingField: 0
   - name: Damage
     <Stat>k__BackingField: 3
-    <BaseValue>k__BackingField: 1
+    <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 1
+    <ModifiedValue>k__BackingField: 0
   - name: CurrentHealth
     <Stat>k__BackingField: 4
-    <BaseValue>k__BackingField: 100
+    <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 100
+    <ModifiedValue>k__BackingField: 0
   - name: AttackSpeed
     <Stat>k__BackingField: 5
-    <BaseValue>k__BackingField: 1
+    <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 1
+    <ModifiedValue>k__BackingField: 0
+  - name: MagicFind
+    <Stat>k__BackingField: 100
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
+  - name: AreaDamagePercent
+    <Stat>k__BackingField: 101
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
+  - name: AttackSpeedPercent
+    <Stat>k__BackingField: 102
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
+  - name: CritChancePercent
+    <Stat>k__BackingField: 103
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
+  - name: CritDamagePercent
+    <Stat>k__BackingField: 104
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
+  - name: DamagePercent
+    <Stat>k__BackingField: 105
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
+  - name: DamageTypePercent
+    <Stat>k__BackingField: 106
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
+  - name: MinElementalDamage
+    <Stat>k__BackingField: 107
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
+  - name: MaxElementalDamage
+    <Stat>k__BackingField: 108
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
+  - name: MinDamage
+    <Stat>k__BackingField: 109
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
+  - name: MaxDamage
+    <Stat>k__BackingField: 110
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
+  - name: DamageAgainstElitesPercent
+    <Stat>k__BackingField: 111
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
+  - name: ReducedResourceCostPercent
+    <Stat>k__BackingField: 112
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
+  - name: ReducedCooldownPercent
+    <Stat>k__BackingField: 113
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
+  - name: BlockChancePercent
+    <Stat>k__BackingField: 114
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
+  - name: BonusArmor
+    <Stat>k__BackingField: 115
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
+  - name: ReducedDamageFromElites
+    <Stat>k__BackingField: 116
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
+  - name: ReducedDamageFromRanged
+    <Stat>k__BackingField: 117
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
+  - name: ReducedDamageFromMelee
+    <Stat>k__BackingField: 118
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
+  - name: ReducedLossOfControll
+    <Stat>k__BackingField: 119
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
+  - name: Thorns
+    <Stat>k__BackingField: 120
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
+  - name: ResistanceToAll
+    <Stat>k__BackingField: 121
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
+  - name: DamageTypeResistance
+    <Stat>k__BackingField: 122
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
+  - name: LifePercent
+    <Stat>k__BackingField: 123
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
+  - name: LifePerHit
+    <Stat>k__BackingField: 124
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
+  - name: LifePerSecond
+    <Stat>k__BackingField: 125
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
+  - name: LifePerKill
+    <Stat>k__BackingField: 126
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
+  - name: ExtraLifeFromHealing
+    <Stat>k__BackingField: 127
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
+  - name: MovementSpeedPercent
+    <Stat>k__BackingField: 128
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
+  - name: Sockets
+    <Stat>k__BackingField: 129
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
+  - name: BonusExperiencePercent
+    <Stat>k__BackingField: 130
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
+  - name: BonusExperience
+    <Stat>k__BackingField: 131
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
+  - name: GoldFindPercent
+    <Stat>k__BackingField: 132
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
+  - name: IncreasedItemRarityPercent
+    <Stat>k__BackingField: 133
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
+  - name: IncreasedItemQuantityPercent
+    <Stat>k__BackingField: 134
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
+  - name: PickupRadius
+    <Stat>k__BackingField: 135
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
+  - name: ReducedLevelRequirements
+    <Stat>k__BackingField: 136
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
+  - name: ChanceToBlindPercent
+    <Stat>k__BackingField: 137
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <ModifiedValue>k__BackingField: 0
   statPrefab: {fileID: 3966431505955093578}
 --- !u!1 &6710603046912445379
 GameObject:
@@ -953,7 +1144,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 8183235012115119045}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.98913044
+  m_Size: 0.9891305
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -1146,7 +1337,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4948396725324134363, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
       propertyPath: allowedEquipmentTypes.Array.data[0]
-      value: 14
+      value: 6
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
@@ -1275,7 +1466,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4948396725324134363, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
       propertyPath: allowedEquipmentTypes.Array.data[0]
-      value: 7
+      value: 4
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
@@ -1404,7 +1595,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4948396725324134363, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
       propertyPath: allowedEquipmentTypes.Array.data[0]
-      value: 9
+      value: 402
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
@@ -1529,15 +1720,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4948396725324134363, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
       propertyPath: allowedEquipmentTypes.Array.size
-      value: 2
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4948396725324134363, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
       propertyPath: allowedEquipmentTypes.Array.data[0]
-      value: 11
+      value: 101
       objectReference: {fileID: 0}
     - target: {fileID: 4948396725324134363, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
       propertyPath: allowedEquipmentTypes.Array.data[1]
-      value: 13
+      value: 202
+      objectReference: {fileID: 0}
+    - target: {fileID: 4948396725324134363, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
+      propertyPath: allowedEquipmentTypes.Array.data[2]
+      value: 201
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
@@ -1662,7 +1857,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4948396725324134363, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
       propertyPath: allowedEquipmentTypes.Array.data[0]
-      value: 1
+      value: 3
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
@@ -1791,7 +1986,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4948396725324134363, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
       propertyPath: allowedEquipmentTypes.Array.data[0]
-      value: 8
+      value: 10
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
@@ -1920,7 +2115,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4948396725324134363, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
       propertyPath: allowedEquipmentTypes.Array.data[0]
-      value: 2
+      value: 9
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
@@ -2049,7 +2244,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4948396725324134363, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
       propertyPath: allowedEquipmentTypes.Array.data[0]
-      value: 3
+      value: 2
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
@@ -2178,7 +2373,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4948396725324134363, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
       propertyPath: allowedEquipmentTypes.Array.data[0]
-      value: 4
+      value: 5
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
@@ -2307,7 +2502,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4948396725324134363, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
       propertyPath: allowedEquipmentTypes.Array.data[0]
-      value: 6
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
@@ -2431,12 +2626,8 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4948396725324134363, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
-      propertyPath: allowedEquipmentTypes.Array.size
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4948396725324134363, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
       propertyPath: allowedEquipmentTypes.Array.data[0]
-      value: 10
+      value: 401
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
@@ -2565,15 +2756,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4948396725324134363, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
       propertyPath: allowedEquipmentTypes.Array.data[0]
-      value: 12
+      value: 101
       objectReference: {fileID: 0}
     - target: {fileID: 4948396725324134363, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
       propertyPath: allowedEquipmentTypes.Array.data[1]
-      value: 11
+      value: 301
       objectReference: {fileID: 0}
     - target: {fileID: 4948396725324134363, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
       propertyPath: allowedEquipmentTypes.Array.data[2]
-      value: 15
+      value: 302
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
@@ -2702,7 +2893,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4948396725324134363, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
       propertyPath: allowedEquipmentTypes.Array.data[0]
-      value: 9
+      value: 402
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
@@ -2831,7 +3022,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4948396725324134363, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
       propertyPath: allowedEquipmentTypes.Array.data[0]
-      value: 5
+      value: 8
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}

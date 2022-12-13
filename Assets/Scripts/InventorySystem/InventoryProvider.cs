@@ -15,7 +15,7 @@ namespace ToolSmiths.InventorySystem.Inventories
     {
         public PlayerInventory PlayerInventory;
         public PlayerInventory PlayerStash;
-        public PlayerEquipment PlayerEquipment;
+        public CharacterEquipment PlayerEquipment;
         public AbstractDimensionalContainer ContainerToAddTo { get; private set; }
 
         [field: SerializeField] public bool ShowDebugPositions { get; private set; }
@@ -34,9 +34,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         [Header("Items")]
         [SerializeField] private List<AbstractItemObject> Amulets;
-        [SerializeField] private List<AbstractItemObject> Arrows;
         [SerializeField] private List<AbstractItemObject> Belts;
-        [SerializeField] private List<AbstractItemObject> Books;
         [SerializeField] private List<AbstractItemObject> Boots;
         [SerializeField] private List<AbstractItemObject> Bracers;
         [SerializeField] private List<AbstractItemObject> Chests;
@@ -48,9 +46,32 @@ namespace ToolSmiths.InventorySystem.Inventories
         [SerializeField] private List<AbstractItemObject> Rings;
         [SerializeField] private List<AbstractItemObject> Shields;
         [SerializeField] private List<AbstractItemObject> Shoulder;
-        [SerializeField] private List<AbstractItemObject> Potions;
         [SerializeField] private List<AbstractItemObject> Weapon1H;
         [SerializeField] private List<AbstractItemObject> Weapon2H;
+        [Space]
+        [SerializeField] private List<AbstractItemObject> Arrows;
+        [SerializeField] private List<AbstractItemObject> Books;
+        [SerializeField] private List<AbstractItemObject> Potions;
+
+        private static List<AbstractItemObject> _Amulets;
+        private static List<AbstractItemObject> _Belts;
+        private static List<AbstractItemObject> _Boots;
+        private static List<AbstractItemObject> _Bracers;
+        private static List<AbstractItemObject> _Chests;
+        private static List<AbstractItemObject> _Cloaks;
+        private static List<AbstractItemObject> _Gloves;
+        private static List<AbstractItemObject> _Helmets;
+        private static List<AbstractItemObject> _Pants;
+        private static List<AbstractItemObject> _Quiver;
+        private static List<AbstractItemObject> _Rings;
+        private static List<AbstractItemObject> _Shields;
+        private static List<AbstractItemObject> _Shoulder;
+        private static List<AbstractItemObject> _Weapon1H;
+        private static List<AbstractItemObject> _Weapon2H;
+
+        private static List<AbstractItemObject> _Arrows;
+        private static List<AbstractItemObject> _Books;
+        private static List<AbstractItemObject> _Potions;
 
         [SerializeField] private bool add = true;
 
@@ -82,22 +103,41 @@ namespace ToolSmiths.InventorySystem.Inventories
             add = true;
 
             SetInventories();
+
+            _Amulets = Amulets;
+            _Arrows = Arrows;
+            _Belts = Belts;
+            _Books = Books;
+            _Boots = Boots;
+            _Bracers = Bracers;
+            _Chests = Chests;
+            _Cloaks = Cloaks;
+            _Gloves = Gloves;
+            _Helmets = Helmets;
+            _Pants = Pants;
+            _Quiver = Quiver;
+            _Rings = Rings;
+            _Shields = Shields;
+            _Shoulder = Shoulder;
+            _Potions = Potions;
+            _Weapon1H = Weapon1H;
+            _Weapon2H = Weapon2H;
         }
 
-        private void AddRemoveItem(List<AbstractItemObject> items)
+        private void AddRemoveItem(List<AbstractItemObject> objects)
         {
             for (var i = 0; i < Amount; i++)
             {
                 if (add)
                 {
-                    random = Random.Range(0, items.Count);
-                    _ = ContainerToAddTo?.AddToContainer(new Package(items[random], 1));
+                    random = Random.Range(0, objects.Count);
+                    _ = ContainerToAddTo?.AddToContainer(new Package(objects[random].GetItem(), 1));
                 }
                 else
                 {
-                    for (var x = items.Count; x-- > 0;)
+                    for (var x = objects.Count; x-- > 0;)
                     {
-                        var removedPackage = ContainerToAddTo.RemoveFromContainer(new Package(items[x], 1));
+                        var removedPackage = ContainerToAddTo.RemoveFromContainer(new Package(objects[x].GetItem(), 1));
 
                         if (removedPackage.Amount == 0)
                             break;
@@ -105,6 +145,16 @@ namespace ToolSmiths.InventorySystem.Inventories
                 }
             }
         }
+
+        public void AddRandomLoot()
+        {
+            var items = GenerateLoot(Amount);
+
+            for (var i = 0; i < items.Count; i++)
+                if (add)
+                    _ = ContainerToAddTo?.AddToContainer(new Package(items[i], 1));
+        }
+
 
         [ContextMenu("RemoveAllItems")]
         public void RemoveAllItems()
@@ -160,148 +210,149 @@ namespace ToolSmiths.InventorySystem.Inventories
         public Package EquipItem(Package package) => PlayerEquipment.AddToContainer(package);
 
         #region LOOT GENERATION
-
-
-        // when there is a loot drop event (enemy died, destructable destroyed, chest opened, etc)
-        // calculate an amount of loot to drop
-        // this could be based on character level, enemy level, area level...
-        // ...
-        // => adjust amount of drops by magic find?
-        // => defines weighted rarity => chests more likely to drop rare/legendary...
-        // weighted LOOT TYPE
-        // => consumables, equipment, crafting materials, skill, gold...
-
-        [SerializeField] private int dropChanceConsumable;
-        [SerializeField] private int dropChanceEquipment;
-        private int Sum => dropChanceConsumable + dropChanceEquipment;
-
-        public List<AbstractItemObject> GenerateRandomLoot(int amount = 1)
+        public List<AbstractItem> GenerateLoot(uint amount = 1)
         {
-            #region GENERAL
-            // => get the list of all attributes in the game
-            var allAttributes = new List<AbstractItemObject>();
-            // => exclude non valid attributes down the loot creation
-            #endregion
+            var generatedLoot = new List<AbstractItem>();
+            /// calculates the number of items to drop
+            CalculateBonusDrops(ref amount);
 
-            #region LOOT LEVEL
-            // => character level sensitive
-            // => define min/max range
-            var lootLevel = Character.Instance.CharacterLevel;
-            #endregion
+            for (var i = 0; i < amount; i++)
+                generatedLoot.Add(GenerateItem());
 
-            #region LOOT TYPE
-            var randomLootType = Random.Range(0, Sum);
-            // => exclusion of non relevant attributes
-            #endregion
+            return generatedLoot;
 
-            #region weighted RARITY / QUALITY
-            // => adjust rarity selection by magic find ?
-            var randomRarity = GetRandomRarity(0);
-            // => rarity defines the amount of attributes on an item
-            var attributeAmount = randomRarity switch
+            static void CalculateBonusDrops(ref uint amount)
             {
-                ItemRarity.NONE => 0,
-                ItemRarity.Crafted => 0,
-                ItemRarity.Common => 1,
-                ItemRarity.Uncommon => 1,
-                ItemRarity.Magic => 2,
-                ItemRarity.Rare => 3,
-                ItemRarity.Set => 2,    // plus set attributes
-                ItemRarity.Unique => 3, // plus unique stats
-                _ => 0,
-            };
-            // => exclusion of non relevant attributes ???
-            var rarityAllowedAttributes = new List<AbstractItemObject>();
-
-            foreach (var item in allAttributes)
-                if (!rarityAllowedAttributes.Contains(item))
-                    allAttributes.Remove(item);
-
-            // allAttributes.RemoveAt(0);
-            // => modifies the min/max range of attributes
-            var rangeModifier = randomRarity switch
-            {
-                ItemRarity.NONE => 0f,
-                ItemRarity.Crafted => 1f,
-                ItemRarity.Common => 1f,
-                ItemRarity.Uncommon => 1f,
-                ItemRarity.Magic => .9f,
-                ItemRarity.Rare => .8f,
-                ItemRarity.Set => .8f,
-                ItemRarity.Unique => .7f,
-                _ => 0f,
-            };
-            #endregion
-
-            #region weighted EQUIPMENT TYPE
-            // => further exclusion of non relevant attributes
-            // => character class sensitive
-            #endregion
-
-            #region weighted LEGENDARIES
-            // => weighted lookup table for each item type
-            // => apply/add predefined attributes
-            // => player level sensitive ?
-            #endregion
-
-            #region
-            // => add item type predefined attributes
-            // => weighting of remaining possible attributes
-            #endregion
-
-            #region
-            // get a random number between 0 and the sum of all rarity chances
-            // return the highest rarity thats chance <= to the random roll
-            #endregion
-
-            #region weighted ATTRIBUTES
-            // break things down to keep modifiers impactfull -> noone needs +1% block chance...
-            // => double-rolled attributes?
-            // -> requires further design
-            // => primary/secondary attributes
-            // -> requires further design
-            #endregion
-
-            #region weighted RANDOM ROLL
-            // => more likey to randomly roll a lower range value within min and max
-            // => modified by rarity
-            // => modified by character level?
-            #endregion
-
-            #region REQUIREMENTS / ITEM VALUE
-            // => these are derived values from the random modifiers
-            #endregion
-
-            return new List<AbstractItemObject> { };
-
-            static ItemRarity GetRandomRarity(int magicFind = 0)
-            {
-                var randomRoll = Random.Range(0, (int)ItemRarity.Unique); // get rarity dispribution
-                randomRoll += magicFind;
-
-                var rarity = ItemRarity.NONE;
-
-                if (randomRoll <= (int)ItemRarity.Common)
-                    rarity = ItemRarity.Common;
-                else
-                if (randomRoll <= (int)ItemRarity.Uncommon)
-                    rarity = ItemRarity.Uncommon;
-                else
-                if (randomRoll <= (int)ItemRarity.Magic)
-                    rarity = ItemRarity.Magic;
-                else
-                if (randomRoll <= (int)ItemRarity.Rare)
-                    rarity = ItemRarity.Rare;
-                else
-                if (randomRoll <= (int)ItemRarity.Set)
-                    rarity = ItemRarity.Set;
-                else
-                if (randomRoll <= (int)ItemRarity.Unique)
-                    rarity = ItemRarity.Unique;
-
-                return rarity;
+                var bonusDrops = Character.Instance.GetStatValue(StatName.IncreasedItemQuantityPercent);
+                amount += (uint)(bonusDrops / 100f); // TODO: requires a better formula
             }
         }
+
+        [SerializeField] private ItemCategoryDistribution itemCategoryDistribution;
+        [SerializeField] private ItemRarityDistribution itemRarityDistribution;
+        [SerializeField] private EquipmentCategoryDistribution equipmentCategoryDistribution;
+        [SerializeField] private EquipmentTypeDistribution armamentsDistribution;
+        [SerializeField] private EquipmentTypeDistribution weaponsDistribution;
+        [SerializeField] private EquipmentTypeDistribution jewelryDistribution;
+        [SerializeField] private ConsumableTypeDistribution consumableTypeDistribution;
+
+        private AbstractItem GenerateItem()
+        {
+            /// selects item type
+            var itemCategory = itemCategoryDistribution.GetRandomEnumerator();
+
+            if (itemCategory == ItemCategory.NONE)
+                return null;
+
+            /// selects item qualities
+            var itemRarity = itemRarityDistribution.GetRandomEnumerator();
+
+            if (itemRarity == ItemRarity.NoDrop)
+                return null;
+
+            if (itemCategory == ItemCategory.Equipment)
+            {
+                var equipmentCategory = equipmentCategoryDistribution.GetRandomEnumerator();
+                // then select equipmentType within that Category
+
+                if (equipmentCategory == EquipmentCategory.NONE)
+                    return null;
+
+                var equipmentType = equipmentCategory switch
+                {
+                    EquipmentCategory.Armaments => armamentsDistribution.GetRandomEnumerator(),
+                    EquipmentCategory.Weapons => weaponsDistribution.GetRandomEnumerator(), // if weapons -> determine weapon category -> pick within that category
+                    EquipmentCategory.Jewelry => jewelryDistribution.GetRandomEnumerator(),
+
+                    EquipmentCategory.NONE => EquipmentType.NONE,
+                    _ => EquipmentType.NONE,
+                };
+
+                return equipmentType == EquipmentType.NONE ? null : (AbstractItem)new EquipmentItem(equipmentType, itemRarity);
+            }
+            else if (itemCategory == ItemCategory.Consumable)
+            {
+                var consumable = consumableTypeDistribution.GetRandomEnumerator();
+
+                return consumable == ConsumableType.NONE ? null : (AbstractItem)new ConsumableItem(consumable, itemRarity);
+            }
+
+            //////// old version below
+            void AddRandomAffixes(ref List<PlayerStatModifier> affixes)
+            {
+                var allowedAffixes = new List<StatName>();
+                /// selects item properties
+                //for (var i = 0; i < randomStatAmount; i++)
+                {
+                    /// weighted STATS
+                    // => primary/secondary stats? -> requires further design
+                    // => double-rolled stats? -> requires further design
+
+                    var randomRoll = Random.Range(0, allowedAffixes.Count);
+                    var randomStat = allowedAffixes[randomRoll];
+                    allowedAffixes.RemoveAt(randomRoll); // to exclude double rolls
+
+                    /// weighted RANDOM ROLL
+                    var lootLevel = Character.Instance.CharacterLevel; // define base min/max stat range
+                    var minMax = Vector2.up; // as min/max is different for each stat we need a lookup table to convert the lootLevel into min/max ranges
+
+                    var rangeModifier = itemRarity switch
+                    {
+                        ItemRarity.NoDrop => 0f,
+                        //ItemRarity.Crafted => 1f,
+                        ItemRarity.Common => 1f,
+                        //ItemRarity.Uncommon => 1f,
+                        ItemRarity.Magic => .9f,
+                        ItemRarity.Rare => .8f,
+                        //ItemRarity.Set => .8f,
+                        ItemRarity.Unique => .7f,
+                        _ => 0f,
+                    };
+
+                    minMax *= rangeModifier;
+
+                    var value = Random.Range(minMax.x, minMax.y);                           // TODO: should favor lower range value within min and max
+                    var statModifier = new StatModifier(value, StatModifierType.FlatAdd); // TODO: lookup table for each statName => rework the statModifier to derive the type from the name?
+                    var itemStat = new PlayerStatModifier(randomStat, statModifier);
+
+                    //affixList.Add(itemStat);
+                }
+            }
+
+            return null;
+        }
+
+        private static AbstractItemObject GetRandomUnique(EquipmentType type)
+        {
+            var uniquesOfType = type switch
+            {
+                EquipmentType.Amulet => _Amulets,
+                EquipmentType.Belt => _Belts,
+                EquipmentType.Boots => _Boots,
+                EquipmentType.Bracers => _Bracers,
+                EquipmentType.Chest => _Chests,
+                EquipmentType.Cloak => _Cloaks,
+                EquipmentType.Gloves => _Gloves,
+                EquipmentType.Helm => _Helmets,
+                EquipmentType.Pants => _Pants,
+                EquipmentType.Quiver => _Quiver,
+                EquipmentType.Ring => _Rings,
+                EquipmentType.Shield => _Shields,
+                EquipmentType.Shoulders => _Shoulder,
+                // EquipmentType.Weapon_1H => _Weapon1H,
+                // EquipmentType.Weapon_2H => _Weapon2H,
+
+                EquipmentType.NONE => null,
+                _ => null,
+            };
+
+            // TODO: weighted lookup table for each item type
+            // => player level sensitive ?
+
+            var index = Random.Range(0, uniquesOfType.Count);
+            return uniquesOfType[index];
+        }
+
         #endregion
     }
 }

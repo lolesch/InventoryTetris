@@ -9,11 +9,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6f309e7fa52d3224a9ca8bdb9762ab39, type: 3}
+  m_Script: {fileID: 11500000, guid: 31f0e98bc9fa3164d9344a1e34327811, type: 3}
   m_Name: Ring 6
   m_EditorClassIdentifier: 
-  <Icon>k__BackingField: {fileID: 21300000, guid: 06503c432b6250846aac3090a54f4103, type: 3}
-  <Dimensions>k__BackingField: {x: 1, y: 1}
-  <StackLimit>k__BackingField: 1
-  <Stats>k__BackingField: []
-  equipmentType: 9
+  <Item>k__BackingField:
+    <Dimensions>k__BackingField: 11
+    <Icon>k__BackingField: {fileID: 21300000, guid: d23c0612cd4915e45b187592965ed0fb, type: 3}
+    <StackLimit>k__BackingField: 1
+    <Rarity>k__BackingField: 5
+    <Stats>k__BackingField:
+    - <Stat>k__BackingField: 134
+      <Modifier>k__BackingField:
+        <Value>k__BackingField: 100
+        <Type>k__BackingField: 100
+    <EquipmentType>k__BackingField: 9

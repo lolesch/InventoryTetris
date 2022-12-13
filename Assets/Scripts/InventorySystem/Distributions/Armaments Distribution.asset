@@ -1,0 +1,151 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a44c9985231e0694189c8d828f0ae0eb, type: 3}
+  m_Name: Armaments Distribution
+  m_EditorClassIdentifier: 
+  failQuantity: 0
+  quantities:
+  - name: NONE
+    Enumeration: 0
+    Quantity: 0
+  - name: ARMAMENTS
+    Enumeration: 1
+    Quantity: 0
+  - name: Belt
+    Enumeration: 2
+    Quantity: 1
+  - name: Boots
+    Enumeration: 3
+    Quantity: 1
+  - name: Bracers
+    Enumeration: 4
+    Quantity: 1
+  - name: Chest
+    Enumeration: 5
+    Quantity: 1
+  - name: Cloak
+    Enumeration: 6
+    Quantity: 1
+  - name: Gloves
+    Enumeration: 7
+    Quantity: 1
+  - name: Helm
+    Enumeration: 8
+    Quantity: 1
+  - name: Pants
+    Enumeration: 9
+    Quantity: 1
+  - name: Shoulders
+    Enumeration: 10
+    Quantity: 1
+  - name: ONEHANDEDWEAPONS
+    Enumeration: 100
+    Quantity: 0
+  - name: Sword
+    Enumeration: 101
+    Quantity: 0
+  - name: TWOHANDEDWEAPONS
+    Enumeration: 200
+    Quantity: 0
+  - name: Bow
+    Enumeration: 201
+    Quantity: 0
+  - name: GreatSword
+    Enumeration: 202
+    Quantity: 0
+  - name: OFFHANDS
+    Enumeration: 300
+    Quantity: 0
+  - name: Shield
+    Enumeration: 301
+    Quantity: 0
+  - name: Quiver
+    Enumeration: 302
+    Quantity: 0
+  - name: JEWELRY
+    Enumeration: 400
+    Quantity: 0
+  - name: Amulet
+    Enumeration: 401
+    Quantity: 0
+  - name: Ring
+    Enumeration: 402
+    Quantity: 0
+  successProbability: 1
+  probabilities:
+  - name: NONE
+    Enumeration: 0
+    Probability: 0
+  - name: ARMAMENTS
+    Enumeration: 1
+    Probability: 0
+  - name: Belt
+    Enumeration: 2
+    Probability: 0.11111111
+  - name: Boots
+    Enumeration: 3
+    Probability: 0.11111111
+  - name: Bracers
+    Enumeration: 4
+    Probability: 0.11111111
+  - name: Chest
+    Enumeration: 5
+    Probability: 0.11111111
+  - name: Cloak
+    Enumeration: 6
+    Probability: 0.11111111
+  - name: Gloves
+    Enumeration: 7
+    Probability: 0.11111111
+  - name: Helm
+    Enumeration: 8
+    Probability: 0.11111111
+  - name: Pants
+    Enumeration: 9
+    Probability: 0.11111111
+  - name: Shoulders
+    Enumeration: 10
+    Probability: 0.11111111
+  - name: ONEHANDEDWEAPONS
+    Enumeration: 100
+    Probability: 0
+  - name: Sword
+    Enumeration: 101
+    Probability: 0
+  - name: TWOHANDEDWEAPONS
+    Enumeration: 200
+    Probability: 0
+  - name: Bow
+    Enumeration: 201
+    Probability: 0
+  - name: GreatSword
+    Enumeration: 202
+    Probability: 0
+  - name: OFFHANDS
+    Enumeration: 300
+    Probability: 0
+  - name: Shield
+    Enumeration: 301
+    Probability: 0
+  - name: Quiver
+    Enumeration: 302
+    Probability: 0
+  - name: JEWELRY
+    Enumeration: 400
+    Probability: 0
+  - name: Amulet
+    Enumeration: 401
+    Probability: 0
+  - name: Ring
+    Enumeration: 402
+    Probability: 0
+  exampleResults: 02000000030000000500000006000000080000000800000009000000090000000a0000000a000000

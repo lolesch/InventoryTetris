@@ -22,23 +22,23 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         public Package AddToContainer(Package package)
         {
-            if (!package.Item)
+            if (package.Item == null)
                 return package;
 
             if (this is PlayerInventory)
             {
                 var equipment = InventoryProvider.Instance.PlayerEquipment;
 
-                if (package.Item is Equipment && equipment.autoEquip)
+                if (package.Item is EquipmentItem && equipment.autoEquip)
                 {
-                    var equipmentPosition = equipment.GetEquipmentTypePosition((package.Item as Equipment).equipmentType);
+                    var equipmentPosition = equipment.GetEquipmentTypePosition((package.Item as EquipmentItem).EquipmentType);
 
                     if (equipment.IsEmptyPosition(equipmentPosition, new(1, 1), out _))
                         return equipment.AddToContainer(package);
                 }
             }
 
-            if (ItemStackType.Single < package.Item.StackLimit)
+            if (ItemStack.Single < package.Item.StackLimit)
                 AddToOpenStacks();
 
             AddToEmptyPositions();
@@ -58,25 +58,25 @@ namespace ToolSmiths.InventorySystem.Inventories
             {
                 for (var x = 0; x < Dimensions.x && 0 < package.Amount; x++)
                     for (var y = 0; y < Dimensions.y && 0 < package.Amount; y++)
-                        if (IsEmptyPosition(new(x, y), package.Item.Dimensions, out _)) // this might need to be abstract and with a dimension of (1,1) for equipment
+                        if (IsEmptyPosition(new(x, y), AbstractItem.GetDimensions(package.Item.Dimensions), out _)) // this might need to be abstract and with a dimension of (1,1) for equipment
                             package = AddAtPosition(new(x, y), package);
             }
         }
 
         public Package AddAtPosition(Vector2Int position, Package package)
         {
-            if (!package.Item)
+            if (package.Item == null)
                 return package;
 
-            if (this is PlayerEquipment)
+            if (this is CharacterEquipment)
             {
-                if (package.Item is Equipment)
-                    position = (this as PlayerEquipment).GetEquipmentTypePosition((package.Item as Equipment).equipmentType);
+                if (package.Item is EquipmentItem)
+                    position = (this as CharacterEquipment).GetEquipmentTypePosition((package.Item as EquipmentItem).EquipmentType);
                 else
                     return package;
             }
 
-            var dimensions = this is PlayerEquipment ? new(1, 1) : package.Item.Dimensions;
+            var dimensions = this is CharacterEquipment ? new(1, 1) : AbstractItem.GetDimensions(package.Item.Dimensions);
 
             if (CanAddAtPosition(position, dimensions, out var otherItems))
             {
@@ -100,9 +100,9 @@ namespace ToolSmiths.InventorySystem.Inventories
                     _ = package.ReduceAmount(amount);
                 }
 
-                if (this is PlayerEquipment && package.Item is Equipment)
+                if (this is CharacterEquipment && package.Item is EquipmentItem)
                 {
-                    Character.Instance.AddItemStats(package.Item.Stats);
+                    Character.Instance.AddItemStats(package.Item.Affixes);
                 }
 
                 OnContentChanged?.Invoke(StoredPackages);
@@ -142,7 +142,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             return package;
 
-            void FindAllEqualItems(AbstractItemObject item, out List<Vector2Int> positions)
+            void FindAllEqualItems(AbstractItem item, out List<Vector2Int> positions)
             {
                 positions = new List<Vector2Int>();
 
@@ -177,9 +177,9 @@ namespace ToolSmiths.InventorySystem.Inventories
                     {
                         _ = StoredPackages.Remove(storedPositions[0]);
 
-                        if (this is PlayerEquipment)// && storedPackage.Item is Equipment) // must have been an Equipment if it was in the Equipment container
+                        if (this is CharacterEquipment)// && storedPackage.Item is Equipment) // must have been an Equipment if it was in the Equipment container
                         {
-                            Character.Instance.RemoveItemStats(storedPackage.Item.Stats);
+                            Character.Instance.RemoveItemStats(storedPackage.Item.Affixes);
                         }
                     }
                 }
@@ -216,7 +216,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             }
         }
 
-        public bool CanAddAtPosition(Vector2Int position, Vector2Int dimension, out List<Vector2Int> otherItems) => IsEmptyPosition(position, dimension, out otherItems) || otherItems.Count <= 1;
+        public bool CanAddAtPosition(Vector2Int position, Vector2Int dimension, out List<Vector2Int> otherItems) => IsEmptyPosition(position, dimension, out otherItems) || (!IsEmptyPosition(position, dimension, out otherItems) && otherItems.Count <= 1);
 
         /// A List of all storedPackages positions that overlap with the requiredPositions
         public abstract List<Vector2Int> GetOtherItemsAt(Vector2Int position, Vector2Int dimension);
@@ -233,9 +233,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             List<Vector2Int> storedDimensions = new();
 
             for (var i = 0; i < storedKeys.Count; i++)
-            {
-                storedDimensions.Add(StoredPackages[storedKeys[i]].Item.Dimensions);
-            }
+                storedDimensions.Add(AbstractItem.GetDimensions(StoredPackages[storedKeys[i]].Item.Dimensions));
 
             storedDimensions = storedDimensions.Distinct().OrderByDescending(v => v.x * v.y/*v.sqrMagnitude*/).ToList();
 
@@ -243,20 +241,14 @@ namespace ToolSmiths.InventorySystem.Inventories
             StoredPackages.Clear(); // This won't unequip => stats not removed from character
 
             for (var i = 0; i < storedDimensions.Count; i++)
-            {
                 for (var j = 0; j < storedValues.Count; j++)
-                {
-                    if (storedValues[j].Item.Dimensions == storedDimensions[i])
-                    {
+                    if (AbstractItem.GetDimensions(storedValues[j].Item.Dimensions) == storedDimensions[i])
                         _ = AddToContainer(storedValues[j]);
-                    }
-                }
-            }
         }
 
         private void SortAlphabetically()
         {
-            var storedNames = StoredPackages.Values.Select(x => x.Item.name).ToList();
+            var storedNames = StoredPackages.Values.Select(x => x.Item.Name).ToList();
 
             storedNames = storedNames.Distinct().OrderBy(x => x).ToList();
 
@@ -264,15 +256,9 @@ namespace ToolSmiths.InventorySystem.Inventories
             StoredPackages.Clear(); // This won't unequip => stats not removed from character
 
             for (var i = 0; i < storedNames.Count; i++)
-            {
                 for (var j = 0; j < storedValues.Count; j++)
-                {
-                    if (storedValues[j].Item.name == storedNames[i])
-                    {
+                    if (storedValues[j].Item.Name == storedNames[i])
                         _ = AddToContainer(storedValues[j]);
-                    }
-                }
-            }
         }
 
         protected internal void InvokeRefresh() => OnContentChanged?.Invoke(StoredPackages);

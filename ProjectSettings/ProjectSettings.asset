@@ -579,7 +579,7 @@ PlayerSettings:
   webGLDecompressionFallback: 1
   webGLPowerPreference: 2
   scriptingDefineSymbols:
-    Standalone: ODIN_INSPECTOR;ODIN_INSPECTOR_3;RH_SerializedDictionary
+    Standalone: ODIN_INSPECTOR;ODIN_INSPECTOR_3;RH_SerializedDictionary;ODIN_INSPECTOR_3_1
   additionalCompilerArguments: {}
   platformArchitecture: {}
   scriptingBackend: {}

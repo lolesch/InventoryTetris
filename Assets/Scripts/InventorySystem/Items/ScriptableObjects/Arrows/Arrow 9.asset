@@ -9,14 +9,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b1e12fd1e1584b842bc5c4c347a197bb, type: 3}
+  m_Script: {fileID: 11500000, guid: 20c829f3cde0c1049b16f82a4d2fbd43, type: 3}
   m_Name: Arrow 9
   m_EditorClassIdentifier: 
-  <Icon>k__BackingField: {fileID: 21300000, guid: d78a3beef9593df488236f2107e72697, type: 3}
-  <Dimensions>k__BackingField: {x: 1, y: 2}
-  <StackLimit>k__BackingField: 50
-  <Stats>k__BackingField:
-  - <Stat>k__BackingField: 3
-    <Modifier>k__BackingField:
-      <Value>k__BackingField: 9
-      <Type>k__BackingField: 100
+  <Item>k__BackingField:
+    <Icon>k__BackingField: {fileID: 21300000, guid: 01819f568865a8f4a93ab674f59b3e1a, type: 3}
+    <Dimensions>k__BackingField: 11
+    <StackLimit>k__BackingField: 50
+    <Rarity>k__BackingField: 5
+    <Stats>k__BackingField:
+    - <Stat>k__BackingField: 3
+      <Modifier>k__BackingField:
+        <Value>k__BackingField: 5
+        <Type>k__BackingField: 100
+    <ConsumableType>k__BackingField: 1

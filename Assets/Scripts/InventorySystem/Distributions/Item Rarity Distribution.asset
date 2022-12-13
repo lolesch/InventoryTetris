@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a460b874ffbd28342af76deb2e6ae875, type: 3}
+  m_Name: Item Rarity Distribution
+  m_EditorClassIdentifier: Assembly-CSharp:ToolSmiths.InventorySystem.Items:RarityDistribution
+  failQuantity: 300
+  quantities:
+  - name: NoDrop
+    Enumeration: 0
+    Quantity: 300
+  - name: Common
+    Enumeration: 5
+    Quantity: 160
+  - name: Magic
+    Enumeration: 15
+    Quantity: 80
+  - name: Rare
+    Enumeration: 20
+    Quantity: 40
+  - name: Unique
+    Enumeration: 30
+    Quantity: 20
+  successProbability: 0.5
+  probabilities:
+  - name: NoDrop
+    Enumeration: 0
+    Probability: 0.5
+  - name: Common
+    Enumeration: 5
+    Probability: 0.26666668
+  - name: Magic
+    Enumeration: 15
+    Probability: 0.13333334
+  - name: Rare
+    Enumeration: 20
+    Probability: 0.06666667
+  - name: Unique
+    Enumeration: 30
+    Probability: 0.033333335
+  exampleTotalPlayerCount: 1
+  exampleAlliedPlayerCount: 7
+  exampleResults: 00000000000000000000000000000000050000000500000005000000050000001400000014000000

@@ -17,16 +17,16 @@ namespace ToolSmiths.InventorySystem.Displays
 
         protected override void DropItem()
         {
-            if (StaticDragDisplay.Instance.Package.Item)
+            if (StaticDragDisplay.Instance.Package.Item != null)
             {
-                var positionOffset = StaticDragDisplay.Instance.Package.Item.Dimensions / 2;
+                var positionOffset = AbstractItem.GetDimensions(StaticDragDisplay.Instance.Package.Item.Dimensions) / 2;
                 var mousePositionOffset = (Vector2)(Input.mousePosition - transform.position) / transform.lossyScale; //transform.root.GetComponent<Canvas>().scaleFactor;
                 var relativeMouseOffset = (mousePositionOffset - (transform as RectTransform).rect.size / 2) / (transform as RectTransform).rect.size;
                 var mouseOffset = new Vector2Int(Mathf.CeilToInt(relativeMouseOffset.x), -Mathf.CeilToInt(relativeMouseOffset.y));
 
                 var positionToAdd = Position - positionOffset + mouseOffset;
 
-                if (Container.CanAddAtPosition(positionToAdd, StaticDragDisplay.Instance.Package.Item.Dimensions, out _))
+                if (Container.CanAddAtPosition(positionToAdd, AbstractItem.GetDimensions(StaticDragDisplay.Instance.Package.Item.Dimensions), out _))
                 {
                     Package remaining;
 
@@ -61,9 +61,9 @@ namespace ToolSmiths.InventorySystem.Displays
                 gridLayout = GetComponentInParent<GridLayoutGroup>();
             if (gridLayout)
             {
-                var additionalSpacing = gridLayout.spacing * new Vector2(package.Item.Dimensions.x - 1, package.Item.Dimensions.y - 1);
+                var additionalSpacing = gridLayout.spacing * new Vector2(AbstractItem.GetDimensions(package.Item.Dimensions).x - 1, AbstractItem.GetDimensions(package.Item.Dimensions).y - 1);
 
-                display.sizeDelta = gridLayout.cellSize * package.Item.Dimensions + additionalSpacing;
+                display.sizeDelta = gridLayout.cellSize * AbstractItem.GetDimensions(package.Item.Dimensions) + additionalSpacing;
             }
 
             display.anchoredPosition = new Vector2(display.sizeDelta.x * .5f, display.sizeDelta.y * -.5f);
@@ -78,7 +78,7 @@ namespace ToolSmiths.InventorySystem.Displays
 
             if (otherItems.Count == 1)
             {
-                if (Container.StoredPackages[otherItems[0]].Item is Equipment)
+                if (Container.StoredPackages[otherItems[0]].Item is EquipmentItem)
                 {
                     packageToMove = Container.StoredPackages[otherItems[0]];
 

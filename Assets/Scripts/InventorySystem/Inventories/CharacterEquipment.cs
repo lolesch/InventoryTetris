@@ -5,9 +5,9 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.Inventories
 {
     [System.Serializable]
-    public class PlayerEquipment : AbstractDimensionalContainer
+    public class CharacterEquipment : AbstractDimensionalContainer
     {
-        public PlayerEquipment(Vector2Int dimensions) : base(dimensions) { }
+        public CharacterEquipment(Vector2Int dimensions) : base(dimensions) { }
 
         [SerializeField] public bool autoEquip = true;
 
@@ -37,11 +37,24 @@ namespace ToolSmiths.InventorySystem.Inventories
             EquipmentType.Pants => new(8, 0),
             EquipmentType.Shoulders => new(9, 0),
             EquipmentType.Ring => IsEmptyPosition(new(10, 0), new(1, 1), out _) ? new(10, 0) : (IsEmptyPosition(new(11, 0), new(1, 1), out _) ? new(11, 0) : new(10, 0)),
-            EquipmentType.Weapon_1H => IsEmptyPosition(new(12, 0), new(1, 1), out _) ? (new(12, 0)) : (IsEmptyPosition(new(13, 0), new(1, 1), out _) ? (new(13, 0)) : new(12, 0)),
-            EquipmentType.Weapon_2H => new(12, 0),
-            EquipmentType.Shield => new(13, 0),
-            EquipmentType.Quiver => new(13, 0),
-            EquipmentType.None => new(-1, -1),
+
+            //EquipmentType.Shield => new(13, 0),
+            //EquipmentType.Quiver => new(13, 0),
+            //EquipmentType.Sword => IsEmptyPosition(new(12, 0), new(1, 1), out _) ? (new(12, 0)) : (IsEmptyPosition(new(13, 0), new(1, 1), out _) ? (new(13, 0)) : new(12, 0)),
+            //EquipmentType.Bow => new(13, 0),
+            //EquipmentType.GreatSword => new(12, 0),
+
+            // might require enhanced logic
+            > EquipmentType.ONEHANDEDWEAPONS and < EquipmentType.TWOHANDEDWEAPONS => IsEmptyPosition(new(12, 0), new(1, 1), out _) ? (new(12, 0)) : (IsEmptyPosition(new(13, 0), new(1, 1), out _) ? (new(13, 0)) : new(12, 0)),
+            > EquipmentType.TWOHANDEDWEAPONS and < EquipmentType.OFFHANDS => new(12, 0),
+            > EquipmentType.OFFHANDS and < EquipmentType.JEWELRY => new(13, 0),
+
+            EquipmentType.NONE => new(-1, -1),
+            EquipmentType.ARMAMENTS => new(-1, -1),
+            EquipmentType.ONEHANDEDWEAPONS => new(-1, -1),
+            EquipmentType.TWOHANDEDWEAPONS => new(-1, -1),
+            EquipmentType.OFFHANDS => new(-1, -1),
+            EquipmentType.JEWELRY => new(-1, -1),
             _ => new(-1, -1),
         };
     }

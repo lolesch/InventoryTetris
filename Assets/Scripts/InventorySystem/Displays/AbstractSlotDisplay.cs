@@ -85,6 +85,12 @@ namespace ToolSmiths.InventorySystem.Displays
 
         private void HandleItem(PointerEventData eventData)
         {
+            // TODO: this should be abstract and each slotDisplay decides how to handle items
+            // --> or calculate the context dependent on what UI elements are visable...
+            // => stash and inventory will equip/consume/use/sell
+            // => equipment will unequip
+            // => shop will buy
+
             // TODO: SPLIT ITEM STACKS => handle picking up one/all from a stack
 
             if (StaticDragDisplay.Instance.IsDragging)
@@ -96,17 +102,17 @@ namespace ToolSmiths.InventorySystem.Displays
                     var packagePosition = Container.GetOtherItemsAt(Position, new(1, 1))[0];
                     var item = Container.StoredPackages[packagePosition].Item;
 
-                    if (item is Consumable)
-                        (item as Consumable).Consume();
+                    if (item is ConsumableItem)
+                        (item as ConsumableItem).Consume();
 
-                    else if (item is Equipment)
+                    else if (item is EquipmentItem)
                         if (this is EquipmentSlotDisplay)
                             UnequipItem();
                         else
                             EquipItem();
 
-                    else if (item is Item)
-                    { }
+                    // else if (item is Item)
+                    // { }
                 }
                 else
                     PickUpItem();
@@ -153,7 +159,7 @@ namespace ToolSmiths.InventorySystem.Displays
 
                     if (canFadeIn && hovering)
                     {
-                        StaticPrevievDisplay.Instance.SetPackage(package, storedPosition);
+                        StaticPrevievDisplay.Instance.RefreshPreviewDisplay(package, this);
                         hovering = false;
                     }
                 }
@@ -164,7 +170,7 @@ namespace ToolSmiths.InventorySystem.Displays
         {
             hovering = false;
 
-            StaticPrevievDisplay.Instance.SetPackage(new Package(null, 0), new(-1, -1));
+            StaticPrevievDisplay.Instance.RefreshPreviewDisplay(new Package(null, 0), this);
         }
 
         protected virtual void DropItem() => FadeInPreview();
@@ -199,7 +205,7 @@ namespace ToolSmiths.InventorySystem.Displays
                     if (amount)
                         amount.text = 1 < package.Amount ? package.Amount.ToString() : string.Empty;
 
-                    var rarityColor = AbstractItemObject.GetRarityColor(package.Item);
+                    var rarityColor = AbstractItem.GetRarityColor(package.Item.Rarity);
 
                     if (frame)
                         frame.color = rarityColor;

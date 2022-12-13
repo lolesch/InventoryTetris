@@ -9,11 +9,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6f309e7fa52d3224a9ca8bdb9762ab39, type: 3}
+  m_Script: {fileID: 11500000, guid: 31f0e98bc9fa3164d9344a1e34327811, type: 3}
   m_Name: Helm 4
   m_EditorClassIdentifier: 
-  <Icon>k__BackingField: {fileID: 21300000, guid: 03e2abba11c2c9244bdaa5b987c60831, type: 3}
-  <Dimensions>k__BackingField: {x: 2, y: 2}
-  <StackLimit>k__BackingField: 1
-  <Stats>k__BackingField: []
-  equipmentType: 5
+  <Item>k__BackingField:
+    <Dimensions>k__BackingField: 22
+    <Icon>k__BackingField: {fileID: 21300000, guid: ecd306c1ebecc844085426dcf98c81b4, type: 3}
+    <StackLimit>k__BackingField: 1
+    <Rarity>k__BackingField: 5
+    <Stats>k__BackingField:
+    - <Stat>k__BackingField: 0
+      <Modifier>k__BackingField:
+        <Value>k__BackingField: 10
+        <Type>k__BackingField: 200
+    <EquipmentType>k__BackingField: 5

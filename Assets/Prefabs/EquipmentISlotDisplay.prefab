@@ -100,7 +100,7 @@ MonoBehaviour:
   amount: {fileID: 1750711888921296693}
   slotBackground: {fileID: 2604562765609723336}
   debugPosition: {fileID: 292869630088620566}
-  allowedEquipmentTypes: 
+  allowedEquipmentTypes: 00000000
 --- !u!1 &4253099238647935454
 GameObject:
   m_ObjectHideFlags: 0

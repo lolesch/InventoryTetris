@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using ToolSmiths.InventorySystem.Items;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Inventories
@@ -26,8 +27,8 @@ namespace ToolSmiths.InventorySystem.Inventories
             var requiredPositions = CalculateRequiredPositions(position, dimension);
 
             foreach (var package in StoredPackages)
-                for (var x = package.Key.x; x < package.Key.x + package.Value.Item.Dimensions.x; x++)
-                    for (var y = package.Key.y; y < package.Key.y + package.Value.Item.Dimensions.y; y++)
+                for (var x = package.Key.x; x < package.Key.x + AbstractItem.GetDimensions(package.Value.Item.Dimensions).x; x++)
+                    for (var y = package.Key.y; y < package.Key.y + AbstractItem.GetDimensions(package.Value.Item.Dimensions).y; y++)
                         foreach (var requiredPosition in requiredPositions)
                             if (new Vector2Int(x, y) == requiredPosition)
                                 otherPackagePositions.Add(package.Key);

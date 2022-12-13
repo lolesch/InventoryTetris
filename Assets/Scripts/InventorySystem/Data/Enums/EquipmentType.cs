@@ -1,32 +1,60 @@
-﻿namespace ToolSmiths.InventorySystem.Data.Enums
+﻿using UnityEngine;
+
+namespace ToolSmiths.InventorySystem.Data.Enums
 {
     [System.Serializable]
     /// The identifier of equipment slots
     public enum EquipmentType
     {
-        None = 0,
-        Amulet = 10,
-        Belt = 3,
-        Boots = 1,
-        Bracers = 7,
-        Chest = 4,
-        Cloak = 14,
-        Gloves = 6,
-        Helm = 5,
-        Pants = 2,
-        Quiver = 15,
-        Ring = 9,
-        Shield = 12,
-        Shoulders = 8,
-        Weapon_1H = 11,
-        Weapon_2H = 13,
+        NONE = 0,
+
+        [Tooltip("ArmamentTypes --> 2-99")]
+        ARMAMENTS = 1,
+        Belt = 2,
+        Boots = 3,
+        Bracers = 4,
+        Chest = 5,
+        Cloak = 6,
+        Gloves = 7,
+        Helm = 8,
+        Pants = 9,
+        Shoulders = 10,
+
+        [Tooltip("OneHandedWeapons --> 101-199")]
+        ONEHANDEDWEAPONS = 100,
+        Sword = 101,
+
+        [Tooltip("TwoHandedWeapons --> 201-299")]
+        TWOHANDEDWEAPONS = 200,
+        Bow = 201,
+        GreatSword = 202,
+
+        [Tooltip("Offhands --> 301-399")]
+        OFFHANDS = 300,
+        Shield = 301,
+        Quiver = 302,
+
+        [Tooltip("Jewelry --> 401-499")]
+        JEWELRY = 400,
+        Amulet = 401,
+        Ring = 402,
     }
 
-    public enum ConsumableType
+    public enum EquipmentCategory
     {
         NONE = 0,
-        Arrows = 1,
-        Books = 2,
-        Potions = 3,
+
+        Armaments = 1,
+        Weapons = 2,
+        Jewelry = 3,
+    }
+
+    public enum WeaponCategory
+    {
+        NONE = 0,
+
+        Weapon_1H = 100,
+        Weapon_2H = 200,
+        Offhand = 300,
     }
 }

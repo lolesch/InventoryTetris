@@ -4,38 +4,49 @@ namespace TeppichsTools.Creation
 {
     public class MonoSingleton<T> : MonoBehaviour where T : MonoBehaviour
     {
-        private static T s_instance;
+        private static T instance;
 
         public static T Instance
         {
             get
             {
-                if (s_instance)
-                    return s_instance;
-
-                T[] candidates = FindObjectsOfType<T>();
-
-                if (candidates.Length == 0)
-                    s_instance = new GameObject("MonoSingleton_" + nameof(T)).AddComponent<T>();
-                else
+                if (!instance)
                 {
-                    s_instance = candidates[0];
+                    var candidates = FindObjectsOfType<T>();
 
-                    for (int i = 1; i < candidates.Length; i++)
+                    if (0 < candidates.Length)
                     {
-                        Debug.LogWarning("Found multiple instances of the MonoSingleton of type " + typeof(T));
+                        instance = candidates[0];
+
+                        for (var i = candidates.Length; i-- > 0;)
+                        {
+                            if (candidates[i] != null && candidates[i] != instance)
+                            {
 #if UNITY_EDITOR
-                        DestroyImmediate(candidates[i]);
+                                DestroyImmediate(candidates[i]);
 #else
-                        Destroy(candidates[i]);
+                                Destroy(candidates[i]);
 #endif
+                                Debug.LogWarning($"Destroyed obsolete instance of {typeof(T)} - Instance");
+                            }
+                        }
                     }
+                    else if (Application.isPlaying)
+                    {
+                        instance = new GameObject($"{typeof(T).Name}".ToUpper()).AddComponent<T>();
+
+                        Debug.LogWarning($"Created new instance of {typeof(T)}");
+                    }
+
+                    if (Application.isPlaying)
+                        // TODO: make this a new root object
+                        DontDestroyOnLoad(instance.gameObject);
                 }
-#if !UNITY_EDITOR
-                DontDestroyOnLoad(s_instance.gameObject);
-#endif
-                return s_instance;
+
+                return instance;
             }
         }
+
+        private void Awake() => name = $"{typeof(T).Name}".ToUpper();
     }
 }

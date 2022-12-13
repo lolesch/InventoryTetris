@@ -1,23 +1,12 @@
-﻿using System.Runtime.CompilerServices;
-using ToolSmiths.InventorySystem.Data.Enums;
+﻿using ToolSmiths.InventorySystem.Data.Enums;
 using UnityEngine;
-
-[assembly: InternalsVisibleTo("Tests")]
 
 namespace ToolSmiths.InventorySystem.Data
 {
-    /// <summary>
-    /// ItemStats will modify the corresponding playerStat.
-    /// </summary>
+    /// <summary>PlayerStatModifiers will modify the corresponding playerStat.</summary>
     [System.Serializable]
-    public struct ItemStat
+    public struct PlayerStatModifier
     {
-        public ItemStat(StatName stat, StatModifier modifier)
-        {
-            Stat = stat;
-            Modifier = modifier;
-        }
-
         /// <summary>The identiryer of the stat.</summary>
         [Tooltip("The identifyer of the stat.")]
         [field: SerializeField] public StatName Stat { get; private set; }
@@ -25,5 +14,12 @@ namespace ToolSmiths.InventorySystem.Data
         /// <summary>The stat's modifier on this item.</summary>
         [Tooltip("The stat's modifier on this item.")]
         [field: SerializeField] public StatModifier Modifier { get; private set; }
+
+        /// <summary>PlayerStatModifiers will modify the corresponding playerStat.</summary>
+        public PlayerStatModifier(StatName stat, StatModifier modifier)
+        {
+            Stat = stat;
+            Modifier = modifier;
+        }
     }
 }

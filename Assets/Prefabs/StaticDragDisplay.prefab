@@ -76,6 +76,10 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 4737588000363776923}
     m_Modifications:
+    - target: {fileID: 745403343036375855, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
+      propertyPath: m_RaycastTarget
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4001338958284427548, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
       propertyPath: m_Enabled
       value: 1

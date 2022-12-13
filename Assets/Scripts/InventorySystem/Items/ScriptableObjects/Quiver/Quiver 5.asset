@@ -9,15 +9,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6f309e7fa52d3224a9ca8bdb9762ab39, type: 3}
+  m_Script: {fileID: 11500000, guid: 31f0e98bc9fa3164d9344a1e34327811, type: 3}
   m_Name: Quiver 5
   m_EditorClassIdentifier: 
-  <Icon>k__BackingField: {fileID: 21300000, guid: 4532aff5be2394041b58bdce60a52d8c, type: 3}
-  <Dimensions>k__BackingField: {x: 1, y: 3}
-  <StackLimit>k__BackingField: 1
-  <Stats>k__BackingField:
-  - <Stat>k__BackingField: 3
-    <Modifier>k__BackingField:
-      <Value>k__BackingField: 2
-      <Type>k__BackingField: 100
-  equipmentType: 15
+  <Item>k__BackingField:
+    <Dimensions>k__BackingField: 13
+    <Icon>k__BackingField: {fileID: 21300000, guid: e2e5975a0ccb1ed42a3fc7585d2e339e, type: 3}
+    <StackLimit>k__BackingField: 1
+    <Rarity>k__BackingField: 5
+    <Stats>k__BackingField:
+    - <Stat>k__BackingField: 3
+      <Modifier>k__BackingField:
+        <Value>k__BackingField: 10
+        <Type>k__BackingField: 200
+    <EquipmentType>k__BackingField: 15

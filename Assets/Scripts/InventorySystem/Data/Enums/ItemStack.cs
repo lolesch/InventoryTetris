@@ -2,7 +2,7 @@
 {
     [System.Serializable]
     /// The chategory of item stackLimits
-    public enum ItemStackType
+    public enum ItemStack
     {
         NONE = 0,
         Single = 1,
