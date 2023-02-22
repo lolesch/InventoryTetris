@@ -136,9 +136,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             FindAllEqualItems(package.Item, out var positions);
 
             for (var i = positions.Count - 1; 0 <= i && 0 < package.Amount; i--)
-            {
                 package = RemoveAtPosition(positions[i], package);
-            }
 
             return package;
 
@@ -147,12 +145,8 @@ namespace ToolSmiths.InventorySystem.Inventories
                 positions = new List<Vector2Int>();
 
                 foreach (var package in StoredPackages)
-                {
                     if (package.Value.Item == item)
-                    {
                         positions.Add(package.Key);
-                    }
-                }
 
                 _ = positions.OrderBy(v => v.x);
             }
@@ -220,6 +214,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         /// A List of all storedPackages positions that overlap with the requiredPositions
         public abstract List<Vector2Int> GetOtherItemsAt(Vector2Int position, Vector2Int dimension);
+
         public bool TryGetPackageAt(Vector2Int position, out Package package) => StoredPackages.TryGetValue(position, out package);
 
         /// A List of all positions that are required to add this item to the container
@@ -248,7 +243,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         private void SortAlphabetically()
         {
-            var storedNames = StoredPackages.Values.Select(x => x.Item.Name).ToList();
+            var storedNames = StoredPackages.Values.Select(x => x.Item.ToString()).ToList();
 
             storedNames = storedNames.Distinct().OrderBy(x => x).ToList();
 
@@ -257,9 +252,11 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             for (var i = 0; i < storedNames.Count; i++)
                 for (var j = 0; j < storedValues.Count; j++)
-                    if (storedValues[j].Item.Name == storedNames[i])
+                    if (storedValues[j].Item.ToString() == storedNames[i])
                         _ = AddToContainer(storedValues[j]);
         }
+
+        // TODO: sort by rarity
 
         protected internal void InvokeRefresh() => OnContentChanged?.Invoke(StoredPackages);
     }

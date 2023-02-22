@@ -13,13 +13,14 @@ MonoBehaviour:
   m_Name: Belt 3
   m_EditorClassIdentifier: 
   <Item>k__BackingField:
+    <Icon>k__BackingField: {fileID: 21300000, guid: 33a0399185b5255469ff9b52cce1b452, type: 3}
     <Dimensions>k__BackingField: 21
-    <Icon>k__BackingField: {fileID: 21300000, guid: 6db5658bad45a4e41a511136b4376894, type: 3}
     <StackLimit>k__BackingField: 1
-    <Rarity>k__BackingField: 5
-    <Stats>k__BackingField:
+    <Rarity>k__BackingField: 30
+    <Affixes>k__BackingField:
     - <Stat>k__BackingField: 0
       <Modifier>k__BackingField:
-        <Value>k__BackingField: 5
+        <Value>k__BackingField: 3
         <Type>k__BackingField: 200
-    <EquipmentType>k__BackingField: 3
+    <EquipmentCategory>k__BackingField: 1
+    <EquipmentType>k__BackingField: 2

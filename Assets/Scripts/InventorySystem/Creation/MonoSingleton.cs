@@ -39,8 +39,11 @@ namespace TeppichsTools.Creation
                     }
 
                     if (Application.isPlaying)
-                        // TODO: make this a new root object
+                    {
+                        // /// set the instance as a root object
+                        // instance.gameObject.transform.parent = null;
                         DontDestroyOnLoad(instance.gameObject);
+                    }
                 }
 
                 return instance;

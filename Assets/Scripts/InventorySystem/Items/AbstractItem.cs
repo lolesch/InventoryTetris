@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
+using ToolSmiths.InventorySystem.Extensions;
 using ToolSmiths.InventorySystem.Inventories;
 using UnityEngine;
 
@@ -11,36 +12,24 @@ namespace ToolSmiths.InventorySystem.Items
     [Serializable]
     public abstract class AbstractItem
     {
-        [field: SerializeField] public Sprite Icon { get; protected set; } = null;
+        [field: SerializeField] public Sprite Icon { get; protected set; } = null; // make Icon a class that is serialized (rendered) in editor
         [field: SerializeField] public ItemSize Dimensions { get; protected set; } = ItemSize.OneByOne;
         [field: SerializeField] public ItemStack StackLimit { get; protected set; } = ItemStack.Single;
         [field: SerializeField] public ItemRarity Rarity { get; protected set; } = ItemRarity.Common;
         [field: SerializeField] public List<PlayerStatModifier> Affixes { get; protected set; } = new List<PlayerStatModifier>();
 
-        //[field: SerializeField] public List<StatName> AllowedAffixes { get; protected set; } = null;
-
-        //public AbstractItem(Sprite icon, ItemSize dimensions, ItemStack stackLimit, ItemRarity rarity, List<ItemAffix> stats)
-        //{
-        //    Icon = icon;
-        //    Dimensions = dimensions;
-        //    StackLimit = stackLimit;
-        //    Rarity = rarity;
-        //    Stats = stats;
-        //}
-
         // TODO: handle overTime effects => Stats != Effects --> see ARPG_Combat for DoT_effects
-        public string Name => Colored($"{Rarity} {"Category"} {(Affixes.Count > 0 ? $"of {Affixes[0].Stat}" : "")}", GetRarityColor(Rarity));
+        public new abstract string ToString();
 
         //Stats = stats.OrderBy(x => x.Stat).ToList();
 
-        private string Colored(string text, Color color) => $"<color=#{ColorUtility.ToHtmlStringRGBA(color)}>{text}</color>";
         public static Color GetRarityColor(ItemRarity rarity) => rarity switch
         {
             ItemRarity.NoDrop => Color.clear,
             //ItemRarity.Crafted => new Color(0.4f, 0, 1, 1), // purple
             ItemRarity.Common => Color.white,
             //ItemRarity.Uncommon => Color.gray,
-            ItemRarity.Magic => Color.blue,
+            ItemRarity.Magic => Color.cyan,
             ItemRarity.Rare => Color.yellow,
             //ItemRarity.Set => Color.green,
             ItemRarity.Unique => new Color(1, 0.35f, 0, 1), // orange
@@ -71,32 +60,40 @@ namespace ToolSmiths.InventorySystem.Items
 
         public ConsumableItem(ConsumableType consumableType, ItemRarity rarity)
         {
+            if (rarity == ItemRarity.NoDrop)
+            {
+                Debug.LogWarning("This should not happen");
+                return;
+            }
+
             ConsumableType = consumableType;
             Rarity = rarity;
 
+            StackLimit = ItemStack.StackOfTen; // TODO: Get type specific stack limit
+
+            Icon = ItemProvider.Instance.GetIcon(ConsumableType, Rarity);
+            Dimensions = GetDimension(ConsumableType);
+            var stats = GetRandomAffixes(ConsumableType, Rarity);
+            //stats + ConsumableType specific stats
+
             if (Rarity == ItemRarity.Unique)
             {
-                // TODO: individual probabilityDistribution for each equipment type
-                // var unique = correspondingTypeDistribution.GetRandomEnumerator();
+                var unique = ItemProvider.Instance.GetUnique(ConsumableType).GetItem();
 
-                // Icon == unique.Icon
-                // Dimensions == unique.Dimensions
-                // Stats == stats + unique.Stats + equipmentType specific stats
-            }
-            else
-            {
-                Icon = GetIcon(ConsumableType, Rarity);
-                Dimensions = GetDimension(ConsumableType);
+                Icon = unique.Icon;
+                Dimensions = unique.Dimensions;
 
-                var stats = GetRandomAffixes(ConsumableType, Rarity);
-                Affixes = GetStats(Rarity, stats);
+                for (var i = 0; i < unique.Affixes.Count; i++)
+                    stats.Add(unique.Affixes[i]);
             }
 
-            Sprite GetIcon(ConsumableType consumableType, ItemRarity rarity) => null;
+            //Affixes = GetStats(Rarity, stats);
+            Affixes = stats;
 
             ItemSize GetDimension(ConsumableType consumableType) => consumableType switch
             {
                 ConsumableType.NONE => ItemSize.NONE,
+
                 ConsumableType.Arrows => ItemSize.OneByOne,
                 ConsumableType.Books => ItemSize.TwoByTwo,
                 ConsumableType.Potions => ItemSize.OneByTwo,
@@ -106,27 +103,24 @@ namespace ToolSmiths.InventorySystem.Items
 
             List<PlayerStatModifier> GetRandomAffixes(ConsumableType consumableType, ItemRarity rarity)
             {
-                var randomAffixAmount = GetAffixAmount();
+                var affixAmount = GetAffixAmount(rarity);
 
                 var affixList = new List<PlayerStatModifier>();
 
-                /// selects item properties
-                for (var i = 0; i < randomAffixAmount; i++)
-                {
-                    var allowedAffixes = Character.Instance.Stats.Select(x => x.Stat).ToList(); // switch => lookup table
-                                                                                                // => weighting of allowed Affixes          => more likely to roll
+                var allowedAffixes = ItemProvider.Instance.ItemTypeData.GetPossibleStats(consumableType).ToList();
 
-                    /// weighted STATS
-                    // => primary/secondary stats? -> requires further design
-                    // => double-rolled stats? -> requires further design
+                /// selects item properties
+                for (var i = 0; i < affixAmount; i++)
+                {
+                    if (allowedAffixes.Count <= 0)
+                        break;
 
                     var randomRoll = UnityEngine.Random.Range(0, allowedAffixes.Count);
                     var randomStat = allowedAffixes[randomRoll];
-                    allowedAffixes.RemoveAt(randomRoll); // to exclude double rolls
+                    allowedAffixes.RemoveAt(randomRoll); // => exclude double rolls
 
                     /// weighted RANDOM ROLL
                     var lootLevel = Character.Instance.CharacterLevel; // define base min/max stat range
-                    var minMax = Vector2.up; // as min/max is different for each stat we need a lookup table to convert the lootLevel into min/max ranges
 
                     var rangeModifier = rarity switch
                     {
@@ -141,11 +135,8 @@ namespace ToolSmiths.InventorySystem.Items
                         _ => 0f,
                     };
 
-                    minMax *= rangeModifier;
-
-                    var value = UnityEngine.Random.Range(minMax.x, minMax.y);                           // TODO: should favor lower range value within min and max
-                    var statModifier = new StatModifier(value, StatModifierType.FlatAdd); // TODO: lookup table for each statName => rework the statModifier to derive the type from the name?
-                    var itemStat = new PlayerStatModifier(randomStat, statModifier);
+                    var modifier = randomStat.GetRandomRoll(rangeModifier);
+                    var itemStat = new PlayerStatModifier(randomStat.StatName, modifier);
 
                     affixList.Add(itemStat);
                 }
@@ -156,10 +147,10 @@ namespace ToolSmiths.InventorySystem.Items
 
                 return affixList;
 
-                uint GetAffixAmount() => rarity switch    // TODO: itemType sensitive?
+                uint GetAffixAmount(ItemRarity rarity) => rarity switch    // TODO: itemType sensitive?
                 {
                     ItemRarity.NoDrop => 0,
-                    ItemRarity.Common => 0,
+                    ItemRarity.Common => 0,     // plus item specific stat
                     ItemRarity.Magic => 1,
                     ItemRarity.Rare => 2,
                     ItemRarity.Unique => 2,     // plus unique stats
@@ -170,15 +161,13 @@ namespace ToolSmiths.InventorySystem.Items
                     //ItemRarity.Set => 2,      // plus set stats
                 };
             }
-
-            List<PlayerStatModifier> GetStats(ItemRarity rarity, List<PlayerStatModifier> randomAffixes) =>
-                // plus itemType specific stats
-                randomAffixes;
         }
 
         public void Consume() { }
 
         public void UseItem() => Consume();
+        public override string ToString() => $"{Rarity} {ConsumableType}".Colored(GetRarityColor(Rarity));
+
     }
 
     [Serializable]
@@ -189,35 +178,32 @@ namespace ToolSmiths.InventorySystem.Items
 
         public EquipmentItem(EquipmentType equipmentType, ItemRarity rarity)
         {
+            if (rarity == ItemRarity.NoDrop)
+                return;
+
             EquipmentType = equipmentType;
             Rarity = rarity;
 
             StackLimit = ItemStack.Single;
 
-            // TODO: GetItemTypeData
-            // -> this includes the icons, uniques to pick from, itemType specific affixes and allowedAffixes, their distribution and minMax range
+            Icon = ItemProvider.Instance.GetIcon(EquipmentType, Rarity);
+            Dimensions = GetDimension(EquipmentType);
+            var stats = GetRandomAffixes(EquipmentType, Rarity);
+            //stats + equipmentType specific stats
 
             if (Rarity == ItemRarity.Unique)
             {
-                // TODO: individual probabilityDistribution for each equipment type
-                // var unique = correspondingTypeDistribution.GetRandomEnumerator();
+                var unique = ItemProvider.Instance.GetUnique(EquipmentType).GetItem();
 
-                // Icon == unique.Icon
-                // Dimensions == unique.Dimensions
-                // Stats == stats + unique.Stats + equipmentType specific stats
-            }
-            else
-            {
-                Icon = GetIcon(EquipmentType, Rarity);
-                Dimensions = GetDimension(EquipmentType);
+                Icon = unique.Icon;
+                Dimensions = unique.Dimensions;
 
-                var stats = GetRandomAffixes(EquipmentType, Rarity);
-                Affixes = GetStats(Rarity, stats);
+                for (var i = 0; i < unique.Affixes.Count; i++)
+                    stats.Add(unique.Affixes[i]);
             }
 
-            // TODO: equipmentType defines the list of icons 
-            // TODO: rarity defines what icon within the list
-            Sprite GetIcon(EquipmentType equipmentType, ItemRarity rarity) => null;
+            //Affixes = GetStats(Rarity, stats);
+            Affixes = stats;
 
             ItemSize GetDimension(EquipmentType equipmentType) => equipmentType switch
             {
@@ -254,42 +240,41 @@ namespace ToolSmiths.InventorySystem.Items
 
             List<PlayerStatModifier> GetRandomAffixes(EquipmentType equipmentType, ItemRarity rarity)
             {
-                var randomAffixAmount = GetAffixAmount();
+                var affixAmount = GetAffixAmount(rarity);
 
                 var affixList = new List<PlayerStatModifier>();
 
-                var allowedAffixes = Character.Instance.Stats.Select(x => x.Stat).ToList(); // switch => lookup table
-                                                                                            // => weighting of allowed Affixes          => more likely to roll
+                var allowedAffixes = ItemProvider.Instance.ItemTypeData.GetPossibleStats(equipmentType).ToList();
 
                 /// selects item properties
-                for (var i = 0; i < randomAffixAmount; i++)
+                for (var i = 0; i < affixAmount; i++)
                 {
+                    if (allowedAffixes.Count <= 0)
+                        break;
+
                     var randomRoll = UnityEngine.Random.Range(0, allowedAffixes.Count);
                     var randomStat = allowedAffixes[randomRoll];
-                    allowedAffixes.RemoveAt(randomRoll); // to exclude double rolls
+                    allowedAffixes.RemoveAt(randomRoll); // => exclude double rolls
 
                     /// weighted RANDOM ROLL
                     var lootLevel = Character.Instance.CharacterLevel; // define base min/max stat range
-                    var minMax = Vector2.up; // as min/max is different for each stat we need a lookup table to convert the lootLevel into min/max ranges
 
                     var rangeModifier = rarity switch
                     {
                         ItemRarity.NoDrop => 0f,
-                        //ItemRarity.Crafted => 1f,
                         ItemRarity.Common => 1f,
-                        //ItemRarity.Uncommon => 1f,
                         ItemRarity.Magic => .9f,
                         ItemRarity.Rare => .8f,
-                        //ItemRarity.Set => .8f,
                         ItemRarity.Unique => .7f,
+
+                        //ItemRarity.Crafted => 1f,
+                        //ItemRarity.Uncommon => 1f,
+                        //ItemRarity.Set => .8f,
                         _ => 0f,
                     };
 
-                    minMax *= rangeModifier;
-
-                    var value = UnityEngine.Random.Range(minMax.x, minMax.y);             // TODO: should favor lower range value within min and max
-                    var statModifier = new StatModifier(value, StatModifierType.FlatAdd); // TODO: lookup table for each statName => rework the statModifier to derive the type from the name?
-                    var itemStat = new PlayerStatModifier(randomStat, statModifier);
+                    var modifier = randomStat.GetRandomRoll(rangeModifier);
+                    var itemStat = new PlayerStatModifier(randomStat.StatName, modifier);
 
                     affixList.Add(itemStat);
                 }
@@ -300,13 +285,13 @@ namespace ToolSmiths.InventorySystem.Items
 
                 return affixList;
 
-                uint GetAffixAmount() => rarity switch    // TODO: itemType sensitive?
+                uint GetAffixAmount(ItemRarity rarity) => rarity switch    // TODO: itemType sensitive?
                 {
                     ItemRarity.NoDrop => 0,
-                    ItemRarity.Common => 0,
-                    ItemRarity.Magic => 1,
-                    ItemRarity.Rare => 2,
-                    ItemRarity.Unique => 2,     // plus unique stats
+                    ItemRarity.Common => 1,     // plus item specific stat
+                    ItemRarity.Magic => 2,
+                    ItemRarity.Rare => 3,
+                    ItemRarity.Unique => 3,     // plus unique stats
                     _ => 0,
 
                     //ItemRarity.Crafted => 0,
@@ -315,14 +300,8 @@ namespace ToolSmiths.InventorySystem.Items
                 };
             }
 
-            List<PlayerStatModifier> GetStats(ItemRarity rarity, List<PlayerStatModifier> randomAffixes) =>
-                // plus itemType specific stats
-                randomAffixes;
+            // List<PlayerStatModifier> GetStats(ItemRarity rarity, List<PlayerStatModifier> randomAffixes) => randomAffixes;
         }
-
-        //public EquipmentItem(Sprite icon, ItemSize dimensions, ItemStack stackLimit, ItemRarity rarity, List<ItemAffix> stats, EquipmentType equipmentType) : base(icon, dimensions, stackLimit, rarity, stats)
-        //    => EquipmentType = equipmentType;
-
 
         public void UseItem()
         {
@@ -351,6 +330,7 @@ namespace ToolSmiths.InventorySystem.Items
             if (0 < remaining.Amount)
                 InventoryProvider.Instance.PlayerEquipment.RemoveFromContainer(package);
         }
+        public override string ToString() => $"{Rarity} {EquipmentType}".Colored(GetRarityColor(Rarity));
     }
 
     public interface IUsableItem

@@ -268,14 +268,14 @@ PrefabInstance:
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 98726128}
+      objectReference: {fileID: 322785545}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: SetItemToShields
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, InventorySystem
+      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -386,14 +386,14 @@ PrefabInstance:
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 98726128}
+      objectReference: {fileID: 322785545}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: SetItemToHelmets
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, InventorySystem
+      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -642,7 +642,6 @@ GameObject:
   - component: {fileID: 98726126}
   - component: {fileID: 98726130}
   - component: {fileID: 98726129}
-  - component: {fileID: 98726128}
   m_Layer: 5
   m_Name: MiddlePanel
   m_TagString: Untagged
@@ -663,7 +662,6 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2073134484}
-  - {fileID: 188321652}
   m_Father: {fileID: 1980660185}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -710,205 +708,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 98726124}
   m_CullTransparentMesh: 1
---- !u!114 &98726128
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 98726124}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ff2fdfa93f150e24f92c26f82cbcdcc2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  PlayerEquipment:
-    autoEquip: 1
-  <ShowDebugPositions>k__BackingField: 0
-  PlayerInventoryDisplay: {fileID: 1485550229}
-  playerInventorySize: {x: 10, y: 5}
-  PlayerStashDisplay: {fileID: 1370558871}
-  playerStashSize: {x: 10, y: 16}
-  PlayerEquipmentDisplay: {fileID: 998310528992184647}
-  playerEquipmentSize: {x: 14, y: 1}
-  Amulets:
-  - {fileID: 11400000, guid: b19d9e41f7a59ae44946a83314ef6a55, type: 2}
-  - {fileID: 11400000, guid: f5bef30ed8acf8a4d9fee3d05c03e30a, type: 2}
-  - {fileID: 11400000, guid: 7e64222c3d1250045a60231548818f27, type: 2}
-  - {fileID: 11400000, guid: 84ef36b7ea7ca9e41b9d85c69537f5cd, type: 2}
-  - {fileID: 11400000, guid: 770c4887d5f38714ba1db8e1cb4f72f0, type: 2}
-  - {fileID: 11400000, guid: 734ab7dd14821214393c8421a7efb0d9, type: 2}
-  - {fileID: 11400000, guid: cf22dfa1471f1f349b96f5a6bbec54cd, type: 2}
-  - {fileID: 11400000, guid: 9f17977775d0892428a2508d13f88506, type: 2}
-  - {fileID: 11400000, guid: 4637c2cb39742ca439de0007ed14c560, type: 2}
-  - {fileID: 11400000, guid: d47c007d838e4984586f5630a93673fc, type: 2}
-  - {fileID: 11400000, guid: c324f9e51a592bd479b6ca97b18dcc83, type: 2}
-  - {fileID: 11400000, guid: 57dcdea1ca78f1b469b78729200f8c0a, type: 2}
-  - {fileID: 11400000, guid: 111f68f2eb188a744aa726a30d4299f7, type: 2}
-  - {fileID: 11400000, guid: 2308d20c27fc9994985058aa06669711, type: 2}
-  - {fileID: 11400000, guid: f3a414e1989555b4aa004793af053fc6, type: 2}
-  Belts:
-  - {fileID: 11400000, guid: 1b5f94626bb3eb64da497f2868819831, type: 2}
-  - {fileID: 11400000, guid: b866f35983254f84a81ce669f14add9d, type: 2}
-  - {fileID: 11400000, guid: cff6809d85c7c1743b528c95640e21f3, type: 2}
-  - {fileID: 11400000, guid: 359920fca0bc7b844891818af4e15c57, type: 2}
-  - {fileID: 11400000, guid: 4d36346558c45d249b722e225abca3ef, type: 2}
-  - {fileID: 11400000, guid: 70e1333330a464647bbc082b0283bc64, type: 2}
-  - {fileID: 11400000, guid: f5fca8df508dd4847882644034123c25, type: 2}
-  - {fileID: 11400000, guid: 75f45a8ddded1fa4b903a2e3e5a1fab9, type: 2}
-  - {fileID: 11400000, guid: 07b7cdf4bf45b4742b918e1600472e53, type: 2}
-  Boots:
-  - {fileID: 11400000, guid: e06b7eb9c7ec4b8448a0782a1991cfc0, type: 2}
-  - {fileID: 11400000, guid: e2083dabd749a224081c55b45da65f1e, type: 2}
-  - {fileID: 11400000, guid: 20b5f39817dab0d40916e21a0959e5b6, type: 2}
-  - {fileID: 11400000, guid: 5bb7001928fd15340b254959310652aa, type: 2}
-  - {fileID: 11400000, guid: e702e0ee82f50684d9b895eed986164d, type: 2}
-  - {fileID: 11400000, guid: ccd63f2ed888d8a468b689eae1f2bc9d, type: 2}
-  - {fileID: 11400000, guid: 9a5085a03718e574aa9079879cc3ad9d, type: 2}
-  - {fileID: 11400000, guid: 5cca73aba48d2724790346572618919f, type: 2}
-  - {fileID: 11400000, guid: d25b5c2417a5cec4db6c1886d6d2d763, type: 2}
-  Bracers:
-  - {fileID: 11400000, guid: 81e2ac6a9b18808409d14a8a2a1608fb, type: 2}
-  - {fileID: 11400000, guid: 5790a4863c687234eb2ed2e1b96713fd, type: 2}
-  - {fileID: 11400000, guid: 291ab19553dc9614793bbeb9cf551510, type: 2}
-  - {fileID: 11400000, guid: fbc8777a9af0909479e9c05dffc95836, type: 2}
-  - {fileID: 11400000, guid: a7be9d8498146a94782cf1ced429b18f, type: 2}
-  - {fileID: 11400000, guid: 9649f6d41b9936f4190f1708cb520a2e, type: 2}
-  - {fileID: 11400000, guid: 5ece60156998b514287faf40cae3dbe1, type: 2}
-  - {fileID: 11400000, guid: 69c87f40fa96ead4f8e02df07f2d6745, type: 2}
-  - {fileID: 11400000, guid: 9420a89d231448a42b11800f6930ea8d, type: 2}
-  Chests:
-  - {fileID: 11400000, guid: 126935b07ac547345afec39869490729, type: 2}
-  - {fileID: 11400000, guid: 58bc6de3e9ee2934db6ab162d3e63dd9, type: 2}
-  - {fileID: 11400000, guid: 9c1824965aeff3d4481d502a4d251aa5, type: 2}
-  - {fileID: 11400000, guid: 783f68a068410b54cbbe8420651ad3ee, type: 2}
-  - {fileID: 11400000, guid: 99b33ba073a2d5241adede5d3d6ac917, type: 2}
-  - {fileID: 11400000, guid: f3dc3f7872e05af4c8cdec7c74477b1c, type: 2}
-  - {fileID: 11400000, guid: cb6acf3d6feacf74c89abee8292cad3c, type: 2}
-  - {fileID: 11400000, guid: 082ef5fbe17a15c4ca4f5dbae2bc3ef8, type: 2}
-  - {fileID: 11400000, guid: 08b919ea432c4b144ad0e200a803da49, type: 2}
-  Cloaks:
-  - {fileID: 11400000, guid: 0bf2628960ff33f469c6627979457df6, type: 2}
-  - {fileID: 11400000, guid: 36ccbe6505df96d4391e935d06c450dc, type: 2}
-  - {fileID: 11400000, guid: c2de3a6c294200942bebb8f9633c0da9, type: 2}
-  - {fileID: 11400000, guid: dd3202c46b6ca3545a5e2b01e97f895f, type: 2}
-  - {fileID: 11400000, guid: 4022a30a382b0e44fba5ca105a695afc, type: 2}
-  - {fileID: 11400000, guid: c97ee5007e2db4441b10514a6ad21c10, type: 2}
-  - {fileID: 11400000, guid: b06aa0dbef5517642b97698be913a69e, type: 2}
-  - {fileID: 11400000, guid: 76657ea7bfaecc14584fb0bf24a0eb18, type: 2}
-  - {fileID: 11400000, guid: 8523367534290784da8f4f6848e07e80, type: 2}
-  Gloves:
-  - {fileID: 11400000, guid: 38834d181f79468429b8719e2126787d, type: 2}
-  - {fileID: 11400000, guid: 999fe2242f347934599a48655d5acd6d, type: 2}
-  - {fileID: 11400000, guid: 5eef9c4e21ca4e24cb559d84cbf512b8, type: 2}
-  - {fileID: 11400000, guid: 9cbf057014acf604e91e7050ee5849ec, type: 2}
-  - {fileID: 11400000, guid: 6166e592f0e1e7942a1fe1f3e437cd2c, type: 2}
-  - {fileID: 11400000, guid: d47496bc566fe9e4690e9e4cf480b5b1, type: 2}
-  - {fileID: 11400000, guid: cbc17009274f76b4c8a12d174dfd9ef7, type: 2}
-  - {fileID: 11400000, guid: 6d104e82f19af274da87554ec04a8198, type: 2}
-  - {fileID: 11400000, guid: e2b0124aad776b3478806c265b7ead46, type: 2}
-  Helmets:
-  - {fileID: 11400000, guid: a11a6f4ba0c7d144c82cbc8a96defdda, type: 2}
-  - {fileID: 11400000, guid: f64572df80e133849b9d327789b92276, type: 2}
-  - {fileID: 11400000, guid: 6f8fb3ad2fb60e54db5bfb756fd8ec96, type: 2}
-  - {fileID: 11400000, guid: eec4945ad94ae044d9dff552c257ef6c, type: 2}
-  - {fileID: 11400000, guid: 7923ff0df69281c4b86594f653910261, type: 2}
-  - {fileID: 11400000, guid: b965799e675835b4999d6120467c4d55, type: 2}
-  - {fileID: 11400000, guid: 674988ac6ae307240b087c62b58e1505, type: 2}
-  - {fileID: 11400000, guid: cbe6f4fa2fd32644d979db495904813a, type: 2}
-  - {fileID: 11400000, guid: a116d32479615124eb09379dad02f72e, type: 2}
-  Pants:
-  - {fileID: 11400000, guid: 8fa77f11ad3ad8747a8e71904aebb466, type: 2}
-  - {fileID: 11400000, guid: 90ce0b8eedfe6724487657110d8f2d69, type: 2}
-  - {fileID: 11400000, guid: 7635c70af35695c46a46bd562a2d6682, type: 2}
-  - {fileID: 11400000, guid: 2555b31520841514db1681756d7c7709, type: 2}
-  - {fileID: 11400000, guid: d6ac4358e3f7f5d44bcf0b6ceda82f8d, type: 2}
-  - {fileID: 11400000, guid: 3e1f94e8646d51c4996582fb89dc4b03, type: 2}
-  - {fileID: 11400000, guid: 106ead458339d78409d8464e033f5109, type: 2}
-  - {fileID: 11400000, guid: b3ba76bc5b080ab4e8fda311ac4bf526, type: 2}
-  - {fileID: 11400000, guid: c489e002f1cac8e4c8afc15cf4bc72cb, type: 2}
-  Quiver:
-  - {fileID: 11400000, guid: ddef006cac68bf1409e399637ef18611, type: 2}
-  - {fileID: 11400000, guid: c210b0e7f73b4e144a95dc445526e968, type: 2}
-  - {fileID: 11400000, guid: b44d26864f66a01448e057cb59b17234, type: 2}
-  - {fileID: 11400000, guid: b8319de67e262db4aaa761cb2ed2e872, type: 2}
-  - {fileID: 11400000, guid: 17a34b090b610094ca7690277adbf6cf, type: 2}
-  - {fileID: 11400000, guid: da9a5e92388aeb648b5856e8d403f8ef, type: 2}
-  - {fileID: 11400000, guid: 1cc79c5e17f384f45a31f443351613bc, type: 2}
-  - {fileID: 11400000, guid: 41f89cbcca43725478b54819e366e5e9, type: 2}
-  - {fileID: 11400000, guid: 6b8e6f318f8bd474cbbd70323b19ed43, type: 2}
-  - {fileID: 11400000, guid: 6342048fffc9c164c98796a2e434ed6c, type: 2}
-  Rings:
-  - {fileID: 11400000, guid: fdd1c459f84b8a0449b051505c52a064, type: 2}
-  - {fileID: 11400000, guid: 969f84f5c6153134781372783a6251de, type: 2}
-  - {fileID: 11400000, guid: 92b19b88cdd50c84fa3f4bc1c53a0ff9, type: 2}
-  - {fileID: 11400000, guid: bb7e0021744d5924d9f267a0a1fc5873, type: 2}
-  - {fileID: 11400000, guid: e8a589fe5d142ac41a00dc3e28badb54, type: 2}
-  - {fileID: 11400000, guid: 9c24c8a389f0031478bf54de5274514e, type: 2}
-  - {fileID: 11400000, guid: 087f709b745a6b44ead7c4c9a9edb137, type: 2}
-  - {fileID: 11400000, guid: eee89f7778d49814385e2c7df09061e6, type: 2}
-  - {fileID: 11400000, guid: 6065eecd15836c74493675934f2da146, type: 2}
-  - {fileID: 11400000, guid: eced5756f54c275448eedfc04e3c6c93, type: 2}
-  - {fileID: 11400000, guid: f93fc915c2d7a7747ae089dea82bc309, type: 2}
-  - {fileID: 11400000, guid: ac9c9ff2ac917ce499797d81d693ddd2, type: 2}
-  - {fileID: 11400000, guid: 04290a2be9d3f4d4dad20510011bc766, type: 2}
-  - {fileID: 11400000, guid: 89d0e14c607294347a54e7084dc0415b, type: 2}
-  - {fileID: 11400000, guid: cf6b5f1a03d5fd8419195ff5d27567a3, type: 2}
-  Shields:
-  - {fileID: 11400000, guid: a32fe0023b95ea249a7861c0efc15d41, type: 2}
-  - {fileID: 11400000, guid: 701071730f8052349948e248f505fcdf, type: 2}
-  - {fileID: 11400000, guid: cb467f334c79fa74b837900830d707a3, type: 2}
-  - {fileID: 11400000, guid: f22d48b2ce11c4343a5eae1193388c3b, type: 2}
-  - {fileID: 11400000, guid: 7d071ffaeaa7e4a44a9e05a2982f2e20, type: 2}
-  - {fileID: 11400000, guid: 5cd3b383e94fbb946884d74967a9ef44, type: 2}
-  - {fileID: 11400000, guid: 1599d29613b9d8242b98b1e101478e2b, type: 2}
-  - {fileID: 11400000, guid: 805ffad02b934ae4cb434f64193e2d30, type: 2}
-  - {fileID: 11400000, guid: 06152eb718f2c044b86c05b35a7b0285, type: 2}
-  Shoulder:
-  - {fileID: 11400000, guid: 6f4c37b3d48aef5479ab6da8a44a1e51, type: 2}
-  - {fileID: 11400000, guid: 98758c5c71294744089c71da0d9b7be3, type: 2}
-  - {fileID: 11400000, guid: d0b48ac45d7ad46498bf2880c89826b1, type: 2}
-  - {fileID: 11400000, guid: 7901ef61990f2b84e808ac65176e4b8a, type: 2}
-  - {fileID: 11400000, guid: 0c7a0aeea69ec0347939e28c0c64c05a, type: 2}
-  - {fileID: 11400000, guid: f2254f6a34afb704f81d862799553df7, type: 2}
-  - {fileID: 11400000, guid: 4a997c72e18043342b62e2bbe98ee33b, type: 2}
-  - {fileID: 11400000, guid: e970bed128802d34e952b5396c848ddc, type: 2}
-  - {fileID: 11400000, guid: 824de86d36845d74aa4c24018740947d, type: 2}
-  Weapon1H:
-  - {fileID: 11400000, guid: e67659d196a6a024ba1d064cc427a8fb, type: 2}
-  Weapon2H:
-  - {fileID: 11400000, guid: c4ae283ec74f2b344b34ebd795935462, type: 2}
-  Arrows:
-  - {fileID: 11400000, guid: 1b6a85cfd3eb51e4abe9d5bba2b1e5ab, type: 2}
-  - {fileID: 11400000, guid: 298cc8092f3508549974f31c727ffbfc, type: 2}
-  - {fileID: 11400000, guid: 79aba32b19a5c49459b0dec1ef55b3cc, type: 2}
-  - {fileID: 11400000, guid: cb538c79a5d762548b9c61d4159498b4, type: 2}
-  - {fileID: 11400000, guid: dfa3a18003a9a4649a61a63f475afd34, type: 2}
-  - {fileID: 11400000, guid: 916166505af77a7498edbad31af841b7, type: 2}
-  - {fileID: 11400000, guid: 92e2f6242faf2f04198acf10bfd989a9, type: 2}
-  - {fileID: 11400000, guid: 6e4d9e1ed86484d46afc7602b79853b2, type: 2}
-  - {fileID: 11400000, guid: 5ec8b4b20cf4e6649848474e6475f08f, type: 2}
-  - {fileID: 11400000, guid: ae5d9b4832572e447be631c5b1a036d1, type: 2}
-  Books:
-  - {fileID: 11400000, guid: 62b2c769c6760d24eaaf6bcaecaeedf9, type: 2}
-  - {fileID: 11400000, guid: d8c129c261e04dc419e31ee4209beecf, type: 2}
-  - {fileID: 11400000, guid: 6396cfbfaf0a720438efdaba2d644283, type: 2}
-  - {fileID: 11400000, guid: 4fcc03ef6f397524e9ec47498daecd99, type: 2}
-  - {fileID: 11400000, guid: 5d636b62e861b0648b8d60501087d7a3, type: 2}
-  - {fileID: 11400000, guid: ad32ba1692d16694896065bd6e342125, type: 2}
-  - {fileID: 11400000, guid: 5eb14f83c1048a947a9dd63a918e406e, type: 2}
-  - {fileID: 11400000, guid: d2fee95ebfe8a084a9c53126c462e410, type: 2}
-  - {fileID: 11400000, guid: 83e29d87edbe4c945a8f23d78816dcf4, type: 2}
-  Potions:
-  - {fileID: 11400000, guid: d1a179ea89fd5aa4fa25278462ad79c6, type: 2}
-  add: 1
-  itemCategoryDistribution: {fileID: 11400000, guid: ae878e2503b01aa4f8df8fc578e7a993, type: 2}
-  itemRarityDistribution: {fileID: 11400000, guid: 1d3181e9dd35dea49b7900e07374d206, type: 2}
-  equipmentCategoryDistribution: {fileID: 11400000, guid: 8f1d7ef58b3daaa45972073ee8a8532b, type: 2}
-  armamentsDistribution: {fileID: 11400000, guid: e51bf724a5af117439d55f405bd06c2f, type: 2}
-  weaponsDistribution: {fileID: 11400000, guid: c1a3f14045796f047973e63f09fc2a91, type: 2}
-  jewelryDistribution: {fileID: 11400000, guid: 54faba0152fdb8849ad9223e39a69145, type: 2}
-  consumableTypeDistribution: {fileID: 11400000, guid: ca398d20cb0869a4ebef17325eeb1d21, type: 2}
 --- !u!114 &98726129
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1083,14 +882,14 @@ PrefabInstance:
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 98726128}
+      objectReference: {fileID: 322785545}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: SetItemToAmulets
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, InventorySystem
+      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -1191,7 +990,7 @@ PrefabInstance:
     m_RemovedComponents:
     - {fileID: 6561342732504229910, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
   m_SourcePrefab: {fileID: 100100000, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
---- !u!1 &188321651
+--- !u!1 &322785544
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1199,34 +998,54 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 188321652}
-  m_Layer: 5
-  m_Name: GameObject
+  - component: {fileID: 322785546}
+  - component: {fileID: 322785545}
+  m_Layer: 0
+  m_Name: INVENTORY PROVIDER
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!224 &188321652
-RectTransform:
+--- !u!114 &322785545
+MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 188321651}
+  m_GameObject: {fileID: 322785544}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ff2fdfa93f150e24f92c26f82cbcdcc2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  <PlayerEquipment>k__BackingField:
+    autoEquip: 0
+  <ShowDebugPositions>k__BackingField: 0
+  PlayerInventoryDisplay: {fileID: 1485550229}
+  playerInventorySize: {x: 10, y: 5}
+  PlayerStashDisplay: {fileID: 1370558871}
+  playerStashSize: {x: 10, y: 16}
+  PlayerEquipmentDisplay: {fileID: 998310528992184647}
+  playerEquipmentSize: {x: 14, y: 1}
+  add: 1
+  amountSlider: {fileID: 1937414601}
+  amountText: {fileID: 1743492170}
+--- !u!4 &322785546
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 322785544}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 98726125}
-  m_RootOrder: 1
+  m_Father: {fileID: 0}
+  m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
-  m_Pivot: {x: 0, y: 0}
 --- !u!1001 &332666268
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1237,14 +1056,14 @@ PrefabInstance:
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 98726128}
+      objectReference: {fileID: 322785545}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: SetItemToBoots
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, InventorySystem
+      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -1355,14 +1174,14 @@ PrefabInstance:
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 98726128}
+      objectReference: {fileID: 322785545}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: SetItemToGloves
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, InventorySystem
+      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -1578,10 +1397,14 @@ PrefabInstance:
     - target: {fileID: 7732425298350059325, guid: cf0141580ffbbc444b72dd3d441cf354, type: 3}
       propertyPath: onValueChanged.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 98726128}
+      objectReference: {fileID: 322785545}
     - target: {fileID: 7732425298350059325, guid: cf0141580ffbbc444b72dd3d441cf354, type: 3}
       propertyPath: onValueChanged.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: SetAutoEquip
+      value: ToggleAutoEquip
+      objectReference: {fileID: 0}
+    - target: {fileID: 7732425298350059325, guid: cf0141580ffbbc444b72dd3d441cf354, type: 3}
+      propertyPath: onValueChanged.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7732425298734919702, guid: cf0141580ffbbc444b72dd3d441cf354, type: 3}
       propertyPath: m_Sprite
@@ -1699,10 +1522,14 @@ PrefabInstance:
     - target: {fileID: 7732425298350059325, guid: cf0141580ffbbc444b72dd3d441cf354, type: 3}
       propertyPath: onValueChanged.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 98726128}
+      objectReference: {fileID: 322785545}
     - target: {fileID: 7732425298350059325, guid: cf0141580ffbbc444b72dd3d441cf354, type: 3}
       propertyPath: onValueChanged.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: AddToPlayerInventory
+      objectReference: {fileID: 0}
+    - target: {fileID: 7732425298350059325, guid: cf0141580ffbbc444b72dd3d441cf354, type: 3}
+      propertyPath: onValueChanged.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7732425298734919702, guid: cf0141580ffbbc444b72dd3d441cf354, type: 3}
       propertyPath: m_Type
@@ -1766,7 +1593,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.3107849, g: 0.3301887, b: 0.26944643, a: 0}
+  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -1824,14 +1651,14 @@ PrefabInstance:
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 98726128}
+      objectReference: {fileID: 322785545}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: SetItemToCloaks
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, InventorySystem
+      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -1957,14 +1784,14 @@ PrefabInstance:
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 98726128}
+      objectReference: {fileID: 322785545}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: SetItemToBracers
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, InventorySystem
+      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -2144,7 +1971,7 @@ GameObject:
   - component: {fileID: 708370310}
   - component: {fileID: 708370311}
   m_Layer: 5
-  m_Name: GameObject
+  m_Name: Spacer
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2306,7 +2133,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.7311321, g: 0.87576485, b: 1, a: 1}
+  m_Color: {r: 1, g: 0.83251196, b: 0.7294118, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -2341,14 +2168,14 @@ PrefabInstance:
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 98726128}
+      objectReference: {fileID: 322785545}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: SetItemToPants
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, InventorySystem
+      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -2464,14 +2291,14 @@ PrefabInstance:
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 98726128}
+      objectReference: {fileID: 322785545}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: SetItemToShoulders
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, InventorySystem
+      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -2587,14 +2414,14 @@ PrefabInstance:
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 98726128}
+      objectReference: {fileID: 322785545}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: SetItemToRings
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, InventorySystem
+      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -2809,14 +2636,14 @@ PrefabInstance:
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 98726128}
+      objectReference: {fileID: 322785545}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: SetItemToArrows
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, InventorySystem
+      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -3019,10 +2846,14 @@ PrefabInstance:
     - target: {fileID: 7732425298350059325, guid: cf0141580ffbbc444b72dd3d441cf354, type: 3}
       propertyPath: onValueChanged.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 98726128}
+      objectReference: {fileID: 322785545}
     - target: {fileID: 7732425298350059325, guid: cf0141580ffbbc444b72dd3d441cf354, type: 3}
       propertyPath: onValueChanged.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: AddToPlayerEquipment
+      objectReference: {fileID: 0}
+    - target: {fileID: 7732425298350059325, guid: cf0141580ffbbc444b72dd3d441cf354, type: 3}
+      propertyPath: onValueChanged.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7732425298734919702, guid: cf0141580ffbbc444b72dd3d441cf354, type: 3}
       propertyPath: m_Sprite
@@ -3187,14 +3018,14 @@ PrefabInstance:
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 98726128}
+      objectReference: {fileID: 322785545}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: SetItemToBooks
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, InventorySystem
+      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -3458,7 +3289,7 @@ PrefabInstance:
     - target: {fileID: 7732425298350059325, guid: cf0141580ffbbc444b72dd3d441cf354, type: 3}
       propertyPath: onValueChanged.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 98726128}
+      objectReference: {fileID: 0}
     - target: {fileID: 7732425298350059325, guid: cf0141580ffbbc444b72dd3d441cf354, type: 3}
       propertyPath: onValueChanged.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: SetToRemoveItems
@@ -3483,14 +3314,14 @@ PrefabInstance:
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 98726128}
+      objectReference: {fileID: 322785545}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: SetItemToBelts
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, InventorySystem
+      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -3701,10 +3532,14 @@ PrefabInstance:
     - target: {fileID: 7732425298350059325, guid: cf0141580ffbbc444b72dd3d441cf354, type: 3}
       propertyPath: onValueChanged.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 98726128}
+      objectReference: {fileID: 322785545}
     - target: {fileID: 7732425298350059325, guid: cf0141580ffbbc444b72dd3d441cf354, type: 3}
       propertyPath: onValueChanged.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: SetAddRemove
+      value: ToggleAddRemove
+      objectReference: {fileID: 0}
+    - target: {fileID: 7732425298350059325, guid: cf0141580ffbbc444b72dd3d441cf354, type: 3}
+      propertyPath: onValueChanged.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7732425298734919702, guid: cf0141580ffbbc444b72dd3d441cf354, type: 3}
       propertyPath: m_Sprite
@@ -3814,14 +3649,14 @@ PrefabInstance:
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 98726128}
+      objectReference: {fileID: 322785545}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: SetItemToChests
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, InventorySystem
+      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -3932,10 +3767,10 @@ PrefabInstance:
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 98726128}
+      objectReference: {fileID: 322785545}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: AddRandomLoot
+      value: AddRemoveRandomLoot
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
@@ -4181,14 +4016,14 @@ PrefabInstance:
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 98726128}
+      objectReference: {fileID: 322785545}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: SetItemToQuiver
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, InventorySystem
+      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -4343,14 +4178,14 @@ PrefabInstance:
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 98726128}
+      objectReference: {fileID: 322785545}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: SortInventory
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, InventorySystem
+      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -4691,10 +4526,14 @@ PrefabInstance:
     - target: {fileID: 7732425298350059325, guid: cf0141580ffbbc444b72dd3d441cf354, type: 3}
       propertyPath: onValueChanged.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 98726128}
+      objectReference: {fileID: 322785545}
     - target: {fileID: 7732425298350059325, guid: cf0141580ffbbc444b72dd3d441cf354, type: 3}
       propertyPath: onValueChanged.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: AddToPlayerStash
+      objectReference: {fileID: 0}
+    - target: {fileID: 7732425298350059325, guid: cf0141580ffbbc444b72dd3d441cf354, type: 3}
+      propertyPath: onValueChanged.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7732425298734919702, guid: cf0141580ffbbc444b72dd3d441cf354, type: 3}
       propertyPath: m_Sprite
@@ -4801,14 +4640,14 @@ PrefabInstance:
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 98726128}
+      objectReference: {fileID: 322785545}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: SetItemToPotions
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, InventorySystem
+      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -5107,9 +4946,9 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 98726128}
+      - m_Target: {fileID: 322785545}
         m_TargetAssemblyTypeName: ToolSmiths.InventorySystem.Inventories.InventoryProvider,
-          InventorySystem
+          Assembly-CSharp
         m_MethodName: SetAmountText
         m_Mode: 1
         m_Arguments:
@@ -5273,14 +5112,14 @@ PrefabInstance:
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 98726128}
+      objectReference: {fileID: 322785545}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: SetItemToWeapon2H
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, InventorySystem
+      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -5454,14 +5293,14 @@ PrefabInstance:
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 98726128}
+      objectReference: {fileID: 322785545}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: SetItemToWeapon1H
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, InventorySystem
+      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -5604,8 +5443,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 152.5, y: 0}
-  m_SizeDelta: {x: 285, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!114 &2073134486
 MonoBehaviour:
@@ -5685,6 +5524,232 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!1 &2074813802
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2074813804}
+  - component: {fileID: 2074813803}
+  m_Layer: 0
+  m_Name: ITEM PROVIDER
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2074813803
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2074813802}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b58ee377468ee442a97473a7fa16ae4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ItemTypeData: {fileID: 11400000, guid: be7b2766279a25b4bbc708817fa006cb, type: 2}
+  itemCategoryDistribution: {fileID: 11400000, guid: ae878e2503b01aa4f8df8fc578e7a993, type: 2}
+  itemRarityDistribution: {fileID: 11400000, guid: 1d3181e9dd35dea49b7900e07374d206, type: 2}
+  equipmentCategoryDistribution: {fileID: 11400000, guid: 8f1d7ef58b3daaa45972073ee8a8532b, type: 2}
+  armamentsDistribution: {fileID: 11400000, guid: e51bf724a5af117439d55f405bd06c2f, type: 2}
+  weaponCategoryDistribution: {fileID: 11400000, guid: 3492ee1619409384586fb6cbbaa7c716, type: 2}
+  oneHandDistribution: {fileID: 11400000, guid: 77ba22fac486b404bb6d94b5e7ef9cea, type: 2}
+  twoHandDistribution: {fileID: 11400000, guid: c1a3f14045796f047973e63f09fc2a91, type: 2}
+  offHandDistribution: {fileID: 11400000, guid: bf1da72236ee47f44ae07f5de3daafe6, type: 2}
+  jewelryDistribution: {fileID: 11400000, guid: 54faba0152fdb8849ad9223e39a69145, type: 2}
+  consumableTypeDistribution: {fileID: 11400000, guid: ca398d20cb0869a4ebef17325eeb1d21, type: 2}
+  Amulets:
+  - {fileID: 11400000, guid: b19d9e41f7a59ae44946a83314ef6a55, type: 2}
+  - {fileID: 11400000, guid: f5bef30ed8acf8a4d9fee3d05c03e30a, type: 2}
+  - {fileID: 11400000, guid: 7e64222c3d1250045a60231548818f27, type: 2}
+  - {fileID: 11400000, guid: 84ef36b7ea7ca9e41b9d85c69537f5cd, type: 2}
+  - {fileID: 11400000, guid: 770c4887d5f38714ba1db8e1cb4f72f0, type: 2}
+  - {fileID: 11400000, guid: 734ab7dd14821214393c8421a7efb0d9, type: 2}
+  - {fileID: 11400000, guid: cf22dfa1471f1f349b96f5a6bbec54cd, type: 2}
+  - {fileID: 11400000, guid: 9f17977775d0892428a2508d13f88506, type: 2}
+  - {fileID: 11400000, guid: 4637c2cb39742ca439de0007ed14c560, type: 2}
+  - {fileID: 11400000, guid: d47c007d838e4984586f5630a93673fc, type: 2}
+  - {fileID: 11400000, guid: c324f9e51a592bd479b6ca97b18dcc83, type: 2}
+  - {fileID: 11400000, guid: 57dcdea1ca78f1b469b78729200f8c0a, type: 2}
+  - {fileID: 11400000, guid: 111f68f2eb188a744aa726a30d4299f7, type: 2}
+  - {fileID: 11400000, guid: 2308d20c27fc9994985058aa06669711, type: 2}
+  - {fileID: 11400000, guid: f3a414e1989555b4aa004793af053fc6, type: 2}
+  Belts:
+  - {fileID: 11400000, guid: 1b5f94626bb3eb64da497f2868819831, type: 2}
+  - {fileID: 11400000, guid: b866f35983254f84a81ce669f14add9d, type: 2}
+  - {fileID: 11400000, guid: cff6809d85c7c1743b528c95640e21f3, type: 2}
+  - {fileID: 11400000, guid: 359920fca0bc7b844891818af4e15c57, type: 2}
+  - {fileID: 11400000, guid: 4d36346558c45d249b722e225abca3ef, type: 2}
+  - {fileID: 11400000, guid: 70e1333330a464647bbc082b0283bc64, type: 2}
+  - {fileID: 11400000, guid: f5fca8df508dd4847882644034123c25, type: 2}
+  - {fileID: 11400000, guid: 75f45a8ddded1fa4b903a2e3e5a1fab9, type: 2}
+  - {fileID: 11400000, guid: 07b7cdf4bf45b4742b918e1600472e53, type: 2}
+  Boots:
+  - {fileID: 11400000, guid: e06b7eb9c7ec4b8448a0782a1991cfc0, type: 2}
+  - {fileID: 11400000, guid: e2083dabd749a224081c55b45da65f1e, type: 2}
+  - {fileID: 11400000, guid: 20b5f39817dab0d40916e21a0959e5b6, type: 2}
+  - {fileID: 11400000, guid: 5bb7001928fd15340b254959310652aa, type: 2}
+  - {fileID: 11400000, guid: e702e0ee82f50684d9b895eed986164d, type: 2}
+  - {fileID: 11400000, guid: ccd63f2ed888d8a468b689eae1f2bc9d, type: 2}
+  - {fileID: 11400000, guid: 9a5085a03718e574aa9079879cc3ad9d, type: 2}
+  - {fileID: 11400000, guid: 5cca73aba48d2724790346572618919f, type: 2}
+  - {fileID: 11400000, guid: d25b5c2417a5cec4db6c1886d6d2d763, type: 2}
+  Bracers:
+  - {fileID: 11400000, guid: 81e2ac6a9b18808409d14a8a2a1608fb, type: 2}
+  - {fileID: 11400000, guid: 5790a4863c687234eb2ed2e1b96713fd, type: 2}
+  - {fileID: 11400000, guid: 291ab19553dc9614793bbeb9cf551510, type: 2}
+  - {fileID: 11400000, guid: fbc8777a9af0909479e9c05dffc95836, type: 2}
+  - {fileID: 11400000, guid: a7be9d8498146a94782cf1ced429b18f, type: 2}
+  - {fileID: 11400000, guid: 9649f6d41b9936f4190f1708cb520a2e, type: 2}
+  - {fileID: 11400000, guid: 5ece60156998b514287faf40cae3dbe1, type: 2}
+  - {fileID: 11400000, guid: 69c87f40fa96ead4f8e02df07f2d6745, type: 2}
+  - {fileID: 11400000, guid: 9420a89d231448a42b11800f6930ea8d, type: 2}
+  Chests:
+  - {fileID: 11400000, guid: 126935b07ac547345afec39869490729, type: 2}
+  - {fileID: 11400000, guid: 58bc6de3e9ee2934db6ab162d3e63dd9, type: 2}
+  - {fileID: 11400000, guid: 9c1824965aeff3d4481d502a4d251aa5, type: 2}
+  - {fileID: 11400000, guid: 783f68a068410b54cbbe8420651ad3ee, type: 2}
+  - {fileID: 11400000, guid: 99b33ba073a2d5241adede5d3d6ac917, type: 2}
+  - {fileID: 11400000, guid: f3dc3f7872e05af4c8cdec7c74477b1c, type: 2}
+  - {fileID: 11400000, guid: cb6acf3d6feacf74c89abee8292cad3c, type: 2}
+  - {fileID: 11400000, guid: 082ef5fbe17a15c4ca4f5dbae2bc3ef8, type: 2}
+  - {fileID: 11400000, guid: 08b919ea432c4b144ad0e200a803da49, type: 2}
+  Cloaks:
+  - {fileID: 11400000, guid: 0bf2628960ff33f469c6627979457df6, type: 2}
+  - {fileID: 11400000, guid: 36ccbe6505df96d4391e935d06c450dc, type: 2}
+  - {fileID: 11400000, guid: c2de3a6c294200942bebb8f9633c0da9, type: 2}
+  - {fileID: 11400000, guid: dd3202c46b6ca3545a5e2b01e97f895f, type: 2}
+  - {fileID: 11400000, guid: 4022a30a382b0e44fba5ca105a695afc, type: 2}
+  - {fileID: 11400000, guid: c97ee5007e2db4441b10514a6ad21c10, type: 2}
+  - {fileID: 11400000, guid: b06aa0dbef5517642b97698be913a69e, type: 2}
+  - {fileID: 11400000, guid: 76657ea7bfaecc14584fb0bf24a0eb18, type: 2}
+  - {fileID: 11400000, guid: 8523367534290784da8f4f6848e07e80, type: 2}
+  Gloves:
+  - {fileID: 11400000, guid: 38834d181f79468429b8719e2126787d, type: 2}
+  - {fileID: 11400000, guid: 999fe2242f347934599a48655d5acd6d, type: 2}
+  - {fileID: 11400000, guid: 5eef9c4e21ca4e24cb559d84cbf512b8, type: 2}
+  - {fileID: 11400000, guid: 9cbf057014acf604e91e7050ee5849ec, type: 2}
+  - {fileID: 11400000, guid: 6166e592f0e1e7942a1fe1f3e437cd2c, type: 2}
+  - {fileID: 11400000, guid: d47496bc566fe9e4690e9e4cf480b5b1, type: 2}
+  - {fileID: 11400000, guid: cbc17009274f76b4c8a12d174dfd9ef7, type: 2}
+  - {fileID: 11400000, guid: 6d104e82f19af274da87554ec04a8198, type: 2}
+  - {fileID: 11400000, guid: e2b0124aad776b3478806c265b7ead46, type: 2}
+  Helmets:
+  - {fileID: 11400000, guid: a11a6f4ba0c7d144c82cbc8a96defdda, type: 2}
+  - {fileID: 11400000, guid: f64572df80e133849b9d327789b92276, type: 2}
+  - {fileID: 11400000, guid: 6f8fb3ad2fb60e54db5bfb756fd8ec96, type: 2}
+  - {fileID: 11400000, guid: eec4945ad94ae044d9dff552c257ef6c, type: 2}
+  - {fileID: 11400000, guid: 7923ff0df69281c4b86594f653910261, type: 2}
+  - {fileID: 11400000, guid: b965799e675835b4999d6120467c4d55, type: 2}
+  - {fileID: 11400000, guid: 674988ac6ae307240b087c62b58e1505, type: 2}
+  - {fileID: 11400000, guid: cbe6f4fa2fd32644d979db495904813a, type: 2}
+  - {fileID: 11400000, guid: a116d32479615124eb09379dad02f72e, type: 2}
+  Pants:
+  - {fileID: 11400000, guid: 8fa77f11ad3ad8747a8e71904aebb466, type: 2}
+  - {fileID: 11400000, guid: 90ce0b8eedfe6724487657110d8f2d69, type: 2}
+  - {fileID: 11400000, guid: 7635c70af35695c46a46bd562a2d6682, type: 2}
+  - {fileID: 11400000, guid: 2555b31520841514db1681756d7c7709, type: 2}
+  - {fileID: 11400000, guid: d6ac4358e3f7f5d44bcf0b6ceda82f8d, type: 2}
+  - {fileID: 11400000, guid: 3e1f94e8646d51c4996582fb89dc4b03, type: 2}
+  - {fileID: 11400000, guid: 106ead458339d78409d8464e033f5109, type: 2}
+  - {fileID: 11400000, guid: b3ba76bc5b080ab4e8fda311ac4bf526, type: 2}
+  - {fileID: 11400000, guid: c489e002f1cac8e4c8afc15cf4bc72cb, type: 2}
+  Quiver:
+  - {fileID: 11400000, guid: ddef006cac68bf1409e399637ef18611, type: 2}
+  - {fileID: 11400000, guid: c210b0e7f73b4e144a95dc445526e968, type: 2}
+  - {fileID: 11400000, guid: b44d26864f66a01448e057cb59b17234, type: 2}
+  - {fileID: 11400000, guid: b8319de67e262db4aaa761cb2ed2e872, type: 2}
+  - {fileID: 11400000, guid: 17a34b090b610094ca7690277adbf6cf, type: 2}
+  - {fileID: 11400000, guid: da9a5e92388aeb648b5856e8d403f8ef, type: 2}
+  - {fileID: 11400000, guid: 1cc79c5e17f384f45a31f443351613bc, type: 2}
+  - {fileID: 11400000, guid: 41f89cbcca43725478b54819e366e5e9, type: 2}
+  - {fileID: 11400000, guid: 6b8e6f318f8bd474cbbd70323b19ed43, type: 2}
+  - {fileID: 11400000, guid: 6342048fffc9c164c98796a2e434ed6c, type: 2}
+  Rings:
+  - {fileID: 11400000, guid: fdd1c459f84b8a0449b051505c52a064, type: 2}
+  - {fileID: 11400000, guid: 969f84f5c6153134781372783a6251de, type: 2}
+  - {fileID: 11400000, guid: 92b19b88cdd50c84fa3f4bc1c53a0ff9, type: 2}
+  - {fileID: 11400000, guid: bb7e0021744d5924d9f267a0a1fc5873, type: 2}
+  - {fileID: 11400000, guid: e8a589fe5d142ac41a00dc3e28badb54, type: 2}
+  - {fileID: 11400000, guid: 9c24c8a389f0031478bf54de5274514e, type: 2}
+  - {fileID: 11400000, guid: 087f709b745a6b44ead7c4c9a9edb137, type: 2}
+  - {fileID: 11400000, guid: eee89f7778d49814385e2c7df09061e6, type: 2}
+  - {fileID: 11400000, guid: 6065eecd15836c74493675934f2da146, type: 2}
+  - {fileID: 11400000, guid: eced5756f54c275448eedfc04e3c6c93, type: 2}
+  - {fileID: 11400000, guid: f93fc915c2d7a7747ae089dea82bc309, type: 2}
+  - {fileID: 11400000, guid: ac9c9ff2ac917ce499797d81d693ddd2, type: 2}
+  - {fileID: 11400000, guid: 04290a2be9d3f4d4dad20510011bc766, type: 2}
+  - {fileID: 11400000, guid: 89d0e14c607294347a54e7084dc0415b, type: 2}
+  - {fileID: 11400000, guid: cf6b5f1a03d5fd8419195ff5d27567a3, type: 2}
+  Shields:
+  - {fileID: 11400000, guid: a32fe0023b95ea249a7861c0efc15d41, type: 2}
+  - {fileID: 11400000, guid: 701071730f8052349948e248f505fcdf, type: 2}
+  - {fileID: 11400000, guid: cb467f334c79fa74b837900830d707a3, type: 2}
+  - {fileID: 11400000, guid: f22d48b2ce11c4343a5eae1193388c3b, type: 2}
+  - {fileID: 11400000, guid: 7d071ffaeaa7e4a44a9e05a2982f2e20, type: 2}
+  - {fileID: 11400000, guid: 5cd3b383e94fbb946884d74967a9ef44, type: 2}
+  - {fileID: 11400000, guid: 1599d29613b9d8242b98b1e101478e2b, type: 2}
+  - {fileID: 11400000, guid: 805ffad02b934ae4cb434f64193e2d30, type: 2}
+  - {fileID: 11400000, guid: 06152eb718f2c044b86c05b35a7b0285, type: 2}
+  Shoulder:
+  - {fileID: 11400000, guid: 6f4c37b3d48aef5479ab6da8a44a1e51, type: 2}
+  - {fileID: 11400000, guid: 98758c5c71294744089c71da0d9b7be3, type: 2}
+  - {fileID: 11400000, guid: d0b48ac45d7ad46498bf2880c89826b1, type: 2}
+  - {fileID: 11400000, guid: 7901ef61990f2b84e808ac65176e4b8a, type: 2}
+  - {fileID: 11400000, guid: 0c7a0aeea69ec0347939e28c0c64c05a, type: 2}
+  - {fileID: 11400000, guid: f2254f6a34afb704f81d862799553df7, type: 2}
+  - {fileID: 11400000, guid: 4a997c72e18043342b62e2bbe98ee33b, type: 2}
+  - {fileID: 11400000, guid: e970bed128802d34e952b5396c848ddc, type: 2}
+  - {fileID: 11400000, guid: 824de86d36845d74aa4c24018740947d, type: 2}
+  Swords:
+  - {fileID: 11400000, guid: e67659d196a6a024ba1d064cc427a8fb, type: 2}
+  Bows:
+  - {fileID: 11400000, guid: c4ae283ec74f2b344b34ebd795935462, type: 2}
+  GreatSwords: []
+  Arrows:
+  - {fileID: 11400000, guid: 1b6a85cfd3eb51e4abe9d5bba2b1e5ab, type: 2}
+  - {fileID: 11400000, guid: 298cc8092f3508549974f31c727ffbfc, type: 2}
+  - {fileID: 11400000, guid: 79aba32b19a5c49459b0dec1ef55b3cc, type: 2}
+  - {fileID: 11400000, guid: cb538c79a5d762548b9c61d4159498b4, type: 2}
+  - {fileID: 11400000, guid: dfa3a18003a9a4649a61a63f475afd34, type: 2}
+  - {fileID: 11400000, guid: 916166505af77a7498edbad31af841b7, type: 2}
+  - {fileID: 11400000, guid: 92e2f6242faf2f04198acf10bfd989a9, type: 2}
+  - {fileID: 11400000, guid: 6e4d9e1ed86484d46afc7602b79853b2, type: 2}
+  - {fileID: 11400000, guid: 5ec8b4b20cf4e6649848474e6475f08f, type: 2}
+  - {fileID: 11400000, guid: ae5d9b4832572e447be631c5b1a036d1, type: 2}
+  Books:
+  - {fileID: 11400000, guid: 62b2c769c6760d24eaaf6bcaecaeedf9, type: 2}
+  - {fileID: 11400000, guid: d8c129c261e04dc419e31ee4209beecf, type: 2}
+  - {fileID: 11400000, guid: 6396cfbfaf0a720438efdaba2d644283, type: 2}
+  - {fileID: 11400000, guid: 4fcc03ef6f397524e9ec47498daecd99, type: 2}
+  - {fileID: 11400000, guid: 5d636b62e861b0648b8d60501087d7a3, type: 2}
+  - {fileID: 11400000, guid: ad32ba1692d16694896065bd6e342125, type: 2}
+  - {fileID: 11400000, guid: 5eb14f83c1048a947a9dd63a918e406e, type: 2}
+  - {fileID: 11400000, guid: d2fee95ebfe8a084a9c53126c462e410, type: 2}
+  - {fileID: 11400000, guid: 83e29d87edbe4c945a8f23d78816dcf4, type: 2}
+  Potions:
+  - {fileID: 11400000, guid: d1a179ea89fd5aa4fa25278462ad79c6, type: 2}
+--- !u!4 &2074813804
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2074813802}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 4
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2092265038
 GameObject:
   m_ObjectHideFlags: 0
@@ -5885,7 +5950,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 759432216187712586, guid: 91471b344b37389498b75d12a2cee4c0, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 620
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 759432216187712586, guid: 91471b344b37389498b75d12a2cee4c0, type: 3}
       propertyPath: m_SizeDelta.y
@@ -5921,7 +5986,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 759432216187712586, guid: 91471b344b37389498b75d12a2cee4c0, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 320
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 759432216187712586, guid: 91471b344b37389498b75d12a2cee4c0, type: 3}
       propertyPath: m_AnchoredPosition.y
@@ -6426,15 +6491,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 88730000908859642, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 190.89
-      objectReference: {fileID: 0}
-    - target: {fileID: 88730000908859642, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
-      propertyPath: m_SizeDelta.y
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 88730000908859642, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 88730000908859642, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 105.445
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 88730000908859642, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
       propertyPath: m_AnchoredPosition.y
@@ -6450,15 +6515,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 338798801661309390, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 190.89
-      objectReference: {fileID: 0}
-    - target: {fileID: 338798801661309390, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
-      propertyPath: m_SizeDelta.y
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 338798801661309390, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 338798801661309390, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 105.445
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 338798801661309390, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
       propertyPath: m_AnchoredPosition.y
@@ -6530,7 +6595,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 532141253804732523, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 65.445
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 532141253804732523, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
       propertyPath: m_AnchoredPosition.y
@@ -6554,12 +6619,40 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 834847599562176455, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 65.445
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 834847599562176455, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1054205605761741242, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
+      propertyPath: m_RootOrder
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 1054205605761741242, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1054205605761741242, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1054205605761741242, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1054205605761741242, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1054205605761741242, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1054205605761741242, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1183071953826523078, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -6602,7 +6695,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1787611738787772072, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 105.445
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1787611738787772072, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
       propertyPath: m_AnchoredPosition.y
@@ -6640,6 +6733,30 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.x
       value: 65.445
       objectReference: {fileID: 0}
+    - target: {fileID: 2505885982564552039, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2505885982564552039, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2505885982564552039, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2505885982564552039, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2505885982564552039, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2505885982564552039, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2902535465197701590, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -6658,7 +6775,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2902535465197701590, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 65.445
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2902535465197701590, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
       propertyPath: m_AnchoredPosition.y
@@ -6720,6 +6837,10 @@ PrefabInstance:
       propertyPath: m_SizeDelta.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3851055537867326169, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
+      propertyPath: m_RootOrder
+      value: 5
+      objectReference: {fileID: 0}
     - target: {fileID: 4273549594731458586, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -6738,30 +6859,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4273549594731458586, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4282606198646792282, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
-      propertyPath: m_AnchorMax.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4282606198646792282, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
-      propertyPath: m_AnchorMin.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4282606198646792282, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
-      propertyPath: m_SizeDelta.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4282606198646792282, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
-      propertyPath: m_SizeDelta.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4282606198646792282, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
-      propertyPath: m_AnchoredPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4282606198646792282, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
-      propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4425426822500994583, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
@@ -6794,7 +6891,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4451467149909442843, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 105.445
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4451467149909442843, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
       propertyPath: m_AnchoredPosition.y
@@ -6818,7 +6915,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4605721420896038905, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 65.445
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4623782800280858149, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
       propertyPath: m_AnchorMax.y
@@ -6986,7 +7083,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6391749441784877225, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 105.445
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6391749441784877225, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
       propertyPath: m_AnchoredPosition.y
@@ -7034,33 +7131,9 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6963948381081191218, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 105.445
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6963948381081191218, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
-      propertyPath: m_AnchoredPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6974335174679940747, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
-      propertyPath: m_AnchorMax.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6974335174679940747, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
-      propertyPath: m_AnchorMin.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6974335174679940747, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
-      propertyPath: m_SizeDelta.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6974335174679940747, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
-      propertyPath: m_SizeDelta.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6974335174679940747, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
-      propertyPath: m_AnchoredPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6974335174679940747, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
@@ -7337,7 +7410,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1141628726790606186, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -0.000030517578
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1168866829102530351, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
       propertyPath: m_Pivot.x
@@ -7413,6 +7486,14 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3677882925760495411, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
       propertyPath: m_Size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3966431505955093578, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_fontSizeBase
+      value: 16
+      objectReference: {fileID: 0}
+    - target: {fileID: 3966431505955093578, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_HorizontalAlignment
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4015303438272514626, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}

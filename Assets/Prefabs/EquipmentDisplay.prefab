@@ -375,7 +375,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 18
+  m_fontSize: 16
   m_fontSizeBase: 18
   m_fontWeight: 400
   m_enableAutoSizing: 0
@@ -659,223 +659,63 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   characterLevel: 0
   stats:
-  - name: Health
+  - name: AttackSpeedPercent
     <Stat>k__BackingField: 0
     <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
     <ModifiedValue>k__BackingField: 0
-  - name: HealthRegen
+  - name: DamagePercent
     <Stat>k__BackingField: 1
     <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
     <ModifiedValue>k__BackingField: 0
-  - name: MoveSpeed
+  - name: MinDamage
     <Stat>k__BackingField: 2
     <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
     <ModifiedValue>k__BackingField: 0
-  - name: Damage
+  - name: MaxDamage
     <Stat>k__BackingField: 3
     <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
     <ModifiedValue>k__BackingField: 0
-  - name: CurrentHealth
+  - name: BlockChancePercent
     <Stat>k__BackingField: 4
     <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
     <ModifiedValue>k__BackingField: 0
-  - name: AttackSpeed
+  - name: BonusArmor
     <Stat>k__BackingField: 5
     <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
     <ModifiedValue>k__BackingField: 0
-  - name: MagicFind
-    <Stat>k__BackingField: 100
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: AreaDamagePercent
-    <Stat>k__BackingField: 101
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: AttackSpeedPercent
-    <Stat>k__BackingField: 102
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: CritChancePercent
-    <Stat>k__BackingField: 103
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: CritDamagePercent
-    <Stat>k__BackingField: 104
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: DamagePercent
-    <Stat>k__BackingField: 105
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: DamageTypePercent
-    <Stat>k__BackingField: 106
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: MinElementalDamage
-    <Stat>k__BackingField: 107
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: MaxElementalDamage
-    <Stat>k__BackingField: 108
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: MinDamage
-    <Stat>k__BackingField: 109
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: MaxDamage
-    <Stat>k__BackingField: 110
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: DamageAgainstElitesPercent
-    <Stat>k__BackingField: 111
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: ReducedResourceCostPercent
-    <Stat>k__BackingField: 112
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: ReducedCooldownPercent
-    <Stat>k__BackingField: 113
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: BlockChancePercent
-    <Stat>k__BackingField: 114
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: BonusArmor
-    <Stat>k__BackingField: 115
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: ReducedDamageFromElites
-    <Stat>k__BackingField: 116
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: ReducedDamageFromRanged
-    <Stat>k__BackingField: 117
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: ReducedDamageFromMelee
-    <Stat>k__BackingField: 118
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: ReducedLossOfControll
-    <Stat>k__BackingField: 119
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: Thorns
-    <Stat>k__BackingField: 120
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
   - name: ResistanceToAll
-    <Stat>k__BackingField: 121
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: DamageTypeResistance
-    <Stat>k__BackingField: 122
+    <Stat>k__BackingField: 6
     <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
     <ModifiedValue>k__BackingField: 0
   - name: LifePercent
-    <Stat>k__BackingField: 123
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: LifePerHit
-    <Stat>k__BackingField: 124
+    <Stat>k__BackingField: 7
     <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
     <ModifiedValue>k__BackingField: 0
   - name: LifePerSecond
-    <Stat>k__BackingField: 125
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: LifePerKill
-    <Stat>k__BackingField: 126
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: ExtraLifeFromHealing
-    <Stat>k__BackingField: 127
+    <Stat>k__BackingField: 8
     <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
     <ModifiedValue>k__BackingField: 0
   - name: MovementSpeedPercent
-    <Stat>k__BackingField: 128
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: Sockets
-    <Stat>k__BackingField: 129
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: BonusExperiencePercent
-    <Stat>k__BackingField: 130
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: BonusExperience
-    <Stat>k__BackingField: 131
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: GoldFindPercent
-    <Stat>k__BackingField: 132
+    <Stat>k__BackingField: 9
     <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
     <ModifiedValue>k__BackingField: 0
   - name: IncreasedItemRarityPercent
-    <Stat>k__BackingField: 133
+    <Stat>k__BackingField: 10
     <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
     <ModifiedValue>k__BackingField: 0
   - name: IncreasedItemQuantityPercent
-    <Stat>k__BackingField: 134
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: PickupRadius
-    <Stat>k__BackingField: 135
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: ReducedLevelRequirements
-    <Stat>k__BackingField: 136
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: ChanceToBlindPercent
-    <Stat>k__BackingField: 137
+    <Stat>k__BackingField: 11
     <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
     <ModifiedValue>k__BackingField: 0

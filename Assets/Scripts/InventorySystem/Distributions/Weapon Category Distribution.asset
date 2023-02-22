@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1448423e6f580f44c91b64f2e5640d0e, type: 3}
+  m_Name: Weapon Category Distribution
+  m_EditorClassIdentifier: 
+  failQuantity: 0
+  quantities:
+  - name: NONE
+    Enumeration: 0
+    Quantity: 0
+  - name: Weapon_1H
+    Enumeration: 100
+    Quantity: 4
+  - name: Weapon_2H
+    Enumeration: 200
+    Quantity: 2
+  - name: Offhand
+    Enumeration: 300
+    Quantity: 2
+  successProbability: 1
+  probabilities:
+  - name: NONE
+    Enumeration: 0
+    Probability: 0
+  - name: Weapon_1H
+    Enumeration: 100
+    Probability: 0.5
+  - name: Weapon_2H
+    Enumeration: 200
+    Probability: 0.25
+  - name: Offhand
+    Enumeration: 300
+    Probability: 0.25
+  exampleResults: 640000006400000064000000640000006400000064000000c80000002c0100002c0100002c010000

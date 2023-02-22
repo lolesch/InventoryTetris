@@ -38,7 +38,7 @@ namespace ToolSmiths.InventorySystem.Displays
 
             if (itemName)
             {
-                itemName.text = package.Item.Name; // UIExtensions.Colored
+                itemName.text = package.Item.ToString(); // UIExtensions.Colored
                 itemName.color = rarityColor;
             }
 
@@ -85,11 +85,11 @@ namespace ToolSmiths.InventorySystem.Displays
 
                     var comparisonString = stats[i].Modifier.Type switch
                     {
-                        StatModifierType.Override => $"= {stats[i].Modifier.Value:+ #.###;- #.###;#.###}",
+                        StatModifierType.Override => $"== {stats[i].Modifier.Value:+ #.###;- #.###;#.###}",
                         StatModifierType.FlatAdd => $"{stats[i].Modifier.Value:+ #.###;- #.###;#.###}",
                         StatModifierType.PercentAdd => $"{stats[i].Modifier.Value:+ #.###;- #.###;#.###} %",
                         StatModifierType.PercentMult => $"* {stats[i].Modifier.Value:+ #.###;- #.###;#.###} %",
-                        _ => $"{stats[i].Modifier.Value} {stats[i].Stat}",
+                        _ => $"{stats[i].Modifier.Value} {stats[i].Stat}", // get human readable string
                     };
 
                     itemStat.text = $"{Colored(comparisonString, color)} {stats[i].Stat}";

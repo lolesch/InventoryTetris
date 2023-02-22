@@ -1,68 +1,74 @@
-﻿namespace ToolSmiths.InventorySystem.Data.Enums
+﻿using UnityEngine;
+
+namespace ToolSmiths.InventorySystem.Data.Enums
 {
     [System.Serializable]
     /// The identifier of all stats in the game.
     public enum StatName
     {
-        Health = 0,
-        HealthRegen = 1,
-        MoveSpeed = 2,
-        Damage = 3,
-        CurrentHealth = 4,
-        AttackSpeed = 5,
-
-        MagicFind = 100,
-
         /// D3
         // damage
-        AreaDamagePercent,
+        //AreaDamagePercent,
+        [InspectorName("Attack Speed %")]
         AttackSpeedPercent,
-        CritChancePercent,
-        CritDamagePercent,
+        //CritChancePercent,
+        //CritDamagePercent,
+        [InspectorName("Damage %")]
         DamagePercent,
-        DamageTypePercent, // foreach damageType
-        MinElementalDamage,
-        MaxElementalDamage,
+        //DamageTypePercent, // foreach damageType
+        //MinElementalDamage,
+        //MaxElementalDamage,
+        [InspectorName("Damage Min")]
         MinDamage,
+        [InspectorName("Damage Max")]
         MaxDamage,
-        DamageAgainstElitesPercent,
+        //DamageAgainstElitesPercent,
 
-        ReducedResourceCostPercent,
-        ReducedCooldownPercent,
+        //ReducedResourceCostPercent,
+        //ReducedCooldownPercent,
+
         // defense
+        [InspectorName("Block Chance %")]
         BlockChancePercent,
+        [InspectorName("Armor")]
         BonusArmor,
-        ReducedDamageFromElites,
-        ReducedDamageFromRanged,
-        ReducedDamageFromMelee,
+        //ReducedDamageFromElites,
+        //ReducedDamageFromRanged,
+        //ReducedDamageFromMelee,
 
-        ReducedLossOfControll,
+        //ReducedLossOfControll,
 
-        Thorns,
+        //Thorns,
 
         // resistance
+        [InspectorName("All Resistance")]
         ResistanceToAll,
-        DamageTypeResistance, // foreach damageType
+        //DamageTypeResistance, // foreach damageType
 
         // healing
+        [InspectorName("Health %")]
         LifePercent,
-        LifePerHit,
+        //LifePerHit,
+        [InspectorName("Health Regen")]
         LifePerSecond,
-        LifePerKill,
-        ExtraLifeFromHealing,
+        //LifePerKill,
+        //ExtraLifeFromHealing,
 
         // adventure
+        [InspectorName("Move Speed %")]
         MovementSpeedPercent,
-        Sockets,
-        BonusExperiencePercent,
-        BonusExperience,
-        GoldFindPercent,
+        //Sockets,
+        //BonusExperiencePercent,
+        //BonusExperience,
+        //GoldFindPercent,
+        [InspectorName("Increased Rarity %")]
         IncreasedItemRarityPercent,
+        [InspectorName("Increased Quantity %")]
         IncreasedItemQuantityPercent,
-        PickupRadius,
-        ReducedLevelRequirements,
+        //PickupRadius,
+        //ReducedLevelRequirements,
 
         // OnHit 
-        ChanceToBlindPercent, // and many more...
+        //ChanceToBlindPercent, // and many more...
     }
 }

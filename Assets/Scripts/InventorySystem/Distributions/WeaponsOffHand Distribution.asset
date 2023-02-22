@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a44c9985231e0694189c8d828f0ae0eb, type: 3}
-  m_Name: Weapons Distribution
+  m_Name: WeaponsOffHand Distribution
   m_EditorClassIdentifier: 
   failQuantity: 0
   quantities:
@@ -52,16 +52,16 @@ MonoBehaviour:
     Quantity: 0
   - name: Sword
     Enumeration: 101
-    Quantity: 2
+    Quantity: 0
   - name: TWOHANDEDWEAPONS
     Enumeration: 200
     Quantity: 0
   - name: Bow
     Enumeration: 201
-    Quantity: 1
+    Quantity: 0
   - name: GreatSword
     Enumeration: 202
-    Quantity: 1
+    Quantity: 0
   - name: OFFHANDS
     Enumeration: 300
     Quantity: 0
@@ -120,25 +120,25 @@ MonoBehaviour:
     Probability: 0
   - name: Sword
     Enumeration: 101
-    Probability: 0.33333334
+    Probability: 0
   - name: TWOHANDEDWEAPONS
     Enumeration: 200
     Probability: 0
   - name: Bow
     Enumeration: 201
-    Probability: 0.16666667
+    Probability: 0
   - name: GreatSword
     Enumeration: 202
-    Probability: 0.16666667
+    Probability: 0
   - name: OFFHANDS
     Enumeration: 300
     Probability: 0
   - name: Shield
     Enumeration: 301
-    Probability: 0.16666667
+    Probability: 0.5
   - name: Quiver
     Enumeration: 302
-    Probability: 0.16666667
+    Probability: 0.5
   - name: JEWELRY
     Enumeration: 400
     Probability: 0
@@ -148,4 +148,4 @@ MonoBehaviour:
   - name: Ring
     Enumeration: 402
     Probability: 0
-  exampleResults: 65000000650000006500000065000000650000002d0100002e0100002e0100002e0100002e010000
+  exampleResults: 2d0100002d0100002d0100002d0100002d0100002d0100002d0100002d0100002e0100002e010000

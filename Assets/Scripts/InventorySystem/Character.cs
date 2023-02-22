@@ -17,8 +17,10 @@ namespace ToolSmiths.InventorySystem.Data
         private List<TextMeshProUGUI> mainStatDisplays = new();
         [SerializeField] private TextMeshProUGUI statPrefab;
 
-        //[SerializeField] private PlayerStat[] derivedStats = new PlayerStat[0];
         // TODO: DERIVED STATS => define and calculate derived values
+        // PlayerAttributes[]
+        // each PlayerAttribute has a list of PlayerStats to modify
+        // defines Attribute conversion
 
         private void OnValidate()
         {
@@ -44,7 +46,7 @@ namespace ToolSmiths.InventorySystem.Data
                     var display = Instantiate(statPrefab, statPrefab.transform.parent);
                     display.gameObject.SetActive(true);
                     mainStatDisplays.Add(display);
-                    display.text = $"{stats[i].Stat}: {stats[i].ModifiedValue}";
+                    display.text = $"{stats[i].Stat}: {stats[i].ModifiedValue:0.###}";
                 }
             }
             UpdateStatDisplays();
@@ -53,7 +55,7 @@ namespace ToolSmiths.InventorySystem.Data
         private void UpdateStatDisplays()
         {
             for (var i = 0; i < mainStatDisplays.Count; i++)
-                mainStatDisplays[i].text = $"{Stats[i].Stat}: {Stats[i].ModifiedValue:#.###}";
+                mainStatDisplays[i].text = $"{Stats[i].Stat}: {Stats[i].ModifiedValue:0.###}";
         }
 
         public void AddItemStats(List<PlayerStatModifier> stats)
@@ -88,6 +90,7 @@ namespace ToolSmiths.InventorySystem.Data
             return null;
         }
 
-        public float GetStatValue(StatName stat) => GetStat(stat).ModifiedValue; // TODO: make it an interface for all things that have a list of stats on them
+        // make it an interface for all things that have a list of stats on them?
+        public float GetStatValue(StatName stat) => GetStat(stat).ModifiedValue;
     }
 }
