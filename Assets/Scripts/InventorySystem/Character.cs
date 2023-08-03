@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using TeppichsTools.Creation;
 using TMPro;
 using ToolSmiths.InventorySystem.Data.Enums;
+using ToolSmiths.InventorySystem.Extensions;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Data
@@ -46,7 +47,7 @@ namespace ToolSmiths.InventorySystem.Data
                     var display = Instantiate(statPrefab, statPrefab.transform.parent);
                     display.gameObject.SetActive(true);
                     mainStatDisplays.Add(display);
-                    display.text = $"{stats[i].Stat}: {stats[i].ModifiedValue:0.###}";
+                    display.text = $"{stats[i].Stat.SplitCamelCase()}: {stats[i].ModifiedValue:0.###}";
                 }
             }
             UpdateStatDisplays();
@@ -55,7 +56,7 @@ namespace ToolSmiths.InventorySystem.Data
         private void UpdateStatDisplays()
         {
             for (var i = 0; i < mainStatDisplays.Count; i++)
-                mainStatDisplays[i].text = $"{Stats[i].Stat}: {Stats[i].ModifiedValue:0.###}";
+                mainStatDisplays[i].text = $"{Stats[i].Stat.SplitCamelCase()}: {Stats[i].ModifiedValue:0.###}";
         }
 
         public void AddItemStats(List<PlayerStatModifier> stats)

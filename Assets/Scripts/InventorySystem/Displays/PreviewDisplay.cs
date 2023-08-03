@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using TMPro;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
+using ToolSmiths.InventorySystem.Extensions;
 using ToolSmiths.InventorySystem.Items;
 using UnityEngine;
 using UnityEngine.UI;
@@ -89,10 +90,10 @@ namespace ToolSmiths.InventorySystem.Displays
                         StatModifierType.FlatAdd => $"{stats[i].Modifier.Value:+ #.###;- #.###;#.###}",
                         StatModifierType.PercentAdd => $"{stats[i].Modifier.Value:+ #.###;- #.###;#.###} %",
                         StatModifierType.PercentMult => $"* {stats[i].Modifier.Value:+ #.###;- #.###;#.###} %",
-                        _ => $"{stats[i].Modifier.Value} {stats[i].Stat}", // get human readable string
+                        _ => $"{stats[i].Modifier.Value}", // get human readable string
                     };
 
-                    itemStat.text = $"{Colored(comparisonString, color)} {stats[i].Stat}";
+                    itemStat.text = $"{Colored(comparisonString, color)} {stats[i].Stat.SplitCamelCase()}";
 
                     itemStat.gameObject.SetActive(true);
 

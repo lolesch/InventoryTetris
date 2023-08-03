@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using ToolSmiths.InventorySystem.Data.Enums;
+using ToolSmiths.InventorySystem.Extensions;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Data
@@ -96,9 +97,11 @@ namespace ToolSmiths.InventorySystem.Data
 
         public void OnBeforeSerialize()
         {
-            name = Stat.ToString();
+            name = Stat.SplitCamelCase();
             ModifiedValue = CalculateModifiedValue();
         }
+
+        public override string ToString() => $"{Stat.SplitCamelCase()}: {ModifiedValue:0.###}";
 
         public void OnAfterDeserialize()
         {

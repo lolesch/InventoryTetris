@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a460b874ffbd28342af76deb2e6ae875, type: 3}
   m_Name: Item Rarity Distribution
   m_EditorClassIdentifier: Assembly-CSharp:ToolSmiths.InventorySystem.Items:RarityDistribution
-  failQuantity: 300
+  failQuantity: 0
   quantities:
   - name: NoDrop
     Enumeration: 0
-    Quantity: 300
+    Quantity: 0
   - name: Common
     Enumeration: 5
     Quantity: 160
@@ -29,23 +29,23 @@ MonoBehaviour:
   - name: Unique
     Enumeration: 30
     Quantity: 20
-  successProbability: 0.5
+  successProbability: 1
   probabilities:
   - name: NoDrop
     Enumeration: 0
-    Probability: 0.5
+    Probability: 0
   - name: Common
     Enumeration: 5
-    Probability: 0.26666668
+    Probability: 0.53333336
   - name: Magic
     Enumeration: 15
-    Probability: 0.13333334
+    Probability: 0.26666668
   - name: Rare
     Enumeration: 20
-    Probability: 0.06666667
+    Probability: 0.13333334
   - name: Unique
     Enumeration: 30
-    Probability: 0.033333335
-  exampleResults: 0000000000000000000000000500000005000000050000000500000005000000050000000f000000
+    Probability: 0.06666667
+  exampleResults: 050000000500000005000000050000000500000005000000050000000f0000000f00000014000000
   exampleTotalPlayerCount: 1
   exampleAlliedPlayerCount: 7
