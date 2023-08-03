@@ -283,6 +283,8 @@ namespace ToolSmiths.InventorySystem.Items
                 // => these are derived values from the random affixes
                 #endregion
 
+                affixList.Sort();
+
                 return affixList;
 
                 uint GetAffixAmount(ItemRarity rarity) => rarity switch    // TODO: itemType sensitive?

@@ -7,3 +7,7 @@
 // loot generation
 
 // rework all to support AbstractItems instead of AbstractItemObjects => AbstractItemObjects contain an AbstractItem
+
+// keep item preview within the screen
+// -> anchor the preview based on the cursor relative position to the screen center so that it always points towards the center
+// -> the item comparison should follow these rulez
