@@ -84,14 +84,11 @@ namespace ToolSmiths.InventorySystem.Displays
 
                     var color = comparison == 0 ? Color.white : Color.green; //(comparison < 0 ? Color.red : Color.green);
 
-                    var coloredValue = Colored(stats[i].Modifier.ToString(), color);
+                    var coloredValue = stats[i].Modifier.ToString().Colored(color);
 
-                    itemStat.text = $"{coloredValue} {stats[i].Stat.SplitCamelCase()}";
+                    itemStat.text = $"{coloredValue} {stats[i].Stat.SplitCamelCase()} {stats[i].Modifier.Range}";
 
                     itemStat.gameObject.SetActive(true);
-
-                    // TODO: move to extensions
-                    string Colored(string text, Color color) => $"<color=#{ColorUtility.ToHtmlStringRGBA(color)}>{text}</color>";
                 }
 
                 int CompareStatValues(PlayerStatModifier stat)

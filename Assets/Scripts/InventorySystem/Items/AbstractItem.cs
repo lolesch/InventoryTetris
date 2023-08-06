@@ -124,7 +124,7 @@ namespace ToolSmiths.InventorySystem.Items
                     var value = randomStat.GetRandomRoll(rarity);
 
                     // TODO: determine statModType => lookup table for each statName
-                    var modifier = new StatModifier(value/*, type*/);
+                    var modifier = new StatModifier(randomStat.MinMax, value/*, type*/);
 
                     var itemStat = new PlayerStatModifier(randomStat.StatName, modifier);
 
@@ -246,13 +246,12 @@ namespace ToolSmiths.InventorySystem.Items
                     var randomStat = allowedAffixes[randomRoll];
                     allowedAffixes.RemoveAt(randomRoll); // => exclude double rolls
 
-                    /// weighted RANDOM ROLL
-                    var lootLevel = Character.Instance.CharacterLevel; // define base min/max stat range
+                    var lootLevel = Character.Instance.CharacterLevel; // could modify min/max stat range
 
-                    var value = randomStat.GetRandomRoll(rarity);
+                    var value = randomStat.GetRandomRoll(rarity /*, lootLevel*/);
 
                     // TODO: determine statModType => lookup table for each statName
-                    var modifier = new StatModifier(value/*, type*/);
+                    var modifier = new StatModifier(randomStat.MinMax, value/*, type*/);
 
                     var itemStat = new PlayerStatModifier(randomStat.StatName, modifier);
 

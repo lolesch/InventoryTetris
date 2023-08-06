@@ -13,6 +13,12 @@ namespace ToolSmiths.InventorySystem.Data
     [Serializable]
     public struct StatModifier : IComparable<StatModifier>
     {
+        //CONTINUE HERE
+        // adding the Range for later lookup
+        /// <summary>The modifier's range.</summary>
+        [Tooltip("The modifier's range.")]
+        [field: SerializeField] public Vector2Int Range { get; private set; }
+
         /// <summary>The modifier's value.</summary>
         [Tooltip("The modifier's value.")]
         [field: SerializeField] public float Value { get; private set; }
@@ -21,9 +27,10 @@ namespace ToolSmiths.InventorySystem.Data
         [Tooltip("The modifyer type - defines how and in what order it is applied.")]
         [field: SerializeField] public StatModifierType Type { get; private set; }
 
-        public StatModifier(float value, StatModifierType type)
+        public StatModifier(Vector2Int range, float value, StatModifierType type)
         {
-            Value = value;
+            Range = range;
+            Value = Mathf.Clamp(value, range.x, range.y);
             Type = type;
         }
 
@@ -31,9 +38,10 @@ namespace ToolSmiths.InventorySystem.Data
         /// Creates a StatModifier with random Type
         /// </summary>
         /// <param name="value"></param>
-        public StatModifier(float value) // just for development -> REMOVE ME LATER
+        public StatModifier(Vector2Int range, float value) // just for development -> REMOVE ME LATER
         {
-            Value = value;
+            Range = range;
+            Value = Mathf.Clamp(value, range.x, range.y);
 
             var randomType = UnityEngine.Random.Range(0, Enum.GetValues(typeof(StatModifierType)).Length);
             Type = randomType switch

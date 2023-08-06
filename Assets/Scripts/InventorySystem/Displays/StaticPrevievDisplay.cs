@@ -63,9 +63,6 @@ namespace ToolSmiths.InventorySystem.Displays
 
             compareItem.SetDisplay(compareTo, package);
 
-            //CONTINUE HERE
-            // POSITION WIP
-
             compareItem.ItemDisplay.pivot = new Vector2(pivotX, 1);
 
             compareItem.ItemDisplay.anchorMin = showLeft ? Vector2.one : Vector2.up;
