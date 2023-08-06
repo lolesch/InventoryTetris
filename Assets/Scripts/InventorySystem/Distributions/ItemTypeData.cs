@@ -29,10 +29,6 @@ namespace ToolSmiths.InventorySystem.Data
 
             public int GetRandomRoll(ItemRarity rarity)
             {
-                var randomRoll = UnityEngine.Random.Range(float.MinValue, 1.0f);
-                var weightedRoll = Distribution.Evaluate(randomRoll);
-                var mappedValue = weightedRoll.MapFrom01(MinMax.x - 1, MinMax.y);
-
                 var modifier = rarity switch
                 {
                     ItemRarity.NoDrop => 0f,
@@ -47,8 +43,10 @@ namespace ToolSmiths.InventorySystem.Data
                     _ => 0f,
                 };
 
-                var modifiedValue = mappedValue * modifier;
-                var value = Mathf.CeilToInt(modifiedValue);
+                var randomRoll = UnityEngine.Random.Range(0, 1.0f);
+                var weightedRoll = Distribution.Evaluate(randomRoll);
+                var mappedValue = Mathf.Max(MinMax.x, weightedRoll.MapFrom01(MinMax.x - 1, MinMax.y * modifier));
+                var value = Mathf.CeilToInt(mappedValue);
 
                 return value;
             }

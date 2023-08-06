@@ -22,9 +22,9 @@ MonoBehaviour:
   - name: Belt
     EquipmentType: 2
     StatRanges:
-    - name: "BonusArmor\t(5, 25)"
+    - name: "BonusArmor\t(10, 25)"
       StatName: 5
-      MinMax: {x: 5, y: 25}
+      MinMax: {x: 10, y: 25}
       Distribution:
         serializedVersion: 2
         m_Curve:
@@ -106,9 +106,9 @@ MonoBehaviour:
   - name: Boots
     EquipmentType: 3
     StatRanges:
-    - name: "BonusArmor\t(5, 25)"
+    - name: "BonusArmor\t(5, 20)"
       StatName: 5
-      MinMax: {x: 5, y: 25}
+      MinMax: {x: 5, y: 20}
       Distribution:
         serializedVersion: 2
         m_Curve:

@@ -1,5 +1,6 @@
 ﻿using TeppichsTools.Creation;
 using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Extensions;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
 using UnityEngine;
@@ -10,12 +11,13 @@ namespace ToolSmiths.InventorySystem.Displays
     [RequireComponent(typeof(RectTransform))]
     public class StaticPrevievDisplay : MonoSingleton<StaticPrevievDisplay>
     {
-        // TODO: handle comparison with equipped items
-
         [SerializeField] private PreviewDisplay hoveredItem;
         [SerializeField] private PreviewDisplay compareItem;
 
         private Canvas rootCanvas;
+        private bool showLeft;
+
+        private float OffsetX => showLeft ? +10 : -10;
 
         private void Awake() => transform.root.TryGetComponent(out rootCanvas);
 
@@ -24,7 +26,11 @@ namespace ToolSmiths.InventorySystem.Displays
             if (hoveredItem.IsPreviewing)
                 MoveDisplay();
 
-            void MoveDisplay() => hoveredItem.ItemDisplay.anchoredPosition = Input.mousePosition / rootCanvas.scaleFactor;
+            void MoveDisplay()
+            {
+                var mousePos = Input.mousePosition / rootCanvas.scaleFactor;
+                hoveredItem.ItemDisplay.anchoredPosition = new Vector2(mousePos.x + OffsetX, mousePos.y);
+            }
         }
 
         public void RefreshPreviewDisplay(Package package, AbstractSlotDisplay slot)
@@ -40,15 +46,32 @@ namespace ToolSmiths.InventorySystem.Displays
             }
 
             hoveredItem.SetDisplay(package, compareTo);
-            compareItem.SetDisplay(compareTo, package);
 
-            // TODO: set pivot relative to the screen border
-            // and align next to the items dimensions?
-            hoveredItem.ItemDisplay.pivot = new Vector2(1, .5f);
+            /// pivot pointing towards center of screen
+            showLeft = Input.mousePosition.x < (Screen.width * 0.5);
+
+            var pivotX = showLeft ? 0 : 1;
+            var pivotY = Input.mousePosition.y.MapTo01(0, Screen.height);
+
+            hoveredItem.ItemDisplay.pivot = new Vector2(pivotX, pivotY);
 
             hoveredItem.ItemDisplay.anchorMin = Vector2.zero;
             hoveredItem.ItemDisplay.anchorMax = Vector2.zero;
-            hoveredItem.ItemDisplay.anchoredPosition = Input.mousePosition / rootCanvas.scaleFactor;
+
+            var mousePos = Input.mousePosition / rootCanvas.scaleFactor;
+            hoveredItem.ItemDisplay.anchoredPosition = new Vector2(mousePos.x + OffsetX, mousePos.y);
+
+            compareItem.SetDisplay(compareTo, package);
+
+            //CONTINUE HERE
+            // POSITION WIP
+
+            compareItem.ItemDisplay.pivot = new Vector2(pivotX, 1);
+
+            compareItem.ItemDisplay.anchorMin = showLeft ? Vector2.one : Vector2.up;
+            compareItem.ItemDisplay.anchorMax = showLeft ? Vector2.one : Vector2.up;
+
+            compareItem.ItemDisplay.anchoredPosition = new Vector2(OffsetX, 20);
         }
     }
 }
