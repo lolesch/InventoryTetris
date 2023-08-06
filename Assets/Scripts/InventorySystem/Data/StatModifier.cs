@@ -13,12 +13,6 @@ namespace ToolSmiths.InventorySystem.Data
     [Serializable]
     public struct StatModifier : IComparable<StatModifier>
     {
-        public StatModifier(float value, StatModifierType type = StatModifierType.FlatAdd)
-        {
-            Value = value;
-            Type = type;
-        }
-
         /// <summary>The modifier's value.</summary>
         [Tooltip("The modifier's value.")]
         [field: SerializeField] public float Value { get; private set; }
@@ -26,6 +20,32 @@ namespace ToolSmiths.InventorySystem.Data
         /// <summary>The modifyer type - defines how and in what order it is applied.</summary>
         [Tooltip("The modifyer type - defines how and in what order it is applied.")]
         [field: SerializeField] public StatModifierType Type { get; private set; }
+
+        public StatModifier(float value, StatModifierType type)
+        {
+            Value = value;
+            Type = type;
+        }
+
+        /// <summary>
+        /// Creates a StatModifier with random Type
+        /// </summary>
+        /// <param name="value"></param>
+        public StatModifier(float value) // just for development -> REMOVE ME LATER
+        {
+            Value = value;
+
+            var randomType = UnityEngine.Random.Range(0, Enum.GetValues(typeof(StatModifierType)).Length);
+            Type = randomType switch
+            {
+                0 => StatModifierType.Override,
+                1 => StatModifierType.FlatAdd,
+                2 => StatModifierType.PercentAdd,
+                3 => StatModifierType.PercentMult,
+
+                _ => StatModifierType.FlatAdd,
+            };
+        }
 
         public int CompareTo(StatModifier other)
         {
@@ -40,13 +60,17 @@ namespace ToolSmiths.InventorySystem.Data
 
         public int SortByType(StatModifier other) => Type.CompareTo(other.Type);
 
-        public override string ToString() => Type switch
+        public override readonly string ToString() => Type switch
         {
-            StatModifierType.Override => $"== {Value:+ #.###;- #.###;#.###}",
-            StatModifierType.FlatAdd => $"{Value:+ #.###;- #.###;#.###}",
+            /// wording
+            // additional, additive, bonus, 
+
+            StatModifierType.Override => $"{Value:+ #.###;- #.###;#.###} override",
+            StatModifierType.FlatAdd => $"{Value:+ #.###;- #.###;#.###} additive",
             StatModifierType.PercentAdd => $"{Value:+ #.###;- #.###;#.###} %",
-            StatModifierType.PercentMult => $"* {Value:+ #.###;- #.###;#.###} %",
-            _ => $"{Value}",
+            StatModifierType.PercentMult => $"{Value:+ #.###;- #.###;#.###} *%",
+
+            _ => $"?? {Value:+ #.###;- #.###;#.###}",
         };
     }
 }

@@ -1,6 +1,5 @@
 ﻿using System;
 using ToolSmiths.InventorySystem.Data.Enums;
-using ToolSmiths.InventorySystem.Extensions;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Data
@@ -25,8 +24,5 @@ namespace ToolSmiths.InventorySystem.Data
         }
 
         public int CompareTo(PlayerStatModifier other) => Stat.CompareTo(other.Stat); // then by modifyer
-
-
-        public override string ToString() => $"{Stat.SplitCamelCase()}: {Modifier}";
     }
 }

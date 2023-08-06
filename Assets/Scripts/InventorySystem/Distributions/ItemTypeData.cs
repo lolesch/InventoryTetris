@@ -27,20 +27,30 @@ namespace ToolSmiths.InventorySystem.Data
                 name = StatName.ToString();
             }
 
-            public StatModifier GetRandomRoll(float modifier = 1)
+            public int GetRandomRoll(ItemRarity rarity)
             {
-                var randomRoll = UnityEngine.Random.Range(0.0f, 1.0f);
+                var randomRoll = UnityEngine.Random.Range(float.MinValue, 1.0f);
                 var weightedRoll = Distribution.Evaluate(randomRoll);
-                var mapping = weightedRoll.MapFrom01((MinMax.x - 1) * modifier, MinMax.y * modifier);
+                var mappedValue = weightedRoll.MapFrom01(MinMax.x - 1, MinMax.y);
 
-                if (mapping == (MinMax.x - 1) * modifier)
-                { } // TODO exclude int out of range
+                var modifier = rarity switch
+                {
+                    ItemRarity.NoDrop => 0f,
+                    ItemRarity.Common => 1f,
+                    ItemRarity.Magic => .9f,
+                    ItemRarity.Rare => .8f,
+                    ItemRarity.Unique => .7f,
 
-                var roll = Mathf.CeilToInt(mapping);
+                    //ItemRarity.Crafted => 1f,
+                    //ItemRarity.Uncommon => 1f,
+                    //ItemRarity.Set => .8f,
+                    _ => 0f,
+                };
 
-                var statModifier = new StatModifier(roll, StatModifierType.FlatAdd); // TODO: determine statModType => lookup table for each statName
-                                                                                     // => rework the statModifier to derive the type from the name?
-                return statModifier;
+                var modifiedValue = mappedValue * modifier;
+                var value = Mathf.CeilToInt(modifiedValue);
+
+                return value;
             }
 
             public void OnBeforeSerialize() => name = $"{StatName}\t{MinMax}";

@@ -91,7 +91,7 @@ namespace ToolSmiths.InventorySystem.Data
             return null;
         }
 
-        // make it an interface for all things that have a list of stats on them?
+        // TODO make it an interface for all things that have a list of stats on them?
         public float GetStatValue(StatName stat) => GetStat(stat).ModifiedValue;
     }
 }

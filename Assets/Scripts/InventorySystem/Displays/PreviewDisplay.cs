@@ -82,21 +82,15 @@ namespace ToolSmiths.InventorySystem.Displays
 
                     var comparison = CompareStatValues(stats[i]);
 
-                    var color = comparison == 0 ? Color.white : (comparison < 0 ? Color.red : Color.green);
+                    var color = comparison == 0 ? Color.white : Color.green; //(comparison < 0 ? Color.red : Color.green);
 
-                    var comparisonString = stats[i].Modifier.Type switch
-                    {
-                        StatModifierType.Override => $"== {stats[i].Modifier.Value:+ #.###;- #.###;#.###}",
-                        StatModifierType.FlatAdd => $"{stats[i].Modifier.Value:+ #.###;- #.###;#.###}",
-                        StatModifierType.PercentAdd => $"{stats[i].Modifier.Value:+ #.###;- #.###;#.###} %",
-                        StatModifierType.PercentMult => $"* {stats[i].Modifier.Value:+ #.###;- #.###;#.###} %",
-                        _ => $"{stats[i].Modifier.Value}", // get human readable string
-                    };
+                    var coloredValue = Colored(stats[i].Modifier.ToString(), color);
 
-                    itemStat.text = $"{Colored(comparisonString, color)} {stats[i].Stat.SplitCamelCase()}";
+                    itemStat.text = $"{coloredValue} {stats[i].Stat.SplitCamelCase()}";
 
                     itemStat.gameObject.SetActive(true);
 
+                    // TODO: move to extensions
                     string Colored(string text, Color color) => $"<color=#{ColorUtility.ToHtmlStringRGBA(color)}>{text}</color>";
                 }
 

@@ -12,7 +12,7 @@ namespace ToolSmiths.InventorySystem.Items
     [Serializable]
     public abstract class AbstractItem
     {
-        [field: SerializeField] public Sprite Icon { get; protected set; } = null; // make Icon a class that is serialized (rendered) in editor
+        [field: SerializeField] public Sprite Icon { get; protected set; } = null;
         [field: SerializeField] public ItemSize Dimensions { get; protected set; } = ItemSize.OneByOne;
         [field: SerializeField] public ItemStack StackLimit { get; protected set; } = ItemStack.Single;
         [field: SerializeField] public ItemRarity Rarity { get; protected set; } = ItemRarity.Common;
@@ -21,18 +21,17 @@ namespace ToolSmiths.InventorySystem.Items
         // TODO: handle overTime effects => Stats != Effects --> see ARPG_Combat for DoT_effects
         public new abstract string ToString();
 
-        //Stats = stats.OrderBy(x => x.Stat).ToList();
-
         public static Color GetRarityColor(ItemRarity rarity) => rarity switch
         {
             ItemRarity.NoDrop => Color.clear,
-            //ItemRarity.Crafted => new Color(0.4f, 0, 1, 1), // purple
             ItemRarity.Common => Color.white,
-            //ItemRarity.Uncommon => Color.gray,
             ItemRarity.Magic => Color.cyan,
             ItemRarity.Rare => Color.yellow,
-            //ItemRarity.Set => Color.green,
             ItemRarity.Unique => new Color(1, 0.35f, 0, 1), // orange
+
+            //ItemRarity.Uncommon => Color.gray,
+            //ItemRarity.Crafted => new Color(0.4f, 0, 1, 1), // purple
+            //ItemRarity.Set => Color.green,
             _ => Color.clear,
         };
 
@@ -122,20 +121,11 @@ namespace ToolSmiths.InventorySystem.Items
                     /// weighted RANDOM ROLL
                     var lootLevel = Character.Instance.CharacterLevel; // define base min/max stat range
 
-                    var rangeModifier = rarity switch
-                    {
-                        ItemRarity.NoDrop => 0f,
-                        //ItemRarity.Crafted => 1f,
-                        ItemRarity.Common => 1f,
-                        //ItemRarity.Uncommon => 1f,
-                        ItemRarity.Magic => .9f,
-                        ItemRarity.Rare => .8f,
-                        //ItemRarity.Set => .8f,
-                        ItemRarity.Unique => .7f,
-                        _ => 0f,
-                    };
+                    var value = randomStat.GetRandomRoll(rarity);
 
-                    var modifier = randomStat.GetRandomRoll(rangeModifier);
+                    // TODO: determine statModType => lookup table for each statName
+                    var modifier = new StatModifier(value/*, type*/);
+
                     var itemStat = new PlayerStatModifier(randomStat.StatName, modifier);
 
                     affixList.Add(itemStat);
@@ -259,21 +249,11 @@ namespace ToolSmiths.InventorySystem.Items
                     /// weighted RANDOM ROLL
                     var lootLevel = Character.Instance.CharacterLevel; // define base min/max stat range
 
-                    var rangeModifier = rarity switch
-                    {
-                        ItemRarity.NoDrop => 0f,
-                        ItemRarity.Common => 1f,
-                        ItemRarity.Magic => .9f,
-                        ItemRarity.Rare => .8f,
-                        ItemRarity.Unique => .7f,
+                    var value = randomStat.GetRandomRoll(rarity);
 
-                        //ItemRarity.Crafted => 1f,
-                        //ItemRarity.Uncommon => 1f,
-                        //ItemRarity.Set => .8f,
-                        _ => 0f,
-                    };
+                    // TODO: determine statModType => lookup table for each statName
+                    var modifier = new StatModifier(value/*, type*/);
 
-                    var modifier = randomStat.GetRandomRoll(rangeModifier);
                     var itemStat = new PlayerStatModifier(randomStat.StatName, modifier);
 
                     affixList.Add(itemStat);
@@ -332,6 +312,8 @@ namespace ToolSmiths.InventorySystem.Items
             if (0 < remaining.Amount)
                 InventoryProvider.Instance.PlayerEquipment.RemoveFromContainer(package);
         }
+
+        //TODO: extend naming
         public override string ToString() => $"{Rarity} {EquipmentType}".Colored(GetRarityColor(Rarity));
     }
 

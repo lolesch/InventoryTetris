@@ -223,6 +223,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         public void SortByItemDimension()
         {
             SortAlphabetically();
+            SortByRarity();
 
             var storedKeys = StoredPackages.Keys.ToList();
             List<Vector2Int> storedDimensions = new();
@@ -245,7 +246,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         {
             var storedNames = StoredPackages.Values.Select(x => x.Item.ToString()).ToList();
 
-            storedNames = storedNames.Distinct().OrderBy(x => x).ToList();
+            storedNames = storedNames.Distinct().OrderByDescending(x => x).ToList();
 
             var storedValues = StoredPackages.Values.ToList();
             StoredPackages.Clear(); // This won't unequip => stats not removed from character
@@ -256,7 +257,20 @@ namespace ToolSmiths.InventorySystem.Inventories
                         _ = AddToContainer(storedValues[j]);
         }
 
-        // TODO: sort by rarity
+        private void SortByRarity()
+        {
+            var storedRarities = StoredPackages.Values.Select(x => x.Item.Rarity).ToList();
+
+            storedRarities = storedRarities.Distinct().OrderBy(x => x).ToList();
+
+            var storedValues = StoredPackages.Values.ToList();
+            StoredPackages.Clear(); // This won't unequip => stats not removed from character
+
+            for (var i = 0; i < storedRarities.Count; i++)
+                for (var j = 0; j < storedValues.Count; j++)
+                    if (storedValues[j].Item.Rarity == storedRarities[i])
+                        _ = AddToContainer(storedValues[j]);
+        }
 
         protected internal void InvokeRefresh() => OnContentChanged?.Invoke(StoredPackages);
     }
