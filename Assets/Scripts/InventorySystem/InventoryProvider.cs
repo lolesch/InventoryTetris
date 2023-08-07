@@ -168,7 +168,9 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         public void ToggleAutoEquip() => PlayerEquipment.autoEquip = !PlayerEquipment.autoEquip;
 
-        public void SortInventory() => ContainerToAddTo.SortByItemDimension();
+        public void SortInventory() => ContainerToAddTo.Sort();
+        public void SortPlayerInventory() => PlayerInventory.Sort();
+        public void SortPlayerStash() => PlayerStash.Sort();
 
         //public Package EquipItem(Package package) => PlayerEquipment.AddToContainer(package);
     }

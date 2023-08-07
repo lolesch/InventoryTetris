@@ -220,11 +220,15 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// A List of all positions that are required to add this item to the container
         protected abstract List<Vector2Int> CalculateRequiredPositions(Vector2Int position, Vector2Int dimension);
 
-        public void SortByItemDimension()
+        public void Sort()
         {
             SortAlphabetically();
             SortByRarity();
+            SortByItemDimension();
+        }
 
+        private void SortByItemDimension()
+        {
             var storedKeys = StoredPackages.Keys.ToList();
             List<Vector2Int> storedDimensions = new();
 
