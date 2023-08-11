@@ -12,3 +12,14 @@
 // -> the item comparison should follow these rulez
 
 // preview possible item stat ranges
+
+/// known Issues:
+
+// modified affix range can result in higher min than max values => reorder before setting the range
+// comparison color seems off - eaqual values are highlighted => reenable the red color for lower values and doublecheck the results
+// rework the equipment slot selection
+// => go over all slots and check for allowed equipment types. 
+// => if multiple found 
+//      prefer empty slots for autoEquip
+//      compare to all
+// => for dropping get the hovered slot and try adding there
