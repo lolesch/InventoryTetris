@@ -15,7 +15,7 @@
 
 /// POLISH
 
-// Sockets?
+// Sockets? in D2:
 // Any weapon except throwing weapons.
 // Any body armor.
 // Any shields.
@@ -23,3 +23,14 @@
 
 // Improved MagicFind:
 // Effective MF = (MF * Factor) / (MF + Factor), where Factor=250 for unique items, 500 for set items and 600 for rare items..
+
+/// KNOWN ISSUES:
+
+// modified affix range can result in higher min than max values => reorder before setting the range
+// comparison color seems off - eaqual values are highlighted => reenable the red color for lower values and doublecheck the results
+// rework the equipment slot selection
+// => go over all slots and check for allowed equipment types. 
+// => if multiple found 
+//      prefer empty slots for autoEquip
+//      compare to all
+// => for dropping get the hovered slot and try adding there

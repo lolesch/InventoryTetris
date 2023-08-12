@@ -50,6 +50,8 @@ namespace ToolSmiths.InventorySystem.Data
                 var randomRoll = UnityEngine.Random.Range(0f, 1f);
                 var weightedRoll = Distribution.Evaluate(randomRoll);
 
+                // TODO modified affix range can result in higher min than max values => reorder before setting the range
+
                 /// the higher the rarity, the higher the min affix roll => Unique items roll with usefull affix values
                 var min = Mathf.CeilToInt(MinMax.x * modifier);
 
