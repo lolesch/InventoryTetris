@@ -78,7 +78,10 @@ namespace ToolSmiths.InventorySystem.Displays
 
                 var positionToAdd = Hovered.Position - positionDiff;
 
-                var storedPositions = Hovered.Container.GetOtherItemsAt(positionToAdd, AbstractItem.GetDimensions(Package.Item.Dimensions));
+                if (Hovered.Container == null)
+                    return;
+
+                var storedPositions = Hovered.Container?.GetOtherItemsAt(positionToAdd, AbstractItem.GetDimensions(Package.Item.Dimensions));
 
                 if (storedPositions.Count <= 0)
                 {
@@ -153,7 +156,7 @@ namespace ToolSmiths.InventorySystem.Displays
                     slotPivot.y /= AbstractItem.GetDimensions(package.Item.Dimensions).y;
 
                     // NOTE: this is derived from the GridLayoutComponent => get GridLayoutGroup.Corner to implement for all possible cases
-                    /// THe positionOffset was calculated in InventorySpace (anchored TopLeft) so we subtract the DimensionHeight-1 to get to the BottomLeft position
+                    /// The positionOffset was calculated in InventorySpace (anchored TopLeft) so we subtract the DimensionHeight-1 to get to the BottomLeft position
                     positionOffset -= new Vector2Int(0, AbstractItem.GetDimensions(package.Item.Dimensions).y - 1);
                     /// and convert it to screenCoordinates
                     positionOffset.y *= -1;

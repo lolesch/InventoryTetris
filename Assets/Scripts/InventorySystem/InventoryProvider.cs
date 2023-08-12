@@ -119,11 +119,12 @@ namespace ToolSmiths.InventorySystem.Inventories
         }
 
         [ContextMenu("RemoveAllItems")]
-        public void RemoveAllItems()
+        public void RemoveAllItems() => RemoveAllItems(ContainerToAddTo);
+        public void RemoveAllItems(AbstractDimensionalContainer container)
         {
-            var storedPackages = ContainerToAddTo?.StoredPackages.ToList();
+            var storedPackages = container?.StoredPackages.ToList();
             for (var i = 0; i < storedPackages.Count; i++)
-                _ = ContainerToAddTo.RemoveAtPosition(storedPackages[i].Key, storedPackages[i].Value);
+                _ = container.RemoveAtPosition(storedPackages[i].Key, storedPackages[i].Value);
         }
 
         public void SetAmountText() => amountText.text = amountSlider.value.ToString();
@@ -168,9 +169,13 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         public void ToggleAutoEquip() => PlayerEquipment.autoEquip = !PlayerEquipment.autoEquip;
 
-        public void SortInventory() => ContainerToAddTo.Sort();
+        //public void SortSelectedInventory() => ContainerToAddTo.Sort();
         public void SortPlayerInventory() => PlayerInventory.Sort();
         public void SortPlayerStash() => PlayerStash.Sort();
+
+        public void ClearPlayerInventory() => RemoveAllItems(PlayerInventory);
+        public void ClearPlayerStash() => RemoveAllItems(PlayerStash);
+        public void ClearPlayerEquipment() => RemoveAllItems(PlayerEquipment);
 
         //public Package EquipItem(Package package) => PlayerEquipment.AddToContainer(package);
     }

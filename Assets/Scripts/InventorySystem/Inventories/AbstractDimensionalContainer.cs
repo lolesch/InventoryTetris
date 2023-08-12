@@ -33,6 +33,7 @@ namespace ToolSmiths.InventorySystem.Inventories
                 {
                     var equipmentPosition = equipment.GetEquipmentTypePosition((package.Item as EquipmentItem).EquipmentType);
 
+                    // TODO unequip offhands when equiping a 2H
                     if (equipment.IsEmptyPosition(equipmentPosition, new(1, 1), out _))
                         return equipment.AddToContainer(package);
                 }
@@ -42,6 +43,10 @@ namespace ToolSmiths.InventorySystem.Inventories
                 AddToOpenStacks();
 
             AddToEmptyPositions();
+
+            // Just for quality of life => if inventory is full add to stash
+            if (0 < package.Amount)
+                return InventoryProvider.Instance.PlayerStash.AddToContainer(package);
 
             return package;
 
@@ -112,6 +117,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             {
                 if (StoredPackages.TryGetValue(position, out var storedPackage))
                 {
+                    /// Try stacking
                     if (1 < (uint)package.Item.StackLimit && package.Item == storedPackage.Item && 0 < storedPackage.SpaceLeft)
                     {
                         var addedAmount = storedPackage.IncreaseAmount(package.Amount);
@@ -120,6 +126,7 @@ namespace ToolSmiths.InventorySystem.Inventories
                     }
                     else /// swap items
                     {
+                        // TODO unequip offhands when equiping a 2H
                         _ = RemoveAtPosition(position, storedPackage);
 
                         TryAddToInventory();
@@ -210,6 +217,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             }
         }
 
+        // TODO override in PlayerEquipment to check all viable positions (rings, 1h and offhand, 2h...)
         public bool CanAddAtPosition(Vector2Int position, Vector2Int dimension, out List<Vector2Int> otherItems) => IsEmptyPosition(position, dimension, out otherItems) || (!IsEmptyPosition(position, dimension, out otherItems) && otherItems.Count <= 1);
 
         /// A List of all storedPackages positions that overlap with the requiredPositions
@@ -227,20 +235,17 @@ namespace ToolSmiths.InventorySystem.Inventories
             SortByItemDimension();
         }
 
+        // TODO package should implement IComparable 
         private void SortByItemDimension()
         {
-            var storedKeys = StoredPackages.Keys.ToList();
-            List<Vector2Int> storedDimensions = new();
+            var storedDimensions = StoredPackages.Values.Select(x => AbstractItem.GetDimensions(x.Item.Dimensions)).ToList();
 
-            for (var i = 0; i < storedKeys.Count; i++)
-                storedDimensions.Add(AbstractItem.GetDimensions(StoredPackages[storedKeys[i]].Item.Dimensions));
-
-            storedDimensions = storedDimensions.Distinct().OrderByDescending(v => v.x * v.y/*v.sqrMagnitude*/).ToList();
+            storedDimensions = storedDimensions.Distinct().OrderByDescending(v => v.x * v.y).ToList();/*v.sqrMagnitude*/
 
             var storedValues = StoredPackages.Values.ToList();
             StoredPackages.Clear(); // This won't unequip => stats not removed from character
 
-            for (var i = 0; i < storedDimensions.Count; i++)
+            for (var i = 0; i < storedDimensions.Count(); i++)
                 for (var j = 0; j < storedValues.Count; j++)
                     if (AbstractItem.GetDimensions(storedValues[j].Item.Dimensions) == storedDimensions[i])
                         _ = AddToContainer(storedValues[j]);

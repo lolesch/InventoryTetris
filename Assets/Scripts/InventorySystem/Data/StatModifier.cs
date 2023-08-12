@@ -27,33 +27,33 @@ namespace ToolSmiths.InventorySystem.Data
         [Tooltip("The modifyer type - defines how and in what order it is applied.")]
         [field: SerializeField] public StatModifierType Type { get; private set; }
 
-        public StatModifier(Vector2Int range, float value, StatModifierType type)
+        public StatModifier(Vector2Int range, float value, StatModifierType type = StatModifierType.FlatAdd)
         {
             Range = range;
             Value = Mathf.Clamp(value, range.x, range.y);
             Type = type;
         }
 
-        /// <summary>
-        /// Creates a StatModifier with random Type
-        /// </summary>
-        /// <param name="value"></param>
-        public StatModifier(Vector2Int range, float value) // just for development -> REMOVE ME LATER
-        {
-            Range = range;
-            Value = Mathf.Clamp(value, range.x, range.y);
-
-            var randomType = UnityEngine.Random.Range(0, Enum.GetValues(typeof(StatModifierType)).Length);
-            Type = randomType switch
-            {
-                0 => StatModifierType.Override,
-                1 => StatModifierType.FlatAdd,
-                2 => StatModifierType.PercentAdd,
-                3 => StatModifierType.PercentMult,
-
-                _ => StatModifierType.FlatAdd,
-            };
-        }
+        ///// <summary>
+        ///// Creates a StatModifier with random Type
+        ///// </summary>
+        ///// <param name="value"></param>
+        //public StatModifier(Vector2Int range, float value) // just for development -> REMOVE ME LATER
+        //{
+        //    Range = range;
+        //    Value = Mathf.Clamp(value, range.x, range.y);
+        //
+        //    var randomType = UnityEngine.Random.Range(0, Enum.GetValues(typeof(StatModifierType)).Length);
+        //    Type = randomType switch
+        //    {
+        //        0 => StatModifierType.Override,
+        //        1 => StatModifierType.FlatAdd,
+        //        2 => StatModifierType.PercentAdd,
+        //        3 => StatModifierType.PercentMult,
+        //
+        //        _ => StatModifierType.FlatAdd,
+        //    };
+        //}
 
         public int CompareTo(StatModifier other)
         {
@@ -73,10 +73,10 @@ namespace ToolSmiths.InventorySystem.Data
             /// wording
             // additional, additive, bonus, 
 
-            StatModifierType.Override => $"{Value:+ #.###;- #.###;#.###} override",
-            StatModifierType.FlatAdd => $"{Value:+ #.###;- #.###;#.###} additive",
-            StatModifierType.PercentAdd => $"{Value:+ #.###;- #.###;#.###} %",
-            StatModifierType.PercentMult => $"{Value:+ #.###;- #.###;#.###} *%",
+            StatModifierType.Override => $"={Value:+ #.###;- #.###;#.###}",
+            StatModifierType.FlatAdd => $"{Value:+ #.###;- #.###;#.###}",
+            StatModifierType.PercentAdd => $"{Value:+ #.###;- #.###;#.###}%",
+            StatModifierType.PercentMult => $"{Value:+ #.###;- #.###;#.###}*%",
 
             _ => $"?? {Value:+ #.###;- #.###;#.###}",
         };

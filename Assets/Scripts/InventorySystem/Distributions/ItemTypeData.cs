@@ -15,7 +15,7 @@ namespace ToolSmiths.InventorySystem.Data
         {
             [SerializeField, HideInInspector] public string name;
             [SerializeField] public StatName StatName;
-            [SerializeField] public Vector2Int MinMax;
+            [SerializeField] private Vector2Int MinMax;
 
             [SerializeField] public AnimationCurve Distribution;
 
@@ -27,15 +27,19 @@ namespace ToolSmiths.InventorySystem.Data
                 name = StatName.ToString();
             }
 
-            public int GetRandomRoll(ItemRarity rarity)
+            public (Vector2Int MinMax, float value) GetRandomRoll(ItemRarity rarity)
             {
+                /// ITEM AFFIX DESIGN BY RARITY:
+                /// 
+                /// the lesser the rarity, the higher the max affix roll => Common items can roll the highest stats => good base for crafting
+                /// the higher the rarity, the higher the min affix roll => Unique items roll with usefull affix values
                 var modifier = rarity switch
                 {
                     ItemRarity.NoDrop => 0f,
                     ItemRarity.Common => 1f,
-                    ItemRarity.Magic => .9f,
-                    ItemRarity.Rare => .8f,
-                    ItemRarity.Unique => .7f,
+                    ItemRarity.Magic => 1.1f,
+                    ItemRarity.Rare => 1.2f,
+                    ItemRarity.Unique => 1.3f,
 
                     //ItemRarity.Crafted => 1f,
                     //ItemRarity.Uncommon => 1f,
@@ -43,12 +47,19 @@ namespace ToolSmiths.InventorySystem.Data
                     _ => 0f,
                 };
 
-                var randomRoll = UnityEngine.Random.Range(0, 1.0f);
+                var randomRoll = UnityEngine.Random.Range(0f, 1f);
                 var weightedRoll = Distribution.Evaluate(randomRoll);
-                var mappedValue = Mathf.Max(MinMax.x, weightedRoll.MapFrom01(MinMax.x - 1, MinMax.y * modifier));
-                var value = Mathf.CeilToInt(mappedValue);
 
-                return value;
+                /// the higher the rarity, the higher the min affix roll => Unique items roll with usefull affix values
+                var min = Mathf.CeilToInt(MinMax.x * modifier);
+
+                /// the lesser the rarity, the higher the max affix roll => Common items can roll the highest stats => good base for crafting
+                var max = Mathf.CeilToInt(MinMax.y * (1f + (1f - modifier)));
+
+                var mappedValue = weightedRoll.MapFrom01(min - 1, max);
+                var value = Mathf.Max(min, Mathf.CeilToInt(mappedValue));
+
+                return (new Vector2Int(min, max), value);
             }
 
             public void OnBeforeSerialize() => name = $"{StatName}\t{MinMax}";

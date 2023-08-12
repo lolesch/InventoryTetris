@@ -36,6 +36,8 @@ namespace ToolSmiths.InventorySystem.Inventories
             EquipmentType.Helm => new(7, 0),
             EquipmentType.Pants => new(8, 0),
             EquipmentType.Shoulders => new(9, 0),
+            // TODO this always equips in (10, 0) before (11, 0) requardless of drag/drop position
+            // and cant unequip (11, 0)
             EquipmentType.Ring => IsEmptyPosition(new(10, 0), new(1, 1), out _) ? new(10, 0) : (IsEmptyPosition(new(11, 0), new(1, 1), out _) ? new(11, 0) : new(10, 0)),
 
             //EquipmentType.Shield => new(13, 0),
@@ -44,8 +46,9 @@ namespace ToolSmiths.InventorySystem.Inventories
             //EquipmentType.Bow => new(13, 0),
             //EquipmentType.GreatSword => new(12, 0),
 
-            // might require enhanced logic
-            > EquipmentType.ONEHANDEDWEAPONS and < EquipmentType.TWOHANDEDWEAPONS => IsEmptyPosition(new(12, 0), new(1, 1), out _) ? (new(12, 0)) : (IsEmptyPosition(new(13, 0), new(1, 1), out _) ? (new(13, 0)) : new(12, 0)),
+            // TODO -> might require enhanced logic for selecting what hand to hold the weapon with (Bows are left)
+            // TODO unequip offhands when equiping a 2H
+            > EquipmentType.ONEHANDEDWEAPONS and < EquipmentType.TWOHANDEDWEAPONS => IsEmptyPosition(new(12, 0), new(1, 1), out _) ? new(12, 0) : (IsEmptyPosition(new(13, 0), new(1, 1), out _) ? new(13, 0) : new(12, 0)),
             > EquipmentType.TWOHANDEDWEAPONS and < EquipmentType.OFFHANDS => new(12, 0),
             > EquipmentType.OFFHANDS and < EquipmentType.JEWELRY => new(13, 0),
 

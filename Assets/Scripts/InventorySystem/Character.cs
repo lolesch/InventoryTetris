@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using TeppichsTools.Creation;
 using TMPro;
 using ToolSmiths.InventorySystem.Data.Enums;
-using ToolSmiths.InventorySystem.Extensions;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Data
@@ -18,10 +17,7 @@ namespace ToolSmiths.InventorySystem.Data
         private List<TextMeshProUGUI> mainStatDisplays = new();
         [SerializeField] private TextMeshProUGUI statPrefab;
 
-        // TODO: DERIVED STATS => define and calculate derived values
-        // PlayerAttributes[]
-        // each PlayerAttribute has a list of PlayerStats to modify
-        // defines Attribute conversion
+        // TODO: DERIVED STATS => define and calculate derived values => see Bone&Blood
 
         private void OnValidate()
         {
@@ -33,7 +29,7 @@ namespace ToolSmiths.InventorySystem.Data
                 for (var i = 0; i < affixes.Length; i++)
                 {
                     stats[i] = new PlayerStat(affixes[i]);
-                    // feed in base values from a scriptable object?
+                    //TODO: feed in base values from a scriptable object
                 }
             }
         }
@@ -47,7 +43,6 @@ namespace ToolSmiths.InventorySystem.Data
                     var display = Instantiate(statPrefab, statPrefab.transform.parent);
                     display.gameObject.SetActive(true);
                     mainStatDisplays.Add(display);
-                    display.text = $"{stats[i].Stat.SplitCamelCase()}: {stats[i].ModifiedValue:0.###}";
                 }
             }
             UpdateStatDisplays();
@@ -56,7 +51,7 @@ namespace ToolSmiths.InventorySystem.Data
         private void UpdateStatDisplays()
         {
             for (var i = 0; i < mainStatDisplays.Count; i++)
-                mainStatDisplays[i].text = $"{Stats[i].Stat.SplitCamelCase()}: {Stats[i].ModifiedValue:0.###}";
+                mainStatDisplays[i].text = $"{stats[i].ToString()}";
         }
 
         public void AddItemStats(List<PlayerStatModifier> stats)

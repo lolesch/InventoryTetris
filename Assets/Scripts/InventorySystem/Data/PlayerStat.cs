@@ -101,7 +101,22 @@ namespace ToolSmiths.InventorySystem.Data
             ModifiedValue = CalculateModifiedValue();
         }
 
-        public override string ToString() => $"{Stat.SplitCamelCase()}: {ModifiedValue:0.###}";
+        public override string ToString()
+        {
+            var isPercent = false;
+
+            var statName = Stat.SplitCamelCase();
+
+            if (statName.Contains("Percent"))
+            {
+                //System.Text.RegularExpressions.Regex.Replace(name, "( Percent)", "", System.Text.RegularExpressions.RegexOptions.Compiled).Trim();
+                statName = statName.Replace(" Percent", "");
+                isPercent = true;
+            }
+            var percent = isPercent ? "%" : "";
+
+            return $"{statName}: {ModifiedValue:0.###}{percent}";
+        }
 
         public void OnAfterDeserialize()
         {

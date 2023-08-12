@@ -141,7 +141,10 @@ namespace ToolSmiths.InventorySystem.Displays
         {
             hovering = true;
 
-            var itemToDisplay = Container.GetOtherItemsAt(Position, new(1, 1));
+            if (Container == null)
+                return;
+
+            var itemToDisplay = Container?.GetOtherItemsAt(Position, new(1, 1));
             if (itemToDisplay.Count == 1)
                 if (Container.StoredPackages.TryGetValue(itemToDisplay[0], out var hoveredIten))
                     if (hoveredIten.Item != null && 0 < hoveredIten.Amount)

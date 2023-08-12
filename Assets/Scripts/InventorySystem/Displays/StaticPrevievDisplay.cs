@@ -39,6 +39,8 @@ namespace ToolSmiths.InventorySystem.Displays
 
             if (package.Item is EquipmentItem && slot is not EquipmentSlotDisplay)
             {
+                // TODO compare to all equipments of the items equipmentType
+                // var other = GetEquipmentOfType...
                 var equipmentPosition = InventoryProvider.Instance.PlayerEquipment.GetEquipmentTypePosition((package.Item as EquipmentItem).EquipmentType);
 
                 //var currentEquipped = InventoryProvider.Instance.PlayerEquipment.GetStoredPackagesAtPosition(equipmentPosition, new(1, 1));

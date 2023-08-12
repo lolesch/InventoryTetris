@@ -1,6 +1,3 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -8,14 +5,13 @@ using UnityEngine.EventSystems;
 public class ShowNameOnHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
     [SerializeField] private TextMeshProUGUI label;
+
+    private void Awake() { if (label) label.color = Color.white; }
     public void OnPointerEnter(PointerEventData eventData)
     {
-        label.text = this.name;
+        label.text = name;
         label.gameObject.SetActive(true);
     }
 
-    public void OnPointerExit(PointerEventData eventData)
-    {
-        label.gameObject.SetActive(false);
-    }
+    public void OnPointerExit(PointerEventData eventData) => label.gameObject.SetActive(false);
 }
