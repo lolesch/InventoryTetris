@@ -270,7 +270,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         {
             var storedRarities = StoredPackages.Values.Select(x => x.Item.Rarity).ToList();
 
-            storedRarities = storedRarities.Distinct().OrderBy(x => x).ToList();
+            storedRarities = storedRarities.Distinct().OrderByDescending(x => x).ToList();
 
             var storedValues = StoredPackages.Values.ToList();
             StoredPackages.Clear(); // This won't unequip => stats not removed from character

@@ -33,6 +33,7 @@ namespace ToolSmiths.InventorySystem.Data
                 /// 
                 /// the lesser the rarity, the higher the max affix roll => Common items can roll the highest stats => good base for crafting
                 /// the higher the rarity, the higher the min affix roll => Unique items roll with usefull affix values
+
                 var modifier = rarity switch
                 {
                     ItemRarity.NoDrop => 0f,

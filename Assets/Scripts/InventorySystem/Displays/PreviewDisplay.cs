@@ -82,11 +82,16 @@ namespace ToolSmiths.InventorySystem.Displays
 
                     var comparison = CompareStatValues(stats[i]);
 
-                    var color = comparison == 0 ? Color.white : Color.green; //(comparison < 0 ? Color.red : Color.green);
+                    var color = comparison == 0 ? Color.white : (comparison < 0 ? Color.yellow : Color.green);
 
                     var coloredValue = stats[i].Modifier.ToString().Colored(color);
 
-                    itemStat.text = $"{coloredValue} {stats[i].Stat.SplitCamelCase()} {stats[i].Modifier.Range}";
+                    var statName = stats[i].Stat.SplitCamelCase();
+
+                    if (statName.Contains("Percent"))
+                        statName = statName.Replace(" Percent", "");
+
+                    itemStat.text = $"{coloredValue} {statName} {stats[i].Modifier.Range}";
 
                     itemStat.gameObject.SetActive(true);
                 }
@@ -100,7 +105,8 @@ namespace ToolSmiths.InventorySystem.Displays
                     else if (compareTo.Item != null)
                         for (var i = 0; i < compareTo.Item.Affixes.Count; i++) // foreach stat of the other item
                             if (compareTo.Item.Affixes[i].Stat == stat.Stat) // find a corresponding stat
-                                other = compareTo.Item.Affixes[i].Modifier.Value;
+                                if (compareTo.Item.Affixes[i].Modifier.Type == stat.Modifier.Type) // find a corresponding stat
+                                    other = compareTo.Item.Affixes[i].Modifier.Value;
 
                     return stat.Modifier.Value.CompareTo(other);
                 }
