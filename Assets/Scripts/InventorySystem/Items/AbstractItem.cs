@@ -46,7 +46,7 @@ namespace ToolSmiths.InventorySystem.Items
             ItemSize.TwoByOne => new Vector2Int(2, 1),
             ItemSize.TwoByTwo => new Vector2Int(2, 2),
             ItemSize.TwoByThree => new Vector2Int(2, 3),
-            ItemSize.TwoByFour => new Vector2Int(2, 3),
+            ItemSize.TwoByFour => new Vector2Int(2, 4),
             _ => Vector2Int.zero,
         };
 
@@ -124,7 +124,7 @@ namespace ToolSmiths.InventorySystem.Items
                     var rangeRoll = randomStat.GetRandomRoll(rarity /*, lootLevel*/);
 
                     // TODO: determine statModType => lookup table for each statName
-                    var modifier = new StatModifier(rangeRoll.MinMax, rangeRoll.value/*, type*/);
+                    var modifier = new StatModifier(rangeRoll.Range, rangeRoll.value/*, type*/);
 
                     var itemStat = new PlayerStatModifier(randomStat.StatName, modifier);
 
@@ -179,14 +179,14 @@ namespace ToolSmiths.InventorySystem.Items
             Icon = ItemProvider.Instance.GetIcon(EquipmentType, Rarity);
             Dimensions = GetDimension(EquipmentType);
             var stats = GetRandomAffixes(EquipmentType, Rarity);
-            //stats + equipmentType specific stats
+            //TODO: stats + equipmentType specific stats
+            // TODO: add weapon attacks per second
 
             if (Rarity == ItemRarity.Unique)
             {
                 var unique = ItemProvider.Instance.GetUnique(EquipmentType).GetItem();
 
                 Icon = unique.Icon;
-                Dimensions = unique.Dimensions;
 
                 for (var i = 0; i < unique.Affixes.Count; i++)
                     stats.Add(unique.Affixes[i]);
@@ -251,7 +251,7 @@ namespace ToolSmiths.InventorySystem.Items
                     var rangeRoll = randomStat.GetRandomRoll(rarity /*, lootLevel*/);
 
                     // TODO: determine statModType => lookup table for each statName
-                    var modifier = new StatModifier(rangeRoll.MinMax, rangeRoll.value/*, type*/);
+                    var modifier = new StatModifier(rangeRoll.Range, rangeRoll.value/*, type*/);
 
                     var itemStat = new PlayerStatModifier(randomStat.StatName, modifier);
 
@@ -301,6 +301,7 @@ namespace ToolSmiths.InventorySystem.Items
             var remaining = InventoryProvider.Instance.PlayerEquipment.AddToContainer(package);
 
             if (0 < remaining.Amount)
+                // does that mean we cant equip from outside the inventory?
                 InventoryProvider.Instance.PlayerInventory.RemoveFromContainer(package);
         }
 

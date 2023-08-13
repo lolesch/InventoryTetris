@@ -3,6 +3,7 @@ using System.Linq;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Extensions;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace ToolSmiths.InventorySystem.Data
 {
@@ -15,24 +16,26 @@ namespace ToolSmiths.InventorySystem.Data
         {
             [SerializeField, HideInInspector] public string name;
             [SerializeField] public StatName StatName;
-            [SerializeField] private Vector2Int MinMax;
+            [FormerlySerializedAs("MinMax")]
+            [SerializeField] private Vector2Int Range;
 
+            [Tooltip("Modifies the likleyness to roll values within the given range")]
             [SerializeField] public AnimationCurve Distribution;
 
-            public StatRange(StatName statName, Vector2Int minMax)
+            public StatRange(StatName statName, Vector2Int range)
             {
                 StatName = statName;
-                MinMax = minMax;
+                Range = range;
 
                 name = StatName.ToString();
             }
 
-            public (Vector2Int MinMax, float value) GetRandomRoll(ItemRarity rarity)
+            public (Vector2Int Range, float value) GetRandomRoll(ItemRarity rarity)
             {
                 /// ITEM AFFIX DESIGN BY RARITY:
                 /// 
-                /// the lesser the rarity, the higher the max affix roll => Common items can roll the highest stats => good base for crafting
-                /// the higher the rarity, the higher the min affix roll => Unique items roll with usefull affix values
+                /// the lesser the rarity, the higher the max range => Common items can roll the highest stats => good base for crafting
+                /// the higher the rarity, the higher the min range => Unique items roll with usefull affix values
 
                 var modifier = rarity switch
                 {
@@ -53,11 +56,11 @@ namespace ToolSmiths.InventorySystem.Data
 
                 // TODO modified affix range can result in higher min than max values => reorder before setting the range
 
-                /// the higher the rarity, the higher the min affix roll => Unique items roll with usefull affix values
-                var min = Mathf.CeilToInt(MinMax.x * modifier);
+                /// the higher the rarity, the higher the min range => Unique items roll with usefull affix values
+                var min = Mathf.CeilToInt(Range.x * modifier);
 
-                /// the lesser the rarity, the higher the max affix roll => Common items can roll the highest stats => good base for crafting
-                var max = Mathf.CeilToInt(MinMax.y * (1f + (1f - modifier)));
+                /// the lesser the rarity, the higher the max range => Common items can roll the highest stats => good base for crafting
+                var max = Mathf.CeilToInt(Range.y * (1f + (1f - modifier)));
 
                 var mappedValue = weightedRoll.MapFrom01(min - 1, max);
                 var value = Mathf.Max(min, Mathf.CeilToInt(mappedValue));
@@ -65,7 +68,7 @@ namespace ToolSmiths.InventorySystem.Data
                 return (new Vector2Int(min, max), value);
             }
 
-            public void OnBeforeSerialize() => name = $"{StatName}\t{MinMax}";
+            public void OnBeforeSerialize() => name = $"{StatName}\t{Range}";
 
             public void OnAfterDeserialize() { }
         }

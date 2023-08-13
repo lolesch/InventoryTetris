@@ -37,6 +37,7 @@ namespace ToolSmiths.InventorySystem.Displays
         {
             var compareTo = new Package(null, 0);
 
+            // TODO: do not compare against itself when hovering an equipment slot !
             if (package.Item is EquipmentItem && slot is not EquipmentSlotDisplay)
             {
                 // TODO compare to all equipments of the items equipmentType

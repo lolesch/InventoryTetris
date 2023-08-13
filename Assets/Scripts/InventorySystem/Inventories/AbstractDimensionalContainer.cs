@@ -45,8 +45,9 @@ namespace ToolSmiths.InventorySystem.Inventories
             AddToEmptyPositions();
 
             // Just for quality of life => if inventory is full add to stash
-            if (0 < package.Amount)
-                return InventoryProvider.Instance.PlayerStash.AddToContainer(package);
+            if (this is PlayerInventory)
+                if (0 < package.Amount)
+                    return InventoryProvider.Instance.PlayerStash.AddToContainer(package);
 
             return package;
 

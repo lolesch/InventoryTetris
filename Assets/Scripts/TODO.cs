@@ -34,3 +34,10 @@
 //      prefer empty slots for autoEquip
 //      compare to all
 // => for dropping get the hovered slot and try adding there
+
+/// COMBAT SIMULATION
+
+// Dummy to take damage
+// damage calculation based on equipment
+// add damage types and resistances
+// => later add skills to deal damage with

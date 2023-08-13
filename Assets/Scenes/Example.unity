@@ -7417,7 +7417,9 @@ MonoBehaviour:
   - {fileID: 11400000, guid: e67659d196a6a024ba1d064cc427a8fb, type: 2}
   Bows:
   - {fileID: 11400000, guid: c4ae283ec74f2b344b34ebd795935462, type: 2}
-  GreatSwords: []
+  GreatSwords:
+  - {fileID: 11400000, guid: eecdc070fa79bd8468dfd45986bafb6b, type: 2}
+  - {fileID: 11400000, guid: 83f20b036c4b56941be823070337e7d1, type: 2}
   Arrows:
   - {fileID: 11400000, guid: 1b6a85cfd3eb51e4abe9d5bba2b1e5ab, type: 2}
   - {fileID: 11400000, guid: 298cc8092f3508549974f31c727ffbfc, type: 2}

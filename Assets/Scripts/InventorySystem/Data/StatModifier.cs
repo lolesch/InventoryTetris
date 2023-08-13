@@ -13,8 +13,6 @@ namespace ToolSmiths.InventorySystem.Data
     [Serializable]
     public struct StatModifier : IComparable<StatModifier>
     {
-        //CONTINUE HERE
-        // adding the Range for later lookup
         /// <summary>The modifier's range.</summary>
         [Tooltip("The modifier's range.")]
         [field: SerializeField] public Vector2Int Range { get; private set; }
@@ -70,10 +68,10 @@ namespace ToolSmiths.InventorySystem.Data
 
         public override readonly string ToString() => Type switch
         {
-            /// wording
+            /// wording => how to consistantly translate the modifier types 
             // additional, additive, bonus, 
 
-            StatModifierType.Override => $"={Value:+ #.###;- #.###;#.###}",
+            StatModifierType.Override => $"={Value:- #.###;#.###}",
             StatModifierType.FlatAdd => $"{Value:+ #.###;- #.###;#.###}",
             StatModifierType.PercentAdd => $"{Value:+ #.###;- #.###;#.###}%",
             StatModifierType.PercentMult => $"{Value:+ #.###;- #.###;#.###}*%",

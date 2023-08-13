@@ -38,16 +38,10 @@ namespace ToolSmiths.InventorySystem.Displays
             var rarityColor = AbstractItem.GetRarityColor(package.Item.Rarity);
 
             if (itemName)
-            {
-                itemName.text = package.Item.ToString(); // UIExtensions.Colored
-                itemName.color = rarityColor;
-            }
+                itemName.text = package.Item.ToString().Colored(rarityColor);
 
             if (itemType)
-            {
-                itemType.text = package.Item is EquipmentItem ? (package.Item as EquipmentItem).EquipmentType.ToString() : string.Empty; // UIExtensions.Colored
-                itemType.color = rarityColor;
-            }
+                itemType.text = package.Item is EquipmentItem ? (package.Item as EquipmentItem).EquipmentType.ToString().Colored(rarityColor) : string.Empty;
 
             if (icon)
                 icon.sprite = package.Item.Icon;
@@ -80,33 +74,49 @@ namespace ToolSmiths.InventorySystem.Displays
                 {
                     var itemStat = Instantiate(itemStatPrefab, itemStatPrefab.transform.parent);
 
-                    var comparison = CompareStatValues(stats[i]);
+                    var comparison = CompareStatValues(stats[i], out var difference);
 
-                    var color = comparison == 0 ? Color.white : (comparison < 0 ? Color.yellow : Color.green);
+                    //var difference = comparison == 0 ? 0 : stats[i].Modifier.Value - other; // should compare character stats with 
 
-                    var coloredValue = stats[i].Modifier.ToString().Colored(color);
+                    var color = comparison == 0 ? Color.white : (comparison < 0 ? Color.red : Color.green);
+
+                    var differenceString = stats[i].Modifier.Type switch
+                    {
+                        StatModifierType.Override => $"{difference:+ #.###;- #.###;#.###}",
+                        StatModifierType.FlatAdd => $"{difference:+ #.###;- #.###;#.###}",
+                        StatModifierType.PercentAdd => $"{difference:+ #.###;- #.###;#.###}%",
+                        StatModifierType.PercentMult => $"{difference:+ #.###;- #.###;#.###}%",
+
+                        _ => $"?? {difference:+ #.###;- #.###;#.###}",
+                    };
 
                     var statName = stats[i].Stat.SplitCamelCase();
 
                     if (statName.Contains("Percent"))
                         statName = statName.Replace(" Percent", "");
 
-                    itemStat.text = $"{coloredValue} {statName} {stats[i].Modifier.Range}";
+                    // TODO: review the references
+                    itemStat.text = $"{stats[i].Modifier} {statName} {stats[i].Modifier.Range} {differenceString.Colored(color)}";
 
                     itemStat.gameObject.SetActive(true);
                 }
 
-                int CompareStatValues(PlayerStatModifier stat)
+                int CompareStatValues(PlayerStatModifier stat, out float difference)
                 {
                     var other = 0f;
+                    difference = stat.Modifier.Value;
 
-                    if (stat.Modifier.Type == StatModifierType.Override) // => compare to total
-                        other = Character.Instance.GetStatValue(stat.Stat);
-                    else if (compareTo.Item != null)
+                    //if (stat.Modifier.Type == StatModifierType.Override) // => compare to total
+                    //    other = Character.Instance.GetStatValue(stat.Stat);
+                    //else 
+                    if (compareTo.Item != null)
                         for (var i = 0; i < compareTo.Item.Affixes.Count; i++) // foreach stat of the other item
                             if (compareTo.Item.Affixes[i].Stat == stat.Stat) // find a corresponding stat
-                                if (compareTo.Item.Affixes[i].Modifier.Type == stat.Modifier.Type) // find a corresponding stat
-                                    other = compareTo.Item.Affixes[i].Modifier.Value;
+                                                                             //        if (compareTo.Item.Affixes[i].Modifier.Type == stat.Modifier.Type) // find a corresponding mod type
+                            {
+                                other = compareTo.Item.Affixes[i].Modifier.Value;
+                                difference = Character.Instance.CompareStatModifiers(stat, compareTo.Item.Affixes[i].Modifier);
+                            }
 
                     return stat.Modifier.Value.CompareTo(other);
                 }

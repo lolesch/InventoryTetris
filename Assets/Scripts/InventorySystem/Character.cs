@@ -88,5 +88,17 @@ namespace ToolSmiths.InventorySystem.Data
 
         // TODO make it an interface for all things that have a list of stats on them?
         public float GetStatValue(StatName stat) => GetStat(stat).ModifiedValue;
+
+        public float CompareStatModifiers(PlayerStatModifier playerStatModifier, StatModifier other) => CompareStatModifiers(playerStatModifier.Stat, playerStatModifier.Modifier, other);
+        public float CompareStatModifiers(StatName stat, StatModifier current, StatModifier other)
+        {
+            var currentValue = GetStatValue(stat);
+            var copiedStat = GetStat(stat);
+            copiedStat.RemoveModifier(current);
+            copiedStat.AddModifier(other);
+            var newValue = copiedStat.ModifiedValue;
+
+            return currentValue - newValue;
+        }
     }
 }
