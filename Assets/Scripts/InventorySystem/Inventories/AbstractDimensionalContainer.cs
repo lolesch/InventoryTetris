@@ -229,57 +229,50 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// A List of all positions that are required to add this item to the container
         protected abstract List<Vector2Int> CalculateRequiredPositions(Vector2Int position, Vector2Int dimension);
 
-        public void Sort()
-        {
-            SortAlphabetically();
-            SortByRarity();
-            SortByItemDimension();
-        }
-
         // TODO package should implement IComparable 
-        private void SortByItemDimension()
+        public void Sort() // TODO garbage free sorting
         {
-            var storedDimensions = StoredPackages.Values.Select(x => AbstractItem.GetDimensions(x.Item.Dimensions)).ToList();
-
-            storedDimensions = storedDimensions.Distinct().OrderByDescending(v => v.x * v.y).ToList();/*v.sqrMagnitude*/
-
             var storedValues = StoredPackages.Values.ToList();
-            StoredPackages.Clear(); // This won't unequip => stats not removed from character
 
-            for (var i = 0; i < storedDimensions.Count(); i++)
-                for (var j = 0; j < storedValues.Count; j++)
-                    if (AbstractItem.GetDimensions(storedValues[j].Item.Dimensions) == storedDimensions[i])
-                        _ = AddToContainer(storedValues[j]);
+            SortAlphabetically(storedValues);
+            SortByRarity(storedValues);
+            SortByItemDimension(storedValues);
         }
 
-        private void SortAlphabetically()
+        private void SortAlphabetically(List<Package> storedValues)
         {
-            var storedNames = StoredPackages.Values.Select(x => x.Item.ToString()).ToList();
-
-            storedNames = storedNames.Distinct().OrderByDescending(x => x).ToList();
-
-            var storedValues = StoredPackages.Values.ToList();
             StoredPackages.Clear(); // This won't unequip => stats not removed from character
 
-            for (var i = 0; i < storedNames.Count; i++)
-                for (var j = 0; j < storedValues.Count; j++)
-                    if (storedValues[j].Item.ToString() == storedNames[i])
-                        _ = AddToContainer(storedValues[j]);
+            var storedNames = storedValues.Select(x => x.Item.ToString()).Distinct().OrderByDescending(x => x).ToList();
+
+            foreach (var x in storedNames)
+                foreach (var y in storedValues)
+                    if (y.ToString() == x)
+                        _ = AddToContainer(y);
         }
 
-        private void SortByRarity()
+        private void SortByItemDimension(List<Package> storedValues)
         {
-            var storedRarities = StoredPackages.Values.Select(x => x.Item.Rarity).ToList();
-
-            storedRarities = storedRarities.Distinct().OrderByDescending(x => x).ToList();
-
-            var storedValues = StoredPackages.Values.ToList();
             StoredPackages.Clear(); // This won't unequip => stats not removed from character
 
-            for (var i = 0; i < storedRarities.Count; i++)
-                for (var j = 0; j < storedValues.Count; j++)
-                    if (storedValues[j].Item.Rarity == storedRarities[i])
-                        _ = AddToContainer(storedValues[j]);
+            var storedDimensions = storedValues.Select(x => AbstractItem.GetDimensions(x.Item.Dimensions)).Distinct().OrderByDescending(v => v.sqrMagnitude/* v.x * v.y*/).ToList();/*v.sqrMagnitude*/
+
+            foreach (var x in storedDimensions)
+                foreach (var y in storedValues)
+                    if (AbstractItem.GetDimensions(y.Item.Dimensions) == x)
+                        _ = AddToContainer(y);
+        }
+
+        private void SortByRarity(List<Package> storedValues)
+        {
+            StoredPackages.Clear(); // This won't unequip => stats not removed from character
+
+            var storedRarities = storedValues.Select(x => x.Item.Rarity).Distinct().OrderByDescending(x => x).ToList();
+
+            foreach (var x in storedRarities)
+                foreach (var y in storedValues)
+                    if (y.Item.Rarity == x)
+                        _ = AddToContainer(y);
         }
 
         protected internal void InvokeRefresh() => OnContentChanged?.Invoke(StoredPackages);

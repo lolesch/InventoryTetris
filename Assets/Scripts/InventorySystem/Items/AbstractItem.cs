@@ -89,6 +89,22 @@ namespace ToolSmiths.InventorySystem.Items
             //Affixes = GetStats(Rarity, stats);
             Affixes = stats;
 
+            CombineAffixesOfSameTypeAndMod();
+
+            void CombineAffixesOfSameTypeAndMod()
+            {
+                // for each affix go down the list and check for same affix wich same type
+                for (var i = 0; i < Affixes.Count; i++)
+                    for (var j = Affixes.Count; j-- > i;) // reverse loop because we remove elements
+                        if (Affixes[i].Stat == Affixes[j].Stat && Affixes[i].Modifier.Type == Affixes[j].Modifier.Type)
+                        {
+                            var range = Affixes[i].Modifier.Range + Affixes[j].Modifier.Range;
+                            var value = Affixes[i].Modifier.Value + Affixes[j].Modifier.Value;
+                            Affixes[i] = new PlayerStatModifier(Affixes[i].Stat, new StatModifier(range, value, Affixes[i].Modifier.Type));
+                            Affixes.RemoveAt(j);
+                        }
+            }
+
             ItemSize GetDimension(ConsumableType consumableType) => consumableType switch
             {
                 ConsumableType.NONE => ItemSize.NONE,
@@ -153,7 +169,7 @@ namespace ToolSmiths.InventorySystem.Items
             }
         }
 
-        public void Consume() { }
+        public void Consume() => Debug.Log($"Consuming {ToString()}");
 
         public void UseItem() => Consume();
         public override string ToString() => $"{Rarity} {ConsumableType}".Colored(GetRarityColor(Rarity));
@@ -317,6 +333,7 @@ namespace ToolSmiths.InventorySystem.Items
         public override string ToString() => $"{Rarity} {EquipmentType}".Colored(GetRarityColor(Rarity));
     }
 
+    // TODO: should use the package instead => package stores the amount and has more knowledge of the container it is stored in
     public interface IUsableItem
     {
         public abstract void UseItem();
