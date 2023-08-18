@@ -21,7 +21,7 @@ MonoBehaviour:
     - <Stat>k__BackingField: 3
       <Modifier>k__BackingField:
         <Range>k__BackingField: {x: 5, y: 10}
-        <Value>k__BackingField: 0
+        <Value>k__BackingField: 7
         <Type>k__BackingField: 100
     <EquipmentCategory>k__BackingField: 2
     <EquipmentType>k__BackingField: 202

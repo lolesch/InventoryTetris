@@ -17,9 +17,10 @@ MonoBehaviour:
     <Dimensions>k__BackingField: 11
     <StackLimit>k__BackingField: 50
     <Rarity>k__BackingField: 5
-    <Stats>k__BackingField:
-    - <Stat>k__BackingField: 3
+    <Affixes>k__BackingField:
+    - <Stat>k__BackingField: 2
       <Modifier>k__BackingField:
-        <Value>k__BackingField: 5
+        <Range>k__BackingField: {x: 1, y: 10}
+        <Value>k__BackingField: 1
         <Type>k__BackingField: 100
     <ConsumableType>k__BackingField: 1

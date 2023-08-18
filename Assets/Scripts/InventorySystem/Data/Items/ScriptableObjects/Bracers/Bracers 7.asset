@@ -13,13 +13,10 @@ MonoBehaviour:
   m_Name: Bracers 7
   m_EditorClassIdentifier: 
   <Item>k__BackingField:
+    <Icon>k__BackingField: {fileID: 21300000, guid: 19dbf17225be10b4ba481421a7b8c8b5, type: 3}
     <Dimensions>k__BackingField: 22
-    <Icon>k__BackingField: {fileID: 21300000, guid: 5608dc27e386432419b67f2cbd1e71e8, type: 3}
     <StackLimit>k__BackingField: 1
     <Rarity>k__BackingField: 5
-    <Stats>k__BackingField:
-    - <Stat>k__BackingField: 0
-      <Modifier>k__BackingField:
-        <Value>k__BackingField: 20
-        <Type>k__BackingField: 200
+    <Affixes>k__BackingField: []
+    <EquipmentCategory>k__BackingField: 0
     <EquipmentType>k__BackingField: 7

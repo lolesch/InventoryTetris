@@ -13,13 +13,10 @@ MonoBehaviour:
   m_Name: Shield 3
   m_EditorClassIdentifier: 
   <Item>k__BackingField:
+    <Icon>k__BackingField: {fileID: 21300000, guid: e499a69d1c6d5514eb344e0e6e92588f, type: 3}
     <Dimensions>k__BackingField: 23
-    <Icon>k__BackingField: {fileID: 21300000, guid: a60d09cccf43c8f4c873d4b7a1fb7bca, type: 3}
     <StackLimit>k__BackingField: 1
     <Rarity>k__BackingField: 5
-    <Stats>k__BackingField:
-    - <Stat>k__BackingField: 0
-      <Modifier>k__BackingField:
-        <Value>k__BackingField: 10
-        <Type>k__BackingField: 300
+    <Affixes>k__BackingField: []
+    <EquipmentCategory>k__BackingField: 0
     <EquipmentType>k__BackingField: 12

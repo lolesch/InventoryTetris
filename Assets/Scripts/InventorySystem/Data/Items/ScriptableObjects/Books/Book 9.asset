@@ -13,13 +13,9 @@ MonoBehaviour:
   m_Name: Book 9
   m_EditorClassIdentifier: 
   <Item>k__BackingField:
+    <Icon>k__BackingField: {fileID: 21300000, guid: 2c883a29a6895db40950a168205fdda1, type: 3}
     <Dimensions>k__BackingField: 22
-    <Icon>k__BackingField: {fileID: 21300000, guid: 1c7a41a89b8e36a4cb18a4946c66c3a8, type: 3}
     <StackLimit>k__BackingField: 1
     <Rarity>k__BackingField: 5
-    <Stats>k__BackingField:
-    - <Stat>k__BackingField: 4
-      <Modifier>k__BackingField:
-        <Value>k__BackingField: 50
-        <Type>k__BackingField: 200
+    <Affixes>k__BackingField: []
     <ConsumableType>k__BackingField: 2
