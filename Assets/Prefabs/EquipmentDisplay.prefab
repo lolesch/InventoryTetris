@@ -465,7 +465,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0.000030517578}
   m_SizeDelta: {x: -20, y: -10.000002}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &4745071996144970725
@@ -654,71 +654,71 @@ MonoBehaviour:
   m_GameObject: {fileID: 6625933068359046462}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a8647e8ca895ed14596f672120bb86da, type: 3}
+  m_Script: {fileID: 11500000, guid: be3de1f6fbda9d74c92c30b4d1a6fef6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   characterLevel: 0
   stats:
-  - name: AttackSpeedPercent
+  - name: Attack Speed Percent
     <Stat>k__BackingField: 0
-    <BaseValue>k__BackingField: 0
+    <BaseValue>k__BackingField: 1
     <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: DamagePercent
+    <ModifiedValue>k__BackingField: 1
+  - name: Damage Percent
     <Stat>k__BackingField: 1
-    <BaseValue>k__BackingField: 0
+    <BaseValue>k__BackingField: 1
     <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: MinDamage
+    <ModifiedValue>k__BackingField: 1
+  - name: Min Damage
     <Stat>k__BackingField: 2
-    <BaseValue>k__BackingField: 0
+    <BaseValue>k__BackingField: 1
     <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: MaxDamage
+    <ModifiedValue>k__BackingField: 1
+  - name: Max Damage
     <Stat>k__BackingField: 3
-    <BaseValue>k__BackingField: 0
+    <BaseValue>k__BackingField: 1
     <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: BlockChancePercent
+    <ModifiedValue>k__BackingField: 1
+  - name: Block Chance Percent
     <Stat>k__BackingField: 4
-    <BaseValue>k__BackingField: 0
+    <BaseValue>k__BackingField: 5
     <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: BonusArmor
+    <ModifiedValue>k__BackingField: 5
+  - name: Bonus Armor
     <Stat>k__BackingField: 5
-    <BaseValue>k__BackingField: 0
+    <BaseValue>k__BackingField: 10
     <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: ResistanceToAll
+    <ModifiedValue>k__BackingField: 10
+  - name: Resistance To All
     <Stat>k__BackingField: 6
-    <BaseValue>k__BackingField: 0
+    <BaseValue>k__BackingField: 5
     <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: LifePercent
+    <ModifiedValue>k__BackingField: 5
+  - name: Life Percent
     <Stat>k__BackingField: 7
-    <BaseValue>k__BackingField: 0
+    <BaseValue>k__BackingField: 100
     <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: LifePerSecond
+    <ModifiedValue>k__BackingField: 100
+  - name: Life Per Second
     <Stat>k__BackingField: 8
-    <BaseValue>k__BackingField: 0
+    <BaseValue>k__BackingField: 5
     <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: MovementSpeedPercent
+    <ModifiedValue>k__BackingField: 5
+  - name: Movement Speed Percent
     <Stat>k__BackingField: 9
-    <BaseValue>k__BackingField: 0
+    <BaseValue>k__BackingField: 6
     <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: IncreasedItemRarityPercent
+    <ModifiedValue>k__BackingField: 6
+  - name: Increased Item Rarity Percent
     <Stat>k__BackingField: 10
-    <BaseValue>k__BackingField: 0
+    <BaseValue>k__BackingField: 1
     <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
-  - name: IncreasedItemQuantityPercent
+    <ModifiedValue>k__BackingField: 1
+  - name: Increased Item Quantity Percent
     <Stat>k__BackingField: 11
-    <BaseValue>k__BackingField: 0
+    <BaseValue>k__BackingField: 1
     <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 0
+    <ModifiedValue>k__BackingField: 1
   statPrefab: {fileID: 3966431505955093578}
 --- !u!1 &6710603046912445379
 GameObject:
@@ -984,7 +984,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 8183235012115119045}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.9891305
+  m_Size: 0.98913056
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
