@@ -1,4 +1,4 @@
-﻿//using DG.Tweening;
+﻿using DG.Tweening;
 using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -56,8 +56,8 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         {
             base.OnDisable();
 
-            //if (targetGraphic && DOTween.IsTweening(targetGraphic.transform))
-            //    DOTween.Kill(targetGraphic.transform);
+            if (targetGraphic && DOTween.IsTweening(targetGraphic.transform))
+                DOTween.Kill(targetGraphic.transform);
 
             if (radioGroup)
                 radioGroup.Unregister(this);
@@ -181,8 +181,8 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
 
         private void Scale(bool condition, float factor)
         {
-            //if (targetGraphic)
-            //    targetGraphic.transform.DOScale(condition ? factor : 1, .15f).SetEase(Ease.InOutSine);
+            if (targetGraphic)
+                targetGraphic.transform.DOScale(condition ? factor : 1, .15f).SetEase(Ease.InOutSine);
         }
 
         public virtual void PlayHoverSound() { } // => AudioProvider.Instance.PlayButtonHover();

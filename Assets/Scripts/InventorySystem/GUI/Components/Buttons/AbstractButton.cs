@@ -1,4 +1,4 @@
-﻿//using DG.Tweening;
+﻿using DG.Tweening;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -103,8 +103,8 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
 
         private void Scale(bool condition, float factor)
         {
-            //if (targetGraphic)
-            //    _ = targetGraphic.transform.DOScale(condition ? factor : 1, .15f).SetEase(Ease.InOutSine);
+            if (targetGraphic)
+                _ = targetGraphic.transform.DOScale(condition ? factor : 1, .15f).SetEase(Ease.InOutSine);
         }
 
         public virtual void PlayHoverSound() { } // => AudioProvider.Instance.PlayButtonHover();

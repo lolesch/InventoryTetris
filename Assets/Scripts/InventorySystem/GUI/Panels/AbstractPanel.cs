@@ -1,4 +1,4 @@
-﻿//using DG.Tweening;
+﻿using DG.Tweening;
 using System;
 using UnityEngine;
 using UnityEngine.UI;
@@ -63,16 +63,16 @@ namespace ToolSmiths.InventorySystem.GUI.Panels
                 return;
             }
 
-            //_ = CanvasGroup.DOFade(1, fadeInDuration).SetEase(Ease.InOutQuad).OnComplete(() => OnAppear());
-            //
-            //if (IsMoving)
-            //    _ = Transform.DOAnchorPos(startPosition, fadeInDuration).SetEase(Ease.InOutQuad);
-            //
-            //if (IsScaling)
-            //{
-            //    Transform.localScale = new Vector2(scaleFrom, scaleFrom);
-            //    _ = Transform.DOScale(1, fadeInDuration).SetEase(Ease.InOutQuad);
-            //}
+            _ = CanvasGroup.DOFade(1, fadeInDuration).SetEase(Ease.InOutQuad).OnComplete(() => OnAppear());
+
+            if (IsMoving)
+                _ = Transform.DOAnchorPos(startPosition, fadeInDuration).SetEase(Ease.InOutQuad);
+
+            if (IsScaling)
+            {
+                Transform.localScale = new Vector2(scaleFrom, scaleFrom);
+                _ = Transform.DOScale(1, fadeInDuration).SetEase(Ease.InOutQuad);
+            }
         }
 
         public void FadeInAfterDelay(float fadeInDelay = 0)
@@ -83,8 +83,8 @@ namespace ToolSmiths.InventorySystem.GUI.Panels
                 return;
             }
 
-            //var sequence = DOTween.Sequence();
-            //_ = sequence.InsertCallback(fadeInDelay, FadeIn);
+            var sequence = DOTween.Sequence();
+            _ = sequence.InsertCallback(fadeInDelay, FadeIn);
         }
 
         /// <summary>
@@ -101,8 +101,8 @@ namespace ToolSmiths.InventorySystem.GUI.Panels
 
             if (0 < fadeOutDelay)
             {
-                //var sequence = DOTween.Sequence();
-                //_ = sequence.InsertCallback(fadeOutDelay, FadeOut);
+                var sequence = DOTween.Sequence();
+                _ = sequence.InsertCallback(fadeOutDelay, FadeOut);
             }
         }
 
@@ -126,13 +126,13 @@ namespace ToolSmiths.InventorySystem.GUI.Panels
 
             CanvasGroup.blocksRaycasts = false;
 
-            //_ = CanvasGroup.DOFade(0, fadeOutDuration).SetEase(Ease.InQuad); //.OnComplete(() => OnDisappear());
-            //
-            //if (IsMoving)
-            //    _ = Transform.DOAnchorPos(startPosition + moveFrom, fadeOutDuration).SetEase(Ease.InQuad);
-            //
-            //if (IsScaling)
-            //    _ = Transform.DOScale(scaleFrom, fadeOutDuration).SetEase(Ease.InQuad);
+            _ = CanvasGroup.DOFade(0, fadeOutDuration).SetEase(Ease.InQuad); //.OnComplete(() => OnDisappear());
+
+            if (IsMoving)
+                _ = Transform.DOAnchorPos(startPosition + moveFrom, fadeOutDuration).SetEase(Ease.InQuad);
+
+            if (IsScaling)
+                _ = Transform.DOScale(scaleFrom, fadeOutDuration).SetEase(Ease.InQuad);
         }
 
         [ContextMenu("Toggle Visibility")]
@@ -149,8 +149,8 @@ namespace ToolSmiths.InventorySystem.GUI.Panels
             if (CanvasGroup == null)
                 return;
 
-            //if (DOTween.IsTweening(CanvasGroup))
-            //    _ = DOTween.Kill(CanvasGroup);
+            if (DOTween.IsTweening(CanvasGroup))
+                _ = DOTween.Kill(CanvasGroup);
         }
 
         //public abstract void SetData();
