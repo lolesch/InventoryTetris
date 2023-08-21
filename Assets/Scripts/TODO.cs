@@ -39,7 +39,7 @@
 
 /// COMBAT SIMULATION
 
-// Dummy to take damage
+// simulate Dummy to take damage
 // Weapons should have attackSpeed multiply mod
 // Weapons should set Damage base value on equip
 // => later add skills to deal damage with
