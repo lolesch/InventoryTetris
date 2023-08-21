@@ -3,6 +3,7 @@ using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Distributions;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Items;
+using ToolSmiths.InventorySystem.Runtime.Character;
 using ToolSmiths.InventorySystem.Runtime.Provider;
 using UnityEngine;
 
@@ -11,6 +12,7 @@ namespace ToolSmiths.InventorySystem.Inventories
     public class ItemProvider : AbstractProvider<ItemProvider>
     {
         public ItemTypeData ItemTypeData;
+        public LocalPlayer LocalPlayer;
 
         [Header("Distributions")]
         [SerializeField] private ItemCategoryDistribution itemCategoryDistribution;
@@ -57,9 +59,9 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             return generatedLoot;
 
-            static void CalculateBonusDrops(ref uint amount)
+            void CalculateBonusDrops(ref uint amount)
             {
-                var bonusDrops = Character.Instance.GetStatValue(StatName.IncreasedItemQuantityPercent);
+                var bonusDrops = BaseCharacter.GetStatValue(LocalPlayer, StatName.IncreasedItemQuantity);
                 amount += (uint)(bonusDrops / 100f); // TODO: requires a better formula
             }
         }

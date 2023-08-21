@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using TMPro;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
+using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Utility.Extensions;
 using UnityEngine;
@@ -116,7 +117,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                                                                              //        if (compareTo.Item.Affixes[i].Modifier.Type == stat.Modifier.Type) // find a corresponding mod type
                             {
                                 other = compareTo.Item.Affixes[i].Modifier.Value;
-                                difference = Character.Instance.CompareStatModifiers(stat, compareTo.Item.Affixes[i].Modifier);
+                                difference = ItemProvider.Instance.LocalPlayer.CompareStatModifiers(stat, compareTo.Item.Affixes[i].Modifier);
                             }
 
                     return stat.Modifier.Value.CompareTo(other);

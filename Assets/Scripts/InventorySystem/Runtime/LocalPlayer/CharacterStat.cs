@@ -7,20 +7,25 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.Data
 {
     [System.Serializable]
-    public class PlayerStat : ISerializationCallbackReceiver
+    public class CharacterStat : ISerializationCallbackReceiver
     {
         [SerializeField, HideInInspector] private string name;
         [field: SerializeField, HideInInspector] public StatName Stat { get; private set; }
 
         [field: SerializeField] public uint BaseValue { get; private set; }
         [field: SerializeField] public List<StatModifier> StatModifiers { get; private set; }
-        [field: SerializeField, ReadOnly] public float ModifiedValue { get; private set; }
 
-        public PlayerStat(StatName statName, uint baseValue = 0)
+        public event Action<float> TotalHasChanged;
+
+        [SerializeField] public float TotalValue => CalculateTotalValue();
+        // [SerializeField] public float BonusValue => TotalValue - BaseValue;
+
+        public CharacterStat(StatName statName, uint baseValue = 0)
         {
             Stat = statName;
             BaseValue = baseValue;
-            ModifiedValue = CalculateModifiedValue();
+            //ModifiedValue = CalculateModifiedValue();
+            name = Stat.SplitCamelCase();
         }
 
         public void RemoveModifier(StatModifier modifier)
@@ -29,31 +34,33 @@ namespace ToolSmiths.InventorySystem.Data
                 if (StatModifiers[i].Equals(modifier))
                 {
                     StatModifiers.RemoveAt(i);
+
+                    TotalHasChanged?.Invoke(TotalValue);
                     break;
                 }
-
-            ModifiedValue = CalculateModifiedValue();
         }
 
         public void AddModifier(StatModifier modifier)
         {
+            StatModifiers ??= new List<StatModifier>();
+
             StatModifiers.Add(modifier);
 
-            ModifiedValue = CalculateModifiedValue();
+            TotalHasChanged?.Invoke(TotalValue);
         }
 
-        private float CalculateModifiedValue()
+        private float CalculateTotalValue()
         {
             if (StatModifiers == null)
                 return BaseValue;
 
             StatModifiers.Sort((x, y) => x.SortByType(y));
 
-            var result = (float)BaseValue;
+            var result = TotalValue;
             var index = 0;
 
             /// Overrides
-            var highestOverride = result;
+            var highestOverride = 0f;
             var hasOverrides = false;
 
             for (var i = index; i < StatModifiers.Count; i++)
@@ -67,7 +74,7 @@ namespace ToolSmiths.InventorySystem.Data
                 }
 
             if (hasOverrides)
-                return (float)Math.Round(highestOverride, 4);
+                return highestOverride;// (float)Math.Round(highestOverride, 4);
 
             /// FlatAdd
             for (var i = index; i < StatModifiers.Count; i++)
@@ -92,14 +99,10 @@ namespace ToolSmiths.InventorySystem.Data
                 if (StatModifiers[i].Type == StatModifierType.PercentMult)
                     result *= 1 + StatModifiers[i].Value / 100;
 
-            return result;
+            return result;// (float)Math.Round(result, 4);
         }
 
-        public void OnBeforeSerialize()
-        {
-            name = Stat.SplitCamelCase();
-            ModifiedValue = CalculateModifiedValue();
-        }
+        public void OnBeforeSerialize() => name = ToString();
 
         public override string ToString()
         {
@@ -109,19 +112,42 @@ namespace ToolSmiths.InventorySystem.Data
 
             if (statName.Contains("Percent"))
             {
-                //System.Text.RegularExpressions.Regex.Replace(name, "( Percent)", "", System.Text.RegularExpressions.RegexOptions.Compiled).Trim();
                 statName = statName.Replace(" Percent", "");
                 isPercent = true;
             }
-            var percent = isPercent ? "%" : "";
 
-            return $"{statName}: {ModifiedValue:0.###}{percent}";
+            return $"{statName}: {TotalValue:0.###}{(isPercent ? "%" : "")}";
         }
 
-        public void OnAfterDeserialize()
+        public void OnAfterDeserialize() { }
+    }
+
+    [Serializable]
+    public class CharacterResource : CharacterStat
+    {
+        [field: SerializeField, ReadOnly] public float CurrentValue { get; private set; }
+
+        public CharacterResource(StatName resourceName, uint baseValue = 0) : base(resourceName, baseValue) => CurrentValue = TotalValue;//RecoveryStat = recoveryName;
+        public bool IsDepleted => CurrentValue <= 0;
+
+        public event Action<float> CurrentHasChanged;
+        public event Action CurrentHasDepleted;
+
+        public void AddToCurrent(float value) => SetCurrentValue(CurrentValue + value);
+        public void RefillCurrent() => SetCurrentValue(TotalValue);
+
+        private void SetCurrentValue(float value)
         {
-            //name = Stat.ToString();
-            //ModifiedValue = CalculateModifiedValue();
+            var resultingValue = Mathf.Clamp(value, 0, TotalValue);
+            if (CurrentValue != resultingValue)
+            {
+                CurrentValue = resultingValue;
+
+                CurrentHasChanged?.Invoke(CurrentValue);
+
+                if (IsDepleted)
+                    CurrentHasDepleted?.Invoke();
+            }
         }
     }
 }

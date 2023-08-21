@@ -6,30 +6,24 @@ namespace ToolSmiths.InventorySystem.Data.Enums
     /// The identifier of all stats in the game.
     public enum StatName
     {
-        /// D3
-        // damage
-        //AreaDamagePercent,
-        [InspectorName("Attack Speed %")]
-        AttackSpeedPercent,
-        //CritChancePercent,
-        //CritDamagePercent,
-        [InspectorName("Damage %")]
-        DamagePercent,
-        //DamageTypePercent, // foreach damageType
-        //MinElementalDamage,
-        //MaxElementalDamage,
-        [InspectorName("Damage Min")]
-        MinDamage,
-        [InspectorName("Damage Max")]
-        MaxDamage,
-        //DamageAgainstElitesPercent,
+        // DAMAGE
+        [InspectorName("Weapon Damage")]
+        WeaponDamage,
+        [InspectorName("Attack Speed")]
+        AttackSpeed,
+        //CritChance,
+        //CritDamage,
+        //DamageType, // foreach damageType
+        [InspectorName("Physical Damage")]
+        PhysicalDamage,
+        [InspectorName("Elemental Damage")]
+        ElementalDamage,
+        //DamageAgainstElites,
+        //SplashDamage,
 
-        //ReducedResourceCostPercent,
-        //ReducedCooldownPercent,
-
-        // defense
-        [InspectorName("Block Chance %")]
-        BlockChancePercent,
+        // DEFENSE
+        [InspectorName("Block Chance")]
+        BlockChance,
         [InspectorName("Armor")]
         BonusArmor,
         //ReducedDamageFromElites,
@@ -40,35 +34,41 @@ namespace ToolSmiths.InventorySystem.Data.Enums
 
         //Thorns,
 
-        // resistance
-        [InspectorName("All Resistance")]
-        ResistanceToAll,
+        // RESISTANCE
         //DamageTypeResistance, // foreach damageType
+        [InspectorName("Physical Resistance")]
+        PhysicalResistance,
+        [InspectorName("Elemental Resistance")]
+        ElementalResistance,
+        //[InspectorName("All Resistance")]
+        //ResistanceToAll,
 
-        // healing
-        [InspectorName("Health %")]
-        LifePercent,
+        // HEALING
+        [InspectorName("Health")]
+        MaxLife,
         //LifePerHit,
         [InspectorName("Health Regen")]
         LifePerSecond,
         //LifePerKill,
-        //ExtraLifeFromHealing,
+        //IncreasedHealing,
 
-        // adventure
-        [InspectorName("Move Speed %")]
-        MovementSpeedPercent,
-        //Sockets,
-        //BonusExperiencePercent,
+        // UTILITY
+        [InspectorName("Move Speed")]
+        MovementSpeed,
+        //ReducedResourceCost,
+        //ReducedCooldown,
+
+        //Sockets, ???
         //BonusExperience,
-        //GoldFindPercent,
+        //GoldFind,
         [InspectorName("Increased Rarity %")]
-        IncreasedItemRarityPercent,
+        IncreasedItemRarity,
         [InspectorName("Increased Quantity %")]
-        IncreasedItemQuantityPercent,
+        IncreasedItemQuantity,
         //PickupRadius,
         //ReducedLevelRequirements,
 
-        // OnHit 
-        //ChanceToBlindPercent, // and many more...
+        // ONHIT PROCS 
+        //ChanceToBlind, // and many more...
     }
 }

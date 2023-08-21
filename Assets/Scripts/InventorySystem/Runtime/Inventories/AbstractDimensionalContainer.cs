@@ -25,6 +25,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             if (package.Item == null)
                 return package;
 
+            /// handle autoEquip
             if (this is PlayerInventory)
             {
                 var equipment = InventoryProvider.Instance.PlayerEquipment;
@@ -45,8 +46,8 @@ namespace ToolSmiths.InventorySystem.Inventories
             AddToEmptyPositions();
 
             // Just for quality of life => if inventory is full add to stash
-            if (this is PlayerInventory)
-                if (0 < package.Amount)
+            if (0 < package.Amount)
+                if (this == InventoryProvider.Instance.PlayerInventory)
                     return InventoryProvider.Instance.PlayerStash.AddToContainer(package);
 
             return package;
@@ -108,7 +109,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
                 if (this is CharacterEquipment && package.Item is EquipmentItem)
                 {
-                    Character.Instance.AddItemStats(package.Item.Affixes);
+                    ItemProvider.Instance.LocalPlayer.AddItemStats(package.Item.Affixes);
                 }
 
                 OnContentChanged?.Invoke(StoredPackages);
@@ -181,7 +182,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
                         if (this is CharacterEquipment)// && storedPackage.Item is Equipment) // must have been an Equipment if it was in the Equipment container
                         {
-                            Character.Instance.RemoveItemStats(storedPackage.Item.Affixes);
+                            ItemProvider.Instance.LocalPlayer.RemoveItemStats(storedPackage.Item.Affixes);
                         }
                     }
                 }

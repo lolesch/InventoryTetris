@@ -24,6 +24,10 @@ namespace ToolSmiths.InventorySystem.Inventories
             return otherPackagePositions;
         }
 
+        //public Vector2Int GetEquipmentTypePosition(EquipmentType equipment)
+        //{
+        //    go over each slotDisplay to see what equipmentTypes are allowed?
+        //}
         public Vector2Int GetEquipmentTypePosition(EquipmentType equipment) => equipment switch
         {
             EquipmentType.Amulet => new(0, 0),

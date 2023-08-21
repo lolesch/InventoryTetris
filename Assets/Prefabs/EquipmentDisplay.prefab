@@ -465,7 +465,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.000030517578}
+  m_AnchoredPosition: {x: 0, y: -0.000030517578}
   m_SizeDelta: {x: -20, y: -10.000002}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &4745071996144970725
@@ -658,7 +658,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   characterLevel: 0
-  stats:
+  playerStats:
   - name: Attack Speed Percent
     <Stat>k__BackingField: 0
     <BaseValue>k__BackingField: 1
@@ -666,9 +666,9 @@ MonoBehaviour:
     <ModifiedValue>k__BackingField: 1
   - name: Damage Percent
     <Stat>k__BackingField: 1
-    <BaseValue>k__BackingField: 1
+    <BaseValue>k__BackingField: 100
     <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 1
+    <ModifiedValue>k__BackingField: 100
   - name: Min Damage
     <Stat>k__BackingField: 2
     <BaseValue>k__BackingField: 1
@@ -676,9 +676,9 @@ MonoBehaviour:
     <ModifiedValue>k__BackingField: 1
   - name: Max Damage
     <Stat>k__BackingField: 3
-    <BaseValue>k__BackingField: 1
+    <BaseValue>k__BackingField: 10
     <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 1
+    <ModifiedValue>k__BackingField: 10
   - name: Block Chance Percent
     <Stat>k__BackingField: 4
     <BaseValue>k__BackingField: 5
@@ -686,14 +686,14 @@ MonoBehaviour:
     <ModifiedValue>k__BackingField: 5
   - name: Bonus Armor
     <Stat>k__BackingField: 5
-    <BaseValue>k__BackingField: 10
+    <BaseValue>k__BackingField: 12
     <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 10
+    <ModifiedValue>k__BackingField: 12
   - name: Resistance To All
     <Stat>k__BackingField: 6
-    <BaseValue>k__BackingField: 5
+    <BaseValue>k__BackingField: 8
     <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 5
+    <ModifiedValue>k__BackingField: 8
   - name: Life Percent
     <Stat>k__BackingField: 7
     <BaseValue>k__BackingField: 100
@@ -983,8 +983,8 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 6024013811301611008}
   m_HandleRect: {fileID: 8183235012115119045}
   m_Direction: 2
-  m_Value: 0
-  m_Size: 0.98913056
+  m_Value: 1
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:

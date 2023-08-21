@@ -1,12 +1,17 @@
 /// KNOWN ISSUES:
 
-// droping an item sometimes selects an unexpected position
+// dragDroping an item sometimes selects an unexpected position
+
 // equipment positions is buggy
 // => cant equip 2nd ring via dragDrop
 // => 2h wont unequip both slots
+
 // comparison shows wrong numbers of first hover => rehover shows correct values
 // comparison cant compare against all equipment of same type (i.e. both rings)
+
 // modified affix range can result in higher min than max values => reorder before setting the range
+
+// item stacking seems broken => random items never stack
 
 /// TODO
 
@@ -32,6 +37,13 @@
 
 // rework comparison
 
+/// COMBAT SIMULATION
+
+// Dummy to take damage
+// Weapons should have attackSpeed multiply mod
+// Weapons should set Damage base value on equip
+// => later add skills to deal damage with
+
 /// ICEBOX
 
 // Sockets? in D2:
@@ -42,12 +54,5 @@
 
 // Improved MagicFind:
 // Effective MF = (MF * Factor) / (MF + Factor), where Factor=250 for unique items, 500 for set items and 600 for rare items..
-
-/// COMBAT SIMULATION
-
-// Dummy to take damage
-// damage calculation based on equipment
-// add damage types and resistances
-// => later add skills to deal damage with
 
 /// POLISH

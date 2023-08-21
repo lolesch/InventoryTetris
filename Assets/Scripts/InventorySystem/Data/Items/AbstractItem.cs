@@ -10,7 +10,7 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.Items
 {
     [Serializable]
-    public abstract class AbstractItem
+    public abstract class AbstractItem // TODO: inherit IComparable
     {
         [field: SerializeField] public Sprite Icon { get; protected set; } = null;
         [field: SerializeField] public ItemSize Dimensions { get; protected set; } = ItemSize.OneByOne;
@@ -136,7 +136,7 @@ namespace ToolSmiths.InventorySystem.Items
                     allowedAffixes.RemoveAt(randomRoll); // => exclude double rolls
 
                     /// weighted RANDOM ROLL
-                    var lootLevel = Character.Instance.CharacterLevel; // define base min/max stat range
+                    //var lootLevel = LocalPlayer.Instance.CharacterLevel; // define base min/max stat range
 
                     var rangeRoll = randomStat.GetRandomRoll(rarity /*, lootLevel*/);
 
@@ -263,7 +263,7 @@ namespace ToolSmiths.InventorySystem.Items
                     var randomStat = allowedAffixes[randomRoll];
                     allowedAffixes.RemoveAt(randomRoll); // => exclude double rolls
 
-                    var lootLevel = Character.Instance.CharacterLevel; // could modify min/max stat range
+                    // var lootLevel = LocalPlayer.CharacterLevel; // could modify min/max stat range
 
                     var rangeRoll = randomStat.GetRandomRoll(rarity /*, lootLevel*/);
 
