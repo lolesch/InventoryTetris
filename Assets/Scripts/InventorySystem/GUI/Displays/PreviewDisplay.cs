@@ -98,19 +98,20 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                         statName = statName.Replace(" Percent", "");
 
                     // TODO: review the references
-                    itemStat.text = $"{stats[i].Modifier} {statName} {stats[i].Modifier.Range} {differenceString.Colored(color)}";
+                    itemStat.text = $"{stats[i].Modifier} {statName} {stats[i].Modifier.Range.ToString().Colored(Color.gray)} {differenceString.Colored(color)}";
 
                     itemStat.gameObject.SetActive(true);
                 }
 
                 int CompareStatValues(PlayerStatModifier stat, out float difference)
                 {
+                    difference = 0;
                     var other = 0f;
-                    difference = stat.Modifier.Value;
 
                     //if (stat.Modifier.Type == StatModifierType.Override) // => compare to total
                     //    other = Character.Instance.GetStatValue(stat.Stat);
                     //else 
+
                     if (compareTo.Item != null)
                         for (var i = 0; i < compareTo.Item.Affixes.Count; i++) // foreach stat of the other item
                             if (compareTo.Item.Affixes[i].Stat == stat.Stat) // find a corresponding stat

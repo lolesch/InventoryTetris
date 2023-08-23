@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using UnityEngine;
@@ -12,13 +13,15 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         // validate all BaseCharacters within that area as targets (Faction)
         // the area deals damage to all targets over its lifespan
 
-        public bool IsInvincible { get; protected set; } = false;
-        public bool IsBlocking { get; protected set; } = false;
+        [field: SerializeField] public bool IsInvincible { get; protected set; } = false;
+        [field: SerializeField] public bool IsBlocking { get; protected set; } = false;
+
+        [field: SerializeField] public CharacterStat[] CharacterStats { get; protected set; } = new CharacterStat[(System.Enum.GetValues(typeof(StatName)) as StatName[]).Length];
+        [field: SerializeField] public CharacterResource[] CharacterResources { get; protected set; } = new CharacterResource[0];
 
         public event Action OnBlock;
 
-        [SerializeField] public CharacterStat[] CharacterStats { get; protected set; } = new CharacterStat[(System.Enum.GetValues(typeof(StatName)) as StatName[]).Length];
-        [SerializeField] public CharacterResource[] CharacterResources { get; protected set; } = new CharacterResource[0];
+        protected void OnValidate() => Refresh();
 
         protected void Update() =>
             // COMBAT TICK RATE
@@ -28,13 +31,32 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             //if(interval >= combatTickRate)
             RegenerateHealth();
 
-        protected void RegenerateHealth()
+        private void RegenerateHealth()
         {
             var health = GetResource(this, StatName.MaxLife);
+            if (health == null)
+            {
+                CharacterResources.Append(new CharacterResource(StatName.MaxLife, 100));
+                health = GetResource(this, StatName.MaxLife);
+            }
+
             if (health.IsDepleted || health.CurrentValue == health.TotalValue)
                 return;
 
             health.AddToCurrent(GetStatValue(this, StatName.LifePerSecond) * Time.deltaTime);
+        }
+
+        private void Refresh()
+        {
+            var statNames = System.Enum.GetValues(typeof(StatName)) as StatName[];
+
+            if (CharacterStats.Length != statNames.Length)
+            {
+                CharacterStats = new CharacterStat[(System.Enum.GetValues(typeof(StatName)) as StatName[]).Length];
+
+                for (var i = 0; i < statNames.Length; i++)
+                    CharacterStats[i] = new CharacterStat(statNames[i], 1);
+            }
         }
 
         protected static float CalculateDamageOutput(BaseCharacter character, DamageType damageType)
@@ -63,7 +85,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
             var damageTypeResist = damageType switch
             {
-                DamageType.PhysicalDamage => GetStatValue(character, StatName.PhysicalResistance) + GetStatValue(character, StatName.BonusArmor) * 0.01f,
+                DamageType.PhysicalDamage => GetStatValue(character, StatName.PhysicalResistance) + GetStatValue(character, StatName.Armor) * 0.01f,
                 DamageType.ElementalDamage => GetStatValue(character, StatName.ElementalResistance),
 
                 _ => 0f,

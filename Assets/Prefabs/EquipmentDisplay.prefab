@@ -465,7 +465,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -0.000030517578}
+  m_AnchoredPosition: {x: 0, y: 0.000030517578}
   m_SizeDelta: {x: -20, y: -10.000002}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &4745071996144970725
@@ -654,71 +654,66 @@ MonoBehaviour:
   m_GameObject: {fileID: 6625933068359046462}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: be3de1f6fbda9d74c92c30b4d1a6fef6, type: 3}
+  m_Script: {fileID: 11500000, guid: 3a1d854912199534491df4462f45b537, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  characterLevel: 0
-  playerStats:
-  - name: Attack Speed Percent
+  <IsInvincible>k__BackingField: 0
+  <IsBlocking>k__BackingField: 0
+  <CharacterStats>k__BackingField:
+  - name: 'Weapon Damage: 1'
     <Stat>k__BackingField: 0
     <BaseValue>k__BackingField: 1
     <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 1
-  - name: Damage Percent
+  - name: 'Attack Speed: 1'
     <Stat>k__BackingField: 1
-    <BaseValue>k__BackingField: 100
+    <BaseValue>k__BackingField: 1
     <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 100
-  - name: Min Damage
+  - name: 'Physical Damage: 1'
     <Stat>k__BackingField: 2
     <BaseValue>k__BackingField: 1
     <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 1
-  - name: Max Damage
+  - name: 'Elemental Damage: 1'
     <Stat>k__BackingField: 3
-    <BaseValue>k__BackingField: 10
+    <BaseValue>k__BackingField: 1
     <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 10
-  - name: Block Chance Percent
+  - name: 'Block Chance: 1'
     <Stat>k__BackingField: 4
-    <BaseValue>k__BackingField: 5
+    <BaseValue>k__BackingField: 1
     <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 5
-  - name: Bonus Armor
+  - name: 'Armor: 1'
     <Stat>k__BackingField: 5
-    <BaseValue>k__BackingField: 12
+    <BaseValue>k__BackingField: 1
     <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 12
-  - name: Resistance To All
+  - name: 'Physical Resistance: 1'
     <Stat>k__BackingField: 6
-    <BaseValue>k__BackingField: 8
+    <BaseValue>k__BackingField: 1
     <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 8
-  - name: Life Percent
+  - name: 'Elemental Resistance: 1'
     <Stat>k__BackingField: 7
-    <BaseValue>k__BackingField: 100
+    <BaseValue>k__BackingField: 1
     <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 100
-  - name: Life Per Second
+  - name: 'Max Life: 1'
     <Stat>k__BackingField: 8
-    <BaseValue>k__BackingField: 5
+    <BaseValue>k__BackingField: 1
     <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 5
-  - name: Movement Speed Percent
+  - name: 'Life Per Second: 1'
     <Stat>k__BackingField: 9
-    <BaseValue>k__BackingField: 6
+    <BaseValue>k__BackingField: 1
     <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 6
-  - name: Increased Item Rarity Percent
+  - name: 'Movement Speed: 1'
     <Stat>k__BackingField: 10
     <BaseValue>k__BackingField: 1
     <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 1
-  - name: Increased Item Quantity Percent
+  - name: 'Increased Item Rarity: 1'
     <Stat>k__BackingField: 11
     <BaseValue>k__BackingField: 1
     <StatModifiers>k__BackingField: []
-    <ModifiedValue>k__BackingField: 1
+  - name: 'Increased Item Quantity: 1'
+    <Stat>k__BackingField: 12
+    <BaseValue>k__BackingField: 1
+    <StatModifiers>k__BackingField: []
+  <CharacterResources>k__BackingField: []
+  <CharacterLevel>k__BackingField: 0
   statPrefab: {fileID: 3966431505955093578}
 --- !u!1 &6710603046912445379
 GameObject:
@@ -983,7 +978,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 6024013811301611008}
   m_HandleRect: {fileID: 8183235012115119045}
   m_Direction: 2
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:

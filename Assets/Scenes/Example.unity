@@ -940,6 +940,17 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: -60, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &161486405 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+  m_PrefabInstance: {fileID: 6317092845225414494}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1d854912199534491df4462f45b537, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &180205568
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1491,7 +1502,7 @@ MonoBehaviour:
   PlayerStashDisplay: {fileID: 1370558871}
   playerStashSize: {x: 10, y: 15}
   PlayerEquipmentDisplay: {fileID: 998310528992184647}
-  playerEquipmentSize: {x: 13, y: 1}
+  playerEquipmentSize: {x: 14, y: 1}
   add: 1
   amountSlider: {fileID: 322413267}
   amountText: {fileID: 1817569713}
@@ -7217,6 +7228,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ItemTypeData: {fileID: 11400000, guid: be7b2766279a25b4bbc708817fa006cb, type: 2}
+  LocalPlayer: {fileID: 161486405}
   itemCategoryDistribution: {fileID: 11400000, guid: ae878e2503b01aa4f8df8fc578e7a993, type: 2}
   itemRarityDistribution: {fileID: 11400000, guid: 1d3181e9dd35dea49b7900e07374d206, type: 2}
   equipmentCategoryDistribution: {fileID: 11400000, guid: 8f1d7ef58b3daaa45972073ee8a8532b, type: 2}
@@ -9279,7 +9291,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1141628726790606186, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0
+      value: -0.000030517578
       objectReference: {fileID: 0}
     - target: {fileID: 1168866829102530351, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
       propertyPath: m_Pivot.x
@@ -9344,6 +9356,158 @@ PrefabInstance:
     - target: {fileID: 2260600603815469273, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: -20
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[0].name
+      value: 'Weapon Damage: 1'
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[1].name
+      value: 'Attack Speed: 1'
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[2].name
+      value: 'Physical Damage: 1'
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[3].name
+      value: 'Elemental Damage: 1'
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[4].name
+      value: 'Block Chance: 1'
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[5].name
+      value: 'Armor: 1'
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[6].name
+      value: 'Physical Resistance: 1'
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[7].name
+      value: 'Elemental Resistance: 1'
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[8].name
+      value: 'Max Life: 1'
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[9].name
+      value: 'Life Per Second: 1'
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[10].name
+      value: 'Movement Speed: 1'
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[11].name
+      value: 'Increased Item Rarity: 1'
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[12].name
+      value: 'Increased Item Quantity: 1'
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[1].<Stat>k__BackingField
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[2].<Stat>k__BackingField
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[3].<Stat>k__BackingField
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[4].<Stat>k__BackingField
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[5].<Stat>k__BackingField
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[6].<Stat>k__BackingField
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[7].<Stat>k__BackingField
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[8].<Stat>k__BackingField
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[9].<Stat>k__BackingField
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[10].<Stat>k__BackingField
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[11].<Stat>k__BackingField
+      value: 11
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[12].<Stat>k__BackingField
+      value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[0].<BaseValue>k__BackingField
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[1].<BaseValue>k__BackingField
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[2].<BaseValue>k__BackingField
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[3].<BaseValue>k__BackingField
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[4].<BaseValue>k__BackingField
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[5].<BaseValue>k__BackingField
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[6].<BaseValue>k__BackingField
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[7].<BaseValue>k__BackingField
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[8].<BaseValue>k__BackingField
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[9].<BaseValue>k__BackingField
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[10].<BaseValue>k__BackingField
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[11].<BaseValue>k__BackingField
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[12].<BaseValue>k__BackingField
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3677882925760495411, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
       propertyPath: m_Size

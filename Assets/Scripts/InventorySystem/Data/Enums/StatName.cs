@@ -1,31 +1,23 @@
-﻿using UnityEngine;
-
-namespace ToolSmiths.InventorySystem.Data.Enums
+﻿namespace ToolSmiths.InventorySystem.Data.Enums
 {
     [System.Serializable]
     /// The identifier of all stats in the game.
     public enum StatName
     {
         // DAMAGE
-        [InspectorName("Weapon Damage")]
         WeaponDamage,
-        [InspectorName("Attack Speed")]
         AttackSpeed,
         //CritChance,
         //CritDamage,
         //DamageType, // foreach damageType
-        [InspectorName("Physical Damage")]
         PhysicalDamage,
-        [InspectorName("Elemental Damage")]
         ElementalDamage,
         //DamageAgainstElites,
         //SplashDamage,
 
         // DEFENSE
-        [InspectorName("Block Chance")]
         BlockChance,
-        [InspectorName("Armor")]
-        BonusArmor,
+        Armor,
         //ReducedDamageFromElites,
         //ReducedDamageFromRanged,
         //ReducedDamageFromMelee,
@@ -36,24 +28,19 @@ namespace ToolSmiths.InventorySystem.Data.Enums
 
         // RESISTANCE
         //DamageTypeResistance, // foreach damageType
-        [InspectorName("Physical Resistance")]
         PhysicalResistance,
-        [InspectorName("Elemental Resistance")]
         ElementalResistance,
         //[InspectorName("All Resistance")]
         //ResistanceToAll,
 
         // HEALING
-        [InspectorName("Health")]
         MaxLife,
         //LifePerHit,
-        [InspectorName("Health Regen")]
         LifePerSecond,
         //LifePerKill,
         //IncreasedHealing,
 
         // UTILITY
-        [InspectorName("Move Speed")]
         MovementSpeed,
         //ReducedResourceCost,
         //ReducedCooldown,
@@ -61,9 +48,7 @@ namespace ToolSmiths.InventorySystem.Data.Enums
         //Sockets, ???
         //BonusExperience,
         //GoldFind,
-        [InspectorName("Increased Rarity %")]
         IncreasedItemRarity,
-        [InspectorName("Increased Quantity %")]
         IncreasedItemQuantity,
         //PickupRadius,
         //ReducedLevelRequirements,

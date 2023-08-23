@@ -14,10 +14,9 @@ namespace ToolSmiths.InventorySystem.Data
 
         [field: SerializeField] public uint BaseValue { get; private set; }
         [field: SerializeField] public List<StatModifier> StatModifiers { get; private set; }
-
         public event Action<float> TotalHasChanged;
 
-        [SerializeField] public float TotalValue => CalculateTotalValue();
+        [SerializeField] public float TotalValue => CalculateTotalValue(); //(float)Math.Round(CalculateTotalValue(), 4);
         // [SerializeField] public float BonusValue => TotalValue - BaseValue;
 
         public CharacterStat(StatName statName, uint baseValue = 0)
@@ -56,7 +55,6 @@ namespace ToolSmiths.InventorySystem.Data
 
             StatModifiers.Sort((x, y) => x.SortByType(y));
 
-            var result = TotalValue;
             var index = 0;
 
             /// Overrides
@@ -75,6 +73,8 @@ namespace ToolSmiths.InventorySystem.Data
 
             if (hasOverrides)
                 return highestOverride;// (float)Math.Round(highestOverride, 4);
+
+            var result = (float)BaseValue;
 
             /// FlatAdd
             for (var i = index; i < StatModifiers.Count; i++)
@@ -120,6 +120,8 @@ namespace ToolSmiths.InventorySystem.Data
         }
 
         public void OnAfterDeserialize() { }
+
+        public CharacterStat GetClone() => (CharacterStat)MemberwiseClone();
     }
 
     [Serializable]

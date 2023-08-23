@@ -169,6 +169,11 @@ namespace ToolSmiths.InventorySystem.Inventories
             {
                 if (StoredPackages.TryGetValue(storedPositions[0], out var storedPackage))
                 {
+                    if (this is CharacterEquipment)// && storedPackage.Item is Equipment) // must have been an Equipment if it was in the Equipment container
+                    {
+                        ItemProvider.Instance.LocalPlayer.RemoveItemStats(storedPackage.Item.Affixes);
+                    }
+
                     var removed = storedPackage.ReduceAmount(package.Amount);
                     _ = package.ReduceAmount(removed);
 
@@ -178,12 +183,8 @@ namespace ToolSmiths.InventorySystem.Inventories
                     }
                     else
                     {
-                        _ = StoredPackages.Remove(storedPositions[0]);
 
-                        if (this is CharacterEquipment)// && storedPackage.Item is Equipment) // must have been an Equipment if it was in the Equipment container
-                        {
-                            ItemProvider.Instance.LocalPlayer.RemoveItemStats(storedPackage.Item.Affixes);
-                        }
+                        _ = StoredPackages.Remove(storedPositions[0]);
                     }
                 }
             }
