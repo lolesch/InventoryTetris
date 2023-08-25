@@ -37,17 +37,17 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
         public void RefreshPreviewDisplay(Package package, AbstractSlotDisplay slot)
         {
-            var compareTo = new Package(null, 0);
+            var other = new Package(null, 0);
+            var compareTo = new Package[2] { other, other };
 
             // TODO: do not compare against itself when hovering an equipment slot !
             if (package.Item is EquipmentItem && slot is not EquipmentSlotDisplay)
             {
                 // TODO compare to all equipments of the items equipmentType
-                // var other = GetEquipmentOfType...
-                var equipmentPosition = InventoryProvider.Instance.PlayerEquipment.GetEquipmentTypePosition((package.Item as EquipmentItem).EquipmentType);
+                var equipmentPositions = InventoryProvider.Instance.PlayerEquipment.GetTypeSpecificPositions((package.Item as EquipmentItem).EquipmentType);
 
-                //var currentEquipped = InventoryProvider.Instance.PlayerEquipment.GetStoredPackagesAtPosition(equipmentPosition, new(1, 1));
-                InventoryProvider.Instance.PlayerEquipment.StoredPackages.TryGetValue(equipmentPosition, out compareTo);
+                for (var i = 0; i < equipmentPositions.Length; i++)
+                    InventoryProvider.Instance.PlayerEquipment.StoredPackages.TryGetValue(equipmentPositions[i], out compareTo[i]);
             }
 
             hoveredItem.SetDisplay(package, compareTo);
@@ -66,7 +66,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             var mousePos = Input.mousePosition / rootCanvas.scaleFactor;
             hoveredItem.ItemDisplay.anchoredPosition = new Vector2(mousePos.x + OffsetX, mousePos.y);
 
-            compareItem.SetDisplay(compareTo, package);
+            compareItem.SetDisplay(compareTo[0], new Package[1] { package });
 
             compareItem.ItemDisplay.pivot = new Vector2(pivotX, 1);
 

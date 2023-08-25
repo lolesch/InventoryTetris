@@ -15,6 +15,9 @@
 
 /// TODO
 
+// fix equiping 2h => unequip offhands when equiping a 2H
+// extend TryStackOrSwap in AbstractDimensionalContainer OR implement overrides for CanAddAtPosition or AddAtPosition in the CharacterEquipment
+
 // fix characterStats modifier list => hovering items (previewDisplay) adds modifiers without equipping and never removes them
 
 // fix the item drop positioning
@@ -22,18 +25,7 @@
 // atm. the item is dropped in the surrounding slots dependent on the mouse offset to the center of the hovered slot.
 // this offset needs to be calculated in relation to the center of the drag display
 
-// fix offhand and second ring slot interaction (can equip but can't unequip/select)
-// fix equiping 2h + 1h => unequip offhands when equiping a 2H
 // compare rings and weapons to both slots
-
-// rework the equipment slot selection
-// => go over all slots and check for allowed equipment types. 
-// => if multiple found 
-//      prefer empty slots for autoEquip
-//      compare to all
-// => for dropping get the hovered slot and try adding there
-
-// rework all to support AbstractItems instead of AbstractItemObjects => AbstractItemObjects contain an AbstractItem
 
 // hoverable playerStats => tooltip baseValue and mod sum per mod type
 
@@ -44,7 +36,15 @@
 // simulate Dummy to take damage
 // Weapons should have attackSpeed multiply mod
 // Weapons should set Damage base value on equip
-// => later add skills to deal damage with
+
+// editable Dummy CharacterStats
+
+// lokalPlayer take damage
+// HUD to show health
+
+// add skills to deal damage with
+// HUD to show skills
+// HUD to show Resource
 
 /// ICEBOX
 
@@ -58,3 +58,14 @@
 // Effective MF = (MF * Factor) / (MF + Factor), where Factor=250 for unique items, 500 for set items and 600 for rare items..
 
 /// POLISH
+
+///GUSTAV
+/*
+          2 = 2     1*2 = 2        
+        2+2 = 4                  4 = 4
+      2+2+2 = 6                
+    2+2+2+2 = 8                4+4 = 8
+  2+2+2+2+2 = 10             
+2+2+2+2+2+2 = 12             4+4+4 = 12
+
+3, 6, 9, 12, 15, 18, 21, 24 */

@@ -20,23 +20,23 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         public Dictionary<Vector2Int, Package> StoredPackages { get; protected set; } = new();
 
-        public Package AddToContainer(Package package)
+        public virtual Package AddToContainer(Package package)
         {
             if (package.Item == null)
                 return package;
 
             /// handle autoEquip
-            if (this is PlayerInventory)
+            if (this == InventoryProvider.Instance.PlayerInventory)
             {
                 var equipment = InventoryProvider.Instance.PlayerEquipment;
 
                 if (package.Item is EquipmentItem && equipment.autoEquip)
                 {
-                    var equipmentPosition = equipment.GetEquipmentTypePosition((package.Item as EquipmentItem).EquipmentType);
+                    var equipmentPositions = equipment.GetTypeSpecificPositions((package.Item as EquipmentItem).EquipmentType);
 
-                    // TODO unequip offhands when equiping a 2H
-                    if (equipment.IsEmptyPosition(equipmentPosition, new(1, 1), out _))
-                        return equipment.AddToContainer(package);
+                    foreach (var position in equipmentPositions)
+                        if (equipment.IsEmptyPosition(position, new(1, 1), out _))
+                            return equipment.AddAtPosition(position, package);
                 }
             }
 
@@ -45,7 +45,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             AddToEmptyPositions();
 
-            // Just for quality of life => if inventory is full add to stash
+            // DEVELOPMENT ONLY => remaining amount but inventory is full add to stash
             if (0 < package.Amount)
                 if (this == InventoryProvider.Instance.PlayerInventory)
                     return InventoryProvider.Instance.PlayerStash.AddToContainer(package);
@@ -63,27 +63,38 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             void AddToEmptyPositions()
             {
+                var dimensions = this is CharacterEquipment ? new(1, 1) : AbstractItem.GetDimensions(package.Item.Dimensions);
+
                 for (var x = 0; x < Dimensions.x && 0 < package.Amount; x++)
                     for (var y = 0; y < Dimensions.y && 0 < package.Amount; y++)
-                        if (IsEmptyPosition(new(x, y), AbstractItem.GetDimensions(package.Item.Dimensions), out _)) // this might need to be abstract and with a dimension of (1,1) for equipment
+                        if (IsEmptyPosition(new(x, y), dimensions, out _))
                             package = AddAtPosition(new(x, y), package);
             }
         }
 
-        public Package AddAtPosition(Vector2Int position, Package package)
+        public virtual Package AddAtPosition(Vector2Int position, Package package)
         {
             if (package.Item == null)
                 return package;
 
+            var dimensions = this is CharacterEquipment ? new(1, 1) : AbstractItem.GetDimensions(package.Item.Dimensions);
+
             if (this is CharacterEquipment)
             {
                 if (package.Item is EquipmentItem)
-                    position = (this as CharacterEquipment).GetEquipmentTypePosition((package.Item as EquipmentItem).EquipmentType);
+                {
+                    var positions = (this as CharacterEquipment).GetTypeSpecificPositions((package.Item as EquipmentItem).EquipmentType);
+
+                    foreach (var pos in positions)
+                        if (IsEmptyPosition(pos, dimensions, out var other))
+                        {
+                            position = pos;
+                            break;
+                        }
+                }
                 else
                     return package;
             }
-
-            var dimensions = this is CharacterEquipment ? new(1, 1) : AbstractItem.GetDimensions(package.Item.Dimensions);
 
             if (CanAddAtPosition(position, dimensions, out var otherItems))
             {
@@ -129,6 +140,11 @@ namespace ToolSmiths.InventorySystem.Inventories
                     else /// swap items
                     {
                         // TODO unequip offhands when equiping a 2H
+                        if (this is CharacterEquipment && package.Item is EquipmentItem && (package.Item as EquipmentItem).EquipmentType is > EquipmentType.TWOHANDEDWEAPONS and < EquipmentType.OFFHANDS)
+                        {
+                            var positions = InventoryProvider.Instance.PlayerEquipment.GetOtherItemsAt(position, dimensions);
+                            // TODO: CONTINUE HERE or implement overrides for CanAddAtPosition or AddAtPosition in the CharacterEquipment
+                        }
                         _ = RemoveAtPosition(position, storedPackage);
 
                         TryAddToInventory();
@@ -169,23 +185,16 @@ namespace ToolSmiths.InventorySystem.Inventories
             {
                 if (StoredPackages.TryGetValue(storedPositions[0], out var storedPackage))
                 {
-                    if (this is CharacterEquipment)// && storedPackage.Item is Equipment) // must have been an Equipment if it was in the Equipment container
-                    {
+                    if (this is CharacterEquipment)
                         ItemProvider.Instance.LocalPlayer.RemoveItemStats(storedPackage.Item.Affixes);
-                    }
 
                     var removed = storedPackage.ReduceAmount(package.Amount);
                     _ = package.ReduceAmount(removed);
 
                     if (0 < storedPackage.Amount)
-                    {
                         StoredPackages[storedPositions[0]] = storedPackage;
-                    }
                     else
-                    {
-
                         _ = StoredPackages.Remove(storedPositions[0]);
-                    }
                 }
             }
 
@@ -200,7 +209,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             if (IsValidPosition(position, dimension))
             {
-                otherItems = GetOtherItemsAt(position, dimension);
+                otherItems = GetOtherItemsAt(position, dimension); // Cant 
                 return otherItems.Count <= 0;
             }
 
@@ -221,7 +230,9 @@ namespace ToolSmiths.InventorySystem.Inventories
         }
 
         // TODO override in PlayerEquipment to check all viable positions (rings, 1h and offhand, 2h...)
-        public bool CanAddAtPosition(Vector2Int position, Vector2Int dimension, out List<Vector2Int> otherItems) => IsEmptyPosition(position, dimension, out otherItems) || (!IsEmptyPosition(position, dimension, out otherItems) && otherItems.Count <= 1);
+        public bool CanAddAtPosition(Vector2Int position, Vector2Int dimension, out List<Vector2Int> otherItems) =>
+            IsEmptyPosition(position, dimension, out otherItems) ||
+            (!IsEmptyPosition(position, dimension, out otherItems) && otherItems.Count <= 1);
 
         /// A List of all storedPackages positions that overlap with the requiredPositions
         public abstract List<Vector2Int> GetOtherItemsAt(Vector2Int position, Vector2Int dimension);

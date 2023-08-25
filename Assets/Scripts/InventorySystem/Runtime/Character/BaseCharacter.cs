@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
@@ -34,11 +35,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         private void RegenerateHealth()
         {
             var health = GetResource(this, StatName.MaxLife);
-            if (health == null)
-            {
-                CharacterResources.Append(new CharacterResource(StatName.MaxLife, 100));
-                health = GetResource(this, StatName.MaxLife);
-            }
 
             if (health.IsDepleted || health.CurrentValue == health.TotalValue)
                 return;
@@ -49,13 +45,26 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         private void Refresh()
         {
             var statNames = System.Enum.GetValues(typeof(StatName)) as StatName[];
+            var statsOnly = statNames.ToList();
+            statsOnly.Remove(StatName.MaxLife);
+            var resourcesOnly = new List<StatName>() { StatName.MaxLife };
 
-            if (CharacterStats.Length != statNames.Length)
+            if (CharacterStats.Length != statsOnly.Count)
             {
-                CharacterStats = new CharacterStat[(System.Enum.GetValues(typeof(StatName)) as StatName[]).Length];
+                CharacterStats = new CharacterStat[statsOnly.Count];
 
-                for (var i = 0; i < statNames.Length; i++)
-                    CharacterStats[i] = new CharacterStat(statNames[i], 1);
+                for (var i = 0; i < statsOnly.Count; i++)
+                    CharacterStats[i] = new CharacterStat(statsOnly[i], 1);
+            }
+
+            if (CharacterResources.Length != resourcesOnly.Count)
+            {
+                //CharacterResources = new CharacterResource[1] { new CharacterResource(StatName.MaxLife, 100) };
+
+                CharacterResources = new CharacterResource[resourcesOnly.Count];
+
+                for (var i = 0; i < resourcesOnly.Count; i++)
+                    CharacterResources[i] = new CharacterResource(resourcesOnly[i], 100);
             }
         }
 

@@ -29,7 +29,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 
         private void Awake() => ItemDisplay.gameObject.SetActive(false);
 
-        public void SetDisplay(Package package, Package compareTo)
+        public void SetDisplay(Package package, Package[] compareTo)
         {
             if (package.Item == null || package.Amount < 1)
             {
@@ -111,15 +111,15 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                     //if (stat.Modifier.Type == StatModifierType.Override) // => compare to total
                     //    other = Character.Instance.GetStatValue(stat.Stat);
                     //else 
-
-                    if (compareTo.Item != null)
-                        for (var i = 0; i < compareTo.Item.Affixes.Count; i++) // foreach stat of the other item
-                            if (compareTo.Item.Affixes[i].Stat == stat.Stat) // find a corresponding stat
-                                                                             //        if (compareTo.Item.Affixes[i].Modifier.Type == stat.Modifier.Type) // find a corresponding mod type
-                            {
-                                other = compareTo.Item.Affixes[i].Modifier.Value;
-                                difference = ItemProvider.Instance.LocalPlayer.CompareStatModifiers(stat, compareTo.Item.Affixes[i].Modifier);
-                            }
+                    foreach (var item in compareTo)
+                        if (item.Item != null)
+                            for (var i = 0; i < item.Item.Affixes.Count; i++)   // foreach stat of the other item
+                                if (item.Item.Affixes[i].Stat == stat.Stat)     // find a corresponding stat
+                                // if (compareTo.Item.Affixes[i].Modifier.Type == stat.Modifier.Type) // find a corresponding mod type
+                                {
+                                    other = item.Item.Affixes[i].Modifier.Value;
+                                    difference = ItemProvider.Instance.LocalPlayer.CompareStatModifiers(stat, item.Item.Affixes[i].Modifier);
+                                }
 
                     return stat.Modifier.Value.CompareTo(other);
                 }

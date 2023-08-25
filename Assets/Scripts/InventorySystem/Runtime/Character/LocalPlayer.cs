@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
@@ -8,7 +9,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 {
     public class LocalPlayer : BaseCharacter
     {
-        [field: SerializeField] public int CharacterLevel { get; private set; } = 0;
+        [field: SerializeField, Range(1, 100)] public int CharacterLevel { get; private set; } = 1;
 
         private List<TextMeshProUGUI> mainStatDisplays = new();
         [SerializeField] private TextMeshProUGUI statPrefab;
@@ -19,7 +20,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         {
             if (statPrefab != null)
             {
-                for (var i = 0; i < CharacterStats.Length; i++)
+                var statsAndResources = CharacterStats.Union(CharacterResources);
+                for (var i = 0; i < statsAndResources.Count(); i++)
                 {
                     var display = Instantiate(statPrefab, statPrefab.transform.parent);
                     display.gameObject.SetActive(true);
@@ -31,8 +33,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
         private void UpdateStatDisplays()
         {
+            var statsAndResources = CharacterResources.Union(CharacterStats).ToArray();
             for (var i = 0; i < mainStatDisplays.Count; i++)
-                mainStatDisplays[i].text = $"{CharacterStats[i].ToString()}";
+                mainStatDisplays[i].text = $"{statsAndResources[i].ToString()}";
         }
 
         public void AddItemStats(List<PlayerStatModifier> stats)
