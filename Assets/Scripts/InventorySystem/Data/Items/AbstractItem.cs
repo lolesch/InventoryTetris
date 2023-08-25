@@ -201,7 +201,7 @@ namespace ToolSmiths.InventorySystem.Items
 
             if (Rarity == ItemRarity.Unique)
             {
-                var unique = ItemProvider.Instance.GetUnique(EquipmentType).GetItem();
+                var unique = ItemProvider.Instance.GetUnique(EquipmentType);
 
                 Icon = unique.Icon;
 

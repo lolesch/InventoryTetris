@@ -89,7 +89,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
                     Package remaining;
 
-                    remaining = InventoryProvider.Instance.PlayerEquipment.AddAtPosition(Position, packageToMove);
+                    remaining = InventoryProvider.Instance.PlayerEquipment.AddToContainer(packageToMove);
 
                     if (0 < remaining.Amount)
                         remaining = Container.AddAtPosition(otherItems[0], remaining);

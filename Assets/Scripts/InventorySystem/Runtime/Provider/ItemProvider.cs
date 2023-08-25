@@ -273,17 +273,17 @@ namespace ToolSmiths.InventorySystem.Inventories
         {
             var unique = GetUnique(equipmentType);
 
-            return unique != null ? unique.GetItem().Icon : null;
+            return unique?.Icon;
         }
 
         public Sprite GetIcon(ConsumableType consumableType, ItemRarity rarity)
         {
             var unique = GetUnique(consumableType);
 
-            return unique != null ? unique.GetItem().Icon : null;
+            return unique?.Icon;
         }
 
-        public AbstractItemObject GetUnique(EquipmentType equipmentType)
+        public AbstractItem GetUnique(EquipmentType equipmentType)
         {
             // TODO: individual probabilityDistribution for each equipment type
             // var unique = correspondingTypeDistribution.GetRandomEnumerator();
@@ -323,7 +323,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             return GetUniqueFromList(uniquesOfType);
         }
 
-        public AbstractItemObject GetUnique(ConsumableType consumableType)
+        public AbstractItem GetUnique(ConsumableType consumableType)
         {
             // TODO: individual probabilityDistribution for each equipment type
             // var unique = correspondingTypeDistribution.GetRandomEnumerator();
@@ -341,7 +341,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             return GetUniqueFromList(uniquesOfType);
         }
 
-        private static AbstractItemObject GetUniqueFromList(List<AbstractItemObject> uniquesOfType)
+        private static AbstractItem GetUniqueFromList(List<AbstractItemObject> uniquesOfType)
         {
             if (uniquesOfType.Count <= 0)
             {
@@ -350,7 +350,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             }
 
             var index = Random.Range(0, uniquesOfType.Count);
-            return uniquesOfType[index];
+            return uniquesOfType[index].GetItem();
         }
     }
 }

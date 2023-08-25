@@ -465,7 +465,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.000030517578}
+  m_AnchoredPosition: {x: 0, y: -0.000030517578}
   m_SizeDelta: {x: -20, y: -10.000002}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &4745071996144970725
@@ -692,9 +692,9 @@ MonoBehaviour:
     <Stat>k__BackingField: 7
     <BaseValue>k__BackingField: 1
     <StatModifiers>k__BackingField: []
-  - name: 'Max Life: 1'
-    <Stat>k__BackingField: 8
-    <BaseValue>k__BackingField: 1
+  - name: 'Weapon Damage: 0'
+    <Stat>k__BackingField: 0
+    <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
   - name: 'Life Per Second: 1'
     <Stat>k__BackingField: 9
@@ -708,12 +708,13 @@ MonoBehaviour:
     <Stat>k__BackingField: 11
     <BaseValue>k__BackingField: 1
     <StatModifiers>k__BackingField: []
-  - name: 'Increased Item Quantity: 1'
-    <Stat>k__BackingField: 12
-    <BaseValue>k__BackingField: 1
+  <CharacterResources>k__BackingField:
+  - name: 'Max Life: 100'
+    <Stat>k__BackingField: 8
+    <BaseValue>k__BackingField: 100
     <StatModifiers>k__BackingField: []
-  <CharacterResources>k__BackingField: []
-  <CharacterLevel>k__BackingField: 0
+    <CurrentValue>k__BackingField: 100
+  <CharacterLevel>k__BackingField: 1
   statPrefab: {fileID: 3966431505955093578}
 --- !u!1 &6710603046912445379
 GameObject:
@@ -979,7 +980,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 8183235012115119045}
   m_Direction: 2
   m_Value: 0
-  m_Size: 1
+  m_Size: 0.98913044
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
