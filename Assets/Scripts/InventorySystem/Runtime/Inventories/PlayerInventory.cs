@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Items;
 using UnityEngine;
 
@@ -9,6 +10,38 @@ namespace ToolSmiths.InventorySystem.Inventories
     public class PlayerInventory : AbstractDimensionalContainer
     {
         public PlayerInventory(Vector2Int dimensions) : base(dimensions) { }
+
+        public override Package AddToContainer(Package package)
+        {
+            if (package.Item == null)
+                return package;
+
+            /// Auto Equip items that enter the localPlayer's inventory if that slot is empty
+            if (this == InventoryProvider.Instance.PlayerInventory)
+            {
+                var equipment = InventoryProvider.Instance.PlayerEquipment;
+
+                if (package.Item is EquipmentItem && equipment.autoEquip)
+                {
+                    var typePositions = equipment.GetTypeSpecificPositions((package.Item as EquipmentItem).EquipmentType);
+
+                    foreach (var position in typePositions)
+                        if (equipment.IsEmptyPosition(position, new(1, 1), out _))
+                            return equipment.AddAtPosition(position, package);
+                }
+            }
+
+            package = base.AddToContainer(package);
+
+            if (Debug.isDebugBuild) // remaining package amount => add to stash
+            {
+                if (0 < package.Amount)
+                    if (this == InventoryProvider.Instance.PlayerInventory)
+                        return InventoryProvider.Instance.PlayerStash.AddToContainer(package);
+            }
+
+            return package;
+        }
 
         protected override List<Vector2Int> CalculateRequiredPositions(Vector2Int position, Vector2Int dimension)
         {

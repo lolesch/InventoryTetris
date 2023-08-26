@@ -16,8 +16,10 @@ namespace ToolSmiths.InventorySystem.Items
         [field: SerializeField] public ItemSize Dimensions { get; protected set; } = ItemSize.OneByOne;
         [field: SerializeField] public ItemStack StackLimit { get; protected set; } = ItemStack.Single;
         [field: SerializeField] public ItemRarity Rarity { get; protected set; } = ItemRarity.Common;
+
+        // consider changing to prefix/suffix system
+        /// keep this as list (vs array) since crafting migth add/remove Affixes
         [field: SerializeField] public List<PlayerStatModifier> Affixes { get; protected set; } = new List<PlayerStatModifier>();
-        // might want to change this to prefix/suffix system
 
         // TODO: handle overTime effects => Stats != Effects --> see ARPG_Combat for DoT_effects
         public new abstract string ToString();

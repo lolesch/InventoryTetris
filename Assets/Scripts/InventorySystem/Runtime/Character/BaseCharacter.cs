@@ -17,8 +17,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         [field: SerializeField] public bool IsInvincible { get; protected set; } = false;
         [field: SerializeField] public bool IsBlocking { get; protected set; } = false;
 
-        [field: SerializeField] public CharacterStat[] CharacterStats { get; protected set; } = new CharacterStat[(System.Enum.GetValues(typeof(StatName)) as StatName[]).Length];
-        [field: SerializeField] public CharacterResource[] CharacterResources { get; protected set; } = new CharacterResource[0];
+        [field: SerializeField] public CharacterStat[] CharacterStats { get; protected set; }
+        [field: SerializeField] public CharacterResource[] CharacterResources { get; protected set; }
 
         public event Action OnBlock;
 
