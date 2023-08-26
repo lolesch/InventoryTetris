@@ -1,10 +1,8 @@
 /// KNOWN ISSUES:
 
-// dragDroping an item sometimes selects an unexpected position
+// Droping an item selects unexpected positions
 
-// equipment positions is buggy
-// => cant equip 2nd ring via dragDrop
-// => 2h wont unequip both slots
+// eqiping 2h wont unequip both slots
 
 // comparison shows wrong numbers of first hover => rehover shows correct values
 // comparison cant compare against all equipment of same type (i.e. both rings)

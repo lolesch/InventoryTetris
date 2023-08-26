@@ -78,7 +78,7 @@ namespace ToolSmiths.InventorySystem.Items
 
             if (Rarity == ItemRarity.Unique)
             {
-                var unique = ItemProvider.Instance.GetUnique(ConsumableType).GetItem();
+                var unique = ItemProvider.Instance.GetUnique(ConsumableType);
 
                 Icon = unique.Icon;
                 Dimensions = unique.Dimensions;

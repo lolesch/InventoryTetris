@@ -135,9 +135,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
         protected static CharacterStat GetStat(BaseCharacter character, StatName stat)
         {
-            for (var i = character.CharacterStats.Length; i-- > 0;)
-                if (character.CharacterStats[i].Stat == stat)
-                    return character.CharacterStats[i];
+            var statsAndResources = character.CharacterStats.Union(character.CharacterResources).ToArray();
+            for (var i = statsAndResources.Length; i-- > 0;)
+                if (statsAndResources[i].Stat == stat)
+                    return statsAndResources[i];
             return null;
         }
 
