@@ -1,59 +1,44 @@
 ﻿namespace ToolSmiths.InventorySystem.Data.Enums
 {
     [System.Serializable]
-    /// The identifier of all stats in the game.
+    /// The identifier of stats that can appear on gear.
     public enum StatName
     {
-        // DAMAGE
-        WeaponDamage,
-        AttackSpeed,
-        //CritChance,
-        //CritDamage,
-        //DamageType, // foreach damageType
-        PhysicalDamage,
-        ElementalDamage,
-        //DamageAgainstElites,
-        //SplashDamage,
+        /// OFFENSIVE
+        AttackSpeed = 1,
+        PhysicalDamage = 2,
+        MagicalDamage = 3,
+        ArmorPenetration = 4,
+        MagicResistPenetration = 5,
 
-        // DEFENSE
-        BlockChance,
-        Armor,
-        //ReducedDamageFromElites,
-        //ReducedDamageFromRanged,
-        //ReducedDamageFromMelee,
+        //AttackRange
+        //CritStrikeChance,         
+        //CritStrikeDamage,         
 
-        //ReducedLossOfControll,
-
-        //Thorns,
-
-        // RESISTANCE
-        //DamageTypeResistance, // foreach damageType
-        PhysicalResistance,
-        ElementalResistance,
-        //[InspectorName("All Resistance")]
-        //ResistanceToAll,
-
-        // HEALING
-        MaxLife,
-        //LifePerHit,
-        LifePerSecond,
-        //LifePerKill,
+        /// DEFENSIVE
+        Health = 11,
+        HealthRegeneration = 12,
         //IncreasedHealing,
 
-        // UTILITY
-        MovementSpeed,
-        //ReducedResourceCost,
-        //ReducedCooldown,
+        Armor = 13,
+        MagicResist = 14,
 
-        //Sockets, ???
-        //BonusExperience,
-        //GoldFind,
-        IncreasedItemRarity,
-        IncreasedItemQuantity,
-        //PickupRadius,
-        //ReducedLevelRequirements,
+        //Shield
 
-        // ONHIT PROCS 
-        //ChanceToBlind, // and many more...
+        //Lethality = 15,           
+        //SlowResistance = 16,      
+
+        /// UTILITY
+        MovementSpeed = 21,
+
+        Resource = 22,
+        ResourceRegeneration = 23,
+
+        IncreasedItemRarity = 24,
+        IncreasedItemQuantity = 25,
+        //Sockets,
+
+        // ON HIT PROCS 
+        //LifeOnHit,
     }
 }

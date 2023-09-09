@@ -131,6 +131,7 @@ namespace ToolSmiths.InventorySystem.Data
 
         public CharacterResource(StatName resourceName, uint baseValue = 0) : base(resourceName, baseValue) => CurrentValue = TotalValue;//RecoveryStat = recoveryName;
         public bool IsDepleted => CurrentValue <= 0;
+        public float MissingValue => TotalValue - CurrentValue;
 
         public event Action<float> CurrentHasChanged;
         public event Action CurrentHasDepleted;

@@ -32,7 +32,8 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             if (StaticDragDisplay.Instance.Package.Item is EquipmentItem)
                 //if (allowedEquipmentTypes.Contains((StaticDragDisplay.Instance.Package.Item as Equipment).equipmentType))
                 if (IsAllowedEquipmentType((StaticDragDisplay.Instance.Package.Item as EquipmentItem).EquipmentType))
-                    if (Container.CanAddAtPosition(Position, AbstractItem.GetDimensions(StaticDragDisplay.Instance.Package.Item.Dimensions), out _))
+                    if (Container.IsEmptyPosition(Position, AbstractItem.GetDimensions(StaticDragDisplay.Instance.Package.Item.Dimensions), out var otherItems)
+                        || otherItems.Count <= 1)
                     {
                         Package remaining;
 

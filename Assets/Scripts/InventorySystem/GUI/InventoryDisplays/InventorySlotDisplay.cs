@@ -26,8 +26,8 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 var mouseOffset = new Vector2Int(Mathf.CeilToInt(relativeMouseOffset.x), -Mathf.CeilToInt(relativeMouseOffset.y));
 
                 var positionToAdd = Position - positionOffset + mouseOffset;
-
-                if (Container.CanAddAtPosition(positionToAdd, AbstractItem.GetDimensions(StaticDragDisplay.Instance.Package.Item.Dimensions), out _))
+                if (Container.IsEmptyPosition(positionToAdd, AbstractItem.GetDimensions(StaticDragDisplay.Instance.Package.Item.Dimensions), out var otherItems)
+                    || otherItems.Count <= 1)
                 {
                     Package remaining;
 

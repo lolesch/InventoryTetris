@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
+using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
 using UnityEngine;
 
@@ -11,8 +12,9 @@ namespace ToolSmiths.InventorySystem.Data
     public struct Package
     {
         /// <summary>The package contains an amount of items and can be stored inside containers</summary>
-        public Package(AbstractItem item, uint amount = 1)
+        public Package(AbstractDimensionalContainer sender, AbstractItem item, uint amount = 1)
         {
+            Sender = sender;
             Item = item;
             Amount = amount;
 
@@ -20,11 +22,12 @@ namespace ToolSmiths.InventorySystem.Data
                 Debug.LogWarning($"The Package you constructed contains more items than the item's stacking limit!");
         }
 
+        [field: SerializeField] public AbstractDimensionalContainer Sender { get; private set; }
         [field: SerializeField] public AbstractItem Item { get; private set; }
 
         [field: SerializeField] public uint Amount { get; private set; }
 
-        [SerializeField] public uint SpaceLeft => (uint)Item.StackLimit - Amount;
+        [SerializeField] public readonly uint SpaceLeft => (uint)Item.StackLimit - Amount;
 
         /// <summary>Tries to add to the amount (within stacking limit).</summary>
         /// <returns>The amount that was added</returns>
@@ -33,10 +36,10 @@ namespace ToolSmiths.InventorySystem.Data
             if (0 == amountToAdd)
                 return 0;
 
-            amountToAdd = Math.Min(SpaceLeft, amountToAdd);
-            Amount += amountToAdd;
+            var added = Math.Min(SpaceLeft, amountToAdd);
+            Amount += added;
 
-            return amountToAdd;
+            return added;
         }
 
         /// <summary>Tries to remove the amount from the current stack</summary>
@@ -46,10 +49,10 @@ namespace ToolSmiths.InventorySystem.Data
             if (0 == amountToRemove)
                 return 0;
 
-            amountToRemove = Math.Min(Amount, amountToRemove);
-            Amount -= amountToRemove;
+            var removed = Math.Min(Amount, amountToRemove);
+            Amount -= removed;
 
-            return amountToRemove;
+            return removed;
         }
     }
 }

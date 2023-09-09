@@ -37,7 +37,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
         public void RefreshPreviewDisplay(Package package, AbstractSlotDisplay slot)
         {
-            var other = new Package(null, 0);
+            var other = new Package(null, null, 0);
             var compareTo = new Package[2] { other, other };
 
             // TODO: do not compare against itself when hovering an equipment slot !

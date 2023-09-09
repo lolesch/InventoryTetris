@@ -27,31 +27,33 @@ namespace ToolSmiths.InventorySystem.Inventories
 
                     foreach (var position in typePositions)
                         if (equipment.IsEmptyPosition(position, new(1, 1), out _))
-                            return equipment.AddAtPosition(position, package);
+                        {
+                            package = equipment.AddAtPosition(position, package);
+
+                            InvokeRefresh();
+
+                            return package;
+                        }
                 }
             }
 
             package = base.AddToContainer(package);
 
-            if (Debug.isDebugBuild) // remaining package amount => add to stash
+            /// try add remaining package amount to player stash
+            if (Debug.isDebugBuild)
             {
                 if (0 < package.Amount)
                     if (this == InventoryProvider.Instance.PlayerInventory)
-                        return InventoryProvider.Instance.PlayerStash.AddToContainer(package);
+                    {
+                        Debug.LogWarning($"Trying to add the remaining amount of {package.Amount} to {InventoryProvider.Instance.PlayerStash}");
+
+                        package = InventoryProvider.Instance.PlayerStash.AddToContainer(package);
+                    }
             }
 
+            InvokeRefresh();
+
             return package;
-        }
-
-        protected override List<Vector2Int> CalculateRequiredPositions(Vector2Int position, Vector2Int dimension)
-        {
-            List<Vector2Int> requiredPositions = new();
-
-            for (var x = position.x; x < position.x + dimension.x; x++)
-                for (var y = position.y; y < position.y + dimension.y; y++)
-                    requiredPositions.Add(new(x, y));
-
-            return requiredPositions;
         }
 
         public override List<Vector2Int> GetOtherItemsAt(Vector2Int position, Vector2Int dimension)
@@ -67,6 +69,17 @@ namespace ToolSmiths.InventorySystem.Inventories
                                 otherPackagePositions.Add(package.Key);
 
             return otherPackagePositions.Distinct().ToList();
+        }
+
+        protected override List<Vector2Int> CalculateRequiredPositions(Vector2Int position, Vector2Int dimension)
+        {
+            List<Vector2Int> requiredPositions = new();
+
+            for (var x = position.x; x < position.x + dimension.x; x++)
+                for (var y = position.y; y < position.y + dimension.y; y++)
+                    requiredPositions.Add(new(x, y));
+
+            return requiredPositions;
         }
     }
 }

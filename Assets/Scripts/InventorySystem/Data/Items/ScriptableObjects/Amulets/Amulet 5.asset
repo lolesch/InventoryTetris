@@ -18,7 +18,7 @@ MonoBehaviour:
     <StackLimit>k__BackingField: 1
     <Rarity>k__BackingField: 30
     <Affixes>k__BackingField:
-    - <Stat>k__BackingField: 10
+    - <Stat>k__BackingField: 24
       <Modifier>k__BackingField:
         <Range>k__BackingField: {x: 0, y: 0}
         <Value>k__BackingField: 25

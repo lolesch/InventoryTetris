@@ -10,7 +10,7 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.Items
 {
     [Serializable]
-    public abstract class AbstractItem // TODO: inherit IComparable
+    public abstract class AbstractItem : IEquatable<AbstractItem> //, IComparable
     {
         [field: SerializeField] public Sprite Icon { get; protected set; } = null;
         [field: SerializeField] public ItemSize Dimensions { get; protected set; } = ItemSize.OneByOne;
@@ -26,7 +26,6 @@ namespace ToolSmiths.InventorySystem.Items
 
         public static Color GetRarityColor(ItemRarity rarity) => rarity switch
         {
-            ItemRarity.NoDrop => Color.clear,
             ItemRarity.Common => Color.white,
             ItemRarity.Magic => Color.cyan,
             ItemRarity.Rare => Color.yellow,
@@ -35,6 +34,8 @@ namespace ToolSmiths.InventorySystem.Items
             //ItemRarity.Uncommon => Color.gray,
             //ItemRarity.Crafted => new Color(0.4f, 0, 1, 1), // purple
             //ItemRarity.Set => Color.green,
+
+            ItemRarity.NoDrop => Color.clear,
             _ => Color.clear,
         };
 
@@ -53,6 +54,7 @@ namespace ToolSmiths.InventorySystem.Items
             _ => Vector2Int.zero,
         };
 
+        public bool Equals(AbstractItem other) => Icon == other.Icon && Dimensions == other.Dimensions && StackLimit == other.StackLimit && Rarity == other.Rarity;// && Affixes == other.Affixes;
     }
 
     [Serializable]
@@ -308,11 +310,11 @@ namespace ToolSmiths.InventorySystem.Items
             foreach (var package in InventoryProvider.Instance.PlayerEquipment.StoredPackages.Values)
                 if (package.Item == this)
                 {
-                    Unequip(new(this));
+                    Unequip(new(InventoryProvider.Instance.PlayerEquipment, this));
                     return;
                 }
 
-            Equip(new(this));
+            Equip(new(InventoryProvider.Instance.PlayerEquipment, this));
         }
 
         private void Equip(Package package)

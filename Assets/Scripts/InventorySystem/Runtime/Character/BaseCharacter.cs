@@ -34,20 +34,20 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
         private void RegenerateHealth()
         {
-            var health = GetResource(this, StatName.MaxLife);
+            var health = GetResource(this, StatName.Health);
 
             if (health.IsDepleted || health.CurrentValue == health.TotalValue)
                 return;
 
-            health.AddToCurrent(GetStatValue(this, StatName.LifePerSecond) * Time.deltaTime);
+            health.AddToCurrent(GetStatValue(this, StatName.HealthRegeneration) * Time.deltaTime);
         }
 
         private void Refresh()
         {
             var statNames = System.Enum.GetValues(typeof(StatName)) as StatName[];
             var statsOnly = statNames.ToList();
-            statsOnly.Remove(StatName.MaxLife);
-            var resourcesOnly = new List<StatName>() { StatName.MaxLife };
+            statsOnly.Remove(StatName.Health);
+            var resourcesOnly = new List<StatName>() { StatName.Health };
 
             if (CharacterStats.Length != statsOnly.Count)
             {
@@ -70,12 +70,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
         protected static float CalculateDamageOutput(BaseCharacter character, DamageType damageType)
         {
-            var weaponDamage = GetStatValue(character, StatName.WeaponDamage);
+            var weaponDamage = GetStatValue(character, StatName.PhysicalDamage);
             var attackSpeed = GetStatValue(character, StatName.AttackSpeed);
             var damageTypeMod = damageType switch
             {
                 DamageType.PhysicalDamage => GetStatValue(character, StatName.PhysicalDamage),
-                DamageType.ElementalDamage => GetStatValue(character, StatName.ElementalDamage),
+                DamageType.ElementalDamage => GetStatValue(character, StatName.MagicalDamage),
 
                 _ => 0f,
             };
@@ -89,13 +89,13 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             if (character.IsInvincible)
                 return 0f;
 
-            if (GetResource(character, StatName.MaxLife).IsDepleted)
+            if (GetResource(character, StatName.Health).IsDepleted)
                 return 0f;
 
             var damageTypeResist = damageType switch
             {
-                DamageType.PhysicalDamage => GetStatValue(character, StatName.PhysicalResistance) + GetStatValue(character, StatName.Armor) * 0.01f,
-                DamageType.ElementalDamage => GetStatValue(character, StatName.ElementalResistance),
+                DamageType.PhysicalDamage => GetStatValue(character, StatName.Armor),
+                DamageType.ElementalDamage => GetStatValue(character, StatName.MagicResist),
 
                 _ => 0f,
             };
@@ -127,7 +127,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         protected void ReceiveDamage(DamageType damageType, float incomingDamage)
         {
             var healthDamage = CalculateReceivingDamage(this, damageType, incomingDamage);
-            var health = GetResource(this, StatName.MaxLife);
+            var health = GetResource(this, StatName.Health);
             health.AddToCurrent(healthDamage);
 
             //AddReceivedDPS(healthDamage);

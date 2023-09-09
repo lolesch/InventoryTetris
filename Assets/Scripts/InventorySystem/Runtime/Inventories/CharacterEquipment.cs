@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Items;
+using ToolSmiths.InventorySystem.Runtime.Provider;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Inventories
@@ -14,17 +15,15 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         [SerializeField] public bool autoEquip = true;
 
-        protected override List<Vector2Int> CalculateRequiredPositions(Vector2Int position, Vector2Int dimension) => new() { position };
-
         public override List<Vector2Int> GetOtherItemsAt(Vector2Int position, Vector2Int dimension)
         {
             List<Vector2Int> otherPackagePositions = new();
+            var requiredPositions = CalculateRequiredPositions(position, dimension);
 
             foreach (var package in StoredPackages)
-                if (package.Key == position)
-                    // might need rework => get both weaponslots when asking for position 
-                    // otherPackagePositions = GetTypeSpecificRequiredPositions((package.Value.Item as EquipmentItem).EquipmentType).ToList();
-                    otherPackagePositions.Add(package.Key);
+                foreach (var requiredPosition in requiredPositions)
+                    if (package.Key == requiredPosition)
+                        otherPackagePositions.Add(package.Key);
 
             return otherPackagePositions;
         }
@@ -33,6 +32,8 @@ namespace ToolSmiths.InventorySystem.Inventories
         {
             if (package.Item == null || package.Item is not EquipmentItem)
                 return package;
+
+            InvokeRefresh();
 
             return AddAtEquipmentTypePosition((package.Item as EquipmentItem).EquipmentType, package);
 
@@ -53,63 +54,73 @@ namespace ToolSmiths.InventorySystem.Inventories
             if (package.Item == null || package.Item is not EquipmentItem)
                 return package;
 
-            if (CanAddAtPosition(position, new(1, 1), out var otherItems))
-            {
-                if (0 == otherItems.Count)
-                    TryAddToInventory();
+            if (ItemStack.Single < package.Item.StackLimit)
+                Debug.LogWarning($"EquipmentItems should not be stackable! {package.Item.StackLimit}");
 
-                if (1 == otherItems.Count)
-                    TrySwap(otherItems[0]);
+            var equipmentType = (package.Item as EquipmentItem).EquipmentType;
+            var dimensions = IsTwoHandedWeapon(equipmentType) ? new Vector2Int(2, 1) : new Vector2Int(1, 1);
 
-                //OnContentChanged?.Invoke(StoredPackages);
-            }
+            if (IsEmptyPosition(position, dimensions, out var otherItems))
+                TryAddToInventory(dimensions);
+            else
+                TrySwap(otherItems, dimensions);
+
+            InvokeRefresh();
 
             return package;
 
-            void TryAddToInventory()
+            bool IsTwoHandedWeapon(EquipmentType equipmentType) => equipmentType is > EquipmentType.TWOHANDEDWEAPONS && equipmentType < EquipmentType.OFFHANDS;
+
+            void TryAddToInventory(Vector2Int dimensions)
             {
-                //TODO: if adding a 2h add a 2h dummy item in the offhand
+                // TODO: use the dimensions 
+                // var requiredPositions = CalculateRequiredPositions(position, dimensions);
                 var amount = Math.Min(package.Amount, (uint)package.Item.StackLimit);
 
-                if (StoredPackages.TryAdd(position, new Package(package.Item, amount)))
+                if (StoredPackages.TryAdd(position, new Package(this, package.Item, amount)))
                 {
                     ItemProvider.Instance.LocalPlayer.AddItemStats(package.Item.Affixes);
 
                     _ = package.ReduceAmount(amount);
                 }
-
-                //OnContentChanged?.Invoke(StoredPackages);
             }
 
-            void TrySwap(Vector2Int position)
+            void TrySwap(List<Vector2Int> positions, Vector2Int dimensions)
             {
-                if (StoredPackages.TryGetValue(position, out var storedPackage))
-                {
-                    var equipmentType = (package.Item as EquipmentItem).EquipmentType;
+                // TODO: unequip offhands when equiping a 2H
+                // TODO: unequip 2h when equiping an offhand
+                // TODO: if adding a 2h add a 2h dummy item in the offhand => obsolete because the dimension handles that?
 
-                    // TODO: swap might return 2 items (2h only)
-                    /// unequip offhands when equiping a 2H
-                    if (equipmentType is > EquipmentType.TWOHANDEDWEAPONS and < EquipmentType.OFFHANDS)
+                //var equipmentType = (package.Item as EquipmentItem).EquipmentType;
+                //if (equipmentType is > EquipmentType.TWOHANDEDWEAPONS and < EquipmentType.OFFHANDS) { }
+                //else if (equipmentType is > EquipmentType.OFFHANDS and < EquipmentType.JEWELRY) { }
+
+                var otherPackages = new List<Package>();
+
+                foreach (var position in positions)
+                    if (StoredPackages.TryGetValue(position, out var storedPackage))
                     {
-                        var requiredPositions = new Vector2Int[2] { new(12, 0), new(13, 0) };
-                        //InventoryProvider.Instance.PlayerEquipment.GetOtherItemsAt(position, dimensions);
-                        // TODO: CONTINUE HERE or implement overrides for CanAddAtPosition or AddAtPosition in the CharacterEquipment
+                        _ = RemoveAtPosition(position, storedPackage);
+                        otherPackages.Add(storedPackage);
                     }
-                    /// unequip 2h when equiping an offhand
-                    else if (equipmentType is > EquipmentType.OFFHANDS and < EquipmentType.JEWELRY)
-                    { }
 
-                    _ = RemoveAtPosition(position, storedPackage);
+                TryAddToInventory(dimensions);
 
-                    TryAddToInventory();
+                if (0 < package.Amount)
+                    Debug.LogWarning($"Something went wrong! remaining package will be overwritten: {package} by {otherItems[0]}");
 
-                    // TODO: check for item loss, else revert
-                    package = storedPackage;
-                }
+                package = otherPackages[0];
+
+                if (otherPackages.Count == 2)
+                    // TODO: try add swaped packages to the container the package was coming from
+                    // else set static drag display
+                    StaticDragDisplay.Instance.SetPackage(StaticDragDisplay.Instance.Hovered, otherPackages[1], Vector2Int.zero);
+
+                // TODO: check for item loss, else revert
             }
         }
 
-        private Vector2Int[] GetTypeSpecificRequiredPositions(EquipmentType equipment) => equipment switch
+        /*private Vector2Int[] GetTypeSpecificRequiredPositions(EquipmentType equipment) => equipment switch
         {
             EquipmentType.Amulet => new Vector2Int[1] { new(0, 0) },
             EquipmentType.Belt => new Vector2Int[1] { new(1, 0) },
@@ -136,7 +147,8 @@ namespace ToolSmiths.InventorySystem.Inventories
             EquipmentType.OFFHANDS => new Vector2Int[1] { new(-1, -1) },
             EquipmentType.JEWELRY => new Vector2Int[1] { new(-1, -1) },
             _ => new Vector2Int[1] { new(-1, -1) },
-        };
+        };*/
+
         public Vector2Int[] GetTypeSpecificPositions(EquipmentType equipment) => equipment switch
         {
             EquipmentType.Amulet => new Vector2Int[1] { new(0, 0) },
@@ -157,7 +169,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             > EquipmentType.TWOHANDEDWEAPONS and < EquipmentType.OFFHANDS => new Vector2Int[1] { new(12, 0) },
             > EquipmentType.OFFHANDS and < EquipmentType.JEWELRY => new Vector2Int[1] { new(13, 0) },
 
-            // INVALID REQUESTS
+            /// INVALID REQUESTS
             EquipmentType.NONE => new Vector2Int[1] { new(-1, -1) },
             EquipmentType.ARMAMENTS => new Vector2Int[1] { new(-1, -1) },
             EquipmentType.ONEHANDEDWEAPONS => new Vector2Int[1] { new(-1, -1) },
@@ -166,5 +178,12 @@ namespace ToolSmiths.InventorySystem.Inventories
             EquipmentType.JEWELRY => new Vector2Int[1] { new(-1, -1) },
             _ => new Vector2Int[1] { new(-1, -1) },
         };
+
+        protected override List<Vector2Int> CalculateRequiredPositions(Vector2Int position, Vector2Int dimension)
+        {
+            // TODO: CHANGE THIS TO MATCH EQIPMENT REQUIREMENTS
+            List<Vector2Int> requiredPositions = new() { position };
+            return requiredPositions;
+        }
     }
 }

@@ -67,7 +67,7 @@ namespace ToolSmiths.InventorySystem.Inventories
                 if (add)
                 {
                     var randomEquipment = ItemProvider.Instance.GenerateRandomOfEquipmentType(equipmentType);
-                    _ = ContainerToAddTo?.AddToContainer(new Package(randomEquipment, 1));
+                    _ = ContainerToAddTo?.AddToContainer(new Package(null, randomEquipment, 1));
                 }
                 else
                 {
@@ -83,7 +83,7 @@ namespace ToolSmiths.InventorySystem.Inventories
                 if (add)
                 {
                     var randomConsumable = ItemProvider.Instance.GenerateRandomOfConsumableType(consumableType);
-                    _ = ContainerToAddTo?.AddToContainer(new Package(randomConsumable, 1));
+                    _ = ContainerToAddTo?.AddToContainer(new Package(null, randomConsumable, 1));
                 }
                 else
                 {
@@ -99,7 +99,7 @@ namespace ToolSmiths.InventorySystem.Inventories
                 var items = ItemProvider.Instance.GenerateRandomLoot(Amount);
 
                 for (var i = 0; i < items.Count; i++)
-                    _ = ContainerToAddTo?.AddToContainer(new Package(items[i], 1));
+                    _ = ContainerToAddTo?.AddToContainer(new Package(null, items[i], 1));
             }
             else // needs testing
             {

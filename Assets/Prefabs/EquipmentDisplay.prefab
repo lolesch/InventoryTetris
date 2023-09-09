@@ -660,10 +660,6 @@ MonoBehaviour:
   <IsInvincible>k__BackingField: 0
   <IsBlocking>k__BackingField: 0
   <CharacterStats>k__BackingField:
-  - name: 'Weapon Damage: 1'
-    <Stat>k__BackingField: 0
-    <BaseValue>k__BackingField: 1
-    <StatModifiers>k__BackingField: []
   - name: 'Attack Speed: 1'
     <Stat>k__BackingField: 1
     <BaseValue>k__BackingField: 1
@@ -672,45 +668,53 @@ MonoBehaviour:
     <Stat>k__BackingField: 2
     <BaseValue>k__BackingField: 1
     <StatModifiers>k__BackingField: []
-  - name: 'Elemental Damage: 1'
+  - name: 'Magical Damage: 1'
     <Stat>k__BackingField: 3
     <BaseValue>k__BackingField: 1
     <StatModifiers>k__BackingField: []
-  - name: 'Block Chance: 1'
+  - name: 'Armor Penetration: 1'
     <Stat>k__BackingField: 4
     <BaseValue>k__BackingField: 1
     <StatModifiers>k__BackingField: []
-  - name: 'Armor: 1'
+  - name: 'Magic Resist Penetration: 1'
     <Stat>k__BackingField: 5
     <BaseValue>k__BackingField: 1
     <StatModifiers>k__BackingField: []
-  - name: 'Physical Resistance: 1'
-    <Stat>k__BackingField: 6
+  - name: 'Health Regeneration: 1'
+    <Stat>k__BackingField: 12
     <BaseValue>k__BackingField: 1
     <StatModifiers>k__BackingField: []
-  - name: 'Elemental Resistance: 1'
-    <Stat>k__BackingField: 7
+  - name: 'Armor: 1'
+    <Stat>k__BackingField: 13
     <BaseValue>k__BackingField: 1
     <StatModifiers>k__BackingField: []
-  - name: 'Weapon Damage: 0'
-    <Stat>k__BackingField: 0
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
-  - name: 'Life Per Second: 1'
-    <Stat>k__BackingField: 9
+  - name: 'Magic Resist: 1'
+    <Stat>k__BackingField: 14
     <BaseValue>k__BackingField: 1
     <StatModifiers>k__BackingField: []
   - name: 'Movement Speed: 1'
-    <Stat>k__BackingField: 10
+    <Stat>k__BackingField: 21
+    <BaseValue>k__BackingField: 1
+    <StatModifiers>k__BackingField: []
+  - name: 'Resource: 1'
+    <Stat>k__BackingField: 22
+    <BaseValue>k__BackingField: 1
+    <StatModifiers>k__BackingField: []
+  - name: 'Resource Regeneration: 1'
+    <Stat>k__BackingField: 23
     <BaseValue>k__BackingField: 1
     <StatModifiers>k__BackingField: []
   - name: 'Increased Item Rarity: 1'
-    <Stat>k__BackingField: 11
+    <Stat>k__BackingField: 24
+    <BaseValue>k__BackingField: 1
+    <StatModifiers>k__BackingField: []
+  - name: 'Increased Item Quantity: 1'
+    <Stat>k__BackingField: 25
     <BaseValue>k__BackingField: 1
     <StatModifiers>k__BackingField: []
   <CharacterResources>k__BackingField:
-  - name: 'Max Life: 100'
-    <Stat>k__BackingField: 8
+  - name: 'Health: 100'
+    <Stat>k__BackingField: 11
     <BaseValue>k__BackingField: 100
     <StatModifiers>k__BackingField: []
     <CurrentValue>k__BackingField: 100
@@ -980,7 +984,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 8183235012115119045}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.98913044
+  m_Size: 0.9891304
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:

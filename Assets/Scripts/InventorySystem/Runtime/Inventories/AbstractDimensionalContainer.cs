@@ -29,7 +29,11 @@ namespace ToolSmiths.InventorySystem.Inventories
             if (ItemStack.Single < package.Item.StackLimit)
                 AddToOpenStacks();
 
-            AddToEmptyPositions();
+            if (0 < package.Amount)
+                AddToEmptyPositions();
+
+            if (0 < package.Amount)
+                Debug.LogWarning($"Could not add the remaining amount of {package.Amount} to {this}");
 
             return package;
 
@@ -38,8 +42,9 @@ namespace ToolSmiths.InventorySystem.Inventories
                 var positions = StoredPackages.Keys.ToList();
 
                 for (var i = 0; i < positions.Count && 0 < package.Amount; i++)
-                    if (StoredPackages[positions[i]].Item == package.Item && 0 < StoredPackages[positions[i]].SpaceLeft)
-                        package = AddAtPosition(positions[i], package);
+                    if (StoredPackages[positions[i]].Item.Equals(package.Item))
+                        if (0 < StoredPackages[positions[i]].SpaceLeft)
+                            package = AddAtPosition(positions[i], package);
             }
 
             void AddToEmptyPositions()
@@ -61,16 +66,22 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             var dimensions = AbstractItem.GetDimensions(package.Item.Dimensions);
 
-            if (CanAddAtPosition(position, dimensions, out var otherItems))
+            if (IsEmptyPosition(position, dimensions, out var otherItems))
+                TryAddToInventory();
+            else if (1 == otherItems.Count)
             {
-                if (0 == otherItems.Count)
-                    TryAddToInventory();
+                if (StoredPackages.TryGetValue(otherItems[0], out var storedPackage))
+                {
+                    if (!TryStack(storedPackage))
+                        TrySwap(storedPackage);
+                }
 
-                if (1 == otherItems.Count)
-                    TryStackOrSwap(otherItems[0]);
-
-                OnContentChanged?.Invoke(StoredPackages);
+                return package;
             }
+            else
+                return package;
+
+            OnContentChanged?.Invoke(StoredPackages);
 
             return package;
 
@@ -78,7 +89,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             {
                 var amount = Math.Min(package.Amount, (uint)package.Item.StackLimit);
 
-                if (StoredPackages.TryAdd(position, new Package(package.Item, amount)))
+                if (StoredPackages.TryAdd(position, new Package(this, package.Item, amount)))
                 {
                     _ = package.ReduceAmount(amount);
                 }
@@ -91,27 +102,29 @@ namespace ToolSmiths.InventorySystem.Inventories
                 OnContentChanged?.Invoke(StoredPackages);
             }
 
-            void TryStackOrSwap(Vector2Int position)
+            bool TryStack(Package storedPackage)
             {
-                if (StoredPackages.TryGetValue(position, out var storedPackage))
-                {
-                    /// Try stacking
-                    if (1 < (uint)package.Item.StackLimit && package.Item == storedPackage.Item && 0 < storedPackage.SpaceLeft)
+                if (0 < storedPackage.SpaceLeft)
+                    if (package.Item.Equals(storedPackage.Item))
                     {
                         var addedAmount = storedPackage.IncreaseAmount(package.Amount);
                         StoredPackages[position] = storedPackage;
                         _ = package.ReduceAmount(addedAmount);
-                    }
-                    else /// swap items
-                    {
-                        _ = RemoveAtPosition(position, storedPackage);
 
-                        TryAddToInventory();
-
-                        // TODO: check for item loss, else revert
-                        package = storedPackage;
+                        return true;
                     }
-                }
+
+                return false;
+            }
+
+            void TrySwap(Package storedPackage)
+            {
+                _ = RemoveAtPosition(position, storedPackage);
+
+                TryAddToInventory();
+
+                // TODO: check for item loss, else revert
+                package = storedPackage;
             }
         }
 
@@ -138,7 +151,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         public Package RemoveAtPosition(Vector2Int position, Package package)
         {
-            var storedPositions = GetOtherItemsAt(position, new(1, 1));
+            var storedPositions = GetOtherItemsAt(position, new(1, 1)); // will this ever return more than one position?
 
             if (storedPositions.Count == 1)
             {
@@ -168,7 +181,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             if (IsValidPosition(position, dimension))
             {
-                otherItems = GetOtherItemsAt(position, dimension); // Cant 
+                otherItems = GetOtherItemsAt(position, dimension);
                 return otherItems.Count <= 0;
             }
 
@@ -188,18 +201,13 @@ namespace ToolSmiths.InventorySystem.Inventories
             }
         }
 
-        // this is playerInventory specific and does not belong here => || (!IsEmptyPosition(position, dimension, out otherItems) && otherItems.Count <= 1);
-        // TODO: override in PlayerEquipment to check all viable positions (rings, 1h and offhand, 2h...)
-        public bool CanAddAtPosition(Vector2Int position, Vector2Int dimension, out List<Vector2Int> otherItems) =>
-            IsEmptyPosition(position, dimension, out otherItems) ||
-            (!IsEmptyPosition(position, dimension, out otherItems) && otherItems.Count <= 1);
-
         /// A List of all storedPackages positions that overlap with the requiredPositions
         public abstract List<Vector2Int> GetOtherItemsAt(Vector2Int position, Vector2Int dimension);
 
         public bool TryGetPackageAt(Vector2Int position, out Package package) => StoredPackages.TryGetValue(position, out package);
 
         /// A List of all positions that are required to add this item to the container
+        // TODO make this abstract! CONTINUE HERE
         protected abstract List<Vector2Int> CalculateRequiredPositions(Vector2Int position, Vector2Int dimension);
 
         // TODO package should implement IComparable 
@@ -216,36 +224,54 @@ namespace ToolSmiths.InventorySystem.Inventories
         {
             StoredPackages.Clear(); // This won't unequip => stats not removed from character
 
-            var storedNames = storedValues.Select(x => x.Item.ToString()).Distinct().OrderByDescending(x => x).ToList();
+            var sortedValues = storedValues.OrderByDescending(x => x.Item.ToString());
 
+            foreach (var package in sortedValues)
+                _ = AddToContainer(package);
+
+            /*var storedNames = storedValues.Select(x => x.Item.ToString()).Distinct().OrderByDescending(x => x).ToList();
+            
             foreach (var x in storedNames)
                 foreach (var y in storedValues)
                     if (y.ToString() == x)
                         _ = AddToContainer(y);
-        }
-
-        private void SortByItemDimension(List<Package> storedValues)
-        {
-            StoredPackages.Clear(); // This won't unequip => stats not removed from character
-
-            var storedDimensions = storedValues.Select(x => AbstractItem.GetDimensions(x.Item.Dimensions)).Distinct().OrderByDescending(v => v.sqrMagnitude/* v.x * v.y*/).ToList();/*v.sqrMagnitude*/
-
-            foreach (var x in storedDimensions)
-                foreach (var y in storedValues)
-                    if (AbstractItem.GetDimensions(y.Item.Dimensions) == x)
-                        _ = AddToContainer(y);
+            */
         }
 
         private void SortByRarity(List<Package> storedValues)
         {
             StoredPackages.Clear(); // This won't unequip => stats not removed from character
 
-            var storedRarities = storedValues.Select(x => x.Item.Rarity).Distinct().OrderByDescending(x => x).ToList();
+            var sortedValues = storedValues.OrderByDescending(x => x.Item.Rarity).ToList();
+
+            foreach (var package in sortedValues)
+                _ = AddToContainer(package);
+
+            /*var storedRarities = storedValues.Select(x => x.Item.Rarity).Distinct().OrderByDescending(x => x).ToList();
 
             foreach (var x in storedRarities)
                 foreach (var y in storedValues)
                     if (y.Item.Rarity == x)
                         _ = AddToContainer(y);
+            */
+        }
+
+        private void SortByItemDimension(List<Package> storedValues)
+        {
+            StoredPackages.Clear(); // This won't unequip => stats not removed from character
+
+            var sortedValues = storedValues.OrderByDescending(x => AbstractItem.GetDimensions(x.Item.Dimensions).sqrMagnitude).ToList();
+
+            foreach (var package in sortedValues)
+                _ = AddToContainer(package);
+
+            /*var storedDimensions = storedValues.Select(x => AbstractItem.GetDimensions(x.Item.Dimensions)).Distinct().OrderByDescending(v => v.sqrMagnitude).ToList();
+
+            foreach (var x in storedDimensions)
+                foreach (var y in storedValues)
+                    if (AbstractItem.GetDimensions(y.Item.Dimensions) == x)
+                _ = AddToContainer(package);
+            */
         }
 
         protected internal void InvokeRefresh() => OnContentChanged?.Invoke(StoredPackages);

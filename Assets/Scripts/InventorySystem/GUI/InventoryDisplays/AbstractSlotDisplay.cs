@@ -22,14 +22,15 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         [field: SerializeField, ReadOnly] public AbstractDimensionalContainer Container { get; private set; }
         [field: SerializeField, ReadOnly] public Vector2Int Position { get; private set; }
         [Space]
-        [SerializeField] protected internal RectTransform itemDisplay;
-        [SerializeField] protected internal Image icon;
+        [SerializeField] protected RectTransform itemDisplay;
+        [SerializeField] protected Image icon;
         [SerializeField] private Image frame;
         [SerializeField] private Image background;
-        [SerializeField] protected internal TextMeshProUGUI amount;
-        [SerializeField] protected internal Image slotBackground;
+        [SerializeField] protected TextMeshProUGUI amount;
+        [SerializeField] protected Image slotBackground;
 
-        [SerializeField] protected internal TextMeshProUGUI debugPosition;
+        [SerializeField] protected TextMeshProUGUI debugPosition;
+        [SerializeField] protected Package debugPackage;
 
         protected static Package packageToMove;
 
@@ -175,7 +176,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         {
             hovering = false;
 
-            StaticPrevievDisplay.Instance.RefreshPreviewDisplay(new Package(null, 0), this);
+            StaticPrevievDisplay.Instance.RefreshPreviewDisplay(new Package(Container, null, 0), this);
         }
 
         protected virtual void DropItem() => FadeInPreview();
@@ -217,6 +218,8 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
                     if (background)
                         background.color = rarityColor * Color.gray * Color.gray;
+
+                    debugPackage = package;
                 }
             }
         }
