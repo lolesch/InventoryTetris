@@ -40,25 +40,54 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
         public void AddItemStats(List<CharacterStatModifier> stats)
         {
+            var resources = new List<CharacterStatModifier>();
+
             foreach (var itemStat in stats)
-                for (var i = 0; i < CharacterStats.Length; i++)
-                    if (CharacterStats[i].Stat == itemStat.Stat)
+                if (itemStat.Stat is StatName.Health or StatName.Resource)
+                    resources.Add(itemStat);
+                else
+                    for (var i = 0; i < CharacterStats.Length; i++)
+                        if (CharacterStats[i].Stat == itemStat.Stat)
+                        {
+                            CharacterStats[i].AddModifier(itemStat.Modifier);
+                            break;
+                        }
+
+            foreach (var itemStat in resources)
+                for (var i = 0; i < CharacterResources.Length; i++)
+                    if (CharacterResources[i].Stat == itemStat.Stat)
                     {
-                        CharacterStats[i].AddModifier(itemStat.Modifier);
+                        CharacterResources[i].AddModifier(itemStat.Modifier);
                         break;
                     }
+
             UpdateStatDisplays();
         }
 
         public void RemoveItemStats(List<CharacterStatModifier> stats)
         {
+            var resources = new List<CharacterStatModifier>();
+
             foreach (var itemStat in stats)
-                for (var i = CharacterStats.Length; i-- > 0;)
-                    if (CharacterStats[i].Stat == itemStat.Stat)
+                if (itemStat.Stat is StatName.Health or StatName.Resource)
+                    resources.Add(itemStat);
+                else
+                    for (var i = CharacterStats.Length; i-- > 0;)
+                        if (CharacterStats[i].Stat == itemStat.Stat)
+                        {
+                            CharacterStats[i].RemoveModifier(itemStat.Modifier);
+                            resources.Remove(itemStat);
+                            break;
+                        }
+
+            foreach (var itemStat in resources)
+                for (var i = 0; i < CharacterResources.Length; i++)
+                    if (CharacterResources[i].Stat == itemStat.Stat)
                     {
-                        CharacterStats[i].RemoveModifier(itemStat.Modifier);
-                        //break;
+                        CharacterResources[i].RemoveModifier(itemStat.Modifier);
+                        break;
                     }
+
             UpdateStatDisplays();
         }
 

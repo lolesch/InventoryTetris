@@ -1,34 +1,27 @@
 /// KNOWN ISSUES:
-// cant rightclick equip a 2H when there is an offhand but no mainhand equipped
-// autoequipping a 2H will unequipp offhands if there is no mainhand equipped
+// Dropping an item can duplicate it
 
 // Droping an item selects unexpected positions
 
-// comparison shows wrong numbers of first hover => rehover shows correct values
+// comparison shows wrong numbers of first hover => re-hover shows correct values
 // comparison cant compare against all equipment of same type (i.e. both rings)
 
 // modified affix range can result in higher min than max values => reorder before setting the range
 
 /// TODO
-// fix health affixes dont add to health as resource
-
 // add a source to statModifiers to remove all modifiers of that source 
-
-// fix characterStats modifier list => hovering items (previewDisplay) adds modifiers without equipping and never removes them
 
 // fix the item drop positioning
 // -> the offset is fine once the drop includes the items dimensions
 // atm. the item is dropped in the surrounding slots dependent on the mouse offset to the center of the hovered slot.
 // this offset needs to be calculated in relation to the center of the drag display
 
-// hoverable playerStats => tooltip baseValue and mod sum per mod type
-
 // rework item comparison
 // compare rings and weapons to both slots
 
-/// ITEM EQUIPMENT LOGIC
-// cant rightclick equip a 2H when there is an offhand but no mainhand equipped
-// autoequipping a 2H will unequipp offhands if there is no mainhand equipped
+/// PLAYER STATS DETAILS
+// hoverable playerStatDisplays => tooltip baseValue and mod sum per mod type
+// add icons to the displays
 
 /// COMBAT SIMULATION
 // simulate Dummy to take damage
@@ -67,13 +60,7 @@
 // design socketables - this goes into attribute design
 
 /// ICEBOX
-
 // Improved MagicFind:
-// Effective MF = (MF * Factor) / (MF + Factor), where Factor=250 for unique items, 500 for set items and 600 for rare items..
+// in D2 => Effective MF = (MF * Factor) / (MF + Factor), where Factor=250 for unique items, 500 for set items and 600 for rare items..
 
 /// POLISH
-
-///GUSTAV
-/*
- * 
- */

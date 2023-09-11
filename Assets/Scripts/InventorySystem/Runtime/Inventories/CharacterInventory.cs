@@ -37,7 +37,7 @@ namespace ToolSmiths.InventorySystem.Inventories
                     package = AddToEmptyPosition(package);
 
                 if (0 < package.Amount)
-                    Debug.LogWarning($"Could not add the remaining amount of {package.Amount} to {this}");
+                    Debug.LogWarning($"Your Inventory is full!");
 
                 void AddToOpenStacks()
                 {
