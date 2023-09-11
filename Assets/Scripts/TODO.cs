@@ -11,6 +11,8 @@
 /// TODO
 // add a source to statModifiers to remove all modifiers of that source 
 
+// fix item duplication
+
 // fix the item drop positioning
 // -> the offset is fine once the drop includes the items dimensions
 // atm. the item is dropped in the surrounding slots dependent on the mouse offset to the center of the hovered slot.
