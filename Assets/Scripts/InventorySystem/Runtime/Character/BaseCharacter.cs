@@ -47,7 +47,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             var statNames = System.Enum.GetValues(typeof(StatName)) as StatName[];
             var statsOnly = statNames.ToList();
             statsOnly.Remove(StatName.Health);
-            var resourcesOnly = new List<StatName>() { StatName.Health };
+            statsOnly.Remove(StatName.Resource);
+            var resourcesOnly = new List<StatName>() { StatName.Health, StatName.Resource };
 
             if (CharacterStats.Length != statsOnly.Count)
             {
@@ -59,8 +60,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
             if (CharacterResources.Length != resourcesOnly.Count)
             {
-                //CharacterResources = new CharacterResource[1] { new CharacterResource(StatName.MaxLife, 100) };
-
                 CharacterResources = new CharacterResource[resourcesOnly.Count];
 
                 for (var i = 0; i < resourcesOnly.Count; i++)
