@@ -82,7 +82,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
                 if (Hovered.Container == null)
                     return;
 
-                var storedPositions = Hovered.Container?.GetOtherItemsAt(positionToAdd, AbstractItem.GetDimensions(Package.Item.Dimensions));
+                var storedPositions = Hovered.Container?.GetStoredItemsAt(positionToAdd, AbstractItem.GetDimensions(Package.Item.Dimensions));
 
                 if (storedPositions.Count <= 0)
                 {

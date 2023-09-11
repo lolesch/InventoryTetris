@@ -1,7 +1,8 @@
 /// KNOWN ISSUES:
-// Droping an item selects unexpected positions
+// cant rightclick equip a 2H when there is an offhand but no mainhand equipped
+// autoequipping a 2H will unequipp offhands if there is no mainhand equipped
 
-// eqipping 2h wont unequip both slots
+// Droping an item selects unexpected positions
 
 // comparison shows wrong numbers of first hover => rehover shows correct values
 // comparison cant compare against all equipment of same type (i.e. both rings)
@@ -9,8 +10,9 @@
 // modified affix range can result in higher min than max values => reorder before setting the range
 
 /// TODO
-// remove bool CanAddAtPosition() from AbstractDimensionalContainer and refactor its references!
-// add a sender container (and a receiver container?) to the package => if something goes wrong, return package to sender container
+// fix health affixes dont add to health as resource
+
+// add a source to statModifiers to remove all modifiers of that source 
 
 // fix characterStats modifier list => hovering items (previewDisplay) adds modifiers without equipping and never removes them
 
@@ -25,9 +27,8 @@
 // compare rings and weapons to both slots
 
 /// ITEM EQUIPMENT LOGIC
-// 2h weapons should have a dimension of new(2, 1) so they require the offhand slot too
-// => unequip offhands when equiping a 2H
-// => unequip 2H when equiping an offhand
+// cant rightclick equip a 2H when there is an offhand but no mainhand equipped
+// autoequipping a 2H will unequipp offhands if there is no mainhand equipped
 
 /// COMBAT SIMULATION
 // simulate Dummy to take damage

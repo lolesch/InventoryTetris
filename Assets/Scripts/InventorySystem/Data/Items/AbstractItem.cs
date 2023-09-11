@@ -19,7 +19,7 @@ namespace ToolSmiths.InventorySystem.Items
 
         // consider changing to prefix/suffix system
         /// keep this as list (vs array) since crafting migth add/remove Affixes
-        [field: SerializeField] public List<PlayerStatModifier> Affixes { get; protected set; } = new List<PlayerStatModifier>();
+        [field: SerializeField] public List<CharacterStatModifier> Affixes { get; protected set; } = new List<CharacterStatModifier>();
 
         // TODO: handle overTime effects => Stats != Effects --> see ARPG_Combat for DoT_effects
         public new abstract string ToString();
@@ -105,7 +105,7 @@ namespace ToolSmiths.InventorySystem.Items
                         {
                             var range = Affixes[i].Modifier.Range + Affixes[j].Modifier.Range;
                             var value = Affixes[i].Modifier.Value + Affixes[j].Modifier.Value;
-                            Affixes[i] = new PlayerStatModifier(Affixes[i].Stat, new StatModifier(range, value, Affixes[i].Modifier.Type));
+                            Affixes[i] = new CharacterStatModifier(Affixes[i].Stat, new StatModifier(range, value, Affixes[i].Modifier.Type));
                             Affixes.RemoveAt(j);
                         }
             }
@@ -121,11 +121,11 @@ namespace ToolSmiths.InventorySystem.Items
                 _ => ItemSize.NONE
             };
 
-            List<PlayerStatModifier> GetRandomAffixes(ConsumableType consumableType, ItemRarity rarity)
+            List<CharacterStatModifier> GetRandomAffixes(ConsumableType consumableType, ItemRarity rarity)
             {
                 var affixAmount = GetAffixAmount(rarity);
 
-                var affixList = new List<PlayerStatModifier>();
+                var affixList = new List<CharacterStatModifier>();
 
                 var allowedAffixes = ItemProvider.Instance.ItemTypeData.GetPossibleStats(consumableType).ToList();
 
@@ -147,7 +147,7 @@ namespace ToolSmiths.InventorySystem.Items
                     // TODO: determine statModType => lookup table for each statName
                     var modifier = new StatModifier(rangeRoll.Range, rangeRoll.value/*, type*/);
 
-                    var itemStat = new PlayerStatModifier(randomStat.StatName, modifier);
+                    var itemStat = new CharacterStatModifier(randomStat.StatName, modifier);
 
                     affixList.Add(itemStat);
                 }
@@ -249,11 +249,11 @@ namespace ToolSmiths.InventorySystem.Items
                 _ => ItemSize.NONE
             };
 
-            List<PlayerStatModifier> GetRandomAffixes(EquipmentType equipmentType, ItemRarity rarity)
+            List<CharacterStatModifier> GetRandomAffixes(EquipmentType equipmentType, ItemRarity rarity)
             {
                 var affixAmount = GetAffixAmount(rarity);
 
-                var affixList = new List<PlayerStatModifier>();
+                var affixList = new List<CharacterStatModifier>();
 
                 var allowedAffixes = ItemProvider.Instance.ItemTypeData.GetPossibleStats(equipmentType).ToList();
 
@@ -274,7 +274,7 @@ namespace ToolSmiths.InventorySystem.Items
                     // TODO: determine statModType => lookup table for each statName
                     var modifier = new StatModifier(rangeRoll.Range, rangeRoll.value/*, type*/);
 
-                    var itemStat = new PlayerStatModifier(randomStat.StatName, modifier);
+                    var itemStat = new CharacterStatModifier(randomStat.StatName, modifier);
 
                     affixList.Add(itemStat);
                 }
@@ -307,31 +307,31 @@ namespace ToolSmiths.InventorySystem.Items
 
         public void UseItem()
         {
-            foreach (var package in InventoryProvider.Instance.PlayerEquipment.StoredPackages.Values)
+            foreach (var package in InventoryProvider.Instance.Equipment.StoredPackages.Values)
                 if (package.Item == this)
                 {
-                    Unequip(new(InventoryProvider.Instance.PlayerEquipment, this));
+                    Unequip(new(InventoryProvider.Instance.Equipment, this));
                     return;
                 }
 
-            Equip(new(InventoryProvider.Instance.PlayerEquipment, this));
+            Equip(new(InventoryProvider.Instance.Equipment, this));
         }
 
         private void Equip(Package package)
         {
-            var remaining = InventoryProvider.Instance.PlayerEquipment.AddToContainer(package);
+            var remaining = InventoryProvider.Instance.Equipment.AddToContainer(package);
 
             if (0 < remaining.Amount)
                 // does that mean we cant equip from outside the inventory?
-                InventoryProvider.Instance.PlayerInventory.RemoveFromContainer(package);
+                InventoryProvider.Instance.Inventory.RemoveFromContainer(package);
         }
 
         private void Unequip(Package package)
         {
-            var remaining = InventoryProvider.Instance.PlayerInventory.AddToContainer(package);
+            var remaining = InventoryProvider.Instance.Inventory.AddToContainer(package);
 
             if (0 < remaining.Amount)
-                InventoryProvider.Instance.PlayerEquipment.RemoveFromContainer(package);
+                InventoryProvider.Instance.Equipment.RemoveFromContainer(package);
         }
 
         //TODO: extend naming

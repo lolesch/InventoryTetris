@@ -6,7 +6,7 @@ namespace ToolSmiths.InventorySystem.Data
 {
     /// <summary>PlayerStatModifiers will modify the corresponding playerStat.</summary>
     [Serializable]
-    public struct PlayerStatModifier : IComparable<PlayerStatModifier>
+    public struct CharacterStatModifier : IComparable<CharacterStatModifier>
     {
         /// <summary>The identiryer of the stat.</summary>
         [Tooltip("The identifyer of the stat.")]
@@ -17,12 +17,12 @@ namespace ToolSmiths.InventorySystem.Data
         [field: SerializeField] public StatModifier Modifier { get; private set; }
 
         /// <summary>PlayerStatModifiers will modify the corresponding playerStat.</summary>
-        public PlayerStatModifier(StatName stat, StatModifier modifier)
+        public CharacterStatModifier(StatName stat, StatModifier modifier)
         {
             Stat = stat;
             Modifier = modifier;
         }
 
-        public int CompareTo(PlayerStatModifier other) => Stat.CompareTo(other.Stat); // then by modifyer
+        public int CompareTo(CharacterStatModifier other) => Stat.CompareTo(other.Stat); // then by modifyer
     }
 }

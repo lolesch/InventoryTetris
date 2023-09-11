@@ -44,10 +44,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             if (package.Item is EquipmentItem && slot is not EquipmentSlotDisplay)
             {
                 // TODO compare to all equipments of the items equipmentType
-                var equipmentPositions = InventoryProvider.Instance.PlayerEquipment.GetTypeSpecificPositions((package.Item as EquipmentItem).EquipmentType);
+                var equipmentPositions = InventoryProvider.Instance.Equipment.GetTypeSpecificPositions((package.Item as EquipmentItem).EquipmentType);
 
                 for (var i = 0; i < equipmentPositions.Length; i++)
-                    InventoryProvider.Instance.PlayerEquipment.StoredPackages.TryGetValue(equipmentPositions[i], out compareTo[i]);
+                    InventoryProvider.Instance.Equipment.StoredPackages.TryGetValue(equipmentPositions[i], out compareTo[i]);
             }
 
             hoveredItem.SetDisplay(package, compareTo);

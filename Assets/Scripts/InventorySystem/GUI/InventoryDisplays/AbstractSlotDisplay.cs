@@ -102,7 +102,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             {
                 if (eventData.button == PointerEventData.InputButton.Right)
                 {
-                    var packagePosition = Container.GetOtherItemsAt(Position, new(1, 1))[0];
+                    var packagePosition = Container.GetStoredItemsAt(Position, new(1, 1))[0];
                     var item = Container.StoredPackages[packagePosition].Item;
 
                     if (item is ConsumableItem)
@@ -122,7 +122,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
                 void PickUpItem()
                 {
-                    var storedPositions = Container.GetOtherItemsAt(Position, new(1, 1));
+                    var storedPositions = Container.GetStoredItemsAt(Position, new(1, 1));
 
                     if (storedPositions.Count == 1)
                     {
@@ -147,7 +147,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             if (Container == null)
                 return;
 
-            var itemToDisplay = Container?.GetOtherItemsAt(Position, new(1, 1));
+            var itemToDisplay = Container?.GetStoredItemsAt(Position, new(1, 1));
             if (itemToDisplay.Count == 1)
                 if (Container.StoredPackages.TryGetValue(itemToDisplay[0], out var hoveredIten))
                     if (hoveredIten.Item != null && 0 < hoveredIten.Amount)

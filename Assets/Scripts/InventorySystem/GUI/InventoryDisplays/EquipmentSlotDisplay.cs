@@ -17,43 +17,37 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         private bool IsAllowedEquipmentType(EquipmentType type)
         {
-            if (allowedEquipmentTypes.Count <= 0)
-                return true;
+            // TODO should derive this bool from the slot position
 
-            for (var i = 0; i < allowedEquipmentTypes.Count; i++)
+            for (var i = allowedEquipmentTypes.Count; i-- > 0;)
                 if (allowedEquipmentTypes[i] == type)
                     return true;
 
-            return false;
+            return allowedEquipmentTypes.Count <= 0;
         }
 
         protected override void DropItem()
         {
             if (StaticDragDisplay.Instance.Package.Item is EquipmentItem)
-                //if (allowedEquipmentTypes.Contains((StaticDragDisplay.Instance.Package.Item as Equipment).equipmentType))
                 if (IsAllowedEquipmentType((StaticDragDisplay.Instance.Package.Item as EquipmentItem).EquipmentType))
-                    if (Container.IsEmptyPosition(Position, AbstractItem.GetDimensions(StaticDragDisplay.Instance.Package.Item.Dimensions), out var otherItems)
-                        || otherItems.Count <= 1)
+                {
+                    var remaining = Container.AddAtPosition(Position, packageToMove);
+
+                    if (0 < remaining.Amount)
                     {
-                        Package remaining;
-
-                        remaining = Container.AddAtPosition(Position, packageToMove);
-
-                        if (0 < remaining.Amount)
-                        {
-                            packageToMove = remaining;
-                            StaticDragDisplay.Instance.SetPackage(this, remaining, Vector2Int.zero);
-                        }
-                        else
-                        {
-                            packageToMove = new Package();
-
-                            StaticDragDisplay.Instance.SetPackage(this, packageToMove, Vector2Int.zero);
-                        }
-
-                        Container.InvokeRefresh();
-                        StaticDragDisplay.Instance.Origin.Container?.InvokeRefresh();
+                        packageToMove = remaining;
+                        StaticDragDisplay.Instance.SetPackage(this, remaining, Vector2Int.zero);
                     }
+                    else
+                    {
+                        packageToMove = new Package();
+
+                        StaticDragDisplay.Instance.SetPackage(this, packageToMove, Vector2Int.zero);
+                    }
+
+                    Container.InvokeRefresh();
+                    StaticDragDisplay.Instance.Origin.Container?.InvokeRefresh();
+                }
 
             // must come after adding items to the container to have something to preview
             base.DropItem();
@@ -63,33 +57,26 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         {
             base.UnequipItem();
 
-            var otherItems = Container.GetOtherItemsAt(Position, new(1, 1));
+            packageToMove = Container.StoredPackages[Position];
 
-            if (otherItems.Count == 1)
+            _ = Container.RemoveAtPosition(Position, packageToMove);
+
+            var remaining = InventoryProvider.Instance.Inventory.AddToContainer(packageToMove);
+
+            if (0 < remaining.Amount)
             {
-                packageToMove = Container.StoredPackages[otherItems[0]];
-
-                _ = Container.RemoveAtPosition(otherItems[0], packageToMove);
-
-                Package remaining;
-
-                remaining = InventoryProvider.Instance.PlayerInventory.AddToContainer(packageToMove);
-
-                if (0 < remaining.Amount)
-                {
-                    packageToMove = remaining;
-                    StaticDragDisplay.Instance.SetPackage(this, remaining, Vector2Int.zero);
-                }
-                else
-                {
-                    packageToMove = new Package();
-
-                    StaticDragDisplay.Instance.SetPackage(this, packageToMove, Vector2Int.zero);
-                }
-
-                Container.InvokeRefresh();
-                StaticDragDisplay.Instance.Origin.Container?.InvokeRefresh();
+                packageToMove = remaining;
+                StaticDragDisplay.Instance.SetPackage(this, remaining, Vector2Int.zero);
             }
+            else
+            {
+                packageToMove = new Package();
+
+                StaticDragDisplay.Instance.SetPackage(this, packageToMove, Vector2Int.zero);
+            }
+
+            Container.InvokeRefresh();
+            StaticDragDisplay.Instance.Origin.Container?.InvokeRefresh();
         }
     }
 }

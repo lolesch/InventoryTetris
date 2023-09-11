@@ -11,24 +11,24 @@ namespace ToolSmiths.InventorySystem.Inventories
 {
     public class InventoryProvider : AbstractProvider<InventoryProvider>
     {
-        [field: SerializeField] public PlayerInventory PlayerInventory { get; private set; }
-        [field: SerializeField] public PlayerInventory PlayerStash { get; private set; }
-        [field: SerializeField] public CharacterEquipment PlayerEquipment { get; private set; }
+        [field: SerializeField] public CharacterInventory Inventory { get; private set; }
+        [field: SerializeField] public CharacterInventory Stash { get; private set; }
+        [field: SerializeField] public CharacterEquipment Equipment { get; private set; }
         [field: SerializeField] public AbstractDimensionalContainer ContainerToAddTo { get; private set; }
 
         [field: SerializeField] public bool ShowDebugPositions { get; private set; }
 
         [Space]
-        public InventoryContainerDisplay PlayerInventoryDisplay;
-        [SerializeField] private Vector2Int playerInventorySize = new(10, 6);
+        public InventoryContainerDisplay InventoryDisplay;
+        [SerializeField] private Vector2Int inventorySize = new(10, 6);
 
         [Space]
-        public InventoryContainerDisplay PlayerStashDisplay;
-        [SerializeField] private Vector2Int playerStashSize = new(10, 15);
+        public InventoryContainerDisplay StashDisplay;
+        [SerializeField] private Vector2Int stashSize = new(10, 15);
 
         [Space]
-        public EquipmentContainerDisplay PlayerEquipmentDisplay;
-        [SerializeField] private Vector2Int playerEquipmentSize = new(13, 1);
+        public EquipmentContainerDisplay EquipmentDisplay;
+        [SerializeField] private Vector2Int equipmentSize = new(14, 1);
 
         [SerializeField, ReadOnly] private bool add = true;
 
@@ -38,9 +38,9 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         private void SetInventories()
         {
-            PlayerInventoryDisplay.SetupDisplay(PlayerInventory);
-            PlayerStashDisplay.SetupDisplay(PlayerStash);
-            PlayerEquipmentDisplay.SetupDisplay(PlayerEquipment);
+            InventoryDisplay.SetupDisplay(Inventory);
+            StashDisplay.SetupDisplay(Stash);
+            EquipmentDisplay.SetupDisplay(Equipment);
         }
 
         [ContextMenu("Awake")]
@@ -50,11 +50,11 @@ namespace ToolSmiths.InventorySystem.Inventories
             //amountText = amountSlider?.GetComponentInChildren<TextMeshProUGUI>();
 
             /// serialize inventories
-            PlayerInventory = new(playerInventorySize);
-            PlayerStash = new(playerStashSize);
-            PlayerEquipment = new(playerEquipmentSize);
+            Inventory = new(inventorySize);
+            Stash = new(stashSize);
+            Equipment = new(equipmentSize);
 
-            ContainerToAddTo = PlayerInventory; // should get the current active toggle instead
+            ContainerToAddTo = Inventory; // should get the current active toggle instead
             add = true;
 
             SetInventories();
@@ -62,11 +62,14 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         private void AddRemoveEquipment(EquipmentType equipmentType)
         {
+            //Debug.Log($"amountToAdd? {Amount}");
             for (var i = 0; i < Amount; i++)
             {
+                //Debug.Log($"adding? {add}");
                 if (add)
                 {
                     var randomEquipment = ItemProvider.Instance.GenerateRandomOfEquipmentType(equipmentType);
+                    //Debug.Log($"{ContainerToAddTo}");
                     _ = ContainerToAddTo?.AddToContainer(new Package(null, randomEquipment, 1));
                 }
                 else
@@ -131,17 +134,17 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         public void AddToPlayerInventory()
         {
-            ContainerToAddTo = PlayerInventory;
+            ContainerToAddTo = Inventory;
             SetInventories();
         }
         public void AddToPlayerEquipment()
         {
-            ContainerToAddTo = PlayerEquipment;
+            ContainerToAddTo = Equipment;
             SetInventories();
         }
         public void AddToPlayerStash()
         {
-            ContainerToAddTo = PlayerStash;
+            ContainerToAddTo = Stash;
             SetInventories();
         }
 
@@ -167,15 +170,15 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         public void ToggleAddRemove() => add = !add;
 
-        public void ToggleAutoEquip() => PlayerEquipment.autoEquip = !PlayerEquipment.autoEquip;
+        public void ToggleAutoEquip() => Equipment.autoEquip = !Equipment.autoEquip;
 
         //public void SortSelectedInventory() => ContainerToAddTo.Sort();
-        public void SortPlayerInventory() => PlayerInventory.Sort();
-        public void SortPlayerStash() => PlayerStash.Sort();
+        public void SortPlayerInventory() => Inventory.Sort();
+        public void SortPlayerStash() => Stash.Sort();
 
-        public void ClearPlayerInventory() => RemoveAllItems(PlayerInventory);
-        public void ClearPlayerStash() => RemoveAllItems(PlayerStash);
-        public void ClearPlayerEquipment() => RemoveAllItems(PlayerEquipment);
+        public void ClearPlayerInventory() => RemoveAllItems(Inventory);
+        public void ClearPlayerStash() => RemoveAllItems(Stash);
+        public void ClearPlayerEquipment() => RemoveAllItems(Equipment);
 
         //public Package EquipItem(Package package) => PlayerEquipment.AddToContainer(package);
     }

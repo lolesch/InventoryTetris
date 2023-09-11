@@ -11,7 +11,7 @@ namespace ToolSmiths.InventorySystem.Data
     /// StatModifier have a type to determine how they apply their modifier value.
     /// </summary>
     [Serializable]
-    public struct StatModifier : IComparable<StatModifier>
+    public struct StatModifier : IComparable<StatModifier>, IEquatable<StatModifier>
     {
         /// <summary>The modifier's range.</summary>
         [Tooltip("The modifier's range.")]
@@ -78,5 +78,6 @@ namespace ToolSmiths.InventorySystem.Data
 
             _ => $"?? {Value:+ #.###;- #.###;#.###}",
         };
+        public bool Equals(StatModifier other) => Value == other.Value && Type == other.Type;
     }
 }

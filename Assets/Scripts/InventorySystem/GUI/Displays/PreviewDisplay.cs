@@ -103,7 +103,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                     itemStat.gameObject.SetActive(true);
                 }
 
-                int CompareStatValues(PlayerStatModifier stat, out float difference)
+                int CompareStatValues(CharacterStatModifier stat, out float difference)
                 {
                     difference = 0;
                     var other = 0f;

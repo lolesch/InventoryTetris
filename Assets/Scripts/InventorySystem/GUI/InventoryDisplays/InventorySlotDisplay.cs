@@ -26,28 +26,23 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 var mouseOffset = new Vector2Int(Mathf.CeilToInt(relativeMouseOffset.x), -Mathf.CeilToInt(relativeMouseOffset.y));
 
                 var positionToAdd = Position - positionOffset + mouseOffset;
-                if (Container.IsEmptyPosition(positionToAdd, AbstractItem.GetDimensions(StaticDragDisplay.Instance.Package.Item.Dimensions), out var otherItems)
-                    || otherItems.Count <= 1)
+
+                var remaining = Container.AddAtPosition(positionToAdd, packageToMove);
+
+                if (0 < remaining.Amount)
                 {
-                    Package remaining;
-
-                    remaining = Container.AddAtPosition(positionToAdd, packageToMove);
-
-                    if (0 < remaining.Amount)
-                    {
-                        packageToMove = remaining;
-                        StaticDragDisplay.Instance.SetPackage(this, remaining, positionOffset);
-                    }
-                    else
-                    {
-                        packageToMove = new Package();
-
-                        StaticDragDisplay.Instance.SetPackage(this, packageToMove, positionOffset);
-                    }
-
-                    Container.InvokeRefresh();
-                    StaticDragDisplay.Instance.Origin.Container?.InvokeRefresh();
+                    packageToMove = remaining;
+                    StaticDragDisplay.Instance.SetPackage(this, remaining, positionOffset);
                 }
+                else
+                {
+                    packageToMove = new Package();
+
+                    StaticDragDisplay.Instance.SetPackage(this, packageToMove, positionOffset);
+                }
+
+                Container.InvokeRefresh();
+                StaticDragDisplay.Instance.Origin.Container?.InvokeRefresh();
             }
 
             // must come after adding items to the container to have something to preview
@@ -75,41 +70,25 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         protected override void EquipItem()
         {
-            var otherItems = Container.GetOtherItemsAt(Position, new(1, 1));
+            var storedPositions = Container.GetStoredItemsAt(Position, new(1, 1));
 
-            if (otherItems.Count == 1)
-            {
-                if (Container.StoredPackages[otherItems[0]].Item is EquipmentItem)
+            if (storedPositions.Count == 1)
+                if (Container.StoredPackages.TryGetValue(storedPositions[0], out packageToMove))
                 {
-                    packageToMove = Container.StoredPackages[otherItems[0]];
+                    _ = Container.RemoveAtPosition(storedPositions[0], packageToMove);
 
-                    var positionOffset = Position - otherItems[0];
+                    packageToMove = InventoryProvider.Instance.Equipment.AddToContainer(packageToMove);
 
-                    _ = Container.RemoveAtPosition(otherItems[0], packageToMove);
+                    if (0 < packageToMove.Amount)
+                        packageToMove = Container.AddToEmptyPosition(packageToMove);
 
-                    Package remaining;
+                    var positionOffset = Position - storedPositions[0]; // might look up the added package and get that position instead
 
-                    remaining = InventoryProvider.Instance.PlayerEquipment.AddToContainer(packageToMove);
-
-                    if (0 < remaining.Amount)
-                        remaining = Container.AddAtPosition(otherItems[0], remaining);
-
-                    if (0 < remaining.Amount)
-                    {
-                        packageToMove = remaining;
-                        StaticDragDisplay.Instance.SetPackage(this, remaining, positionOffset);
-                    }
-                    else
-                    {
-                        packageToMove = new Package();
-
-                        StaticDragDisplay.Instance.SetPackage(this, packageToMove, positionOffset);
-                    }
+                    StaticDragDisplay.Instance.SetPackage(this, packageToMove, positionOffset);
 
                     Container.InvokeRefresh();
                     StaticDragDisplay.Instance.Origin.Container?.InvokeRefresh();
                 }
-            }
 
             base.EquipItem();
         }

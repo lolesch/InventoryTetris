@@ -38,7 +38,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
                 mainStatDisplays[i].text = $"{statsAndResources[i].ToString()}";
         }
 
-        public void AddItemStats(List<PlayerStatModifier> stats)
+        public void AddItemStats(List<CharacterStatModifier> stats)
         {
             foreach (var itemStat in stats)
                 for (var i = 0; i < CharacterStats.Length; i++)
@@ -50,7 +50,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             UpdateStatDisplays();
         }
 
-        public void RemoveItemStats(List<PlayerStatModifier> stats)
+        public void RemoveItemStats(List<CharacterStatModifier> stats)
         {
             foreach (var itemStat in stats)
                 for (var i = CharacterStats.Length; i-- > 0;)
@@ -62,7 +62,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             UpdateStatDisplays();
         }
 
-        public float CompareStatModifiers(PlayerStatModifier playerStatModifier, StatModifier other) => CompareStatModifiers(playerStatModifier.Stat, playerStatModifier.Modifier, other);
+        public float CompareStatModifiers(CharacterStatModifier playerStatModifier, StatModifier other) => CompareStatModifiers(playerStatModifier.Stat, playerStatModifier.Modifier, other);
         public float CompareStatModifiers(StatName stat, StatModifier current, StatModifier other)
         {
             var currentValue = GetStatValue(this, stat);
