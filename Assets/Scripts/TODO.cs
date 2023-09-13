@@ -3,12 +3,17 @@
 
 // Droping an item selects unexpected positions
 
+// un/equipping items not correctly removes itemStatModifiers
+
 // comparison shows wrong numbers of first hover => re-hover shows correct values
 // comparison cant compare against all equipment of same type (i.e. both rings)
 
 // modified affix range can result in higher min than max values => reorder before setting the range
 
 /// TODO
+// Add stash tabs
+// -> this might require to make each stashTab its own inventory to interact with
+
 // add a source to statModifiers to remove all modifiers of that source 
 
 // fix item duplication

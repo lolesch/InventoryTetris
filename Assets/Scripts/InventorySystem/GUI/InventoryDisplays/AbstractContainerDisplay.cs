@@ -2,17 +2,16 @@ using System.Collections.Generic;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Inventories;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 {
     // TODO: inherit AbstractDisplay or rename this pattern
-    public abstract class AbstractContainerDisplay : MonoBehaviour
+    public abstract class AbstractContainerDisplay : MonoBehaviour//AbstractPanel
     {
         protected AbstractDimensionalContainer Container;
 
         [SerializeField] protected List<AbstractSlotDisplay> containerSlotDisplays = new();
-        [SerializeField] protected Image Icon;
+        //[SerializeField] protected Image Icon;
 
         public void SetupDisplay(AbstractDimensionalContainer container)
         {
@@ -54,9 +53,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                     current++;
                 }
 
-            Icon.color = InventoryProvider.Instance.ContainerToAddTo == Container ?
-            new Color(1, .84f, 0, 1) :
-            Color.white;
+            //Icon.color = InventoryProvider.Instance.ContainerToAddTo == Container
+            //    ? new Color(1, .84f, 0, 1)
+            //    : Color.white;
         }
     }
 }

@@ -137,6 +137,7 @@ namespace ToolSmiths.InventorySystem.Data
         public event Action CurrentHasDepleted;
 
         public void AddToCurrent(float value) => SetCurrentValue(CurrentValue + value);
+        public void RemoveFromCurrent(float value) => AddToCurrent(-value);
         public void RefillCurrent() => SetCurrentValue(TotalValue);
 
         private void SetCurrentValue(float value)

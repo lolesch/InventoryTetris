@@ -70,20 +70,20 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         protected static float CalculateDamageOutput(BaseCharacter character, DamageType damageType)
         {
             var weaponDamage = GetStatValue(character, StatName.PhysicalDamage);
+            // TODO: if attackSpeed has only percantMods and a base of 0 it will return 0 
             var attackSpeed = GetStatValue(character, StatName.AttackSpeed);
             var damageTypeMod = damageType switch
             {
                 DamageType.PhysicalDamage => GetStatValue(character, StatName.PhysicalDamage),
-                DamageType.ElementalDamage => GetStatValue(character, StatName.MagicalDamage),
+                DamageType.MagicalDamage => GetStatValue(character, StatName.MagicalDamage),
 
                 _ => 0f,
             };
 
             return weaponDamage * (1f + attackSpeed * 0.01f) * (1f + damageTypeMod * 0.01f);
-            // TODO: if attackSpeed has only percantMods and a base of 0 it will return 0 
         }
 
-        public static float CalculateReceivingDamage(BaseCharacter character, DamageType damageType, float incomingDamage)
+        protected static float CalculateReceivingDamage(BaseCharacter character, DamageType damageType, float incomingDamage)
         {
             if (character.IsInvincible)
                 return 0f;
@@ -94,7 +94,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             var damageTypeResist = damageType switch
             {
                 DamageType.PhysicalDamage => GetStatValue(character, StatName.Armor),
-                DamageType.ElementalDamage => GetStatValue(character, StatName.MagicResist),
+                DamageType.MagicalDamage => GetStatValue(character, StatName.MagicResist),
 
                 _ => 0f,
             };
@@ -115,7 +115,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             return unshieldedDamage;
         }
 
-        protected void DealDamageTo(BaseCharacter target, DamageType damageType)
+        public void DealDamageTo(BaseCharacter target, DamageType damageType)
         {
             var damageOutput = CalculateDamageOutput(this, damageType);
             target.ReceiveDamage(damageType, damageOutput);
@@ -123,16 +123,16 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             //AddDealtDPS(damageOutput);
         }
 
-        protected void ReceiveDamage(DamageType damageType, float incomingDamage)
+        public void ReceiveDamage(DamageType damageType, float incomingDamage)
         {
             var healthDamage = CalculateReceivingDamage(this, damageType, incomingDamage);
             var health = GetResource(this, StatName.Health);
-            health.AddToCurrent(healthDamage);
+            health.RemoveFromCurrent(healthDamage);
 
             //AddReceivedDPS(healthDamage);
         }
 
-        protected static CharacterStat GetStat(BaseCharacter character, StatName stat)
+        public static CharacterStat GetStat(BaseCharacter character, StatName stat)
         {
             var statsAndResources = character.CharacterStats.Union(character.CharacterResources).ToArray();
             for (var i = statsAndResources.Length; i-- > 0;)
@@ -140,8 +140,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
                     return statsAndResources[i];
             return null;
         }
-
-        protected static CharacterResource GetResource(BaseCharacter character, StatName resource)
+        public static CharacterResource GetResource(BaseCharacter character, StatName resource)
         {
             for (var i = character.CharacterResources.Length; i-- > 0;)
                 if (character.CharacterResources[i].Stat == resource)
