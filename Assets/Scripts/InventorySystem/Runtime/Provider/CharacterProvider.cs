@@ -24,5 +24,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         public void DummyDealsPhysicalDamageToPlayer() => DealDamage(Dummy, Player, DamageType.PhysicalDamage);
         public void DummyDealsMagicalDamageToPlayer() => DealDamage(Dummy, Player, DamageType.MagicalDamage);
+
+        public void ToggleSpendingResource() => Player.UseResource = !Player.UseResource;
     }
 }

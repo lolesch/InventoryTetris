@@ -376,13 +376,13 @@ MonoBehaviour:
     serializedVersion: 2
     rgba: 4294967295
   m_fontSize: 16
-  m_fontSizeBase: 18
+  m_fontSizeBase: 16
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 0
-  m_HorizontalAlignment: 16
+  m_HorizontalAlignment: 1
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
@@ -560,7 +560,7 @@ GameObject:
   - component: {fileID: 6878599473451086774}
   - component: {fileID: 2911217452408835015}
   m_Layer: 5
-  m_Name: CharacterDisplay
+  m_Name: PLAYER
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -696,10 +696,6 @@ MonoBehaviour:
     <Stat>k__BackingField: 21
     <BaseValue>k__BackingField: 1
     <StatModifiers>k__BackingField: []
-  - name: 'Resource: 1'
-    <Stat>k__BackingField: 22
-    <BaseValue>k__BackingField: 1
-    <StatModifiers>k__BackingField: []
   - name: 'Resource Regeneration: 1'
     <Stat>k__BackingField: 23
     <BaseValue>k__BackingField: 1
@@ -715,6 +711,11 @@ MonoBehaviour:
   <CharacterResources>k__BackingField:
   - name: 'Health: 100'
     <Stat>k__BackingField: 11
+    <BaseValue>k__BackingField: 100
+    <StatModifiers>k__BackingField: []
+    <CurrentValue>k__BackingField: 100
+  - name: 'Resource: 100'
+    <Stat>k__BackingField: 22
     <BaseValue>k__BackingField: 100
     <StatModifiers>k__BackingField: []
     <CurrentValue>k__BackingField: 100
@@ -861,7 +862,6 @@ MonoBehaviour:
   - {fileID: 5175087420206225723}
   - {fileID: 5279859599752812368}
   - {fileID: 2703176691296629520}
-  Icon: {fileID: 6510917141935759879}
 --- !u!1 &6895508162728277845
 GameObject:
   m_ObjectHideFlags: 0
@@ -984,7 +984,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 8183235012115119045}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.9891304
+  m_Size: 0.98913044
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -2994,14 +2994,3 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 5672011502311748919, guid: 4c87773b3288fa943a37ac271c0ffbaf, type: 3}
   m_PrefabInstance: {fileID: 8354954955086401799}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &6510917141935759879 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 3002124033480569600, guid: 4c87773b3288fa943a37ac271c0ffbaf, type: 3}
-  m_PrefabInstance: {fileID: 8354954955086401799}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 

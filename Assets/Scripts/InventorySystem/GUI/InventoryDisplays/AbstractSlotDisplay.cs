@@ -24,13 +24,12 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         [Space]
         [SerializeField] protected RectTransform itemDisplay;
         [SerializeField] protected Image icon;
-        [SerializeField] private Image frame;
-        [SerializeField] private Image background;
+        [SerializeField] protected Image frame;
+        [SerializeField] protected Image background;
         [SerializeField] protected TextMeshProUGUI amount;
         [SerializeField] protected Image slotBackground;
 
         [SerializeField] protected TextMeshProUGUI debugPosition;
-        [SerializeField] protected Package debugPackage;
 
         protected static Package packageToMove;
 
@@ -206,7 +205,10 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                     SetDisplaySize(itemDisplay, package);
 
                     if (icon)
+                    {
                         icon.sprite = package.Item.Icon;
+                        icon.color = Color.white;
+                    }
 
                     if (amount)
                         amount.text = 1 < package.Amount ? package.Amount.ToString() : string.Empty;
@@ -218,8 +220,6 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
                     if (background)
                         background.color = rarityColor * Color.gray * Color.gray;
-
-                    debugPackage = package;
                 }
             }
         }

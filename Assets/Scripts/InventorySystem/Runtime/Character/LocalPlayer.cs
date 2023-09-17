@@ -11,10 +11,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
     {
         [field: SerializeField, Range(1, 100)] public int CharacterLevel { get; private set; } = 1;
 
+        // TODO: move that into a display component instead of the actual character
         private List<TextMeshProUGUI> mainStatDisplays = new();
         [SerializeField] private TextMeshProUGUI statPrefab;
 
-        // TODO: DERIVED STATS => define and calculate derived values => see Bone&Blood
+        // TODO: ATTRIBUTES and DERIVED STATS => define and calculate derived values => see Bone&Blood
 
         private void OnEnable()
         {
@@ -76,12 +77,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
                         if (CharacterStats[i].Stat == itemStat.Stat)
                         {
                             CharacterStats[i].RemoveModifier(itemStat.Modifier);
-                            resources.Remove(itemStat);
                             break;
                         }
 
             foreach (var itemStat in resources)
-                for (var i = 0; i < CharacterResources.Length; i++)
+                for (var i = CharacterResources.Length; i-- > 0;)
                     if (CharacterResources[i].Stat == itemStat.Stat)
                     {
                         CharacterResources[i].RemoveModifier(itemStat.Modifier);
@@ -94,12 +94,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         public float CompareStatModifiers(CharacterStatModifier playerStatModifier, StatModifier other) => CompareStatModifiers(playerStatModifier.Stat, playerStatModifier.Modifier, other);
         public float CompareStatModifiers(StatName stat, StatModifier current, StatModifier other)
         {
-            var currentValue = GetStatValue(this, stat);
-            var clonedStat = GetStat(this, stat).GetClone();
+            var currentStat = GetStat(this, stat);
+            var clonedStat = currentStat.GetDeepCopy();
             clonedStat.RemoveModifier(current);
             clonedStat.AddModifier(other);
 
-            return currentValue - clonedStat.TotalValue;
+            return currentStat.TotalValue - clonedStat.TotalValue;
         }
     }
 }

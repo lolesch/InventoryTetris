@@ -22,7 +22,7 @@ MonoBehaviour:
     Quantity: 1
   - name: Equipment
     Enumeration: 2
-    Quantity: 2
+    Quantity: 3
   successProbability: 1
   probabilities:
   - name: NONE
@@ -30,10 +30,8 @@ MonoBehaviour:
     Probability: 0
   - name: Consumable
     Enumeration: 1
-    Probability: 0.33333334
+    Probability: 0.25
   - name: Equipment
     Enumeration: 2
-    Probability: 0.6666667
-  exampleTotalPlayerCount: 1
-  exampleAlliedPlayerCount: 7
-  exampleResults: 01000000010000000100000001000000020000000200000002000000020000000200000002000000
+    Probability: 0.75
+  exampleResults: 01000000010000000100000002000000020000000200000002000000020000000200000002000000

@@ -100,6 +100,9 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                     // TODO: review the references
                     itemStat.text = $"{stats[i].Modifier} {statName} {stats[i].Modifier.Range.ToString().Colored(Color.gray)} {differenceString.Colored(color)}";
 
+                    /// THIS MIGHT CHANGE => counteracts the comparison coloring...
+                    itemStat.fontSize = stats[i].Modifier.Value.Map(stats[i].Modifier.Range, 18, 22);
+
                     itemStat.gameObject.SetActive(true);
                 }
 
@@ -118,7 +121,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                                 // if (compareTo.Item.Affixes[i].Modifier.Type == stat.Modifier.Type) // find a corresponding mod type
                                 {
                                     other = item.Item.Affixes[i].Modifier.Value;
-                                    difference = ItemProvider.Instance.LocalPlayer.CompareStatModifiers(stat, item.Item.Affixes[i].Modifier);
+                                    difference = CharacterProvider.Instance.Player.CompareStatModifiers(stat, item.Item.Affixes[i].Modifier);
                                 }
 
                     return stat.Modifier.Value.CompareTo(other);

@@ -16,7 +16,7 @@ namespace ToolSmiths.InventorySystem.Data
         [field: SerializeField] public List<StatModifier> StatModifiers { get; private set; }
         public event Action<float> TotalHasChanged;
 
-        [SerializeField] public float TotalValue => CalculateTotalValue(); //(float)Math.Round(CalculateTotalValue(), 4);
+        [SerializeField] public float TotalValue => CalculateTotalValue(); // only recalculate when adding/removing mods and store that value for lookups?
         // [SerializeField] public float BonusValue => TotalValue - BaseValue;
 
         public CharacterStat(StatName statName, uint baseValue = 0)
@@ -121,7 +121,17 @@ namespace ToolSmiths.InventorySystem.Data
 
         public void OnAfterDeserialize() { }
 
-        public CharacterStat GetClone() => (CharacterStat)MemberwiseClone();
+        public CharacterStat GetShallowCopy() => (CharacterStat)MemberwiseClone();
+        public CharacterStat GetDeepCopy()
+        {
+            var other = (CharacterStat)MemberwiseClone();
+            other.name = string.Copy(name);
+            other.Stat = Stat;
+            other.BaseValue = BaseValue;
+            other.StatModifiers = new List<StatModifier>(StatModifiers);
+
+            return other;
+        }
     }
 
     [Serializable]
@@ -133,24 +143,53 @@ namespace ToolSmiths.InventorySystem.Data
         public bool IsDepleted => CurrentValue <= 0;
         public float MissingValue => TotalValue - CurrentValue;
 
-        public event Action<float> CurrentHasChanged;
+        public event Action<float, float, float> CurrentHasChanged;
         public event Action CurrentHasDepleted;
 
-        public void AddToCurrent(float value) => SetCurrentValue(CurrentValue + value);
-        public void RemoveFromCurrent(float value) => AddToCurrent(-value);
-        public void RefillCurrent() => SetCurrentValue(TotalValue);
 
-        private void SetCurrentValue(float value)
+        /// <summary>Tries to add to the amount to the current value.</summary>
+        /// <returns>The remaining amount that was not  added</returns>
+        public float AddToCurrent(float amountToAdd)
+        {
+            var added = Math.Min(TotalValue - CurrentValue, amountToAdd);
+
+            SetCurrentTo(CurrentValue + added);
+
+            return amountToAdd - added;
+        }
+
+        /// <summary>Tries to remove the amount from the current value</summary>
+        /// <returns>The remaining amount that was not removed</returns>
+        public float RemoveFromCurrent(float amountToRemove)
+        {
+            var removed = Math.Min(CurrentValue, amountToRemove);
+
+            SetCurrentTo(CurrentValue - removed);
+
+            return amountToRemove - removed;
+        }
+
+        public void RefillCurrent() => SetCurrentTo(TotalValue);
+
+        private void SetCurrentTo(float value)
         {
             var resultingValue = Mathf.Clamp(value, 0, TotalValue);
+
             if (CurrentValue != resultingValue)
             {
+                CurrentHasChanged?.Invoke(CurrentValue, resultingValue, TotalValue);
+
+                //var sign = (CurrentValue - resultingValue) >= 0f ? 1f : 0f;
+                //
+                //Debug.Log($"{Stat} receives {healthDamage} {damageType}");
+
                 CurrentValue = resultingValue;
 
-                CurrentHasChanged?.Invoke(CurrentValue);
-
                 if (IsDepleted)
+                {
+                    //Debug.LogWarning($"{Stat} depleted!");
                     CurrentHasDepleted?.Invoke();
+                }
             }
         }
     }

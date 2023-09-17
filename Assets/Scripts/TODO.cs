@@ -31,14 +31,10 @@
 // add icons to the displays
 
 /// COMBAT SIMULATION
-// simulate Dummy to take damage
 // Weapons should have attackSpeed multiply mod
 // Weapons should set Damage base value on equip
 
 // editable Dummy CharacterStats
-
-// lokalPlayer take damage
-// HUD to show health
 
 // add skills to deal damage with
 // HUD to show skills

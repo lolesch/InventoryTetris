@@ -78,5 +78,19 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             Container.InvokeRefresh();
             StaticDragDisplay.Instance.Origin.Container?.InvokeRefresh();
         }
+
+        public void Refresh2HandSlotDisplay(Package package)
+        {
+            RefreshSlotDisplay(package);
+
+            if (icon)
+                icon.color = new Color(1, 1, 1, .3f);
+
+            if (frame)
+                frame.color *= new Color(1, 1, 1, .4f);
+
+            if (background)
+                background.color *= new Color(1, 1, 1, .4f);
+        }
     }
 }

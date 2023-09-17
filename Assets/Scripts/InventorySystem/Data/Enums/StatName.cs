@@ -23,10 +23,10 @@
         Armor = 13,
         MagicResist = 14,
 
-        //Shield
-
         //Lethality = 15,           
         //SlowResistance = 16,      
+
+        Shield = 17,
 
         /// UTILITY
         MovementSpeed = 21,

@@ -5,12 +5,12 @@ using UnityEngine.UI;
 
 namespace ToolSmiths.InventorySystem.GUI.Displays
 {
-    public class HealthbarDisplay : MonoBehaviour
+    public class ResourceDisplay : MonoBehaviour
     {
         [SerializeField] protected Image resourceImage;
 
         [SerializeField] protected BaseCharacter character;
-        [SerializeField] protected StatName resourceName;
+        [SerializeField] protected StatName resourceName = StatName.Health;
 
         protected void OnEnable()
         {
@@ -18,10 +18,10 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
             {
                 var resource = BaseCharacter.GetResource(character, resourceName);
 
-                resource.CurrentHasChanged -= UpdateCurrent;
-                resource.CurrentHasChanged += UpdateCurrent;
+                resource.CurrentHasChanged -= UpdateDisplay;
+                resource.CurrentHasChanged += UpdateDisplay;
 
-                UpdateDisplay(resource.CurrentValue);
+                UpdateDisplay(0, resource.CurrentValue, resource.TotalValue);
             }
         }
 
@@ -31,16 +31,14 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
             {
                 var resource = BaseCharacter.GetResource(character, resourceName);
 
-                resource.CurrentHasChanged -= UpdateCurrent;
+                resource.CurrentHasChanged -= UpdateDisplay;
             }
         }
 
-        protected void UpdateCurrent(float current) => UpdateDisplay(current);
-
-        protected virtual void UpdateDisplay(float current)
+        protected virtual void UpdateDisplay(float previous, float current, float total)
         {
             if (resourceImage)
-                resourceImage.fillAmount = current * 0.01f;
+                resourceImage.fillAmount = current / total;// todo: test filling up fast, then slow then fast, as the volume of the globe would in real life
         }
     }
 }

@@ -77,7 +77,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
                 if (StoredPackages.TryAdd(position, new Package(this, package.Item, amount)))
                 {
-                    ItemProvider.Instance.LocalPlayer.AddItemStats(package.Item.Affixes);
+                    CharacterProvider.Instance.Player.AddItemStats(package.Item.Affixes);
 
                     _ = package.ReduceAmount(amount);
                 }
@@ -106,11 +106,8 @@ namespace ToolSmiths.InventorySystem.Inventories
                     if (0 < returningToSender.Amount)
                         StaticDragDisplay.Instance.SetPackage(StaticDragDisplay.Instance.Hovered, returningToSender, Vector2Int.zero);
 
-                    /// CONTINUE HERE
-                    // TODO: unequip 2h when equiping an offhand
-
-                    // TODO: if adding a 2h => add a 2h dummy item in the offhand => obsolete because the dimension handles that?
-
+                    // TODO: if adding a 2h => add a 2h dummy item in the offhand
+                    // => this is display logic, not inventory logic, so look how the equipment displays implement it
                 }
 
                 package = previouslyEquipped[0];
@@ -144,7 +141,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             return otherPackagePositions.Distinct().ToList();
         }
 
-        private static bool IsTwoHandedWeapon(EquipmentType equipmentType) => equipmentType is > EquipmentType.TWOHANDEDWEAPONS && equipmentType < EquipmentType.OFFHANDS;
+        public static bool IsTwoHandedWeapon(EquipmentType equipmentType) => equipmentType is > EquipmentType.TWOHANDEDWEAPONS && equipmentType < EquipmentType.OFFHANDS;
 
         public Vector2Int[] GetTypeSpecificPositions(EquipmentType equipment) => equipment switch
         {

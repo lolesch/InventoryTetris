@@ -12,7 +12,6 @@ namespace ToolSmiths.InventorySystem.Inventories
     public class ItemProvider : AbstractProvider<ItemProvider>
     {
         public ItemTypeData ItemTypeData;
-        public LocalPlayer LocalPlayer;
 
         [Header("Distributions")]
         [SerializeField] private ItemCategoryDistribution itemCategoryDistribution;
@@ -59,9 +58,9 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             return generatedLoot;
 
-            void CalculateBonusDrops(ref uint amount)
+            static void CalculateBonusDrops(ref uint amount)
             {
-                var bonusDrops = BaseCharacter.GetStatValue(LocalPlayer, StatName.IncreasedItemQuantity);
+                var bonusDrops = BaseCharacter.GetStatValue(CharacterProvider.Instance.Player, StatName.IncreasedItemQuantity);
                 amount += (uint)(bonusDrops / 100f); // TODO: requires a better formula
             }
         }

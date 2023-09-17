@@ -949,8 +949,8 @@ MonoBehaviour:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 0
-    - name: "PhysicalDamage\t(6, 12)"
-      StatName: 2
+    - name: "MagicalDamage\t(6, 12)"
+      StatName: 3
       Range: {x: 6, y: 12}
       Distribution:
         serializedVersion: 2

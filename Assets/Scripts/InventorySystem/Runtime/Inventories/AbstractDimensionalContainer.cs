@@ -69,7 +69,7 @@ namespace ToolSmiths.InventorySystem.Inventories
                 if (StoredPackages.TryGetValue(storedPositions[0], out var storedPackage))
                 {
                     if (this is CharacterEquipment)
-                        ItemProvider.Instance.LocalPlayer.RemoveItemStats(storedPackage.Item.Affixes);
+                        CharacterProvider.Instance.Player.RemoveItemStats(storedPackage.Item.Affixes);
 
                     var removed = storedPackage.ReduceAmount(package.Amount);
                     _ = package.ReduceAmount(removed);
