@@ -3,8 +3,6 @@
 
 // Droping an item selects unexpected positions
 
-// un/equipping items not correctly removes itemStatModifiers
-
 // comparison shows wrong numbers of first hover => re-hover shows correct values
 // comparison cant compare against all equipment of same type (i.e. both rings)
 

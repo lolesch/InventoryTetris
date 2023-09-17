@@ -13,7 +13,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         [SerializeField, Range(.8f, 1.2f)] protected float scaleOnHover = 1.06f;
         protected bool DoScaleOnHover => scaleOnHover != 1f;
 
-        [field: SerializeField, ReadOnly] public bool IsOn { get; private set; } = false;
+        [field: SerializeField] public bool IsOn { get; private set; } = false;
 
         [SerializeField, ReadOnly] protected RadioGroup radioGroup = null;
         public RadioGroup RadioGroup => radioGroup != null ? radioGroup : radioGroup = GetComponentInParent<RadioGroup>();
@@ -50,6 +50,8 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
 
             if (radioGroup && interactable)
                 radioGroup.Register(this);
+
+            SetToggle(IsOn);
         }
 
         protected override void OnDisable()

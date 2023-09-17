@@ -21,6 +21,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         [field: SerializeField] public CharacterStat[] CharacterStats { get; protected set; }
         [field: SerializeField] public CharacterResource[] CharacterResources { get; protected set; }
 
+        [field: SerializeField, Range(1, 100)] public uint CharacterLevel { get; protected set; } = 1;
+
         //public event Action OnBlock;
 
         protected void OnValidate() => ResetStatsAndResources();
@@ -58,11 +60,13 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
         private void ResetStatsAndResources()
         {
+            var resourcesOnly = new List<StatName>() { StatName.Health, StatName.Resource, StatName.Shield, StatName.Experience };
+
             var statNames = System.Enum.GetValues(typeof(StatName)) as StatName[];
             var statsOnly = statNames.ToList();
-            statsOnly.Remove(StatName.Health);
-            statsOnly.Remove(StatName.Resource);
-            var resourcesOnly = new List<StatName>() { StatName.Health, StatName.Resource, StatName.Shield };
+
+            foreach (var resource in resourcesOnly)
+                statsOnly.Remove(resource);
 
             if (CharacterStats.Length != statsOnly.Count)
             {
@@ -74,10 +78,15 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
             if (CharacterResources.Length != resourcesOnly.Count)
             {
-                CharacterResources = new CharacterResource[resourcesOnly.Count];
+                CharacterResources = new CharacterResource[] {
+                    new CharacterResource(StatName.Health, 100),
+                    new CharacterResource(StatName.Resource, 60),
+                    new CharacterResource(StatName.Shield, 0),
+                    new CharacterResource(StatName.Experience, 0),
+                };
 
-                for (var i = 0; i < resourcesOnly.Count; i++)
-                    CharacterResources[i] = new CharacterResource(resourcesOnly[i], 100);
+                //for (var i = 0; i < resourcesOnly.Count; i++)
+                //    CharacterResources[i] = new CharacterResource(resourcesOnly[i], 100);
             }
         }
 
@@ -89,12 +98,16 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             GetResource(this, StatName.Resource).CurrentHasDepleted -= CharacterResourceWarning;
             GetResource(this, StatName.Resource).CurrentHasDepleted += CharacterResourceWarning;
 
-            //TODO: Shield
+            //TODO: design Shield recharge
+            GetResource(this, StatName.Shield).DepleteCurrent();
+
+            //TODO: design Experience
+            GetResource(this, StatName.Experience).DepleteCurrent();
 
             void CharacterResourceWarning() => Debug.LogWarning($"{name.ColoredComponent()} resource {"depleted".Colored(Color.red)}", this);
         }
 
-        protected virtual void OnDeath() => Debug.LogWarning($"{name.ColoredComponent()} {"died!".Colored(Color.red)}", this);
+        protected abstract void OnDeath();
 
         // just for testing
         protected float CalculateRequiredResource(BaseCharacter character, DamageType damageType)
@@ -116,7 +129,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
         protected static float CalculateDamageOutput(BaseCharacter character, DamageType damageType)
         {
-            var weaponDamage = GetStatValue(character, StatName.PhysicalDamage);
             // TODO: if attackSpeed has only percantMods and a base of 0 it will return 0 
             var attackSpeed = GetStatValue(character, StatName.AttackSpeed);
             var damageTypeMod = damageType switch
@@ -127,7 +139,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
                 _ => 0f,
             };
 
-            return weaponDamage * (1f + attackSpeed * 0.01f) * (1f + damageTypeMod * 0.01f);
+            return damageTypeMod * (1f + attackSpeed * 0.01f); // * (1f + damageTypeMod * 0.01f);
         }
 
         protected static float CalculateReceivingDamage(BaseCharacter character, DamageType damageType, float incomingDamage)
@@ -155,13 +167,18 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
         public void DealDamageTo(BaseCharacter target, DamageType damageType)
         {
-            var damageOutput = CalculateDamageOutput(this, damageType);
             var resource = GetResource(this, StatName.Resource);
-            var requiredResource = CalculateRequiredResource(this, damageType);
+            var resourceCost = CalculateRequiredResource(this, damageType);
 
-            if (CanSpendResource(resource, requiredResource))
+            // TODO: if Shield protects resource
+            //var shield = GetResource(this, StatName.Shield);
+
+            //resourceCost = shield.RemoveFromCurrent(resourceCost);
+            if (resourceCost == 0 || CanSpendResource(resource, resourceCost))
             {
-                //GetResource(target, StatName.Health).CurrentHasDepleted += GetReward;
+                resource.RemoveFromCurrent(resourceCost);
+
+                var damageOutput = CalculateDamageOutput(this, damageType);
 
                 Debug.Log($"{name.ColoredComponent()} deals {damageOutput.ToString().Colored(Color.red)} {damageType}", this);
                 target.ReceiveDamageFrom(this, damageType, damageOutput);
@@ -179,29 +196,21 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
             var mitigatedDamage = CalculateReceivingDamage(this, damageType, incomingDamage);
 
+            // TODO: if Shield protects resource instead => then skip shielding
             var shield = GetResource(this, StatName.Shield);
 
             var unshieldedDamage = shield.RemoveFromCurrent(mitigatedDamage);
 
-            Debug.Log($"{name.ColoredComponent()} absorbs {Mathf.Clamp(mitigatedDamage - unshieldedDamage, 0, shield.TotalValue).ToString().Colored(Color.red)} {damageType}", this);
+            Debug.Log($"{name.ColoredComponent()} absorbs {Mathf.Min(mitigatedDamage - unshieldedDamage, shield.TotalValue).ToString().Colored(Color.red)} {damageType}", this);
 
-            Debug.Log($"{name.ColoredComponent()} receives {Mathf.Clamp(unshieldedDamage, 0, health.TotalValue).ToString().Colored(Color.red)} {damageType}", this);
+            Debug.Log($"{name.ColoredComponent()} receives {Mathf.Min(unshieldedDamage, health.TotalValue).ToString().Colored(Color.red)} {damageType}", this);
 
             health.RemoveFromCurrent(unshieldedDamage);
 
             //AddReceivedDPS(healthDamage);
         }
 
-        private bool CanSpendResource(CharacterResource resource, float amount)
-        {
-            if (resource.CurrentValue < amount)
-                return false;
-
-            resource.RemoveFromCurrent(amount);
-            return true;
-        }
-
-        //private void GetReward() { }
+        private bool CanSpendResource(CharacterResource resource, float amount) => amount <= resource.CurrentValue;
 
         public static CharacterStat GetStat(BaseCharacter character, StatName stat)
         {

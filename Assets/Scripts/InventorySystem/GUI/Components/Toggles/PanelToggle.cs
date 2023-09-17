@@ -3,19 +3,19 @@ using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
 {
-    public class DisplayToggle : AbstractToggle
+    public class PanelToggle : AbstractToggle
     {
-        [SerializeField] protected AbstractPanel display;
+        [SerializeField] protected AbstractPanel panel;
 
         public override void SetToggle(bool isOn)
         {
             base.SetToggle(isOn);
 
-            if (display)
+            if (panel)
                 if (isOn)
-                    display.FadeIn();
+                    panel.FadeIn();
                 else
-                    display.FadeOut();
+                    panel.FadeOut();
         }
     }
 }

@@ -3,14 +3,13 @@ using System.Linq;
 using TMPro;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
+using ToolSmiths.InventorySystem.Utility.Extensions;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Runtime.Character
 {
     public class LocalPlayer : BaseCharacter
     {
-        [field: SerializeField, Range(1, 100)] public int CharacterLevel { get; private set; } = 1;
-
         // TODO: move that into a display component instead of the actual character
         private List<TextMeshProUGUI> mainStatDisplays = new();
         [SerializeField] private TextMeshProUGUI statPrefab;
@@ -37,6 +36,34 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             var statsAndResources = CharacterResources.Union(CharacterStats).ToArray();
             for (var i = 0; i < mainStatDisplays.Count; i++)
                 mainStatDisplays[i].text = $"{statsAndResources[i].ToString()}";
+        }
+
+        protected override void OnDeath() => Debug.LogWarning($"{name.ColoredComponent()} {"died!".Colored(Color.red)}", this);
+
+        public void GainExperience(float exp)
+        {
+            var experience = GetResource(this, StatName.Experience);
+
+            while (0 < exp)
+            {
+                exp = experience.AddToCurrent(exp);
+
+                if (experience.IsFull)
+                    LevelUp();
+            }
+        }
+
+        private void LevelUp()
+        {
+            CharacterLevel++;
+
+            // TODO: requires better formula
+            var statMod = new StatModifier(new Vector2Int(0, int.MaxValue), CharacterLevel * 10);
+
+            // add statMod to raise the new totalValue to reach before leveling up
+            var experience = GetResource(this, StatName.Experience);
+            experience.AddModifier(statMod);
+            experience.DepleteCurrent();
         }
 
         public void AddItemStats(List<CharacterStatModifier> stats)

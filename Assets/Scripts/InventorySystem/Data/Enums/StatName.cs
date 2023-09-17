@@ -4,6 +4,8 @@
     /// The identifier of stats that can appear on gear.
     public enum StatName
     {
+        Experience = -1,
+
         /// OFFENSIVE
         AttackSpeed = 1,
         PhysicalDamage = 2,
