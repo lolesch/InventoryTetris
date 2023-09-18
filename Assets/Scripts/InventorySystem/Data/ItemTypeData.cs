@@ -62,6 +62,9 @@ namespace ToolSmiths.InventorySystem.Data
                 /// the lesser the rarity, the higher the max range => Common items can roll the highest stats => good base for crafting
                 var max = Mathf.CeilToInt(Range.y * (1f + (1f - modifier)));
 
+                if (max < min)
+                    (min, max) = (max, min);
+
                 var mappedValue = weightedRoll.MapFrom01(min - 1, max);
                 var value = Mathf.Max(min, Mathf.CeilToInt(mappedValue));
 
