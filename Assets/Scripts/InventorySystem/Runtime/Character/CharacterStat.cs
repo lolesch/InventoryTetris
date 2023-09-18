@@ -146,6 +146,7 @@ namespace ToolSmiths.InventorySystem.Data
 
         public event Action<float, float, float> CurrentHasChanged;
         public event Action CurrentHasDepleted;
+        public event Action CurrentHasRecharged;
 
 
         /// <summary>Tries to add to the amount to the current value.</summary>
@@ -154,7 +155,8 @@ namespace ToolSmiths.InventorySystem.Data
         {
             var added = Math.Min(TotalValue - CurrentValue, amountToAdd);
 
-            SetCurrentTo(CurrentValue + added);
+            if (added != 0)
+                SetCurrentTo(CurrentValue + added);
 
             return amountToAdd - added;
         }
@@ -165,7 +167,8 @@ namespace ToolSmiths.InventorySystem.Data
         {
             var removed = Math.Min(CurrentValue, amountToRemove);
 
-            SetCurrentTo(CurrentValue - removed);
+            if (removed != 0)
+                SetCurrentTo(CurrentValue - removed);
 
             return amountToRemove - removed;
         }
@@ -191,6 +194,10 @@ namespace ToolSmiths.InventorySystem.Data
                 {
                     //Debug.LogWarning($"{Stat} depleted!");
                     CurrentHasDepleted?.Invoke();
+                }
+                else if (IsFull)
+                {
+                    CurrentHasRecharged?.Invoke();
                 }
             }
         }

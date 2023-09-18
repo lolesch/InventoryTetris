@@ -1,19 +1,11 @@
 /// KNOWN ISSUES:
-// Dropping an item can duplicate it
+// Dropping an item ontop of another can duplicate it
+// Dropping an item selects unexpected positions
 
-// Droping an item selects unexpected positions
-
-// comparison shows wrong numbers of first hover => re-hover shows correct values
-// comparison cant compare against all equipment of same type (i.e. both rings)
-
-// modified affix range can result in higher min than max values => reorder before setting the range
+// comparison shows wrong numbers on the unequipped item
+// comparison cant compare against all equipment of same type (rings, both weapon slots)
 
 /// TODO
-// Add stash tabs
-// -> this might require to make each stashTab its own inventory to interact with
-
-// add a source to statModifiers to remove all modifiers of that source 
-
 // fix item duplication
 
 // fix the item drop positioning
@@ -36,7 +28,6 @@
 
 // add skills to deal damage with
 // HUD to show skills
-// HUD to show Resource
 
 /// CRAFTING SYSTEM
 // adjustable affixe amount
@@ -63,5 +54,10 @@
 /// ICEBOX
 // Improved MagicFind:
 // in D2 => Effective MF = (MF * Factor) / (MF + Factor), where Factor=250 for unique items, 500 for set items and 600 for rare items..
+
+// Add stash tabs
+// -> this might require to make each stashTab its own inventory to interact with
+
+// add a source to statModifiers to remove all modifiers of that source 
 
 /// POLISH

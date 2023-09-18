@@ -16,16 +16,32 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
         [field: SerializeField] public bool IsInvincible { get; protected set; } = false;
         [field: SerializeField] public bool IsBlocking { get; protected set; } = false;
-        [field: SerializeField] public bool UseResource { get; set; } = true;
+        [field: SerializeField] public bool SpendResource { get; set; } = true;
+        [SerializeField] public bool IsDead => GetResource(this, StatName.Health).IsDepleted;
 
         [field: SerializeField] public CharacterStat[] CharacterStats { get; protected set; }
         [field: SerializeField] public CharacterResource[] CharacterResources { get; protected set; }
 
         [field: SerializeField, Range(1, 100)] public uint CharacterLevel { get; protected set; } = 1;
 
-        //public event Action OnBlock;
-
         protected void OnValidate() => ResetStatsAndResources();
+
+        protected void Start()
+        {
+            GetResource(this, StatName.Health).CurrentHasDepleted -= OnDeath;
+            GetResource(this, StatName.Health).CurrentHasDepleted += OnDeath;
+
+            GetResource(this, StatName.Resource).CurrentHasDepleted -= CharacterResourceWarning;
+            GetResource(this, StatName.Resource).CurrentHasDepleted += CharacterResourceWarning;
+
+            //TODO: design Shield recharge
+            GetResource(this, StatName.Shield).DepleteCurrent();
+
+            //TODO: design Experience
+            GetResource(this, StatName.Experience).DepleteCurrent();
+
+            void CharacterResourceWarning() => Debug.LogWarning($"{name.ColoredComponent()} resource {"depleted".Colored(Color.red)}", this);
+        }
 
         protected void Update()
         {
@@ -34,30 +50,19 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             //interval += Time.deltaTime;
             //if(interval >= combatTickRate)
 
-            RegenerateHealth();
-            RegenerateResource();
+            RegenerateResource(GetResource(this, StatName.Resource), GetStatValue(this, StatName.ResourceRegeneration), false);
+            RegenerateResource(GetResource(this, StatName.Health), GetStatValue(this, StatName.HealthRegeneration), true);
         }
 
-        private void RegenerateHealth()
+        private static void RegenerateResource(CharacterResource resource, float regeneration, bool stopIfDepleeted)
         {
-            var health = GetResource(this, StatName.Health);
-
-            if (health.IsDepleted || health.CurrentValue == health.TotalValue)
+            if (stopIfDepleeted && resource.IsDepleted)
                 return;
 
-            health.AddToCurrent(GetStatValue(this, StatName.HealthRegeneration) * Time.deltaTime);
+            _ = resource.AddToCurrent(regeneration * Time.deltaTime);
         }
 
-        private void RegenerateResource()
-        {
-            var resource = GetResource(this, StatName.Resource);
-
-            if (resource.CurrentValue == resource.TotalValue)
-                return;
-
-            resource.AddToCurrent(GetStatValue(this, StatName.ResourceRegeneration) * Time.deltaTime);
-        }
-
+        [ContextMenu("ResetStatsAndResources")]
         private void ResetStatsAndResources()
         {
             var resourcesOnly = new List<StatName>() { StatName.Health, StatName.Resource, StatName.Shield, StatName.Experience };
@@ -78,44 +83,28 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
             if (CharacterResources.Length != resourcesOnly.Count)
             {
+                //for (var i = 0; i < resourcesOnly.Count; i++)
+                //    CharacterResources[i] = new CharacterResource(resourcesOnly[i], 100);
+
                 CharacterResources = new CharacterResource[] {
                     new CharacterResource(StatName.Health, 100),
                     new CharacterResource(StatName.Resource, 60),
                     new CharacterResource(StatName.Shield, 0),
-                    new CharacterResource(StatName.Experience, 0),
+                    new CharacterResource(StatName.Experience, 280),
                 };
-
-                //for (var i = 0; i < resourcesOnly.Count; i++)
-                //    CharacterResources[i] = new CharacterResource(resourcesOnly[i], 100);
             }
-        }
-
-        protected void Start()
-        {
-            GetResource(this, StatName.Health).CurrentHasDepleted -= OnDeath;
-            GetResource(this, StatName.Health).CurrentHasDepleted += OnDeath;
-
-            GetResource(this, StatName.Resource).CurrentHasDepleted -= CharacterResourceWarning;
-            GetResource(this, StatName.Resource).CurrentHasDepleted += CharacterResourceWarning;
-
-            //TODO: design Shield recharge
-            GetResource(this, StatName.Shield).DepleteCurrent();
-
-            //TODO: design Experience
-            GetResource(this, StatName.Experience).DepleteCurrent();
-
-            void CharacterResourceWarning() => Debug.LogWarning($"{name.ColoredComponent()} resource {"depleted".Colored(Color.red)}", this);
         }
 
         protected abstract void OnDeath();
 
-        // just for testing
-        protected float CalculateRequiredResource(BaseCharacter character, DamageType damageType)
+        protected static float CalculateRequiredResource(BaseCharacter character, DamageType damageType)
         {
-            if (!UseResource)
+            if (!character.SpendResource)
                 return 0;
 
             var resource = GetStatValue(character, StatName.Resource);
+
+            // implementation is just for testing
             var damageTypeMod = damageType switch
             {
                 DamageType.PhysicalDamage => .03f,
@@ -167,13 +156,17 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
         public void DealDamageTo(BaseCharacter target, DamageType damageType)
         {
-            var resource = GetResource(this, StatName.Resource);
+            if (IsDead)
+                return;
+
             var resourceCost = CalculateRequiredResource(this, damageType);
+            var resource = GetResource(this, StatName.Resource);
 
             // TODO: if Shield protects resource
             //var shield = GetResource(this, StatName.Shield);
 
             //resourceCost = shield.RemoveFromCurrent(resourceCost);
+
             if (resourceCost == 0 || CanSpendResource(resource, resourceCost))
             {
                 resource.RemoveFromCurrent(resourceCost);
@@ -210,7 +203,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             //AddReceivedDPS(healthDamage);
         }
 
-        private bool CanSpendResource(CharacterResource resource, float amount) => amount <= resource.CurrentValue;
+        private static bool CanSpendResource(CharacterResource resource, float amount) => amount <= resource.CurrentValue;
 
         public static CharacterStat GetStat(BaseCharacter character, StatName stat)
         {

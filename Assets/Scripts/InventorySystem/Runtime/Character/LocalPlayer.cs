@@ -49,21 +49,20 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
                 exp = experience.AddToCurrent(exp);
 
                 if (experience.IsFull)
-                    LevelUp();
+                    CharacterLevel = LevelUp(experience);
             }
         }
 
-        private void LevelUp()
+        private uint LevelUp(CharacterResource experience)
         {
-            CharacterLevel++;
+            var nextLevel = CharacterLevel + 1;
 
-            // TODO: requires better formula
-            var statMod = new StatModifier(new Vector2Int(0, int.MaxValue), CharacterLevel * 10);
+            var statMod = new StatModifier(new Vector2Int(0, int.MaxValue), nextLevel * 100 + 80);
 
-            // add statMod to raise the new totalValue to reach before leveling up
-            var experience = GetResource(this, StatName.Experience);
             experience.AddModifier(statMod);
             experience.DepleteCurrent();
+
+            return nextLevel;
         }
 
         public void AddItemStats(List<CharacterStatModifier> stats)
