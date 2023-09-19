@@ -58,7 +58,7 @@ namespace ToolSmiths.InventorySystem.Items
     }
 
     [Serializable]
-    public class ConsumableItem : AbstractItem, IUsableItem
+    public class ConsumableItem : AbstractItem
     {
         [field: SerializeField] public ConsumableType ConsumableType { get; protected set; }
 
@@ -114,9 +114,9 @@ namespace ToolSmiths.InventorySystem.Items
             {
                 ConsumableType.NONE => ItemSize.NONE,
 
-                ConsumableType.Arrows => ItemSize.OneByOne,
-                ConsumableType.Books => ItemSize.TwoByTwo,
-                ConsumableType.Potions => ItemSize.OneByTwo,
+                ConsumableType.Arrow => ItemSize.OneByOne,
+                ConsumableType.Book => ItemSize.TwoByTwo,
+                ConsumableType.Potion => ItemSize.OneByTwo,
 
                 _ => ItemSize.NONE
             };
@@ -173,16 +173,12 @@ namespace ToolSmiths.InventorySystem.Items
                 };
             }
         }
-
-        public void Consume() => Debug.Log($"Consuming {ToString()}");
-
-        public void UseItem() => Consume();
         public override string ToString() => $"{Rarity} {ConsumableType}".Colored(GetRarityColor(Rarity));
 
     }
 
     [Serializable]
-    public class EquipmentItem : AbstractItem, IUsableItem
+    public class EquipmentItem : AbstractItem
     {
         [field: SerializeField] public EquipmentCategory EquipmentCategory { get; protected set; } // make EquipmentItem abstract and inherite for each category
         [field: SerializeField] public EquipmentType EquipmentType { get; protected set; } // might want to use inheritance instead and make EquipmentItem abstract to get more detailed itemTypes
@@ -305,42 +301,7 @@ namespace ToolSmiths.InventorySystem.Items
             // List<PlayerStatModifier> GetStats(ItemRarity rarity, List<PlayerStatModifier> randomAffixes) => randomAffixes;
         }
 
-        public void UseItem()
-        {
-            foreach (var package in InventoryProvider.Instance.Equipment.StoredPackages.Values)
-                if (package.Item == this)
-                {
-                    Unequip(new(InventoryProvider.Instance.Equipment, this));
-                    return;
-                }
-
-            Equip(new(InventoryProvider.Instance.Equipment, this));
-        }
-
-        private void Equip(Package package)
-        {
-            var remaining = InventoryProvider.Instance.Equipment.AddToContainer(package);
-
-            if (0 < remaining.Amount)
-                // does that mean we cant equip from outside the inventory?
-                InventoryProvider.Instance.Inventory.RemoveFromContainer(package);
-        }
-
-        private void Unequip(Package package)
-        {
-            var remaining = InventoryProvider.Instance.Inventory.AddToContainer(package);
-
-            if (0 < remaining.Amount)
-                InventoryProvider.Instance.Equipment.RemoveFromContainer(package);
-        }
-
         //TODO: extend naming
         public override string ToString() => $"{Rarity} {EquipmentType}".Colored(GetRarityColor(Rarity));
-    }
-
-    // TODO: should use the package instead => package stores the amount and has more knowledge of the container it is stored in
-    public interface IUsableItem
-    {
-        public abstract void UseItem();
     }
 }

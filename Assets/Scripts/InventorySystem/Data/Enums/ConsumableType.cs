@@ -4,8 +4,8 @@
     {
         NONE = 0,
 
-        Arrows = 1,
-        Books = 2,
-        Potions = 3,
+        Arrow = 1,
+        Book = 2,
+        Potion = 3,
     }
 }

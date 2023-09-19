@@ -187,9 +187,9 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             return consumable switch
             {
-                ConsumableType.Arrows => new ConsumableItem(consumable, itemRarity),     // TODO: generate specific
-                ConsumableType.Books => new ConsumableItem(consumable, itemRarity),      // TODO: generate specific
-                ConsumableType.Potions => new ConsumableItem(consumable, itemRarity),    // TODO: generate specific
+                ConsumableType.Arrow => new ConsumableItem(consumable, itemRarity),     // TODO: generate specific
+                ConsumableType.Book => new ConsumableItem(consumable, itemRarity),      // TODO: generate specific
+                ConsumableType.Potion => new ConsumableItem(consumable, itemRarity),    // TODO: generate specific
 
                 _ => null,
             };
@@ -256,9 +256,9 @@ namespace ToolSmiths.InventorySystem.Inventories
                 ? null
                 : consumableType switch
                 {
-                    ConsumableType.Arrows => new ConsumableItem(ConsumableType.Arrows, rarity),
-                    ConsumableType.Books => new ConsumableItem(ConsumableType.Books, rarity),
-                    ConsumableType.Potions => new ConsumableItem(ConsumableType.Potions, rarity),
+                    ConsumableType.Arrow => new ConsumableItem(ConsumableType.Arrow, rarity),
+                    ConsumableType.Book => new ConsumableItem(ConsumableType.Book, rarity),
+                    ConsumableType.Potion => new ConsumableItem(ConsumableType.Potion, rarity),
 
                     _ => null,
                 };
@@ -330,9 +330,9 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             var uniquesOfType = consumableType switch
             {
-                ConsumableType.Arrows => Arrows,
-                ConsumableType.Books => Books,
-                ConsumableType.Potions => Potions,
+                ConsumableType.Arrow => Arrows,
+                ConsumableType.Book => Books,
+                ConsumableType.Potion => Potions,
 
                 _ => null,
             };

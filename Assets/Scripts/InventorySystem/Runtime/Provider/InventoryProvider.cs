@@ -164,9 +164,9 @@ namespace ToolSmiths.InventorySystem.Inventories
         public void SetItemToWeapon1H() => AddRemoveEquipment(EquipmentType.ONEHANDEDWEAPONS);
         public void SetItemToWeapon2H() => AddRemoveEquipment(EquipmentType.TWOHANDEDWEAPONS);
 
-        public void SetItemToArrows() => AddRemoveConsumable(ConsumableType.Arrows);
-        public void SetItemToBooks() => AddRemoveConsumable(ConsumableType.Books);
-        public void SetItemToPotions() => AddRemoveConsumable(ConsumableType.Potions);
+        public void SetItemToArrows() => AddRemoveConsumable(ConsumableType.Arrow);
+        public void SetItemToBooks() => AddRemoveConsumable(ConsumableType.Book);
+        public void SetItemToPotions() => AddRemoveConsumable(ConsumableType.Potion);
 
         public void ToggleAddRemove() => add = !add;
 

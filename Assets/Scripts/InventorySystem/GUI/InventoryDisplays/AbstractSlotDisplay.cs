@@ -99,43 +99,55 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 DropItem();
             else
             {
-                if (eventData.button == PointerEventData.InputButton.Right)
+                var storedPositions = Container.GetStoredItemsAt(Position, new(1, 1));
+
+                if (storedPositions.Count == 1)
                 {
-                    var packagePosition = Container.GetStoredItemsAt(Position, new(1, 1))[0];
-                    var item = Container.StoredPackages[packagePosition].Item;
+                    packageToMove = Container.StoredPackages[storedPositions[0]];
 
-                    if (item is ConsumableItem)
-                        (item as ConsumableItem).Consume();
-
-                    else if (item is EquipmentItem)
-                        if (this is EquipmentSlotDisplay)
-                            UnequipItem();
-                        else
-                            EquipItem();
-
-                    // else if (item is Item)
-                    // { }
-                }
-                else
-                    PickUpItem();
-
-                void PickUpItem()
-                {
-                    var storedPositions = Container.GetStoredItemsAt(Position, new(1, 1));
-
-                    if (storedPositions.Count == 1)
+                    if (eventData.button == PointerEventData.InputButton.Right)
                     {
-                        packageToMove = Container.StoredPackages[storedPositions[0]];
+                        if (packageToMove.Item is ConsumableItem)
+                            //(packageToMove.Item as ConsumableItem).Consume();
+                            ConsumeItem();
+
+                        else if (packageToMove.Item is EquipmentItem)
+                            if (this is EquipmentSlotDisplay)
+                                UnequipItem();
+                            else
+                                EquipItem();
+
+                        return;
+                    }
+
+                    if (Input.GetKey(KeyCode.LeftControl))
+                        if (1 < packageToMove.Amount)
+                            packageToMove.ReduceAmount(packageToMove.Amount / 2);
+
+                    if (Input.GetKey(KeyCode.LeftShift))
+                    {
+                        if (Container == InventoryProvider.Instance.Inventory || Container == InventoryProvider.Instance.Equipment)
+                        {
+                            _ = Container.RemoveAtPosition(storedPositions[0], packageToMove);
+                            InventoryProvider.Instance.Stash.AddToContainer(packageToMove);
+                        }
+                        else if (Container == InventoryProvider.Instance.Stash)
+                        {
+                            _ = Container.RemoveAtPosition(storedPositions[0], packageToMove);
+                            InventoryProvider.Instance.Inventory.AddToContainer(packageToMove);
+                        }
+                    }
+                    else
+                    {
+                        _ = Container.RemoveAtPosition(storedPositions[0], packageToMove);
 
                         var positionOffset = Position - storedPositions[0];
 
-                        _ = Container.RemoveAtPosition(storedPositions[0], packageToMove);
-
                         StaticDragDisplay.Instance.SetPackage(this, packageToMove, positionOffset);
                     }
-
-                    FadeOutPreview();
                 }
+
+                FadeOutPreview();
             }
         }
 
@@ -183,6 +195,8 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         protected virtual void UnequipItem() => FadeOutPreview();
 
         protected virtual void EquipItem() => FadeOutPreview();
+
+        protected virtual void ConsumeItem() => FadeOutPreview();
 
         protected virtual void SetDisplaySize(RectTransform display, Package package) { }
 

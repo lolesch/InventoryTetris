@@ -75,22 +75,43 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             if (storedPositions.Count == 1)
                 if (Container.StoredPackages.TryGetValue(storedPositions[0], out packageToMove))
                 {
-                    _ = Container.RemoveAtPosition(storedPositions[0], packageToMove);
+                    if (packageToMove.Item is EquipmentItem)
+                    {
+                        _ = Container.RemoveAtPosition(storedPositions[0], packageToMove);
 
-                    packageToMove = InventoryProvider.Instance.Equipment.AddToContainer(packageToMove);
+                        packageToMove = InventoryProvider.Instance.Equipment.AddToContainer(packageToMove);
 
-                    if (0 < packageToMove.Amount)
-                        packageToMove = Container.AddToEmptyPosition(packageToMove);
+                        if (0 < packageToMove.Amount)
+                            packageToMove = Container.AddToEmptyPosition(packageToMove);
 
-                    var positionOffset = Position - storedPositions[0]; // might look up the added package and get that position instead
+                        var positionOffset = Position - storedPositions[0]; // might look up the added package and get that position instead
 
-                    StaticDragDisplay.Instance.SetPackage(this, packageToMove, positionOffset);
+                        StaticDragDisplay.Instance.SetPackage(this, packageToMove, positionOffset);
 
-                    Container.InvokeRefresh();
-                    StaticDragDisplay.Instance.Origin.Container?.InvokeRefresh();
+                        //Container.InvokeRefresh();
+                        //SStaticDragDisplay.Instance.Origin.Container?.InvokeRefresh();
+                    }
                 }
 
             base.EquipItem();
+        }
+
+        protected override void ConsumeItem()
+        {
+            var storedPositions = Container.GetStoredItemsAt(Position, new(1, 1));
+
+            if (storedPositions.Count == 1)
+                if (Container.StoredPackages.TryGetValue(storedPositions[0], out packageToMove))
+                {
+                    if (packageToMove.Item is ConsumableItem)
+                    {
+                        Debug.Log($"Consuming {packageToMove.Item.ToString()}");
+
+                        _ = Container.RemoveAtPosition(storedPositions[0], new Package(Container, packageToMove.Item, 1));
+                    }
+                }
+
+            base.ConsumeItem();
         }
     }
 }

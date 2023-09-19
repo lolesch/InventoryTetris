@@ -61,22 +61,13 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
             _ = Container.RemoveAtPosition(Position, packageToMove);
 
-            var remaining = InventoryProvider.Instance.Inventory.AddToContainer(packageToMove);
+            packageToMove = InventoryProvider.Instance.Inventory.AddToContainer(packageToMove);
 
-            if (0 < remaining.Amount)
-            {
-                packageToMove = remaining;
-                StaticDragDisplay.Instance.SetPackage(this, remaining, Vector2Int.zero);
-            }
-            else
-            {
-                packageToMove = new Package();
-
+            if (0 < packageToMove.Amount)
                 StaticDragDisplay.Instance.SetPackage(this, packageToMove, Vector2Int.zero);
-            }
 
-            Container.InvokeRefresh();
-            StaticDragDisplay.Instance.Origin.Container?.InvokeRefresh();
+            //Container.InvokeRefresh();
+            //StaticDragDisplay.Instance.Origin.Container?.InvokeRefresh();
         }
 
         public void Refresh2HandSlotDisplay(Package package)
