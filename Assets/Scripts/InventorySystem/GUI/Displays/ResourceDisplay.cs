@@ -1,6 +1,7 @@
 ﻿using TMPro;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Runtime.Character;
+using ToolSmiths.InventorySystem.Utility.Extensions;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -23,7 +24,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
         {
             if (character)
             {
-                var resource = BaseCharacter.GetResource(character, resourceName);
+                var resource = character.GetResource(resourceName);
 
                 resource.CurrentHasChanged -= UpdateDisplay;
                 resource.CurrentHasChanged += UpdateDisplay;
@@ -36,7 +37,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
         {
             if (character)
             {
-                var resource = BaseCharacter.GetResource(character, resourceName);
+                var resource = character.GetResource(resourceName);
 
                 resource.CurrentHasChanged -= UpdateDisplay;
             }

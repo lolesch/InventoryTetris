@@ -42,7 +42,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
         public void GainExperience(float exp)
         {
-            var experience = GetResource(this, StatName.Experience);
+            var experience = this.GetResource(StatName.Experience);
 
             while (0 < exp)
             {
@@ -120,7 +120,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         public float CompareStatModifiers(CharacterStatModifier playerStatModifier, StatModifier other) => CompareStatModifiers(playerStatModifier.Stat, playerStatModifier.Modifier, other);
         public float CompareStatModifiers(StatName stat, StatModifier current, StatModifier other)
         {
-            var currentStat = GetStat(this, stat);
+            var currentStat = this.GetStat(stat);
             var clonedStat = currentStat.GetDeepCopy();
             clonedStat.RemoveModifier(current);
             clonedStat.AddModifier(other);

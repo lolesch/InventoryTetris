@@ -6,20 +6,24 @@ using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Data
 {
-    [System.Serializable]
+    [Serializable]
     public class CharacterStat : ISerializationCallbackReceiver
     {
         [SerializeField, HideInInspector] private string name;
         [field: SerializeField, HideInInspector] public StatName Stat { get; private set; }
 
-        [field: SerializeField] public uint BaseValue { get; private set; }
+        [field: SerializeField] public float BaseValue { get; private set; }
+
+        // TODO: growth requires CharacterLevel but at the moment CharacterStats dont know their character so make it a funktion(float characterLevel)
+        // [field: SerializeField] public uint GrowthPerLevel { get; private set; }
+
         [field: SerializeField] public List<StatModifier> StatModifiers { get; private set; }
         public event Action<float> TotalHasChanged;
 
         [SerializeField] public float TotalValue => CalculateTotalValue(); // only recalculate when adding/removing mods and store that value for lookups?
         // [SerializeField] public float BonusValue => TotalValue - BaseValue;
 
-        public CharacterStat(StatName statName, uint baseValue = 0)
+        public CharacterStat(StatName statName, float baseValue = 0)
         {
             Stat = statName;
             BaseValue = baseValue;
@@ -50,14 +54,16 @@ namespace ToolSmiths.InventorySystem.Data
 
         private float CalculateTotalValue()
         {
+            var result = BaseValue;// + GrowthPerLevel * CharacterLevel;
+
             if (StatModifiers == null)
-                return BaseValue;
+                return result;
 
             StatModifiers.Sort((x, y) => x.SortByType(y));
 
-            var index = 0;
+            var index = 0; // used to skip to the desired type
 
-            /// Overrides
+            #region Overrides
             var highestOverride = 0f;
             var hasOverrides = false;
 
@@ -73,18 +79,18 @@ namespace ToolSmiths.InventorySystem.Data
 
             if (hasOverrides)
                 return highestOverride;// (float)Math.Round(highestOverride, 4);
+            #endregion Overrides
 
-            var result = (float)BaseValue;
-
-            /// FlatAdd
+            #region FlatAdd
             for (var i = index; i < StatModifiers.Count; i++)
                 if (StatModifiers[i].Type == StatModifierType.FlatAdd)
                 {
                     index++;
                     result += StatModifiers[i].Value;
                 }
+            #endregion FlatAdd
 
-            /// PercentAdd
+            #region PercentAdd
             var sumPercentAdd = 0f;
             for (var i = index; i < StatModifiers.Count; i++)
                 if (StatModifiers[i].Type == StatModifierType.PercentAdd)
@@ -93,13 +99,15 @@ namespace ToolSmiths.InventorySystem.Data
                     sumPercentAdd += StatModifiers[i].Value / 100;
                 }
             result *= 1 + sumPercentAdd;
+            #endregion PercentAdd
 
-            /// PercentMult
+            #region PercentMult
             for (var i = index; i < StatModifiers.Count; i++, index++)
                 if (StatModifiers[i].Type == StatModifierType.PercentMult)
                     result *= 1 + StatModifiers[i].Value / 100;
+            #endregion PercentMult
 
-            return result;// (float)Math.Round(result, 4);
+            return result; // (float)Math.Round(result, 4);
         }
 
         public void OnBeforeSerialize() => name = ToString();
@@ -147,7 +155,6 @@ namespace ToolSmiths.InventorySystem.Data
         public event Action<float, float, float> CurrentHasChanged;
         public event Action CurrentHasDepleted;
         public event Action CurrentHasRecharged;
-
 
         /// <summary>Tries to add to the amount to the current value.</summary>
         /// <returns>The remaining amount that was not  added</returns>

@@ -53,10 +53,13 @@ MonoBehaviour:
   - name: Sword
     Enumeration: 101
     Quantity: 1
+  - name: Bow
+    Enumeration: 102
+    Quantity: 1
   - name: TWOHANDEDWEAPONS
     Enumeration: 200
     Quantity: 0
-  - name: Bow
+  - name: Crossbow
     Enumeration: 201
     Quantity: 0
   - name: GreatSword
@@ -120,11 +123,14 @@ MonoBehaviour:
     Probability: 0
   - name: Sword
     Enumeration: 101
-    Probability: 1
+    Probability: 0.5
+  - name: Bow
+    Enumeration: 102
+    Probability: 0.5
   - name: TWOHANDEDWEAPONS
     Enumeration: 200
     Probability: 0
-  - name: Bow
+  - name: Crossbow
     Enumeration: 201
     Probability: 0
   - name: GreatSword
@@ -148,4 +154,4 @@ MonoBehaviour:
   - name: Ring
     Enumeration: 402
     Probability: 0
-  exampleResults: 65000000650000006500000065000000650000006500000065000000650000006500000065000000
+  exampleResults: 65000000650000006500000066000000660000006600000066000000660000006600000066000000

@@ -6,6 +6,8 @@
 // comparison cant compare against all equipment of same type (rings, both weapon slots)
 
 /// TODO
+// Add resourceRegenerationValue to the display
+
 // fix item duplication
 
 // fix the item drop positioning

@@ -23,10 +23,11 @@ namespace ToolSmiths.InventorySystem.Data.Enums
         [Tooltip("OneHandedWeapons --> 101-199")]
         ONEHANDEDWEAPONS = 100,
         Sword = 101,
+        Bow = 102,
 
         [Tooltip("TwoHandedWeapons --> 201-299")]
         TWOHANDEDWEAPONS = 200,
-        Bow = 201,
+        Crossbow = 201,
         GreatSword = 202,
 
         [Tooltip("Offhands --> 301-399")]

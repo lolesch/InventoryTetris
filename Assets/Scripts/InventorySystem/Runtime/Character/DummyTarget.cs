@@ -22,7 +22,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             // send experience to the player?
             CharacterProvider.Instance.Player.GainExperience(experience);
 
-            GetResource(this, StatName.Health).RefillCurrent();
+            this.GetResource(StatName.Health).RefillCurrent();
         }
     }
 }

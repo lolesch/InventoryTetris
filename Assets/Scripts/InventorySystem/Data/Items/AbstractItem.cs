@@ -54,6 +54,39 @@ namespace ToolSmiths.InventorySystem.Items
             _ => Vector2Int.zero,
         };
 
+        protected static List<CharacterStatModifier> CombineAffixesOfSameTypeAndMod(List<CharacterStatModifier> affixes)
+        {
+            // for each affix go down the list and check for same affix and same type
+            for (var i = 0; i < affixes.Count; i++)
+                for (var j = affixes.Count; j-- > i + 1;) // reverse loop because we remove elements
+                    if (affixes[i].Stat == affixes[j].Stat && affixes[i].Modifier.Type == affixes[j].Modifier.Type)
+                    {
+                        var range = affixes[i].Modifier.Range + affixes[j].Modifier.Range;
+                        /*
+                        var randomRoll = UnityEngine.Random.Range(0f, 1f);
+                        var weightedRoll = Distribution.Evaluate(randomRoll);
+
+                        // TODO modified affix range can result in higher min than max values => reorder before setting the range
+
+                        /// the higher the rarity, the higher the min range => Unique items roll with usefull affix values
+                        var min = Mathf.CeilToInt(Range.x * modifier);
+
+                        /// the lesser the rarity, the higher the max range => Common items can roll the highest stats => good base for crafting
+                        var max = Mathf.CeilToInt(Range.y * (1f + (1f - modifier)));
+
+                        if (max < min)
+                            (min, max) = (max, min);
+
+                        var mappedValue = weightedRoll.MapFrom01(min - 1, max);
+                        var value = Mathf.Max(min, Mathf.CeilToInt(mappedValue));
+                        */
+                        var value = affixes[i].Modifier.Value + affixes[j].Modifier.Value;
+                        affixes[i] = new CharacterStatModifier(affixes[i].Stat, new StatModifier(range, value, affixes[i].Modifier.Type));
+                        affixes.RemoveAt(j);
+                    }
+            return affixes;
+        }
+
         public bool Equals(AbstractItem other) => Icon == other.Icon && Dimensions == other.Dimensions && StackLimit == other.StackLimit && Rarity == other.Rarity;// && Affixes == other.Affixes;
     }
 
@@ -91,24 +124,7 @@ namespace ToolSmiths.InventorySystem.Items
                     stats.Add(unique.Affixes[i]);
             }
 
-            //Affixes = GetStats(Rarity, stats);
-            Affixes = stats;
-
-            CombineAffixesOfSameTypeAndMod();
-
-            void CombineAffixesOfSameTypeAndMod()
-            {
-                // for each affix go down the list and check for same affix wich same type
-                for (var i = 0; i < Affixes.Count; i++)
-                    for (var j = Affixes.Count; j-- > i;) // reverse loop because we remove elements
-                        if (Affixes[i].Stat == Affixes[j].Stat && Affixes[i].Modifier.Type == Affixes[j].Modifier.Type)
-                        {
-                            var range = Affixes[i].Modifier.Range + Affixes[j].Modifier.Range;
-                            var value = Affixes[i].Modifier.Value + Affixes[j].Modifier.Value;
-                            Affixes[i] = new CharacterStatModifier(Affixes[i].Stat, new StatModifier(range, value, Affixes[i].Modifier.Type));
-                            Affixes.RemoveAt(j);
-                        }
-            }
+            Affixes = CombineAffixesOfSameTypeAndMod(stats);
 
             ItemSize GetDimension(ConsumableType consumableType) => consumableType switch
             {
@@ -144,10 +160,10 @@ namespace ToolSmiths.InventorySystem.Items
 
                     var rangeRoll = randomStat.GetRandomRoll(rarity /*, lootLevel*/);
 
-                    // TODO: determine statModType => lookup table for each statName
-                    var modifier = new StatModifier(rangeRoll.Range, rangeRoll.value/*, type*/);
+                    //// TODO: determine statModType => lookup table for each statName
+                    //var modifier = new StatModifier(rangeRoll.Range, rangeRoll.value/*, type*/);
 
-                    var itemStat = new CharacterStatModifier(randomStat.StatName, modifier);
+                    var itemStat = new CharacterStatModifier(randomStat.StatName, rangeRoll);
 
                     affixList.Add(itemStat);
                 }
@@ -199,6 +215,7 @@ namespace ToolSmiths.InventorySystem.Items
             //TODO: stats + equipmentType specific stats
             // TODO: add weapon attacks per second
 
+            // TODO: implement something like GetRandomAffixes() to reroll the value within the affix range
             if (Rarity == ItemRarity.Unique)
             {
                 var unique = ItemProvider.Instance.GetUnique(EquipmentType);
@@ -206,11 +223,14 @@ namespace ToolSmiths.InventorySystem.Items
                 Icon = unique.Icon;
 
                 for (var i = 0; i < unique.Affixes.Count; i++)
-                    stats.Add(unique.Affixes[i]);
+                {
+                    var itemStat = new CharacterStatModifier(unique.Affixes[i].Stat, unique.Affixes[i].Modifier); // this should clamp the value within the range
+
+                    stats.Add(itemStat);
+                }
             }
 
-            //Affixes = GetStats(Rarity, stats);
-            Affixes = stats;
+            Affixes = CombineAffixesOfSameTypeAndMod(stats);
 
             ItemSize GetDimension(EquipmentType equipmentType) => equipmentType switch
             {
@@ -229,9 +249,10 @@ namespace ToolSmiths.InventorySystem.Items
 
                 EquipmentType.ONEHANDEDWEAPONS => ItemSize.NONE,
                 EquipmentType.Sword => ItemSize.OneByThree,
+                EquipmentType.Bow => ItemSize.TwoByThree,
 
                 EquipmentType.TWOHANDEDWEAPONS => ItemSize.NONE,
-                EquipmentType.Bow => ItemSize.TwoByThree,
+                EquipmentType.Crossbow => ItemSize.TwoByFour,
                 EquipmentType.GreatSword => ItemSize.TwoByFour,
 
                 EquipmentType.OFFHANDS => ItemSize.NONE,
@@ -265,12 +286,12 @@ namespace ToolSmiths.InventorySystem.Items
 
                     // var lootLevel = LocalPlayer.CharacterLevel; // could modify min/max stat range
 
-                    var rangeRoll = randomStat.GetRandomRoll(rarity /*, lootLevel*/);
+                    var rangeRoll = randomStat.GetRandomRoll(rarity); //, statModTypeOverride, lootLevel*/);
 
-                    // TODO: determine statModType => lookup table for each statName
-                    var modifier = new StatModifier(rangeRoll.Range, rangeRoll.value/*, type*/);
+                    //// TODO: determine statModType => lookup table for each statName
+                    //var modifier = new StatModifier(rangeRoll.Range, rangeRoll.value/*, type*/);
 
-                    var itemStat = new CharacterStatModifier(randomStat.StatName, modifier);
+                    var itemStat = new CharacterStatModifier(randomStat.StatName, rangeRoll);
 
                     affixList.Add(itemStat);
                 }

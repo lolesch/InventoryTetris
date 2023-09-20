@@ -2276,76 +2276,76 @@ MonoBehaviour:
   <IsBlocking>k__BackingField: 0
   <SpendResource>k__BackingField: 1
   <CharacterStats>k__BackingField:
-  - name: 'Attack Speed: 1'
+  - name: 'Attack Speed: 0'
     <Stat>k__BackingField: 1
-    <BaseValue>k__BackingField: 1
+    <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
-  - name: 'Physical Damage: 5'
+  - name: 'Physical Damage: 4'
     <Stat>k__BackingField: 2
-    <BaseValue>k__BackingField: 1
+    <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField:
     - <Range>k__BackingField: {x: 0, y: 5}
       <Value>k__BackingField: 4
       <Type>k__BackingField: 100
-  - name: 'Magical Damage: 1'
+  - name: 'Magical Damage: 0'
     <Stat>k__BackingField: 3
-    <BaseValue>k__BackingField: 1
+    <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
-  - name: 'Armor Penetration: 1'
+  - name: 'Armor Penetration: 0'
     <Stat>k__BackingField: 4
-    <BaseValue>k__BackingField: 1
+    <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
-  - name: 'Magic Resist Penetration: 1'
+  - name: 'Magic Resist Penetration: 0'
     <Stat>k__BackingField: 5
-    <BaseValue>k__BackingField: 1
+    <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
-  - name: 'Health Regeneration: 1'
+  - name: 'Health Regeneration: 0'
     <Stat>k__BackingField: 12
-    <BaseValue>k__BackingField: 1
+    <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
-  - name: 'Armor: 1'
+  - name: 'Armor: 0'
     <Stat>k__BackingField: 13
-    <BaseValue>k__BackingField: 1
+    <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
-  - name: 'Magic Resist: 1'
+  - name: 'Magic Resist: 0'
     <Stat>k__BackingField: 14
-    <BaseValue>k__BackingField: 1
+    <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
-  - name: 'Movement Speed: 1'
+  - name: 'Movement Speed: 0'
     <Stat>k__BackingField: 21
-    <BaseValue>k__BackingField: 1
+    <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
-  - name: 'Resource Regeneration: 1'
+  - name: 'Resource Regeneration: 0'
     <Stat>k__BackingField: 23
-    <BaseValue>k__BackingField: 1
+    <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
-  - name: 'Increased Item Rarity: 1'
+  - name: 'Increased Item Rarity: 0'
     <Stat>k__BackingField: 24
-    <BaseValue>k__BackingField: 1
+    <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
-  - name: 'Increased Item Quantity: 1'
+  - name: 'Increased Item Quantity: 0'
     <Stat>k__BackingField: 25
-    <BaseValue>k__BackingField: 1
+    <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
   <CharacterResources>k__BackingField:
-  - name: 'Health: 100'
+  - name: 'Health: 0'
     <Stat>k__BackingField: 11
-    <BaseValue>k__BackingField: 100
+    <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
     <CurrentValue>k__BackingField: 100
-  - name: 'Resource: 100'
+  - name: 'Resource: 0'
     <Stat>k__BackingField: 22
-    <BaseValue>k__BackingField: 100
+    <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
     <CurrentValue>k__BackingField: 100
-  - name: 'Shield: 100'
+  - name: 'Shield: 0'
     <Stat>k__BackingField: 17
-    <BaseValue>k__BackingField: 100
+    <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
     <CurrentValue>k__BackingField: 100
-  - name: 'Experience: 100'
+  - name: 'Experience: 0'
     <Stat>k__BackingField: -1
-    <BaseValue>k__BackingField: 100
+    <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
     <CurrentValue>k__BackingField: 100
   <CharacterLevel>k__BackingField: 1
@@ -5151,7 +5151,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581285, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_RootOrder
-      value: 3
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581285, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_AnchorMax.x
@@ -6232,7 +6232,7 @@ PrefabInstance:
     - target: {fileID: 9048962497890206683, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_Sprite
       value: 
-      objectReference: {fileID: 21300000, guid: 7e54b52d753d041a79f98a71e1de629a, type: 3}
+      objectReference: {fileID: 21300000, guid: ff08d0d5f0614bc4b8ce26aa4702d827, type: 3}
     m_RemovedComponents:
     - {fileID: 6561342732504229910, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
   m_SourcePrefab: {fileID: 100100000, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
@@ -7931,7 +7931,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581285, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_RootOrder
-      value: 1
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581285, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_AnchorMax.x
@@ -8008,7 +8008,7 @@ PrefabInstance:
     - target: {fileID: 9048962497890206683, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_Sprite
       value: 
-      objectReference: {fileID: 21300000, guid: a4fdb87196158764f90726ac3df72863, type: 3}
+      objectReference: {fileID: 21300000, guid: 15740714bc30b7d468abb4f417884268, type: 3}
     m_RemovedComponents:
     - {fileID: 6561342732504229910, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
   m_SourcePrefab: {fileID: 100100000, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
@@ -10856,62 +10856,59 @@ MonoBehaviour:
     <Stat>k__BackingField: 1
     <BaseValue>k__BackingField: 1
     <StatModifiers>k__BackingField: []
-  - name: 'Physical Damage: 5'
+  - name: 'Physical Damage: 80'
     <Stat>k__BackingField: 2
-    <BaseValue>k__BackingField: 1
-    <StatModifiers>k__BackingField:
-    - <Range>k__BackingField: {x: 0, y: 5}
-      <Value>k__BackingField: 4
-      <Type>k__BackingField: 100
-  - name: 'Magical Damage: 1'
+    <BaseValue>k__BackingField: 80
+    <StatModifiers>k__BackingField: []
+  - name: 'Magical Damage: 120'
     <Stat>k__BackingField: 3
-    <BaseValue>k__BackingField: 1
+    <BaseValue>k__BackingField: 120
     <StatModifiers>k__BackingField: []
-  - name: 'Armor Penetration: 1'
+  - name: 'Armor Penetration: 10'
     <Stat>k__BackingField: 4
-    <BaseValue>k__BackingField: 1
+    <BaseValue>k__BackingField: 10
     <StatModifiers>k__BackingField: []
-  - name: 'Magic Resist Penetration: 1'
+  - name: 'Magic Resist Penetration: 10'
     <Stat>k__BackingField: 5
-    <BaseValue>k__BackingField: 1
+    <BaseValue>k__BackingField: 10
     <StatModifiers>k__BackingField: []
-  - name: 'Health Regeneration: 1'
+  - name: 'Health Regeneration: 10'
     <Stat>k__BackingField: 12
-    <BaseValue>k__BackingField: 1
+    <BaseValue>k__BackingField: 10
     <StatModifiers>k__BackingField: []
-  - name: 'Armor: 1'
+  - name: 'Armor: 30'
     <Stat>k__BackingField: 13
-    <BaseValue>k__BackingField: 1
+    <BaseValue>k__BackingField: 30
     <StatModifiers>k__BackingField: []
-  - name: 'Magic Resist: 1'
+  - name: 'Magic Resist: 50'
     <Stat>k__BackingField: 14
-    <BaseValue>k__BackingField: 1
+    <BaseValue>k__BackingField: 50
     <StatModifiers>k__BackingField: []
-  - name: 'Movement Speed: 1'
+  - name: 'Movement Speed: 0'
     <Stat>k__BackingField: 21
-    <BaseValue>k__BackingField: 1
+    <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
-  - name: 'Resource Regeneration: 1'
+  - name: 'Resource Regeneration: 20'
     <Stat>k__BackingField: 23
-    <BaseValue>k__BackingField: 1
+    <BaseValue>k__BackingField: 20
     <StatModifiers>k__BackingField: []
-  - name: 'Increased Item Rarity: 1'
+  - name: 'Increased Item Rarity: 0'
     <Stat>k__BackingField: 24
-    <BaseValue>k__BackingField: 1
+    <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
-  - name: 'Increased Item Quantity: 1'
+  - name: 'Increased Item Quantity: 0'
     <Stat>k__BackingField: 25
-    <BaseValue>k__BackingField: 1
+    <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
   <CharacterResources>k__BackingField:
-  - name: 'Health: 100'
+  - name: 'Health: 500'
     <Stat>k__BackingField: 11
-    <BaseValue>k__BackingField: 100
+    <BaseValue>k__BackingField: 500
     <StatModifiers>k__BackingField: []
     <CurrentValue>k__BackingField: 100
-  - name: 'Resource: 60'
+  - name: 'Resource: 500'
     <Stat>k__BackingField: 22
-    <BaseValue>k__BackingField: 60
+    <BaseValue>k__BackingField: 500
     <StatModifiers>k__BackingField: []
     <CurrentValue>k__BackingField: 60
   - name: 'Shield: 0'
@@ -10919,9 +10916,9 @@ MonoBehaviour:
     <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
     <CurrentValue>k__BackingField: 0
-  - name: 'Experience: 280'
+  - name: 'Experience: 0'
     <Stat>k__BackingField: -1
-    <BaseValue>k__BackingField: 280
+    <BaseValue>k__BackingField: 0
     <StatModifiers>k__BackingField: []
     <CurrentValue>k__BackingField: 280
   <CharacterLevel>k__BackingField: 1
@@ -12709,11 +12706,11 @@ RectTransform:
   m_Father: {fileID: 1927298326}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 560.00024, y: 0}
-  m_SizeDelta: {x: 640, y: 1080}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_AnchorMin: {x: 1, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 640, y: 0}
+  m_Pivot: {x: 1, y: 0.5}
 --- !u!114 &1561434721
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -14998,9 +14995,9 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1788652331}
-  - {fileID: 395591177}
-  - {fileID: 1131202896}
   - {fileID: 1572200721}
+  - {fileID: 1131202896}
+  - {fileID: 395591177}
   - {fileID: 600442580}
   - {fileID: 1126549954}
   - {fileID: 602500454}
@@ -16344,6 +16341,22 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 111f68f2eb188a744aa726a30d4299f7, type: 2}
   - {fileID: 11400000, guid: 2308d20c27fc9994985058aa06669711, type: 2}
   - {fileID: 11400000, guid: f3a414e1989555b4aa004793af053fc6, type: 2}
+  Rings:
+  - {fileID: 11400000, guid: fdd1c459f84b8a0449b051505c52a064, type: 2}
+  - {fileID: 11400000, guid: 969f84f5c6153134781372783a6251de, type: 2}
+  - {fileID: 11400000, guid: 92b19b88cdd50c84fa3f4bc1c53a0ff9, type: 2}
+  - {fileID: 11400000, guid: bb7e0021744d5924d9f267a0a1fc5873, type: 2}
+  - {fileID: 11400000, guid: e8a589fe5d142ac41a00dc3e28badb54, type: 2}
+  - {fileID: 11400000, guid: 9c24c8a389f0031478bf54de5274514e, type: 2}
+  - {fileID: 11400000, guid: 087f709b745a6b44ead7c4c9a9edb137, type: 2}
+  - {fileID: 11400000, guid: eee89f7778d49814385e2c7df09061e6, type: 2}
+  - {fileID: 11400000, guid: 6065eecd15836c74493675934f2da146, type: 2}
+  - {fileID: 11400000, guid: eced5756f54c275448eedfc04e3c6c93, type: 2}
+  - {fileID: 11400000, guid: f93fc915c2d7a7747ae089dea82bc309, type: 2}
+  - {fileID: 11400000, guid: ac9c9ff2ac917ce499797d81d693ddd2, type: 2}
+  - {fileID: 11400000, guid: 04290a2be9d3f4d4dad20510011bc766, type: 2}
+  - {fileID: 11400000, guid: 89d0e14c607294347a54e7084dc0415b, type: 2}
+  - {fileID: 11400000, guid: cf6b5f1a03d5fd8419195ff5d27567a3, type: 2}
   Belts:
   - {fileID: 11400000, guid: 1b5f94626bb3eb64da497f2868819831, type: 2}
   - {fileID: 11400000, guid: b866f35983254f84a81ce669f14add9d, type: 2}
@@ -16424,43 +16437,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 106ead458339d78409d8464e033f5109, type: 2}
   - {fileID: 11400000, guid: b3ba76bc5b080ab4e8fda311ac4bf526, type: 2}
   - {fileID: 11400000, guid: c489e002f1cac8e4c8afc15cf4bc72cb, type: 2}
-  Quiver:
-  - {fileID: 11400000, guid: ddef006cac68bf1409e399637ef18611, type: 2}
-  - {fileID: 11400000, guid: c210b0e7f73b4e144a95dc445526e968, type: 2}
-  - {fileID: 11400000, guid: b44d26864f66a01448e057cb59b17234, type: 2}
-  - {fileID: 11400000, guid: b8319de67e262db4aaa761cb2ed2e872, type: 2}
-  - {fileID: 11400000, guid: 17a34b090b610094ca7690277adbf6cf, type: 2}
-  - {fileID: 11400000, guid: da9a5e92388aeb648b5856e8d403f8ef, type: 2}
-  - {fileID: 11400000, guid: 1cc79c5e17f384f45a31f443351613bc, type: 2}
-  - {fileID: 11400000, guid: 41f89cbcca43725478b54819e366e5e9, type: 2}
-  - {fileID: 11400000, guid: 6b8e6f318f8bd474cbbd70323b19ed43, type: 2}
-  - {fileID: 11400000, guid: 6342048fffc9c164c98796a2e434ed6c, type: 2}
-  Rings:
-  - {fileID: 11400000, guid: fdd1c459f84b8a0449b051505c52a064, type: 2}
-  - {fileID: 11400000, guid: 969f84f5c6153134781372783a6251de, type: 2}
-  - {fileID: 11400000, guid: 92b19b88cdd50c84fa3f4bc1c53a0ff9, type: 2}
-  - {fileID: 11400000, guid: bb7e0021744d5924d9f267a0a1fc5873, type: 2}
-  - {fileID: 11400000, guid: e8a589fe5d142ac41a00dc3e28badb54, type: 2}
-  - {fileID: 11400000, guid: 9c24c8a389f0031478bf54de5274514e, type: 2}
-  - {fileID: 11400000, guid: 087f709b745a6b44ead7c4c9a9edb137, type: 2}
-  - {fileID: 11400000, guid: eee89f7778d49814385e2c7df09061e6, type: 2}
-  - {fileID: 11400000, guid: 6065eecd15836c74493675934f2da146, type: 2}
-  - {fileID: 11400000, guid: eced5756f54c275448eedfc04e3c6c93, type: 2}
-  - {fileID: 11400000, guid: f93fc915c2d7a7747ae089dea82bc309, type: 2}
-  - {fileID: 11400000, guid: ac9c9ff2ac917ce499797d81d693ddd2, type: 2}
-  - {fileID: 11400000, guid: 04290a2be9d3f4d4dad20510011bc766, type: 2}
-  - {fileID: 11400000, guid: 89d0e14c607294347a54e7084dc0415b, type: 2}
-  - {fileID: 11400000, guid: cf6b5f1a03d5fd8419195ff5d27567a3, type: 2}
-  Shields:
-  - {fileID: 11400000, guid: a32fe0023b95ea249a7861c0efc15d41, type: 2}
-  - {fileID: 11400000, guid: 701071730f8052349948e248f505fcdf, type: 2}
-  - {fileID: 11400000, guid: cb467f334c79fa74b837900830d707a3, type: 2}
-  - {fileID: 11400000, guid: f22d48b2ce11c4343a5eae1193388c3b, type: 2}
-  - {fileID: 11400000, guid: 7d071ffaeaa7e4a44a9e05a2982f2e20, type: 2}
-  - {fileID: 11400000, guid: 5cd3b383e94fbb946884d74967a9ef44, type: 2}
-  - {fileID: 11400000, guid: 1599d29613b9d8242b98b1e101478e2b, type: 2}
-  - {fileID: 11400000, guid: 805ffad02b934ae4cb434f64193e2d30, type: 2}
-  - {fileID: 11400000, guid: 06152eb718f2c044b86c05b35a7b0285, type: 2}
   Shoulder:
   - {fileID: 11400000, guid: 6f4c37b3d48aef5479ab6da8a44a1e51, type: 2}
   - {fileID: 11400000, guid: 98758c5c71294744089c71da0d9b7be3, type: 2}
@@ -16475,9 +16451,32 @@ MonoBehaviour:
   - {fileID: 11400000, guid: e67659d196a6a024ba1d064cc427a8fb, type: 2}
   Bows:
   - {fileID: 11400000, guid: c4ae283ec74f2b344b34ebd795935462, type: 2}
+  Crossbows:
+  - {fileID: 11400000, guid: f76975d280433e94288a52db7023c74f, type: 2}
   GreatSwords:
   - {fileID: 11400000, guid: 83f20b036c4b56941be823070337e7d1, type: 2}
   - {fileID: 11400000, guid: eecdc070fa79bd8468dfd45986bafb6b, type: 2}
+  Quiver:
+  - {fileID: 11400000, guid: ddef006cac68bf1409e399637ef18611, type: 2}
+  - {fileID: 11400000, guid: c210b0e7f73b4e144a95dc445526e968, type: 2}
+  - {fileID: 11400000, guid: b44d26864f66a01448e057cb59b17234, type: 2}
+  - {fileID: 11400000, guid: b8319de67e262db4aaa761cb2ed2e872, type: 2}
+  - {fileID: 11400000, guid: 17a34b090b610094ca7690277adbf6cf, type: 2}
+  - {fileID: 11400000, guid: da9a5e92388aeb648b5856e8d403f8ef, type: 2}
+  - {fileID: 11400000, guid: 1cc79c5e17f384f45a31f443351613bc, type: 2}
+  - {fileID: 11400000, guid: 41f89cbcca43725478b54819e366e5e9, type: 2}
+  - {fileID: 11400000, guid: 6b8e6f318f8bd474cbbd70323b19ed43, type: 2}
+  - {fileID: 11400000, guid: 6342048fffc9c164c98796a2e434ed6c, type: 2}
+  Shields:
+  - {fileID: 11400000, guid: a32fe0023b95ea249a7861c0efc15d41, type: 2}
+  - {fileID: 11400000, guid: 701071730f8052349948e248f505fcdf, type: 2}
+  - {fileID: 11400000, guid: cb467f334c79fa74b837900830d707a3, type: 2}
+  - {fileID: 11400000, guid: f22d48b2ce11c4343a5eae1193388c3b, type: 2}
+  - {fileID: 11400000, guid: 7d071ffaeaa7e4a44a9e05a2982f2e20, type: 2}
+  - {fileID: 11400000, guid: 5cd3b383e94fbb946884d74967a9ef44, type: 2}
+  - {fileID: 11400000, guid: 1599d29613b9d8242b98b1e101478e2b, type: 2}
+  - {fileID: 11400000, guid: 805ffad02b934ae4cb434f64193e2d30, type: 2}
+  - {fileID: 11400000, guid: 06152eb718f2c044b86c05b35a7b0285, type: 2}
   Arrows:
   - {fileID: 11400000, guid: 1b6a85cfd3eb51e4abe9d5bba2b1e5ab, type: 2}
   - {fileID: 11400000, guid: 298cc8092f3508549974f31c727ffbfc, type: 2}
@@ -18700,6 +18699,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: -380
       objectReference: {fileID: 0}
+    - target: {fileID: 892874222740474139, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: ff08d0d5f0614bc4b8ce26aa4702d827, type: 3}
     - target: {fileID: 1141628726790606186, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0.000030517578
@@ -18768,10 +18771,126 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: -20
       objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[0].name
+      value: 'Attack Speed: 0.658'
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[1].name
+      value: 'Physical Damage: 59'
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[2].name
+      value: 'Magical Damage: 0'
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[3].name
+      value: 'Armor Penetration: 0'
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[4].name
+      value: 'Magic Resist Penetration: 0'
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[5].name
+      value: 'Health Regeneration: 3.5'
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[6].name
+      value: 'Armor: 26'
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[7].name
+      value: 'Magic Resist: 30'
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[8].name
+      value: 'Movement Speed: 325'
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[9].name
+      value: 'Resource Regeneration: 7'
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[10].name
+      value: 'Increased Item Rarity: 1000000'
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[11].name
+      value: 'Increased Item Quantity: 0'
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterResources>k__BackingField.Array.data[0].name
+      value: 'Health: 640'
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterResources>k__BackingField.Array.data[1].name
+      value: 'Resource: 280'
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[0].<BaseValue>k__BackingField
+      value: 0.658
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[1].<BaseValue>k__BackingField
+      value: 59
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[2].<BaseValue>k__BackingField
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[3].<BaseValue>k__BackingField
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[4].<BaseValue>k__BackingField
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[5].<BaseValue>k__BackingField
+      value: 3.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[6].<BaseValue>k__BackingField
+      value: 26
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[7].<BaseValue>k__BackingField
+      value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[8].<BaseValue>k__BackingField
+      value: 325
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[9].<BaseValue>k__BackingField
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[10].<BaseValue>k__BackingField
+      value: 1000000
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterStats>k__BackingField.Array.data[11].<BaseValue>k__BackingField
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterResources>k__BackingField.Array.data[0].<BaseValue>k__BackingField
+      value: 640
+      objectReference: {fileID: 0}
+    - target: {fileID: 2911217452408835015, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: <CharacterResources>k__BackingField.Array.data[1].<BaseValue>k__BackingField
+      value: 280
+      objectReference: {fileID: 0}
     - target: {fileID: 3003162471221209195, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
       propertyPath: m_AdditionalShaderChannelsFlag
       value: 25
       objectReference: {fileID: 0}
+    - target: {fileID: 3258701408835421487, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 15740714bc30b7d468abb4f417884268, type: 3}
     - target: {fileID: 3677882925760495411, guid: eaef1e7efe00bc847b3ee05a69555be6, type: 3}
       propertyPath: m_Size
       value: 1

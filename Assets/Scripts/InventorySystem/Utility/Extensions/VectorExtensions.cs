@@ -1,5 +1,4 @@
-﻿
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Utility.Extensions
 {

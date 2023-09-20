@@ -10,18 +10,23 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 31f0e98bc9fa3164d9344a1e34327811, type: 3}
-  m_Name: Sword
+  m_Name: DoransBlade
   m_EditorClassIdentifier: 
   <Item>k__BackingField:
-    <Icon>k__BackingField: {fileID: 21300000, guid: d20275db3061d5445b9747a50ef125bd, type: 3}
+    <Icon>k__BackingField: {fileID: 21300000, guid: 7f8f815ddc53e634fa367e3b23762b28, type: 3}
     <Dimensions>k__BackingField: 13
     <StackLimit>k__BackingField: 1
     <Rarity>k__BackingField: 5
     <Affixes>k__BackingField:
-    - <Stat>k__BackingField: 3
+    - <Stat>k__BackingField: 2
       <Modifier>k__BackingField:
-        <Range>k__BackingField: {x: 2, y: 5}
+        <Range>k__BackingField: {x: 5, y: 8}
         <Value>k__BackingField: 4
-        <Type>k__BackingField: 200
+        <Type>k__BackingField: 100
+    - <Stat>k__BackingField: 11
+      <Modifier>k__BackingField:
+        <Range>k__BackingField: {x: 53, y: 80}
+        <Value>k__BackingField: 4
+        <Type>k__BackingField: 100
     <EquipmentCategory>k__BackingField: 2
     <EquipmentType>k__BackingField: 101

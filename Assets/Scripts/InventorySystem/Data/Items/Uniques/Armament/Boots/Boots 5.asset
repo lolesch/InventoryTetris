@@ -10,18 +10,23 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 31f0e98bc9fa3164d9344a1e34327811, type: 3}
-  m_Name: Boots 2
+  m_Name: Boots 5
   m_EditorClassIdentifier: 
   <Item>k__BackingField:
-    <Icon>k__BackingField: {fileID: 21300000, guid: 2e3fdfe8a1d313541b911a358e2d949d, type: 3}
+    <Icon>k__BackingField: {fileID: 21300000, guid: f07dfdddba87fd64684367b14457e9cb, type: 3}
     <Dimensions>k__BackingField: 22
     <StackLimit>k__BackingField: 1
     <Rarity>k__BackingField: 5
     <Affixes>k__BackingField:
-    - <Stat>k__BackingField: 1
+    - <Stat>k__BackingField: 21
       <Modifier>k__BackingField:
-        <Range>k__BackingField: {x: 0, y: 0}
+        <Range>k__BackingField: {x: 13, y: 20}
         <Value>k__BackingField: 10
         <Type>k__BackingField: 100
-    <EquipmentCategory>k__BackingField: 0
-    <EquipmentType>k__BackingField: 1
+    - <Stat>k__BackingField: 5
+      <Modifier>k__BackingField:
+        <Range>k__BackingField: {x: 12, y: 18}
+        <Value>k__BackingField: 10
+        <Type>k__BackingField: 100
+    <EquipmentCategory>k__BackingField: 1
+    <EquipmentType>k__BackingField: 3

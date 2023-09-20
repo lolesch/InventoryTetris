@@ -39,6 +39,9 @@ namespace ToolSmiths.InventorySystem.Inventories
                 if (0 < package.Amount)
                     Debug.LogWarning($"Your Inventory is full!");
 
+                // TODO: DragDrop adding to stacks is dimension dependent...
+                // => this should simply check if a stack of the same item is at the drop position and add it.
+
                 void AddToOpenStacks()
                 {
                     var positions = StoredPackages.Keys.ToList();

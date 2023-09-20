@@ -3,8 +3,8 @@ using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Distributions;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Items;
-using ToolSmiths.InventorySystem.Runtime.Character;
 using ToolSmiths.InventorySystem.Runtime.Provider;
+using ToolSmiths.InventorySystem.Utility.Extensions;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Inventories
@@ -27,6 +27,8 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         [Header("Uniques")]
         [SerializeField] private List<AbstractItemObject> Amulets;
+        [SerializeField] private List<AbstractItemObject> Rings;
+        [Space]
         [SerializeField] private List<AbstractItemObject> Belts;
         [SerializeField] private List<AbstractItemObject> Boots;
         [SerializeField] private List<AbstractItemObject> Bracers;
@@ -35,13 +37,14 @@ namespace ToolSmiths.InventorySystem.Inventories
         [SerializeField] private List<AbstractItemObject> Gloves;
         [SerializeField] private List<AbstractItemObject> Helmets;
         [SerializeField] private List<AbstractItemObject> Pants;
-        [SerializeField] private List<AbstractItemObject> Quiver;
-        [SerializeField] private List<AbstractItemObject> Rings;
-        [SerializeField] private List<AbstractItemObject> Shields;
         [SerializeField] private List<AbstractItemObject> Shoulder;
+        [Space]
         [SerializeField] private List<AbstractItemObject> Swords;
         [SerializeField] private List<AbstractItemObject> Bows;
+        [SerializeField] private List<AbstractItemObject> Crossbows;
         [SerializeField] private List<AbstractItemObject> GreatSwords;
+        [SerializeField] private List<AbstractItemObject> Quiver;
+        [SerializeField] private List<AbstractItemObject> Shields;
         [Space]
         [SerializeField] private List<AbstractItemObject> Arrows;
         [SerializeField] private List<AbstractItemObject> Books;
@@ -60,7 +63,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             static void CalculateBonusDrops(ref uint amount)
             {
-                var bonusDrops = BaseCharacter.GetStatValue(CharacterProvider.Instance.Player, StatName.IncreasedItemQuantity);
+                var bonusDrops = CharacterProvider.Instance.Player.GetStatValue(StatName.IncreasedItemQuantity);
                 amount += (uint)(bonusDrops / 100f); // TODO: requires a better formula
             }
         }
@@ -135,6 +138,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             return equipmentType switch
             {
                 EquipmentType.Sword => GenerateRandomSword(),
+                EquipmentType.Bow => GenerateRandomBow(),
 
                 _ => null,
             };
@@ -146,7 +150,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             return equipmentType switch
             {
-                EquipmentType.Bow => GenerateRandomBow(),
+                EquipmentType.Crossbow => GenerateRandomCrossbow(),
                 EquipmentType.GreatSword => GenerateRandomGreatSword(),
 
                 _ => null,
@@ -206,6 +210,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         public AbstractItem GenerateRandomShoulders() => GenerateRandomOfEquipmentType(EquipmentType.Shoulders);
         public AbstractItem GenerateRandomSword() => GenerateRandomOfEquipmentType(EquipmentType.Sword);
         public AbstractItem GenerateRandomBow() => GenerateRandomOfEquipmentType(EquipmentType.Bow);
+        public AbstractItem GenerateRandomCrossbow() => GenerateRandomOfEquipmentType(EquipmentType.Crossbow);
         public AbstractItem GenerateRandomGreatSword() => GenerateRandomOfEquipmentType(EquipmentType.GreatSword);
         public AbstractItem GenerateRandomShield() => GenerateRandomOfEquipmentType(EquipmentType.Shield);
         public AbstractItem GenerateRandomQuiver() => GenerateRandomOfEquipmentType(EquipmentType.Quiver);
@@ -232,9 +237,10 @@ namespace ToolSmiths.InventorySystem.Inventories
 
                     EquipmentType.ONEHANDEDWEAPONS => GenerateRandomOneHand(),
                     EquipmentType.Sword => new EquipmentItem(EquipmentType.Sword, rarity),
+                    EquipmentType.Bow => new EquipmentItem(EquipmentType.Bow, rarity),
 
                     EquipmentType.TWOHANDEDWEAPONS => GenerateRandomTwoHand(),
-                    EquipmentType.Bow => new EquipmentItem(EquipmentType.Bow, rarity),
+                    EquipmentType.Crossbow => new EquipmentItem(EquipmentType.Crossbow, rarity),
                     EquipmentType.GreatSword => new EquipmentItem(EquipmentType.GreatSword, rarity),
 
                     EquipmentType.OFFHANDS => GenerateRandomOffHand(),
@@ -264,7 +270,7 @@ namespace ToolSmiths.InventorySystem.Inventories
                 };
         }
 
-        private ItemRarity GetRandomRarity() => itemRarityDistribution.GetRandomEnumerator();
+        private ItemRarity GetRandomRarity() => itemRarityDistribution.GetRandomEnumerator(CharacterProvider.Instance.Player.GetStatValue(StatName.IncreasedItemRarity));
 
         // TODO: equipmentType defines the list of icons 
         // TODO: rarity defines what icon within the list
@@ -303,9 +309,10 @@ namespace ToolSmiths.InventorySystem.Inventories
 
                 EquipmentType.ONEHANDEDWEAPONS => null,
                 EquipmentType.Sword => Swords,
+                EquipmentType.Bow => Bows,
 
                 EquipmentType.TWOHANDEDWEAPONS => null,
-                EquipmentType.Bow => Bows,
+                EquipmentType.Crossbow => Crossbows,
                 EquipmentType.GreatSword => GreatSwords,
 
                 EquipmentType.OFFHANDS => null,

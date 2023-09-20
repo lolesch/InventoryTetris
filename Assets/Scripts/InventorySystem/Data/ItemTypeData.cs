@@ -18,19 +18,21 @@ namespace ToolSmiths.InventorySystem.Data
             [SerializeField] public StatName StatName;
             [FormerlySerializedAs("MinMax")]
             [SerializeField] private Vector2Int Range;
+            [SerializeField] private StatModifierType DefaultModType = StatModifierType.FlatAdd;
 
             [Tooltip("Modifies the likleyness to roll values within the given range")]
             [SerializeField] public AnimationCurve Distribution;
 
-            public StatRange(StatName statName, Vector2Int range)
+            public StatRange(StatName statName, Vector2Int range, StatModifierType defaultModType)
             {
                 StatName = statName;
                 Range = range;
+                DefaultModType = defaultModType;
 
                 name = StatName.ToString();
             }
 
-            public (Vector2Int Range, float value) GetRandomRoll(ItemRarity rarity)
+            public StatModifier GetRandomRoll(ItemRarity rarity)
             {
                 /// ITEM AFFIX DESIGN BY RARITY:
                 /// 
@@ -54,24 +56,23 @@ namespace ToolSmiths.InventorySystem.Data
                 var randomRoll = UnityEngine.Random.Range(0f, 1f);
                 var weightedRoll = Distribution.Evaluate(randomRoll);
 
-                // TODO modified affix range can result in higher min than max values => reorder before setting the range
-
                 /// the higher the rarity, the higher the min range => Unique items roll with usefull affix values
                 var min = Mathf.CeilToInt(Range.x * modifier);
 
                 /// the lesser the rarity, the higher the max range => Common items can roll the highest stats => good base for crafting
                 var max = Mathf.CeilToInt(Range.y * (1f + (1f - modifier)));
 
+                /// reorder before setting the range
                 if (max < min)
                     (min, max) = (max, min);
 
                 var mappedValue = weightedRoll.MapFrom01(min - 1, max);
                 var value = Mathf.Max(min, Mathf.CeilToInt(mappedValue));
 
-                return (new Vector2Int(min, max), value);
+                return new StatModifier(new Vector2Int(min, max), value, DefaultModType);
             }
 
-            public void OnBeforeSerialize() => name = $"{StatName}\t{Range}";
+            public void OnBeforeSerialize() => name = $"{StatName}\t{Range}\t{DefaultModType}";
 
             public void OnAfterDeserialize() { }
         }
@@ -106,7 +107,7 @@ namespace ToolSmiths.InventorySystem.Data
         [field: SerializeField] public EquipmentTypeSpecificStatRange[] EquipmentTypeAllowedStats { get; private set; } = new EquipmentTypeSpecificStatRange[System.Enum.GetValues(typeof(EquipmentType)).Length];
         [field: SerializeField] public ConsumableTypeSpecificStatRange[] ConsumableTypeAllowedStats { get; private set; } = new ConsumableTypeSpecificStatRange[System.Enum.GetValues(typeof(ConsumableType)).Length];
 
-        private void OnValidate()
+        /*private void OnValidate()
         {
             //var statNames = System.Enum.GetValues(typeof(StatName)) as StatName[];
             //if (PossibleStatRolls.Length != statNames.Length)
@@ -130,7 +131,7 @@ namespace ToolSmiths.InventorySystem.Data
 
             for (var i = 0; i < consumableTypes.Length; i++)
                 ConsumableTypeAllowedStats[i].ConsumableType = consumableTypes[i];
-        }
+        }*/
 
         public StatRange[] GetPossibleStats(EquipmentType equipmentType) => EquipmentTypeAllowedStats.Where(x => x.EquipmentType == equipmentType).FirstOrDefault().StatRanges;
         public StatRange[] GetPossibleStats(ConsumableType consumableType) => ConsumableTypeAllowedStats.Where(x => x.ConsumableType == consumableType).FirstOrDefault().StatRanges;
