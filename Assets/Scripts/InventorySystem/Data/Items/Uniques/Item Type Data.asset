@@ -979,7 +979,7 @@ MonoBehaviour:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 0
-    - name: "MagicResistPenetration\t(8, 13)\tPercentAdd"
+    - name: "MagicPenetration\t(8, 13)\tPercentAdd"
       StatName: 5
       Range: {x: 8, y: 13}
       DefaultModType: 200
@@ -1775,3 +1775,52 @@ MonoBehaviour:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 0
+  statIcons:
+  - name: Experience
+    StatName: -1
+    Icon: {fileID: 21300000, guid: 8490904f3f11b409f8484f53d6449bd2, type: 3}
+  - name: Attack Speed
+    StatName: 1
+    Icon: {fileID: 21300000, guid: 958dc3fb1d5f74e42ba1246fde7ec5d9, type: 3}
+  - name: Physical Damage
+    StatName: 2
+    Icon: {fileID: 21300000, guid: e4b063a50718cb94783b7a001ce86ba4, type: 3}
+  - name: Magical Damage
+    StatName: 3
+    Icon: {fileID: 21300000, guid: bf01ab0d0c6dc72489a89711fcedd664, type: 3}
+  - name: Armor Penetration
+    StatName: 4
+    Icon: {fileID: 21300000, guid: e762ebbc892cd2846819bbae9dee23af, type: 3}
+  - name: Magic Penetration
+    StatName: 5
+    Icon: {fileID: 0}
+  - name: Health
+    StatName: 11
+    Icon: {fileID: 21300000, guid: 49a6751f96c744a778c8cae53b080a09, type: 3}
+  - name: Health Regeneration
+    StatName: 12
+    Icon: {fileID: 21300000, guid: d8470a2110fb9480aab068689e3c7b36, type: 3}
+  - name: Armor
+    StatName: 13
+    Icon: {fileID: 21300000, guid: d675c00729a9947a6903aee78bdd2824, type: 3}
+  - name: Magic Resist
+    StatName: 14
+    Icon: {fileID: 21300000, guid: 125c3f0e17dae4dcab945becb563ad7e, type: 3}
+  - name: Shield
+    StatName: 17
+    Icon: {fileID: 21300000, guid: e5a8ddb71725f4711a397ec9f4e31623, type: 3}
+  - name: Movement Speed
+    StatName: 21
+    Icon: {fileID: 21300000, guid: f0394939e473a419b9b647625315fe3c, type: 3}
+  - name: Resource
+    StatName: 22
+    Icon: {fileID: 21300000, guid: 9914cfea8957a40f3b37a4d184e95230, type: 3}
+  - name: Resource Regeneration
+    StatName: 23
+    Icon: {fileID: 21300000, guid: 709e3479d3d334c21b699e10a901f63a, type: 3}
+  - name: Increased Item Rarity
+    StatName: 24
+    Icon: {fileID: 21300000, guid: 6f5dd630af0134b72ac6f10c070c797a, type: 3}
+  - name: Increased Item Quantity
+    StatName: 25
+    Icon: {fileID: 21300000, guid: c321ad1571b31455aa9e72ecbfee9eba, type: 3}

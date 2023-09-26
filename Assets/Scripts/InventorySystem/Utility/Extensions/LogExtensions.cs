@@ -15,6 +15,7 @@ namespace ToolSmiths.InventorySystem.Utility.Extensions
 
         private static bool doLog = true;
 
+#if UNITY_EDITOR
         [MenuItem("DC/ToggleLogExtensions", false, 100)]
         public static void ToggleLogExtensions()
         {
@@ -22,6 +23,7 @@ namespace ToolSmiths.InventorySystem.Utility.Extensions
 
             Debug.LogWarning($"LogExtensions are now turned {(doLog ? "ON".Colored(Color.green) : "OFF".Colored(Color.red))}");
         }
+#endif
 
         public static void MissingComponent(string type, GameObject gameObject, LogType logType = LogType.Error) => Log($"{"MISSING:".Colored(Color.red)}\t{type.Colored(Color.yellow)} on {gameObject.ColoredComponent()} under {gameObject.transform.parent.name.ColoredComponent()}.", gameObject, logType);
         public static void Select(GameObject gameObject, LogType logType = LogType.Log) => Log($"{"SELECTION:".Colored(ColorExtensions.Orange)}\t{gameObject.ColoredComponent()}.", gameObject, logType);

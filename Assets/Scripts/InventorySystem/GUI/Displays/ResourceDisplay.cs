@@ -14,9 +14,11 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 
         [SerializeField] protected TextMeshProUGUI percentageText;
         [SerializeField] protected TextMeshProUGUI currentText;
+        [SerializeField] protected TextMeshProUGUI recoveryText;
 
         [SerializeField] protected BaseCharacter character;
         [SerializeField] protected StatName resourceName = StatName.Health;
+        [SerializeField] protected StatName recoveryName = StatName.HealthRegeneration;
 
         [SerializeField] protected AnimationCurve globeVolume;
 
@@ -29,7 +31,13 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                 resource.CurrentHasChanged -= UpdateDisplay;
                 resource.CurrentHasChanged += UpdateDisplay;
 
+                var stat = character.GetStat(recoveryName);
+
+                stat.TotalHasChanged -= UpdateRechargeDisplay;
+                stat.TotalHasChanged += UpdateRechargeDisplay;
+
                 UpdateDisplay(0, resource.CurrentValue, resource.TotalValue);
+                UpdateRechargeDisplay(stat.TotalValue);
             }
         }
 
@@ -40,6 +48,10 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                 var resource = character.GetResource(resourceName);
 
                 resource.CurrentHasChanged -= UpdateDisplay;
+
+                var stat = character.GetStat(recoveryName);
+
+                stat.TotalHasChanged -= UpdateRechargeDisplay;
             }
         }
 
@@ -56,6 +68,12 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 
             if (currentText)
                 currentText.text = $"{current:0} / {total:0}";
+        }
+
+        protected virtual void UpdateRechargeDisplay(float total)
+        {
+            if (recoveryText)
+                recoveryText.text = $"{total:0} / sec";
         }
     }
 }

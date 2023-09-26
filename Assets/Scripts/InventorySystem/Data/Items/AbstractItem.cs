@@ -20,6 +20,7 @@ namespace ToolSmiths.InventorySystem.Items
         // consider changing to prefix/suffix system
         /// keep this as list (vs array) since crafting migth add/remove Affixes
         [field: SerializeField] public List<CharacterStatModifier> Affixes { get; protected set; } = new List<CharacterStatModifier>();
+        [SerializeField] public float GoldValue => CalculateGoldValue();
 
         // TODO: handle overTime effects => Stats != Effects --> see ARPG_Combat for DoT_effects
         public new abstract string ToString();
@@ -62,29 +63,48 @@ namespace ToolSmiths.InventorySystem.Items
                     if (affixes[i].Stat == affixes[j].Stat && affixes[i].Modifier.Type == affixes[j].Modifier.Type)
                     {
                         var range = affixes[i].Modifier.Range + affixes[j].Modifier.Range;
-                        /*
-                        var randomRoll = UnityEngine.Random.Range(0f, 1f);
-                        var weightedRoll = Distribution.Evaluate(randomRoll);
-
-                        // TODO modified affix range can result in higher min than max values => reorder before setting the range
-
-                        /// the higher the rarity, the higher the min range => Unique items roll with usefull affix values
-                        var min = Mathf.CeilToInt(Range.x * modifier);
-
-                        /// the lesser the rarity, the higher the max range => Common items can roll the highest stats => good base for crafting
-                        var max = Mathf.CeilToInt(Range.y * (1f + (1f - modifier)));
-
-                        if (max < min)
-                            (min, max) = (max, min);
-
-                        var mappedValue = weightedRoll.MapFrom01(min - 1, max);
-                        var value = Mathf.Max(min, Mathf.CeilToInt(mappedValue));
-                        */
                         var value = affixes[i].Modifier.Value + affixes[j].Modifier.Value;
+
                         affixes[i] = new CharacterStatModifier(affixes[i].Stat, new StatModifier(range, value, affixes[i].Modifier.Type));
                         affixes.RemoveAt(j);
                     }
             return affixes;
+        }
+
+        private float CalculateGoldValue()
+        {
+            var goldValue = 0f;
+
+            foreach (var affix in Affixes)
+            {
+                // NOTE that goldRation should differ based on the modifier type!
+                var goldRation = affix.Stat switch
+                {
+                    StatName.AttackSpeed => 25f,
+                    StatName.PhysicalDamage => 35f,
+                    StatName.MagicalDamage => 21.75f,
+                    StatName.Health => 2.67f,
+                    StatName.HealthRegeneration => 3f,
+                    StatName.Armor => 20f,
+                    StatName.MagicResist => 18f,
+                    StatName.MovementSpeed => 12,
+                    StatName.Resource => 1.4f,
+                    StatName.ResourceRegeneration => 5f,
+
+                    StatName.ArmorPenetration => 41.67f,
+                    StatName.MagicPenetration => 54.33f,
+
+                    //Values not set yet
+                    StatName.Shield => 0f,
+                    StatName.IncreasedItemRarity => 0f,
+                    StatName.IncreasedItemQuantity => 0f,
+
+                    StatName.Experience => 0f,
+                    _ => 0f,
+                };
+                goldValue += affix.Modifier.Value * goldRation;
+            }
+            return goldValue;
         }
 
         public bool Equals(AbstractItem other) => Icon == other.Icon && Dimensions == other.Dimensions && StackLimit == other.StackLimit && Rarity == other.Rarity;// && Affixes == other.Affixes;
@@ -110,7 +130,7 @@ namespace ToolSmiths.InventorySystem.Items
 
             Icon = ItemProvider.Instance.GetIcon(ConsumableType, Rarity);
             Dimensions = GetDimension(ConsumableType);
-            var stats = GetRandomAffixes(ConsumableType, Rarity);
+            Affixes = GetRandomAffixes(ConsumableType, Rarity);
             //stats + ConsumableType specific stats
 
             if (Rarity == ItemRarity.Unique)
@@ -121,10 +141,10 @@ namespace ToolSmiths.InventorySystem.Items
                 Dimensions = unique.Dimensions;
 
                 for (var i = 0; i < unique.Affixes.Count; i++)
-                    stats.Add(unique.Affixes[i]);
+                    Affixes.Add(unique.Affixes[i]);
             }
 
-            Affixes = CombineAffixesOfSameTypeAndMod(stats);
+            Affixes = CombineAffixesOfSameTypeAndMod(Affixes);
 
             ItemSize GetDimension(ConsumableType consumableType) => consumableType switch
             {
@@ -211,7 +231,7 @@ namespace ToolSmiths.InventorySystem.Items
 
             Icon = ItemProvider.Instance.GetIcon(EquipmentType, Rarity);
             Dimensions = GetDimension(EquipmentType);
-            var stats = GetRandomAffixes(EquipmentType, Rarity);
+            Affixes = GetRandomAffixes(EquipmentType, Rarity);
             //TODO: stats + equipmentType specific stats
             // TODO: add weapon attacks per second
 
@@ -226,11 +246,11 @@ namespace ToolSmiths.InventorySystem.Items
                 {
                     var itemStat = new CharacterStatModifier(unique.Affixes[i].Stat, unique.Affixes[i].Modifier); // this should clamp the value within the range
 
-                    stats.Add(itemStat);
+                    Affixes.Add(itemStat);
                 }
             }
 
-            Affixes = CombineAffixesOfSameTypeAndMod(stats);
+            Affixes = CombineAffixesOfSameTypeAndMod(Affixes);
 
             ItemSize GetDimension(EquipmentType equipmentType) => equipmentType switch
             {
@@ -288,17 +308,10 @@ namespace ToolSmiths.InventorySystem.Items
 
                     var rangeRoll = randomStat.GetRandomRoll(rarity); //, statModTypeOverride, lootLevel*/);
 
-                    //// TODO: determine statModType => lookup table for each statName
-                    //var modifier = new StatModifier(rangeRoll.Range, rangeRoll.value/*, type*/);
-
                     var itemStat = new CharacterStatModifier(randomStat.StatName, rangeRoll);
 
                     affixList.Add(itemStat);
                 }
-
-                #region REQUIREMENTS / ITEM VALUE
-                // => these are derived values from the random affixes
-                #endregion
 
                 affixList.Sort();
 

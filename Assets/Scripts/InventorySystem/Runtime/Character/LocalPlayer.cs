@@ -40,13 +40,18 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
         protected override void OnDeath() => Debug.LogWarning($"{name.ColoredComponent()} {"died!".Colored(Color.red)}", this);
 
-        public void GainExperience(float exp)
+        public void GainExperience(float exp, uint monsterLevel)
         {
+            if (this.GetResource(StatName.Health).IsDepleted)
+                return;
+
+            var levelDifference = monsterLevel - CharacterLevel;
+            var levelBalanceExp = exp * (1f + levelDifference / 100f);
             var experience = this.GetResource(StatName.Experience);
 
-            while (0 < exp)
+            while (0 < levelBalanceExp)
             {
-                exp = experience.AddToCurrent(exp);
+                levelBalanceExp = experience.AddToCurrent(levelBalanceExp);
 
                 if (experience.IsFull)
                     CharacterLevel = LevelUp(experience);

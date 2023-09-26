@@ -1,6 +1,7 @@
 ﻿using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Runtime.Character;
 using ToolSmiths.InventorySystem.Runtime.Provider;
+using ToolSmiths.InventorySystem.Utility.Extensions;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Inventories
@@ -17,6 +18,8 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         public void DummyDealsPhysicalDamageToPlayer() => DealDamage(Dummy, Player, DamageType.PhysicalDamage);
         public void DummyDealsMagicalDamageToPlayer() => DealDamage(Dummy, Player, DamageType.MagicalDamage);
+        public void KillPlayer() => Player.GetResource(StatName.Health).DepleteCurrent();
+        public void KillDummy() => Dummy.GetResource(StatName.Health).DepleteCurrent();
 
         public void ToggleSpendingResource() => Player.SpendResource = !Player.SpendResource;
     }

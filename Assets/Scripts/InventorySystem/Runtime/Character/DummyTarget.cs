@@ -20,7 +20,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
                 InventoryProvider.Instance.Inventory.AddToContainer(new Package(null, item, 1));
 
             // send experience to the player?
-            CharacterProvider.Instance.Player.GainExperience(experience);
+            CharacterProvider.Instance.Player.GainExperience(experience, CharacterLevel);
 
             this.GetResource(StatName.Health).RefillCurrent();
         }

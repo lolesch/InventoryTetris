@@ -28,11 +28,15 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
         protected void Start()
         {
-            this.GetResource(StatName.Health).CurrentHasDepleted -= OnDeath;
-            this.GetResource(StatName.Health).CurrentHasDepleted += OnDeath;
+            var health = this.GetResource(StatName.Health);
+            health.CurrentHasDepleted -= OnDeath;
+            health.CurrentHasDepleted += OnDeath;
+            health.RefillCurrent();
 
-            this.GetResource(StatName.Resource).CurrentHasDepleted -= CharacterResourceWarning;
-            this.GetResource(StatName.Resource).CurrentHasDepleted += CharacterResourceWarning;
+            var resource = this.GetResource(StatName.Resource);
+            resource.CurrentHasDepleted -= CharacterResourceWarning;
+            resource.CurrentHasDepleted += CharacterResourceWarning;
+            resource.RefillCurrent();
 
             //TODO: design Shield recharge
             this.GetResource(StatName.Shield).DepleteCurrent();
@@ -50,16 +54,16 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             //interval += Time.deltaTime;
             //if(interval >= combatTickRate)
 
-            RegenerateResource(this.GetResource(StatName.Resource), this.GetStatValue(StatName.ResourceRegeneration), false);
-            RegenerateResource(this.GetResource(StatName.Health), this.GetStatValue(StatName.HealthRegeneration), true);
-        }
+            RegenerateResource(this.GetResource(StatName.Resource), this.GetStat(StatName.ResourceRegeneration).TotalValue, false);
+            RegenerateResource(this.GetResource(StatName.Health), this.GetStat(StatName.HealthRegeneration).TotalValue, true);
 
-        private static void RegenerateResource(CharacterResource resource, float regeneration, bool stopIfDepleeted)
-        {
-            if (stopIfDepleeted && resource.IsDepleted)
-                return;
+            static void RegenerateResource(CharacterResource resource, float recoveryAmount, bool stopIfDepleeted)
+            {
+                if (stopIfDepleeted && resource.IsDepleted)
+                    return;
 
-            _ = resource.AddToCurrent(regeneration * Time.deltaTime);
+                _ = resource.AddToCurrent(recoveryAmount * Time.deltaTime);
+            }
         }
 
         [ContextMenu("ResetStatsAndResources")]

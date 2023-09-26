@@ -15,7 +15,7 @@ namespace ToolSmiths.InventorySystem.Data
         [field: SerializeField] public float BaseValue { get; private set; }
 
         // TODO: growth requires CharacterLevel but at the moment CharacterStats dont know their character so make it a funktion(float characterLevel)
-        // [field: SerializeField] public uint GrowthPerLevel { get; private set; }
+        //[field: SerializeField] public uint GrowthPerLevel { get; private set; }
 
         [field: SerializeField] public List<StatModifier> StatModifiers { get; private set; }
         public event Action<float> TotalHasChanged;
@@ -54,9 +54,10 @@ namespace ToolSmiths.InventorySystem.Data
 
         private float CalculateTotalValue()
         {
-            var result = BaseValue;// + GrowthPerLevel * CharacterLevel;
+            //var levelUps = characterLevel - 1;
+            var result = BaseValue;// + GrowthPerLevel * characterLevel; // flat increase
 
-            if (StatModifiers == null)
+            if (StatModifiers == null || StatModifiers.Count == 0)
                 return result;
 
             StatModifiers.Sort((x, y) => x.SortByType(y));
@@ -147,7 +148,8 @@ namespace ToolSmiths.InventorySystem.Data
     {
         [field: SerializeField, ReadOnly] public float CurrentValue { get; private set; }
 
-        public CharacterResource(StatName resourceName, uint baseValue = 0) : base(resourceName, baseValue) => CurrentValue = TotalValue;//RecoveryStat = recoveryName;
+        public CharacterResource(StatName resourceName, uint baseValue = 0) : base(resourceName, baseValue) => CurrentValue = TotalValue;
+
         public bool IsDepleted => CurrentValue <= 0;
         public bool IsFull => CurrentValue == TotalValue;
         public float MissingValue => TotalValue - CurrentValue;
@@ -191,21 +193,12 @@ namespace ToolSmiths.InventorySystem.Data
             {
                 CurrentHasChanged?.Invoke(CurrentValue, resultingValue, TotalValue);
 
-                //var sign = (CurrentValue - resultingValue) >= 0f ? 1f : 0f;
-                //
-                //Debug.Log($"{Stat} receives {healthDamage} {damageType}");
-
                 CurrentValue = resultingValue;
 
                 if (IsDepleted)
-                {
-                    //Debug.LogWarning($"{Stat} depleted!");
                     CurrentHasDepleted?.Invoke();
-                }
                 else if (IsFull)
-                {
                     CurrentHasRecharged?.Invoke();
-                }
             }
         }
     }

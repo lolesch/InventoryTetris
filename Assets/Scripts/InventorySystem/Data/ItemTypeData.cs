@@ -101,11 +101,27 @@ namespace ToolSmiths.InventorySystem.Data
             public void OnAfterDeserialize() { }
         }
 
+        [Serializable]
+        public class StatIcon : ISerializationCallbackReceiver
+        {
+            [HideInInspector] public string name;
+            public StatName StatName = StatName.Health;
+            public Sprite Icon;
+
+            public void OnBeforeSerialize() => name = StatName.SplitCamelCase();
+            public void OnAfterDeserialize() { }
+        }
+
         //[field: SerializeField] public StatRange[] PossibleStatRolls { get; private set; } = new StatRange[System.Enum.GetValues(typeof(StatName)).Length];
 
         // -> TODO: AllowedStats distribution
         [field: SerializeField] public EquipmentTypeSpecificStatRange[] EquipmentTypeAllowedStats { get; private set; } = new EquipmentTypeSpecificStatRange[System.Enum.GetValues(typeof(EquipmentType)).Length];
         [field: SerializeField] public ConsumableTypeSpecificStatRange[] ConsumableTypeAllowedStats { get; private set; } = new ConsumableTypeSpecificStatRange[System.Enum.GetValues(typeof(ConsumableType)).Length];
+
+        //serializable dictionary
+        [field: SerializeField] private StatIcon[] statIcons = new StatIcon[Enum.GetValues(typeof(StatName)).Length];
+
+        public Sprite GetStatIcon(StatName stat) => statIcons.Where(x => x.StatName == stat).FirstOrDefault().Icon;
 
         /*private void OnValidate()
         {

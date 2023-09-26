@@ -3,6 +3,7 @@
     // TODO: inherit AbstractDisplay
     public class CharacterStatsDisplay
     {
-        // continue here
+        // CONTINUE HERE
+        // see preview display as reference
     }
 }

@@ -31,6 +31,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
                     containerSlotDisplays[current].RefreshSlotDisplay(package);
 
+                    if (Debug.isDebugBuild)
+                        (containerSlotDisplays[current] as EquipmentSlotDisplay).DebugItem = package.Item as EquipmentItem;
+
                     // Hacking in the preview of 2H in offhand slot
                     if (current == 12 && package.Item != null && CharacterEquipment.IsTwoHandedWeapon((package.Item as EquipmentItem).EquipmentType))
                     {

@@ -27,9 +27,8 @@ namespace ToolSmiths.InventorySystem.Data
 
         public StatModifier(Vector2Int range, float value, StatModifierType type = StatModifierType.FlatAdd)
         {
-            // think about adding a 0 to 1 value and map it to the range
             Range = range;
-            Value = Mathf.Clamp(value, range.x, range.y);
+            Value = Mathf.Clamp(value, range.x, range.y); // think about converting it to a (0 to 1) value and map it to the range
             Type = type;
         }
 

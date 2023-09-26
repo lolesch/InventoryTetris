@@ -17,7 +17,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         public event Action<Dictionary<Vector2Int, Package>> OnContentChanged;
 
-        public Dictionary<Vector2Int, Package> StoredPackages { get; protected set; } = new();
+        [field: SerializeField] public Dictionary<Vector2Int, Package> StoredPackages { get; protected set; } = new();
 
         public abstract Package AddToContainer(Package package);
         public abstract Package AddToEmptyPosition(Package package);

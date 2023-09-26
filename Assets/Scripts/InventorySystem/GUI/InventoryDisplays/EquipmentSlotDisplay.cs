@@ -15,6 +15,8 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
     {
         [SerializeField] protected internal List<EquipmentType> allowedEquipmentTypes;
 
+        [field: SerializeField] public EquipmentItem DebugItem;
+
         private bool IsAllowedEquipmentType(EquipmentType type)
         {
             // TODO should derive this bool from the slot position

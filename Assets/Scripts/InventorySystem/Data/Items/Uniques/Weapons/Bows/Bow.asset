@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Bow
   m_EditorClassIdentifier: 
   <Item>k__BackingField:
-    <Icon>k__BackingField: {fileID: 21300000, guid: 1b04c3c1c10ac4afb990af705d26c1bc, type: 3}
+    <Icon>k__BackingField: {fileID: 21300000, guid: 78d63d1b516ba4e43ad68d75f97cbb90, type: 3}
     <Dimensions>k__BackingField: 23
     <StackLimit>k__BackingField: 1
     <Rarity>k__BackingField: 5

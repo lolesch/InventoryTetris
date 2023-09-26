@@ -2,9 +2,8 @@
 using System.Collections.Generic;
 using TMPro;
 using ToolSmiths.InventorySystem.Data;
-using ToolSmiths.InventorySystem.Data.Enums;
-using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
+using ToolSmiths.InventorySystem.Runtime.Pools;
 using ToolSmiths.InventorySystem.Utility.Extensions;
 using UnityEngine;
 using UnityEngine.UI;
@@ -22,12 +21,18 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
         [SerializeField] private TextMeshProUGUI itemName;
         [SerializeField] private TextMeshProUGUI itemType;
         [SerializeField] private TextMeshProUGUI amount;
-        [SerializeField] private TextMeshProUGUI itemStatPrefab;
+        [SerializeField] private TextMeshProUGUI goldValue;
 
-        private Canvas rootCanvas;
+        [SerializeField] private CharacterStatModifierDisplay itemStatPrefab;
+        [SerializeField] private PrefabPool<CharacterStatModifierDisplay> itemStatPool;
+
         public bool IsPreviewing => ItemDisplay.gameObject.activeSelf;
 
-        private void Awake() => ItemDisplay.gameObject.SetActive(false);
+        private void Awake()
+        {
+            ItemDisplay.gameObject.SetActive(false);
+            itemStatPool = new(itemStatPrefab);
+        }
 
         public void SetDisplay(Package package, Package[] compareTo)
         {
@@ -37,19 +42,27 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                 return;
             }
 
+            //TODO:
+            /*  durability?
+             *  flavor text?
+             */
+
             var rarityColor = AbstractItem.GetRarityColor(package.Item.Rarity);
 
             if (itemName)
                 itemName.text = package.Item.ToString().Colored(rarityColor);
 
             if (itemType)
-                itemType.text = package.Item is EquipmentItem ? (package.Item as EquipmentItem).EquipmentType.ToString().Colored(rarityColor) : string.Empty;
+                itemType.text = package.Item.ToString();
 
             if (icon)
                 icon.sprite = package.Item.Icon;
 
             if (amount)
-                amount.text = 1 < package.Amount && package.Item is ConsumableItem ? $"{package.Amount}/{(int)(package.Item as ConsumableItem).StackLimit}" : string.Empty;
+                amount.text = 1 < package.Amount /*&& package.Item is ConsumableItem*/ ? $"{package.Amount}/{(int)(package.Item as ConsumableItem).StackLimit}" : string.Empty;
+
+            if (goldValue)
+                goldValue.text = 0 < package.Item.GoldValue ? $"GoldValue: {package.Item.GoldValue}" : string.Empty;
 
             if (frame)
                 frame.color = rarityColor;
@@ -61,77 +74,18 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
             if (background)
                 background.color = rarityColor * Color.gray * Color.gray;
 
-            // TODO: make this poolable
-            if (itemStatPrefab)
+            itemStatPool.ReleaseAll();
+
+            foreach (var stat in package.Item.Affixes)
             {
-                for (var i = itemStatPrefab.transform.parent.childCount; i-- > 1;)
-                {
-                    Destroy(itemStatPrefab.transform.parent.GetChild(i).gameObject);
-                    DestroyImmediate(itemStatPrefab.transform.parent.GetChild(i).gameObject);
-                }
+                //TODO: inherit prefabPool to support abstractDisplays that update the Display(newData) before activating the object
 
-                var stats = package.Item.Affixes;
+                var itemStat = itemStatPool.GetObject(false);
 
-                for (var i = 0; i < stats.Count; i++)
-                {
-                    var itemStat = Instantiate(itemStatPrefab, itemStatPrefab.transform.parent);
+                itemStat.Display(new(stat, compareTo));
 
-                    var comparison = CompareStatValues(stats[i], out var difference);
-
-                    //var difference = comparison == 0 ? 0 : stats[i].Modifier.Value - other; // should compare character stats with 
-
-                    var color = comparison == 0 ? Color.white : (comparison < 0 ? Color.red : Color.green);
-
-                    var differenceString = stats[i].Modifier.Type switch
-                    {
-                        StatModifierType.Override => $"{difference:+ #.###;- #.###;#.###}",
-                        StatModifierType.FlatAdd => $"{difference:+ #.###;- #.###;#.###}",
-                        StatModifierType.PercentAdd => $"{difference:+ #.###;- #.###;#.###}%",
-                        StatModifierType.PercentMult => $"{difference:+ #.###;- #.###;#.###}%",
-
-                        _ => $"?? {difference:+ #.###;- #.###;#.###}",
-                    };
-
-                    var statName = stats[i].Stat.SplitCamelCase();
-
-                    if (statName.Contains("Percent"))
-                        statName = statName.Replace(" Percent", "");
-
-                    // TODO: review the references
-                    itemStat.text = $"{stats[i].Modifier} {statName} {stats[i].Modifier.Range.ToString().Colored(Color.gray)} {differenceString.Colored(color)}";
-
-                    /// THIS MIGHT CHANGE => counteracts the comparison coloring...
-                    itemStat.fontSize = stats[i].Modifier.Value.Map(stats[i].Modifier.Range, 18, 22);
-
-                    itemStat.gameObject.SetActive(true);
-                }
-
-                int CompareStatValues(CharacterStatModifier stat, out float difference)
-                {
-                    difference = 0;
-                    var other = 0f;
-
-                    //if (stat.Modifier.Type == StatModifierType.Override) // => compare to total
-                    //    other = Character.Instance.GetStatValue(stat.Stat);
-                    //else 
-                    foreach (var item in compareTo)
-                        if (item.Item != null)
-                            for (var i = 0; i < item.Item.Affixes.Count; i++)   // foreach stat of the other item
-                                if (item.Item.Affixes[i].Stat == stat.Stat)     // find a corresponding stat
-                                // if (compareTo.Item.Affixes[i].Modifier.Type == stat.Modifier.Type) // find a corresponding mod type
-                                {
-                                    other = item.Item.Affixes[i].Modifier.Value;
-                                    difference = CharacterProvider.Instance.Player.CompareStatModifiers(stat, item.Item.Affixes[i].Modifier);
-                                }
-
-                    return stat.Modifier.Value.CompareTo(other);
-                }
+                itemStat.gameObject.SetActive(true);
             }
-
-            /*  itemValue / sellValue
-             *  durability?
-             *  flavor text?
-             */
 
             ItemDisplay.gameObject.SetActive(true);
         }
