@@ -69,7 +69,7 @@ namespace ToolSmiths.InventorySystem.Data
             var hasOverrides = false;
 
             for (var i = index; i < StatModifiers.Count; i++)
-                if (StatModifiers[i].Type == StatModifierType.Override)
+                if (StatModifiers[i].Type == StatModifierType.Overwrite)
                 {
                     index++;
                     hasOverrides = true;

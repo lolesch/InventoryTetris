@@ -5,6 +5,7 @@
     public enum ItemStack
     {
         NONE = 0,
+
         Single = 1,
         StackOfTen = 10,
         StackOfFifty = 50,

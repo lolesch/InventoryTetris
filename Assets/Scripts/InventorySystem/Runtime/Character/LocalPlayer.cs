@@ -1,8 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
-using TMPro;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
+using ToolSmiths.InventorySystem.GUI.Displays;
+using ToolSmiths.InventorySystem.Runtime.Pools;
 using ToolSmiths.InventorySystem.Utility.Extensions;
 using UnityEngine;
 
@@ -10,41 +11,60 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 {
     public class LocalPlayer : BaseCharacter
     {
-        // TODO: move that into a display component instead of the actual character
-        private List<TextMeshProUGUI> mainStatDisplays = new();
-        [SerializeField] private TextMeshProUGUI statPrefab;
+        //TODO: make the displayLogic its own component and design its layout individually and not via a pool
+        [SerializeField] private CharacterStatDisplay characterStatPrefab;
+        [SerializeField] private PrefabPool<CharacterStatDisplay> characterStatPool;
 
         // TODO: ATTRIBUTES and DERIVED STATS => define and calculate derived values => see Bone&Blood
+        private void Awake() => characterStatPool = new(characterStatPrefab);
 
         private void OnEnable()
         {
-            if (statPrefab != null)
+            var statsAndResources = CharacterResources.Union(CharacterStats).ToArray();
+
+            foreach (var stat in statsAndResources)
             {
-                var statsAndResources = CharacterStats.Union(CharacterResources);
-                for (var i = 0; i < statsAndResources.Count(); i++)
-                {
-                    var display = Instantiate(statPrefab, statPrefab.transform.parent);
-                    display.gameObject.SetActive(true);
-                    mainStatDisplays.Add(display);
-                }
+                stat.TotalHasChanged -= UpdateStatDisplays;
+                stat.TotalHasChanged += UpdateStatDisplays;
             }
+
             UpdateStatDisplays();
         }
 
-        private void UpdateStatDisplays()
+        private void OnDisable()
         {
             var statsAndResources = CharacterResources.Union(CharacterStats).ToArray();
-            for (var i = 0; i < mainStatDisplays.Count; i++)
-                mainStatDisplays[i].text = $"{statsAndResources[i].ToString()}";
+
+            foreach (var stat in statsAndResources)
+                stat.TotalHasChanged -= UpdateStatDisplays;
         }
 
-        protected override void OnDeath() => Debug.LogWarning($"{name.ColoredComponent()} {"died!".Colored(Color.red)}", this);
+        private void UpdateStatDisplays(float debug = 0)
+        {
+            var statsAndResources = CharacterResources.Union(CharacterStats).ToArray();
+
+            characterStatPool.ReleaseAll();
+
+            foreach (var stat in statsAndResources)
+            {
+                //TODO: extend prefabPool to support abstractDisplays that update the Display(newData) before activating the object
+
+                var itemStat = characterStatPool.GetObject(false);
+
+                itemStat.Display(new(stat));
+
+                itemStat.gameObject.SetActive(true);
+            }
+        }
+
+        protected override void OnDeath() => Debug.LogWarning($"{name.ColoredComponent()} {"DIED!".Colored(Color.red)}", this);
 
         public void GainExperience(float exp, uint monsterLevel)
         {
             if (this.GetResource(StatName.Health).IsDepleted)
                 return;
 
+            //TODO: design exp gain 
             var levelDifference = monsterLevel - CharacterLevel;
             var levelBalanceExp = exp * (1f + levelDifference / 100f);
             var experience = this.GetResource(StatName.Experience);
@@ -54,29 +74,31 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
                 levelBalanceExp = experience.AddToCurrent(levelBalanceExp);
 
                 if (experience.IsFull)
-                    CharacterLevel = LevelUp(experience);
+                {
+                    CharacterLevel++;
+
+                    var statMod = new StatModifier(new Vector2Int(0, int.MaxValue), CharacterLevel * 100 + 80);
+
+                    experience.AddModifier(statMod);
+                    experience.DepleteCurrent();
+                }
             }
-        }
-
-        private uint LevelUp(CharacterResource experience)
-        {
-            var nextLevel = CharacterLevel + 1;
-
-            var statMod = new StatModifier(new Vector2Int(0, int.MaxValue), nextLevel * 100 + 80);
-
-            experience.AddModifier(statMod);
-            experience.DepleteCurrent();
-
-            return nextLevel;
         }
 
         public void AddItemStats(List<CharacterStatModifier> stats)
         {
-            var resources = new List<CharacterStatModifier>();
+            var resources = new StatName[] { StatName.Health, StatName.Resource, StatName.Shield, StatName.Experience };
 
             foreach (var itemStat in stats)
-                if (itemStat.Stat is StatName.Health or StatName.Resource)
-                    resources.Add(itemStat);
+                if (resources.Contains(itemStat.Stat))
+                {
+                    for (var i = 0; i < CharacterResources.Length; i++)
+                        if (CharacterResources[i].Stat == itemStat.Stat)
+                        {
+                            CharacterResources[i].AddModifier(itemStat.Modifier);
+                            break;
+                        }
+                }
                 else
                     for (var i = 0; i < CharacterStats.Length; i++)
                         if (CharacterStats[i].Stat == itemStat.Stat)
@@ -85,24 +107,23 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
                             break;
                         }
 
-            foreach (var itemStat in resources)
-                for (var i = 0; i < CharacterResources.Length; i++)
-                    if (CharacterResources[i].Stat == itemStat.Stat)
-                    {
-                        CharacterResources[i].AddModifier(itemStat.Modifier);
-                        break;
-                    }
-
             UpdateStatDisplays();
         }
 
         public void RemoveItemStats(List<CharacterStatModifier> stats)
         {
-            var resources = new List<CharacterStatModifier>();
+            var resources = new StatName[] { StatName.Health, StatName.Resource, StatName.Shield, StatName.Experience };
 
             foreach (var itemStat in stats)
-                if (itemStat.Stat is StatName.Health or StatName.Resource)
-                    resources.Add(itemStat);
+                if (resources.Contains(itemStat.Stat))
+                {
+                    for (var i = CharacterResources.Length; i-- > 0;)
+                        if (CharacterResources[i].Stat == itemStat.Stat)
+                        {
+                            CharacterResources[i].RemoveModifier(itemStat.Modifier);
+                            break;
+                        }
+                }
                 else
                     for (var i = CharacterStats.Length; i-- > 0;)
                         if (CharacterStats[i].Stat == itemStat.Stat)
@@ -110,14 +131,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
                             CharacterStats[i].RemoveModifier(itemStat.Modifier);
                             break;
                         }
-
-            foreach (var itemStat in resources)
-                for (var i = CharacterResources.Length; i-- > 0;)
-                    if (CharacterResources[i].Stat == itemStat.Stat)
-                    {
-                        CharacterResources[i].RemoveModifier(itemStat.Modifier);
-                        break;
-                    }
 
             UpdateStatDisplays();
         }

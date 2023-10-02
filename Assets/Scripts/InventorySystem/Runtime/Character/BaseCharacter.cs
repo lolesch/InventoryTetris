@@ -1,5 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Utility.Extensions;
@@ -38,7 +39,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             resource.CurrentHasDepleted += CharacterResourceWarning;
             resource.RefillCurrent();
 
-            //TODO: design Shield recharge
             this.GetResource(StatName.Shield).DepleteCurrent();
 
             //TODO: design Experience
@@ -54,13 +54,19 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             //interval += Time.deltaTime;
             //if(interval >= combatTickRate)
 
-            RegenerateResource(this.GetResource(StatName.Resource), this.GetStat(StatName.ResourceRegeneration).TotalValue, false);
-            RegenerateResource(this.GetResource(StatName.Health), this.GetStat(StatName.HealthRegeneration).TotalValue, true);
+            RegenerateResource(this.GetResource(StatName.Health), this.GetStat(StatName.HealthRegeneration).TotalValue, -1f);
+            RegenerateResource(this.GetResource(StatName.Resource), this.GetStat(StatName.ResourceRegeneration).TotalValue, 0f);
 
-            static void RegenerateResource(CharacterResource resource, float recoveryAmount, bool stopIfDepleeted)
+            //TODO: design Shield recharge
+            RegenerateResource(this.GetResource(StatName.Shield), this.GetStat(StatName.HealthRegeneration).TotalValue, 2f);
+
+            static async void RegenerateResource(CharacterResource resource, float recoveryAmount, float recoveryDelay)
             {
-                if (stopIfDepleeted && resource.IsDepleted)
-                    return;
+                if (resource.IsDepleted)
+                    if (recoveryDelay < 0)
+                        return;
+                    else
+                        await Task.Delay(TimeSpan.FromSeconds(recoveryDelay));
 
                 _ = resource.AddToCurrent(recoveryAmount * Time.deltaTime);
             }
@@ -69,9 +75,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         [ContextMenu("ResetStatsAndResources")]
         private void ResetStatsAndResources()
         {
-            var resourcesOnly = new List<StatName>() { StatName.Health, StatName.Resource, StatName.Shield, StatName.Experience };
+            var resourcesOnly = new StatName[] { StatName.Health, StatName.Resource, StatName.Shield, StatName.Experience };
 
-            var statNames = System.Enum.GetValues(typeof(StatName)) as StatName[];
+            var statNames = Enum.GetValues(typeof(StatName)) as StatName[];
             var statsOnly = statNames.ToList();
 
             foreach (var resource in resourcesOnly)
@@ -85,11 +91,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
                     CharacterStats[i] = new CharacterStat(statsOnly[i], 1);
             }
 
-            if (CharacterResources.Length != resourcesOnly.Count)
+            if (CharacterResources.Length != resourcesOnly.Length)
             {
-                //for (var i = 0; i < resourcesOnly.Count; i++)
-                //    CharacterResources[i] = new CharacterResource(resourcesOnly[i], 100);
-
                 CharacterResources = new CharacterResource[] {
                     new CharacterResource(StatName.Health, 100),
                     new CharacterResource(StatName.Resource, 60),

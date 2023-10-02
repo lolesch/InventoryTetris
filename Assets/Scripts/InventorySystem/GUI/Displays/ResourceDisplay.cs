@@ -59,7 +59,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
         {
             if (resourceImage)
                 if (0 < globeVolume.length)
-                    resourceImage.fillAmount = globeVolume.Evaluate(current / total);// test filling up fast, then slow then fast, as the volume of the globe would in real life
+                    resourceImage.fillAmount = globeVolume.Evaluate(current / total);
                 else
                     resourceImage.fillAmount = current / total;
 

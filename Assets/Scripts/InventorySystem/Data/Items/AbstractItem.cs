@@ -71,14 +71,14 @@ namespace ToolSmiths.InventorySystem.Items
             return affixes;
         }
 
-        private float CalculateGoldValue()
+        protected virtual float CalculateGoldValue()
         {
-            var goldValue = 0f;
+            var amount = 0f;
 
             foreach (var affix in Affixes)
             {
-                // NOTE that goldRation should differ based on the modifier type!
-                var goldRation = affix.Stat switch
+                // NOTE that goldRatios should differ based on the modifier type!
+                var goldRatio = affix.Stat switch
                 {
                     StatName.AttackSpeed => 25f,
                     StatName.PhysicalDamage => 35f,
@@ -95,16 +95,18 @@ namespace ToolSmiths.InventorySystem.Items
                     StatName.MagicPenetration => 54.33f,
 
                     //Values not set yet
-                    StatName.Shield => 0f,
+                    StatName.Shield => 2.67f,
                     StatName.IncreasedItemRarity => 0f,
                     StatName.IncreasedItemQuantity => 0f,
 
                     StatName.Experience => 0f,
                     _ => 0f,
                 };
-                goldValue += affix.Modifier.Value * goldRation;
+
+                amount += Mathf.Abs(affix.Modifier.Value * goldRatio); // uses Abs() for possible negative modValues or goldRatios that should not lower the total value
             }
-            return goldValue;
+
+            return amount;
         }
 
         public bool Equals(AbstractItem other) => Icon == other.Icon && Dimensions == other.Dimensions && StackLimit == other.StackLimit && Rarity == other.Rarity;// && Affixes == other.Affixes;
@@ -222,7 +224,10 @@ namespace ToolSmiths.InventorySystem.Items
         public EquipmentItem(EquipmentType equipmentType, ItemRarity rarity)
         {
             if (rarity == ItemRarity.NoDrop)
+            {
+                Debug.LogWarning("This should not happen");
                 return;
+            }
 
             EquipmentType = equipmentType;
             Rarity = rarity;
@@ -337,5 +342,61 @@ namespace ToolSmiths.InventorySystem.Items
 
         //TODO: extend naming
         public override string ToString() => $"{Rarity} {EquipmentType}".Colored(GetRarityColor(Rarity));
+    }
+
+    [Serializable]
+    public class CurrencyItem : AbstractItem
+    {
+        [field: SerializeField] public CurrencyType CurrencyType { get; protected set; }
+
+        public CurrencyItem(CurrencyType currencyType)
+        {
+            if (currencyType == CurrencyType.NONE)
+            {
+                Debug.LogWarning("This should not happen");
+                return;
+            }
+
+            CurrencyType = currencyType;
+
+            Rarity = ItemRarity.Common;/*currencyType switch
+            {
+                CurrencyType.Iron => ItemRarity.Common,
+                CurrencyType.Copper => ItemRarity.Magic,
+                CurrencyType.Silver => ItemRarity.Rare,
+                CurrencyType.Gold => ItemRarity.Unique,
+            
+                CurrencyType.NONE => ItemRarity.NoDrop,
+                _ => ItemRarity.NoDrop,
+            };*/
+
+            Icon = ItemProvider.Instance.GetIcon(CurrencyType);
+            Affixes = new List<CharacterStatModifier>();
+
+            Dimensions = ItemSize.OneByOne;
+            StackLimit = ItemStack.StackOfHundred;/* CurrencyType switch
+            {
+                CurrencyType.Iron => ItemStack.StackOfHundred,
+                CurrencyType.Copper => ItemStack.StackOfFifty,
+                CurrencyType.Silver => ItemStack.StackOfTen,
+                CurrencyType.Gold => ItemStack.Single,
+
+                CurrencyType.NONE => ItemStack.NONE,
+                _ => ItemStack.NONE,
+            };*/
+        }
+
+        public override string ToString() => $"{CurrencyType}".Colored(GetRarityColor(Rarity));
+
+        protected override float CalculateGoldValue() => CurrencyType switch
+        {
+            CurrencyType.Iron => 1f,
+            CurrencyType.Copper => Currency.ironToCopper,
+            CurrencyType.Silver => Currency.ironToSilver,
+            CurrencyType.Gold => Currency.ironToGold,
+
+            CurrencyType.NONE => 0f,
+            _ => 0f,
+        };
     }
 }

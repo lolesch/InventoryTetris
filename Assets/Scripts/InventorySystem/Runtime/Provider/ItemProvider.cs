@@ -24,6 +24,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         [SerializeField] private EquipmentTypeDistribution offHandDistribution;
         [SerializeField] private EquipmentTypeDistribution jewelryDistribution;
         [SerializeField] private ConsumableTypeDistribution consumableTypeDistribution;
+        [SerializeField] private CurrencyTypeDistribution currencyTypeDistribution;
 
         [Header("Uniques")]
         [SerializeField] private List<AbstractItemObject> Amulets;
@@ -49,6 +50,8 @@ namespace ToolSmiths.InventorySystem.Inventories
         [SerializeField] private List<AbstractItemObject> Arrows;
         [SerializeField] private List<AbstractItemObject> Books;
         [SerializeField] private List<AbstractItemObject> Potions;
+        // TODO: make it a serialiyed dictionary
+        [SerializeField] private List<Sprite> CurrencyIcons = new();
 
         public List<AbstractItem> GenerateRandomLoot(uint amount = 1)
         {
@@ -77,6 +80,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             {
                 ItemCategory.Equipment => GenerateRandomEquipment(),
                 ItemCategory.Consumable => GenerateRandomConsumable(),
+                ItemCategory.Currency => GenerateRandomCurrency(),
 
                 ItemCategory.NONE => null,
                 _ => null,
@@ -183,22 +187,6 @@ namespace ToolSmiths.InventorySystem.Inventories
             };
         }
 
-        private AbstractItem GenerateRandomConsumable()
-        {
-            var consumable = consumableTypeDistribution.GetRandomEnumerator();
-
-            var itemRarity = GetRandomRarity();
-
-            return consumable switch
-            {
-                ConsumableType.Arrow => new ConsumableItem(consumable, itemRarity),     // TODO: generate specific
-                ConsumableType.Book => new ConsumableItem(consumable, itemRarity),      // TODO: generate specific
-                ConsumableType.Potion => new ConsumableItem(consumable, itemRarity),    // TODO: generate specific
-
-                _ => null,
-            };
-        }
-
         public AbstractItem GenerateRandomBelt() => GenerateRandomOfEquipmentType(EquipmentType.Belt);
         public AbstractItem GenerateRandomBoots() => GenerateRandomOfEquipmentType(EquipmentType.Boots);
         public AbstractItem GenerateRandomBracers() => GenerateRandomOfEquipmentType(EquipmentType.Bracers);
@@ -255,6 +243,13 @@ namespace ToolSmiths.InventorySystem.Inventories
                 };
         }
 
+        private AbstractItem GenerateRandomConsumable()
+        {
+            var consumable = consumableTypeDistribution.GetRandomEnumerator();
+
+            return GenerateRandomOfConsumableType(consumable);
+        }
+
         public AbstractItem GenerateRandomOfConsumableType(ConsumableType consumableType)
         {
             var rarity = GetRandomRarity();
@@ -270,6 +265,16 @@ namespace ToolSmiths.InventorySystem.Inventories
                 };
         }
 
+        public AbstractItem GenerateRandomCurrency()
+        {
+            var currency = currencyTypeDistribution.GetRandomEnumerator();
+
+            return GenerateRandomOfCurrencyType(currency);
+        }
+
+        public AbstractItem GenerateRandomOfCurrencyType(CurrencyType currencyType) => new CurrencyItem(currencyType);
+
+        // TODO: implement falloff => ATM 300% will always drop legendaries
         private ItemRarity GetRandomRarity() => itemRarityDistribution.GetRandomEnumerator(CharacterProvider.Instance.Player.GetStatValue(StatName.IncreasedItemRarity));
 
         // TODO: equipmentType defines the list of icons 
@@ -287,6 +292,17 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             return unique?.Icon;
         }
+
+        public Sprite GetIcon(CurrencyType currencyType) => currencyType switch
+        {
+            CurrencyType.Iron => CurrencyIcons[0],
+            CurrencyType.Copper => CurrencyIcons[1],
+            CurrencyType.Silver => CurrencyIcons[2],
+            CurrencyType.Gold => CurrencyIcons[3],
+
+            CurrencyType.NONE => null,
+            _ => null,
+        };
 
         public AbstractItem GetUnique(EquipmentType equipmentType)
         {

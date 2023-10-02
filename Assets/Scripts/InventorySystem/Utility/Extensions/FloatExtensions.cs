@@ -1,6 +1,4 @@
-﻿
-
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Utility.Extensions
 {
@@ -10,8 +8,8 @@ namespace ToolSmiths.InventorySystem.Utility.Extensions
         {
             if (fromMax - fromMin == 0)
             {
-                Debug.LogWarning($"Cannot devide by 0! {fromMin} needs to differ {fromMax}");
-                fromMax++;
+                Debug.LogWarning($"{fromMin} should differ from {fromMax}");
+                fromMin--; //to not devide by 0
             }
 
             return (value - fromMin) / (fromMax - fromMin) * (toMax - toMin) + toMin;

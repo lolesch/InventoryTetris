@@ -2,6 +2,8 @@
 // Dropping an item ontop of another can duplicate it
 // Dropping an item selects unexpected positions
 
+// AutoEquip can set bows into offhand slot while dragAndDrop cant. => unify logic that determines if an item can go into that slot
+
 // comparison shows wrong numbers on the unequipped item
 // comparison cant compare against all equipment of same type (rings, both weapon slots)
 

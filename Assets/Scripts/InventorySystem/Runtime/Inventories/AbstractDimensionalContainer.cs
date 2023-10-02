@@ -117,63 +117,48 @@ namespace ToolSmiths.InventorySystem.Inventories
         // TODO package should implement IComparable 
         public void Sort() // TODO: implement garbage free sorting
         {
-            SortAlphabetically();
-            SortByRarity();
-            SortByItemDimension();
+            var sortedValues = StoredPackages.Values
+                .OrderByDescending(x => AbstractItem.GetDimensions(x.Item.Dimensions).sqrMagnitude) // by itemDimension
+                .ThenByDescending(x => x.Item.Rarity)                                               // by rarity
+                                                                                                    // todo: by itemType 
+                .ThenByDescending(x => x.Item.GoldValue)                                            // by goldValue
+                .ThenBy(x => x.Item.ToString())                                                     // by name
+                .ToList();
+
+            StoredPackages.Clear(); // This won't unequip => stats not removed from character
+
+            foreach (var package in sortedValues)
+                _ = AddToContainer(package);
         }
 
         private void SortAlphabetically()
         {
-            var sortedValues = StoredPackages.Values.ToList().OrderByDescending(x => x.Item.ToString());
+            var sortedValues = StoredPackages.Values.OrderBy(x => x.Item.ToString()).ToList();
 
             StoredPackages.Clear(); // This won't unequip => stats not removed from character
 
             foreach (var package in sortedValues)
                 _ = AddToContainer(package);
-
-            /*var storedNames = storedValues.Select(x => x.Item.ToString()).Distinct().OrderByDescending(x => x).ToList();
-            
-            foreach (var x in storedNames)
-                foreach (var y in storedValues)
-                    if (y.ToString() == x)
-                        _ = AddToContainer(y);
-            */
         }
 
         private void SortByRarity()
         {
-            var sortedValues = StoredPackages.Values.ToList().OrderByDescending(x => x.Item.Rarity).ToList();
+            var sortedValues = StoredPackages.Values.OrderByDescending(x => x.Item.Rarity).ToList();
 
             StoredPackages.Clear(); // This won't unequip => stats not removed from character
 
             foreach (var package in sortedValues)
                 _ = AddToContainer(package);
-
-            /*var storedRarities = storedValues.Select(x => x.Item.Rarity).Distinct().OrderByDescending(x => x).ToList();
-
-            foreach (var x in storedRarities)
-                foreach (var y in storedValues)
-                    if (y.Item.Rarity == x)
-                        _ = AddToContainer(y);
-            */
         }
 
         private void SortByItemDimension()
         {
-            var sortedValues = StoredPackages.Values.ToList().OrderByDescending(x => AbstractItem.GetDimensions(x.Item.Dimensions).sqrMagnitude).ToList();
+            var sortedValues = StoredPackages.Values.OrderByDescending(x => AbstractItem.GetDimensions(x.Item.Dimensions).sqrMagnitude).ToList();
 
             StoredPackages.Clear(); // This won't unequip => stats not removed from character
 
             foreach (var package in sortedValues)
                 _ = AddToContainer(package);
-
-            /*var storedDimensions = storedValues.Select(x => AbstractItem.GetDimensions(x.Item.Dimensions)).Distinct().OrderByDescending(v => v.sqrMagnitude).ToList();
-
-            foreach (var x in storedDimensions)
-                foreach (var y in storedValues)
-                    if (AbstractItem.GetDimensions(y.Item.Dimensions) == x)
-                _ = AddToContainer(package);
-            */
         }
 
         protected internal void InvokeRefresh() => OnContentChanged?.Invoke(StoredPackages);

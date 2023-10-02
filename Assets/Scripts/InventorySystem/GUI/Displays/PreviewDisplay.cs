@@ -1,5 +1,4 @@
-﻿
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using TMPro;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Items;
@@ -21,7 +20,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
         [SerializeField] private TextMeshProUGUI itemName;
         [SerializeField] private TextMeshProUGUI itemType;
         [SerializeField] private TextMeshProUGUI amount;
-        [SerializeField] private TextMeshProUGUI goldValue;
+        [SerializeField] private CurrencyDisplay goldValue;
 
         [SerializeField] private CharacterStatModifierDisplay itemStatPrefab;
         [SerializeField] private PrefabPool<CharacterStatModifierDisplay> itemStatPool;
@@ -59,10 +58,10 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                 icon.sprite = package.Item.Icon;
 
             if (amount)
-                amount.text = 1 < package.Amount /*&& package.Item is ConsumableItem*/ ? $"{package.Amount}/{(int)(package.Item as ConsumableItem).StackLimit}" : string.Empty;
+                amount.text = 1 < package.Amount ? $"{package.Amount}/{(int)package.Item.StackLimit}" : string.Empty;
 
             if (goldValue)
-                goldValue.text = 0 < package.Item.GoldValue ? $"GoldValue: {package.Item.GoldValue}" : string.Empty;
+                goldValue.Display(new Currency(package.Item.GoldValue)); //? $"{package.Item.GoldValue}" : string.Empty;
 
             if (frame)
                 frame.color = rarityColor;
@@ -78,7 +77,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 
             foreach (var stat in package.Item.Affixes)
             {
-                //TODO: inherit prefabPool to support abstractDisplays that update the Display(newData) before activating the object
+                //TODO: extend prefabPool to support abstractDisplays that update the Display(newData) before activating the object
 
                 var itemStat = itemStatPool.GetObject(false);
 

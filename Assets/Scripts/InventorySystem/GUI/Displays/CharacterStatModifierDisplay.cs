@@ -9,10 +9,9 @@ using static ToolSmiths.InventorySystem.GUI.Displays.CharacterStatModifierDispla
 
 namespace ToolSmiths.InventorySystem.GUI.Displays
 {
-    // CONTINUE HERE => implement statIcons
     public class CharacterStatModifierDisplay : AbstractDisplay<CharacterStatModifierData>
     {
-        public class CharacterStatModifierData
+        public struct CharacterStatModifierData
         {
             private CharacterStatModifier statMod;
             public string displayText;
@@ -27,7 +26,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 
                 var differenceString = statMod.Modifier.Type switch
                 {
-                    StatModifierType.Override => $"={difference:+ #.###;- #.###;#.###}",
+                    StatModifierType.Overwrite => $"={difference:+ #.###;- #.###;#.###}",
                     StatModifierType.FlatAdd => $"{difference:+ #.###;- #.###;#.###}",
                     StatModifierType.PercentAdd => $"{difference:+ #.###;- #.###;#.###}%",
                     StatModifierType.PercentMult => $"*{difference:+ #.###;- #.###;#.###}%",
@@ -44,7 +43,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 
                 icon = ItemProvider.Instance.ItemTypeData.GetStatIcon(statMod.Stat);
                 displayText = $"{statMod.Modifier} {statName} {statMod.Modifier.Range.ToString().Colored(Color.gray)} {differenceString.Colored(comparisonColor)}";
-                displayFontSize = statMod.Modifier.Value.Map(statMod.Modifier.Range, 18, 22);
+                displayFontSize = statMod.Modifier.Value.Map(statMod.Modifier.Range, 18, 24);
 
                 int CompareStatValues(CharacterStatModifier stat, out float difference)
                 {

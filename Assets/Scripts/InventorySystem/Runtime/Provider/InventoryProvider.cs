@@ -30,8 +30,6 @@ namespace ToolSmiths.InventorySystem.Inventories
         public EquipmentContainerDisplay EquipmentDisplay;
         [SerializeField] private Vector2Int equipmentSize = new(14, 1);
 
-        [SerializeField, ReadOnly] private bool add = true;
-
         [SerializeField] private Slider amountSlider;
         [SerializeField] private TextMeshProUGUI amountText;
         private uint Amount => amountSlider != null ? (uint)amountSlider.value : 1;
@@ -55,7 +53,6 @@ namespace ToolSmiths.InventorySystem.Inventories
             Equipment = new(equipmentSize);
 
             ContainerToAddTo = Inventory; // should get the current active toggle instead
-            add = true;
 
             SetInventories();
         }
@@ -65,17 +62,9 @@ namespace ToolSmiths.InventorySystem.Inventories
             //Debug.Log($"amountToAdd? {Amount}");
             for (var i = 0; i < Amount; i++)
             {
-                //Debug.Log($"adding? {add}");
-                if (add)
-                {
-                    var randomEquipment = ItemProvider.Instance.GenerateRandomOfEquipmentType(equipmentType);
-                    //Debug.Log($"{ContainerToAddTo}");
-                    _ = ContainerToAddTo?.AddToContainer(new Package(null, randomEquipment, 1));
-                }
-                else
-                {
-                    // TODO: remove Item of type {equipmentType}
-                }
+                var randomEquipment = ItemProvider.Instance.GenerateRandomOfEquipmentType(equipmentType);
+                //Debug.Log($"{ContainerToAddTo}");
+                _ = ContainerToAddTo?.AddToContainer(new Package(null, randomEquipment, 1));
             }
         }
 
@@ -83,46 +72,37 @@ namespace ToolSmiths.InventorySystem.Inventories
         {
             for (var i = 0; i < Amount; i++)
             {
-                if (add)
-                {
-                    var randomConsumable = ItemProvider.Instance.GenerateRandomOfConsumableType(consumableType);
-                    _ = ContainerToAddTo?.AddToContainer(new Package(null, randomConsumable, 1));
-                }
-                else
-                {
-                    // TODO: remove Item of type {consumableType}
-                }
+                var randomConsumable = ItemProvider.Instance.GenerateRandomOfConsumableType(consumableType);
+                _ = ContainerToAddTo?.AddToContainer(new Package(null, randomConsumable, 1));
+            }
+        }
+
+        public void AddRemoveRandomCurrency()
+        {
+            for (var i = 0; i < Amount; i++)
+            {
+                var randomCurrency = ItemProvider.Instance.GenerateRandomCurrency();
+                _ = ContainerToAddTo?.AddToContainer(new Package(null, randomCurrency, 1));
+            }
+
+        }
+        private void AddRemoveCurrency(CurrencyType currencyType)
+        {
+            for (var i = 0; i < Amount; i++)
+            {
+                var randomCurrency = ItemProvider.Instance.GenerateRandomOfCurrencyType(currencyType);
+                _ = ContainerToAddTo?.AddToContainer(new Package(null, randomCurrency, 1));
             }
         }
 
         public void AddRemoveRandomLoot()
         {
-            if (add)
-            {
-                var items = ItemProvider.Instance.GenerateRandomLoot(Amount);
+            var items = ItemProvider.Instance.GenerateRandomLoot(Amount);
 
-                for (var i = 0; i < items.Count; i++)
-                    _ = ContainerToAddTo?.AddToContainer(new Package(null, items[i], 1));
-            }
-            else // needs testing
-            {
-                var storedPackages = ContainerToAddTo?.StoredPackages.ToList();
-                var amountToRemove = Amount;
-
-                for (var i = storedPackages.Count; i-- > 0;)
-                {
-                    var removedPackage = ContainerToAddTo.RemoveAtPosition(storedPackages[i].Key, storedPackages[i].Value);
-
-                    amountToRemove -= removedPackage.Amount;
-
-                    if (amountToRemove <= 0)
-                        break;
-                }
-            }
+            for (var i = 0; i < items.Count; i++)
+                _ = ContainerToAddTo?.AddToContainer(new Package(null, items[i], 1));
         }
 
-        [ContextMenu("RemoveAllItems")]
-        public void RemoveAllItems() => RemoveAllItems(ContainerToAddTo);
         public void RemoveAllItems(AbstractDimensionalContainer container)
         {
             var storedPackages = container?.StoredPackages.ToList();
@@ -168,7 +148,10 @@ namespace ToolSmiths.InventorySystem.Inventories
         public void SetItemToBooks() => AddRemoveConsumable(ConsumableType.Book);
         public void SetItemToPotions() => AddRemoveConsumable(ConsumableType.Potion);
 
-        public void ToggleAddRemove() => add = !add;
+        public void SetItemToIron() => AddRemoveCurrency(CurrencyType.Iron);
+        public void SetItemToCopper() => AddRemoveCurrency(CurrencyType.Copper);
+        public void SetItemToSilver() => AddRemoveCurrency(CurrencyType.Silver);
+        public void SetItemToGold() => AddRemoveCurrency(CurrencyType.Gold);
 
         public void ToggleAutoEquip() => Equipment.autoEquip = !Equipment.autoEquip;
 
