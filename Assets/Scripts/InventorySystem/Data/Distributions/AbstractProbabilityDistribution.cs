@@ -8,7 +8,7 @@ namespace ToolSmiths.InventorySystem.Data.Distributions
         [System.Serializable]
         public struct EnumerationQuantity
         {
-            [HideInInspector, SerializeField] private string name;
+            [HideInInspector, SerializeField] public string name;
             [HideInInspector, SerializeField] public T Enumeration;
             [SerializeField] public uint Quantity;
 
@@ -23,15 +23,16 @@ namespace ToolSmiths.InventorySystem.Data.Distributions
         [System.Serializable]
         public struct EnumerationProbability
         {
-            [HideInInspector, SerializeField] private string name;
+            [HideInInspector, SerializeField] public string name;
             [HideInInspector, SerializeField] public T Enumeration;
             [SerializeField, Range(0f, 1f)] public float Probability;
 
-            public EnumerationProbability(T enumeration, Vector2 fraction)
+            public EnumerationProbability(T enumeration, Vector2 fraction) => this = new EnumerationProbability(enumeration, fraction.x / fraction.y);
+            public EnumerationProbability(T enumeration, float fraction)
             {
                 Enumeration = enumeration;
                 name = Enumeration.ToString();
-                Probability = fraction.x / fraction.y;
+                Probability = fraction;
             }
         }
 
@@ -53,10 +54,10 @@ namespace ToolSmiths.InventorySystem.Data.Distributions
 
                 for (var i = 0; i < quantities.Length; i++)
                 {
-                    var fraction = new Vector2(quantities[i].Quantity, Mathf.Max(1, QuantitySum));
+                    var fraction = quantities[i].Quantity / Mathf.Max(1, QuantitySum);
                     array[i] = new EnumerationProbability(quantities[i].Enumeration, fraction);
                 }
-                probabilities = array;
+                probabilities = array.OrderBy(x => x.Probability).ToArray();
 
                 return probabilities;
             }
@@ -85,20 +86,18 @@ namespace ToolSmiths.InventorySystem.Data.Distributions
         {
             var randomRoll = Random.Range(0f, 1f);
 
-            randomRoll = Mathf.Clamp01(randomRoll + externalProbabilityIncrease);
-
             for (var i = 0; i < Probabilities.Length; i++)
             {
                 var threshold = 0f;
 
-                for (var j = 0; j <= i; j++)
+                for (var j = 0; j <= i + externalProbabilityIncrease / 100; j++)
                     threshold += Probabilities[j].Probability;
 
                 if (randomRoll <= threshold)
                     return Probabilities[i].Enumeration;
             }
 
-            Debug.LogWarning("Oh oh..");
+            Debug.LogWarning($"Oh oh.. something is wron with {Probabilities[0].Enumeration.GetType().Name}");
             return default;
         }
     }
