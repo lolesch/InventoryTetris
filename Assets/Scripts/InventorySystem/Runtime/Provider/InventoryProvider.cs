@@ -11,9 +11,13 @@ namespace ToolSmiths.InventorySystem.Inventories
 {
     public class InventoryProvider : AbstractProvider<InventoryProvider>
     {
+        [field: SerializeField] public CharacterEquipment Equipment { get; private set; }
         [field: SerializeField] public CharacterInventory Inventory { get; private set; }
         [field: SerializeField] public CharacterInventory Stash { get; private set; }
-        [field: SerializeField] public CharacterEquipment Equipment { get; private set; }
+
+        // CONTINUE HERE => implement store
+        [field: SerializeField] public CharacterInventory Store { get; private set; }
+
         [field: SerializeField] public AbstractDimensionalContainer ContainerToAddTo { get; private set; }
 
         [field: SerializeField] public bool ShowDebugPositions { get; private set; }
@@ -90,7 +94,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         {
             for (var i = 0; i < Amount; i++)
             {
-                var randomCurrency = ItemProvider.Instance.GenerateRandomOfCurrencyType(currencyType);
+                var randomCurrency = ItemProvider.Instance.GenerateCurrency(currencyType);
                 _ = ContainerToAddTo?.AddToContainer(new Package(null, randomCurrency, 1));
             }
         }
@@ -162,6 +166,21 @@ namespace ToolSmiths.InventorySystem.Inventories
         public void ClearPlayerInventory() => RemoveAllItems(Inventory);
         public void ClearPlayerStash() => RemoveAllItems(Stash);
         public void ClearPlayerEquipment() => RemoveAllItems(Equipment);
+
+        // TODO: protect item losss when stash is full
+        public void StashInventory()
+        {
+            var storedPackages = Inventory?.StoredPackages.ToList();
+
+            for (var i = 0; i < storedPackages.Count; i++)
+            {
+                var package = Stash?.AddToContainer(storedPackages[i].Value);
+
+                _ = package.Value.Item == null || package.Value.Amount <= 0
+                    ? Inventory?.RemoveAtPosition(storedPackages[i].Key, storedPackages[i].Value)
+                    : Inventory?.RemoveAtPosition(storedPackages[i].Key, package.Value);
+            }
+        }
 
         //public Package EquipItem(Package package) => PlayerEquipment.AddToContainer(package);
     }

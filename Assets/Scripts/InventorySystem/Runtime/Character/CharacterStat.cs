@@ -52,7 +52,7 @@ namespace ToolSmiths.InventorySystem.Data
             TotalHasChanged?.Invoke(TotalValue);
         }
 
-        private float CalculateTotalValue()
+        private float CalculateTotalValue() //TODO: improve by using linQ => see CharacterStatsDisplay
         {
             //var levelUps = characterLevel - 1;
             var result = BaseValue;// + GrowthPerLevel * characterLevel; // flat increase

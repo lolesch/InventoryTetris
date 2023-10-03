@@ -118,44 +118,17 @@ namespace ToolSmiths.InventorySystem.Inventories
         public void Sort() // TODO: implement garbage free sorting
         {
             var sortedValues = StoredPackages.Values
-                .OrderByDescending(x => AbstractItem.GetDimensions(x.Item.Dimensions).sqrMagnitude) // by itemDimension
-                .ThenByDescending(x => x.Item.Rarity)                                               // by rarity
-                                                                                                    // todo: by itemType 
-                .ThenByDescending(x => x.Item.GoldValue)                                            // by goldValue
-                .ThenBy(x => x.Item.ToString())                                                     // by name
+                .OrderByDescending(x => x.Item.Dimensions)  // by size     //AbstractItem.GetDimensions(x.Item.Dimensions).sqrMagnitude)
+                .ThenBy(x => x.Item is CurrencyItem)        // by equipment infront of consumables infront of currency 
+                .ThenBy(x => x.Item is ConsumableItem)
+                .ThenBy(x => x.Item is EquipmentItem)
+                .ThenByDescending(x => x.Item.Rarity)       // by rarity
+                .ThenByDescending(x => x.Item.GoldValue)    // by goldValue
+                .ThenBy(x => x.Item.ToString())             // by name
                 .ToList();
 
-            StoredPackages.Clear(); // This won't unequip => stats not removed from character
-
-            foreach (var package in sortedValues)
-                _ = AddToContainer(package);
-        }
-
-        private void SortAlphabetically()
-        {
-            var sortedValues = StoredPackages.Values.OrderBy(x => x.Item.ToString()).ToList();
-
-            StoredPackages.Clear(); // This won't unequip => stats not removed from character
-
-            foreach (var package in sortedValues)
-                _ = AddToContainer(package);
-        }
-
-        private void SortByRarity()
-        {
-            var sortedValues = StoredPackages.Values.OrderByDescending(x => x.Item.Rarity).ToList();
-
-            StoredPackages.Clear(); // This won't unequip => stats not removed from character
-
-            foreach (var package in sortedValues)
-                _ = AddToContainer(package);
-        }
-
-        private void SortByItemDimension()
-        {
-            var sortedValues = StoredPackages.Values.OrderByDescending(x => AbstractItem.GetDimensions(x.Item.Dimensions).sqrMagnitude).ToList();
-
-            StoredPackages.Clear(); // This won't unequip => stats not removed from character
+            StoredPackages.Clear(); // This won't removed stats from character // but AddToContainer will add stats to character
+            // Might want to remove each package instead of Clear()
 
             foreach (var package in sortedValues)
                 _ = AddToContainer(package);

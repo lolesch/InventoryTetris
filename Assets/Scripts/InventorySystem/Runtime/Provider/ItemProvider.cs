@@ -269,10 +269,10 @@ namespace ToolSmiths.InventorySystem.Inventories
         {
             var currency = currencyTypeDistribution.GetRandomEnumerator();
 
-            return GenerateRandomOfCurrencyType(currency);
+            return GenerateCurrency(currency);
         }
 
-        public AbstractItem GenerateRandomOfCurrencyType(CurrencyType currencyType) => new CurrencyItem(currencyType);
+        public AbstractItem GenerateCurrency(CurrencyType currencyType) => new CurrencyItem(currencyType);
 
         // TODO: implement falloff => ATM 300% will always drop legendaries
         private ItemRarity GetRandomRarity() => itemRarityDistribution.GetRandomEnumerator(CharacterProvider.Instance.Player.GetStatValue(StatName.IncreasedItemRarity));

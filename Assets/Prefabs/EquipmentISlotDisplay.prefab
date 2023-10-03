@@ -101,6 +101,14 @@ MonoBehaviour:
   slotBackground: {fileID: 2604562765609723336}
   debugPosition: {fileID: 292869630088620566}
   allowedEquipmentTypes: 00000000
+  DebugItem:
+    <Icon>k__BackingField: {fileID: 0}
+    <Dimensions>k__BackingField: 0
+    <StackLimit>k__BackingField: 0
+    <Rarity>k__BackingField: 0
+    <Affixes>k__BackingField: []
+    <EquipmentCategory>k__BackingField: 0
+    <EquipmentType>k__BackingField: 0
 --- !u!1 &4253099238647935454
 GameObject:
   m_ObjectHideFlags: 0
@@ -246,7 +254,7 @@ MonoBehaviour:
   m_text: '##'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_sharedMaterial: {fileID: 2100000, guid: 79459efec17a4d00a321bdcc27bbc385, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -400,6 +408,10 @@ PrefabInstance:
       propertyPath: m_RaycastTarget
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4802227727609418227, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 2100000, guid: 79459efec17a4d00a321bdcc27bbc385, type: 2}
     - target: {fileID: 5384710942150892184, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
       propertyPath: m_PreserveAspect
       value: 1
