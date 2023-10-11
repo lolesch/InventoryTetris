@@ -23,6 +23,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             CharacterProvider.Instance.Player.GainExperience(experience, CharacterLevel);
 
             this.GetResource(StatName.Health).RefillCurrent();
+            this.GetResource(StatName.Shield).RefillCurrent();
         }
     }
 }

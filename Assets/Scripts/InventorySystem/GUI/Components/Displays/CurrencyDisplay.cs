@@ -6,13 +6,13 @@ using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.GUI.Displays
 {
-    public class CurrencyDisplay : AbstractDisplay<Currency>
+    public class CurrencyDisplay : MonoBehaviour, IDisplay<Currency>
     {
         [SerializeField] private CoinDisplay[] coinDisplays = new CoinDisplay[4];
 
         [SerializeField] private TextMeshProUGUI totalText;
 
-        public override void Display(Currency newData)
+        public void RefreshDisplay(Currency newData)
         {
             if (totalText)
                 totalText.text = $"({newData.Total})".Colored(Color.gray);

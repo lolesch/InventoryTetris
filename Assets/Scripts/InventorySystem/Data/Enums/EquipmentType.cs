@@ -20,6 +20,8 @@ namespace ToolSmiths.InventorySystem.Data.Enums
         Pants = 9,
         Shoulders = 10,
 
+        // TODO: implement DUALWIELDWEAPONS
+
         [Tooltip("OneHandedWeapons --> 101-199")]
         ONEHANDEDWEAPONS = 100,
         Sword = 101,

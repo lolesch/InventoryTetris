@@ -1,6 +1,4 @@
-using System.Collections.Generic;
 using ToolSmiths.InventorySystem.Data;
-using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Runtime.Provider;
@@ -13,43 +11,37 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
     public class EquipmentSlotDisplay : AbstractSlotDisplay
     {
-        [SerializeField] protected internal List<EquipmentType> allowedEquipmentTypes;
-
         [field: SerializeField] public EquipmentItem DebugItem;
-
-        private bool IsAllowedEquipmentType(EquipmentType type)
-        {
-            // TODO should derive this bool from the slot position
-
-            for (var i = allowedEquipmentTypes.Count; i-- > 0;)
-                if (allowedEquipmentTypes[i] == type)
-                    return true;
-
-            return allowedEquipmentTypes.Count <= 0;
-        }
 
         protected override void DropItem()
         {
-            if (StaticDragDisplay.Instance.Package.Item is EquipmentItem)
-                if (IsAllowedEquipmentType((StaticDragDisplay.Instance.Package.Item as EquipmentItem).EquipmentType))
-                {
-                    var remaining = Container.AddAtPosition(Position, packageToMove);
+            if (DragProvider.Instance.Package.Item is EquipmentItem)
+            {
+                var allowedPositions = CharacterEquipment.GetTypeSpecificPositions((DragProvider.Instance.Package.Item as EquipmentItem).EquipmentType);
 
-                    if (0 < remaining.Amount)
+                foreach (var position in allowedPositions)
+                    if (Position == position)
                     {
-                        packageToMove = remaining;
-                        StaticDragDisplay.Instance.SetPackage(this, remaining, Vector2Int.zero);
-                    }
-                    else
-                    {
-                        packageToMove = new Package();
+                        var remaining = Container.AddAtPosition(Position, packageToMove);
 
-                        StaticDragDisplay.Instance.SetPackage(this, packageToMove, Vector2Int.zero);
-                    }
+                        if (0 < remaining.Amount)
+                        {
+                            packageToMove = remaining;
+                            DragProvider.Instance.SetPackage(this, remaining, Vector2Int.zero);
+                        }
+                        else
+                        {
+                            packageToMove = new Package();
 
-                    Container.InvokeRefresh();
-                    StaticDragDisplay.Instance.Origin.Container?.InvokeRefresh();
-                }
+                            DragProvider.Instance.SetPackage(this, packageToMove, Vector2Int.zero);
+                        }
+
+                        Container.InvokeRefresh();
+                        DragProvider.Instance.Origin.Container?.InvokeRefresh();
+
+                        break;
+                    }
+            }
 
             // must come after adding items to the container to have something to preview
             base.DropItem();
@@ -66,7 +58,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             packageToMove = InventoryProvider.Instance.Inventory.AddToContainer(packageToMove);
 
             if (0 < packageToMove.Amount)
-                StaticDragDisplay.Instance.SetPackage(this, packageToMove, Vector2Int.zero);
+                DragProvider.Instance.SetPackage(this, packageToMove, Vector2Int.zero);
 
             //Container.InvokeRefresh();
             //StaticDragDisplay.Instance.Origin.Container?.InvokeRefresh();

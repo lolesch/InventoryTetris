@@ -19,17 +19,15 @@ namespace ToolSmiths.InventorySystem.Data
 
         public Currency(uint total)
         {
-            //var remainder = total;
-
             Gold = total / ironToGold;
             Silver = total % ironToGold / ironToSilver;
             Copper = total % ironToGold % ironToSilver / ironToCopper;
             Iron = total % ironToGold % ironToSilver % ironToCopper;
 
-            if (Iron + Copper * ironToCopper + Silver * ironToSilver + Gold * ironToGold != total)
-                Debug.LogWarning("something went wrong here");
+            //if (Iron + Copper * ironToCopper + Silver * ironToSilver + Gold * ironToGold != total)
+            //    Debug.LogWarning("something went wrong here");
 
-            Debug.Log(ToString());
+            //Debug.Log(ToString());
         }
 
         public Currency(float total) => this = new Currency((uint)Mathf.Abs(total));

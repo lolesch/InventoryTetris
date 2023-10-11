@@ -37,7 +37,7 @@ namespace ToolSmiths.InventorySystem.Inventories
                     package = AddToEmptyPosition(package);
 
                 if (0 < package.Amount)
-                    Debug.LogWarning($"Your Inventory is full!");
+                    Debug.LogWarning($"{GetType().Name} is full!");
 
                 // TODO: DragDrop adding to stacks is dimension dependent...
                 // => this should simply check if a stack of the same item is at the drop position and add it.
@@ -151,5 +151,52 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             return otherPackagePositions.Distinct().ToList();
         }
+    }
+
+    // CONTINUE HERE
+    public class VendorSupply : AbstractDimensionalContainer
+    {
+        public VendorSupply(Vector2Int dimensions) : base(dimensions) { }
+
+        public override Package AddToContainer(Package package)
+        {
+            if (package.Item == null || package.Amount <= 0)
+                return package;
+            if (package.Sender == InventoryProvider.Instance.Equipment || package.Sender == InventoryProvider.Instance.Inventory)
+                return package;
+
+            /// Stack or add to empty position
+            if (0 < package.Amount)
+            {
+                if (ItemStack.Single < package.Item.StackLimit)
+                    AddToOpenStacks();
+
+                if (0 < package.Amount)
+                    package = AddToEmptyPosition(package);
+
+                if (0 < package.Amount)
+                    Debug.LogWarning($"{this} is full!");
+
+                // TODO: DragDrop adding to stacks is dimension dependent...
+                // => this should simply check if a stack of the same item is at the drop position and add it.
+                void AddToOpenStacks()
+                {
+                    var positions = StoredPackages.Keys.ToList();
+
+                    for (var i = 0; i < positions.Count && 0 < package.Amount; i++)
+                        if (StoredPackages[positions[i]].Item.Equals(package.Item))
+                            if (0 < StoredPackages[positions[i]].SpaceLeft)
+                                package = AddAtPosition(positions[i], package);
+                }
+            }
+            return package;
+        }
+
+        public override Package AddAtPosition(Vector2Int position, Package package)
+            => throw new NotImplementedException();
+        public override Package AddToEmptyPosition(Package package) => throw new NotImplementedException();
+        public override List<Vector2Int> GetStoredItemsAt(Vector2Int position, Vector2Int dimension) => throw new NotImplementedException();
+
+        public void Restock() { }
     }
 }

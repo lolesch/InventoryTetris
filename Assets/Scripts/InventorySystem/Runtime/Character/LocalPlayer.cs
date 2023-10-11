@@ -47,13 +47,13 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
             foreach (var stat in statsAndResources)
             {
-                //TODO: extend prefabPool to support abstractDisplays that update the Display(newData) before activating the object
+                //TODO: extend prefabPool to support IDisplay<T> that update the Display(newData) before activating the object
 
-                var itemStat = characterStatPool.GetObject(false);
+                var statDisplay = characterStatPool.GetObject(false);
 
-                itemStat.Display(new(stat));
+                statDisplay.RefreshDisplay(new(stat));
 
-                itemStat.gameObject.SetActive(true);
+                statDisplay.gameObject.SetActive(true);
             }
         }
 

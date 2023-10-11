@@ -2,13 +2,15 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace DC
+namespace ToolSmiths.InventorySystem.Utility
 {
     [RequireComponent(typeof(TextMeshProUGUI))]
     public class DebugSceneName : MonoBehaviour
     {
-        private TextMeshProUGUI sceneText;
-        [SerializeField, ReadOnly] private string sceneName;
+        [SerializeField, ReadOnly] private TextMeshProUGUI sceneText;
+        private TextMeshProUGUI SceneText => sceneText != null ? sceneText : sceneText = GetComponent<TextMeshProUGUI>();
+        private string CurrentScene => SceneManager.GetActiveScene().name;
+
         private void OnEnable() => SetSceneText();
 
         private void OnValidate() => SetSceneText();
@@ -17,12 +19,8 @@ namespace DC
         {
             if (Debug.isDebugBuild)
             {
-                sceneText = GetComponent<TextMeshProUGUI>();
-
-                sceneName = SceneManager.GetActiveScene().name;
-
-                if (sceneText != null && sceneName != null)
-                    sceneText.text = sceneName;
+                if (SceneText != null && CurrentScene != null)
+                    SceneText.text = CurrentScene;
             }
         }
     }

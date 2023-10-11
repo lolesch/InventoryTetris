@@ -3,11 +3,11 @@ using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.GUI.Displays
 {
-    public class TestDisplay : AbstractDisplay<TextAndFontSize>
+    public class TestDisplay : MonoBehaviour, IDisplay<TextAndFontSize>
     {
         [SerializeField] protected TextMeshProUGUI testText;
 
-        public override void Display(TextAndFontSize newData)
+        public void RefreshDisplay(TextAndFontSize newData)
         {
             testText.text = newData.text;
             testText.fontSize = newData.fontSize;
@@ -18,7 +18,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
             if (testText == null)
                 testText = GetComponent<TextMeshProUGUI>();
 
-            Display(new("This is a test display - requires further implementation", testText.fontSize));
+            RefreshDisplay(new("This is a test display - requires further implementation", testText.fontSize));
         }
     }
 

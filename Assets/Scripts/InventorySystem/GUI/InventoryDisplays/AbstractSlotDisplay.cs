@@ -40,11 +40,11 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             if (debugPosition != null)
                 debugPosition.text = InventoryProvider.Instance.ShowDebugPositions ? Position.ToString() : "";
 
-            StaticDragDisplay.Instance.OnOverlapping -= SetBackgroundColor;
-            StaticDragDisplay.Instance.OnOverlapping += SetBackgroundColor;
+            DragProvider.Instance.OnOverlapping -= SetBackgroundColor;
+            DragProvider.Instance.OnOverlapping += SetBackgroundColor;
         }
 
-        private void OnDisable() => StaticDragDisplay.Instance.OnOverlapping -= SetBackgroundColor;
+        private void OnDisable() => DragProvider.Instance.OnOverlapping -= SetBackgroundColor;
 
         public void SetupSlot(AbstractDimensionalContainer container, Vector2Int position)
         {
@@ -63,14 +63,14 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         public void OnPointerExit(PointerEventData eventData)
         {
-            StaticDragDisplay.Instance.SetHoveredSlot(null);
+            DragProvider.Instance.SetHoveredSlot(null);
 
             FadeOutPreview();
         }
 
         public void OnPointerEnter(PointerEventData eventData)
         {
-            StaticDragDisplay.Instance.SetHoveredSlot(this);
+            DragProvider.Instance.SetHoveredSlot(this);
 
             FadeInPreview();
         }
@@ -87,19 +87,11 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         private void HandleItem(PointerEventData eventData)
         {
-            // TODO: this should be abstract and each slotDisplay decides how to handle items
-            // --> or calculate the context dependent on what UI elements are visable...
-            // => stash and inventory will equip/consume/use/sell
-            // => equipment will unequip
-            // => shop will buy
-
-            // TODO: SPLIT ITEM STACKS => handle picking up one/all from a stack
-
-            if (StaticDragDisplay.Instance.IsDragging)
+            if (DragProvider.Instance.IsDragging)
                 DropItem();
-            else
+            else if (Container != null)
             {
-                var storedPositions = Container.GetStoredItemsAt(Position, new(1, 1));
+                var storedPositions = Container.GetStoredItemsAt(Position);
 
                 if (storedPositions.Count == 1)
                 {
@@ -108,7 +100,6 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                     if (eventData.button == PointerEventData.InputButton.Right)
                     {
                         if (packageToMove.Item is ConsumableItem)
-                            //(packageToMove.Item as ConsumableItem).Consume();
                             ConsumeItem();
 
                         else if (packageToMove.Item is EquipmentItem)
@@ -120,9 +111,14 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                         return;
                     }
 
+                    // TODO: SPLIT ITEM STACKS => handle picking up one/all from a stack
+
                     if (Input.GetKey(KeyCode.LeftControl))
                         if (1 < packageToMove.Amount)
                             packageToMove.ReduceAmount(packageToMove.Amount / 2);
+
+                    // CONTINUE HERE
+                    // TODO: implement static trade context -> send packages to the tradeProvider to decide how to handle items 
 
                     if (Input.GetKey(KeyCode.LeftShift))
                     {
@@ -130,8 +126,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                         {
                             _ = Container.RemoveAtPosition(storedPositions[0], packageToMove);
                             InventoryProvider.Instance.Stash.AddToContainer(packageToMove);
+                            // -> rework this to a context based system, where each container is eigher left or right sided and therefore moving items to the other side
                         }
-                        else if (Container == InventoryProvider.Instance.Stash)
+                        else //if (Container == InventoryProvider.Instance.Stash)
                         {
                             _ = Container.RemoveAtPosition(storedPositions[0], packageToMove);
                             InventoryProvider.Instance.Inventory.AddToContainer(packageToMove);
@@ -143,7 +140,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
                         var positionOffset = Position - storedPositions[0];
 
-                        StaticDragDisplay.Instance.SetPackage(this, packageToMove, positionOffset);
+                        DragProvider.Instance.SetPackage(this, packageToMove, positionOffset);
                     }
                 }
 
@@ -158,7 +155,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             if (Container == null)
                 return;
 
-            var itemToDisplay = Container?.GetStoredItemsAt(Position, new(1, 1));
+            var itemToDisplay = Container.GetStoredItemsAt(Position);
             if (itemToDisplay.Count == 1)
                 if (Container.StoredPackages.TryGetValue(itemToDisplay[0], out var hoveredIten))
                     if (hoveredIten.Item != null && 0 < hoveredIten.Amount)
@@ -176,7 +173,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
                     if (canFadeIn && hovering)
                     {
-                        StaticPrevievDisplay.Instance.RefreshPreviewDisplay(package, this);
+                        PreviewProvider.Instance.RefreshPreviewDisplay(package, this);
                         hovering = false;
                     }
                 }
@@ -187,7 +184,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         {
             hovering = false;
 
-            StaticPrevievDisplay.Instance.RefreshPreviewDisplay(new Package(Container, null, 0), this);
+            PreviewProvider.Instance.RefreshPreviewDisplay(new Package(Container, null, 0), this);
         }
 
         protected virtual void DropItem() => FadeInPreview();

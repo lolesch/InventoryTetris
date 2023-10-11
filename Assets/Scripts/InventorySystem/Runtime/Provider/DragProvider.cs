@@ -9,10 +9,9 @@ using UnityEngine.UI;
 
 namespace ToolSmiths.InventorySystem.Runtime.Provider
 {
-    // TODO: inherit AbstractDisplay
     [System.Serializable]
     [RequireComponent(typeof(RectTransform))]
-    public class StaticDragDisplay : AbstractProvider<StaticDragDisplay>
+    public class DragProvider : AbstractProvider<DragProvider>
     {
         public bool IsDragging => itemDisplay.gameObject.activeSelf;
 
@@ -34,8 +33,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
         private void Awake()
         {
-            name = "StaticDragDisplay";
-
             _ = transform.root.TryGetComponent(out rootCanvas);
 
             itemDisplay.gameObject.SetActive(false);
@@ -84,15 +81,13 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
                 var storedPositions = Hovered.Container?.GetStoredItemsAt(positionToAdd, AbstractItem.GetDimensions(Package.Item.Dimensions));
 
-                if (storedPositions.Count <= 0)
-                {
-                    if (background)
-                        background.color = initialColor;
-                    return;
-                }
-
                 if (background)
-                    background.color = (storedPositions.Count == 1) ? initialColor * Color.yellow : initialColor * Color.red;
+                    background.color = storedPositions.Count switch
+                    {
+                        0 => initialColor,
+                        1 => initialColor * Color.yellow,
+                        _ => initialColor * Color.red,
+                    };
 
                 //TODO: invoke an event each time the drag display is entering new overlapping positions
                 // each slotDisplay will listen to this event and color its background based on the overlapping result

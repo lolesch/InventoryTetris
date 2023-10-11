@@ -12,11 +12,11 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
     {
         protected override void DropItem()
         {
-            if (StaticDragDisplay.Instance.Package.Item != null)
+            if (DragProvider.Instance.Package.Item != null)
             {
-                var packageToMove = StaticDragDisplay.Instance.Package;
+                var packageToMove = DragProvider.Instance.Package;
 
-                StaticDragDisplay.Instance.Origin.Container?.RemoveFromContainer(packageToMove);
+                DragProvider.Instance.Origin.Container?.RemoveFromContainer(packageToMove);
 
                 var currency = new Currency(packageToMove.Item.GoldValue);
 
@@ -25,10 +25,10 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 InventoryProvider.Instance.Inventory.AddToContainer(new Package(Container, ItemProvider.Instance.GenerateCurrency(Data.Enums.CurrencyType.Copper), currency.Copper));
                 InventoryProvider.Instance.Inventory.AddToContainer(new Package(Container, ItemProvider.Instance.GenerateCurrency(Data.Enums.CurrencyType.Iron), currency.Iron));
 
-                StaticDragDisplay.Instance.SetPackage(this, new Package(), Vector2Int.zero);
+                DragProvider.Instance.SetPackage(this, new Package(), Vector2Int.zero);
 
                 Container?.InvokeRefresh();
-                StaticDragDisplay.Instance.Origin.Container?.InvokeRefresh();
+                DragProvider.Instance.Origin.Container?.InvokeRefresh();
             }
 
             // must come after adding items to the container to have something to preview

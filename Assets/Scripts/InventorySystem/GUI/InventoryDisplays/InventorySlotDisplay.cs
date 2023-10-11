@@ -18,9 +18,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         protected override void DropItem()
         {
-            if (StaticDragDisplay.Instance.Package.Item != null)
+            if (DragProvider.Instance.Package.Item != null)
             {
-                var positionOffset = AbstractItem.GetDimensions(StaticDragDisplay.Instance.Package.Item.Dimensions) / 2;
+                var positionOffset = AbstractItem.GetDimensions(DragProvider.Instance.Package.Item.Dimensions) / 2;
                 var mousePositionOffset = (Vector2)(Input.mousePosition - transform.position) / transform.lossyScale; //transform.root.GetComponent<Canvas>().scaleFactor;
                 var relativeMouseOffset = (mousePositionOffset - (transform as RectTransform).rect.size / 2) / (transform as RectTransform).rect.size;
                 var mouseOffset = new Vector2Int(Mathf.CeilToInt(relativeMouseOffset.x), -Mathf.CeilToInt(relativeMouseOffset.y));
@@ -32,17 +32,17 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 if (0 < remaining.Amount)
                 {
                     packageToMove = remaining;
-                    StaticDragDisplay.Instance.SetPackage(this, remaining, positionOffset);
+                    DragProvider.Instance.SetPackage(this, remaining, positionOffset);
                 }
                 else
                 {
                     packageToMove = new Package();
 
-                    StaticDragDisplay.Instance.SetPackage(this, packageToMove, positionOffset);
+                    DragProvider.Instance.SetPackage(this, packageToMove, positionOffset);
                 }
 
                 Container.InvokeRefresh();
-                StaticDragDisplay.Instance.Origin.Container?.InvokeRefresh();
+                DragProvider.Instance.Origin.Container?.InvokeRefresh();
             }
 
             // must come after adding items to the container to have something to preview
@@ -70,35 +70,38 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         protected override void EquipItem()
         {
-            var storedPositions = Container.GetStoredItemsAt(Position, new(1, 1));
+            if (Container != null)
+            {
+                var storedPositions = Container.GetStoredItemsAt(Position);
 
-            if (storedPositions.Count == 1)
-                if (Container.StoredPackages.TryGetValue(storedPositions[0], out packageToMove))
-                {
-                    if (packageToMove.Item is EquipmentItem)
+                if (storedPositions.Count == 1)
+                    if (Container.StoredPackages.TryGetValue(storedPositions[0], out packageToMove))
                     {
-                        _ = Container.RemoveAtPosition(storedPositions[0], packageToMove);
+                        if (packageToMove.Item is EquipmentItem)
+                        {
+                            _ = Container.RemoveAtPosition(storedPositions[0], packageToMove);
 
-                        packageToMove = InventoryProvider.Instance.Equipment.AddToContainer(packageToMove);
+                            packageToMove = InventoryProvider.Instance.Equipment.AddToContainer(packageToMove);
 
-                        if (0 < packageToMove.Amount)
-                            packageToMove = Container.AddToEmptyPosition(packageToMove);
+                            if (0 < packageToMove.Amount)
+                                packageToMove = Container.AddToEmptyPosition(packageToMove);
 
-                        var positionOffset = Position - storedPositions[0]; // might look up the added package and get that position instead
+                            var positionOffset = Position - storedPositions[0]; // might look up the added package and get that position instead
 
-                        StaticDragDisplay.Instance.SetPackage(this, packageToMove, positionOffset);
+                            DragProvider.Instance.SetPackage(this, packageToMove, positionOffset);
 
-                        //Container.InvokeRefresh();
-                        //SStaticDragDisplay.Instance.Origin.Container?.InvokeRefresh();
+                            //Container.InvokeRefresh();
+                            //SStaticDragDisplay.Instance.Origin.Container?.InvokeRefresh();
+                        }
                     }
-                }
+            }
 
             base.EquipItem();
         }
 
         protected override void ConsumeItem()
         {
-            var storedPositions = Container.GetStoredItemsAt(Position, new(1, 1));
+            var storedPositions = Container.GetStoredItemsAt(Position);
 
             if (storedPositions.Count == 1)
                 if (Container.StoredPackages.TryGetValue(storedPositions[0], out packageToMove))

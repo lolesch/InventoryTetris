@@ -11,9 +11,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
     {
         protected override void DropItem()
         {
-            StaticDragDisplay.Instance.SetPackage(this, new Package(Container, null, 0), Vector2Int.zero);
+            DragProvider.Instance.SetPackage(this, new Package(Container, null, 0), Vector2Int.zero);
 
-            StaticDragDisplay.Instance.Origin.Container?.InvokeRefresh();
+            DragProvider.Instance.Origin.Container?.InvokeRefresh();
         }
     }
 }

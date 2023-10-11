@@ -13,7 +13,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
 
         public event Action OnGroupChanged;
 
-        private readonly List<AbstractToggle> toggleList = new();
+        private readonly List<AbstractToggle> radioToggles = new();
 
         private void OnValidate()
         {
@@ -21,48 +21,38 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
                 LogExtensions.MissingComponent(nameof(LayoutGroup), gameObject);
         }
 
-        public void SetOtherTogglesOff(AbstractToggle activatedToggle)
+        public void Activate(AbstractToggle activatedToggle)
         {
             if (activatedToggle == null || ActivatedToggle == activatedToggle)
                 return;
 
             ActivatedToggle = activatedToggle;
 
-            for (var i = 0; i < toggleList.Count; i++)
-                if (toggleList[i].IsOn && toggleList[i] != ActivatedToggle)
-                    toggleList[i].SetToggle(false);
+            foreach (var toggle in radioToggles)
+                if (toggle != ActivatedToggle /*&& toggle.IsOn*/)
+                    toggle.SetToggle(false);
 
             OnGroupChanged?.Invoke();
         }
 
         public void Register(AbstractToggle item)
         {
-            if (Contains(item))
+            if (radioToggles.Contains(item))
                 return;
 
-            toggleList.Add(item);
+            radioToggles.Add(item);
 
             OnGroupChanged?.Invoke();
-
-            bool Contains(AbstractToggle item)
-            {
-                for (var i = 0; i < toggleList.Count; i++)
-                    if (toggleList[i].Equals(item))
-                        return true;
-
-                return false;
-            }
         }
 
         public void Unregister(AbstractToggle item)
         {
-            for (var i = toggleList.Count; i-- > 0;)
-                if (toggleList[i].Equals(item))
-                {
-                    toggleList.RemoveAt(i);
+            if (!radioToggles.Contains(item))
+                return;
 
-                    OnGroupChanged?.Invoke();
-                }
+            radioToggles.Remove(item);
+
+            OnGroupChanged?.Invoke();
         }
     }
 }

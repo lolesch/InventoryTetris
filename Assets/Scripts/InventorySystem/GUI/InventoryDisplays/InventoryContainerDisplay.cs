@@ -12,8 +12,23 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
     {
         [SerializeField] protected InventorySlotDisplay slotDisplayPrefab;
 
-        private void Awake()
+        //private void Awake()
+        //{
+        //    var gridLayout = GetComponent<GridLayoutGroup>();
+        //    if (gridLayout)
+        //    {
+        //        gridLayout.startAxis = GridLayoutGroup.Axis.Vertical;
+        //        gridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+        //        gridLayout.constraintCount = Container.Dimensions.x;
+        //    }
+        //}
+
+        protected override void SetupSlotDisplays()
         {
+            // TODO: make it a prefab pool instead
+            if (slotDisplayPrefab)
+                InstantiateNewSlots(slotDisplayPrefab);
+
             var gridLayout = GetComponent<GridLayoutGroup>();
             if (gridLayout)
             {
@@ -21,12 +36,6 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 gridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
                 gridLayout.constraintCount = Container.Dimensions.x;
             }
-        }
-
-        protected override void SetupSlotDisplays()
-        {
-            if (slotDisplayPrefab)
-                InstantiateNewSlots(slotDisplayPrefab);
 
             void InstantiateNewSlots(InventorySlotDisplay slot)
             {
@@ -34,6 +43,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
                 var current = 0;
                 containerSlotDisplays.Clear();
+
                 for (var x = 0; x < Container?.Dimensions.x; x++)
                     for (var y = 0; y < Container?.Dimensions.y; y++, current++)
                     {

@@ -36,7 +36,8 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
 
             //IsOn = isToggledOnAwake || isToggledOnEnable;
 
-            NotifyGroup(IsOn);
+            if (IsOn && RadioGroup)
+                RadioGroup.Activate(this);
         }
 
         protected override void Awake() => base.Awake();//if (isToggledOnAwake)//    SetToggle(isToggledOnAwake);
@@ -48,10 +49,20 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
             //if (!isToggledOnAwake)
             //    SetToggle(isToggledOnEnable);
 
-            if (radioGroup && interactable)
-                radioGroup.Register(this);
+            if (RadioGroup && interactable)
+                RadioGroup.Register(this);
+        }
 
+        protected override void Start()
+        {
             SetToggle(IsOn);
+
+            DoStateTransition(IsOn ? SelectionState.Selected : SelectionState.Normal, false);
+
+            if (DoScaleOnSelect)
+                Scale(IsOn, scaleOnSelect);
+            else if (DoScaleOnHover)
+                Scale(IsOn, scaleOnHover);
         }
 
         protected override void OnDisable()
@@ -61,14 +72,17 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
             if (targetGraphic && DOTween.IsTweening(targetGraphic.transform))
                 DOTween.Kill(targetGraphic.transform);
 
-            if (radioGroup)
-                radioGroup.Unregister(this);
+            if (RadioGroup)
+                RadioGroup.Unregister(this);
         }
 
         //public void Toggle() => SetToggle(!IsOn);
 
         public virtual void SetToggle(bool isOn)
         {
+            if (isOn == IsOn)
+                return;
+
             IsOn = isOn;
             OnToggle?.Invoke(IsOn);
 
@@ -82,16 +96,8 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
 
             PlayToggleSound(IsOn);
 
-            NotifyGroup(IsOn);
-        }
-
-        protected void NotifyGroup(bool isOn)
-        {
-            if (!RadioGroup)
-                return;
-
-            if (isOn)
-                RadioGroup.SetOtherTogglesOff(this);
+            if (IsOn && RadioGroup)
+                RadioGroup.Activate(this);
         }
 
         public override void OnSubmit(BaseEventData eventData)

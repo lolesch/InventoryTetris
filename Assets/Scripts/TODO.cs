@@ -7,7 +7,7 @@
 // comparison shows wrong numbers on the unequipped item
 // comparison cant compare against all equipment of same type (rings, both weapon slots)
 
-/// TODO
+#region TODO
 // fix item duplication
 
 // fix the item drop positioning
@@ -17,12 +17,15 @@
 
 // rework item comparison
 // compare rings and weapons to both slots
+#endregion TODO
 
-/// PLAYER STATS DETAILS
+#region PLAYER STATS DETAILS
 // hoverable playerStatDisplays => tooltip baseValue and mod sum per mod type
-// add icons to the displays
 
-/// COMBAT SIMULATION
+// DPS display
+#endregion PLAYER STATS DETAILS
+
+#region COMBAT SIMULATION
 // Weapons should have attackSpeed multiply mod
 // Weapons should set Damage base value on equip
 
@@ -30,16 +33,18 @@
 
 // add skills to deal damage with
 // HUD to show skills
+#endregion COMBAT SIMULATION
 
-/// CRAFTING SYSTEM
+#region CRAFTING SYSTEM
 // adjustable affixe amount
 // adjustable affixes
 // adjustable affixe values
 // adjustable item rarity
 // lock affixes
 // ...
+#endregion CRAFTING SYSTEM
 
-/// CRAFTABLE SKILLS
+#region CRAFTABLE SKILLS
 // base skills have a set of mods
 // crafting allows to adjust, add or combine mods
 /* sample mods are:
@@ -48,12 +53,14 @@
  * radius
  * projectileAmount
  * ... */
+#endregion CRAFTABLE SKILLS
 
-/// ITEM SOCKETS
+#region ITEM SOCKETS
 // implement the simplest version of socketing you can come up with
 // design socketables - this goes into attribute design
+#endregion ITEM SOCKETS
 
-/// ICEBOX
+#region ICEBOX
 // Improved MagicFind:
 // in D2 => Effective MF = (MF * Factor) / (MF + Factor), where Factor=250 for unique items, 500 for set items and 600 for rare items..
 
@@ -61,5 +68,12 @@
 // -> this might require to make each stashTab its own inventory to interact with
 
 // add a source to statModifiers to remove all modifiers of that source 
+#endregion ICEBOX
 
-/// POLISH
+#region ITEM MOVEMENT
+// research if "Handle Item" should instead send the package to the tradeProvider to decide what to do with that item based on the open inventory displays
+#endregion ITEM MOVEMENT
+
+#region POLISH
+//
+#endregion POLISH

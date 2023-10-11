@@ -10,7 +10,7 @@ using static ToolSmiths.InventorySystem.GUI.Displays.CharacterStatDisplay;
 
 namespace ToolSmiths.InventorySystem.GUI.Displays
 {
-    public class CharacterStatDisplay : AbstractDisplay<CharacterStatData>
+    public class CharacterStatDisplay : MonoBehaviour, IDisplay<CharacterStatData>
     {
         public struct CharacterStatData
         {
@@ -51,7 +51,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 
         [SerializeField] protected TextMeshProUGUI text;
 
-        public override void Display(CharacterStatData newData)
+        public void RefreshDisplay(CharacterStatData newData)
         {
             icon.sprite = newData.icon;
             text.text = newData.displayText;

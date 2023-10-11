@@ -8,12 +8,18 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.Inventories
 {
     [Serializable]
+    // stored,
+    // delivered,
+    // consumed,
+
+    // ownership
+
     public abstract class AbstractDimensionalContainer
     {
-        public AbstractDimensionalContainer(Vector2Int dimensions) => Dimensions = dimensions;
+        [SerializeField] public AbstractDimensionalContainer(Vector2Int dimensions) => Dimensions = dimensions;
 
-        public readonly Vector2Int Dimensions;
-        public int Capacity => Dimensions.x * Dimensions.y;
+        [field: SerializeField] public readonly Vector2Int Dimensions;
+        [SerializeField] public int Capacity => Dimensions.x * Dimensions.y;
 
         public event Action<Dictionary<Vector2Int, Package>> OnContentChanged;
 
@@ -38,6 +44,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         /// A List of all storedPackages positions that overlap with the requiredPositions
         public abstract List<Vector2Int> GetStoredItemsAt(Vector2Int position, Vector2Int dimension);
+        public List<Vector2Int> GetStoredItemsAt(Vector2Int position) => GetStoredItemsAt(position, Vector2Int.one);
 
         public Package RemoveFromContainer(Package package)
         {
@@ -62,7 +69,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         public Package RemoveAtPosition(Vector2Int position, Package package)
         {
-            var storedPositions = GetStoredItemsAt(position, new(1, 1)); // will this ever return more than one position?
+            var storedPositions = GetStoredItemsAt(position); // will this ever return more than one position?
 
             if (storedPositions.Count == 1)
             {
@@ -88,7 +95,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         public bool IsEmptyPosition(Vector2Int position, Vector2Int dimension, out List<Vector2Int> otherItems)
         {
-            otherItems = null;
+            otherItems = new();
 
             if (IsValidPosition(position, dimension))
             {
@@ -115,11 +122,11 @@ namespace ToolSmiths.InventorySystem.Inventories
         public bool TryGetPackageAt(Vector2Int position, out Package package) => StoredPackages.TryGetValue(position, out package);
 
         // TODO package should implement IComparable 
-        public void Sort() // TODO: implement garbage free sorting
+        public void Sort()
         {
             var sortedValues = StoredPackages.Values
                 .OrderByDescending(x => x.Item.Dimensions)  // by size     //AbstractItem.GetDimensions(x.Item.Dimensions).sqrMagnitude)
-                .ThenBy(x => x.Item is CurrencyItem)        // by equipment infront of consumables infront of currency 
+                .ThenBy(x => x.Item is CurrencyItem)        // by itemType (equipment before consumables before currency)
                 .ThenBy(x => x.Item is ConsumableItem)
                 .ThenBy(x => x.Item is EquipmentItem)
                 .ThenByDescending(x => x.Item.Rarity)       // by rarity
@@ -127,8 +134,8 @@ namespace ToolSmiths.InventorySystem.Inventories
                 .ThenBy(x => x.Item.ToString())             // by name
                 .ToList();
 
-            StoredPackages.Clear(); // This won't removed stats from character // but AddToContainer will add stats to character
-            // Might want to remove each package instead of Clear()
+            foreach (var package in sortedValues)
+                _ = RemoveFromContainer(package);
 
             foreach (var package in sortedValues)
                 _ = AddToContainer(package);

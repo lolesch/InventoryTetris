@@ -39,7 +39,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             resource.CurrentHasDepleted += CharacterResourceWarning;
             resource.RefillCurrent();
 
-            this.GetResource(StatName.Shield).DepleteCurrent();
+            this.GetResource(StatName.Shield).RefillCurrent();
 
             //TODO: design Experience
             this.GetResource(StatName.Experience).DepleteCurrent();

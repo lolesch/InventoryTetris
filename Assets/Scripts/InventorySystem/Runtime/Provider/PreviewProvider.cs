@@ -8,10 +8,9 @@ using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Runtime.Provider
 {
-    // TODO: inherit AbstractDisplay
     [System.Serializable]
     [RequireComponent(typeof(RectTransform))]
-    public class StaticPrevievDisplay : AbstractProvider<StaticPrevievDisplay>
+    public class PreviewProvider : AbstractProvider<PreviewProvider>
     {
         [SerializeField] private PreviewDisplay hoveredItem;
         [SerializeField] private PreviewDisplay compareItem;
@@ -44,7 +43,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             if (package.Item is EquipmentItem && slot is not EquipmentSlotDisplay)
             {
                 // TODO compare to all equipments of the items equipmentType
-                var equipmentPositions = InventoryProvider.Instance.Equipment.GetTypeSpecificPositions((package.Item as EquipmentItem).EquipmentType);
+                var equipmentPositions = CharacterEquipment.GetTypeSpecificPositions((package.Item as EquipmentItem).EquipmentType);
 
                 for (var i = 0; i < equipmentPositions.Length; i++)
                     InventoryProvider.Instance.Equipment.StoredPackages.TryGetValue(equipmentPositions[i], out compareTo[i]);

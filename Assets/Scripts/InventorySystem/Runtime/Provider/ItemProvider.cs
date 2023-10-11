@@ -50,7 +50,8 @@ namespace ToolSmiths.InventorySystem.Inventories
         [SerializeField] private List<AbstractItemObject> Arrows;
         [SerializeField] private List<AbstractItemObject> Books;
         [SerializeField] private List<AbstractItemObject> Potions;
-        // TODO: make it a serialiyed dictionary
+        [Space]
+        // TODO: make it a serialized dictionary
         [SerializeField] private List<Sprite> CurrencyIcons = new();
 
         public List<AbstractItem> GenerateRandomLoot(uint amount = 1)
@@ -87,7 +88,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             };
         }
 
-        private AbstractItem GenerateRandomEquipment()
+        public AbstractItem GenerateRandomEquipment()
         {
             var equipmentCategory = equipmentCategoryDistribution.GetRandomEnumerator();
 

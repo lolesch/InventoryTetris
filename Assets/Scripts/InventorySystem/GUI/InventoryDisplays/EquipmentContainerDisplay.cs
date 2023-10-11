@@ -43,10 +43,6 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
                     current++;
                 }
-
-            //Icon.color = InventoryProvider.Instance.ContainerToAddTo == Container
-            //    ? new Color(1, .84f, 0, 1)
-            //    : Color.white;
         }
     }
 }

@@ -4,6 +4,8 @@ using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Runtime.Pools
 {
+    //TODO: extend prefabPool to support IDisplay<T> that update the Display(newData) before activating the object
+
     public class PrefabPool<T> : IObjectPool<T> where T : MonoBehaviour
     {
         private readonly T prefab;

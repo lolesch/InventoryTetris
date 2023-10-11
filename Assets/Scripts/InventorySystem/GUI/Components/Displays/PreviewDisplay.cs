@@ -61,7 +61,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                 amount.text = 1 < package.Amount ? $"{package.Amount}/{(int)package.Item.StackLimit}" : string.Empty;
 
             if (goldValue)
-                goldValue.Display(new Currency(package.Item.GoldValue)); //? $"{package.Item.GoldValue}" : string.Empty;
+                goldValue.RefreshDisplay(new Currency(package.Item.GoldValue)); //? $"{package.Item.GoldValue}" : string.Empty;
 
             if (frame)
                 frame.color = rarityColor;
@@ -81,7 +81,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 
                 var itemStat = itemStatPool.GetObject(false);
 
-                itemStat.Display(new(stat, compareTo));
+                itemStat.RefreshDisplay(new(stat, compareTo));
 
                 itemStat.gameObject.SetActive(true);
             }
