@@ -23,6 +23,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
         private Canvas rootCanvas;
 
+        public RectTransform ItemDisplay => itemDisplay;
+
         public AbstractSlotDisplay Origin;
         public AbstractSlotDisplay Hovered;
 

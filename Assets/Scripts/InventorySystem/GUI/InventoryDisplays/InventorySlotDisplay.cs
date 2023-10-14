@@ -22,15 +22,26 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             if (!package.IsValid)
                 return;
 
-            var positionOffset = AbstractItem.GetDimensions(DragProvider.Instance.DraggingPackage.Item.Dimensions) / 2;
-            var mousePositionOffset = (Vector2)(Input.mousePosition - transform.position) / transform.lossyScale; //transform.root.GetComponent<Canvas>().scaleFactor;
-            var relativeMouseOffset = (mousePositionOffset - (transform as RectTransform).rect.size / 2) / (transform as RectTransform).rect.size;
-            var mouseOffset = new Vector2Int(Mathf.CeilToInt(relativeMouseOffset.x), -Mathf.CeilToInt(relativeMouseOffset.y));
+            var draggingDimensions = AbstractItem.GetDimensions(DragProvider.Instance.DraggingPackage.Item.Dimensions);
+            var DraggingPivot = DragProvider.Instance.ItemDisplay.pivot; // anchored in leftBottom to match mousePosition coordinates
+            var positionRelativeToItemDimensions = DraggingPivot * draggingDimensions;
+            var positionOffset = new Vector2Int(Mathf.FloorToInt(positionRelativeToItemDimensions.x), draggingDimensions.y - 1 - Mathf.FloorToInt(positionRelativeToItemDimensions.y));
 
-            var positionToAdd = Position - positionOffset + mouseOffset;
+            #region RETUNDANT
+            var pointerWithinThisSlot = (Vector2)(Input.mousePosition - transform.position) / transform.lossyScale;
+            var distanceToCenter = AbstractItem.GetDimensions(DragProvider.Instance.DraggingPackage.Item.Dimensions) / 2;
+
+            var relativeMouseOffset = (pointerWithinThisSlot - (transform as RectTransform).rect.size / 2) / (transform as RectTransform).rect.size;
+            var mouseOffset = new Vector2Int(Mathf.CeilToInt(relativeMouseOffset.x), -Mathf.CeilToInt(relativeMouseOffset.y));
+            #endregion RETUNDANT
+
+            //var positionToAdd = Position - distanceToCenter + mouseOffset;
+            // TODO: re-implement the half slot offset for expected slots to add to 
+            var positionToAdd = Position - positionOffset;
 
             package = Container.AddAtPosition(positionToAdd, package);
 
+            //DragProvider.Instance.SetPackage(this, package, distanceToCenter);
             DragProvider.Instance.SetPackage(this, package, positionOffset);
 
             Container.InvokeRefresh();
