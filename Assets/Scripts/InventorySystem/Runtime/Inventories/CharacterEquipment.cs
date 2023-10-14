@@ -4,6 +4,7 @@ using System.Linq;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Items;
+using ToolSmiths.InventorySystem.Runtime.Provider;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Inventories
@@ -15,52 +16,60 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         [SerializeField] public bool autoEquip = true;
 
-        public override Package AddToContainer(Package package)
+        public override bool TryAddToContainer(ref Package package)
         {
-            if (package.Item == null || package.Amount <= 0 || package.Item is not EquipmentItem)
-                return package;
+            if (!package.IsValid || package.Item is not EquipmentItem)
+                return false;
 
-            package = AddToEmptyPosition(package);
+            _ = TryAddAtEmpty(ref package);
 
+            /// Force swap with current equipment
             if (0 < package.Amount)
             {
-                var equipmentPositions = GetTypeSpecificPositions((package.Item as EquipmentItem).EquipmentType);
+                var equipmentItem = package.Item as EquipmentItem;
 
-                var preferedPosition = equipmentPositions.Where(x => StoredPackages[x].Item != null && (StoredPackages[x].Item as EquipmentItem).EquipmentType != (package.Item as EquipmentItem).EquipmentType);
-
+                var equipmentPositions = GetTypeSpecificPositions(equipmentItem.EquipmentType);
+                var preferedPosition = equipmentPositions.Where(x => StoredPackages[x].Item != null
+                && (StoredPackages[x].Item as EquipmentItem).EquipmentType != equipmentItem.EquipmentType);
                 var position = preferedPosition.Any() ? preferedPosition.First() : equipmentPositions[0];
+
                 package = AddAtPosition(position, package);
             }
 
             InvokeRefresh();
 
-            return package;
+            return true;
         }
 
-        public override Package AddToEmptyPosition(Package package)
+        protected override bool TryAddAtEmpty(ref Package package)
         {
-            if (package.Item == null || package.Amount <= 0 || package.Item is not EquipmentItem)
-                return package;
+            if (!package.IsValid || package.Item is not EquipmentItem)
+                return false;
+
+            var dimensions = IsTwoHandedWeapon((package.Item as EquipmentItem).EquipmentType) ? new Vector2Int(2, 1) : new Vector2Int(1, 1);
 
             var typePositions = GetTypeSpecificPositions((package.Item as EquipmentItem).EquipmentType);
 
-            var dimensions = IsTwoHandedWeapon((package.Item as EquipmentItem).EquipmentType) ? new Vector2Int(2, 1) : new Vector2Int(1, 1);
-
             foreach (var position in typePositions)
-                if (IsEmptyPosition(position, dimensions, out _))
+                if (IsEmptySpace(position, dimensions, out _))
                     package = AddAtPosition(position, package);
 
-            return package;
+            if (0 < package.Amount)
+                Debug.LogWarning($"{GetType().Name} is full!");
+
+            return 0 == package.Amount;
         }
+
+        public bool AutoEquip(ref Package package) => TryAddAtEmpty(ref package);
 
         public override Package AddAtPosition(Vector2Int position, Package package)
         {
-            if (package.Item == null || package.Amount <= 0 || package.Item is not EquipmentItem)
+            if (!package.IsValid || package.Item is not EquipmentItem)
                 return package;
 
             var dimensions = IsTwoHandedWeapon((package.Item as EquipmentItem).EquipmentType) ? new Vector2Int(2, 1) : new Vector2Int(1, 1);
 
-            if (IsEmptyPosition(position, dimensions, out var otherItems))
+            if (IsEmptySpace(position, dimensions, out var otherItems))
                 TryAddToInventory();
             /// equipping a 2H might return two 1H
             else if (otherItems.Count <= 2)
@@ -103,7 +112,12 @@ namespace ToolSmiths.InventorySystem.Inventories
                     Debug.LogWarning($"Something went wrong! remaining package will be overwritten: {package}");
 
                 for (var i = previouslyEquipped.Count; i-- > 0;)
-                    previouslyEquipped[i] = package.Sender.AddToContainer(previouslyEquipped[i]);
+                {
+                    var current = previouslyEquipped[i];
+                    if (!package.Sender.TryAddToContainer(ref current))
+                        DragProvider.Instance.SetPackage(DragProvider.Instance.Hovered, previouslyEquipped[i], Vector2Int.zero);
+                    previouslyEquipped[i] = current;
+                }
 
                 //    if (0 < returningToSender.Amount)
                 //        DragProvider.Instance.SetPackage(DragProvider.Instance.Hovered, returningToSender, Vector2Int.zero);

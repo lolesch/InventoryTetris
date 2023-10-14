@@ -3,6 +3,8 @@ using System.Linq;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.GUI.Displays;
+using ToolSmiths.InventorySystem.Inventories;
+using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Runtime.Pools;
 using ToolSmiths.InventorySystem.Utility.Extensions;
 using UnityEngine;
@@ -133,6 +135,30 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
                         }
 
             UpdateStatDisplays();
+        }
+
+        public bool PickUpItem(Package package)
+        {
+            if (package.Item is EquipmentItem)
+            {
+                var equipment = InventoryProvider.Instance.Equipment;
+
+                if (equipment.autoEquip && equipment.AutoEquip(ref package))
+                    return true;
+            }
+
+            if (InventoryProvider.Instance.Inventory.TryAddToContainer(ref package))
+                return true;
+
+            /// Debug try add remaining package amount to player stash
+            if (Debug.isDebugBuild)
+            {
+                Debug.LogWarning($"Trying to add the remaining amount of {package.Amount} to {InventoryProvider.Instance.Stash}");
+
+                return InventoryProvider.Instance.Stash.TryAddToContainer(ref package);
+            }
+
+            return false;
         }
 
         public float CompareStatModifiers(CharacterStatModifier playerStatModifier, StatModifier other) => CompareStatModifiers(playerStatModifier.Stat, playerStatModifier.Modifier, other);

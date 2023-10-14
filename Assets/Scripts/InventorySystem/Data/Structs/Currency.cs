@@ -6,32 +6,27 @@ namespace ToolSmiths.InventorySystem.Data
     [Serializable]
     public struct Currency
     {
-        [field: SerializeField] public uint Iron { get; private set; }
         [field: SerializeField] public uint Copper { get; private set; }
+        [field: SerializeField] public uint Iron { get; private set; }
         [field: SerializeField] public uint Silver { get; private set; }
         [field: SerializeField] public uint Gold { get; private set; }
 
-        public static readonly uint ironToCopper = 20u;
-        public static readonly uint ironToSilver = 240u; // copperToSilver = 12;
-        public static readonly uint ironToGold = 1200u;  // silverToGold = 5;
+        public static readonly uint copperToIron = 20u;
+        public static readonly uint copperToSilver = 240u; // ironToSilver = 12;
+        public static readonly uint copperToGold = 1200u;  // silverToGold = 5;
 
-        [SerializeField] public readonly uint Total => Iron + Copper * ironToCopper + Silver * ironToSilver + Gold * ironToGold;
+        [SerializeField] public readonly uint Total => Copper + Iron * copperToIron + Silver * copperToSilver + Gold * copperToGold;
 
         public Currency(uint total)
         {
-            Gold = total / ironToGold;
-            Silver = total % ironToGold / ironToSilver;
-            Copper = total % ironToGold % ironToSilver / ironToCopper;
-            Iron = total % ironToGold % ironToSilver % ironToCopper;
-
-            //if (Iron + Copper * ironToCopper + Silver * ironToSilver + Gold * ironToGold != total)
-            //    Debug.LogWarning("something went wrong here");
-
-            //Debug.Log(ToString());
+            Gold = total / copperToGold;
+            Silver = total % copperToGold / copperToSilver;
+            Iron = total % copperToGold % copperToSilver / copperToIron;
+            Copper = total % copperToGold % copperToSilver % copperToIron;
         }
 
         public Currency(float total) => this = new Currency((uint)Mathf.Abs(total));
 
-        public override readonly string ToString() => $"{Gold}G, {Silver}S, {Copper}C, {Iron}I ({Total})";
+        public override readonly string ToString() => $"{Gold}G, {Silver}S, {Iron}C, {Copper}I ({Total})";
     }
 }

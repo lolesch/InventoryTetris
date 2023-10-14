@@ -31,8 +31,6 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         [SerializeField] protected TextMeshProUGUI debugPosition;
 
-        protected static Package packageToMove;
-
         private bool hovering;
 
         private void OnEnable()
@@ -56,10 +54,13 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 debugPosition.text = InventoryProvider.Instance.ShowDebugPositions ? Position.ToString() : "";
         }
 
-        public void OnPointerClick(PointerEventData eventData) =>
-            // TODO: if shift clicking try add to other container
-
-            HandleItem(eventData);
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (DragProvider.Instance.IsDragging)
+                DropItem(DragProvider.Instance.DraggingPackage);
+            else
+                MoveItem(eventData);
+        }
 
         public void OnPointerExit(PointerEventData eventData)
         {
@@ -75,94 +76,38 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             FadeInPreview();
         }
 
-        public void OnBeginDrag(PointerEventData eventData) => HandleItem(eventData);
+        public void OnBeginDrag(PointerEventData eventData)
+        {
+            if (DragProvider.Instance.IsDragging)
+                DropItem(DragProvider.Instance.DraggingPackage);
+            else
+                MoveItem(eventData);
+        }
 
         /// required for OnBeginDrag() to work => #ThanksUnity
         public void OnDrag(PointerEventData eventData) { }
 
-        // raycast through center top position of drag display to check if over slotDisplay to add at, or to revert, or to drop item at floor
         public void OnEndDrag(PointerEventData eventData) { }
 
-        public void OnDrop(PointerEventData eventData) => DropItem();
+        public void OnDrop(PointerEventData eventData) => DropItem(DragProvider.Instance.DraggingPackage);
 
-        private void HandleItem(PointerEventData eventData)
+        protected abstract void MoveItem(PointerEventData eventData);
+
+        protected void FadeInPreview()
         {
-            if (DragProvider.Instance.IsDragging)
-                DropItem();
-            else if (Container != null)
-            {
-                var storedPositions = Container.GetStoredItemsAt(Position);
-
-                if (storedPositions.Count == 1)
-                {
-                    packageToMove = Container.StoredPackages[storedPositions[0]];
-
-                    if (eventData.button == PointerEventData.InputButton.Right)
-                    {
-                        if (packageToMove.Item is ConsumableItem)
-                            ConsumeItem();
-
-                        else if (packageToMove.Item is EquipmentItem)
-                            if (this is EquipmentSlotDisplay)
-                                UnequipItem();
-                            else
-                                EquipItem();
-
-                        return;
-                    }
-
-                    // TODO: SPLIT ITEM STACKS => handle picking up one/all from a stack
-
-                    if (Input.GetKey(KeyCode.LeftControl))
-                        if (1 < packageToMove.Amount)
-                            packageToMove.ReduceAmount(packageToMove.Amount / 2);
-
-                    // CONTINUE HERE
-                    // TODO: implement static trade context -> send packages to the tradeProvider to decide how to handle items 
-
-                    if (Input.GetKey(KeyCode.LeftShift))
-                    {
-                        if (Container == InventoryProvider.Instance.Inventory || Container == InventoryProvider.Instance.Equipment)
-                        {
-                            _ = Container.RemoveAtPosition(storedPositions[0], packageToMove);
-                            InventoryProvider.Instance.Stash.AddToContainer(packageToMove);
-                            // -> rework this to a context based system, where each container is eigher left or right sided and therefore moving items to the other side
-                        }
-                        else //if (Container == InventoryProvider.Instance.Stash)
-                        {
-                            _ = Container.RemoveAtPosition(storedPositions[0], packageToMove);
-                            InventoryProvider.Instance.Inventory.AddToContainer(packageToMove);
-                        }
-                    }
-                    else
-                    {
-                        _ = Container.RemoveAtPosition(storedPositions[0], packageToMove);
-
-                        var positionOffset = Position - storedPositions[0];
-
-                        DragProvider.Instance.SetPackage(this, packageToMove, positionOffset);
-                    }
-                }
-
-                FadeOutPreview();
-            }
-        }
-
-        private void FadeInPreview()
-        {
-            hovering = true;
-
             if (Container == null)
                 return;
 
-            var itemToDisplay = Container.GetStoredItemsAt(Position);
-            if (itemToDisplay.Count == 1)
-                if (Container.StoredPackages.TryGetValue(itemToDisplay[0], out var hoveredIten))
-                    if (hoveredIten.Item != null && 0 < hoveredIten.Amount)
-                        _ = StartCoroutine(FadeIn(hoveredIten, itemToDisplay[0]));
+            var position = Position;
+
+            if (Container.TryGetItemAt(ref position, out var hoveredIten))
+                if (hoveredIten.Item != null && 0 < hoveredIten.Amount)
+                    _ = StartCoroutine(FadeIn(hoveredIten, position));
 
             IEnumerator FadeIn(Package package, Vector2Int storedPosition)
             {
+                hovering = true;
+
                 var timeStamp = Time.time;
 
                 while (hovering)
@@ -180,20 +125,14 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             }
         }
 
-        private void FadeOutPreview()
+        protected void FadeOutPreview()
         {
             hovering = false;
 
             PreviewProvider.Instance.RefreshPreviewDisplay(new Package(Container, null, 0), this);
         }
 
-        protected virtual void DropItem() => FadeInPreview();
-
-        protected virtual void UnequipItem() => FadeOutPreview();
-
-        protected virtual void EquipItem() => FadeOutPreview();
-
-        protected virtual void ConsumeItem() => FadeOutPreview();
+        protected abstract void DropItem(Package package);
 
         protected virtual void SetDisplaySize(RectTransform display, Package package) { }
 

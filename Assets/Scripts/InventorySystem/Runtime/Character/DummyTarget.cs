@@ -8,7 +8,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 {
     public class DummyTarget : BaseCharacter
     {
-        [SerializeField] private uint experience = 10; // TODO: derive from monsterLevel and combat rating?
+        [SerializeField] private uint experience = 20; // TODO: derive from monsterLevel and combat rating?
 
         protected override void OnDeath()
         {
@@ -17,9 +17,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             var randomEquipment = ItemProvider.Instance.GenerateRandomLoot();
 
             foreach (var item in randomEquipment)
-                InventoryProvider.Instance.Inventory.AddToContainer(new Package(null, item, 1));
+                //rework to drop items on the floor
+                _ = CharacterProvider.Instance.Player.PickUpItem(new Package(null, item));
 
-            // send experience to the player?
+            // TODO: use event instead?
             CharacterProvider.Instance.Player.GainExperience(experience, CharacterLevel);
 
             this.GetResource(StatName.Health).RefillCurrent();

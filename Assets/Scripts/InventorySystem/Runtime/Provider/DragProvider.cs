@@ -28,8 +28,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
         public event Action<List<Vector2Int>> OnOverlapping;
 
-        // might not need this after reworking the dropItem();
-        public Package Package;
+        public Package DraggingPackage;
 
         private void Awake()
         {
@@ -61,17 +60,17 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
             void HighlightOverlappingSlots()
             {
-                if (Hovered == null || Package.Item == null)
+                if (Hovered == null || DraggingPackage.Item == null)
                     return;
 
                 ///NOTE: the display has the Package.Item's dimensions and the pivot is the mouse position within these dimensions
                 /// get the displays pivot
                 var positionPivot = itemDisplay.pivot;
-                positionPivot.x *= AbstractItem.GetDimensions(Package.Item.Dimensions).x;
-                positionPivot.y *= AbstractItem.GetDimensions(Package.Item.Dimensions).y;
+                positionPivot.x *= AbstractItem.GetDimensions(DraggingPackage.Item.Dimensions).x;
+                positionPivot.y *= AbstractItem.GetDimensions(DraggingPackage.Item.Dimensions).y;
 
                 var positionDiff = new Vector2Int(Mathf.FloorToInt(positionPivot.x), Mathf.FloorToInt(positionPivot.y));
-                positionDiff -= new Vector2Int(0, AbstractItem.GetDimensions(Package.Item.Dimensions).y - 1);
+                positionDiff -= new Vector2Int(0, AbstractItem.GetDimensions(DraggingPackage.Item.Dimensions).y - 1);
                 positionDiff.y *= -1;
 
                 var positionToAdd = Hovered.Position - positionDiff;
@@ -79,7 +78,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
                 if (Hovered.Container == null)
                     return;
 
-                var storedPositions = Hovered.Container?.GetStoredItemsAt(positionToAdd, AbstractItem.GetDimensions(Package.Item.Dimensions));
+                var storedPositions = Hovered.Container?.GetStoredItemsAt(positionToAdd, AbstractItem.GetDimensions(DraggingPackage.Item.Dimensions));
 
                 if (background)
                     background.color = storedPositions.Count switch
@@ -89,9 +88,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
                         _ => initialColor * Color.red,
                     };
 
+                OnOverlapping?.Invoke(storedPositions);
                 //TODO: invoke an event each time the drag display is entering new overlapping positions
                 // each slotDisplay will listen to this event and color its background based on the overlapping result
-                OnOverlapping?.Invoke(storedPositions);
 
                 //var requiredPositions = Hovered.Container.CalculateRequiredPositions(positionToAdd, Package.Item.Dimensions);
                 //
@@ -110,9 +109,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         public void SetPackage(AbstractSlotDisplay slot, Package package, Vector2Int positionOffset)
         {
             Origin = slot;
-            Package = package;
+            DraggingPackage = package;
 
-            if (package.Item == null || package.Amount <= 0)
+            if (!DraggingPackage.IsValid)
             {
                 itemDisplay.gameObject.SetActive(false);
                 return;
@@ -120,7 +119,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
             SetHoveredSlot(Origin);
 
-            RefreshDisplay(Package);
+            RefreshDisplay(package);
 
             void RefreshDisplay(Package package)
             {

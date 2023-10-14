@@ -4,6 +4,7 @@ using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Runtime.Provider;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 [assembly: InternalsVisibleTo("Tests")]
@@ -16,37 +17,26 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
     {
         private GridLayoutGroup gridLayout;
 
-        protected override void DropItem()
+        protected override void DropItem(Package package)
         {
-            if (DragProvider.Instance.Package.Item != null)
-            {
-                var positionOffset = AbstractItem.GetDimensions(DragProvider.Instance.Package.Item.Dimensions) / 2;
-                var mousePositionOffset = (Vector2)(Input.mousePosition - transform.position) / transform.lossyScale; //transform.root.GetComponent<Canvas>().scaleFactor;
-                var relativeMouseOffset = (mousePositionOffset - (transform as RectTransform).rect.size / 2) / (transform as RectTransform).rect.size;
-                var mouseOffset = new Vector2Int(Mathf.CeilToInt(relativeMouseOffset.x), -Mathf.CeilToInt(relativeMouseOffset.y));
+            if (!package.IsValid)
+                return;
 
-                var positionToAdd = Position - positionOffset + mouseOffset;
+            var positionOffset = AbstractItem.GetDimensions(DragProvider.Instance.DraggingPackage.Item.Dimensions) / 2;
+            var mousePositionOffset = (Vector2)(Input.mousePosition - transform.position) / transform.lossyScale; //transform.root.GetComponent<Canvas>().scaleFactor;
+            var relativeMouseOffset = (mousePositionOffset - (transform as RectTransform).rect.size / 2) / (transform as RectTransform).rect.size;
+            var mouseOffset = new Vector2Int(Mathf.CeilToInt(relativeMouseOffset.x), -Mathf.CeilToInt(relativeMouseOffset.y));
 
-                var remaining = Container.AddAtPosition(positionToAdd, packageToMove);
+            var positionToAdd = Position - positionOffset + mouseOffset;
 
-                if (0 < remaining.Amount)
-                {
-                    packageToMove = remaining;
-                    DragProvider.Instance.SetPackage(this, remaining, positionOffset);
-                }
-                else
-                {
-                    packageToMove = new Package();
+            package = Container.AddAtPosition(positionToAdd, package);
 
-                    DragProvider.Instance.SetPackage(this, packageToMove, positionOffset);
-                }
+            DragProvider.Instance.SetPackage(this, package, positionOffset);
 
-                Container.InvokeRefresh();
-                DragProvider.Instance.Origin.Container?.InvokeRefresh();
-            }
+            Container.InvokeRefresh();
+            DragProvider.Instance.Origin.Container?.InvokeRefresh();
 
-            // must come after adding items to the container to have something to preview
-            base.DropItem();
+            FadeInPreview(); // TODO: see if the package should propagate to FadeInPreview
         }
 
         protected override void SetDisplaySize(RectTransform display, Package package)
@@ -68,53 +58,81 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             display.anchorMax = new Vector2(0, 1);
         }
 
-        protected override void EquipItem()
+        protected override void MoveItem(PointerEventData eventData)
         {
-            if (Container != null)
+            if (Container == null)
+                return;
+
+            var position = Position;
+
+            if (Container.TryGetItemAt(ref position, out var package))
             {
-                var storedPositions = Container.GetStoredItemsAt(Position);
+                FadeOutPreview();
 
-                if (storedPositions.Count == 1)
-                    if (Container.StoredPackages.TryGetValue(storedPositions[0], out packageToMove))
-                    {
-                        if (packageToMove.Item is EquipmentItem)
-                        {
-                            _ = Container.RemoveAtPosition(storedPositions[0], packageToMove);
-
-                            packageToMove = InventoryProvider.Instance.Equipment.AddToContainer(packageToMove);
-
-                            if (0 < packageToMove.Amount)
-                                packageToMove = Container.AddToEmptyPosition(packageToMove);
-
-                            var positionOffset = Position - storedPositions[0]; // might look up the added package and get that position instead
-
-                            DragProvider.Instance.SetPackage(this, packageToMove, positionOffset);
-
-                            //Container.InvokeRefresh();
-                            //SStaticDragDisplay.Instance.Origin.Container?.InvokeRefresh();
-                        }
-                    }
-            }
-
-            base.EquipItem();
-        }
-
-        protected override void ConsumeItem()
-        {
-            var storedPositions = Container.GetStoredItemsAt(Position);
-
-            if (storedPositions.Count == 1)
-                if (Container.StoredPackages.TryGetValue(storedPositions[0], out packageToMove))
+                #region USE ITEM
+                if (eventData.button == PointerEventData.InputButton.Right)
                 {
-                    if (packageToMove.Item is ConsumableItem)
+                    if (package.Item is ConsumableItem)
                     {
-                        Debug.Log($"Consuming {packageToMove.Item.ToString()}");
+                        Debug.Log($"Consuming {package.Item.ToString()}");
 
-                        _ = Container.RemoveAtPosition(storedPositions[0], new Package(Container, packageToMove.Item, 1));
+                        _ = Container.RemoveAtPosition(position, new Package(Container, package.Item, 1)); // only consume one amount
+
+                        return;
+                    }
+                    else if (package.Item is EquipmentItem)
+                    {
+                        _ = Container.RemoveAtPosition(position, package);
+
+                        if (InventoryProvider.Instance.Equipment.TryAddToContainer(ref package))
+                            DragProvider.Instance.SetPackage(this, package, Vector2Int.zero);
+                        else
+                            _ = Container.TryAddToContainer(ref package);
+
+                        return;
                     }
                 }
+                #endregion USE ITEM
 
-            base.ConsumeItem();
+                // TODO: split in other amount => might want to split on dropping items
+                #region SPLIT AMOUNT
+                if (Input.GetKey(KeyCode.LeftControl))
+                    if (2 <= package.Amount)
+                        package.ReduceAmount(package.Amount / 2);
+                #endregion SPLIT AMOUNT
+
+                // TODO: trade context system
+                #region QUICK MOVE ITEM
+                if (Input.GetKey(KeyCode.LeftShift))
+                {
+                    _ = Container.RemoveAtPosition(position, package);
+
+                    var containerToMoveTo = Container; // rework to context based
+
+                    if (Container == InventoryProvider.Instance.Inventory)
+                        containerToMoveTo = InventoryProvider.Instance.Stash;
+                    else if (containerToMoveTo == InventoryProvider.Instance.Stash)
+                        containerToMoveTo = InventoryProvider.Instance.Inventory;
+
+                    if (containerToMoveTo.TryAddToContainer(ref package))
+                        DragProvider.Instance.SetPackage(this, package, Vector2Int.zero);
+                    else
+                        _ = Container.AddAtPosition(position, package);
+
+                    return;
+                }
+                #endregion QUICK MOVE ITEM
+
+                #region DRAG ITEM
+                _ = Container.RemoveAtPosition(position, package);
+
+                var positionOffset = Position - position;
+
+                DragProvider.Instance.SetPackage(this, package, positionOffset);
+                #endregion DRAG ITEM
+            }
+
+            FadeOutPreview();
         }
     }
 }

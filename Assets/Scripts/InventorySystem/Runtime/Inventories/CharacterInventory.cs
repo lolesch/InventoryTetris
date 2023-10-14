@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using ToolSmiths.InventorySystem.Data;
-using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Items;
 using UnityEngine;
 
@@ -12,77 +11,20 @@ namespace ToolSmiths.InventorySystem.Inventories
     public class CharacterInventory : AbstractDimensionalContainer
     {
         public CharacterInventory(Vector2Int dimensions) : base(dimensions) { }
-
-        public override Package AddToContainer(Package package)
+        public override bool TryAddToContainer(ref Package package)
         {
-            if (package.Item == null || package.Amount <= 0)
-                return package;
+            if (!package.IsValid)
+                return false;
 
-            /// Auto Equip items that enter the localPlayer's inventory if that slot is empty
-            if (this == InventoryProvider.Instance.Inventory)
-            {
-                var equipment = InventoryProvider.Instance.Equipment;
+            /// TryStack
+            _ = TryStack(ref package);
 
-                if (package.Item is EquipmentItem && equipment.autoEquip)
-                    package = equipment.AddToEmptyPosition(package);
-            }
-
-            /// Stack or add to empty position
-            if (0 < package.Amount)
-            {
-                if (ItemStack.Single < package.Item.StackLimit)
-                    AddToOpenStacks();
-
-                if (0 < package.Amount)
-                    package = AddToEmptyPosition(package);
-
-                if (0 < package.Amount)
-                    Debug.LogWarning($"{GetType().Name} is full!");
-
-                // TODO: DragDrop adding to stacks is dimension dependent...
-                // => this should simply check if a stack of the same item is at the drop position and add it.
-
-                void AddToOpenStacks()
-                {
-                    var positions = StoredPackages.Keys.ToList();
-
-                    for (var i = 0; i < positions.Count && 0 < package.Amount; i++)
-                        if (StoredPackages[positions[i]].Item.Equals(package.Item))
-                            if (0 < StoredPackages[positions[i]].SpaceLeft)
-                                package = AddAtPosition(positions[i], package);
-                }
-            }
-
-            /// Debug try add remaining package amount to player stash
-            if (Debug.isDebugBuild)
-            {
-                if (0 < package.Amount)
-                    if (this == InventoryProvider.Instance.Inventory)
-                    {
-                        Debug.LogWarning($"Trying to add the remaining amount of {package.Amount} to {InventoryProvider.Instance.Stash}");
-
-                        package = InventoryProvider.Instance.Stash.AddToContainer(package);
-                    }
-            }
+            /// TryAddToEmpty
+            _ = TryAddAtEmpty(ref package);
 
             InvokeRefresh();
 
-            return package;
-        }
-
-        public override Package AddToEmptyPosition(Package package)
-        {
-            if (package.Item == null || package.Amount <= 0)
-                return package;
-
-            var dimensions = AbstractItem.GetDimensions(package.Item.Dimensions);
-
-            for (var x = 0; x < Dimensions.x && 0 < package.Amount; x++)
-                for (var y = 0; y < Dimensions.y && 0 < package.Amount; y++)
-                    if (IsEmptyPosition(new(x, y), dimensions, out _))
-                        package = AddAtPosition(new(x, y), package);
-
-            return package;
+            return 0 == package.Amount;
         }
 
         public override Package AddAtPosition(Vector2Int position, Package package)
@@ -92,7 +34,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             var dimensions = AbstractItem.GetDimensions(package.Item.Dimensions);
 
-            if (IsEmptyPosition(position, dimensions, out var otherItems))
+            if (IsEmptySpace(position, dimensions, out var otherItems))
                 TryAddToInventory();
             else if (1 == otherItems.Count)
                 if (StoredPackages.TryGetValue(otherItems[0], out var storedPackage))
@@ -117,10 +59,47 @@ namespace ToolSmiths.InventorySystem.Inventories
                     if (package.Item.Equals(storedPackage.Item))
                     {
                         var addedAmount = storedPackage.IncreaseAmount(package.Amount);
-                        StoredPackages[position] = storedPackage;
                         _ = package.ReduceAmount(addedAmount);
 
+
+                        if (storedPackage.Item is CurrencyItem)
+                            if (storedPackage.Amount == (uint)storedPackage.Item.StackLimit) // full stack
+                                if (CheckForCurrencyUpgrade())
+                                    return true;
+
+                        StoredPackages[position] = storedPackage;
+
                         return true;
+
+                        bool CheckForCurrencyUpgrade()
+                        {
+                            var higherCurrency = UpgradeCurrency(storedPackage.Item as CurrencyItem);
+
+                            if (higherCurrency != storedPackage.Item)
+                            {
+                                RemoveAtPosition(position, storedPackage);
+
+                                storedPackage = new Package(storedPackage.Sender, higherCurrency);
+
+                                if (TryAddToContainer(ref storedPackage))
+                                    return true;
+                            }
+
+                            return false;
+
+                            AbstractItem UpgradeCurrency(CurrencyItem currencyItem) => currencyItem.CurrencyType switch
+                            {
+                                Data.Enums.CurrencyType.Copper => new CurrencyItem(Data.Enums.CurrencyType.Iron),
+                                Data.Enums.CurrencyType.Iron => new CurrencyItem(Data.Enums.CurrencyType.Silver),
+                                Data.Enums.CurrencyType.Silver => new CurrencyItem(Data.Enums.CurrencyType.Gold),
+
+                                // no upgrade
+                                Data.Enums.CurrencyType.Gold => currencyItem,
+                                Data.Enums.CurrencyType.NONE => currencyItem,
+                                _ => currencyItem,
+                            };
+                        }
+
                     }
 
                 return false;
@@ -153,48 +132,13 @@ namespace ToolSmiths.InventorySystem.Inventories
         }
     }
 
-    // CONTINUE HERE
+    // CONTINUE HERE ...
     public class VendorSupply : AbstractDimensionalContainer
     {
         public VendorSupply(Vector2Int dimensions) : base(dimensions) { }
 
-        public override Package AddToContainer(Package package)
-        {
-            if (package.Item == null || package.Amount <= 0)
-                return package;
-            if (package.Sender == InventoryProvider.Instance.Equipment || package.Sender == InventoryProvider.Instance.Inventory)
-                return package;
-
-            /// Stack or add to empty position
-            if (0 < package.Amount)
-            {
-                if (ItemStack.Single < package.Item.StackLimit)
-                    AddToOpenStacks();
-
-                if (0 < package.Amount)
-                    package = AddToEmptyPosition(package);
-
-                if (0 < package.Amount)
-                    Debug.LogWarning($"{this} is full!");
-
-                // TODO: DragDrop adding to stacks is dimension dependent...
-                // => this should simply check if a stack of the same item is at the drop position and add it.
-                void AddToOpenStacks()
-                {
-                    var positions = StoredPackages.Keys.ToList();
-
-                    for (var i = 0; i < positions.Count && 0 < package.Amount; i++)
-                        if (StoredPackages[positions[i]].Item.Equals(package.Item))
-                            if (0 < StoredPackages[positions[i]].SpaceLeft)
-                                package = AddAtPosition(positions[i], package);
-                }
-            }
-            return package;
-        }
-
         public override Package AddAtPosition(Vector2Int position, Package package)
             => throw new NotImplementedException();
-        public override Package AddToEmptyPosition(Package package) => throw new NotImplementedException();
         public override List<Vector2Int> GetStoredItemsAt(Vector2Int position, Vector2Int dimension) => throw new NotImplementedException();
 
         public void Restock() { }

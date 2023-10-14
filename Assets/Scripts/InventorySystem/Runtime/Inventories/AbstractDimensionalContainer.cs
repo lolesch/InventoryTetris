@@ -2,18 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Items;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Inventories
 {
     [Serializable]
-    // stored,
-    // delivered,
-    // consumed,
-
-    // ownership
-
     public abstract class AbstractDimensionalContainer
     {
         [SerializeField] public AbstractDimensionalContainer(Vector2Int dimensions) => Dimensions = dimensions;
@@ -25,8 +20,60 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         [field: SerializeField] public Dictionary<Vector2Int, Package> StoredPackages { get; protected set; } = new();
 
-        public abstract Package AddToContainer(Package package);
-        public abstract Package AddToEmptyPosition(Package package);
+        // recipient/receiver <-> sender/returningAddress
+        /// <summary>
+        /// Tries to add the package to the container and updating the package to the state after adding => new Package() 
+        //or previous at that position?
+        /// </summary>
+        /// <param name="package"></param>
+        /// <returns>Returns false if there is a remaining package</returns>
+        public virtual bool TryAddToContainer(ref Package package)
+        {
+            if (!package.IsValid)
+                return false;
+
+            _ = TryStack(ref package);
+            _ = TryAddAtEmpty(ref package);
+
+            OnContentChanged?.Invoke(StoredPackages);
+
+            return 0 == package.Amount;
+        }
+
+        // TODO: DragDrop adding to stacks is dimension dependent...
+        // => this should simply check if a stack of the same item is at the drop position and add it.
+        protected bool TryStack(ref Package package)
+        {
+            if (!package.IsValid || package.Item.StackLimit <= ItemStack.Single)
+                return false;
+
+            var positions = StoredPackages.Keys.ToList();
+
+            for (var i = 0; i < positions.Count && 0 < package.Amount; i++)
+                if (StoredPackages[positions[i]].Item.Equals(package.Item))
+                    if (0 < StoredPackages[positions[i]].SpaceLeft)
+                        package = AddAtPosition(positions[i], package);
+
+            return 0 == package.Amount;
+        }
+
+        protected virtual bool TryAddAtEmpty(ref Package package)
+        {
+            if (!package.IsValid)
+                return false;
+
+            var dimensions = AbstractItem.GetDimensions(package.Item.Dimensions);
+
+            for (var x = 0; x < Dimensions.x && 0 < package.Amount; x++)
+                for (var y = 0; y < Dimensions.y && 0 < package.Amount; y++)
+                    if (IsEmptySpace(new(x, y), dimensions, out _))
+                        package = AddAtPosition(new(x, y), package);
+
+            if (0 < package.Amount)
+                Debug.LogWarning($"{GetType().Name} is full!");
+
+            return 0 == package.Amount;
+        }
 
         public abstract Package AddAtPosition(Vector2Int position, Package package);
 
@@ -44,7 +91,24 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         /// A List of all storedPackages positions that overlap with the requiredPositions
         public abstract List<Vector2Int> GetStoredItemsAt(Vector2Int position, Vector2Int dimension);
-        public List<Vector2Int> GetStoredItemsAt(Vector2Int position) => GetStoredItemsAt(position, Vector2Int.one);
+
+        /// <summary>
+        /// Checks for stored packages that occupy the given <paramref name="position"/> 
+        /// </summary>
+        /// <param name="position"></param>
+        /// <param name="storedPackage"></param>
+        /// <returns>Returns <code true> if there is only one <paramref name="storedPackage"/></returns>
+        public bool TryGetItemAt(ref Vector2Int position, out Package storedPackage)
+        {
+            var positions = GetStoredItemsAt(position, Vector2Int.one);
+
+            if (positions.Any())
+                position = positions.First();
+
+            StoredPackages.TryGetValue(position, out storedPackage);
+
+            return storedPackage.IsValid;
+        }
 
         public Package RemoveFromContainer(Package package)
         {
@@ -69,23 +133,18 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         public Package RemoveAtPosition(Vector2Int position, Package package)
         {
-            var storedPositions = GetStoredItemsAt(position); // will this ever return more than one position?
-
-            if (storedPositions.Count == 1)
+            if (TryGetItemAt(ref position, out var storedPackage))
             {
-                if (StoredPackages.TryGetValue(storedPositions[0], out var storedPackage))
-                {
-                    if (this is CharacterEquipment)
-                        CharacterProvider.Instance.Player.RemoveItemStats(storedPackage.Item.Affixes);
+                if (this is CharacterEquipment)
+                    CharacterProvider.Instance.Player.RemoveItemStats(storedPackage.Item.Affixes);
 
-                    var removed = storedPackage.ReduceAmount(package.Amount);
-                    _ = package.ReduceAmount(removed);
+                var removed = storedPackage.ReduceAmount(package.Amount);
+                _ = package.ReduceAmount(removed);
 
-                    if (0 < storedPackage.Amount)
-                        StoredPackages[storedPositions[0]] = storedPackage;
-                    else
-                        _ = StoredPackages.Remove(storedPositions[0]);
-                }
+                if (0 < storedPackage.Amount)
+                    StoredPackages[position] = storedPackage;
+                else
+                    _ = StoredPackages.Remove(position);
             }
 
             OnContentChanged?.Invoke(StoredPackages);
@@ -93,7 +152,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             return package;
         }
 
-        public bool IsEmptyPosition(Vector2Int position, Vector2Int dimension, out List<Vector2Int> otherItems)
+        public bool IsEmptySpace(Vector2Int position, Vector2Int dimension, out List<Vector2Int> otherItems)
         {
             otherItems = new();
 
@@ -130,7 +189,7 @@ namespace ToolSmiths.InventorySystem.Inventories
                 .ThenBy(x => x.Item is ConsumableItem)
                 .ThenBy(x => x.Item is EquipmentItem)
                 .ThenByDescending(x => x.Item.Rarity)       // by rarity
-                .ThenByDescending(x => x.Item.GoldValue)    // by goldValue
+                .ThenByDescending(x => x.Item.SellValue)    // by goldValue
                 .ThenBy(x => x.Item.ToString())             // by name
                 .ToList();
 
@@ -138,7 +197,10 @@ namespace ToolSmiths.InventorySystem.Inventories
                 _ = RemoveFromContainer(package);
 
             foreach (var package in sortedValues)
-                _ = AddToContainer(package);
+            {
+                var packageRef = package;
+                _ = TryAddToContainer(ref packageRef);
+            }
         }
 
         protected internal void InvokeRefresh() => OnContentChanged?.Invoke(StoredPackages);

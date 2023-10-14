@@ -296,8 +296,8 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         public Sprite GetIcon(CurrencyType currencyType) => currencyType switch
         {
-            CurrencyType.Iron => CurrencyIcons[0],
-            CurrencyType.Copper => CurrencyIcons[1],
+            CurrencyType.Copper => CurrencyIcons[0],
+            CurrencyType.Iron => CurrencyIcons[1],
             CurrencyType.Silver => CurrencyIcons[2],
             CurrencyType.Gold => CurrencyIcons[3],
 

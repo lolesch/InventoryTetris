@@ -11,6 +11,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 {
     public class InventoryProvider : AbstractProvider<InventoryProvider>
     {
+        // TODO: move player related inventories into the local player?
         [field: SerializeField] public CharacterEquipment Equipment { get; private set; }
         [field: SerializeField] public CharacterInventory Inventory { get; private set; }
         [field: SerializeField] public CharacterInventory Stash { get; private set; }
@@ -62,12 +63,10 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         private void AddEquipment(EquipmentType equipmentType)
         {
-            //Debug.Log($"amountToAdd? {Amount}");
             for (var i = 0; i < Amount; i++)
             {
                 var randomEquipment = ItemProvider.Instance.GenerateRandomOfEquipmentType(equipmentType);
-                //Debug.Log($"{ContainerToAddTo}");
-                _ = Inventory?.AddToContainer(new Package(null, randomEquipment, 1));
+                _ = CharacterProvider.Instance.Player.PickUpItem(new Package(null, randomEquipment));
             }
         }
 
@@ -76,7 +75,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             for (var i = 0; i < Amount; i++)
             {
                 var randomConsumable = ItemProvider.Instance.GenerateRandomOfConsumableType(consumableType);
-                _ = Inventory?.AddToContainer(new Package(null, randomConsumable, 1));
+                _ = CharacterProvider.Instance.Player.PickUpItem(new Package(null, randomConsumable));
             }
         }
 
@@ -85,7 +84,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             for (var i = 0; i < Amount; i++)
             {
                 var randomCurrency = ItemProvider.Instance.GenerateCurrency(currencyType);
-                _ = Inventory?.AddToContainer(new Package(null, randomCurrency, 1));
+                _ = CharacterProvider.Instance.Player.PickUpItem(new Package(null, randomCurrency));
             }
         }
 
@@ -94,14 +93,18 @@ namespace ToolSmiths.InventorySystem.Inventories
             var items = ItemProvider.Instance.GenerateRandomLoot(Amount);
 
             for (var i = 0; i < items.Count; i++)
-                _ = Inventory?.AddToContainer(new Package(null, items[i], 1));
+                _ = CharacterProvider.Instance.Player.PickUpItem(new Package(null, items[i]));
         }
+
         public void AddRandomCurrency()
         {
             var randomCurrency = ItemProvider.Instance.GenerateRandomCurrency();
 
             for (var i = 0; i < Amount; i++)
-                _ = Inventory?.AddToContainer(new Package(null, randomCurrency, 1));
+            {
+                var package = new Package(null, randomCurrency);
+                _ = CharacterProvider.Instance.Player.PickUpItem(package);
+            }
         }
 
         public void RemoveAllItems(AbstractDimensionalContainer container)
@@ -133,8 +136,8 @@ namespace ToolSmiths.InventorySystem.Inventories
         public void SetItemToBooks() => AddConsumable(ConsumableType.Book);
         public void SetItemToPotions() => AddConsumable(ConsumableType.Potion);
 
-        public void SetItemToIron() => AddCurrency(CurrencyType.Iron);
-        public void SetItemToCopper() => AddCurrency(CurrencyType.Copper);
+        public void SetItemToIron() => AddCurrency(CurrencyType.Copper);
+        public void SetItemToCopper() => AddCurrency(CurrencyType.Iron);
         public void SetItemToSilver() => AddCurrency(CurrencyType.Silver);
         public void SetItemToGold() => AddCurrency(CurrencyType.Gold);
 
@@ -153,23 +156,27 @@ namespace ToolSmiths.InventorySystem.Inventories
             {
                 var item = ItemProvider.Instance.GenerateRandomEquipment();
 
-                _ = Store?.AddToContainer(new Package(null, item, 1));
+                var package = new Package(null, item);
+
+                _ = Store?.TryAddToContainer(ref package);
             }
             Store.Sort();
         }
 
-        // TODO: protect item losss when stash is full
         public void StashInventory()
         {
             var storedPackages = Inventory?.StoredPackages.ToList();
 
             for (var i = 0; i < storedPackages.Count; i++)
             {
-                var package = Stash?.AddToContainer(storedPackages[i].Value);
+                var package = storedPackages[i].Value;
 
-                _ = package.Value.Item == null || package.Value.Amount <= 0
-                    ? Inventory?.RemoveAtPosition(storedPackages[i].Key, storedPackages[i].Value)
-                    : Inventory?.RemoveAtPosition(storedPackages[i].Key, package.Value);
+                if (Stash.TryAddToContainer(ref package))
+                {
+                    _ = package.Item == null || package.Amount <= 0
+                        ? Inventory?.RemoveAtPosition(storedPackages[i].Key, storedPackages[i].Value)
+                        : Inventory?.RemoveAtPosition(storedPackages[i].Key, package);
+                }
             }
         }
     }

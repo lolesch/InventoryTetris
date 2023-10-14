@@ -18,71 +18,44 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         [SerializeField, ReadOnly] protected RadioGroup radioGroup = null;
         public RadioGroup RadioGroup => radioGroup != null ? radioGroup : radioGroup = GetComponentInParent<RadioGroup>();
 
-        // test wich one to use or if both are necessary
-        //[SerializeField] protected bool isToggledOnAwake = false;
-        //[SerializeField] protected bool isToggledOnEnable = false;
-
         [SerializeField] private Sprite toggledOffSprite;
         [SerializeField] private Sprite toggledOnSprite;
 
         public event Action<bool> OnToggle;
 
-#pragma warning disable CS0114 // Member hides inherited member; missing override keyword
-        protected void OnValidate()
-#pragma warning restore CS0114 // Member hides inherited member; missing override keyword
+        //#pragma warning disable CS0114 // Member hides inherited member; missing override keyword
+        protected override void OnValidate()
         {
             if (RadioGroup != null && RadioGroup.transform != transform.parent)
                 radioGroup = null;
 
-            //IsOn = isToggledOnAwake || isToggledOnEnable;
-
             if (IsOn && RadioGroup)
                 RadioGroup.Activate(this);
-        }
-
-        protected override void Awake() => base.Awake();//if (isToggledOnAwake)//    SetToggle(isToggledOnAwake);
-
-        protected override void OnEnable()
-        {
-            base.OnEnable();
-
-            //if (!isToggledOnAwake)
-            //    SetToggle(isToggledOnEnable);
-
-            if (RadioGroup && interactable)
-                RadioGroup.Register(this);
-        }
-
-        protected override void Start()
-        {
-            SetToggle(IsOn);
-
-            DoStateTransition(IsOn ? SelectionState.Selected : SelectionState.Normal, false);
-
-            if (DoScaleOnSelect)
-                Scale(IsOn, scaleOnSelect);
-            else if (DoScaleOnHover)
-                Scale(IsOn, scaleOnHover);
         }
 
         protected override void OnDisable()
         {
             base.OnDisable();
 
-            if (targetGraphic && DOTween.IsTweening(targetGraphic.transform))
-                DOTween.Kill(targetGraphic.transform);
-
             if (RadioGroup)
                 RadioGroup.Unregister(this);
+
+            if (targetGraphic && DOTween.IsTweening(targetGraphic.transform))
+                DOTween.Kill(targetGraphic.transform);
         }
 
-        //public void Toggle() => SetToggle(!IsOn);
+        protected override void OnEnable()
+        {
+            base.OnEnable();
+
+            if (RadioGroup && interactable)
+                RadioGroup.Register(this);
+        }
+
+        protected override void Start() => SetToggle(IsOn);
 
         public virtual void SetToggle(bool isOn)
         {
-            if (isOn == IsOn)
-                return;
-
             IsOn = isOn;
             OnToggle?.Invoke(IsOn);
 
@@ -91,6 +64,8 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
 
             if (DoScaleOnSelect)
                 Scale(IsOn, scaleOnSelect);
+            else if (DoScaleOnHover)
+                Scale(IsOn, scaleOnHover);
 
             DoStateTransition(IsOn ? SelectionState.Selected : SelectionState.Normal, true);
 

@@ -4,8 +4,8 @@
     {
         NONE = 0,
 
-        Iron = 1,
-        Copper = 2,
+        Copper = 1,
+        Iron = 2,
         Silver = 3,
         Gold = 4,
     }

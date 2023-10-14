@@ -20,7 +20,7 @@ namespace ToolSmiths.InventorySystem.Items
         // consider changing to prefix/suffix system
         /// keep this as list (vs array) since crafting migth add/remove Affixes
         [field: SerializeField] public List<CharacterStatModifier> Affixes { get; protected set; } = new List<CharacterStatModifier>();
-        [SerializeField] public float GoldValue => CalculateGoldValue();
+        [SerializeField] public float SellValue => CalculateGoldValue();
 
         // TODO: handle overTime effects => Stats != Effects --> see ARPG_Combat for DoT_effects
         public new abstract string ToString();
@@ -374,26 +374,26 @@ namespace ToolSmiths.InventorySystem.Items
             Affixes = new List<CharacterStatModifier>();
 
             Dimensions = ItemSize.OneByOne;
-            StackLimit = ItemStack.StackOfHundred;/* CurrencyType switch
+            StackLimit = CurrencyType switch
             {
-                CurrencyType.Iron => ItemStack.StackOfHundred,
-                CurrencyType.Copper => ItemStack.StackOfFifty,
-                CurrencyType.Silver => ItemStack.StackOfTen,
-                CurrencyType.Gold => ItemStack.Single,
+                CurrencyType.Copper => (ItemStack)20u,
+                CurrencyType.Iron => (ItemStack)12,
+                CurrencyType.Silver => (ItemStack)5,
+                CurrencyType.Gold => (ItemStack)999,
 
                 CurrencyType.NONE => ItemStack.NONE,
                 _ => ItemStack.NONE,
-            };*/
+            };
         }
 
         public override string ToString() => $"{CurrencyType}".Colored(GetRarityColor(Rarity));
 
         protected override float CalculateGoldValue() => CurrencyType switch
         {
-            CurrencyType.Iron => 1f,
-            CurrencyType.Copper => Currency.ironToCopper,
-            CurrencyType.Silver => Currency.ironToSilver,
-            CurrencyType.Gold => Currency.ironToGold,
+            CurrencyType.Copper => 1f,
+            CurrencyType.Iron => Currency.copperToIron,
+            CurrencyType.Silver => Currency.copperToSilver,
+            CurrencyType.Gold => Currency.copperToGold,
 
             CurrencyType.NONE => 0f,
             _ => 0f,

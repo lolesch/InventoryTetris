@@ -3,6 +3,7 @@ using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Runtime.Provider;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 {
@@ -13,55 +14,27 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
     {
         [field: SerializeField] public EquipmentItem DebugItem;
 
-        protected override void DropItem()
+        protected override void DropItem(Package package)
         {
-            if (DragProvider.Instance.Package.Item is EquipmentItem)
-            {
-                var allowedPositions = CharacterEquipment.GetTypeSpecificPositions((DragProvider.Instance.Package.Item as EquipmentItem).EquipmentType);
+            if (!package.IsValid || package.Item is not EquipmentItem)
+                return;
 
-                foreach (var position in allowedPositions)
-                    if (Position == position)
-                    {
-                        var remaining = Container.AddAtPosition(Position, packageToMove);
+            var allowedPositions = CharacterEquipment.GetTypeSpecificPositions((package.Item as EquipmentItem).EquipmentType);
 
-                        if (0 < remaining.Amount)
-                        {
-                            packageToMove = remaining;
-                            DragProvider.Instance.SetPackage(this, remaining, Vector2Int.zero);
-                        }
-                        else
-                        {
-                            packageToMove = new Package();
+            foreach (var position in allowedPositions)
+                if (Position == position)
+                {
+                    package = Container.AddAtPosition(Position, package);
 
-                            DragProvider.Instance.SetPackage(this, packageToMove, Vector2Int.zero);
-                        }
+                    DragProvider.Instance.SetPackage(this, package, Vector2Int.zero);
 
-                        Container.InvokeRefresh();
-                        DragProvider.Instance.Origin.Container?.InvokeRefresh();
+                    Container.InvokeRefresh();
+                    DragProvider.Instance.Origin.Container?.InvokeRefresh();
 
-                        break;
-                    }
-            }
+                    break;
+                }
 
-            // must come after adding items to the container to have something to preview
-            base.DropItem();
-        }
-
-        protected override void UnequipItem()
-        {
-            base.UnequipItem();
-
-            packageToMove = Container.StoredPackages[Position];
-
-            _ = Container.RemoveAtPosition(Position, packageToMove);
-
-            packageToMove = InventoryProvider.Instance.Inventory.AddToContainer(packageToMove);
-
-            if (0 < packageToMove.Amount)
-                DragProvider.Instance.SetPackage(this, packageToMove, Vector2Int.zero);
-
-            //Container.InvokeRefresh();
-            //StaticDragDisplay.Instance.Origin.Container?.InvokeRefresh();
+            FadeInPreview(); // TODO: see if the package should propagate to FadeInPreview
         }
 
         public void Refresh2HandSlotDisplay(Package package)
@@ -76,6 +49,60 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
             if (background)
                 background.color *= new Color(1, 1, 1, .4f);
+        }
+
+        protected override void MoveItem(PointerEventData eventData)
+        {
+            if (Container == null)
+                return;
+
+            var position = Position;
+
+            if (Container.TryGetItemAt(ref position, out var package))
+            {
+                FadeOutPreview();
+
+                if (package.Item is not EquipmentItem)
+                    Debug.LogWarning("Something went wrong!");
+
+                #region UNEQUIP ITEM
+                if (eventData.button == PointerEventData.InputButton.Right)
+                {
+                    _ = Container.RemoveAtPosition(position, package);
+
+                    if (InventoryProvider.Instance.Inventory.TryAddToContainer(ref package))
+                        DragProvider.Instance.SetPackage(this, package, Vector2Int.zero);
+                    else
+                        _ = Container.AddAtPosition(position, package);
+
+                    return;
+                }
+                #endregion UNEQUIP ITEM
+
+                // TODO: trade context system
+                #region QUICK MOVE ITEM
+                if (Input.GetKey(KeyCode.LeftShift))
+                {
+                    _ = Container.RemoveAtPosition(position, package);
+
+                    if (InventoryProvider.Instance.Stash.TryAddToContainer(ref package))
+                        DragProvider.Instance.SetPackage(this, package, Vector2Int.zero);
+                    else
+                        _ = Container.AddAtPosition(position, package);
+
+                    return;
+                }
+                #endregion QUICK MOVE ITEM
+
+                #region DRAG ITEM
+                _ = Container.RemoveAtPosition(position, package);
+
+                // can equipment displays ever have an offset? See above => SetPackage is using Vector2Int.zero
+                var positionOffset = Position - position;
+
+                DragProvider.Instance.SetPackage(this, package, positionOffset);
+                #endregion DRAG ITEM
+            }
         }
     }
 }
