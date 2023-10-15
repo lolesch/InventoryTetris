@@ -1,15 +1,10 @@
 /// KNOWN ISSUES:
-// Dropping an item ontop of another can duplicate it
-// Dropping an item selects unexpected positions
-
-// AutoEquip can set bows into offhand slot while dragAndDrop cant. => unify logic that determines if an item can go into that slot
+// Dropping an item selects unexpected positions => was improved but does not support most overlapping
 
 // comparison shows wrong numbers on the unequipped item
 // comparison cant compare against all equipment of same type (rings, both weapon slots)
 
 #region TODO
-// fix item duplication
-
 // fix the item drop positioning
 // -> the offset is fine once the drop includes the items dimensions
 // atm. the item is dropped in the surrounding slots dependent on the mouse offset to the center of the hovered slot.

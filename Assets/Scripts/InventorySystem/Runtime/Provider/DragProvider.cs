@@ -21,20 +21,22 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         [SerializeField] private Color initialColor;
         [SerializeField] private TextMeshProUGUI amount;
 
-        private Canvas rootCanvas;
+        //private Canvas rootCanvas;
 
         public RectTransform ItemDisplay => itemDisplay;
 
-        public AbstractSlotDisplay Origin;
-        public AbstractSlotDisplay Hovered;
+        public AbstractSlotDisplay Origin { get; private set; }
+        public AbstractSlotDisplay Hovered { get; private set; }
+        public Package DraggingPackage { get; private set; }
+
+        public Vector2Int PositionOffset { get; private set; }
 
         public event Action<List<Vector2Int>> OnOverlapping;
 
-        public Package DraggingPackage;
 
         private void Awake()
         {
-            _ = transform.root.TryGetComponent(out rootCanvas);
+            //_ = transform.root.TryGetComponent(out rootCanvas);
 
             itemDisplay.gameObject.SetActive(false);
 
@@ -46,18 +48,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         {
             if (IsDragging)
             {
-                MoveDragDisplay();
+                SetToMousePosition();
 
                 HighlightOverlappingSlots();
-            }
-
-            void MoveDragDisplay()
-            {
-                /// anchor to BottomLeft to match screen/mouse coordinates
-                itemDisplay.anchorMin = Vector2.zero;
-                itemDisplay.anchorMax = Vector2.zero;
-
-                itemDisplay.anchoredPosition = (Vector2)Input.mousePosition / rootCanvas.scaleFactor;
             }
 
             void HighlightOverlappingSlots()
@@ -65,11 +58,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
                 if (Hovered == null || DraggingPackage.Item == null)
                     return;
 
-                ///NOTE: the display has the Package.Item's dimensions and the pivot is the mouse position within these dimensions
-                /// get the displays pivot
+                /// The pivot is the mouse position within the items dimensions
                 var positionPivot = itemDisplay.pivot;
-                positionPivot.x *= AbstractItem.GetDimensions(DraggingPackage.Item.Dimensions).x;
-                positionPivot.y *= AbstractItem.GetDimensions(DraggingPackage.Item.Dimensions).y;
+                positionPivot *= AbstractItem.GetDimensions(DraggingPackage.Item.Dimensions);
 
                 var positionDiff = new Vector2Int(Mathf.FloorToInt(positionPivot.x), Mathf.FloorToInt(positionPivot.y));
                 positionDiff -= new Vector2Int(0, AbstractItem.GetDimensions(DraggingPackage.Item.Dimensions).y - 1);
@@ -108,10 +99,20 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             }
         }
 
+        private void SetToMousePosition()
+        {
+            /// anchor to BottomLeft to match screen/mouse coordinates
+            itemDisplay.anchorMin = Vector2.zero;
+            itemDisplay.anchorMax = Vector2.zero;
+
+            itemDisplay.anchoredPosition = (Vector2)Input.mousePosition / itemDisplay.lossyScale;
+        }
+
         public void SetPackage(AbstractSlotDisplay slot, Package package, Vector2Int positionOffset)
         {
             Origin = slot;
             DraggingPackage = package;
+            PositionOffset = positionOffset;
 
             if (!DraggingPackage.IsValid)
             {
@@ -137,35 +138,30 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
                 void SetPosition(Package package)
                 {
-                    itemDisplay.sizeDelta = AbstractItem.GetDimensions(package.Item.Dimensions) * 60; // * slotSize
+                    var dimensions = AbstractItem.GetDimensions(package.Item.Dimensions);
 
-                    /// anchor to BottomLeft to match screen/mouse coordinates
-                    itemDisplay.anchorMin = new Vector2(0, 0);
-                    itemDisplay.anchorMax = new Vector2(0, 0);
+                    itemDisplay.sizeDelta = dimensions * 60; // slotSize
 
-                    var mousePosition = (Vector2)Input.mousePosition / rootCanvas.scaleFactor;
-                    var slotPosition = (Vector2)Origin.transform.position / rootCanvas.scaleFactor;
-                    /// get the BottomLeft position
-                    slotPosition -= (Origin.transform as RectTransform).pivot * 60;
+                    var pointerRelativeToOrigin = (Vector2)(Input.mousePosition - Origin.transform.position) / transform.lossyScale;
 
-                    var slotPivot = (mousePosition - slotPosition) / 60;
-                    slotPivot.x /= AbstractItem.GetDimensions(package.Item.Dimensions).x;
-                    slotPivot.y /= AbstractItem.GetDimensions(package.Item.Dimensions).y;
+                    /// pointerPosition is in pixelCoordinates anchored TopLeft
+                    var pivot = pointerRelativeToOrigin / 60; // slotSize
+                    /// convert to screenCoordinates anchored BottomLeft
+                    pivot.y += 1;
+                    /// scale to match item dimensions
+                    pivot /= dimensions;
 
-                    // NOTE: this is derived from the GridLayoutComponent => get GridLayoutGroup.Corner to implement for all possible cases
-                    /// The positionOffset was calculated in InventorySpace (anchored TopLeft) so we subtract the DimensionHeight-1 to get to the BottomLeft position
-                    positionOffset -= new Vector2Int(0, AbstractItem.GetDimensions(package.Item.Dimensions).y - 1);
-                    /// and convert it to screenCoordinates
+                    /// The positionOffset was calculated in InventorySpace (anchored TopLeft)
+                    positionOffset.y -= dimensions.y - 1;
+                    /// convert to screenCoordinates anchored BottomLeft
                     positionOffset.y *= -1;
 
                     var positionPivot = (Vector2)positionOffset;
-                    positionPivot.x /= AbstractItem.GetDimensions(package.Item.Dimensions).x;
-                    positionPivot.y /= AbstractItem.GetDimensions(package.Item.Dimensions).y;
+                    positionPivot /= dimensions;
 
-                    // TODO: slightly offset this to simulate pickup OR do this by color change
-                    itemDisplay.pivot = slotPivot + positionPivot;
+                    itemDisplay.pivot = pivot + positionPivot;
 
-                    itemDisplay.anchoredPosition = Input.mousePosition / rootCanvas.scaleFactor;
+                    SetToMousePosition();
                 }
             }
         }

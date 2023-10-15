@@ -22,26 +22,32 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             if (!package.IsValid)
                 return;
 
-            var draggingDimensions = AbstractItem.GetDimensions(DragProvider.Instance.DraggingPackage.Item.Dimensions);
-            var DraggingPivot = DragProvider.Instance.ItemDisplay.pivot; // anchored in leftBottom to match mousePosition coordinates
-            var positionRelativeToItemDimensions = DraggingPivot * draggingDimensions;
-            var positionOffset = new Vector2Int(Mathf.FloorToInt(positionRelativeToItemDimensions.x), draggingDimensions.y - 1 - Mathf.FloorToInt(positionRelativeToItemDimensions.y));
+            var positionOffset = DragProvider.Instance.PositionOffset;
 
-            #region RETUNDANT
-            var pointerWithinThisSlot = (Vector2)(Input.mousePosition - transform.position) / transform.lossyScale;
-            var distanceToCenter = AbstractItem.GetDimensions(DragProvider.Instance.DraggingPackage.Item.Dimensions) / 2;
-
-            var relativeMouseOffset = (pointerWithinThisSlot - (transform as RectTransform).rect.size / 2) / (transform as RectTransform).rect.size;
-            var mouseOffset = new Vector2Int(Mathf.CeilToInt(relativeMouseOffset.x), -Mathf.CeilToInt(relativeMouseOffset.y));
-            #endregion RETUNDANT
-
-            //var positionToAdd = Position - distanceToCenter + mouseOffset;
-            // TODO: re-implement the half slot offset for expected slots to add to 
             var positionToAdd = Position - positionOffset;
+
+            /* TODO: match position offset based on most overlappin slots
+            /// pointerPosition is in pixelCoordinates anchored TopLeft
+            var pointerRelativeToThis = (Vector2)(Input.mousePosition - transform.position) / transform.lossyScale;
+
+            var pointerOffsetPercent = pointerRelativeToThis / (transform as RectTransform).rect.size;
+            //Debug.LogError($"pointerOffsetPercent: {pointerOffsetPercent}");
+            /// match offset addition
+            pointerOffsetPercent.y += 1;
+
+            var pointerOffsettedByHalfASlotSize = pointerOffsetPercent - new Vector2(.5f, .5f);
+            //Debug.LogError($"pointer offsetted by half: {pointerOffsettedByHalfASlotSize}");
+
+            var mouseOffset = new Vector2Int(Mathf.FloorToInt(pointerOffsettedByHalfASlotSize.x), -Mathf.CeilToInt(pointerOffsettedByHalfASlotSize.y));
+            Debug.LogError($"mouseOffsetFloored: {mouseOffset}");
+
+            Debug.LogError($"positionToAdd: {positionToAdd}");
+            Debug.LogError($"positionOffset: {positionToAdd + mouseOffset}");
+            positionToAdd += mouseOffset;
+            */
 
             package = Container.AddAtPosition(positionToAdd, package);
 
-            //DragProvider.Instance.SetPackage(this, package, distanceToCenter);
             DragProvider.Instance.SetPackage(this, package, positionOffset);
 
             Container.InvokeRefresh();

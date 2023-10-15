@@ -29,7 +29,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         public override Package AddAtPosition(Vector2Int position, Package package)
         {
-            if (package.Item == null || package.Amount <= 0)
+            if (!package.IsValid)
                 return package;
 
             var dimensions = AbstractItem.GetDimensions(package.Item.Dimensions);
@@ -38,8 +38,8 @@ namespace ToolSmiths.InventorySystem.Inventories
                 TryAddToInventory();
             else if (1 == otherItems.Count)
                 if (StoredPackages.TryGetValue(otherItems[0], out var storedPackage))
-                    if (!TryStack(storedPackage))
-                        TrySwap(storedPackage);
+                    if (!TryStack(storedPackage, otherItems[0]))
+                        TrySwap(storedPackage, otherItems[0]);
 
             InvokeRefresh();
 
@@ -53,61 +53,59 @@ namespace ToolSmiths.InventorySystem.Inventories
                     _ = package.ReduceAmount(amount);
             }
 
-            bool TryStack(Package storedPackage)
+            bool TryStack(Package storedPackage, Vector2Int storedPosition)
             {
-                if (0 < storedPackage.SpaceLeft)
-                    if (package.Item.Equals(storedPackage.Item))
+                if (0 == storedPackage.SpaceLeft)
+                    return false;
+
+                if (!package.Item.Equals(storedPackage.Item))
+                    return false;
+
+                var addedAmount = storedPackage.IncreaseAmount(package.Amount);
+                _ = package.ReduceAmount(addedAmount);
+
+                if (storedPackage.Item is CurrencyItem)
+                    if (storedPackage.Amount == (uint)storedPackage.Item.StackLimit) // full stack
+                        if (CheckForCurrencyUpgrade())
+                            return true;
+
+                StoredPackages[storedPosition] = storedPackage;
+
+                return true;
+
+                bool CheckForCurrencyUpgrade()
+                {
+                    var higherCurrency = UpgradeCurrency(storedPackage.Item as CurrencyItem);
+
+                    if (higherCurrency != storedPackage.Item)
                     {
-                        var addedAmount = storedPackage.IncreaseAmount(package.Amount);
-                        _ = package.ReduceAmount(addedAmount);
+                        RemoveAtPosition(storedPosition, storedPackage);
 
+                        storedPackage = new Package(storedPackage.Sender, higherCurrency);
 
-                        if (storedPackage.Item is CurrencyItem)
-                            if (storedPackage.Amount == (uint)storedPackage.Item.StackLimit) // full stack
-                                if (CheckForCurrencyUpgrade())
-                                    return true;
-
-                        StoredPackages[position] = storedPackage;
-
-                        return true;
-
-                        bool CheckForCurrencyUpgrade()
-                        {
-                            var higherCurrency = UpgradeCurrency(storedPackage.Item as CurrencyItem);
-
-                            if (higherCurrency != storedPackage.Item)
-                            {
-                                RemoveAtPosition(position, storedPackage);
-
-                                storedPackage = new Package(storedPackage.Sender, higherCurrency);
-
-                                if (TryAddToContainer(ref storedPackage))
-                                    return true;
-                            }
-
-                            return false;
-
-                            AbstractItem UpgradeCurrency(CurrencyItem currencyItem) => currencyItem.CurrencyType switch
-                            {
-                                Data.Enums.CurrencyType.Copper => new CurrencyItem(Data.Enums.CurrencyType.Iron),
-                                Data.Enums.CurrencyType.Iron => new CurrencyItem(Data.Enums.CurrencyType.Silver),
-                                Data.Enums.CurrencyType.Silver => new CurrencyItem(Data.Enums.CurrencyType.Gold),
-
-                                // no upgrade
-                                Data.Enums.CurrencyType.Gold => currencyItem,
-                                Data.Enums.CurrencyType.NONE => currencyItem,
-                                _ => currencyItem,
-                            };
-                        }
-
+                        if (TryAddToContainer(ref storedPackage))
+                            return true;
                     }
 
-                return false;
+                    return false;
+
+                    AbstractItem UpgradeCurrency(CurrencyItem currencyItem) => currencyItem.CurrencyType switch
+                    {
+                        Data.Enums.CurrencyType.Copper => new CurrencyItem(Data.Enums.CurrencyType.Iron),
+                        Data.Enums.CurrencyType.Iron => new CurrencyItem(Data.Enums.CurrencyType.Silver),
+                        Data.Enums.CurrencyType.Silver => new CurrencyItem(Data.Enums.CurrencyType.Gold),
+
+                        // no upgrade
+                        Data.Enums.CurrencyType.Gold => currencyItem,
+                        Data.Enums.CurrencyType.NONE => currencyItem,
+                        _ => currencyItem,
+                    };
+                }
             }
 
-            void TrySwap(Package storedPackage)
+            void TrySwap(Package storedPackage, Vector2Int storedPosition)
             {
-                _ = RemoveAtPosition(position, storedPackage);
+                _ = RemoveAtPosition(storedPosition, storedPackage);
 
                 TryAddToInventory();
 
