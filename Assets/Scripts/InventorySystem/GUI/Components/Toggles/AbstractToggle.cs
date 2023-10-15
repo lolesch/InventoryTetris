@@ -23,7 +23,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
 
         public event Action<bool> OnToggle;
 
-        //#pragma warning disable CS0114 // Member hides inherited member; missing override keyword
+#if UNITY_EDITOR
         protected override void OnValidate()
         {
             if (RadioGroup != null && RadioGroup.transform != transform.parent)
@@ -32,6 +32,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
             if (IsOn && RadioGroup)
                 RadioGroup.Activate(this);
         }
+#endif // if UNTIY_EDITOR
 
         protected override void OnDisable()
         {
