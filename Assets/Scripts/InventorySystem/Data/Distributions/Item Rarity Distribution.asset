@@ -34,18 +34,18 @@ MonoBehaviour:
   - name: NoDrop
     Enumeration: 0
     Probability: 0
-  - name: Common
-    Enumeration: 5
-    Probability: 0.53333336
-  - name: Magic
-    Enumeration: 15
-    Probability: 0.26666668
-  - name: Rare
-    Enumeration: 20
-    Probability: 0.13333334
   - name: Unique
     Enumeration: 30
     Probability: 0.06666667
-  exampleResults: 05000000050000000500000005000000050000000f0000000f0000000f0000000f00000014000000
+  - name: Rare
+    Enumeration: 20
+    Probability: 0.13333334
+  - name: Magic
+    Enumeration: 15
+    Probability: 0.26666668
+  - name: Common
+    Enumeration: 5
+    Probability: 0.53333336
+  exampleResults: 0500000005000000050000000f0000000f0000000f00000014000000140000001e0000001e000000
   exampleTotalPlayerCount: 1
   exampleAlliedPlayerCount: 7

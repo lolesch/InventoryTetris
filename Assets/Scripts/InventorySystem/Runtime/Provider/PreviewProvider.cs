@@ -13,7 +13,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
     public class PreviewProvider : AbstractProvider<PreviewProvider>
     {
         [SerializeField] private PreviewDisplay hoveredItem;
-        [SerializeField] private PreviewDisplay compareItem;
+        [SerializeField] private RectTransform compareItemParent;
+        [SerializeField] private PreviewDisplay compareItem1;
+        [SerializeField] private PreviewDisplay compareItem2;
 
         private Canvas rootCanvas;
         private bool showLeft;
@@ -65,14 +67,16 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             var mousePos = Input.mousePosition / rootCanvas.scaleFactor;
             hoveredItem.ItemDisplay.anchoredPosition = new Vector2(mousePos.x + OffsetX, mousePos.y);
 
-            compareItem.SetDisplay(compareTo[0], new Package[1] { package });
+            // TODO: compare to each
+            compareItem1.SetDisplay(compareTo[0], new Package[1] { package });
+            compareItem2.SetDisplay(compareTo[1], new Package[1] { package });
 
-            compareItem.ItemDisplay.pivot = new Vector2(pivotX, 1);
+            compareItemParent.pivot = new Vector2(pivotX, 1);
 
-            compareItem.ItemDisplay.anchorMin = showLeft ? Vector2.one : Vector2.up;
-            compareItem.ItemDisplay.anchorMax = showLeft ? Vector2.one : Vector2.up;
+            compareItemParent.anchorMin = showLeft ? Vector2.one : Vector2.up;
+            compareItemParent.anchorMax = showLeft ? Vector2.one : Vector2.up;
 
-            compareItem.ItemDisplay.anchoredPosition = new Vector2(OffsetX, 20);
+            compareItemParent.anchoredPosition = new Vector2(OffsetX, 20);
         }
     }
 }

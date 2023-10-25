@@ -31,13 +31,13 @@ MonoBehaviour:
   - name: NONE
     Enumeration: 0
     Probability: 0
+  - name: Jewelry
+    Enumeration: 3
+    Probability: 0.14285715
   - name: Armaments
     Enumeration: 1
     Probability: 0.2857143
   - name: Weapons
     Enumeration: 2
     Probability: 0.5714286
-  - name: Jewelry
-    Enumeration: 3
-    Probability: 0.14285715
-  exampleResults: 01000000010000000100000002000000020000000200000002000000030000000300000003000000
+  exampleResults: 01000000010000000200000002000000020000000200000002000000020000000200000003000000
