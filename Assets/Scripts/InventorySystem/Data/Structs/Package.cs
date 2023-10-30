@@ -12,7 +12,7 @@ namespace ToolSmiths.InventorySystem.Data
     public struct Package
     {
         /// <summary>The package contains an amount of items and can be stored inside containers</summary>
-        public Package(AbstractDimensionalContainer sender, AbstractItem item, uint amount = 1)
+        public Package(AbstractDimensionalContainer sender, AbstractItem item, uint amount)
         {
             Sender = sender;
             Item = item;

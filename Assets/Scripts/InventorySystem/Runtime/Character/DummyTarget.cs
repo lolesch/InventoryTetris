@@ -18,7 +18,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
             foreach (var item in randomEquipment)
                 //rework to drop items on the floor
-                _ = CharacterProvider.Instance.Player.PickUpItem(new Package(null, item));
+                _ = CharacterProvider.Instance.Player.PickUpItem(new Package(null, item, 1u));
 
             // TODO: use event instead?
             CharacterProvider.Instance.Player.GainExperience(experience, CharacterLevel);

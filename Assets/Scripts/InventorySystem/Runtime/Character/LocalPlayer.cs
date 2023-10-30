@@ -115,14 +115,16 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         public void RemoveItemStats(List<CharacterStatModifier> stats)
         {
             var resources = new StatName[] { StatName.Health, StatName.Resource, StatName.Shield, StatName.Experience };
-
             foreach (var itemStat in stats)
+            {
+                var couldRemove = false;
+
                 if (resources.Contains(itemStat.Stat))
                 {
                     for (var i = CharacterResources.Length; i-- > 0;)
                         if (CharacterResources[i].Stat == itemStat.Stat)
                         {
-                            CharacterResources[i].RemoveModifier(itemStat.Modifier);
+                            couldRemove = CharacterResources[i].TryRemoveModifier(itemStat.Modifier);
                             break;
                         }
                 }
@@ -130,9 +132,13 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
                     for (var i = CharacterStats.Length; i-- > 0;)
                         if (CharacterStats[i].Stat == itemStat.Stat)
                         {
-                            CharacterStats[i].RemoveModifier(itemStat.Modifier);
+                            couldRemove = CharacterStats[i].TryRemoveModifier(itemStat.Modifier);
                             break;
                         }
+
+                if (!couldRemove)
+                    Debug.LogWarning($"could not remove {itemStat.Stat} modifier {itemStat.Modifier}!");
+            }
 
             UpdateStatDisplays();
         }
@@ -166,10 +172,16 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         {
             var currentStat = this.GetStat(stat);
             var clonedStat = currentStat.GetDeepCopy();
-            clonedStat.RemoveModifier(current);
-            clonedStat.AddModifier(other);
+            var clonedStat2 = currentStat.GetDeepCopy();
 
-            return currentStat.TotalValue - clonedStat.TotalValue;
+            if (clonedStat.TryRemoveModifier(current))
+                clonedStat.AddModifier(other);
+
+            if (clonedStat2.TryRemoveModifier(other))
+                clonedStat2.AddModifier(current);
+
+            return clonedStat2.TotalValue - clonedStat.TotalValue;
+            //return currentStat.TotalValue - clonedStat.TotalValue;
         }
     }
 }

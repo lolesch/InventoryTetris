@@ -66,7 +66,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             for (var i = 0; i < Amount; i++)
             {
                 var randomEquipment = ItemProvider.Instance.GenerateRandomOfEquipmentType(equipmentType);
-                _ = CharacterProvider.Instance.Player.PickUpItem(new Package(null, randomEquipment));
+                _ = CharacterProvider.Instance.Player.PickUpItem(new Package(null, randomEquipment, 1u));
             }
         }
 
@@ -75,7 +75,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             for (var i = 0; i < Amount; i++)
             {
                 var randomConsumable = ItemProvider.Instance.GenerateRandomOfConsumableType(consumableType);
-                _ = CharacterProvider.Instance.Player.PickUpItem(new Package(null, randomConsumable));
+                _ = CharacterProvider.Instance.Player.PickUpItem(new Package(null, randomConsumable, 1u));
             }
         }
 
@@ -84,7 +84,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             for (var i = 0; i < Amount; i++)
             {
                 var randomCurrency = ItemProvider.Instance.GenerateCurrency(currencyType);
-                _ = CharacterProvider.Instance.Player.PickUpItem(new Package(null, randomCurrency));
+                _ = CharacterProvider.Instance.Player.PickUpItem(new Package(null, randomCurrency, 1u));
             }
         }
 
@@ -93,7 +93,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             var items = ItemProvider.Instance.GenerateRandomLoot(Amount);
 
             for (var i = 0; i < items.Count; i++)
-                _ = CharacterProvider.Instance.Player.PickUpItem(new Package(null, items[i]));
+                _ = CharacterProvider.Instance.Player.PickUpItem(new Package(null, items[i], 1u));
         }
 
         public void AddRandomCurrency()
@@ -102,7 +102,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             for (var i = 0; i < Amount; i++)
             {
-                var package = new Package(null, randomCurrency);
+                var package = new Package(null, randomCurrency, 1u);
                 _ = CharacterProvider.Instance.Player.PickUpItem(package);
             }
         }
@@ -156,7 +156,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             {
                 var item = ItemProvider.Instance.GenerateRandomEquipment();
 
-                var package = new Package(null, item);
+                var package = new Package(null, item, 1u);
 
                 _ = Store?.TryAddToContainer(ref package);
             }

@@ -31,7 +31,7 @@ namespace ToolSmiths.InventorySystem.Data
             name = Stat.SplitCamelCase();
         }
 
-        public void RemoveModifier(StatModifier modifier)
+        public bool TryRemoveModifier(StatModifier modifier)
         {
             for (var i = StatModifiers.Count; i-- > 0;)
                 if (StatModifiers[i].Equals(modifier))
@@ -39,8 +39,10 @@ namespace ToolSmiths.InventorySystem.Data
                     StatModifiers.RemoveAt(i);
 
                     TotalHasChanged?.Invoke(TotalValue);
+                    return true;
                     break;
                 }
+            return false;
         }
 
         public void AddModifier(StatModifier modifier)

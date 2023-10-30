@@ -5468,8 +5468,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   hoveredItem: {fileID: 2490304453565465028}
   compareItemParent: {fileID: 2086157567588453773}
-  compareItem1: {fileID: 6470007127680040892}
-  compareItem2: {fileID: 8057439348665659541}
+  compareDisplay1: {fileID: 6470007127680040892}
+  compareDisplay2: {fileID: 8057439348665659541}
 --- !u!1 &7684276977399331653
 GameObject:
   m_ObjectHideFlags: 0

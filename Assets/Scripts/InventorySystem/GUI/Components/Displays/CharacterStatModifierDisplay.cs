@@ -18,11 +18,20 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
             public float displayFontSize;
             public Sprite icon;
 
-            public CharacterStatModifierData(CharacterStatModifier characterStatModifier, Package[] compareTo)
+            public CharacterStatModifierData(CharacterStatModifier characterStatModifier)
+            {
+                statMod = characterStatModifier;
+                icon = ItemProvider.Instance.ItemTypeData.GetStatIcon(statMod.Stat);
+                displayText = $"{statMod.Modifier} {statMod.Modifier.Range.ToString().Colored(Color.gray)}";
+                displayFontSize = statMod.Modifier.Value.Map(statMod.Modifier.Range, 18, 24);
+            }
+
+            public CharacterStatModifierData(CharacterStatModifier characterStatModifier, Package compareTo)
             {
                 statMod = characterStatModifier;
 
-                var comparison = CompareStatValues(statMod, out var difference);
+                var comparison = CompareStatValues(statMod, compareTo, out var difference);
+                var comparisonColor = comparison == 0 ? Color.white : (comparison < 0 ? Color.red : Color.green);
 
                 var differenceString = statMod.Modifier.Type switch
                 {
@@ -34,18 +43,11 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                     _ => $"?? {difference:+ #.###;- #.###;#.###}",
                 };
 
-                var statName = "";//statMod.Stat.SplitCamelCase();
-
-                if (statName.Contains("Percent"))
-                    statName = statName.Replace(" Percent", "");
-
-                var comparisonColor = comparison == 0 ? Color.white : (comparison < 0 ? Color.red : Color.green);
-
                 icon = ItemProvider.Instance.ItemTypeData.GetStatIcon(statMod.Stat);
-                displayText = $"{statMod.Modifier} {statName} {statMod.Modifier.Range.ToString().Colored(Color.gray)} {differenceString.Colored(comparisonColor)}";
+                displayText = $"{statMod.Modifier} {statMod.Modifier.Range.ToString().Colored(Color.gray)} {differenceString.Colored(comparisonColor)}";
                 displayFontSize = statMod.Modifier.Value.Map(statMod.Modifier.Range, 18, 24);
 
-                int CompareStatValues(CharacterStatModifier stat, out float difference)
+                static int CompareStatValues(CharacterStatModifier stat, Package compareTo, out float difference)
                 {
                     difference = 0;
                     var other = 0f;
@@ -53,15 +55,14 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                     //if (stat.Modifier.Type == StatModifierType.Override) // => compare to total
                     //    other = Character.Instance.GetStatValue(stat.Stat);
                     //else 
-                    foreach (var item in compareTo)
-                        if (item.Item != null)
-                            for (var i = 0; i < item.Item.Affixes.Count; i++)   // foreach stat of the other item
-                                if (item.Item.Affixes[i].Stat == stat.Stat)     // find a corresponding stat
-                                                                                // if (compareTo.Item.Affixes[i].Modifier.Type == stat.Modifier.Type) // find a corresponding mod type
-                                {
-                                    other = item.Item.Affixes[i].Modifier.Value;
-                                    difference = CharacterProvider.Instance.Player.CompareStatModifiers(stat, item.Item.Affixes[i].Modifier);
-                                }
+                    if (compareTo.IsValid)
+                        for (var i = 0; i < compareTo.Item.Affixes.Count; i++)   // foreach stat of the other item
+                            if (compareTo.Item.Affixes[i].Stat == stat.Stat)     // find a corresponding stat
+                                                                                 // if (compareTo.Item.Affixes[i].Modifier.Type == stat.Modifier.Type) // find a corresponding mod type
+                            {
+                                other = compareTo.Item.Affixes[i].Modifier.Value;
+                                difference = CharacterProvider.Instance.Player.CompareStatModifiers(stat, compareTo.Item.Affixes[i].Modifier);
+                            }
 
                     return stat.Modifier.Value.CompareTo(other);
                 }
@@ -71,6 +72,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
         [SerializeField] protected Image icon;
 
         [SerializeField] protected TextMeshProUGUI text;
+
         public void RefreshDisplay(CharacterStatModifierData newData)
         {
             icon.sprite = newData.icon;

@@ -27,10 +27,10 @@ namespace ToolSmiths.InventorySystem.Items
 
         public static Color GetRarityColor(ItemRarity rarity) => rarity switch
         {
-            ItemRarity.Common => Color.white,
-            ItemRarity.Magic => Color.cyan,
-            ItemRarity.Rare => Color.yellow,
-            ItemRarity.Unique => new Color(1, 0.35f, 0, 1), // orange
+            ItemRarity.Common => ColorExtensions.ItemRarityCommon,
+            ItemRarity.Magic => ColorExtensions.ItemRarityMagic,
+            ItemRarity.Rare => ColorExtensions.ItemRarityRare,
+            ItemRarity.Unique => ColorExtensions.ItemRarityUnique,
 
             //ItemRarity.Uncommon => Color.gray,
             //ItemRarity.Crafted => new Color(0.4f, 0, 1, 1), // purple
