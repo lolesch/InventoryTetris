@@ -38,7 +38,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
                         /// instance as component of "non-root" gameObjects
                         if (instance.transform.parent != null)
                         {
-                            Debug.LogWarning($"{instance.name.Colored(Color.yellow)} is no root object and can't be moved by DonstDestroyOnLoad()", instance);
+                            Debug.LogWarning($"{instance.name.Colored(Color.yellow)} is no root object and can't be moved by DonstDestroyOnLoad", instance);
                             // concider force reparent the GameObject as root
                         }
 
@@ -71,7 +71,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
                 {
                     instance = new GameObject(GetProviderName()).AddComponent<T>(); // this calls Awake on the new GameObject
 
-                    Debug.Log($"Created new {instance.name.ColoredComponent()}", instance);
+                    Debug.LogWarning($"Created new {instance.name.ColoredComponent()}", instance);
                 }
             }
         }

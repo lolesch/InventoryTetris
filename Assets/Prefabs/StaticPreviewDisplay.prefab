@@ -3612,7 +3612,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 54fefc236d0f88d4eb6143705a1f084d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ItemDisplay: {fileID: 4886304048020072310}
   icon: {fileID: 1688146457788968644}
   frame: {fileID: 7041900343297031866}
   horizontalLines:
@@ -4531,7 +4530,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 54fefc236d0f88d4eb6143705a1f084d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ItemDisplay: {fileID: 8635660712388306962}
   icon: {fileID: 8003066834717729650}
   frame: {fileID: 4958113686097078073}
   horizontalLines:
@@ -4589,7 +4587,7 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6774256031947967093}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4599,7 +4597,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_SizeDelta: {x: 8, y: 8}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &2806097196409108929
 CanvasRenderer:
@@ -4625,11 +4623,11 @@ MonoBehaviour:
   m_Color: {r: 1, g: 0.8954585, b: 0.6745283, a: 0.5019608}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
+  m_Maskable: 0
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 93128959dd29f3d4f9a0fd5b1f03f522, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 6b4483b412f63b64dae37965b34b18cb, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -4638,7 +4636,7 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 3
+  m_PixelsPerUnitMultiplier: 5
 --- !u!114 &3005615956413895183
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4944,7 +4942,7 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7156100159227953278}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4954,7 +4952,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_SizeDelta: {x: 8, y: 8}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3715127968276994763
 CanvasRenderer:
@@ -4980,11 +4978,11 @@ MonoBehaviour:
   m_Color: {r: 1, g: 0.8954585, b: 0.6745283, a: 0.5019608}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
+  m_Maskable: 0
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 93128959dd29f3d4f9a0fd5b1f03f522, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 6b4483b412f63b64dae37965b34b18cb, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -4993,7 +4991,7 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 3
+  m_PixelsPerUnitMultiplier: 5
 --- !u!114 &1320420687910474141
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5466,10 +5464,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4231629bd8ecf1f44869fa9acf2eab23, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  hoveredItem: {fileID: 2490304453565465028}
+  hoveredDisplay: {fileID: 2490304453565465028}
   compareItemParent: {fileID: 2086157567588453773}
-  compareItem1: {fileID: 6470007127680040892}
-  compareItem2: {fileID: 8057439348665659541}
+  compareDisplay1: {fileID: 6470007127680040892}
+  compareDisplay2: {fileID: 8057439348665659541}
 --- !u!1 &7684276977399331653
 GameObject:
   m_ObjectHideFlags: 0
@@ -5743,7 +5741,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 54fefc236d0f88d4eb6143705a1f084d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ItemDisplay: {fileID: 2280840550376745676}
   icon: {fileID: 4794182680834183586}
   frame: {fileID: 5085944064063303932}
   horizontalLines:

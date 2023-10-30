@@ -197,7 +197,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 3357016484808601846}
   m_HandleRect: {fileID: 909635809162919219}
   m_Direction: 2
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -318,25 +318,25 @@ MonoBehaviour:
   <IsBlocking>k__BackingField: 0
   <SpendResource>k__BackingField: 1
   <CharacterStats>k__BackingField:
-  - name: 'Attack Speed: 0.658'
+  - name: 'Attack Speed: 0.66'
     <Stat>k__BackingField: 1
-    <BaseValue>k__BackingField: 0.658
+    <BaseValue>k__BackingField: 0.66
     <StatModifiers>k__BackingField: []
-  - name: 'Physical Damage: 59'
+  - name: 'Physical Damage: 10'
     <Stat>k__BackingField: 2
-    <BaseValue>k__BackingField: 59
+    <BaseValue>k__BackingField: 10
     <StatModifiers>k__BackingField: []
-  - name: 'Magical Damage: 0'
+  - name: 'Magical Damage: 2'
     <Stat>k__BackingField: 3
-    <BaseValue>k__BackingField: 0
+    <BaseValue>k__BackingField: 2
     <StatModifiers>k__BackingField: []
-  - name: 'Armor Penetration: 0'
+  - name: 'Armor Penetration: 1'
     <Stat>k__BackingField: 4
-    <BaseValue>k__BackingField: 0
+    <BaseValue>k__BackingField: 1
     <StatModifiers>k__BackingField: []
-  - name: 'Magic Penetration: 0'
+  - name: 'Magic Penetration: 1'
     <Stat>k__BackingField: 5
-    <BaseValue>k__BackingField: 0
+    <BaseValue>k__BackingField: 1
     <StatModifiers>k__BackingField: []
   - name: 'Health Regeneration: 3.5'
     <Stat>k__BackingField: 12
@@ -350,21 +350,21 @@ MonoBehaviour:
     <Stat>k__BackingField: 14
     <BaseValue>k__BackingField: 30
     <StatModifiers>k__BackingField: []
-  - name: 'Movement Speed: 325'
+  - name: 'Movement Speed: 6'
     <Stat>k__BackingField: 21
-    <BaseValue>k__BackingField: 325
+    <BaseValue>k__BackingField: 6
     <StatModifiers>k__BackingField: []
   - name: 'Resource Regeneration: 7'
     <Stat>k__BackingField: 23
     <BaseValue>k__BackingField: 7
     <StatModifiers>k__BackingField: []
-  - name: 'Increased Item Rarity: 0'
+  - name: 'Increased Item Rarity: 1'
     <Stat>k__BackingField: 24
-    <BaseValue>k__BackingField: 0
+    <BaseValue>k__BackingField: 1
     <StatModifiers>k__BackingField: []
-  - name: 'Increased Item Quantity: 0'
+  - name: 'Increased Item Quantity: 1'
     <Stat>k__BackingField: 25
-    <BaseValue>k__BackingField: 0
+    <BaseValue>k__BackingField: 1
     <StatModifiers>k__BackingField: []
   <CharacterResources>k__BackingField:
   - name: 'Health: 640'

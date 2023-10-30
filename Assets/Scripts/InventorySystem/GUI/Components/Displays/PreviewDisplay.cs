@@ -9,10 +9,9 @@ using UnityEngine.UI;
 
 namespace ToolSmiths.InventorySystem.GUI.Displays
 {
-    // TODO: inherit AbstractDisplay
-    public class PreviewDisplay : MonoBehaviour
+    [RequireComponent(typeof(RectTransform))]
+    public class PreviewDisplay : MonoBehaviour, IDisplay<(Package package, Package compareTo)>
     {
-        public RectTransform ItemDisplay;
         [SerializeField] private Image icon;
         [SerializeField] private Image frame;
         [SerializeField] private List<Image> horizontalLines;
@@ -25,19 +24,18 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
         [SerializeField] private CharacterStatModifierDisplay itemStatPrefab;
         [SerializeField] private PrefabPool<CharacterStatModifierDisplay> itemStatPool;
 
-        public bool IsPreviewing => ItemDisplay.gameObject.activeSelf;
+        public bool IsPreviewing => gameObject.activeSelf;
 
-        private void Awake()
-        {
-            ItemDisplay.gameObject.SetActive(false);
-            itemStatPool = new(itemStatPrefab);
-        }
+        private void Start() =>
+            //itemStatPool = new(itemStatPrefab);
+            gameObject.SetActive(false);
 
-        public void SetDisplay(Package package, Package compareTo)
+        public void RefreshDisplay((Package package, Package compareTo) data) => RefreshDisplay(data.package, data.compareTo);
+        private void RefreshDisplay(Package package, Package compareTo)
         {
-            if (package.Item == null || package.Amount < 1)
+            if (!package.IsValid)
             {
-                ItemDisplay.gameObject.SetActive(false);
+                gameObject.SetActive(false);
                 return;
             }
 
@@ -73,6 +71,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
             if (background)
                 background.color = rarityColor * Color.gray * Color.gray;
 
+            itemStatPool ??= new(itemStatPrefab);
             itemStatPool.ReleaseAll();
 
             foreach (var stat in package.Item.Affixes)
@@ -81,12 +80,15 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 
                 var itemStat = itemStatPool.GetObject(false);
 
-                itemStat.RefreshDisplay(new(stat, compareTo));
+                if (compareTo.IsValid)
+                    itemStat.RefreshDisplay(new(stat, compareTo));
+                else
+                    itemStat.RefreshDisplay(new(stat));
 
                 itemStat.gameObject.SetActive(true);
             }
 
-            ItemDisplay.gameObject.SetActive(true);
+            gameObject.SetActive(true);
         }
     }
 }

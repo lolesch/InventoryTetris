@@ -29,9 +29,12 @@ namespace ToolSmiths.InventorySystem.Inventories
                 var equipmentItem = package.Item as EquipmentItem;
 
                 var equipmentPositions = GetTypeSpecificPositions(equipmentItem.EquipmentType);
-                var preferedPosition = equipmentPositions.Where(x => StoredPackages[x].Item != null
-                && (StoredPackages[x].Item as EquipmentItem).EquipmentType != equipmentItem.EquipmentType);
-                var position = preferedPosition.Any() ? preferedPosition.First() : equipmentPositions[0];
+                //var preferedPosition = equipmentPositions.Where(
+                //    x => TryGetItemAt(ref x, out var storedPackage)
+                //    && storedPackage.IsValid
+                //    && (StoredPackages[x].Item as EquipmentItem).EquipmentType != equipmentItem.EquipmentType);
+                //var position = preferedPosition.Any() ? preferedPosition.First() : equipmentPositions[0];
+                var position = Input.GetKey(KeyCode.LeftControl) && equipmentPositions.Length > 1 ? equipmentPositions[1] : equipmentPositions[0];
 
                 package = AddAtPosition(position, package);
             }

@@ -102,9 +102,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
             if (Container.TryGetItemAt(ref position, out var hoveredIten))
                 if (hoveredIten.Item != null && 0 < hoveredIten.Amount)
-                    _ = StartCoroutine(FadeIn(hoveredIten, position));
+                    _ = StartCoroutine(FadeIn(hoveredIten));
 
-            IEnumerator FadeIn(Package package, Vector2Int storedPosition)
+            IEnumerator FadeIn(Package package)
             {
                 hovering = true;
 
@@ -129,7 +129,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         {
             hovering = false;
 
-            PreviewProvider.Instance.RefreshPreviewDisplay(new Package(Container, null, 0), this);
+            PreviewProvider.Instance.RefreshPreviewDisplay(new Package(), this);
         }
 
         protected abstract void DropItem(Package package);

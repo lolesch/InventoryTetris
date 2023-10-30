@@ -178,8 +178,6 @@ namespace ToolSmiths.InventorySystem.Inventories
             }
         }
 
-        public bool TryGetPackageAt(Vector2Int position, out Package package) => StoredPackages.TryGetValue(position, out package);
-
         // TODO package should implement IComparable 
         public void Sort()
         {
