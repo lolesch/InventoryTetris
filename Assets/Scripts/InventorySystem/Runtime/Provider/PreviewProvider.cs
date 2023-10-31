@@ -51,7 +51,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
                     InventoryProvider.Instance.Equipment.StoredPackages.TryGetValue(equipmentPositions[i], out compareTo[i]);
             }
 
-            hoveredItem.SetDisplay(package, compareTo);
+            hoveredItem.SetDisplay(package, compareTo[0]);
 
             /// pivot pointing towards center of screen
             showLeft = Input.mousePosition.x < (Screen.width * 0.5);
@@ -68,8 +68,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             hoveredItem.ItemDisplay.anchoredPosition = new Vector2(mousePos.x + OffsetX, mousePos.y);
 
             // TODO: compare to each
-            compareItem1.SetDisplay(compareTo[0], new Package[1] { package });
-            compareItem2.SetDisplay(compareTo[1], new Package[1] { package });
+            compareItem1.SetDisplay(compareTo[0], package);
+            compareItem2.SetDisplay(compareTo[1], package);
 
             compareItemParent.pivot = new Vector2(pivotX, 1);
 

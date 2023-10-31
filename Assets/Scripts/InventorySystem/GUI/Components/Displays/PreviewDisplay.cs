@@ -33,7 +33,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
             itemStatPool = new(itemStatPrefab);
         }
 
-        public void SetDisplay(Package package, Package[] compareTo)
+        public void SetDisplay(Package package, Package compareTo)
         {
             if (package.Item == null || package.Amount < 1)
             {

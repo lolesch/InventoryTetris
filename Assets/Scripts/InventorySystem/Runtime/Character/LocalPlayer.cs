@@ -122,7 +122,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
                     for (var i = CharacterResources.Length; i-- > 0;)
                         if (CharacterResources[i].Stat == itemStat.Stat)
                         {
-                            CharacterResources[i].RemoveModifier(itemStat.Modifier);
+                            CharacterResources[i].TryRemoveModifier(itemStat.Modifier);
                             break;
                         }
                 }
@@ -130,7 +130,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
                     for (var i = CharacterStats.Length; i-- > 0;)
                         if (CharacterStats[i].Stat == itemStat.Stat)
                         {
-                            CharacterStats[i].RemoveModifier(itemStat.Modifier);
+                            CharacterStats[i].TryRemoveModifier(itemStat.Modifier);
                             break;
                         }
 
@@ -166,10 +166,15 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         {
             var currentStat = this.GetStat(stat);
             var clonedStat = currentStat.GetDeepCopy();
-            clonedStat.RemoveModifier(current);
-            clonedStat.AddModifier(other);
+            var clonedStat2 = currentStat.GetDeepCopy();
 
-            return currentStat.TotalValue - clonedStat.TotalValue;
+            if (clonedStat.TryRemoveModifier(current))
+                clonedStat.AddModifier(other);
+
+            if (clonedStat2.TryRemoveModifier(other))
+                clonedStat2.AddModifier(current);
+
+            return clonedStat2.TotalValue - clonedStat.TotalValue;
         }
     }
 }
