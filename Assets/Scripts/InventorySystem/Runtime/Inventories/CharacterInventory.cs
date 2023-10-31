@@ -81,7 +81,7 @@ namespace ToolSmiths.InventorySystem.Inventories
                     {
                         RemoveAtPosition(storedPosition, storedPackage);
 
-                        storedPackage = new Package(storedPackage.Sender, higherCurrency);
+                        storedPackage = new Package(storedPackage.Sender, higherCurrency, 1u);
 
                         if (TryAddToContainer(ref storedPackage))
                             return true;
