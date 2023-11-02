@@ -17,6 +17,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         [SerializeField] private CharacterStatDisplay characterStatPrefab;
         [SerializeField] private PrefabPool<CharacterStatDisplay> characterStatPool;
 
+        [SerializeField] private CharacterDPSDisplay physicalDPS;
+        [SerializeField] private CharacterDPSDisplay magicalDPS;
+
         // TODO: ATTRIBUTES and DERIVED STATS => define and calculate derived values => see Bone&Blood
         private void Awake() => characterStatPool = new(characterStatPrefab);
 
@@ -57,6 +60,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
                 statDisplay.gameObject.SetActive(true);
             }
+
+            physicalDPS.RefreshDisplay(new DPSData(this, DamageType.PhysicalDamage));
+            magicalDPS.RefreshDisplay(new DPSData(this, DamageType.MagicalDamage));
         }
 
         protected override void OnDeath() => Debug.LogWarning($"{name.ColoredComponent()} {"DIED!".Colored(Color.red)}", this);
@@ -180,7 +186,13 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             if (clonedStat2.TryRemoveModifier(other))
                 clonedStat2.AddModifier(current);
 
-            return clonedStat2.TotalValue - clonedStat.TotalValue;
+            var difference = clonedStat2.TotalValue - clonedStat.TotalValue;
+            if (current.Type == StatModifierType.PercentAdd)
+                difference *= 100;
+            if (current.Type == StatModifierType.PercentMult)
+                difference *= 100;
+
+            return difference;
             //return currentStat.TotalValue - clonedStat.TotalValue;
         }
     }

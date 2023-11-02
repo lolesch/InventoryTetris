@@ -93,7 +93,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         protected abstract void MoveItem(PointerEventData eventData);
 
-        protected void FadeInPreview()
+        protected void FadeInPreview()  // TODO move the delayed logic into the previewProvider
         {
             if (Container == null)
                 return;
@@ -101,7 +101,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             var position = Position;
 
             if (Container.TryGetItemAt(ref position, out var hoveredIten))
-                if (hoveredIten.Item != null && 0 < hoveredIten.Amount)
+                if (hoveredIten.IsValid)
                     _ = StartCoroutine(FadeIn(hoveredIten));
 
             IEnumerator FadeIn(Package package)
@@ -114,11 +114,11 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 {
                     yield return null;
 
-                    var canFadeIn = 0.5f < Time.time - timeStamp;
+                    var canFadeIn = PreviewProvider.Instance.FadeInDelay < Time.time - timeStamp;
 
-                    if (canFadeIn && hovering)
+                    if (canFadeIn)// && hovering)
                     {
-                        PreviewProvider.Instance.RefreshPreviewDisplay(package, this);
+                        PreviewProvider.Instance.CompareDetails(package, this is not EquipmentSlotDisplay);
                         hovering = false;
                     }
                 }
@@ -129,7 +129,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         {
             hovering = false;
 
-            PreviewProvider.Instance.RefreshPreviewDisplay(new Package(), this);
+            PreviewProvider.Instance.CompareDetails(new Package(), false);
         }
 
         protected abstract void DropItem(Package package);

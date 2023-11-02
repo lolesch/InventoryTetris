@@ -114,6 +114,8 @@ namespace ToolSmiths.InventorySystem.Inventories
                 if (0 < package.Amount)
                     Debug.LogWarning($"Something went wrong! remaining package will be overwritten: {package}");
 
+                previouslyEquipped = previouslyEquipped.OrderBy(x => x.Item.Dimensions).ToList(); // sort for better positioning in the receiving container
+
                 for (var i = previouslyEquipped.Count; i-- > 0;)
                 {
                     var current = previouslyEquipped[i];

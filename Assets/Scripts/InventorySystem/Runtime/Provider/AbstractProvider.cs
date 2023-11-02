@@ -69,7 +69,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
                 static void CreateNewInstance()
                 {
-                    instance = new GameObject(GetProviderName()).AddComponent<T>(); // this calls Awake on the new GameObject
+                    var gameObject = new GameObject(GetProviderName());
+                    instance = gameObject.AddComponent<T>(); // this calls Awake on the new GameObject
+                    //instance = new GameObject(GetProviderName()).AddComponent<T>(); // this calls Awake on the new GameObject
 
                     Debug.LogWarning($"Created new {instance.name.ColoredComponent()}", instance);
                 }

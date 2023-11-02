@@ -55,7 +55,7 @@ namespace ToolSmiths.InventorySystem.Items
             _ => Vector2Int.zero,
         };
 
-        protected static List<CharacterStatModifier> CombineAffixesOfSameTypeAndMod(List<CharacterStatModifier> affixes)
+        public static List<CharacterStatModifier> CombineAffixesOfSameType(List<CharacterStatModifier> affixes)
         {
             // for each affix go down the list and check for same affix and same type
             for (var i = 0; i < affixes.Count; i++)
@@ -146,7 +146,7 @@ namespace ToolSmiths.InventorySystem.Items
                     Affixes.Add(unique.Affixes[i]);
             }
 
-            Affixes = CombineAffixesOfSameTypeAndMod(Affixes);
+            Affixes = CombineAffixesOfSameType(Affixes);
 
             ItemSize GetDimension(ConsumableType consumableType) => consumableType switch
             {
@@ -221,6 +221,11 @@ namespace ToolSmiths.InventorySystem.Items
         [field: SerializeField] public EquipmentCategory EquipmentCategory { get; protected set; } // make EquipmentItem abstract and inherite for each category
         [field: SerializeField] public EquipmentType EquipmentType { get; protected set; } // might want to use inheritance instead and make EquipmentItem abstract to get more detailed itemTypes
 
+        public EquipmentItem(EquipmentType equipmentType, ItemRarity rarity, List<CharacterStatModifier> predefinedAffixes) => new EquipmentItem(equipmentType, rarity)
+        {
+            Affixes = CombineAffixesOfSameType(predefinedAffixes)
+        };
+
         public EquipmentItem(EquipmentType equipmentType, ItemRarity rarity)
         {
             if (rarity == ItemRarity.NoDrop)
@@ -255,7 +260,7 @@ namespace ToolSmiths.InventorySystem.Items
                 }
             }
 
-            Affixes = CombineAffixesOfSameTypeAndMod(Affixes);
+            Affixes = CombineAffixesOfSameType(Affixes);
 
             ItemSize GetDimension(EquipmentType equipmentType) => equipmentType switch
             {

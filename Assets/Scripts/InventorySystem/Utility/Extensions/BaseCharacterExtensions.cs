@@ -29,17 +29,28 @@ namespace ToolSmiths.InventorySystem.Utility.Extensions
 
         public static float CalculateDamageOutput(this BaseCharacter character, DamageType damageType)
         {
-            // TODO: if attackSpeed has only percantMods and a base of 0 it will return 0 
             var attackSpeed = GetStatValue(character, StatName.AttackSpeed);
-            var damageTypeMod = damageType switch
+            var damage = damageType switch
             {
                 DamageType.PhysicalDamage => GetStatValue(character, StatName.PhysicalDamage),
                 DamageType.MagicalDamage => GetStatValue(character, StatName.MagicalDamage),
 
                 _ => 0f,
             };
+            var damageTypePenetration = damageType switch
+            {
+                DamageType.PhysicalDamage => GetStatValue(character, StatName.ArmorPenetration),
+                DamageType.MagicalDamage => GetStatValue(character, StatName.MagicPenetration),
 
-            return damageTypeMod * (1f + attackSpeed * 0.01f); // * (1f + damageTypeMod * 0.01f);
+                _ => 0f,
+            };
+
+            // TODO: design offensives
+            // bypass target resistances?
+            // Mitigare target resistances?
+            // apply effects
+
+            return damage * (1f + attackSpeed * 0.01f) * (1f + damageTypePenetration * 0.01f);
         }
 
         public static float CalculateReceivingDamage(this BaseCharacter character, DamageType damageType, float incomingDamage)

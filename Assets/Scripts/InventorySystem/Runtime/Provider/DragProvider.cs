@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
-using TMPro;
 using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.GUI.Displays;
 using ToolSmiths.InventorySystem.GUI.InventoryDisplays;
+using ToolSmiths.InventorySystem.GUI.Panels;
 using ToolSmiths.InventorySystem.Items;
 using UnityEngine;
 using UnityEngine.UI;
@@ -13,35 +14,35 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
     [RequireComponent(typeof(RectTransform))]
     public class DragProvider : AbstractProvider<DragProvider>
     {
-        public bool IsDragging => itemDisplay.gameObject.activeSelf;
+        [SerializeField] private SimplePanel itemPanel;
+        [SerializeField] private ItemDisplay itemDisplay;
 
-        [SerializeField] private RectTransform itemDisplay;
-        [SerializeField] private Image icon;
         [SerializeField] private Image background;
         [SerializeField] private Color initialColor;
-        [SerializeField] private TextMeshProUGUI amount;
-
-        //private Canvas rootCanvas;
-
-        public RectTransform ItemDisplay => itemDisplay;
 
         public AbstractSlotDisplay Origin { get; private set; }
         public AbstractSlotDisplay Hovered { get; private set; }
         public Package DraggingPackage { get; private set; }
-
         public Vector2Int PositionOffset { get; private set; }
 
         public event Action<List<Vector2Int>> OnOverlapping;
+        public bool IsDragging => itemPanel.IsActive;
+        private RectTransform ItemTransform => itemDisplay.transform as RectTransform;
 
-
-        private void Awake()
+        private void Start()
         {
-            //_ = transform.root.TryGetComponent(out rootCanvas);
-
-            itemDisplay.gameObject.SetActive(false);
+            /// anchor to BottomLeft to match screen/mouse coordinates
+            if (itemDisplay)
+            {
+                (itemDisplay.transform as RectTransform).anchorMin = Vector2.zero;
+                (itemDisplay.transform as RectTransform).anchorMax = Vector2.zero;
+            }
 
             if (background)
                 initialColor = background.color;
+
+            if (itemPanel)
+                itemPanel.FadeOut();
         }
 
         private void Update()
@@ -52,118 +53,102 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
                 HighlightOverlappingSlots();
             }
-
-            void HighlightOverlappingSlots()
-            {
-                if (Hovered == null || DraggingPackage.Item == null)
-                    return;
-
-                /// The pivot is the mouse position within the items dimensions
-                var positionPivot = itemDisplay.pivot;
-                positionPivot *= AbstractItem.GetDimensions(DraggingPackage.Item.Dimensions);
-
-                var positionDiff = new Vector2Int(Mathf.FloorToInt(positionPivot.x), Mathf.FloorToInt(positionPivot.y));
-                positionDiff -= new Vector2Int(0, AbstractItem.GetDimensions(DraggingPackage.Item.Dimensions).y - 1);
-                positionDiff.y *= -1;
-
-                var positionToAdd = Hovered.Position - positionDiff;
-
-                if (Hovered.Container == null)
-                    return;
-
-                var storedPositions = Hovered.Container?.GetStoredItemsAt(positionToAdd, AbstractItem.GetDimensions(DraggingPackage.Item.Dimensions));
-
-                if (background)
-                    background.color = storedPositions.Count switch
-                    {
-                        0 => initialColor,
-                        1 => initialColor * Color.yellow,
-                        _ => initialColor * Color.red,
-                    };
-
-                OnOverlapping?.Invoke(storedPositions);
-                //TODO: invoke an event each time the drag display is entering new overlapping positions
-                // each slotDisplay will listen to this event and color its background based on the overlapping result
-
-                //var requiredPositions = Hovered.Container.CalculateRequiredPositions(positionToAdd, Package.Item.Dimensions);
-                //
-                //var usedPositions = new List<Vector2Int>();
-                //for (var i = 0; i < storedPositions.Count; i++)
-                //    for (var x = 0; x < Package.Item.Dimensions.x; x++)
-                //        for (var y = 0; y < Package.Item.Dimensions.y; y++)
-                //            usedPositions.Add(new Vector2Int(x, y));
-
-                //var emptyPositions = requiredPositions.Except(usedPositions);
-
-                //var overlappingPositions = requiredPositions.Intersect(usedPositions);
-            }
         }
 
-        private void SetToMousePosition()
-        {
-            /// anchor to BottomLeft to match screen/mouse coordinates
-            itemDisplay.anchorMin = Vector2.zero;
-            itemDisplay.anchorMax = Vector2.zero;
+        private void SetToMousePosition() => ItemTransform.anchoredPosition = (Vector2)Input.mousePosition / ItemTransform.lossyScale;
 
-            itemDisplay.anchoredPosition = (Vector2)Input.mousePosition / itemDisplay.lossyScale;
+        private void HighlightOverlappingSlots()
+        {
+            if (Hovered == null || !DraggingPackage.IsValid)
+                return;
+
+            /// The pivot is the mouse position within the items dimensions
+            var positionPivot = ItemTransform.pivot;
+            positionPivot *= AbstractItem.GetDimensions(DraggingPackage.Item.Dimensions);
+
+            var positionDiff = new Vector2Int(Mathf.FloorToInt(positionPivot.x), Mathf.FloorToInt(positionPivot.y));
+            positionDiff -= new Vector2Int(0, AbstractItem.GetDimensions(DraggingPackage.Item.Dimensions).y - 1);
+            positionDiff.y *= -1;
+
+            if (Hovered.Container == null)
+                return;
+
+            var positionToAdd = Hovered.Position - positionDiff;
+
+            var storedPositions = Hovered.Container?.GetStoredItemsAt(positionToAdd, AbstractItem.GetDimensions(DraggingPackage.Item.Dimensions));
+
+            if (background)
+                background.color = storedPositions.Count switch
+                {
+                    0 => initialColor,
+                    1 => initialColor * Color.yellow,
+                    _ => initialColor * Color.red,
+                };
+
+            OnOverlapping?.Invoke(storedPositions);
+            //TODO: invoke an event each time the drag display is entering new overlapping positions
+            // each slotDisplay will listen to this event and color its background based on the overlapping result
+
+            //var requiredPositions = Hovered.Container.CalculateRequiredPositions(positionToAdd, Package.Item.Dimensions);
+            //
+            //var usedPositions = new List<Vector2Int>();
+            //for (var i = 0; i < storedPositions.Count; i++)
+            //    for (var x = 0; x < Package.Item.Dimensions.x; x++)
+            //        for (var y = 0; y < Package.Item.Dimensions.y; y++)
+            //            usedPositions.Add(new Vector2Int(x, y));
+
+            //var emptyPositions = requiredPositions.Except(usedPositions);
+
+            //var overlappingPositions = requiredPositions.Intersect(usedPositions);
         }
 
         public void SetPackage(AbstractSlotDisplay slot, Package package, Vector2Int positionOffset)
         {
             Origin = slot;
+            Hovered = slot;
             DraggingPackage = package;
             PositionOffset = positionOffset;
 
             if (!DraggingPackage.IsValid)
             {
-                itemDisplay.gameObject.SetActive(false);
+                Debug.LogWarning($"Dragging package is invalid");
+                itemPanel.FadeOut();
                 return;
             }
 
-            SetHoveredSlot(Origin);
+            var dimensions = AbstractItem.GetDimensions(package.Item.Dimensions);
+            SetPosition(dimensions);
 
-            RefreshDisplay(package);
+            SetToMousePosition();
 
-            void RefreshDisplay(Package package)
-            {
-                SetPosition(package);
+            itemDisplay.RefreshDisplay(package);
 
-                if (icon)
-                    icon.sprite = package.Item.Icon;
+            itemPanel.FadeIn();
+        }
 
-                if (amount)
-                    amount.text = 1 < package.Amount ? package.Amount.ToString() : string.Empty;
+        private void SetPosition(Vector2Int dimensions)
+        {
+            ItemTransform.sizeDelta = dimensions * 60; // slotSize
 
-                itemDisplay.gameObject.SetActive(true);
+            var pointerRelativeToOrigin = (Vector2)(Input.mousePosition - Origin.transform.position) / transform.lossyScale;
 
-                void SetPosition(Package package)
-                {
-                    var dimensions = AbstractItem.GetDimensions(package.Item.Dimensions);
+            /// pointerPosition is in pixelCoordinates anchored TopLeft
+            var pivot = pointerRelativeToOrigin / 60; // slotSize
+            /// convert to screenCoordinates anchored BottomLeft
+            pivot.y += 1;
+            /// scale to match item dimensions
+            pivot /= dimensions;
 
-                    itemDisplay.sizeDelta = dimensions * 60; // slotSize
+            /// The positionOffset was calculated in InventorySpace (anchored TopLeft)
+            var positionOffset = PositionOffset;
+            positionOffset.y -= dimensions.y - 1;
+            /// convert to screenCoordinates anchored BottomLeft
+            positionOffset.y *= -1;
 
-                    var pointerRelativeToOrigin = (Vector2)(Input.mousePosition - Origin.transform.position) / transform.lossyScale;
+            var positionPivot = (Vector2)positionOffset;
+            positionPivot /= dimensions;
 
-                    /// pointerPosition is in pixelCoordinates anchored TopLeft
-                    var pivot = pointerRelativeToOrigin / 60; // slotSize
-                    /// convert to screenCoordinates anchored BottomLeft
-                    pivot.y += 1;
-                    /// scale to match item dimensions
-                    pivot /= dimensions;
-
-                    /// The positionOffset was calculated in InventorySpace (anchored TopLeft)
-                    positionOffset.y -= dimensions.y - 1;
-                    /// convert to screenCoordinates anchored BottomLeft
-                    positionOffset.y *= -1;
-
-                    var positionPivot = (Vector2)positionOffset;
-                    positionPivot /= dimensions;
-
-                    itemDisplay.pivot = pivot + positionPivot;
-
-                    SetToMousePosition();
-                }
-            }
+            ItemTransform.pivot = pivot + positionPivot;
         }
 
         public void SetHoveredSlot(AbstractSlotDisplay slot) => Hovered = slot;

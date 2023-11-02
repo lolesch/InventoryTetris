@@ -92,6 +92,16 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// A List of all storedPackages positions that overlap with the requiredPositions
         public abstract List<Vector2Int> GetStoredItemsAt(Vector2Int position, Vector2Int dimension);
 
+        public List<Vector2Int> GetStoredItemsAt(Vector2Int[] positions, Vector2Int dimension)
+        {
+            var occupiedPositions = new List<Vector2Int>();
+
+            foreach (var position in positions)
+                occupiedPositions.AddRange(GetStoredItemsAt(position, dimension));
+
+            return occupiedPositions.Distinct().ToList();
+        }
+
         /// <summary>
         /// Checks for stored packages that occupy the given <paramref name="position"/> 
         /// </summary>

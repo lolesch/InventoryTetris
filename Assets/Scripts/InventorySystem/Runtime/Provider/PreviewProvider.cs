@@ -1,6 +1,9 @@
-﻿using ToolSmiths.InventorySystem.Data;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.GUI.Displays;
-using ToolSmiths.InventorySystem.GUI.InventoryDisplays;
+using ToolSmiths.InventorySystem.GUI.Panels;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Utility.Extensions;
@@ -13,69 +16,138 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
     [RequireComponent(typeof(RectTransform))]
     public class PreviewProvider : AbstractProvider<PreviewProvider>
     {
-        [SerializeField] private PreviewDisplay hoveredDisplay;
-        private RectTransform hoveredItemTransform;
-        [SerializeField] private RectTransform compareItemParent;
-        [SerializeField] private PreviewDisplay compareDisplay1;
-        [SerializeField] private PreviewDisplay compareDisplay2;
+        [field: SerializeField, Range(0f, 1f)] public float FadeInDelay { get; private set; } = .5f;
 
-        private Canvas rootCanvas;
+        [SerializeField] private ItemDetailsDisplay previewDisplay;
+        [SerializeField] private SimplePanel previewPanel;
+        private RectTransform previewTransform;
+
+        //[SerializeField] private SimplePanel comparePanel1;
+        //[SerializeField] private SimplePanel comparePanel2;
+        [SerializeField] private RectTransform compareTransform;
+        [SerializeField] private ItemDetailsDisplay compareDisplay1;
+        [SerializeField] private ItemDetailsDisplay compareDisplay2;
+
         private bool showLeft;
 
         private float OffsetX => showLeft ? +10 : -10;
 
         private void Awake()
         {
-            transform.root.TryGetComponent(out rootCanvas);
+            previewTransform = previewPanel.transform as RectTransform;
+            previewTransform.anchorMin = Vector2.zero;
+            previewTransform.anchorMax = Vector2.zero;
 
-            hoveredItemTransform = hoveredDisplay.transform as RectTransform;
-            hoveredItemTransform.anchorMin = Vector2.zero;
-            hoveredItemTransform.anchorMax = Vector2.zero;
+            //compareTransform = comparePanel1.transform as RectTransform;
+
+            previewPanel.FadeOut();
+            //comparePanel1.FadeOut();
+            //comparePanel2.FadeOut();
         }
 
         private void Update()
         {
-            if (hoveredDisplay.IsPreviewing)
-                MoveDisplay();
-
-            void MoveDisplay()
-            {
-                var mousePos = Input.mousePosition / rootCanvas.scaleFactor;
-                hoveredItemTransform.anchoredPosition = new Vector2(mousePos.x + OffsetX, mousePos.y);
-            }
+            // should this be a movable panel class that internaly handles setting the position?
+            if (previewPanel.IsActive)
+                previewTransform.anchoredPosition = (Vector2)Input.mousePosition / previewTransform.lossyScale + new Vector2(OffsetX, 0f);
         }
 
-        public void RefreshPreviewDisplay(Package hoveredPackage, AbstractSlotDisplay hoveredSlot)
+        public void CompareDetails(Package hoveredPackage, bool compareToEquipment)
         {
+            if (!hoveredPackage.IsValid)
+            {
+                Debug.LogWarning($"Could not preview an invalid item {hoveredPackage}");
+                previewPanel.FadeOut();
+                return;
+            }
+
             /// pivot pointing towards center of screen
             showLeft = Input.mousePosition.x < (Screen.width * 0.5);
             var pivotX = showLeft ? 0 : 1;
             var pivotY = Input.mousePosition.y.MapTo01(0, Screen.height);
-            hoveredItemTransform.pivot = new Vector2(pivotX, pivotY);
+            previewTransform.pivot = new Vector2(pivotX, pivotY);
 
-            var mousePos = Input.mousePosition / rootCanvas.scaleFactor;
-            hoveredItemTransform.anchoredPosition = new Vector2(mousePos.x + OffsetX, mousePos.y);
+            //previewTransform.anchoredPosition = (Vector2)Input.mousePosition / previewTransform.lossyScale + new Vector2(OffsetX, 0f);
 
-            if (hoveredSlot is EquipmentSlotDisplay)
-                hoveredDisplay.RefreshDisplay((hoveredPackage, new Package()));
+            //comparePanel1.FadeOut(0);
+            //comparePanel2.FadeOut(0);
+
+            compareDisplay1.gameObject.SetActive(false);
+            compareDisplay2.gameObject.SetActive(false);
+
+            if (hoveredPackage.Item is not EquipmentItem || !compareToEquipment)
+                previewDisplay.RefreshDisplay(hoveredPackage);
             else
             {
-                var equippedItems = new Package[2];
+                var equippedItems = new List<Package>();
 
-                if (hoveredPackage.Item is EquipmentItem)
+                var possiblePositions = CharacterEquipment.GetTypeSpecificPositions((hoveredPackage.Item as EquipmentItem).EquipmentType);
+
+                var equipmentType = (hoveredPackage.Item as EquipmentItem).EquipmentType;
+                var dimensions = CharacterEquipment.IsTwoHandedWeapon(equipmentType)
+                    ? new Vector2Int(2, 1)
+                    : new Vector2Int(1, 1);
+
+                var occupiedPositions = InventoryProvider.Instance.Equipment.GetStoredItemsAt(possiblePositions, dimensions);
+
+                for (var i = 0; i < occupiedPositions.Count; i++)
+                    if (InventoryProvider.Instance.Equipment.StoredPackages.TryGetValue(occupiedPositions[i], out var other))
+                        equippedItems.Add(other);
+
+                // foreach (var position in possiblePositions)
+                // {
+                //     var occupiedPositions = InventoryProvider.Instance.Equipment.GetStoredItemsAt(position, dimensions);
+                //
+                //     for (var i = 0; i < occupiedPositions.Count; i++)
+                //         InventoryProvider.Instance.Equipment.StoredPackages.TryGetValue(occupiedPositions[i], out equippedItems[i]);
+                // }
+
+                if (equippedItems.Count == 0)
+                    previewDisplay.RefreshDisplay(hoveredPackage);
+                else if (equippedItems.Count == 1)
                 {
-                    var equipmentPositions = CharacterEquipment.GetTypeSpecificPositions((hoveredPackage.Item as EquipmentItem).EquipmentType);
+                    previewDisplay.RefreshDisplay((hoveredPackage, equippedItems[0].Item.Affixes));
 
-                    for (var i = 0; i < equipmentPositions.Length; i++)
-                        if (!InventoryProvider.Instance.Equipment.StoredPackages.TryGetValue(equipmentPositions[i], out equippedItems[i]))
-                            equippedItems[i] = new Package();
+                    if (equippedItems[0].IsValid)
+                    {
+                        compareDisplay1.RefreshDisplay((equippedItems[0], hoveredPackage.Item.Affixes));
+                        compareDisplay1.gameObject.SetActive(true);
+                        //comparePanel1.FadeIn();
+                    }
                 }
+                else if (equippedItems.Count == 2)
+                {
+                    if (possiblePositions.Length == 2)
+                    {
+                        var index = Input.GetKey(KeyCode.LeftControl) && equippedItems[1].IsValid ? 1 : 0;
+                        previewDisplay.RefreshDisplay((hoveredPackage, equippedItems[index].Item.Affixes));
+                    }
+                    else if (possiblePositions.Length == 1)
+                    {
+                        var combinedAffixes = AbstractItem.CombineAffixesOfSameType(equippedItems[0].Item.Affixes.Concat(equippedItems[1].Item.Affixes).ToList());
+                        previewDisplay.RefreshDisplay((hoveredPackage, combinedAffixes));
+                    }
 
-                var index = Input.GetKey(KeyCode.LeftControl) ? 1 : 0;
+                    if (equippedItems[0].IsValid)
+                    {
+                        compareDisplay1.RefreshDisplay((equippedItems[0], hoveredPackage.Item.Affixes));
+                        compareDisplay1.gameObject.SetActive(true);
+                        //comparePanel1.FadeIn();
 
-                hoveredDisplay.RefreshDisplay((hoveredPackage, equippedItems[index]));
-                compareDisplay1.RefreshDisplay((equippedItems[0], hoveredPackage));
-                compareDisplay2.RefreshDisplay((equippedItems[1], hoveredPackage));
+                        if (equippedItems[1].IsValid)
+                        {
+                            compareDisplay2.RefreshDisplay((equippedItems[1], hoveredPackage.Item.Affixes));
+                            compareDisplay2.gameObject.SetActive(true);
+                            //comparePanel2.FadeIn();
+                        }
+                    }
+                    else if (equippedItems[1].IsValid)
+                    {
+                        compareDisplay1.RefreshDisplay((equippedItems[1], hoveredPackage.Item.Affixes));
+                        compareDisplay1.gameObject.SetActive(true);
+                        //comparePanel1.FadeIn();
+                    }
+                }
 
                 (compareDisplay1.transform as RectTransform).pivot = showLeft ? Vector2.up : Vector2.one;
                 (compareDisplay2.transform as RectTransform).pivot = showLeft ? Vector2.up : Vector2.one;
@@ -83,19 +155,21 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
                 var showTop = Input.mousePosition.y < (Screen.height * 0.5);
                 var compPivotY = showTop ? 0 : 1;
 
-                compareItemParent.GetComponent<VerticalLayoutGroup>().childAlignment = showTop
+                compareTransform.GetComponent<VerticalLayoutGroup>().childAlignment = showTop
                     ? (showLeft ? TextAnchor.LowerRight
                                 : TextAnchor.LowerLeft)
                     : (showLeft ? TextAnchor.UpperRight
                                 : TextAnchor.UpperLeft);
 
-                compareItemParent.pivot = new Vector2(pivotX, compPivotY);
+                compareTransform.pivot = new Vector2(pivotX, compPivotY);
 
-                compareItemParent.anchorMin = new Vector2(showLeft ? 1 : 0, showTop ? 0 : 1);
-                compareItemParent.anchorMax = new Vector2(showLeft ? 1 : 0, showTop ? 0 : 1);
+                compareTransform.anchorMin = new Vector2(showLeft ? 1 : 0, showTop ? 0 : 1);
+                compareTransform.anchorMax = new Vector2(showLeft ? 1 : 0, showTop ? 0 : 1);
 
-                compareItemParent.anchoredPosition = new Vector2(OffsetX, 0);
+                compareTransform.anchoredPosition = new Vector2(OffsetX, 0);
             }
+
+            previewPanel.FadeIn();
         }
     }
 }

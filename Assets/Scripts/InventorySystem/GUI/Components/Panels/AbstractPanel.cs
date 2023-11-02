@@ -21,7 +21,8 @@ namespace ToolSmiths.InventorySystem.GUI.Panels
         public RectTransform Transform => _transform != null ? _transform : _transform = GetComponentInParent<RectTransform>();
         #endregion COMPONENT REFERENCES
 
-        [field: SerializeField, Range(0, 1)] public float FadeDuration { get; } = .2f;
+        [field: SerializeField] public bool IsActive { get; private set; }
+        [field: SerializeField, Range(0, 1)] public float FadeDuration { get; private set; } = .2f;
 
         [Tooltip("The timespan to pass after fading in before automatically fading out again. \n0 means no autoFadeOut.")]
         [SerializeField, Range(0, 10)] private float fadeOutDelay = 0f;
@@ -75,22 +76,24 @@ namespace ToolSmiths.InventorySystem.GUI.Panels
             }
         }
 
-        public void FadeInAfterDelay(float fadeInDelay = 0)
+        public Sequence FadeInAfterDelay(float fadeInDelay = 0)
         {
-            if (fadeInDelay >= 0)
+            if (0 >= fadeInDelay)
             {
                 FadeIn();
-                return;
+                return null;
             }
-
-            var sequence = DOTween.Sequence();
-            _ = sequence.InsertCallback(fadeInDelay, FadeIn);
+            else
+            {
+                var sequence = DOTween.Sequence();
+                return sequence.InsertCallback(fadeInDelay, FadeIn);
+            }
         }
 
         /// <summary>
         /// Called right before the CanvasGroup fades in.
         /// </summary>
-        protected virtual void BeforeAppear() { }
+        protected virtual void BeforeAppear() => IsActive = true;// => Transform.RefreshContentFitter();
 
         /// <summary>
         /// Called after the CanvasGroup completed fading in.
@@ -111,6 +114,8 @@ namespace ToolSmiths.InventorySystem.GUI.Panels
         public void FadeOut(float fadeOutDuration)
         {
             KillTweens();
+
+            IsActive = false;
 
             // BeforeDisappear()
 
