@@ -31,7 +31,7 @@
         //SlowResistance = 16,      
 
         Shield = 17,
-        //ShieldRecharge
+        ShieldRecharge = 18,
 
         /// UTILITY
         MovementSpeed = 21,

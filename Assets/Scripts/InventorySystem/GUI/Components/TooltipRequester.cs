@@ -9,7 +9,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components
     public class TooltipRequester : Selectable, ISubmitHandler
     {
         // TODO: import and update tooltip from LOCA CSV Table
-        [SerializeField, TextArea] private string tooltip = "";
+        //[SerializeField, TextArea] private string tooltip = "";
 
         protected override void OnEnable()
         {

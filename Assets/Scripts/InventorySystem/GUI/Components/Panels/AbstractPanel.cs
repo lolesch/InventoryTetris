@@ -56,7 +56,6 @@ namespace ToolSmiths.InventorySystem.GUI.Panels
 
             if (fadeInDuration <= 0)
             {
-                CanvasGroup.blocksRaycasts = true;
                 CanvasGroup.alpha = 1;
 
                 OnAppear();
@@ -124,7 +123,7 @@ namespace ToolSmiths.InventorySystem.GUI.Panels
                 CanvasGroup.blocksRaycasts = false;
                 CanvasGroup.alpha = 0;
 
-                // OnDisappear(); => used to reset the display values
+                // OnDisappear();
 
                 return;
             }

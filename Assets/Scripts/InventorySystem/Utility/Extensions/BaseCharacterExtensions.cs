@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Runtime.Character;
 
@@ -7,7 +6,6 @@ namespace ToolSmiths.InventorySystem.Utility.Extensions
 {
     public static class BaseCharacterExtensions
     {
-
         public static float CalculateRequiredResource(this BaseCharacter character, DamageType damageType)
         {
             if (!character.SpendResource)
@@ -78,7 +76,8 @@ namespace ToolSmiths.InventorySystem.Utility.Extensions
 
         public static CharacterStat GetStat(this BaseCharacter character, StatName stat)
         {
-            var statsAndResources = character.CharacterStats.Union(character.CharacterResources).ToArray();
+            // TODO: make it a dictionary instead
+            var statsAndResources = character.CharacterStats.Concat(character.CharacterResources).ToArray();
             for (var i = statsAndResources.Length; i-- > 0;)
                 if (statsAndResources[i].Stat == stat)
                     return statsAndResources[i];

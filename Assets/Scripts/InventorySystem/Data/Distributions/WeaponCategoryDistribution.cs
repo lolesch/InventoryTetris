@@ -4,6 +4,6 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.Data.Distributions
 {
     [System.Serializable]
-    [CreateAssetMenu(fileName = "Weapon Category Distribution", menuName = "Inventory System/Probability Distributions/Weapon Category")]
+    [CreateAssetMenu(fileName = "Weapon Category Distribution", menuName = "Inventory System/Items/Distributions/Weapon Category")]
     public class WeaponCategoryDistribution : AbstractProbabilityDistribution<WeaponCategory> { }
 }

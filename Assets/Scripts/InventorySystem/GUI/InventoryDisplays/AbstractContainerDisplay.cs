@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using ToolSmiths.InventorySystem.Data;
-using ToolSmiths.InventorySystem.Inventories;
+using ToolSmiths.InventorySystem.Runtime.Inventories;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays

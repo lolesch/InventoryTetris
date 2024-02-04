@@ -1,0 +1,203 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &341224925148245114
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 638745168178922233, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 638745168178922233, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+      propertyPath: m_StoppingDistance
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2031661294597529901, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2328133973959012854, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+      propertyPath: m_RootOrder
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2328133973959012854, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2328133973959012854, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2328133973959012854, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2328133973959012854, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2328133973959012854, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 225
+      objectReference: {fileID: 0}
+    - target: {fileID: 2328133973959012854, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2673479596652754327, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: b85045dcecfe3d7409a0a100fcb5b0a6, type: 2}
+    - target: {fileID: 4535801106387236674, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5405755138378680507, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5551497901255431716, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+      propertyPath: m_Name
+      value: PlayerCharacter
+      objectReference: {fileID: 0}
+    - target: {fileID: 5687674760658121440, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: be1c44173510ad44db6785c948873722, type: 2}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+--- !u!195 &891995413730897539 stripped
+NavMeshAgent:
+  m_CorrespondingSourceObject: {fileID: 638745168178922233, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+  m_PrefabInstance: {fileID: 341224925148245114}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &1769263107481079127 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2031661294597529901, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+  m_PrefabInstance: {fileID: 341224925148245114}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &3208098266178476835
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1769263107481079127}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 810dde920b8c7a5429e88a6c3dabc25c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  agent: {fileID: 891995413730897539}
+  speed:
+    name: '0: 0'
+    <Stat>k__BackingField: 0
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+  rotationSpeed: 17
+--- !u!1 &5311617182274189918 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5551497901255431716, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+  m_PrefabInstance: {fileID: 341224925148245114}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1561687723749794175
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5311617182274189918}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a1d854912199534491df4462f45b537, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  <IsInvincible>k__BackingField: 0
+  <IsBlocking>k__BackingField: 0
+  <SpendResource>k__BackingField: 1
+  BaseValues: {fileID: 11400000, guid: b07e8a0e543ed904d8156adb9294a6f3, type: 2}
+  <CharacterStats>k__BackingField:
+  - name: 'Attack Speed: 0.66'
+    <Stat>k__BackingField: 1
+    <BaseValue>k__BackingField: 0.66
+    <StatModifiers>k__BackingField: []
+  - name: 'Physical Damage: 10'
+    <Stat>k__BackingField: 2
+    <BaseValue>k__BackingField: 10
+    <StatModifiers>k__BackingField: []
+  - name: 'Magical Damage: 2'
+    <Stat>k__BackingField: 3
+    <BaseValue>k__BackingField: 2
+    <StatModifiers>k__BackingField: []
+  - name: 'Armor Penetration: 1'
+    <Stat>k__BackingField: 4
+    <BaseValue>k__BackingField: 1
+    <StatModifiers>k__BackingField: []
+  - name: 'Magic Penetration: 1'
+    <Stat>k__BackingField: 5
+    <BaseValue>k__BackingField: 1
+    <StatModifiers>k__BackingField: []
+  - name: 'Health Regeneration: 3.5'
+    <Stat>k__BackingField: 12
+    <BaseValue>k__BackingField: 3.5
+    <StatModifiers>k__BackingField: []
+  - name: 'Armor: 26'
+    <Stat>k__BackingField: 13
+    <BaseValue>k__BackingField: 26
+    <StatModifiers>k__BackingField: []
+  - name: 'Magic Resist: 30'
+    <Stat>k__BackingField: 14
+    <BaseValue>k__BackingField: 30
+    <StatModifiers>k__BackingField: []
+  - name: 'Shield Recharge: 7'
+    <Stat>k__BackingField: 18
+    <BaseValue>k__BackingField: 7
+    <StatModifiers>k__BackingField: []
+  - name: 'Movement Speed: 6'
+    <Stat>k__BackingField: 21
+    <BaseValue>k__BackingField: 6
+    <StatModifiers>k__BackingField: []
+  - name: 'Resource Regeneration: 7'
+    <Stat>k__BackingField: 23
+    <BaseValue>k__BackingField: 7
+    <StatModifiers>k__BackingField: []
+  - name: 'Increased Item Rarity: 1'
+    <Stat>k__BackingField: 24
+    <BaseValue>k__BackingField: 1
+    <StatModifiers>k__BackingField: []
+  - name: 'Increased Item Quantity: 1'
+    <Stat>k__BackingField: 25
+    <BaseValue>k__BackingField: 1
+    <StatModifiers>k__BackingField: []
+  <CharacterResources>k__BackingField:
+  - name: 'Health: 640'
+    <Stat>k__BackingField: 11
+    <BaseValue>k__BackingField: 640
+    <StatModifiers>k__BackingField: []
+    <CurrentValue>k__BackingField: 0
+  - name: 'Resource: 280'
+    <Stat>k__BackingField: 22
+    <BaseValue>k__BackingField: 280
+    <StatModifiers>k__BackingField: []
+    <CurrentValue>k__BackingField: 0
+  - name: 'Shield: 0'
+    <Stat>k__BackingField: 17
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <CurrentValue>k__BackingField: 0
+  - name: 'Experience: 0'
+    <Stat>k__BackingField: -1
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <CurrentValue>k__BackingField: 0
+  <CharacterLevel>k__BackingField: 1
+  <ActiveSkills>k__BackingField:
+  - {fileID: 11400000, guid: f08dec740db1f5a4892e9890f425c545, type: 2}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}

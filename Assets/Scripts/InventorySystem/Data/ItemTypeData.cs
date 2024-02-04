@@ -23,7 +23,7 @@ namespace ToolSmiths.InventorySystem.Data
             [Tooltip("Modifies the likleyness to roll values within the given range")]
             [SerializeField] public AnimationCurve Distribution;
 
-            public StatRange(StatName statName, Vector2Int range, StatModifierType defaultModType)
+            public StatRange(StatName statName, Vector2Int range, StatModifierType defaultModType = StatModifierType.FlatAdd)
             {
                 StatName = statName;
                 Range = range;
@@ -82,9 +82,11 @@ namespace ToolSmiths.InventorySystem.Data
         {
             [SerializeField, HideInInspector] public string name;
             [SerializeField, HideInInspector] public EquipmentType EquipmentType;
-            [SerializeField] public StatRange[] StatRanges;
             // TODO: implement guarantied type specific stats and random stats
             // => i.e. 2h mace always rolls with splashDamage and random 2h weapon stats
+            [SerializeField] public StatRange[] TypeSpecificStatRanges;
+            [FormerlySerializedAs("StatRanges")]
+            [SerializeField] public StatRange[] AllowedStatRanges;
 
             public void OnBeforeSerialize() => name = EquipmentType.ToString();
             public void OnAfterDeserialize() { }
@@ -111,8 +113,6 @@ namespace ToolSmiths.InventorySystem.Data
             public void OnBeforeSerialize() => name = StatName.SplitCamelCase();
             public void OnAfterDeserialize() { }
         }
-
-        //[field: SerializeField] public StatRange[] PossibleStatRolls { get; private set; } = new StatRange[System.Enum.GetValues(typeof(StatName)).Length];
 
         // -> TODO: AllowedStats distribution
         [field: SerializeField] public EquipmentTypeSpecificStatRange[] EquipmentTypeAllowedStats { get; private set; } = new EquipmentTypeSpecificStatRange[System.Enum.GetValues(typeof(EquipmentType)).Length];
@@ -149,7 +149,8 @@ namespace ToolSmiths.InventorySystem.Data
                 ConsumableTypeAllowedStats[i].ConsumableType = consumableTypes[i];
         }*/
 
-        public StatRange[] GetPossibleStats(EquipmentType equipmentType) => EquipmentTypeAllowedStats.Where(x => x.EquipmentType == equipmentType).FirstOrDefault().StatRanges;
+        public StatRange[] GetPossibleStats(EquipmentType equipmentType) => EquipmentTypeAllowedStats.Where(x => x.EquipmentType == equipmentType).FirstOrDefault().AllowedStatRanges;
+        public StatRange[] GetSpecificStats(EquipmentType equipmentType) => EquipmentTypeAllowedStats.Where(x => x.EquipmentType == equipmentType).FirstOrDefault().TypeSpecificStatRanges;
         public StatRange[] GetPossibleStats(ConsumableType consumableType) => ConsumableTypeAllowedStats.Where(x => x.ConsumableType == consumableType).FirstOrDefault().StatRanges;
     }
 }

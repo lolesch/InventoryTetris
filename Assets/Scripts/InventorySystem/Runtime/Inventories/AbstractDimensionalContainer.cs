@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
-using ToolSmiths.InventorySystem.Items;
+using ToolSmiths.InventorySystem.Data.Items;
+using ToolSmiths.InventorySystem.Runtime.Provider;
 using UnityEngine;
 
-namespace ToolSmiths.InventorySystem.Inventories
+namespace ToolSmiths.InventorySystem.Runtime.Inventories
 {
     [Serializable]
     public abstract class AbstractDimensionalContainer

@@ -1,6 +1,6 @@
 ﻿using TMPro;
 using ToolSmiths.InventorySystem.Data;
-using ToolSmiths.InventorySystem.Items;
+using ToolSmiths.InventorySystem.Data.Items;
 using UnityEngine;
 using UnityEngine.UI;
 

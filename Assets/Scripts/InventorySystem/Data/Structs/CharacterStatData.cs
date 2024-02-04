@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using ToolSmiths.InventorySystem.Data.Enums;
-using ToolSmiths.InventorySystem.Inventories;
+using ToolSmiths.InventorySystem.Runtime.Character;
+using ToolSmiths.InventorySystem.Runtime.Provider;
 using ToolSmiths.InventorySystem.Utility.Extensions;
 using UnityEngine;
 
@@ -8,18 +9,19 @@ namespace ToolSmiths.InventorySystem.Data
 {
     public struct CharacterStatData
     {
-        private CharacterStat stat;
+        public CharacterStat stat;
         public string displayText;
         public Sprite icon;
 
         public CharacterStatData(CharacterStat Stat, Package[] compareTo = null)
         {
             stat = Stat;
+            stat.CalculateTotalValue();
 
-            var statName = stat.Stat.SplitCamelCase();
-
-            if (statName.Contains("Percent"))
-                statName = statName.Replace(" Percent", "");
+            //var statName = stat.Stat.SplitCamelCase();
+            //
+            //if (statName.Contains("Percent"))
+            //    statName = statName.Replace(" Percent", "");
 
             var overwriteMods = stat.StatModifiers.Where(x => x.Type == StatModifierType.Overwrite).OrderByDescending(x => x.Value);
 
@@ -34,7 +36,7 @@ namespace ToolSmiths.InventorySystem.Data
 
             // TODO: implement statModifier source
             var modDetailText = overwriteMods.Any()
-                ? $"overwritten by: implementStatModSource" //{overwriteMods.FirstOrDefault().Source}"
+                ? $"{overwriteMods.FirstOrDefault()} overwrite" //{overwriteMods.FirstOrDefault().Source}"
                 : $"({baseValue:0.##} + {flatAddModValue:0.##}) * {percentAddModValue:0.##} {percentMultModString:0.##}";
 
             displayText = $"{stat.TotalValue:0.##}\t{modDetailText.Colored(Color.gray)}"; //{statName}

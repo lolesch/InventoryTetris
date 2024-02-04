@@ -2,10 +2,10 @@ using System.Collections.Generic;
 using System.Linq;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
-using ToolSmiths.InventorySystem.GUI.Displays;
-using ToolSmiths.InventorySystem.Inventories;
-using ToolSmiths.InventorySystem.Items;
-using ToolSmiths.InventorySystem.Runtime.Pools;
+using ToolSmiths.InventorySystem.Data.Items;
+using ToolSmiths.InventorySystem.Data.Skills;
+using ToolSmiths.InventorySystem.Runtime.Provider;
+using ToolSmiths.InventorySystem.Utility;
 using ToolSmiths.InventorySystem.Utility.Extensions;
 using UnityEngine;
 
@@ -13,59 +13,32 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 {
     public class LocalPlayer : BaseCharacter
     {
-        //TODO: make the displayLogic its own component and design its layout individually and not via a pool
-        [SerializeField] private CharacterStatDisplay characterStatPrefab;
-        [SerializeField] private PrefabPool<CharacterStatDisplay> characterStatPool;
-
-        [SerializeField] private CharacterDPSDisplay physicalDPS;
-        [SerializeField] private CharacterDPSDisplay magicalDPS;
-
         // TODO: ATTRIBUTES and DERIVED STATS => define and calculate derived values => see Bone&Blood
-        private void Awake() => characterStatPool = new(characterStatPrefab);
 
-        private void OnEnable()
+        [field: SerializeField] public Skill[] ActiveSkills { get; private set; } = new Skill[6];
+
+        private void Start()
         {
-            var statsAndResources = CharacterResources.Union(CharacterStats).ToArray();
-
-            foreach (var stat in statsAndResources)
+            for (var i = 0; i < ActiveSkills.Length; i++)
             {
-                stat.TotalHasChanged -= UpdateStatDisplays;
-                stat.TotalHasChanged += UpdateStatDisplays;
+                var skill = ActiveSkills[i];
+                if (skill == null)
+                    continue;
+
+                skill.SpawnData.CooldownTicker = new Ticker(skill.SpawnData.CooldownDuration, true);
             }
-
-            UpdateStatDisplays();
         }
 
-        private void OnDisable()
+        protected override void OnDeath()
         {
-            var statsAndResources = CharacterResources.Union(CharacterStats).ToArray();
+            Debug.LogWarning($"{name.ColoredComponent()} {"DIED!".Colored(Color.red)}", this);
+            Debug.Break();
 
-            foreach (var stat in statsAndResources)
-                stat.TotalHasChanged -= UpdateStatDisplays;
+            // if(!hardcoreCharacter)
+            //  Respawn();
+            // else
+            //  show death cause and 'createNewCharacter' menu
         }
-
-        private void UpdateStatDisplays(float debug = 0)
-        {
-            var statsAndResources = CharacterResources.Union(CharacterStats).ToArray();
-
-            characterStatPool.ReleaseAll();
-
-            foreach (var stat in statsAndResources)
-            {
-                //TODO: extend prefabPool to support IDisplay<T> that update the Display(newData) before activating the object
-
-                var statDisplay = characterStatPool.GetObject(false);
-
-                statDisplay.RefreshDisplay(new(stat));
-
-                statDisplay.gameObject.SetActive(true);
-            }
-
-            physicalDPS.RefreshDisplay(new DPSData(this, DamageType.PhysicalDamage));
-            magicalDPS.RefreshDisplay(new DPSData(this, DamageType.MagicalDamage));
-        }
-
-        protected override void OnDeath() => Debug.LogWarning($"{name.ColoredComponent()} {"DIED!".Colored(Color.red)}", this);
 
         public void GainExperience(float exp, uint monsterLevel)
         {
@@ -114,8 +87,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
                             CharacterStats[i].AddModifier(itemStat.Modifier);
                             break;
                         }
-
-            UpdateStatDisplays();
         }
 
         public void RemoveItemStats(List<CharacterStatModifier> stats)
@@ -145,8 +116,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
                 if (!couldRemove)
                     Debug.LogWarning($"could not remove {itemStat.Stat} modifier {itemStat.Modifier}!");
             }
-
-            UpdateStatDisplays();
         }
 
         public bool PickUpItem(Package package)
@@ -176,24 +145,18 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         public float CompareStatModifiers(CharacterStatModifier playerStatModifier, StatModifier other) => CompareStatModifiers(playerStatModifier.Stat, playerStatModifier.Modifier, other);
         public float CompareStatModifiers(StatName stat, StatModifier current, StatModifier other)
         {
+            if (current.Value == other.Value)
+                return 0;
+
             var currentStat = this.GetStat(stat);
-            var clonedStat = currentStat.GetDeepCopy();
-            var clonedStat2 = currentStat.GetDeepCopy();
+            var difference = currentStat.CompareModifiers(current, other);
 
-            if (clonedStat.TryRemoveModifier(current))
-                clonedStat.AddModifier(other);
-
-            if (clonedStat2.TryRemoveModifier(other))
-                clonedStat2.AddModifier(current);
-
-            var difference = clonedStat2.TotalValue - clonedStat.TotalValue;
             if (current.Type == StatModifierType.PercentAdd)
                 difference *= 100;
             if (current.Type == StatModifierType.PercentMult)
                 difference *= 100;
 
             return difference;
-            //return currentStat.TotalValue - clonedStat.TotalValue;
         }
     }
 }

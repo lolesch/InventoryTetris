@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
-using ToolSmiths.InventorySystem.Inventories;
+using ToolSmiths.InventorySystem.Runtime.Provider;
 using ToolSmiths.InventorySystem.Utility.Extensions;
 using UnityEngine;
 
-namespace ToolSmiths.InventorySystem.Items
+namespace ToolSmiths.InventorySystem.Data.Items
 {
     [Serializable]
     public abstract class AbstractItem : IEquatable<AbstractItem> //, IComparable
@@ -221,6 +220,8 @@ namespace ToolSmiths.InventorySystem.Items
         [field: SerializeField] public EquipmentCategory EquipmentCategory { get; protected set; } // make EquipmentItem abstract and inherite for each category
         [field: SerializeField] public EquipmentType EquipmentType { get; protected set; } // might want to use inheritance instead and make EquipmentItem abstract to get more detailed itemTypes
 
+        [field: SerializeField] public List<CharacterStatModifier> TypeSpecificAffixes { get; protected set; } = new List<CharacterStatModifier>();
+
         public EquipmentItem(EquipmentType equipmentType, ItemRarity rarity, List<CharacterStatModifier> predefinedAffixes) => new EquipmentItem(equipmentType, rarity)
         {
             Affixes = CombineAffixesOfSameType(predefinedAffixes)
@@ -241,11 +242,9 @@ namespace ToolSmiths.InventorySystem.Items
 
             Icon = ItemProvider.Instance.GetIcon(EquipmentType, Rarity);
             Dimensions = GetDimension(EquipmentType);
-            Affixes = GetRandomAffixes(EquipmentType, Rarity);
-            //TODO: stats + equipmentType specific stats
-            // TODO: add weapon attacks per second
 
-            // TODO: implement something like GetRandomAffixes() to reroll the value within the affix range
+            Affixes = GetRandomAffixes(EquipmentType, Rarity);
+
             if (Rarity == ItemRarity.Unique)
             {
                 var unique = ItemProvider.Instance.GetUnique(EquipmentType);
@@ -258,6 +257,15 @@ namespace ToolSmiths.InventorySystem.Items
 
                     Affixes.Add(itemStat);
                 }
+            }
+
+            TypeSpecificAffixes = GetTypeSpecificAffixes(EquipmentType, Rarity);
+
+            for (var i = 0; i < TypeSpecificAffixes.Count; i++)
+            {
+                var itemStat = new CharacterStatModifier(TypeSpecificAffixes[i].Stat, TypeSpecificAffixes[i].Modifier); // this should clamp the value within the range
+
+                Affixes.Add(itemStat);
             }
 
             Affixes = CombineAffixesOfSameType(Affixes);
@@ -340,6 +348,38 @@ namespace ToolSmiths.InventorySystem.Items
                     //ItemRarity.Uncommon => 0,
                     //ItemRarity.Set => 2,      // plus set stats
                 };
+            }
+
+            List<CharacterStatModifier> GetTypeSpecificAffixes(EquipmentType equipmentType, ItemRarity rarity)
+            {
+                //var affixAmount = GetAffixAmount(rarity);
+
+                var affixList = new List<CharacterStatModifier>();
+
+                var allowedAffixes = ItemProvider.Instance.ItemTypeData.GetSpecificStats(equipmentType).ToList();
+
+                /// selects item properties
+                for (var i = 0; i < allowedAffixes.Count; i++) //affixAmount; i++)
+                {
+                    if (allowedAffixes.Count <= 0)
+                        break;
+
+                    var randomRoll = UnityEngine.Random.Range(0, allowedAffixes.Count);
+                    var randomStat = allowedAffixes[randomRoll];
+                    allowedAffixes.RemoveAt(randomRoll); // => exclude double rolls
+
+                    // var lootLevel = LocalPlayer.CharacterLevel; // could modify min/max stat range
+
+                    var rangeRoll = randomStat.GetRandomRoll(rarity); //, statModTypeOverride, lootLevel*/);
+
+                    var itemStat = new CharacterStatModifier(randomStat.StatName, rangeRoll);
+
+                    affixList.Add(itemStat);
+                }
+
+                affixList.Sort();
+
+                return affixList;
             }
 
             // List<PlayerStatModifier> GetStats(ItemRarity rarity, List<PlayerStatModifier> randomAffixes) => randomAffixes;

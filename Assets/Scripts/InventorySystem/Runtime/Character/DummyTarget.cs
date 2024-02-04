@@ -1,6 +1,8 @@
-﻿using ToolSmiths.InventorySystem.Data;
+﻿using System.Collections;
+using System.Linq;
+using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
-using ToolSmiths.InventorySystem.Inventories;
+using ToolSmiths.InventorySystem.Runtime.Provider;
 using ToolSmiths.InventorySystem.Utility.Extensions;
 using UnityEngine;
 
@@ -8,8 +10,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 {
     public class DummyTarget : BaseCharacter
     {
-        [SerializeField] private uint experience = 20; // TODO: derive from monsterLevel and combat rating?
-
+        [ContextMenu("OnDeath")]
         protected override void OnDeath()
         {
             Debug.LogWarning($"{name.ColoredComponent()} {"died!".Colored(Color.red)}", this);
@@ -21,10 +22,24 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
                 _ = CharacterProvider.Instance.Player.PickUpItem(new Package(null, item, 1u));
 
             // TODO: use event instead?
-            CharacterProvider.Instance.Player.GainExperience(experience, CharacterLevel);
+            CharacterProvider.Instance.Player.GainExperience(BaseValues.ExperienceWhenKilled, CharacterLevel);
 
-            this.GetResource(StatName.Health).RefillCurrent();
-            this.GetResource(StatName.Shield).RefillCurrent();
+            StartCoroutine(RespawnDelay());
+
+            IEnumerator RespawnDelay(float delay = 1f)
+            {
+                yield return new WaitForSeconds(delay);
+                Respawn();
+            }
+        }
+
+        private void Respawn()
+        {
+            CharacterLevel++;
+
+            BaseValues.CharacterResources.Where(x => x.Stat == StatName.Health).FirstOrDefault().BaseValue += CharacterLevel + 3; // * 100 + 80
+
+            OnBirth();
         }
     }
 }

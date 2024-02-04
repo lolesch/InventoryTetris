@@ -1,0 +1,213 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &1586680953838271601
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 638745168178922233, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+      propertyPath: m_Speed
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 638745168178922233, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 638745168178922233, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+      propertyPath: m_Acceleration
+      value: 15
+      objectReference: {fileID: 0}
+    - target: {fileID: 638745168178922233, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+      propertyPath: m_AngularSpeed
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 638745168178922233, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+      propertyPath: m_StoppingDistance
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2328133973959012854, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+      propertyPath: m_RootOrder
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2328133973959012854, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2328133973959012854, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2328133973959012854, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2328133973959012854, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.92387956
+      objectReference: {fileID: 0}
+    - target: {fileID: 2328133973959012854, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2328133973959012854, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.38268343
+      objectReference: {fileID: 0}
+    - target: {fileID: 2328133973959012854, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2328133973959012854, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2328133973959012854, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2328133973959012854, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2673479596652754327, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: b85045dcecfe3d7409a0a100fcb5b0a6, type: 2}
+    - target: {fileID: 5551497901255431716, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+      propertyPath: m_Name
+      value: DummyCharacter
+      objectReference: {fileID: 0}
+    - target: {fileID: 5687674760658121440, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 3e8030445490db846b26948b68416310, type: 2}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+--- !u!1 &735472970709671260 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2031661294597529901, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+  m_PrefabInstance: {fileID: 1586680953838271601}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &250972310319661054
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 735472970709671260}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b11970975a330d45908ffcdc08418cf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  agent: {fileID: 2222599754320526984}
+  speed:
+    name: '0: 0'
+    <Stat>k__BackingField: 0
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+  rotationSpeed: 8
+  playerAgent: {fileID: 0}
+--- !u!195 &2222599754320526984 stripped
+NavMeshAgent:
+  m_CorrespondingSourceObject: {fileID: 638745168178922233, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+  m_PrefabInstance: {fileID: 1586680953838271601}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &6561713897978489429 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5551497901255431716, guid: 4d33d2d94b35974429384dea930ee1d6, type: 3}
+  m_PrefabInstance: {fileID: 1586680953838271601}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &3620216251798469279
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6561713897978489429}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3f8c32222194924eabae940cc317fd6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  <IsInvincible>k__BackingField: 0
+  <IsBlocking>k__BackingField: 0
+  <SpendResource>k__BackingField: 0
+  BaseValues: {fileID: 11400000, guid: 35dd239227d3ce9489abb98b1a605a77, type: 2}
+  <CharacterStats>k__BackingField:
+  - name: 'Attack Speed: 1'
+    <Stat>k__BackingField: 1
+    <BaseValue>k__BackingField: 1
+    <StatModifiers>k__BackingField: []
+  - name: 'Physical Damage: 80'
+    <Stat>k__BackingField: 2
+    <BaseValue>k__BackingField: 80
+    <StatModifiers>k__BackingField: []
+  - name: 'Magical Damage: 120'
+    <Stat>k__BackingField: 3
+    <BaseValue>k__BackingField: 120
+    <StatModifiers>k__BackingField: []
+  - name: 'Armor Penetration: 10'
+    <Stat>k__BackingField: 4
+    <BaseValue>k__BackingField: 10
+    <StatModifiers>k__BackingField: []
+  - name: 'Magic Penetration: 10'
+    <Stat>k__BackingField: 5
+    <BaseValue>k__BackingField: 10
+    <StatModifiers>k__BackingField: []
+  - name: 'Health Regeneration: 10'
+    <Stat>k__BackingField: 12
+    <BaseValue>k__BackingField: 10
+    <StatModifiers>k__BackingField: []
+  - name: 'Armor: 30'
+    <Stat>k__BackingField: 13
+    <BaseValue>k__BackingField: 30
+    <StatModifiers>k__BackingField: []
+  - name: 'Magic Resist: 20'
+    <Stat>k__BackingField: 14
+    <BaseValue>k__BackingField: 20
+    <StatModifiers>k__BackingField: []
+  - name: 'Shield Recharge: 5'
+    <Stat>k__BackingField: 18
+    <BaseValue>k__BackingField: 5
+    <StatModifiers>k__BackingField: []
+  - name: 'Movement Speed: 2'
+    <Stat>k__BackingField: 21
+    <BaseValue>k__BackingField: 2
+    <StatModifiers>k__BackingField: []
+  - name: 'Resource Regeneration: 20'
+    <Stat>k__BackingField: 23
+    <BaseValue>k__BackingField: 20
+    <StatModifiers>k__BackingField: []
+  - name: 'Increased Item Rarity: 1'
+    <Stat>k__BackingField: 24
+    <BaseValue>k__BackingField: 1
+    <StatModifiers>k__BackingField: []
+  - name: 'Increased Item Quantity: 1'
+    <Stat>k__BackingField: 25
+    <BaseValue>k__BackingField: 1
+    <StatModifiers>k__BackingField: []
+  <CharacterResources>k__BackingField:
+  - name: 'Health: 10'
+    <Stat>k__BackingField: 11
+    <BaseValue>k__BackingField: 10
+    <StatModifiers>k__BackingField: []
+    <CurrentValue>k__BackingField: 0
+  - name: 'Resource: 0'
+    <Stat>k__BackingField: 22
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <CurrentValue>k__BackingField: 0
+  - name: 'Shield: 50'
+    <Stat>k__BackingField: 17
+    <BaseValue>k__BackingField: 50
+    <StatModifiers>k__BackingField: []
+    <CurrentValue>k__BackingField: 0
+  - name: 'Experience: 0'
+    <Stat>k__BackingField: -1
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <CurrentValue>k__BackingField: 0
+  <CharacterLevel>k__BackingField: 1

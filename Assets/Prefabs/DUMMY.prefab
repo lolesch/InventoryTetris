@@ -1,0 +1,125 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &2735678570932482922
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5884209446459567596}
+  - component: {fileID: 3777215057650729803}
+  m_Layer: 5
+  m_Name: DUMMY
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5884209446459567596
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2735678570932482922}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3777215057650729803
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2735678570932482922}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3f8c32222194924eabae940cc317fd6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  <IsInvincible>k__BackingField: 0
+  <IsBlocking>k__BackingField: 0
+  <SpendResource>k__BackingField: 0
+  BaseValues: {fileID: 11400000, guid: 35dd239227d3ce9489abb98b1a605a77, type: 2}
+  <CharacterStats>k__BackingField:
+  - name: 'Attack Speed: 1'
+    <Stat>k__BackingField: 1
+    <BaseValue>k__BackingField: 1
+    <StatModifiers>k__BackingField: []
+  - name: 'Physical Damage: 80'
+    <Stat>k__BackingField: 2
+    <BaseValue>k__BackingField: 80
+    <StatModifiers>k__BackingField: []
+  - name: 'Magical Damage: 120'
+    <Stat>k__BackingField: 3
+    <BaseValue>k__BackingField: 120
+    <StatModifiers>k__BackingField: []
+  - name: 'Armor Penetration: 10'
+    <Stat>k__BackingField: 4
+    <BaseValue>k__BackingField: 10
+    <StatModifiers>k__BackingField: []
+  - name: 'Magic Penetration: 10'
+    <Stat>k__BackingField: 5
+    <BaseValue>k__BackingField: 10
+    <StatModifiers>k__BackingField: []
+  - name: 'Health Regeneration: 10'
+    <Stat>k__BackingField: 12
+    <BaseValue>k__BackingField: 10
+    <StatModifiers>k__BackingField: []
+  - name: 'Armor: 30'
+    <Stat>k__BackingField: 13
+    <BaseValue>k__BackingField: 30
+    <StatModifiers>k__BackingField: []
+  - name: 'Magic Resist: 20'
+    <Stat>k__BackingField: 14
+    <BaseValue>k__BackingField: 20
+    <StatModifiers>k__BackingField: []
+  - name: 'Shield Recharge: 5'
+    <Stat>k__BackingField: 18
+    <BaseValue>k__BackingField: 5
+    <StatModifiers>k__BackingField: []
+  - name: 'Movement Speed: 1'
+    <Stat>k__BackingField: 21
+    <BaseValue>k__BackingField: 1
+    <StatModifiers>k__BackingField: []
+  - name: 'Resource Regeneration: 20'
+    <Stat>k__BackingField: 23
+    <BaseValue>k__BackingField: 20
+    <StatModifiers>k__BackingField: []
+  - name: 'Increased Item Rarity: 1'
+    <Stat>k__BackingField: 24
+    <BaseValue>k__BackingField: 1
+    <StatModifiers>k__BackingField: []
+  - name: 'Increased Item Quantity: 1'
+    <Stat>k__BackingField: 25
+    <BaseValue>k__BackingField: 1
+    <StatModifiers>k__BackingField: []
+  <CharacterResources>k__BackingField:
+  - name: 'Health: 10'
+    <Stat>k__BackingField: 11
+    <BaseValue>k__BackingField: 10
+    <StatModifiers>k__BackingField: []
+    <CurrentValue>k__BackingField: 0
+  - name: 'Resource: 0'
+    <Stat>k__BackingField: 22
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <CurrentValue>k__BackingField: 0
+  - name: 'Shield: 50'
+    <Stat>k__BackingField: 17
+    <BaseValue>k__BackingField: 50
+    <StatModifiers>k__BackingField: []
+    <CurrentValue>k__BackingField: 50
+  - name: 'Experience: 0'
+    <Stat>k__BackingField: -1
+    <BaseValue>k__BackingField: 0
+    <StatModifiers>k__BackingField: []
+    <CurrentValue>k__BackingField: 0
+  <CharacterLevel>k__BackingField: 1

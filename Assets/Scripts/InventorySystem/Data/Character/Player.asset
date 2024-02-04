@@ -1,0 +1,68 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a5fdea0572acb1f499ddd3ec3dd994ca, type: 3}
+  m_Name: Player
+  m_EditorClassIdentifier: 
+  <CharacterStats>k__BackingField:
+  - name: 'Attack Speed: 0.66'
+    <Stat>k__BackingField: 1
+    <BaseValue>k__BackingField: 0.66
+  - name: 'Physical Damage: 10'
+    <Stat>k__BackingField: 2
+    <BaseValue>k__BackingField: 10
+  - name: 'Magical Damage: 2'
+    <Stat>k__BackingField: 3
+    <BaseValue>k__BackingField: 2
+  - name: 'Armor Penetration: 1'
+    <Stat>k__BackingField: 4
+    <BaseValue>k__BackingField: 1
+  - name: 'Magic Penetration: 1'
+    <Stat>k__BackingField: 5
+    <BaseValue>k__BackingField: 1
+  - name: 'Health Regeneration: 3.5'
+    <Stat>k__BackingField: 12
+    <BaseValue>k__BackingField: 3.5
+  - name: 'Armor: 26'
+    <Stat>k__BackingField: 13
+    <BaseValue>k__BackingField: 26
+  - name: 'Magic Resist: 30'
+    <Stat>k__BackingField: 14
+    <BaseValue>k__BackingField: 30
+  - name: 'Shield Recharge: 7'
+    <Stat>k__BackingField: 18
+    <BaseValue>k__BackingField: 7
+  - name: 'Movement Speed: 6'
+    <Stat>k__BackingField: 21
+    <BaseValue>k__BackingField: 6
+  - name: 'Resource Regeneration: 7'
+    <Stat>k__BackingField: 23
+    <BaseValue>k__BackingField: 7
+  - name: 'Increased Item Rarity: 1'
+    <Stat>k__BackingField: 24
+    <BaseValue>k__BackingField: 1
+  - name: 'Increased Item Quantity: 1'
+    <Stat>k__BackingField: 25
+    <BaseValue>k__BackingField: 1
+  <CharacterResources>k__BackingField:
+  - name: 'Health: 640'
+    <Stat>k__BackingField: 11
+    <BaseValue>k__BackingField: 640
+  - name: 'Resource: 280'
+    <Stat>k__BackingField: 22
+    <BaseValue>k__BackingField: 280
+  - name: 'Shield: 0'
+    <Stat>k__BackingField: 17
+    <BaseValue>k__BackingField: 0
+  - name: 'Experience: 0'
+    <Stat>k__BackingField: -1
+    <BaseValue>k__BackingField: 0
+  <ExperienceWhenKilled>k__BackingField: 0

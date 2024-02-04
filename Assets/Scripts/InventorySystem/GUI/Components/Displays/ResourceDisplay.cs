@@ -1,79 +1,97 @@
 ﻿using TMPro;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Runtime.Character;
+using ToolSmiths.InventorySystem.Runtime.Provider;
 using ToolSmiths.InventorySystem.Utility.Extensions;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace ToolSmiths.InventorySystem.GUI.Displays
 {
-    public class ResourceDisplay : MonoBehaviour
+    public class ResourceDisplay : MonoBehaviour, IDisplay<float>, IDisplay<(float previous, float current, float total)>
     {
         [SerializeField] protected Image resourceImage;
-        // [SerializeField] protected Image impactImage; // TODO: look it up in RuadhWarbands
+        // [SerializeField] protected Image impactImage; // TODO: look it up in previous projects
 
         [SerializeField] protected TextMeshProUGUI percentageText;
         [SerializeField] protected TextMeshProUGUI currentText;
         [SerializeField] protected TextMeshProUGUI recoveryText;
 
-        [SerializeField] protected BaseCharacter character;
+        //[SerializeField] protected BaseCharacter character => CharacterProvider.Instance.Player;
+        [SerializeField] protected CharacterResource resource;
+        [SerializeField] protected CharacterStat recoveryStat;
         [SerializeField] protected StatName resourceName = StatName.Health;
         [SerializeField] protected StatName recoveryName = StatName.HealthRegeneration;
 
-        [SerializeField] protected AnimationCurve globeVolume;
+        //[SerializeField] protected AnimationCurve globeVolume;
 
+        [ContextMenu("RefreshDisplay")]
         protected void OnEnable()
         {
-            if (character)
+            if (CharacterProvider.Instance.Player != null)
+                SetupDisplay(CharacterProvider.Instance.Player);
+            else
             {
-                var resource = character.GetResource(resourceName);
-
-                resource.CurrentHasChanged -= UpdateDisplay;
-                resource.CurrentHasChanged += UpdateDisplay;
-
-                var stat = character.GetStat(recoveryName);
-
-                stat.TotalHasChanged -= UpdateRechargeDisplay;
-                stat.TotalHasChanged += UpdateRechargeDisplay;
-
-                UpdateDisplay(0, resource.CurrentValue, resource.TotalValue);
-                UpdateRechargeDisplay(stat.TotalValue);
+                CharacterProvider.Instance.PlayerChanged -= SetupDisplay;
+                CharacterProvider.Instance.PlayerChanged += SetupDisplay;
             }
         }
 
         protected void OnDisable()
         {
-            if (character)
-            {
-                var resource = character.GetResource(resourceName);
+            resource.CurrentHasChanged -= UpdateCurrent;
 
-                resource.CurrentHasChanged -= UpdateDisplay;
+            recoveryStat.TotalHasChanged -= RefreshDisplay;
 
-                var stat = character.GetStat(recoveryName);
-
-                stat.TotalHasChanged -= UpdateRechargeDisplay;
-            }
+            CharacterProvider.Instance.PlayerChanged -= SetupDisplay;
         }
 
-        protected virtual void UpdateDisplay(float previous, float current, float total)
+        private void SetupDisplay(LocalPlayer player)
         {
-            if (resourceImage)
-                if (0 < globeVolume.length)
-                    resourceImage.fillAmount = globeVolume.Evaluate(current / total);
-                else
-                    resourceImage.fillAmount = current / total;
+            resource = player.GetResource(resourceName);
 
-            if (percentageText)
-                percentageText.text = $"{current / total * 100:0} %";
+            resource.CurrentHasChanged -= UpdateCurrent;
+            resource.CurrentHasChanged += UpdateCurrent;
 
-            if (currentText)
-                currentText.text = $"{current:0} / {total:0}";
+            recoveryStat = player.GetStat(recoveryName);
+
+            recoveryStat.TotalHasChanged -= RefreshDisplay;
+            recoveryStat.TotalHasChanged += RefreshDisplay;
+
+            RefreshDisplay((0, resource.CurrentValue, resource.TotalValue));
+            RefreshDisplay(recoveryStat.TotalValue);
         }
 
-        protected virtual void UpdateRechargeDisplay(float total)
+        protected virtual void UpdateCurrent(float previous, float current, float total) => RefreshDisplay((previous, current, total));
+
+        public void RefreshDisplay(float rechargeValue)
         {
             if (recoveryText)
-                recoveryText.text = $"{total:0} / sec";
+                recoveryText.text = $"{rechargeValue:0} / sec";
+        }
+
+        public void RefreshDisplay((float previous, float current, float total) data)
+        {
+            if (resourceImage)
+            {
+                //resourceImage.fillAmount = 0 < globeVolume.length ? globeVolume.Evaluate(data.current / data.total) : data.current / data.total;
+                resourceImage.fillAmount = data.total != 0 ? data.current / data.total : 0;
+            }
+
+            if (percentageText)
+            {
+                percentageText.text = $"{data.current / data.total * 100:0} %";
+                percentageText.gameObject.SetActive(data.total != 0);
+            }
+
+            if (currentText)
+            {
+                currentText.text = $"{data.current:0} / {data.total:0}";
+                currentText.gameObject.SetActive(data.total != 0);
+            }
+
+            if (recoveryText)
+                recoveryText.gameObject.SetActive(data.total != 0);
         }
     }
 }

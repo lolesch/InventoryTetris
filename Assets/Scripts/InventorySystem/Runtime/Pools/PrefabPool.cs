@@ -12,7 +12,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Pools
         private readonly Transform parent;
         private readonly List<T> pool = new();
 
-        public PrefabPool(T prefab, Transform parent = null, uint amount = 0)
+        public PrefabPool(T prefab, Transform parent = null, int amount = 0)
         {
             if (prefab == null)
                 Debug.LogError("Prefab is null! Cant create a pool of nothing...");
@@ -27,8 +27,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Pools
             ExtendPool(amount);
         }
 
-        private IEnumerable<T> Available => pool.Where(x => x != null && !x.gameObject.activeSelf);
-        private IEnumerable<T> InUse => pool.Where(x => x != null && x.gameObject.activeSelf);
+        public IEnumerable<T> Available => pool.Where(x => x != null && !x.gameObject.activeSelf);
+        public IEnumerable<T> InUse => pool.Where(x => x != null && x.gameObject.activeSelf);
 
         public T GetObject(bool activated = true)
         {
@@ -46,10 +46,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Pools
             return newPrefab;
         }
 
-        private T ExtendPool(uint amount = 0)
+        private T ExtendPool(int amount = 0)
         {
             if (amount <= 0)
-                amount = (uint)pool.Count + 1;
+                amount = pool.Count + 1;
 
             var newPrefabs = new T[amount];
 

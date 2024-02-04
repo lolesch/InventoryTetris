@@ -20,7 +20,7 @@ MonoBehaviour:
     <Affixes>k__BackingField:
     - <Stat>k__BackingField: 24
       <Modifier>k__BackingField:
-        <Range>k__BackingField: {x: 0, y: 0}
+        <Range>k__BackingField: {x: 5, y: 75}
         <Value>k__BackingField: 55
         <Type>k__BackingField: 200
     <EquipmentCategory>k__BackingField: 3

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using TMPro;
 using ToolSmiths.InventorySystem.Data;
-using ToolSmiths.InventorySystem.Items;
+using ToolSmiths.InventorySystem.Data.Items;
 using ToolSmiths.InventorySystem.Runtime.Pools;
 using ToolSmiths.InventorySystem.Utility.Extensions;
 using UnityEngine;

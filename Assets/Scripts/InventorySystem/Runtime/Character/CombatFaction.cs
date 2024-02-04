@@ -2,7 +2,7 @@
 
 namespace ToolSmiths.InventorySystem.Runtime.Character
 {
-    [CreateAssetMenu(menuName = "GrimbartTales/Combat/Faction")]
+    [CreateAssetMenu(menuName = "Inventory System/Combat/Faction")]
     public class CombatFaction : ScriptableObject
     {
         public CombatFaction[] EnemyFactions;

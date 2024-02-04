@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
-using ToolSmiths.InventorySystem.Inventories;
-using ToolSmiths.InventorySystem.Items;
+using ToolSmiths.InventorySystem.Data.Items;
+using ToolSmiths.InventorySystem.Runtime.Inventories;
 using UnityEngine;
 
 [assembly: InternalsVisibleTo("Tests")]

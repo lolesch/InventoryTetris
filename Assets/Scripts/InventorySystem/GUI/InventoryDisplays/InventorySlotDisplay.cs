@@ -1,7 +1,7 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Linq;
+using System.Runtime.CompilerServices;
 using ToolSmiths.InventorySystem.Data;
-using ToolSmiths.InventorySystem.Inventories;
-using ToolSmiths.InventorySystem.Items;
+using ToolSmiths.InventorySystem.Data.Items;
 using ToolSmiths.InventorySystem.Runtime.Provider;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -92,6 +92,20 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                     if (package.Item is ConsumableItem)
                     {
                         Debug.Log($"Consuming {package.Item.ToString()}");
+                        foreach (var affix in package.Item.Affixes)
+                        {
+                            var resources = CharacterProvider.Instance.Player.CharacterResources.Where(x => x.Stat == affix.Stat);
+
+                            if (resources.Any())
+                                resources.FirstOrDefault().AddToCurrent(affix.Modifier.Value);
+                            else
+                            {
+                                var stats = CharacterProvider.Instance.Player.CharacterStats.Where(x => x.Stat == affix.Stat);
+                                if (stats.Any())
+                                    if (affix.Modifier.Type != Data.Enums.StatModifierType.Overwrite) // as it gets consumed we cannot remove that overwrite => therefore exclude it for now
+                                        stats.FirstOrDefault().AddModifier(affix.Modifier); // TODO: convert affixes into effects for x duration
+                            }
+                        }
 
                         _ = Container.RemoveAtPosition(position, new Package(Container, package.Item, 1)); // only consume one amount
 

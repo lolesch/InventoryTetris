@@ -2,12 +2,11 @@
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Distributions;
 using ToolSmiths.InventorySystem.Data.Enums;
-using ToolSmiths.InventorySystem.Items;
-using ToolSmiths.InventorySystem.Runtime.Provider;
+using ToolSmiths.InventorySystem.Data.Items;
 using ToolSmiths.InventorySystem.Utility.Extensions;
 using UnityEngine;
 
-namespace ToolSmiths.InventorySystem.Inventories
+namespace ToolSmiths.InventorySystem.Runtime.Provider
 {
     public class ItemProvider : AbstractProvider<ItemProvider>
     {

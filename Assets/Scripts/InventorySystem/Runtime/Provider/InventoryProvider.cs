@@ -3,11 +3,11 @@ using TMPro;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.GUI.InventoryDisplays;
-using ToolSmiths.InventorySystem.Runtime.Provider;
+using ToolSmiths.InventorySystem.Runtime.Inventories;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace ToolSmiths.InventorySystem.Inventories
+namespace ToolSmiths.InventorySystem.Runtime.Provider
 {
     public class InventoryProvider : AbstractProvider<InventoryProvider>
     {
@@ -54,7 +54,10 @@ namespace ToolSmiths.InventorySystem.Inventories
             Equipment = new(equipmentSize);
             Inventory = new(inventorySize);
             Stash = new(stashSize);
+        }
 
+        private void Start()
+        {
             Store = new(storeSize);
             RestockStore();
 

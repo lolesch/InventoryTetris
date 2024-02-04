@@ -4,7 +4,7 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.Data.Distributions
 {
     [System.Serializable]
-    [CreateAssetMenu(fileName = "Item Rarity Distribution", menuName = "Inventory System/Probability Distributions/Item Rarity")]
+    [CreateAssetMenu(fileName = "Item Rarity Distribution", menuName = "Inventory System/Items/Distributions/Item Rarity")]
     public class ItemRarityDistribution : AbstractProbabilityDistribution<ItemRarity>
     {
         [SerializeField, Range(1, 8)] private int exampleTotalPlayerCount = 1;

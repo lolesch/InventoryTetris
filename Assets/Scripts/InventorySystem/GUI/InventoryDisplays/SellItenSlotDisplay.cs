@@ -1,5 +1,4 @@
 ﻿using ToolSmiths.InventorySystem.Data;
-using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Runtime.Provider;
 using UnityEngine;
 using UnityEngine.EventSystems;

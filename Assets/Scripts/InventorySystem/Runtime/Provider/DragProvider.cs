@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Data.Items;
 using ToolSmiths.InventorySystem.GUI.Displays;
 using ToolSmiths.InventorySystem.GUI.InventoryDisplays;
 using ToolSmiths.InventorySystem.GUI.Panels;
-using ToolSmiths.InventorySystem.Items;
 using UnityEngine;
 using UnityEngine.UI;
 

@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Data.Items;
 using ToolSmiths.InventorySystem.GUI.Displays;
 using ToolSmiths.InventorySystem.GUI.Panels;
-using ToolSmiths.InventorySystem.Inventories;
-using ToolSmiths.InventorySystem.Items;
+using ToolSmiths.InventorySystem.Runtime.Inventories;
 using ToolSmiths.InventorySystem.Utility.Extensions;
 using UnityEngine;
 using UnityEngine.UI;
@@ -56,7 +56,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         {
             if (!hoveredPackage.IsValid)
             {
-                Debug.LogWarning($"Could not preview an invalid item {hoveredPackage}");
                 previewPanel.FadeOut();
                 return;
             }

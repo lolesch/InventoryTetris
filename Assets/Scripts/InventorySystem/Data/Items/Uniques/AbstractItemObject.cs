@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace ToolSmiths.InventorySystem.Items
+namespace ToolSmiths.InventorySystem.Data.Items
 {
     [System.Serializable]
     public abstract class AbstractItemObject : ScriptableObject
