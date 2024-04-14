@@ -19,6 +19,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         // [SerializeField] public float BonusValue => TotalValue - BaseValue;
 
         // TODO: growth requires CharacterLevel but at the moment CharacterStats dont know their character so make it a funktion(float characterLevel)
+        // NO! growth is a statModifier that is applied each levelUp so the Stat doesnt need to know its character
+
         //[field: SerializeField] public uint GrowthPerLevel { get; private set; }
 
         [field: SerializeField] public List<StatModifier> StatModifiers { get; protected set; } = new List<StatModifier>();
@@ -151,7 +153,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
         public void OnAfterDeserialize() { }
 
-        public void SetBaseTo(float newValue)
+        private void SetBaseTo(float newValue)
         {
             BaseValue = newValue;
             CalculateTotalValue();

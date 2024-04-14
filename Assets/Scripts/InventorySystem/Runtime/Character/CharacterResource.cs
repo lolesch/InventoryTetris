@@ -17,7 +17,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         public bool IsFull => CurrentValue >= TotalValue;
         public float MissingValue => TotalValue - CurrentValue;
 
-        public event Action<float, float, float> CurrentHasChanged;
+        public event Action<float, float, float> CurrentHasChanged; // (previous, newValue, total)
         public event Action CurrentHasDepleted;
         public event Action CurrentHasRecharged;
 
@@ -72,6 +72,19 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             base.CalculateTotalValue();
 
             SetCurrentTo(CurrentValue);
+
+            #region Percentage Recalculation <-- requires review!!
+            //float currentPercent = 100f;
+            //
+            ///// store the currentValue percentage before recalculating maxValue
+            //if (0 < MaxValue)
+            //    currentPercent = CurrentValue * 100f / MaxValue;
+            //
+            //base.RecalculateValues();
+            //
+            ///// set currentValue to the percentage it was before recalculating maxValue
+            //SetCurrentValue((int)(MaxValue * currentPercent / 100f));
+            #endregion
         }
 
         public CharacterResource GetResourceCopy()
