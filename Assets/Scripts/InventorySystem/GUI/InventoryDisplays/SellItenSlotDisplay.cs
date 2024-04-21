@@ -18,9 +18,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
             var packageToMove = DragProvider.Instance.DraggingPackage;
 
-            DragProvider.Instance.Origin.Container?.RemoveFromContainer(packageToMove);
+            _ = (DragProvider.Instance.Origin.Container?.RemoveFromContainer(packageToMove));
 
-            var currency = new Currency(packageToMove.Item.SellValue);
+            var currency = new Currency(packageToMove.Item.SellValue * packageToMove.Amount);
 
             //TODO: handle item loss if inventory is full
             var gold = new Package(Container, ItemProvider.Instance.GenerateCurrency(Data.Enums.CurrencyType.Gold), currency.Gold);
