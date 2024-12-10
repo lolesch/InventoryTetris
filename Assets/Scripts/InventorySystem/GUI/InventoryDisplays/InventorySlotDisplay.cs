@@ -13,7 +13,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 {
     [System.Serializable]
     [RequireComponent(typeof(RectTransform))]
-    public class InventorySlotDisplay : AbstractSlotDisplay
+    internal sealed class InventorySlotDisplay : AbstractSlotDisplay
     {
         private GridLayoutGroup gridLayout;
 
@@ -89,24 +89,26 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 #region USE ITEM
                 if (eventData.button == PointerEventData.InputButton.Right)
                 {
-                    if (package.Item is ConsumableItem)
+                    switch (package.Item)
                     {
-                        Debug.Log($"Consuming {package.Item.ToString()}");
+                        case ConsumableItem:
+                            Debug.Log($"Consuming {package.Item.ToString()}");
 
-                        _ = Container.RemoveAtPosition(position, new Package(Container, package.Item, 1)); // only consume one amount
+                            _ = Container.RemoveAtPosition(position, new Package(Container, package.Item, 1)); // only consume one amount
 
-                        return;
-                    }
-                    else if (package.Item is EquipmentItem)
-                    {
-                        _ = Container.RemoveAtPosition(position, package);
+                            return;
 
-                        if (InventoryProvider.Instance.Equipment.TryAddToContainer(ref package))
-                            DragProvider.Instance.SetPackage(this, package, Vector2Int.zero);
-                        else
-                            _ = Container.TryAddToContainer(ref package);
+                        case EquipmentItem:
+                        {
+                            _ = Container.RemoveAtPosition(position, package);
 
-                        return;
+                            if (InventoryProvider.Instance.Equipment.TryAddToContainer(ref package))
+                                DragProvider.Instance.SetPackage(this, package, Vector2Int.zero);
+                            else
+                                _ = Container.TryAddToContainer(ref package);
+
+                            return;
+                        }
                     }
                 }
                 #endregion USE ITEM
@@ -128,7 +130,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
                     if (Container == InventoryProvider.Instance.Inventory)
                         containerToMoveTo = InventoryProvider.Instance.Stash;
-                    else if (containerToMoveTo == InventoryProvider.Instance.Stash)
+                    else if (Container == InventoryProvider.Instance.Stash)
                         containerToMoveTo = InventoryProvider.Instance.Inventory;
 
                     if (containerToMoveTo.TryAddToContainer(ref package))

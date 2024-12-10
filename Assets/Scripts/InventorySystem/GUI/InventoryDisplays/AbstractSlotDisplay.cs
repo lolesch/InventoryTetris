@@ -17,7 +17,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
     // TODO: inherit AbstractDisplay or rename this pattern
     [System.Serializable]
     [RequireComponent(typeof(RectTransform))]
-    public abstract class AbstractSlotDisplay : MonoBehaviour, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler, IPointerEnterHandler, IPointerExitHandler
+    internal abstract class AbstractSlotDisplay : MonoBehaviour, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler, IPointerEnterHandler, IPointerExitHandler
     {
         [field: SerializeField, ReadOnly] public AbstractDimensionalContainer Container { get; private set; }
         [field: SerializeField, ReadOnly] public Vector2Int Position { get; private set; }

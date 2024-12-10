@@ -9,7 +9,7 @@ using UnityEngine.UI;
 
 namespace ToolSmiths.InventorySystem.Inventories
 {
-    public class InventoryProvider : AbstractProvider<InventoryProvider>
+    internal sealed class InventoryProvider : AbstractProvider<InventoryProvider>
     {
         // TODO: move player related inventories into the local player?
         [field: SerializeField] public CharacterEquipment Equipment { get; private set; }

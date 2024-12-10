@@ -8,9 +8,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
     [RequireComponent(typeof(GridLayoutGroup))]
 
     [System.Serializable]
-    public class InventoryContainerDisplay : AbstractContainerDisplay
+    internal sealed class InventoryContainerDisplay : AbstractContainerDisplay
     {
-        [SerializeField] protected InventorySlotDisplay slotDisplayPrefab;
+        [SerializeField] private AbstractSlotDisplay slotDisplayPrefab;
 
         //private void Awake()
         //{
@@ -37,7 +37,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 gridLayout.constraintCount = Container.Dimensions.x;
             }
 
-            void InstantiateNewSlots(InventorySlotDisplay slot)
+            void InstantiateNewSlots(AbstractSlotDisplay slot)
             {
                 var slotDisplays = DestroyInvalidSlotDisplays();
 

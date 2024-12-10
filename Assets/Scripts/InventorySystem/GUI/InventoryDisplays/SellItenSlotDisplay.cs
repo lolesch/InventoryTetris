@@ -9,8 +9,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 {
     [System.Serializable]
     [RequireComponent(typeof(RectTransform), typeof(Image))]
-    public class SellItenSlotDisplay : AbstractSlotDisplay
+    internal sealed class SellItenSlotDisplay : AbstractSlotDisplay
     {
+        // TODO: make it a container with confirmation button before selling
         protected override void DropItem(Package package)
         {
             if (!package.IsValid)

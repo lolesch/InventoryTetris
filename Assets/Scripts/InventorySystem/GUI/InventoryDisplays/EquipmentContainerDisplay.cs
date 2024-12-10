@@ -7,7 +7,7 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 {
     [System.Serializable]
-    public class EquipmentContainerDisplay : AbstractContainerDisplay
+    internal sealed class EquipmentContainerDisplay : AbstractContainerDisplay
     {
         protected override void SetupSlotDisplays()
         {

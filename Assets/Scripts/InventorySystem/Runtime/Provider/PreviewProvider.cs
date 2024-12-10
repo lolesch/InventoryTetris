@@ -11,7 +11,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 {
     [System.Serializable]
     [RequireComponent(typeof(RectTransform))]
-    public class PreviewProvider : AbstractProvider<PreviewProvider>
+    internal sealed class PreviewProvider : AbstractProvider<PreviewProvider>
     {
         [SerializeField] private PreviewDisplay hoveredItem;
         private RectTransform hoveredItemTransform;
@@ -57,8 +57,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             hoveredItemTransform.anchoredPosition = new Vector2(mousePos.x + OffsetX, mousePos.y);
 
             // CONTINUE HERE
-            // TODO: compare the hovered item against the first equipment            
-            // TODO: if holding shift - compare the hovered item against the second equipment            
+            // TODO: compare the hovered item against the first equipment
+            // TODO: if holding shift - compare the hovered item against the second equipment
 
             if (slot is EquipmentSlotDisplay)
                 hoveredItem.RefreshDisplay(package);

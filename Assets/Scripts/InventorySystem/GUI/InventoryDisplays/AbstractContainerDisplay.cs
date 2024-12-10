@@ -6,7 +6,7 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 {
     // TODO: inherit AbstractDisplay or rename this pattern
-    public abstract class AbstractContainerDisplay : MonoBehaviour//AbstractPanel
+    internal abstract class AbstractContainerDisplay : MonoBehaviour//AbstractPanel
     {
         protected AbstractDimensionalContainer Container;
 

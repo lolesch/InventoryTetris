@@ -8,7 +8,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 {
     [System.Serializable]
     [RequireComponent(typeof(RectTransform), typeof(Image), typeof(CanvasGroup))]
-    public class DropToFloorSlotDisplay : AbstractSlotDisplay
+    internal sealed class DropToFloorSlotDisplay : AbstractSlotDisplay
     {
         private CanvasGroup canvasGroup;
         public CanvasGroup CanvasGroup => canvasGroup != null ? canvasGroup : canvasGroup = GetComponent<CanvasGroup>();

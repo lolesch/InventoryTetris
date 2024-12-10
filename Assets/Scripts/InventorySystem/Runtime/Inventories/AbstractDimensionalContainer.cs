@@ -22,7 +22,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         // recipient/receiver <-> sender/returningAddress
         /// <summary>
-        /// Tries to add the package to the container and updating the package to the state after adding => new Package() 
+        /// Tries to add the package to the container and updating the package to the state after adding => new Package()
         //or previous at that position?
         /// </summary>
         /// <param name="package"></param>
@@ -93,7 +93,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         public abstract List<Vector2Int> GetStoredItemsAt(Vector2Int position, Vector2Int dimension);
 
         /// <summary>
-        /// Checks for stored packages that occupy the given <paramref name="position"/> 
+        /// Checks for stored packages that occupy the given <paramref name="position"/>
         /// </summary>
         /// <param name="position"></param>
         /// <param name="storedPackage"></param>
@@ -114,7 +114,8 @@ namespace ToolSmiths.InventorySystem.Inventories
         {
             FindAllEqualItems(package.Item, out var positions);
 
-            for (var i = positions.Count - 1; 0 <= i && 0 < package.Amount; i--)
+            for (var i = positions.Count; 0 < package.Amount && i --> 0;)
+            //for (var i = positions.Count - 1; 0 <= i && 0 < package.Amount; i--)
                 package = RemoveAtPosition(positions[i], package);
 
             return package;
@@ -180,7 +181,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         public bool TryGetPackageAt(Vector2Int position, out Package package) => StoredPackages.TryGetValue(position, out package);
 
-        // TODO package should implement IComparable 
+        // TODO package should implement IComparable
         public void Sort()
         {
             var sortedValues = StoredPackages.Values

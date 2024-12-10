@@ -2,7 +2,7 @@
 // Dropping an item selects unexpected positions => was improved but does not support most overlapping
 
 // comparison shows wrong numbers on the unequipped item
-// comparison cant compare against all equipment of same type (rings, both weapon slots)
+// comparison cant compare against all equipment of same type (rings, 2h vs both weapon slots)
 
 #region TODO
 // buying items need to remove currency from player
@@ -64,7 +64,7 @@
 // Add stash tabs
 // -> this might require to make each stashTab its own inventory to interact with
 
-// add a source to statModifiers to remove all modifiers of that source 
+// add a source to statModifiers to remove all modifiers of that source
 #endregion ICEBOX
 
 #region ITEM MOVEMENT

@@ -11,7 +11,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 {
     [System.Serializable]
     [RequireComponent(typeof(RectTransform))]
-    public class DragProvider : AbstractProvider<DragProvider>
+    internal sealed class DragProvider : AbstractProvider<DragProvider>
     {
         public bool IsDragging => itemDisplay.gameObject.activeSelf;
 

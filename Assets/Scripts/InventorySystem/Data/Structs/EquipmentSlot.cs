@@ -8,9 +8,9 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.Data
 {
     [Serializable]
-    public struct EquipmentSlot
+    internal struct EquipmentSlot
     {
-        public EquipmentSlot(EquipmentSlotDisplay display, Vector2Int dimensions)
+        public EquipmentSlot( EquipmentSlotDisplay display, Vector2Int dimensions )
         {
             Display = display;
             Dimensions = dimensions;

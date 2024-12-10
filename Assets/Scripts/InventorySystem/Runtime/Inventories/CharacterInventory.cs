@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Items;
 using UnityEngine;
 
@@ -64,9 +65,9 @@ namespace ToolSmiths.InventorySystem.Inventories
                 var addedAmount = storedPackage.IncreaseAmount(package.Amount);
                 _ = package.ReduceAmount(addedAmount);
 
-                if (storedPackage.Item is CurrencyItem)
-                    if (storedPackage.Amount == (uint)storedPackage.Item.StackLimit) // full stack
-                        if (CheckForCurrencyUpgrade())
+                if ( storedPackage.Item is CurrencyItem currencyItem )
+                    if ( storedPackage.Amount == (uint)storedPackage.Item.StackLimit ) // full stack
+                        if ( CheckForCurrencyUpgrade() )
                             return true;
 
                 StoredPackages[storedPosition] = storedPackage;
@@ -75,7 +76,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
                 bool CheckForCurrencyUpgrade()
                 {
-                    var higherCurrency = UpgradeCurrency(storedPackage.Item as CurrencyItem);
+                    var higherCurrency = UpgradeCurrency( currencyItem );
 
                     if (higherCurrency != storedPackage.Item)
                     {
@@ -127,6 +128,54 @@ namespace ToolSmiths.InventorySystem.Inventories
                                 otherPackagePositions.Add(package.Key);
 
             return otherPackagePositions.Distinct().ToList();
+        }
+
+        public bool TryPay( float buyValue )
+        {
+            var cash = CalculateCash();
+
+            var price = new Currency( buyValue );
+            price = cash.GetClosestPriceWithoutChange( price );
+
+            if( cash.Gold < price.Gold || cash.Silver < price.Silver || cash.Iron < price.Iron || cash.Copper < price.Copper )
+                return false;
+
+            var copperToPay = new Package( this, new CurrencyItem( CurrencyType.Copper ), price.Copper );
+            var ironToPay = new Package( this, new CurrencyItem( CurrencyType.Iron ), price.Iron );
+            var silverToPay = new Package( this, new CurrencyItem( CurrencyType.Silver ), price.Silver );
+            var goldToPay = new Package( this, new CurrencyItem( CurrencyType.Gold ), price.Gold );
+
+            _ = RemoveFromContainer( copperToPay );
+            _ = RemoveFromContainer( ironToPay );
+            _ = RemoveFromContainer( silverToPay );
+            _ = RemoveFromContainer( goldToPay );
+
+            return true;
+        }
+
+        private Currency CalculateCash()
+        {
+            uint copper = 0;
+            uint iron = 0;
+            uint silver = 0;
+            uint gold = 0;
+
+            foreach (var package in StoredPackages)
+            {
+                if (package.Value.Item is not CurrencyItem currencyItem)
+                    continue;
+
+                if (currencyItem.CurrencyType == CurrencyType.Copper)
+                    copper += package.Value.Amount;
+                else if (currencyItem.CurrencyType == CurrencyType.Iron)
+                    iron += package.Value.Amount;
+                else if (currencyItem.CurrencyType == CurrencyType.Silver)
+                    silver += package.Value.Amount;
+                else if (currencyItem.CurrencyType == CurrencyType.Gold)
+                    gold += package.Value.Amount;
+            }
+
+            return new Currency( copper, iron, silver, gold );
         }
     }
 
