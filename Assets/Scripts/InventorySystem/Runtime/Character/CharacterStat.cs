@@ -15,12 +15,14 @@ namespace ToolSmiths.InventorySystem.Data
         [field: SerializeField] public float BaseValue { get; private set; }
 
         // TODO: growth requires CharacterLevel but at the moment CharacterStats dont know their character so make it a funktion(float characterLevel)
+        // NO! growth is a statModifier that is applied each levelUp so the Stat doesnt need to know its character
+
         //[field: SerializeField] public uint GrowthPerLevel { get; private set; }
 
         [field: SerializeField] public List<StatModifier> StatModifiers { get; private set; }
         public event Action<float> TotalHasChanged;
 
-        [SerializeField] public float TotalValue => CalculateTotalValue(); // only recalculate when adding/removing mods and store that value for lookups?
+        public float TotalValue => CalculateTotalValue(); // only recalculate when adding/removing mods and store that value for lookups?
         // [SerializeField] public float BonusValue => TotalValue - BaseValue;
 
         public CharacterStat(StatName statName, float baseValue = 0)
@@ -133,7 +135,14 @@ namespace ToolSmiths.InventorySystem.Data
         public void OnAfterDeserialize() { }
 
         public CharacterStat GetShallowCopy() => (CharacterStat)MemberwiseClone();
-        public CharacterStat GetDeepCopy()
+
+        private void SetBaseTo(float newValue)
+        {
+            BaseValue = newValue;
+            CalculateTotalValue();
+        }
+
+        public virtual CharacterStat GetDeepCopy()
         {
             var other = (CharacterStat)MemberwiseClone();
             other.name = string.Copy(name);
@@ -142,66 +151,6 @@ namespace ToolSmiths.InventorySystem.Data
             other.StatModifiers = new List<StatModifier>(StatModifiers);
 
             return other;
-        }
-    }
-
-    [Serializable]
-    public class CharacterResource : CharacterStat
-    {
-        [field: SerializeField, ReadOnly] public float CurrentValue { get; private set; }
-
-        public CharacterResource(StatName resourceName, uint baseValue = 0) : base(resourceName, baseValue) => CurrentValue = TotalValue;
-
-        public bool IsDepleted => CurrentValue <= 0;
-        public bool IsFull => CurrentValue == TotalValue;
-        public float MissingValue => TotalValue - CurrentValue;
-
-        public event Action<float, float, float> CurrentHasChanged;
-        public event Action CurrentHasDepleted;
-        public event Action CurrentHasRecharged;
-
-        /// <summary>Tries to add to the amount to the current value.</summary>
-        /// <returns>The remaining amount that was not  added</returns>
-        public float AddToCurrent(float amountToAdd)
-        {
-            var added = Math.Min(TotalValue - CurrentValue, amountToAdd);
-
-            if (added != 0)
-                SetCurrentTo(CurrentValue + added);
-
-            return amountToAdd - added;
-        }
-
-        /// <summary>Tries to remove the amount from the current value</summary>
-        /// <returns>The remaining amount that was not removed</returns>
-        public float RemoveFromCurrent(float amountToRemove)
-        {
-            var removed = Math.Min(CurrentValue, amountToRemove);
-
-            if (removed != 0)
-                SetCurrentTo(CurrentValue - removed);
-
-            return amountToRemove - removed;
-        }
-
-        public void RefillCurrent() => SetCurrentTo(TotalValue);
-        public void DepleteCurrent() => SetCurrentTo(0);
-
-        private void SetCurrentTo(float value)
-        {
-            var resultingValue = Mathf.Clamp(value, 0, TotalValue);
-
-            if (CurrentValue != resultingValue)
-            {
-                CurrentHasChanged?.Invoke(CurrentValue, resultingValue, TotalValue);
-
-                CurrentValue = resultingValue;
-
-                if (IsDepleted)
-                    CurrentHasDepleted?.Invoke();
-                else if (IsFull)
-                    CurrentHasRecharged?.Invoke();
-            }
         }
     }
 }
