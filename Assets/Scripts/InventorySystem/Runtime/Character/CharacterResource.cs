@@ -48,30 +48,30 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         public void RefillCurrent() => SetCurrentTo(TotalValue);
         public void DepleteCurrent() => SetCurrentTo(0);
 
-        private void SetCurrentTo(float value)
-        {
-            //CalculateTotalValue();
+        private void SetCurrentTo(float value) => SetCurrentTo(value, TotalValue);
 
-            var clampedValue = Mathf.Clamp(value, 0, TotalValue);
+        private void SetCurrentTo(float value, float total)
+        {
+            var clampedValue = Mathf.Clamp(value, 0, total);
 
             if (CurrentValue != clampedValue)
             {
-                CurrentHasChanged?.Invoke(CurrentValue, clampedValue, TotalValue);
+                CurrentHasChanged?.Invoke(CurrentValue, clampedValue, total);
 
                 CurrentValue = clampedValue;
 
                 if (IsDepleted)
                     CurrentHasDepleted?.Invoke();
-                else if (IsFull)
+                else if (clampedValue >= total)
                     CurrentHasRecharged?.Invoke();
             }
         }
 
-        public override void CalculateTotalValue()
+        protected override float CalculateTotalValue()
         {
-            base.CalculateTotalValue();
+            var total = base.CalculateTotalValue();
 
-            SetCurrentTo(CurrentValue);
+            SetCurrentTo(CurrentValue, total);
 
             #region Percentage Recalculation <-- requires review!!
             //float currentPercent = 100f;
@@ -85,16 +85,13 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             ///// set currentValue to the percentage it was before recalculating maxValue
             //SetCurrentValue((int)(MaxValue * currentPercent / 100f));
             #endregion
+
+            return total;
         }
 
         public CharacterResource GetResourceCopy()
         {
             var other = (CharacterResource)MemberwiseClone();
-            other.name = string.Copy(name);
-            other.Stat = Stat;
-            other.BaseValue = BaseValue;
-            other.TotalValue = TotalValue;
-            other.StatModifiers = StatModifiers;
             //other.TotalHasChanged = null; //have no listeners to these deep copies
 
             other.CurrentHasChanged = null;
@@ -104,14 +101,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
         public override CharacterStat GetDeepCopy()
         {
-            var other = (CharacterResource)MemberwiseClone();
-            other.name = string.Copy(name);
-            other.Stat = Stat;
-            other.BaseValue = BaseValue;
-            other.StatModifiers = new List<StatModifier>(StatModifiers);
+            var other = (CharacterResource)base.GetDeepCopy();
             other.CurrentHasChanged = null; //have no listeners to these deep copies
             other.CurrentValue = CurrentValue;
-            other.TotalValue = 0;
             other.CalculateTotalValue();
 
             return other;

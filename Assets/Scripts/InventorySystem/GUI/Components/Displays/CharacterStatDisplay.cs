@@ -3,7 +3,7 @@ using TMPro;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Inventories;
-using ToolSmiths.InventorySystem.Utility.Extensions;
+using Submodules.Utility.Extensions;
 using UnityEngine;
 using UnityEngine.UI;
 using static ToolSmiths.InventorySystem.GUI.Displays.CharacterStatDisplay;
@@ -21,7 +21,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
             {
                 stat = characterStat;
 
-                var statName = stat.Stat.SplitCamelCase();
+                var statName = stat.Stat.ToDescription();
 
                 if (statName.Contains("Percent"))
                     statName = statName.Replace(" Percent", "");

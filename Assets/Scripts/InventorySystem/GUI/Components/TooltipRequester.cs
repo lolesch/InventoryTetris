@@ -1,4 +1,4 @@
-﻿using ToolSmiths.InventorySystem.Utility.Extensions;
+﻿using Submodules.Utility.Extensions;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;

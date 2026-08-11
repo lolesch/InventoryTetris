@@ -6,6 +6,7 @@ using ToolSmiths.InventorySystem.GUI.Displays;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Runtime.Pools;
+using Submodules.Utility.Extensions;
 using ToolSmiths.InventorySystem.Utility.Extensions;
 using UnityEngine;
 

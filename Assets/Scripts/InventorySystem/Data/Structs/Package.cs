@@ -27,8 +27,8 @@ namespace ToolSmiths.InventorySystem.Data
 
         [field: SerializeField] public uint Amount { get; private set; }
 
-        [SerializeField] public readonly uint SpaceLeft => (uint)Item.StackLimit - Amount;
-        [SerializeField] public readonly bool IsValid => Item != null && 0 < Amount;
+        public readonly uint SpaceLeft => (uint)Item.StackLimit - Amount;
+        public readonly bool IsValid => Item != null && 0 < Amount;
 
         /// <summary>Tries to add to the amount (within stacking limit).</summary>
         /// <returns>The amount that was added</returns>

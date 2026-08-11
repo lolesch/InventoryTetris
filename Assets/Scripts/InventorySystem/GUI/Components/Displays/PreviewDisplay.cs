@@ -3,7 +3,7 @@ using TMPro;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Runtime.Pools;
-using ToolSmiths.InventorySystem.Utility.Extensions;
+using Submodules.Utility.Extensions;
 using UnityEngine;
 using UnityEngine.UI;
 

@@ -4,6 +4,7 @@ using ToolSmiths.InventorySystem.Data.Distributions;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Runtime.Provider;
+using Submodules.Utility.Extensions;
 using ToolSmiths.InventorySystem.Utility.Extensions;
 using UnityEngine;
 

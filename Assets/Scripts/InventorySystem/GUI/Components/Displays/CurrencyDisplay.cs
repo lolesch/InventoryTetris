@@ -1,7 +1,7 @@
 ﻿using TMPro;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
-using ToolSmiths.InventorySystem.Utility.Extensions;
+using Submodules.Utility.Extensions;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.GUI.Displays

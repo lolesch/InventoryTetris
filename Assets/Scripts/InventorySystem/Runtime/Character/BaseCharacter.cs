@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
+using Submodules.Utility.Extensions;
 using ToolSmiths.InventorySystem.Utility.Extensions;
 using UnityEngine;
 
@@ -18,7 +19,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         [field: SerializeField] public bool IsInvincible { get; protected set; } = false;
         [field: SerializeField] public bool IsBlocking { get; protected set; } = false;
         [field: SerializeField] public bool SpendResource { get; set; } = true;
-        [SerializeField] public bool IsDead => this.GetResource(StatName.Health).IsDepleted;
+        public bool IsDead => this.GetResource(StatName.Health).IsDepleted;
 
         [field: SerializeField] public CharacterStat[] CharacterStats { get; protected set; }
         [field: SerializeField] public CharacterResource[] CharacterResources { get; protected set; }

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 using ToolSmiths.InventorySystem.Data.Enums;
-using ToolSmiths.InventorySystem.Utility.Extensions;
+using Submodules.Utility.Extensions;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -108,7 +108,7 @@ namespace ToolSmiths.InventorySystem.Data
             public StatName StatName = StatName.Health;
             public Sprite Icon;
 
-            public void OnBeforeSerialize() => name = StatName.SplitCamelCase();
+            public void OnBeforeSerialize() => name = StatName.ToDescription();
             public void OnAfterDeserialize() { }
         }
 

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using ToolSmiths.InventorySystem.Data.Enums;
-using ToolSmiths.InventorySystem.Utility.Extensions;
+using Submodules.Utility.Extensions;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Data
@@ -30,7 +30,7 @@ namespace ToolSmiths.InventorySystem.Data
             Stat = statName;
             BaseValue = baseValue;
             //ModifiedValue = CalculateModifiedValue();
-            name = Stat.SplitCamelCase();
+            name = Stat.ToDescription();
         }
 
         public bool TryRemoveModifier(StatModifier modifier)
@@ -56,7 +56,7 @@ namespace ToolSmiths.InventorySystem.Data
             TotalHasChanged?.Invoke(TotalValue);
         }
 
-        private float CalculateTotalValue() //TODO: improve by using linQ => see CharacterStatsDisplay
+        protected virtual float CalculateTotalValue() //TODO: improve by using linQ => see CharacterStatsDisplay
         {
             //var levelUps = characterLevel - 1;
             var result = BaseValue;// + GrowthPerLevel * characterLevel; // flat increase
@@ -121,7 +121,7 @@ namespace ToolSmiths.InventorySystem.Data
         {
             var isPercent = false;
 
-            var statName = Stat.SplitCamelCase();
+            var statName = Stat.ToDescription();
 
             if (statName.Contains("Percent"))
             {

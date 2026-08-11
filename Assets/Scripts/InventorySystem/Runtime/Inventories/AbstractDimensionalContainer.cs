@@ -11,10 +11,10 @@ namespace ToolSmiths.InventorySystem.Inventories
     [Serializable]
     public abstract class AbstractDimensionalContainer
     {
-        [SerializeField] public AbstractDimensionalContainer(Vector2Int dimensions) => Dimensions = dimensions;
+        public AbstractDimensionalContainer(Vector2Int dimensions) => Dimensions = dimensions;
 
         [field: SerializeField] public readonly Vector2Int Dimensions;
-        [SerializeField] public int Capacity => Dimensions.x * Dimensions.y;
+        public int Capacity => Dimensions.x * Dimensions.y;
 
         public event Action<Dictionary<Vector2Int, Package>> OnContentChanged;
 

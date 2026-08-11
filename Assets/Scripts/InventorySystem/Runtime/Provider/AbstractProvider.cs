@@ -1,5 +1,5 @@
 ﻿using System.Text.RegularExpressions;
-using ToolSmiths.InventorySystem.Utility.Extensions;
+using Submodules.Utility.Extensions;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Runtime.Provider

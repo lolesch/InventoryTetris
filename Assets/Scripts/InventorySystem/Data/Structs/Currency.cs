@@ -18,7 +18,7 @@ namespace ToolSmiths.InventorySystem.Data
         public static readonly uint ironToSilver = copperToSilver / copperToIron; // = 12
         public static readonly uint silverToGold = copperToGold / copperToSilver; // = 5
 
-        [field: SerializeField] public readonly uint Total => Copper + Iron * copperToIron + Silver * copperToSilver + Gold * copperToGold;
+        public readonly uint Total => Copper + Iron * copperToIron + Silver * copperToSilver + Gold * copperToGold;
 
         public Currency( uint total )
         {

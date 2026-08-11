@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using ToolSmiths.InventorySystem.Utility.Extensions;
+using Submodules.Utility.Extensions;
 using UnityEngine;
 using UnityEngine.UI;
 

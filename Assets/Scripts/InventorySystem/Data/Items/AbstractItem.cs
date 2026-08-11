@@ -4,7 +4,7 @@ using System.Linq;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Inventories;
-using ToolSmiths.InventorySystem.Utility.Extensions;
+using Submodules.Utility.Extensions;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Items
@@ -20,17 +20,17 @@ namespace ToolSmiths.InventorySystem.Items
         // consider changing to prefix/suffix system
         /// keep this as list (vs array) since crafting migth add/remove Affixes
         [field: SerializeField] public List<CharacterStatModifier> Affixes { get; protected set; } = new List<CharacterStatModifier>();
-        [SerializeField] public float SellValue => CalculateGoldValue();
+        public float SellValue => CalculateGoldValue();
 
         // TODO: handle overTime effects => Stats != Effects --> see ARPG_Combat for DoT_effects
         public new abstract string ToString();
 
         public static Color GetRarityColor(ItemRarity rarity) => rarity switch
         {
-            ItemRarity.Common => ColorExtensions.ItemRarityCommon,
-            ItemRarity.Magic => ColorExtensions.ItemRarityMagic,
-            ItemRarity.Rare => ColorExtensions.ItemRarityRare,
-            ItemRarity.Unique => ColorExtensions.ItemRarityUnique,
+            ItemRarity.Common => Color.white,
+            ItemRarity.Magic => new(0, 0.75f, 1, 1), // blue
+            ItemRarity.Rare => Color.yellow,
+            ItemRarity.Unique => new(1, 0.35f, 0, 1), // orange
 
             //ItemRarity.Uncommon => Color.gray,
             //ItemRarity.Crafted => new Color(0.4f, 0, 1, 1), // purple
