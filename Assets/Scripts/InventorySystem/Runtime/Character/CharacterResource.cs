@@ -11,7 +11,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
     {
         [field: SerializeField, ReadOnly] public float CurrentValue { get; private set; }
 
-        public CharacterResource(StatName resourceName, float baseValue) : base(resourceName, baseValue) => RefillCurrent();
+        public CharacterResource(StatName resourceName, float baseValue) : base(resourceName, baseValue)
+        {
+            RefillCurrent();
+            TotalHasChanged += _ => SetCurrentTo(CurrentValue);
+        }
 
         public bool IsDepleted => CurrentValue <= 0;
         public bool IsFull => CurrentValue >= TotalValue;
@@ -67,44 +71,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             }
         }
 
-        protected override float CalculateTotalValue()
-        {
-            var total = base.CalculateTotalValue();
-
-            SetCurrentTo(CurrentValue, total);
-
-            #region Percentage Recalculation <-- requires review!!
-            //float currentPercent = 100f;
-            //
-            ///// store the currentValue percentage before recalculating maxValue
-            //if (0 < MaxValue)
-            //    currentPercent = CurrentValue * 100f / MaxValue;
-            //
-            //base.RecalculateValues();
-            //
-            ///// set currentValue to the percentage it was before recalculating maxValue
-            //SetCurrentValue((int)(MaxValue * currentPercent / 100f));
-            #endregion
-
-            return total;
-        }
-
-        public CharacterResource GetResourceCopy()
-        {
-            var other = (CharacterResource)MemberwiseClone();
-            //other.TotalHasChanged = null; //have no listeners to these deep copies
-
-            other.CurrentHasChanged = null;
-
-            return other;
-        }
-
         public override CharacterStat GetDeepCopy()
         {
             var other = (CharacterResource)base.GetDeepCopy();
-            other.CurrentHasChanged = null; //have no listeners to these deep copies
             other.CurrentValue = CurrentValue;
-            other.CalculateTotalValue();
+            other.CurrentHasChanged = null; //have no listeners to these deep copies
 
             return other;
         }
