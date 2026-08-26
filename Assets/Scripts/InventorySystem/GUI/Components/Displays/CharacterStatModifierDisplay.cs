@@ -14,6 +14,9 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
     {
         public struct CharacterStatModifierData
         {
+            private const float MinFontSize = 18f;
+            private const float MaxFontSize = 24f;
+
             private CharacterStatModifier statMod;
             public string displayText;
             public float displayFontSize;
@@ -24,7 +27,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                 statMod = characterStatModifier;
                 icon = ItemProvider.Instance.ItemTypeData.GetStatIcon(statMod.Stat);
                 displayText = $"{statMod.Modifier} {statMod.Modifier.Range.ToString().Colored(Color.gray)}";
-                displayFontSize = statMod.Modifier.Value.Map(statMod.Modifier.Range, 18, 24);
+                displayFontSize = RollQualityFontSize(statMod.Modifier);
             }
 
             public CharacterStatModifierData(CharacterStatModifier characterStatModifier, Package compareTo)
@@ -46,7 +49,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 
                 icon = ItemProvider.Instance.ItemTypeData.GetStatIcon(statMod.Stat);
                 displayText = $"{statMod.Modifier} {statMod.Modifier.Range.ToString().Colored(Color.gray)} {differenceString.Colored(comparisonColor)}";
-                displayFontSize = statMod.Modifier.Value.Map(statMod.Modifier.Range, 18, 24);
+                displayFontSize = RollQualityFontSize(statMod.Modifier);
 
                 static int CompareStatValues(CharacterStatModifier stat, Package compareTo, out float difference)
                 {
@@ -67,6 +70,18 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 
                     return stat.Modifier.Value.CompareTo(other);
                 }
+            }
+
+            /// <summary>
+            /// Font size scales with roll quality: an affix at the bottom of its range renders at
+            /// <see cref="MinFontSize"/>, one at the top at <see cref="MaxFontSize"/>. The
+            /// <see cref="Mathf.Clamp01"/> keeps a value outside its range — or a degenerate
+            /// (zero-width) range — from extrapolating past those bounds and blowing the text up.
+            /// </summary>
+            private static float RollQualityFontSize(StatModifier modifier)
+            {
+                var rollQuality = Mathf.Clamp01(modifier.Value.MapTo01(modifier.Range.x, modifier.Range.y));
+                return rollQuality.MapFrom01(MinFontSize, MaxFontSize);
             }
         }
 
