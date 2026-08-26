@@ -58,3 +58,6 @@ sysinfo.txt
 # Crashlytics generated file
 crashlytics-build.properties
 
+# Per-user editor state (window layouts, search index) - see upstream Unity.gitignore
+/[Uu]serSettings/
+
