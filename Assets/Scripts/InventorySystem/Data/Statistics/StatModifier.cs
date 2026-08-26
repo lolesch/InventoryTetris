@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 using ToolSmiths.InventorySystem.Data.Enums;
 using UnityEngine;
 
-[assembly: InternalsVisibleTo("Tests")]
+[assembly: InternalsVisibleTo("InventorySystem.Data.Tests")]
 
 namespace ToolSmiths.InventorySystem.Data
 {

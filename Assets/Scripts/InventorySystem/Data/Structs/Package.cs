@@ -4,7 +4,7 @@ using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
 using UnityEngine;
 
-[assembly: InternalsVisibleTo("Tests")]
+[assembly: InternalsVisibleTo("InventorySystem.Data.Tests")]
 
 namespace ToolSmiths.InventorySystem.Data
 {

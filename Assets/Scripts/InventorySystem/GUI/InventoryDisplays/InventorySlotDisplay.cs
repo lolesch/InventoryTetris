@@ -7,7 +7,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-[assembly: InternalsVisibleTo("Tests")]
+[assembly: InternalsVisibleTo("InventorySystem.Data.Tests")]
 
 namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 {
