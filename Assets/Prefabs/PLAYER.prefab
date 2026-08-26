@@ -320,72 +320,104 @@ MonoBehaviour:
   <CharacterStats>k__BackingField:
   - name: 'Attack Speed: 0.658'
     <Stat>k__BackingField: 1
-    <BaseValue>k__BackingField: 0.658
-    <StatModifiers>k__BackingField: []
+    mutableValue:
+      totalValue: 0.658
+      baseValue: 0.658
+      modifiers: []
   - name: 'Physical Damage: 59'
     <Stat>k__BackingField: 2
-    <BaseValue>k__BackingField: 59
-    <StatModifiers>k__BackingField: []
+    mutableValue:
+      totalValue: 59
+      baseValue: 59
+      modifiers: []
   - name: 'Magical Damage: 0'
     <Stat>k__BackingField: 3
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
+    mutableValue:
+      totalValue: 0
+      baseValue: 0
+      modifiers: []
   - name: 'Armor Penetration: 0'
     <Stat>k__BackingField: 4
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
+    mutableValue:
+      totalValue: 0
+      baseValue: 0
+      modifiers: []
   - name: 'Magic Penetration: 0'
     <Stat>k__BackingField: 5
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
+    mutableValue:
+      totalValue: 0
+      baseValue: 0
+      modifiers: []
   - name: 'Health Regeneration: 3.5'
     <Stat>k__BackingField: 12
-    <BaseValue>k__BackingField: 3.5
-    <StatModifiers>k__BackingField: []
+    mutableValue:
+      totalValue: 3.5
+      baseValue: 3.5
+      modifiers: []
   - name: 'Armor: 26'
     <Stat>k__BackingField: 13
-    <BaseValue>k__BackingField: 26
-    <StatModifiers>k__BackingField: []
+    mutableValue:
+      totalValue: 26
+      baseValue: 26
+      modifiers: []
   - name: 'Magic Resist: 30'
     <Stat>k__BackingField: 14
-    <BaseValue>k__BackingField: 30
-    <StatModifiers>k__BackingField: []
+    mutableValue:
+      totalValue: 30
+      baseValue: 30
+      modifiers: []
   - name: 'Movement Speed: 325'
     <Stat>k__BackingField: 21
-    <BaseValue>k__BackingField: 325
-    <StatModifiers>k__BackingField: []
+    mutableValue:
+      totalValue: 325
+      baseValue: 325
+      modifiers: []
   - name: 'Resource Regeneration: 7'
     <Stat>k__BackingField: 23
-    <BaseValue>k__BackingField: 7
-    <StatModifiers>k__BackingField: []
+    mutableValue:
+      totalValue: 7
+      baseValue: 7
+      modifiers: []
   - name: 'Increased Item Rarity: 0'
     <Stat>k__BackingField: 24
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
+    mutableValue:
+      totalValue: 0
+      baseValue: 0
+      modifiers: []
   - name: 'Increased Item Quantity: 0'
     <Stat>k__BackingField: 25
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
+    mutableValue:
+      totalValue: 0
+      baseValue: 0
+      modifiers: []
   <CharacterResources>k__BackingField:
   - name: 'Health: 640'
     <Stat>k__BackingField: 11
-    <BaseValue>k__BackingField: 640
-    <StatModifiers>k__BackingField: []
+    mutableValue:
+      totalValue: 640
+      baseValue: 640
+      modifiers: []
     <CurrentValue>k__BackingField: 100
   - name: 'Resource: 280'
     <Stat>k__BackingField: 22
-    <BaseValue>k__BackingField: 280
-    <StatModifiers>k__BackingField: []
+    mutableValue:
+      totalValue: 280
+      baseValue: 280
+      modifiers: []
     <CurrentValue>k__BackingField: 60
   - name: 'Shield: 0'
     <Stat>k__BackingField: 17
-    <BaseValue>k__BackingField: 0
-    <StatModifiers>k__BackingField: []
+    mutableValue:
+      totalValue: 0
+      baseValue: 0
+      modifiers: []
     <CurrentValue>k__BackingField: 0
   - name: 'Experience: 280'
     <Stat>k__BackingField: -1
-    <BaseValue>k__BackingField: 280
-    <StatModifiers>k__BackingField: []
+    mutableValue:
+      totalValue: 280
+      baseValue: 280
+      modifiers: []
     <CurrentValue>k__BackingField: 280
   <CharacterLevel>k__BackingField: 1
   characterStatPrefab: {fileID: 4578763057697142868}
