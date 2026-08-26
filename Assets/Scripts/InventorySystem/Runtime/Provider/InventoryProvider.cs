@@ -51,11 +51,11 @@ namespace ToolSmiths.InventorySystem.Inventories
         public void Awake()
         {
             /// serialize inventories
-            Equipment = new(equipmentSize);
-            Inventory = new(inventorySize);
-            Stash = new(stashSize);
+            Equipment = new(equipmentSize, "Equipment");
+            Inventory = new(inventorySize, "Inventory");
+            Stash = new(stashSize, "Stash");
 
-            Store = new(storeSize);
+            Store = new(storeSize, "Store");
             RestockStore();
 
             SetInventories();

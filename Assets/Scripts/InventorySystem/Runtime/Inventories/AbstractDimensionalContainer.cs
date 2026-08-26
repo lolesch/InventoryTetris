@@ -11,10 +11,17 @@ namespace ToolSmiths.InventorySystem.Inventories
     [Serializable]
     public abstract class AbstractDimensionalContainer
     {
-        public AbstractDimensionalContainer(Vector2Int dimensions) => Dimensions = dimensions;
+        public AbstractDimensionalContainer(Vector2Int dimensions, string label = null)
+        {
+            Dimensions = dimensions;
+            Label = label ?? GetType().Name;
+        }
 
         [field: SerializeField] public readonly Vector2Int Dimensions;
         public int Capacity => Dimensions.x * Dimensions.y;
+
+        /// <summary>Distinguishes containers that share a class (Inventory/Stash/Store are all CharacterInventory) in logs.</summary>
+        public string Label { get; }
 
         public event Action<Dictionary<Vector2Int, Package>> OnContentChanged;
 
@@ -70,7 +77,7 @@ namespace ToolSmiths.InventorySystem.Inventories
                         package = AddAtPosition(new(x, y), package);
 
             if (0 < package.Amount)
-                Debug.LogWarning($"{GetType().Name} is full!");
+                Debug.LogWarning($"{Label} is full!");
 
             return 0 == package.Amount;
         }

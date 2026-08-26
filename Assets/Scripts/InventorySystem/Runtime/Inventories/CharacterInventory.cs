@@ -11,7 +11,7 @@ namespace ToolSmiths.InventorySystem.Inventories
     [System.Serializable]
     public class CharacterInventory : AbstractDimensionalContainer
     {
-        public CharacterInventory(Vector2Int dimensions) : base(dimensions) { }
+        public CharacterInventory(Vector2Int dimensions, string label = null) : base(dimensions, label) { }
         public override bool TryAddToContainer(ref Package package)
         {
             if (!package.IsValid)

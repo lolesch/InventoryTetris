@@ -12,7 +12,7 @@ namespace ToolSmiths.InventorySystem.Inventories
     [System.Serializable]
     public class CharacterEquipment : AbstractDimensionalContainer
     {
-        public CharacterEquipment(Vector2Int dimensions) : base(dimensions) { }
+        public CharacterEquipment(Vector2Int dimensions, string label = null) : base(dimensions, label) { }
 
         [SerializeField] public bool autoEquip = true;
 
