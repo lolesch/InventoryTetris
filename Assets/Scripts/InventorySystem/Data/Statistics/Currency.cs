@@ -1,5 +1,4 @@
 ﻿using System;
-using ToolSmiths.InventorySystem.Data.Enums;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Data
@@ -36,44 +35,6 @@ namespace ToolSmiths.InventorySystem.Data
             Iron = iron;
             Silver = silver;
             Gold = gold;
-        }
-
-        public Currency GetClosestPriceWithoutChange( Currency price )
-        {
-            if( Copper < price.Copper )
-                price.RoundTo( CurrencyType.Iron );
-            if( Iron < price.Iron )
-                price.RoundTo( CurrencyType.Silver );
-            if( Silver < price.Silver )
-                price.RoundTo( CurrencyType.Gold );
-
-            return price;
-        }
-
-        private void RoundTo( CurrencyType type )
-        {
-            if (type == CurrencyType.Iron)
-            {
-                Copper = 0;
-                Iron += 1;
-                if (Iron >= ironToSilver)
-                    RoundTo( CurrencyType.Silver );
-            }
-            else if (type == CurrencyType.Silver)
-            {
-                Copper = 0;
-                Iron = 0;
-                Silver += 1;
-                if (Silver >= silverToGold)
-                    RoundTo( CurrencyType.Gold );
-            }
-            else if (type == CurrencyType.Gold)
-            {
-                Copper = 0;
-                Iron = 0;
-                Silver = 0;
-                Gold += 1;
-            }
         }
 
         /// <summary>
