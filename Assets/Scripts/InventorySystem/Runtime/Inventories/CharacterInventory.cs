@@ -130,27 +130,76 @@ namespace ToolSmiths.InventorySystem.Inventories
             return otherPackagePositions.Distinct().ToList();
         }
 
-        public bool TryPay( float buyValue )
+        public bool TryPay(float buyValue)
         {
-            var cash = CalculateCash();
-
-            var price = new Currency( buyValue );
-            price = cash.GetClosestPriceWithoutChange( price );
-
-            if( cash.Gold < price.Gold || cash.Silver < price.Silver || cash.Iron < price.Iron || cash.Copper < price.Copper )
+            if (!CalculateCash().TryGetPayment(new Currency(buyValue), out var toRemove, out var change))
                 return false;
 
-            var copperToPay = new Package( this, new CurrencyItem( CurrencyType.Copper ), price.Copper );
-            var ironToPay = new Package( this, new CurrencyItem( CurrencyType.Iron ), price.Iron );
-            var silverToPay = new Package( this, new CurrencyItem( CurrencyType.Silver ), price.Silver );
-            var goldToPay = new Package( this, new CurrencyItem( CurrencyType.Gold ), price.Gold );
+            RemoveCurrency(CurrencyType.Copper, toRemove.Copper);
+            RemoveCurrency(CurrencyType.Iron, toRemove.Iron);
+            RemoveCurrency(CurrencyType.Silver, toRemove.Silver);
+            RemoveCurrency(CurrencyType.Gold, toRemove.Gold);
 
-            _ = RemoveFromContainer( copperToPay );
-            _ = RemoveFromContainer( ironToPay );
-            _ = RemoveFromContainer( silverToPay );
-            _ = RemoveFromContainer( goldToPay );
+            if (0u < change.Total)
+                AddChange(change);
 
             return true;
+        }
+
+        public bool CanAfford(float buyValue) => new Currency(buyValue).Total <= CalculateCash().Total;
+
+        /// <summary>
+        /// Removes <paramref name="amount"/> coins of <paramref name="type"/> from the
+        /// stored currency packages. The remove-side mirror of <see cref="CalculateCash"/>;
+        /// unlike RemoveFromContainer it matches on CurrencyType, not reference equality.
+        /// </summary>
+        private void RemoveCurrency(CurrencyType type, uint amount)
+        {
+            if (0u == amount)
+                return;
+
+            foreach (var position in StoredPackages.Keys.ToList())
+            {
+                if (0u == amount)
+                    break;
+
+                if (!StoredPackages.TryGetValue(position, out var stored))
+                    continue;
+
+                if (stored.Item is not CurrencyItem coin || coin.CurrencyType != type)
+                    continue;
+
+                var take = Math.Min(amount, stored.Amount);
+                _ = RemoveAtPosition(position, new Package(this, stored.Item, take));
+                amount -= take;
+            }
+
+            if (0u < amount)
+                Debug.LogWarning($"{nameof(RemoveCurrency)}: {amount} {type} left unremoved - wallet desync?");
+        }
+
+        /// <summary>
+        /// Returns change coins to the inventory, largest denomination first. Each
+        /// denomination of a valid change amount is always below its stack limit
+        /// (the overshoot at any denomination is less than that denomination's value).
+        /// The full-inventory edge (change dropped) is acknowledged - see
+        /// dev/specs/2026-08-26-shop-currency-followups.md section 2.
+        /// </summary>
+        private void AddChange(Currency change)
+        {
+            AddCoins(CurrencyType.Gold, change.Gold);
+            AddCoins(CurrencyType.Silver, change.Silver);
+            AddCoins(CurrencyType.Iron, change.Iron);
+            AddCoins(CurrencyType.Copper, change.Copper);
+
+            void AddCoins(CurrencyType type, uint count)
+            {
+                if (0u == count)
+                    return;
+
+                var package = new Package(this, ItemProvider.Instance.GenerateCurrency(type), count);
+                _ = TryAddToContainer(ref package);
+            }
         }
 
         private Currency CalculateCash()
@@ -177,17 +226,5 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             return new Currency( copper, iron, silver, gold );
         }
-    }
-
-    // CONTINUE HERE ...
-    public class VendorSupply : AbstractDimensionalContainer
-    {
-        public VendorSupply(Vector2Int dimensions) : base(dimensions) { }
-
-        public override Package AddAtPosition(Vector2Int position, Package package)
-            => throw new NotImplementedException();
-        public override List<Vector2Int> GetStoredItemsAt(Vector2Int position, Vector2Int dimension) => throw new NotImplementedException();
-
-        public void Restock() { }
     }
 }

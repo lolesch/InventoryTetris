@@ -76,6 +76,47 @@ namespace ToolSmiths.InventorySystem.Data
             }
         }
 
+        /// <summary>
+        /// Works out how to pay <paramref name="price"/> from this wallet, spending the
+        /// smallest denominations first so large coins are kept. Returns false (both
+        /// outs left at zero) when this wallet's total value is below the price; a zero
+        /// price returns true and charges nothing.
+        /// </summary>
+        public readonly bool TryGetPayment(Currency price, out Currency toRemove, out Currency change)
+        {
+            toRemove = default;
+            change = default;
+
+            var owed = price.Total;
+
+            if (Total < owed)
+                return false;
+
+            uint paid = 0u;
+
+            var copper = Take(Copper, 1u);
+            var iron = Take(Iron, copperToIron);
+            var silver = Take(Silver, copperToSilver);
+            var gold = Take(Gold, copperToGold);
+
+            toRemove = new Currency(copper, iron, silver, gold);
+            change = new Currency(paid - owed); // paid >= owed is guaranteed once Total >= owed
+            return true;
+
+            uint Take(uint have, uint denomination)
+            {
+                if (owed <= paid || 0u == have)
+                    return 0u;
+
+                var stillOwed = owed - paid;
+                var wanted = (stillOwed + denomination - 1u) / denomination; // ceil(stillOwed / denomination)
+                var taken = have < wanted ? have : wanted;
+
+                paid += taken * denomination;
+                return taken;
+            }
+        }
+
         public readonly override string ToString() => $"{Gold}G, {Silver}S, {Iron}I, {Copper}C ({Total})";
     }
 }
