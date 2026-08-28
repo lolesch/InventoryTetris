@@ -89,10 +89,13 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
                 var storedPositions = Hovered.Container?.GetStoredItemsAt(positionToAdd, AbstractItem.GetDimensions(DraggingPackage.Item.Dimensions));
 
                 if (background)
+                    /// Assigned, not multiplied: tinting by Color.red is component-wise, so it
+                    /// zeroes the green and blue of the rarity colour underneath - magic blue
+                    /// came out black rather than red.
                     /// 0 overlaps drops into empty space, 1 swaps with the item already there
                     /// (AddAtPosition handles both). Only 2+ cannot be placed at all.
                     background.color = 1 < storedPositions.Count
-                        ? initialColor * Color.red
+                        ? WithAlpha(Color.red, backgroundAlpha)
                         : initialColor;
 
 
@@ -166,7 +169,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
                 if (frame)
                     frame.color = WithAlpha(rarityColor, frameAlpha);
 
-                initialColor = WithAlpha(rarityColor * Color.gray * Color.gray, backgroundAlpha);
+                /// Half brightness, not the quarter a slot uses. A slot background is an
+                /// opaque backdrop behind the icon; this one is translucent and floats over
+                /// the grid, so the same darkening would leave it barely visible.
+                initialColor = WithAlpha(rarityColor * Color.gray, backgroundAlpha);
 
                 if (background)
                     background.color = initialColor;
