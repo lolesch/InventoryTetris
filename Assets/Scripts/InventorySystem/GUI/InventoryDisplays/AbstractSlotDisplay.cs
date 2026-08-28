@@ -28,6 +28,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         [SerializeField] protected Image background;
         [SerializeField] protected TextMeshProUGUI amount;
         [SerializeField] protected Image slotBackground;
+        [SerializeField] protected Image hoverOutline;
 
         [SerializeField] protected TextMeshProUGUI debugPosition;
 
@@ -40,6 +41,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
             DragProvider.Instance.OnOverlapping -= SetBackgroundColor;
             DragProvider.Instance.OnOverlapping += SetBackgroundColor;
+
+            if (hoverOutline)
+                hoverOutline.enabled = false;
         }
 
         private void OnDisable() => DragProvider.Instance.OnOverlapping -= SetBackgroundColor;
@@ -67,6 +71,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             DragProvider.Instance.SetHoveredSlot(null);
 
             FadeOutPreview();
+
+            if (hoverOutline)
+                hoverOutline.enabled = false;
         }
 
         public void OnPointerEnter(PointerEventData eventData)
@@ -74,6 +81,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             DragProvider.Instance.SetHoveredSlot(this);
 
             FadeInPreview();
+
+            if (hoverOutline)
+                hoverOutline.enabled = true;
         }
 
         public void OnBeginDrag(PointerEventData eventData)
