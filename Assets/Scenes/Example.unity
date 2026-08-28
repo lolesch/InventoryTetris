@@ -12280,6 +12280,8 @@ MonoBehaviour:
   amount: {fileID: 0}
   slotBackground: {fileID: 0}
   debugPosition: {fileID: 0}
+  hoverExpand: 1
+  hoverLighten: 0.1
 --- !u!114 &871460283
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -21677,6 +21679,8 @@ MonoBehaviour:
   amount: {fileID: 0}
   slotBackground: {fileID: 0}
   debugPosition: {fileID: 0}
+  hoverExpand: 1
+  hoverLighten: 0.1
 --- !u!114 &1620384238
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -32004,18 +32008,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1927298326}
     m_Modifications:
-    - target: {fileID: 925778035279501782, guid: 86b87c1693d2599468c0892b193d234e, type: 3}
-      propertyPath: m_Color.b
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 925778035279501782, guid: 86b87c1693d2599468c0892b193d234e, type: 3}
-      propertyPath: m_Color.g
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 925778035279501782, guid: 86b87c1693d2599468c0892b193d234e, type: 3}
-      propertyPath: m_Color.r
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 3351639405150599751, guid: 86b87c1693d2599468c0892b193d234e, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -32123,22 +32115,6 @@ PrefabInstance:
     - target: {fileID: 4910545370180954890, guid: 86b87c1693d2599468c0892b193d234e, type: 3}
       propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
       value: 1801810542
-      objectReference: {fileID: 0}
-    - target: {fileID: 5062772906587210717, guid: 86b87c1693d2599468c0892b193d234e, type: 3}
-      propertyPath: m_Color.a
-      value: 0.2
-      objectReference: {fileID: 0}
-    - target: {fileID: 5062772906587210717, guid: 86b87c1693d2599468c0892b193d234e, type: 3}
-      propertyPath: m_Color.b
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 5062772906587210717, guid: 86b87c1693d2599468c0892b193d234e, type: 3}
-      propertyPath: m_Color.g
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 5062772906587210717, guid: 86b87c1693d2599468c0892b193d234e, type: 3}
-      propertyPath: m_Color.r
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7337777373696248210, guid: 86b87c1693d2599468c0892b193d234e, type: 3}
       propertyPath: m_SizeDelta.x

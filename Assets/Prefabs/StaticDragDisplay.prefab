@@ -73,6 +73,14 @@ PrefabInstance:
     m_TransformParent: {fileID: 4737588000363776923}
     m_Modifications:
     - target: {fileID: 745403343036375855, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
+      propertyPath: m_Color.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 745403343036375855, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
+      propertyPath: m_Color.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 745403343036375855, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
       propertyPath: m_RaycastTarget
       value: 0
       objectReference: {fileID: 0}
@@ -86,19 +94,23 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4666757744575494436, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
       propertyPath: m_Color.a
-      value: 0.5019608
+      value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 4666757744575494436, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
       propertyPath: m_Color.b
-      value: 0.47686014
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4666757744575494436, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
       propertyPath: m_Color.g
-      value: 0.55878377
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4666757744575494436, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
       propertyPath: m_Color.r
-      value: 0.7169812
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4802227727609418227, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
+      propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
+      value: 1801810542
       objectReference: {fileID: 0}
     - target: {fileID: 5384710942150892184, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
       propertyPath: m_PreserveAspect
