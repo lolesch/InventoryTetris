@@ -75,7 +75,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
                 }
 
                 var index = Input.GetKey(KeyCode.LeftControl) ? 1 : 0;
-                hoveredItem.RefreshDisplay(package, equippedItems[index]);
+                var priceOverride = slot is VendorSlotDisplay && package.Item != null
+                    ? VendorSlotDisplay.BuyPrice(package.Item)
+                    : -1f;
+
+                hoveredItem.RefreshDisplay(package, equippedItems[index], priceOverride);
                 compareDisplay1.RefreshDisplay(equippedItems[0], package);
                 compareDisplay2.RefreshDisplay(equippedItems[1], package);
 

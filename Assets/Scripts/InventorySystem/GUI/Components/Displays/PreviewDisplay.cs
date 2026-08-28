@@ -34,7 +34,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
         }
 
         public void RefreshDisplay((Package package, Package compareTo) data) => RefreshDisplay(data.package, data.compareTo);
-        public void RefreshDisplay(Package package, Package compareTo)
+        public void RefreshDisplay(Package package, Package compareTo, float priceOverride = -1f)
         {
             if (!package.IsValid)
             {
@@ -62,7 +62,9 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                 amount.text = 1 < package.Amount ? $"{package.Amount}/{(int)package.Item.StackLimit}" : string.Empty;
 
             if (goldValue)
-                goldValue.RefreshDisplay(new Currency(package.Item.SellValue)); //? $"{package.Item.GoldValue}" : string.Empty;
+                goldValue.RefreshDisplay(0f <= priceOverride
+                    ? new Currency(priceOverride)
+                    : new Currency(package.Item.SellValue));
 
             if (frame)
                 frame.color = rarityColor;
