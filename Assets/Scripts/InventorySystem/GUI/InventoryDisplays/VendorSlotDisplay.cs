@@ -12,6 +12,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
     {
         private GridLayoutGroup gridLayout;
 
+        internal const float Markup = 1.5f;
+        internal static float BuyPrice(AbstractItem item) => item.SellValue * Markup;
+
         protected override void SetDisplaySize(RectTransform display, Package package)
         {
             base.SetDisplaySize(display, package);
@@ -41,47 +44,40 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             if (!Container.TryGetItemAt(ref position, out var package))
                 return;
 
-            if( !InventoryProvider.Instance.Inventory.TryPay( package.Item.SellValue ) )
+            var wallet = InventoryProvider.Instance.Inventory;
+            var price = BuyPrice(package.Item);
+
+            if (!wallet.CanAfford(price))
                 return;
 
             FadeOutPreview();
 
-            #region USE ITEM
-            if (eventData.button == PointerEventData.InputButton.Right)
+            // Right-click and shift-click both move the item straight to the inventory.
+            #region BUY: IMMEDIATE MOVE
+            if (eventData.button == PointerEventData.InputButton.Right || Input.GetKey(KeyCode.LeftShift))
             {
                 _ = Container.RemoveAtPosition(position, package);
 
-                if (InventoryProvider.Instance.Inventory.TryAddToContainer(ref package))
-                    DragProvider.Instance.SetPackage(this, package, Vector2Int.zero);
+                if (wallet.TryAddToContainer(ref package))
+                    _ = wallet.TryPay(price); // affordability already confirmed
                 else
-                    _ = Container.AddAtPosition(position, package);
+                    _ = Container.AddAtPosition(position, package); // bounced back to the shelf, no charge
 
                 return;
             }
-            #endregion USE ITEM
+            #endregion BUY: IMMEDIATE MOVE
 
-            // TODO: trade context system
-            #region QUICK MOVE ITEM
-            if (Input.GetKey(KeyCode.LeftShift))
-            {
-                _ = Container.RemoveAtPosition(position, package);
-
-                if (InventoryProvider.Instance.Inventory.TryAddToContainer(ref package))
-                    DragProvider.Instance.SetPackage(this, package, Vector2Int.zero);
-                else
-                    _ = Container.AddAtPosition(position, package);
-
-                return;
-            }
-            #endregion QUICK MOVE ITEM
-
-            #region DRAG ITEM
+            // Drag: the drag system has no clean cancel/refund path; that gap is
+            // pre-existing and deferred (follow-ups spec).
+            #region BUY: DRAG
             _ = Container.RemoveAtPosition(position, package);
 
-           var positionOffset = Position - position;
+            _ = wallet.TryPay(price);
+
+            var positionOffset = Position - position;
 
             DragProvider.Instance.SetPackage(this, package, positionOffset);
-            #endregion DRAG ITEM
+            #endregion BUY: DRAG
         }
 
         protected override void DropItem(Package package)
