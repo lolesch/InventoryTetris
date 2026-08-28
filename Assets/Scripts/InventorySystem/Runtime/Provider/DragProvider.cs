@@ -17,7 +17,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         [SerializeField] private Image icon;
         [SerializeField] private Image frame;
         [SerializeField] private Image background;
-        [Tooltip("The dragged item's own background colour. Set per drag from its rarity; the overlap tint multiplies on top of it.")]
+        [Tooltip("The authored scrim colour the background returns to. Captured at Awake; the forbidden tint replaces it.")]
         [SerializeField, ReadOnly] private Color initialColor;
         [SerializeField] private TextMeshProUGUI amount;
 
@@ -32,7 +32,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         public Vector2Int PositionOffset { get; private set; }
 
         private float frameAlpha = 1f;
-        private float backgroundAlpha = 1f;
 
 
         private void Awake()
@@ -41,13 +40,14 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
             itemDisplay.gameObject.SetActive(false);
 
-            /// The drag display floats over the grid, so it is authored translucent to keep
-            /// what it overlaps readable. Rarity supplies the hue; these keep the alpha.
+            /// Rarity rides on the frame, which keeps its authored alpha. The background stays
+            /// the authored scrim - at alpha 0.2 a rarity tint there would say nothing, and the
+            /// display has to stay see-through over the grid it is covering.
             if (frame)
                 frameAlpha = frame.color.a;
 
             if (background)
-                backgroundAlpha = background.color.a;
+                initialColor = background.color;
         }
 
         private void Update()
@@ -89,13 +89,13 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
                 var storedPositions = Hovered.Container?.GetStoredItemsAt(positionToAdd, AbstractItem.GetDimensions(DraggingPackage.Item.Dimensions));
 
                 if (background)
-                    /// Assigned, not multiplied: tinting by Color.red is component-wise, so it
-                    /// zeroes the green and blue of the rarity colour underneath - magic blue
-                    /// came out black rather than red.
+                    /// Assigned rather than multiplied so it stays red whatever the scrim is
+                    /// tinted to; colour multiplication is component-wise and only lands on red
+                    /// while the scrim happens to be white.
                     /// 0 overlaps drops into empty space, 1 swaps with the item already there
                     /// (AddAtPosition handles both). Only 2+ cannot be placed at all.
                     background.color = 1 < storedPositions.Count
-                        ? WithAlpha(Color.red, backgroundAlpha)
+                        ? WithAlpha(Color.red, initialColor.a)
                         : initialColor;
 
 
@@ -161,21 +161,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
                     icon.color = Color.white;
                 }
 
-                /// Mirrors AbstractSlotDisplay.RefreshSlotDisplay: the drag display is an
-                /// ItemDisplay instance, so it has to be painted the same way or the item
-                /// loses its rarity colours for the duration of the drag.
-                var rarityColor = AbstractItem.GetRarityColor(package.Item.Rarity);
-
+                /// The drag display is an ItemDisplay instance but nothing repainted it, so a
+                /// dragged item lost its rarity for the length of the drag. The frame carries
+                /// rarity here, exactly as it does in a slot.
                 if (frame)
-                    frame.color = WithAlpha(rarityColor, frameAlpha);
-
-                /// Half brightness, not the quarter a slot uses. A slot background is an
-                /// opaque backdrop behind the icon; this one is translucent and floats over
-                /// the grid, so the same darkening would leave it barely visible.
-                initialColor = WithAlpha(rarityColor * Color.gray, backgroundAlpha);
-
-                if (background)
-                    background.color = initialColor;
+                    frame.color = WithAlpha(AbstractItem.GetRarityColor(package.Item.Rarity), frameAlpha);
 
                 if (amount)
                     amount.text = 1 < package.Amount ? package.Amount.ToString() : string.Empty;
