@@ -21,10 +21,17 @@ namespace ToolSmiths.InventorySystem.Data
 
         public Currency( uint total )
         {
+            // Carry the remainder down instead of re-deriving it at each denomination:
+            // 3 divisions + 3 modulos instead of 3 + 6, and each div/mod pair on the
+            // same operands is one hardware division.
             Gold = total / copperToGold;
-            Silver = total % copperToGold / copperToSilver;
-            Iron = total % copperToGold % copperToSilver / copperToIron;
-            Copper = total % copperToGold % copperToSilver % copperToIron;
+
+            var rest = total % copperToGold;
+            Silver = rest / copperToSilver;
+
+            rest %= copperToSilver;
+            Iron = rest / copperToIron;
+            Copper = rest % copperToIron;
         }
 
         public Currency( float total ) => this = new Currency( (uint)Mathf.Abs( total ) );
