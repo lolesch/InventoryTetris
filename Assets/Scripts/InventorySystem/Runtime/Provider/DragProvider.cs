@@ -15,8 +15,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
         [SerializeField] private RectTransform itemDisplay;
         [SerializeField] private Image icon;
+        [SerializeField] private Image frame;
         [SerializeField] private Image background;
-        [SerializeField] private Color initialColor;
+        [Tooltip("The dragged item's own background colour. Set per drag from its rarity; the overlap tint multiplies on top of it.")]
+        [SerializeField, ReadOnly] private Color initialColor;
         [SerializeField] private TextMeshProUGUI amount;
 
         //private Canvas rootCanvas;
@@ -35,9 +37,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             //_ = transform.root.TryGetComponent(out rootCanvas);
 
             itemDisplay.gameObject.SetActive(false);
-
-            if (background)
-                initialColor = background.color;
         }
 
         private void Update()
@@ -137,7 +136,23 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
                 SetPosition(package);
 
                 if (icon)
+                {
                     icon.sprite = package.Item.Icon;
+                    icon.color = Color.white;
+                }
+
+                /// Mirrors AbstractSlotDisplay.RefreshSlotDisplay: the drag display is an
+                /// ItemDisplay instance, so it has to be painted the same way or the item
+                /// loses its rarity colours for the duration of the drag.
+                var rarityColor = AbstractItem.GetRarityColor(package.Item.Rarity);
+
+                if (frame)
+                    frame.color = rarityColor;
+
+                initialColor = rarityColor * Color.gray * Color.gray;
+
+                if (background)
+                    background.color = initialColor;
 
                 if (amount)
                     amount.text = 1 < package.Amount ? package.Amount.ToString() : string.Empty;
