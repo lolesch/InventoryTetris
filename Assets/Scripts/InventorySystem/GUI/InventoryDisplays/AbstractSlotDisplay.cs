@@ -28,11 +28,28 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         [SerializeField] protected Image background;
         [SerializeField] protected TextMeshProUGUI amount;
         [SerializeField] protected Image slotBackground;
-        [SerializeField] protected Image hoverOutline;
 
         [SerializeField] protected TextMeshProUGUI debugPosition;
 
+        [Space]
+        [Tooltip("Pixels the item frame grows outward on every side while hovered.")]
+        [SerializeField] protected float hoverExpand = 1f;
+        [Tooltip("Thicken the sliced border in step with the frame, so it reads as the frame growing rather than stretching.")]
+        [SerializeField] protected bool scaleHoverBorder = true;
+
         private bool hovering;
+
+        /// The container display that owns this slot; needed to reach the slot an item
+        /// actually renders on, which is its origin - not necessarily the hovered one.
+        private AbstractContainerDisplay owner;
+
+        /// The slot whose frame this slot lit up on enter, so exit can clear the same one.
+        private AbstractSlotDisplay highlighted;
+
+        /// Kept so the highlight can be re-applied after a refresh rebuilds the display.
+        private bool isHighlighted;
+
+        private float defaultPixelsPerUnitMultiplier = 1f;
 
         private void OnEnable()
         {
@@ -42,17 +59,24 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             DragProvider.Instance.OnOverlapping -= SetBackgroundColor;
             DragProvider.Instance.OnOverlapping += SetBackgroundColor;
 
-            if (hoverOutline)
-                hoverOutline.enabled = false;
+            if (frame)
+                defaultPixelsPerUnitMultiplier = frame.pixelsPerUnitMultiplier;
         }
 
-        private void OnDisable() => DragProvider.Instance.OnOverlapping -= SetBackgroundColor;
+        private void OnDisable()
+        {
+            DragProvider.Instance.OnOverlapping -= SetBackgroundColor;
 
-        public void SetupSlot(AbstractDimensionalContainer container, Vector2Int position)
+            ClearHighlight();
+            SetHighlighted(false);
+        }
+
+        public void SetupSlot(AbstractContainerDisplay containerDisplay, AbstractDimensionalContainer container, Vector2Int position)
         {
             name = $"{position.x} | {position.y}";
             Position = position;
             Container = container;
+            owner = containerDisplay;
 
             if (debugPosition != null)
                 debugPosition.text = InventoryProvider.Instance.ShowDebugPositions ? Position.ToString() : "";
@@ -72,8 +96,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
             FadeOutPreview();
 
-            if (hoverOutline)
-                hoverOutline.enabled = false;
+            ClearHighlight();
         }
 
         public void OnPointerEnter(PointerEventData eventData)
@@ -82,8 +105,69 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
             FadeInPreview();
 
-            if (hoverOutline)
-                hoverOutline.enabled = true;
+            if (TryGetOriginSlot(out var origin))
+            {
+                highlighted = origin;
+                origin.SetHighlighted(true);
+            }
+        }
+
+        /// The slot an item is drawn on is its origin, and one item can cover many slots.
+        /// Hovering any covered slot must light up that one item, not the sub-slot the
+        /// cursor happens to be over.
+        private bool TryGetOriginSlot(out AbstractSlotDisplay slot)
+        {
+            slot = null;
+
+            if (Container == null || owner == null)
+                return false;
+
+            var position = Position;
+
+            if (!Container.TryGetItemAt(ref position, out _))
+                return false;
+
+            return owner.TryGetSlotDisplayAt(position, out slot);
+        }
+
+        private void ClearHighlight()
+        {
+            if (highlighted)
+                highlighted.SetHighlighted(false);
+
+            highlighted = null;
+        }
+
+        /// Grows the item frame outward instead of overlaying a second image, so the
+        /// highlight covers exactly the item's own footprint however many slots it spans.
+        internal void SetHighlighted(bool highlight)
+        {
+            isHighlighted = highlight;
+
+            if (!frame)
+                return;
+
+            var rect = frame.rectTransform;
+            var expand = highlight ? hoverExpand : 0f;
+
+            rect.offsetMin = new Vector2(-expand, -expand);
+            rect.offsetMax = new Vector2(expand, expand);
+
+            frame.pixelsPerUnitMultiplier = scaleHoverBorder
+                ? ScaledBorderMultiplier(rect.rect.width, expand)
+                : defaultPixelsPerUnitMultiplier;
+        }
+
+        /// The sliced border is drawn at borderPixels / pixelsPerUnitMultiplier, so to keep
+        /// it proportional to a frame that grew from width to width + 2 * expand, the
+        /// multiplier has to shrink by the same ratio.
+        private float ScaledBorderMultiplier(float width, float expand)
+        {
+            var grown = width + (2f * expand);
+
+            return 0f >= grown
+                ? defaultPixelsPerUnitMultiplier
+                : defaultPixelsPerUnitMultiplier * (width / grown);
         }
 
         public void OnBeginDrag(PointerEventData eventData)
@@ -152,6 +236,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             {
                 if (package.Amount < 1)
                 {
+                    SetHighlighted(false);
                     itemDisplay.gameObject.SetActive(false);
                     return;
                 }
@@ -159,6 +244,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 SetDisplay(package);
 
                 itemDisplay.gameObject.SetActive(true);
+
+                /// SetDisplay resets frame geometry; put the highlight back if we are still under the cursor.
+                SetHighlighted(isHighlighted);
 
                 void SetDisplay(Package package)
                 {

@@ -14,7 +14,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             for (var i = 0; i < containerSlotDisplays.Count; i++)
             {
                 //var position = InventoryProvider.Instance.PlayerEquipment.GetTypeSpecificPositions((containerSlotDisplays[i] as EquipmentSlotDisplay).allowedEquipmentTypes[0]);
-                containerSlotDisplays[i].SetupSlot(Container, new(i, 0));
+                containerSlotDisplays[i].SetupSlot(this, Container, new(i, 0));
             }
 
             if (containerSlotDisplays.Count != Container.Capacity)

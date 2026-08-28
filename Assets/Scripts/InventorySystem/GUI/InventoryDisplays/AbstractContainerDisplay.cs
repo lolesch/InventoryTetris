@@ -24,6 +24,25 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         protected abstract void SetupSlotDisplays();
 
+        /// Maps a container position to its slot display, using the same flat
+        /// x-major indexing Refresh walks the grid with.
+        public bool TryGetSlotDisplayAt(Vector2Int position, out AbstractSlotDisplay slotDisplay)
+        {
+            slotDisplay = null;
+
+            if (Container == null)
+                return false;
+
+            var index = (position.x * Container.Dimensions.y) + position.y;
+
+            if (0 > index || containerSlotDisplays.Count <= index)
+                return false;
+
+            slotDisplay = containerSlotDisplays[index];
+
+            return slotDisplay != null;
+        }
+
         private void SetContainer(AbstractDimensionalContainer container)
         {
             if (container != Container)

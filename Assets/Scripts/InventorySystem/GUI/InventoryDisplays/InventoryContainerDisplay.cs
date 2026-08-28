@@ -52,7 +52,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                         else
                             containerSlotDisplays.Add(Instantiate(slot, transform));
 
-                        containerSlotDisplays[current].SetupSlot(Container, new(x, y));
+                        containerSlotDisplays[current].SetupSlot(this, Container, new(x, y));
                     }
 
                 List<InventorySlotDisplay> DestroyInvalidSlotDisplays()
