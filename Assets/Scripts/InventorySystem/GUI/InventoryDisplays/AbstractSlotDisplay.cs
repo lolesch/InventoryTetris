@@ -34,8 +34,8 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         [Space]
         [Tooltip("Pixels the item frame grows outward on every side while hovered.")]
         [SerializeField] protected float hoverExpand = 1f;
-        [Tooltip("Thicken the sliced border in step with the frame, so it reads as the frame growing rather than stretching.")]
-        [SerializeField] protected bool scaleHoverBorder = true;
+        [Tooltip("How far the item background is lightened toward white while hovered. Equivalent to overlaying white at this alpha.")]
+        [SerializeField, Range(0f, 1f)] protected float hoverLighten = 0.1f;
 
         private bool hovering;
 
@@ -49,7 +49,8 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         /// Kept so the highlight can be re-applied after a refresh rebuilds the display.
         private bool isHighlighted;
 
-        private float defaultPixelsPerUnitMultiplier = 1f;
+        /// The item's untinted background color, as RefreshSlotDisplay derived it from rarity.
+        private Color baseBackgroundColor = Color.white;
 
         private void OnEnable()
         {
@@ -58,9 +59,6 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
             DragProvider.Instance.OnOverlapping -= SetBackgroundColor;
             DragProvider.Instance.OnOverlapping += SetBackgroundColor;
-
-            if (frame)
-                defaultPixelsPerUnitMultiplier = frame.pixelsPerUnitMultiplier;
         }
 
         private void OnDisable()
@@ -144,31 +142,28 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         {
             isHighlighted = highlight;
 
-            if (!frame)
-                return;
+            if (frame)
+            {
+                var expand = highlight ? hoverExpand : 0f;
 
-            var rect = frame.rectTransform;
-            var expand = highlight ? hoverExpand : 0f;
+                frame.rectTransform.offsetMin = new Vector2(-expand, -expand);
+                frame.rectTransform.offsetMax = new Vector2(expand, expand);
+            }
 
-            rect.offsetMin = new Vector2(-expand, -expand);
-            rect.offsetMax = new Vector2(expand, expand);
-
-            frame.pixelsPerUnitMultiplier = scaleHoverBorder
-                ? ScaledBorderMultiplier(rect.rect.width, expand)
-                : defaultPixelsPerUnitMultiplier;
+            RefreshBackground();
         }
 
-        /// The sliced border is drawn at borderPixels / pixelsPerUnitMultiplier, so to keep
-        /// it proportional to a frame that grew from width to width + 2 * expand, the
-        /// multiplier has to shrink by the same ratio.
-        private float ScaledBorderMultiplier(float width, float expand)
+        /// Single place the item background color is decided, so hover and any tint on top
+        /// of it (see VendorSlotDisplay) compose instead of overwriting each other.
+        protected void RefreshBackground()
         {
-            var grown = width + (2f * expand);
-
-            return 0f >= grown
-                ? defaultPixelsPerUnitMultiplier
-                : defaultPixelsPerUnitMultiplier * (width / grown);
+            if (background)
+                background.color = GetBackgroundColor();
         }
+
+        protected virtual Color GetBackgroundColor() => isHighlighted
+            ? Color.Lerp(baseBackgroundColor, Color.white, hoverLighten)
+            : baseBackgroundColor;
 
         public void OnBeginDrag(PointerEventData eventData)
         {
@@ -267,7 +262,10 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                         frame.color = rarityColor;
 
                     if (background)
-                        background.color = rarityColor * Color.gray * Color.gray;
+                    {
+                        baseBackgroundColor = rarityColor * Color.gray * Color.gray;
+                        background.color = baseBackgroundColor;
+                    }
                 }
             }
         }
