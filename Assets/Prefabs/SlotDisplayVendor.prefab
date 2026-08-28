@@ -116,6 +116,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &2500067728926753075 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 399643116822514610, guid: 2287cac91a7c16e479ee377613d24cd7, type: 3}
+  m_PrefabInstance: {fileID: 2826526733295553153}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
 --- !u!114 &3821670337192112076 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 1310718993614611789, guid: 2287cac91a7c16e479ee377613d24cd7, type: 3}
@@ -178,6 +189,7 @@ MonoBehaviour:
   background: {fileID: 9192656050607650247}
   amount: {fileID: 9076310314891943184}
   slotBackground: {fileID: 4727384338315708397}
+  hoverOutline: {fileID: 2500067728926753075}
   debugPosition: {fileID: 2060532796230008483}
 --- !u!114 &9076310314891943184 stripped
 MonoBehaviour:
