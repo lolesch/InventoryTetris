@@ -31,12 +31,23 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
         public Vector2Int PositionOffset { get; private set; }
 
+        private float frameAlpha = 1f;
+        private float backgroundAlpha = 1f;
+
 
         private void Awake()
         {
             //_ = transform.root.TryGetComponent(out rootCanvas);
 
             itemDisplay.gameObject.SetActive(false);
+
+            /// The drag display floats over the grid, so it is authored translucent to keep
+            /// what it overlaps readable. Rarity supplies the hue; these keep the alpha.
+            if (frame)
+                frameAlpha = frame.color.a;
+
+            if (background)
+                backgroundAlpha = background.color.a;
         }
 
         private void Update()
@@ -78,12 +89,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
                 var storedPositions = Hovered.Container?.GetStoredItemsAt(positionToAdd, AbstractItem.GetDimensions(DraggingPackage.Item.Dimensions));
 
                 if (background)
-                    background.color = storedPositions.Count switch
-                    {
-                        0 => initialColor,
-                        1 => initialColor * Color.yellow,
-                        _ => initialColor * Color.red,
-                    };
+                    /// 0 overlaps drops into empty space, 1 swaps with the item already there
+                    /// (AddAtPosition handles both). Only 2+ cannot be placed at all.
+                    background.color = 1 < storedPositions.Count
+                        ? initialColor * Color.red
+                        : initialColor;
 
 
                 //var requiredPositions = Hovered.Container.CalculateRequiredPositions(positionToAdd, Package.Item.Dimensions);
@@ -98,6 +108,13 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
                 //var overlappingPositions = requiredPositions.Intersect(usedPositions);
             }
+        }
+
+        private static Color WithAlpha(Color color, float alpha)
+        {
+            color.a = alpha;
+
+            return color;
         }
 
         private void ResetOverlapTint()
@@ -147,9 +164,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
                 var rarityColor = AbstractItem.GetRarityColor(package.Item.Rarity);
 
                 if (frame)
-                    frame.color = rarityColor;
+                    frame.color = WithAlpha(rarityColor, frameAlpha);
 
-                initialColor = rarityColor * Color.gray * Color.gray;
+                initialColor = WithAlpha(rarityColor * Color.gray * Color.gray, backgroundAlpha);
 
                 if (background)
                     background.color = initialColor;
