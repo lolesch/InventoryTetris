@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using TMPro;
 using ToolSmiths.InventorySystem.Data;
@@ -56,15 +55,10 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         {
             if (debugPosition != null)
                 debugPosition.text = InventoryProvider.Instance.ShowDebugPositions ? Position.ToString() : "";
-
-            DragProvider.Instance.OnOverlapping -= SetBackgroundColor;
-            DragProvider.Instance.OnOverlapping += SetBackgroundColor;
         }
 
         private void OnDisable()
         {
-            DragProvider.Instance.OnOverlapping -= SetBackgroundColor;
-
             ClearHighlight();
             SetHighlighted(false);
         }
@@ -267,25 +261,6 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                         background.color = baseBackgroundColor;
                     }
                 }
-            }
-        }
-
-        public void SetBackgroundColor(List<Vector2Int> overlappingPositions)
-        {
-            if (slotBackground)
-            {
-                var alpha = slotBackground.color.a;
-
-                if (0 <= overlappingPositions.Count) // OR if not containing any item
-                    slotBackground.color = Color.white;
-                else
-                {
-                    foreach (var item in overlappingPositions)
-                        if (item == Position)
-                            slotBackground.color = (overlappingPositions.Count == 1) ? Color.yellow : Color.red;
-                }
-
-                slotBackground.color *= new Vector4(1, 1, 1, alpha);
             }
         }
     }

@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using TMPro;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.GUI.InventoryDisplays;
@@ -31,8 +29,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
         public Vector2Int PositionOffset { get; private set; }
 
-        public event Action<List<Vector2Int>> OnOverlapping;
-
 
         private void Awake()
         {
@@ -55,8 +51,14 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
             void HighlightOverlappingSlots()
             {
+                /// Every early return has to clear the tint. Bailing out while a previous
+                /// slot's red is still on screen is what made large items look undroppable
+                /// over the floor and sell slots, which have no container of their own.
                 if (Hovered == null || DraggingPackage.Item == null)
+                {
+                    ResetOverlapTint();
                     return;
+                }
 
                 /// The pivot is the mouse position within the items dimensions
                 var positionPivot = itemDisplay.pivot;
@@ -69,7 +71,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
                 var positionToAdd = Hovered.Position - positionDiff;
 
                 if (Hovered.Container == null)
+                {
+                    ResetOverlapTint();
                     return;
+                }
 
                 var storedPositions = Hovered.Container?.GetStoredItemsAt(positionToAdd, AbstractItem.GetDimensions(DraggingPackage.Item.Dimensions));
 
@@ -81,9 +86,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
                         _ => initialColor * Color.red,
                     };
 
-                OnOverlapping?.Invoke(storedPositions);
-                //TODO: invoke an event each time the drag display is entering new overlapping positions
-                // each slotDisplay will listen to this event and color its background based on the overlapping result
 
                 //var requiredPositions = Hovered.Container.CalculateRequiredPositions(positionToAdd, Package.Item.Dimensions);
                 //
@@ -97,6 +99,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
                 //var overlappingPositions = requiredPositions.Intersect(usedPositions);
             }
+        }
+
+        private void ResetOverlapTint()
+        {
+            if (background)
+                background.color = initialColor;
         }
 
         private void SetToMousePosition()
