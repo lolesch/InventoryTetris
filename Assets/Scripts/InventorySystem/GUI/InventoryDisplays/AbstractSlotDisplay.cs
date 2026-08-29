@@ -34,7 +34,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         [Tooltip("Pixels the item frame grows outward on every side while hovered.")]
         [SerializeField] protected float hoverExpand = 1f;
         [Tooltip("How far the item background is lightened toward white while hovered. Equivalent to overlaying white at this alpha.")]
-        [SerializeField, Range(0f, 1f)] protected float hoverLighten = 0.1f;
+        [SerializeField, Range(0f, 1f)] protected float hoverLighten = 0.25f;
 
         private bool hovering;
 
@@ -159,18 +159,12 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         /// The hover lift, applied to whatever colour the slot settled on, so a subclass
         /// that *replaces* the colour still responds to hover instead of going flat.
-        /// Alpha is carried over untouched: lightening is a colour change, and a tint that
-        /// is deliberately see-through has to stay that way while hovered.
-        protected Color Lighten(Color color)
-        {
-            if (!isHighlighted)
-                return color;
-
-            var lightened = Color.Lerp(color, Color.white, hoverLighten);
-            lightened.a = color.a;
-
-            return lightened;
-        }
+        /// Alpha lifts along with the colour: that is a no-op on an opaque background,
+        /// but a translucent tint (see VendorSlotDisplay) needs the opacity to move or
+        /// the hover barely registers against it.
+        protected Color Lighten(Color color) => isHighlighted
+            ? Color.Lerp(color, Color.white, hoverLighten)
+            : color;
 
         public void OnBeginDrag(PointerEventData eventData)
         {
