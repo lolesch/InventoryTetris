@@ -155,9 +155,22 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 background.color = GetBackgroundColor();
         }
 
-        protected virtual Color GetBackgroundColor() => isHighlighted
-            ? Color.Lerp(baseBackgroundColor, Color.white, hoverLighten)
-            : baseBackgroundColor;
+        protected virtual Color GetBackgroundColor() => Lighten(baseBackgroundColor);
+
+        /// The hover lift, applied to whatever colour the slot settled on, so a subclass
+        /// that *replaces* the colour still responds to hover instead of going flat.
+        /// Alpha is carried over untouched: lightening is a colour change, and a tint that
+        /// is deliberately see-through has to stay that way while hovered.
+        protected Color Lighten(Color color)
+        {
+            if (!isHighlighted)
+                return color;
+
+            var lightened = Color.Lerp(color, Color.white, hoverLighten);
+            lightened.a = color.a;
+
+            return lightened;
+        }
 
         public void OnBeginDrag(PointerEventData eventData)
         {

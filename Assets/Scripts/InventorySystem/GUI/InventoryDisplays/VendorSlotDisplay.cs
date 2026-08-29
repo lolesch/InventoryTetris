@@ -61,7 +61,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         protected override Color GetBackgroundColor() => CanAffordDisplayed()
             ? base.GetBackgroundColor()
-            : UnaffordableBackground;
+            : Lighten(UnaffordableBackground);
 
         /// An empty slot has nothing to price, so it never reads as unaffordable - which
         /// also clears the tint for free on the slot an item was just bought out of.
