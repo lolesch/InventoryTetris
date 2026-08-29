@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
@@ -14,6 +15,65 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         internal const float Markup = 1.5f;
         internal static float BuyPrice(AbstractItem item) => item.SellValue * Markup;
+
+        /// The same "forbidden" feedback the drag display gives an item that cannot be
+        /// placed (see DragProvider.HighlightOverlappingSlots): red is assigned rather
+        /// than multiplied in, so rarity cannot shift it, and it stays see-through so the
+        /// slot underneath still reads.
+        private static readonly Color UnaffordableBackground = new(1f, 0f, 0f, 0.2f);
+
+        /// Cached so a wallet change can re-tint without waiting for a container refresh.
+        private Package displayedPackage;
+
+        protected override void OnEnable()
+        {
+            base.OnEnable();
+
+            var wallet = InventoryProvider.Instance.Inventory;
+
+            if (wallet != null)
+            {
+                wallet.OnContentChanged -= OnWalletChanged;
+                wallet.OnContentChanged += OnWalletChanged;
+            }
+        }
+
+        protected override void OnDisable()
+        {
+            base.OnDisable();
+
+            var wallet = InventoryProvider.Instance.Inventory;
+
+            if (wallet != null)
+                wallet.OnContentChanged -= OnWalletChanged;
+        }
+
+        /// Cached before the base runs, because refreshing the display repaints the
+        /// background and that has to price the incoming item, not the outgoing one.
+        public override void RefreshSlotDisplay(Package package)
+        {
+            displayedPackage = package;
+
+            base.RefreshSlotDisplay(package);
+        }
+
+        private void OnWalletChanged(Dictionary<Vector2Int, Package> _) => RefreshBackground();
+
+        protected override Color GetBackgroundColor() => CanAffordDisplayed()
+            ? base.GetBackgroundColor()
+            : UnaffordableBackground;
+
+        /// An empty slot has nothing to price, so it never reads as unaffordable - which
+        /// also clears the tint for free on the slot an item was just bought out of.
+        private bool CanAffordDisplayed()
+        {
+            if (!displayedPackage.IsValid)
+                return true;
+
+            var wallet = InventoryProvider.Instance.Inventory;
+
+            return wallet == null || wallet.CanAfford(BuyPrice(displayedPackage.Item));
+        }
 
         protected override void SetDisplaySize(RectTransform display, Package package)
         {

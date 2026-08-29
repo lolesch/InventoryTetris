@@ -51,13 +51,13 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         /// The item's untinted background color, as RefreshSlotDisplay derived it from rarity.
         private Color baseBackgroundColor = Color.white;
 
-        private void OnEnable()
+        protected virtual void OnEnable()
         {
             if (debugPosition != null)
                 debugPosition.text = InventoryProvider.Instance.ShowDebugPositions ? Position.ToString() : "";
         }
 
-        private void OnDisable()
+        protected virtual void OnDisable()
         {
             ClearHighlight();
             SetHighlighted(false);
@@ -219,7 +219,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         protected virtual void SetDisplaySize(RectTransform display, Package package) { }
 
-        public void RefreshSlotDisplay(Package package)
+        public virtual void RefreshSlotDisplay(Package package)
         {
             if (itemDisplay)
             {
