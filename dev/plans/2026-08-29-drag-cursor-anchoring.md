@@ -469,11 +469,13 @@ fix: drop the item where it looks, not where the grab cell says
 
 **Files:**
 - Modify: `Assets/Scripts/InventorySystem/Runtime/Inventories/AbstractDimensionalContainer.cs`
-- Modify: `InventorySlotDisplay.cs`, `VendorSlotDisplay.cs`, `EquipmentSlotDisplay.cs`
+- Modify: `InventorySlotDisplay.cs`, ~~`VendorSlotDisplay.cs`~~, `EquipmentSlotDisplay.cs`
 
 Fixes bug 2. Today `DropItem` re-anchors on every call; a rejected drop therefore grid-aligns the item under the cursor. Gate the placement first, and return without touching the drag display when nothing can land.
 
-- [ ] **Step 1: Add `CanPlaceAt` to `AbstractDimensionalContainer`**
+> **Plan correction (2026-08-30, during execution):** the "apply the same gate in `VendorSlotDisplay.DropItem`" instruction in Step 2 is void, for the same reason Task 3 found — `VendorSlotDisplay.DropItem` is a sell sink (mint currency, hide the display), not a grid-placement drop. It has no `positionToAdd` / `AddAtPosition` to gate. Task 4 touched only `AbstractDimensionalContainer` + `InventorySlotDisplay` + `EquipmentSlotDisplay`.
+
+- [x] **Step 1: Add `CanPlaceAt` to `AbstractDimensionalContainer`** — landed. `IsWithinDimensions` promoted to a `private` method; `IsEmptySpace`'s `IsValidPosition` local function and the new `CanPlaceAt` both call it.
 
 Promote the nested `IsWithinDimensions` local function out of `IsEmptySpace` to a private method (both callers use it), then add:
 
@@ -493,7 +495,7 @@ public bool CanPlaceAt(Vector2Int position, Vector2Int dimension)
 }
 ```
 
-- [ ] **Step 2: Gate `DropItem` on it**
+- [x] **Step 2: Gate `DropItem` on it** — landed in `InventorySlotDisplay.DropItem` (between `TryGetDropPosition` and `AddAtPosition`). `EquipmentSlotDisplay.DropItem` had its `foreach ... if (Position == position)` loop replaced with an `!allowedPositions.Contains(Position)` early `return` (`using System.Linq` added). `VendorSlotDisplay.DropItem` untouched — see plan correction above.
 
 ```csharp
 if (!DragProvider.Instance.TryGetDropPosition(this, out var positionToAdd))
@@ -507,17 +509,13 @@ if (!Container.CanPlaceAt(positionToAdd, AbstractItem.GetDimensions(package.Item
 package = Container.AddAtPosition(positionToAdd, package);
 ```
 
-Apply the same gate in `VendorSlotDisplay.DropItem`. `EquipmentSlotDisplay.DropItem` already gates on `allowedPositions`; give it the matching early `return` so a rejected equip does not re-anchor either.
+- [x] **Step 3: Recompile → green; run the harness** — compiled clean through the unity-mcp bridge (0 errors, negative control confirmed the pipeline reports). Harness `Scenario` BUG 2 rewritten to mirror the gated `DropItem` against a throwaway blocked container: the 2×3 over two items reads `CanPlaceAt=False`, pivot `(0.542, 0.028)` unchanged, `(0, 0)` px jump — *"rejected drop keeps the grip"*. (A 1×1 covers one cell and can never collide with two items, so it is only ever rejected out of bounds; the harness notes this.) BUG 1 still `match`, BUG 3 still red (Task 5), BUG 4 still fixed.
 
-- [ ] **Step 3: Recompile → green; run the harness**
+- [ ] **Step 4: Play-mode check** ← *needs a human*
 
-`BUG 2` must show the pivot unchanged and a `(0, 0)` px jump. This requires updating the harness scenario to call the gate — mirror what `DropItem` now does rather than calling `SetPackage` blindly.
+Hold a 2×3 over a spot where it straddles two items (tint goes red) and click. The item must stay under the cursor, unmoved, still held. Also try an equipment slot with the wrong item type — it must stay held too.
 
-- [ ] **Step 4: Play-mode check**
-
-Hold a 2×3 over a spot where it straddles two items (tint goes red) and click. The item must stay under the cursor, unmoved, still held.
-
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit** — `7dbd9f7`
 
 ```
 fix: keep holding the item when a drop cannot land
