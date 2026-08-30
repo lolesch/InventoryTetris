@@ -532,8 +532,14 @@ fix: keep holding the item when a drop cannot land
 Fixes bug 3. After Task 4 the only way `DropItem` reaches the drag display is a real handover: the package landed (drag ends) or it swapped (a *different* item is now in hand). Neither wants the old item's `positionOffset`.
 
 > See **QA findings** below: QA-1 confirms bug 3 in play-test and notes it also affects same-footprint swaps. QA-2 (stale hover preview after a swap) is adjacent — decide here whether to fix it as a **Task 5b** or fold it into Step 2.
+>
+> **Execution notes (2026-08-30):**
+> - QA-1 (1×1↔1×1 swap not centred) is fixed by this task — same `ReplacePackage` path.
+> - QA-2 (stale hover preview): user decision — **leave for later**, not fixed here. Stays open alongside QA-3/QA-4.
+> - `VendorSlotDisplay.DropItem` is a sink (Task 3 correction) — it got `EndDrag()`, not `ReplacePackage`.
+> - `CharacterEquipment.TrySwap`'s pre-existing infinite recursion (QA-4) is untouched; only the `:118` `SetPackage`→`ReplacePackage` swap the plan asked for was done.
 
-- [ ] **Step 1: Add `ReplacePackage` and `EndDrag` to `DragProvider`**
+- [x] **Step 1: Add `ReplacePackage` and `EndDrag` to `DragProvider`** — landed. `RefreshDisplay` lifted out of `SetPackage` into a shared `private` method (icon / frame / amount / `SetActive(true)` only); `SetPackage` does size + `GrabPivot` inline then `RefreshDisplay` + `SetToMousePosition`; `ReplacePackage` does size + `HandOverPivot` then the same. `ReplacePackage` on an invalid package delegates to `EndDrag`.
 
 ```csharp
 /// <summary>
@@ -572,9 +578,9 @@ public void EndDrag()
 
 Lift the `RefreshDisplay` local function out of `SetPackage` into a private method so both entry points share the icon / frame / amount painting. `SetPackage` keeps its `SetPosition` anchor path; `ReplacePackage` uses the centred pivot.
 
-- [ ] **Step 2: Call it from every handover site**
+- [x] **Step 2: Call it from every handover site** — landed. `InventorySlotDisplay` + `EquipmentSlotDisplay` `DropItem`: `ReplacePackage(package)` after `AddAtPosition`. `SellItenSlotDisplay` + `DropToFloorSlotDisplay` + **`VendorSlotDisplay`** `DropItem`: `EndDrag()` (all three are sinks — `VendorSlotDisplay` per the Task 3 correction, *not* `ReplacePackage`). `CharacterEquipment.cs:118`: `ReplacePackage(previouslyEquipped[i])`.
 
-In `InventorySlotDisplay.DropItem`, `VendorSlotDisplay.DropItem`, `EquipmentSlotDisplay.DropItem`:
+In `InventorySlotDisplay.DropItem`, ~~`VendorSlotDisplay.DropItem`~~, `EquipmentSlotDisplay.DropItem`:
 
 ```csharp
 package = Container.AddAtPosition(positionToAdd, package);
@@ -582,19 +588,17 @@ package = Container.AddAtPosition(positionToAdd, package);
 DragProvider.Instance.ReplacePackage(package);
 ```
 
-In `SellItenSlotDisplay.DropItem` and `DropToFloorSlotDisplay.DropItem`, replace `SetPackage(this, new Package(), Vector2Int.zero)` with `EndDrag()` — they are sinks and the empty-package call was only ever a way to hide the display.
+In `SellItenSlotDisplay.DropItem`, `DropToFloorSlotDisplay.DropItem` and `VendorSlotDisplay.DropItem`, replace `SetPackage(this, new Package(), Vector2Int.zero)` with `EndDrag()` — they are sinks and the empty-package call was only ever a way to hide the display.
 
 In `CharacterEquipment.cs:118`, replace `SetPackage(DragProvider.Instance.Hovered, previouslyEquipped[i], Vector2Int.zero)` with `ReplacePackage(previouslyEquipped[i])`. Unequipping a two-hander hands a weapon back the same way a swap does.
 
-- [ ] **Step 3: Recompile → green; run the harness**
+- [x] **Step 3: Recompile → green; run the harness** — compiled clean via the unity-mcp bridge (0 console errors; the rebuilt `Assembly-CSharp.dll` carries `ReplacePackage` / `EndDrag`; the harness itself calls `provider.ReplacePackage` so a successful run is an integration check). Harness `BUG 3` reads `pivot=(0.5, 0.5)`, `cursor inside the item? yes` for **both** the 1×1↔1×1 and the 2×3→1×1 swap. BUG 1 / BUG 2 / BUG 4 unchanged.
 
-`BUG 3` must read `cursor inside the item? yes` for the 2×3 → 1×1 case, with pivot `(0.5, 0.5)`.
+- [ ] **Step 4: Play-mode check** ← *needs a human*
 
-- [ ] **Step 4: Play-mode check**
+Drop a 2×3 onto a 1×1. The 1×1 must appear centred under the cursor and follow it with no gap. Also do a plain 1×1 ↔ 1×1 swap (QA-1) — it must centre too. Repeat for a two-handed weapon over a filled off-hand (**note QA-4: a 2H over bow+shield still recurses / loses the shield — pre-existing, not this task**). Sell slot, floor slot and vendor buyback still work. QA-2 (stale preview after a swap) is *not* fixed here — expect it to persist.
 
-Drop a 2×3 onto a 1×1. The 1×1 must appear centred under the cursor and follow it with no gap. Also do a plain 1×1 ↔ 1×1 swap (QA-1) — it must centre too. Repeat for a two-handed weapon over a filled off-hand. If QA-2 is being fixed here, check the hover preview now describes the item left in the slot, not the one picked up.
-
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit** — `2eb81c3`
 
 ```
 fix: centre a swapped-out item on the cursor instead of inheriting the old grip
