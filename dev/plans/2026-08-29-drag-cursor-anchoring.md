@@ -10,7 +10,8 @@
 
 ## Global Constraints
 
-- **Base branch:** `fix/drag-cursor-anchoring`, cut from `feature/shop-currency` (28 commits ahead of `main`). Keep that base — `main` is pre-Unity-6000.3 and pre-port.
+- **Base branch:** `fix/drag-cursor-anchoring`, sitting directly on `6653484`, the pushed tip of `feature/mutablefloat-port`. Keep that base — `main` is pre-Unity-6000.3 and pre-port. (`feature/shop-currency` was merged into `feature/mutablefloat-port` and deleted; it is not a base for anything.)
+- **Sibling branch:** `feature/currency-redesign` is unrelated work off the same `6653484`. It was briefly branched off this plan's Task 1 commit and was rebased back onto `feature/mutablefloat-port` on 2026-08-30. Do not commit drag work there, and do not commit the `Currency Type Distribution.asset` edit here — it is currency WIP riding along in the working tree.
 - **Behaviour target:** the drag display keeps following the cursor freely (no grid snapping mid-drag). The *drop* is what changes to agree with the visual, never the other way round.
 - **Swap policy (decided):** a package handed over mid-drag is **centred on the cursor** (pivot `(0.5, 0.5)`). Never inherit the previous item's `positionOffset`.
 - **Cell size:** `60` is currently hardcoded in `DragProvider` and read from `GridLayoutGroup.cellSize` in `InventorySlotDisplay`. This plan replaces the literal with one serialized field; unifying it with the layout group is out of scope (see Follow-ups).
