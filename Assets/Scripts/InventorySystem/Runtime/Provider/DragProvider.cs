@@ -68,29 +68,13 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
                 /// Every early return has to clear the tint. Bailing out while a previous
                 /// slot's red is still on screen is what made large items look undroppable
                 /// over the floor and sell slots, which have no container of their own.
-                if (Hovered == null || DraggingPackage.Item == null)
+                if (!TryGetDropPosition(Hovered, out var positionToAdd))
                 {
                     ResetOverlapTint();
                     return;
                 }
 
-                /// The pivot is the mouse position within the items dimensions
-                var positionPivot = itemDisplay.pivot;
-                positionPivot *= AbstractItem.GetDimensions(DraggingPackage.Item.Dimensions);
-
-                var positionDiff = new Vector2Int(Mathf.FloorToInt(positionPivot.x), Mathf.FloorToInt(positionPivot.y));
-                positionDiff -= new Vector2Int(0, AbstractItem.GetDimensions(DraggingPackage.Item.Dimensions).y - 1);
-                positionDiff.y *= -1;
-
-                var positionToAdd = Hovered.Position - positionDiff;
-
-                if (Hovered.Container == null)
-                {
-                    ResetOverlapTint();
-                    return;
-                }
-
-                var storedPositions = Hovered.Container?.GetStoredItemsAt(positionToAdd, AbstractItem.GetDimensions(DraggingPackage.Item.Dimensions));
+                var storedPositions = Hovered.Container.GetStoredItemsAt(positionToAdd, AbstractItem.GetDimensions(DraggingPackage.Item.Dimensions));
 
                 if (background)
                     /// Assigned rather than multiplied so it stays red whatever the scrim is
@@ -101,20 +85,30 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
                     background.color = 1 < storedPositions.Count
                         ? WithAlpha(Color.red, initialColor.a)
                         : initialColor;
-
-
-                //var requiredPositions = Hovered.Container.CalculateRequiredPositions(positionToAdd, Package.Item.Dimensions);
-                //
-                //var usedPositions = new List<Vector2Int>();
-                //for (var i = 0; i < storedPositions.Count; i++)
-                //    for (var x = 0; x < Package.Item.Dimensions.x; x++)
-                //        for (var y = 0; y < Package.Item.Dimensions.y; y++)
-                //            usedPositions.Add(new Vector2Int(x, y));
-
-                //var emptyPositions = requiredPositions.Except(usedPositions);
-
-                //var overlappingPositions = requiredPositions.Intersect(usedPositions);
             }
+        }
+
+        /// <summary>
+        /// The container position the drag display currently covers. The single answer to
+        /// "where would this drop" - the overlap tint and every DropItem read it, so the
+        /// warning the player sees and the placement they get can never disagree.
+        /// </summary>
+        public bool TryGetDropPosition(AbstractSlotDisplay hovered, out Vector2Int position)
+        {
+            position = default;
+
+            if (hovered == null || hovered.Container == null || !DraggingPackage.IsValid)
+                return false;
+
+            position = DragGeometry.DropPosition(
+                (Vector2)Input.mousePosition / transform.lossyScale,
+                itemDisplay.pivot,
+                AbstractItem.GetDimensions(DraggingPackage.Item.Dimensions),
+                (Vector2)hovered.transform.position / transform.lossyScale,
+                hovered.Position,
+                slotSize);
+
+            return true;
         }
 
         private static Color WithAlpha(Color color, float alpha)

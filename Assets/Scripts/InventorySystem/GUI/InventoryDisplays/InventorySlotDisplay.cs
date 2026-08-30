@@ -22,33 +22,14 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             if (!package.IsValid)
                 return;
 
-            var positionOffset = DragProvider.Instance.PositionOffset;
-
-            var positionToAdd = Position - positionOffset;
-
-            /* TODO: match position offset based on most overlappin slots
-            /// pointerPosition is in pixelCoordinates anchored TopLeft
-            var pointerRelativeToThis = (Vector2)(Input.mousePosition - transform.position) / transform.lossyScale;
-
-            var pointerOffsetPercent = pointerRelativeToThis / (transform as RectTransform).rect.size;
-            //Debug.LogError($"pointerOffsetPercent: {pointerOffsetPercent}");
-            /// match offset addition
-            pointerOffsetPercent.y += 1;
-
-            var pointerOffsettedByHalfASlotSize = pointerOffsetPercent - new Vector2(.5f, .5f);
-            //Debug.LogError($"pointer offsetted by half: {pointerOffsettedByHalfASlotSize}");
-
-            var mouseOffset = new Vector2Int(Mathf.FloorToInt(pointerOffsettedByHalfASlotSize.x), -Mathf.CeilToInt(pointerOffsettedByHalfASlotSize.y));
-            Debug.LogError($"mouseOffsetFloored: {mouseOffset}");
-
-            Debug.LogError($"positionToAdd: {positionToAdd}");
-            Debug.LogError($"positionOffset: {positionToAdd + mouseOffset}");
-            positionToAdd += mouseOffset;
-            */
+            /// One rule, read off the drag display's real rect - the same answer the red
+            /// overlap tint uses, so where it looks like it will land is where it lands.
+            if (!DragProvider.Instance.TryGetDropPosition(this, out var positionToAdd))
+                return;
 
             package = Container.AddAtPosition(positionToAdd, package);
 
-            DragProvider.Instance.SetPackage(this, package, positionOffset, Input.mousePosition);
+            DragProvider.Instance.SetPackage(this, package, DragProvider.Instance.PositionOffset, Input.mousePosition);
 
             Container.InvokeRefresh();
             DragProvider.Instance.Origin.Container?.InvokeRefresh();
