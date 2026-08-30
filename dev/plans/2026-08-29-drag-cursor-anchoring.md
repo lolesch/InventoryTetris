@@ -659,6 +659,32 @@ This is **bug 3**, and it is broader than the table row: it is *not* limited to 
 
 ---
 
+## QA findings — 2026-08-30 (play-test after Task 4)
+
+Two symptoms found dragging a **two-handed weapon over an equipped bow + shield**. Both are **pre-existing `CharacterEquipment` bugs**, not Task 4 regressions — Task 4's `EquipmentSlotDisplay` early return does not change the `(12,0)` drop path (a 2H's slot *is* `(12,0)`, so `allowedPositions.Contains(Position)` passes and it proceeds into `AddAtPosition` exactly as before). User decision (2026-08-30): **record only, fix later** — Task 5 proceeds as written.
+
+A 2H weapon (Crossbow / GreatSword) sits at slot `(12,0)` with a 2×1 footprint, so it covers both `(12,0)` (bow) and `(13,0)` (shield).
+
+### QA-3 — the "can't drop" tint lies for the equipment 2H double-swap
+
+**Repro:** hover a 2H weapon over the equipped bow → red tint, even though the drop is legal (a 2H replaces both weapon slots). Hover it over the shield instead → no red tint. Inconsistent.
+
+**Mechanism:** `DragProvider.HighlightOverlappingSlots` hardcodes `1 < storedPositions.Count → red`. `CharacterEquipment.AddAtPosition` explicitly allows `otherItems.Count <= 2` (the 2H double-swap), so the tint rule is stricter than the placement rule. Over the bow the drop cell rounds to `(12,0)` → `GetStoredItemsAt((12,0),(2,1))` sees bow + shield = 2 → red; over the shield it rounds to `(13,0)` → sees only the shield = 1 → no red.
+
+**Fix (not yet scoped):** make `AbstractDimensionalContainer.CanPlaceAt` (added in Task 4) `virtual`, override it in `CharacterEquipment` to allow the 2H case, and have `HighlightOverlappingSlots` ask `CanPlaceAt` instead of counting overlaps itself — the same "one rule, shared by the tint and the drop" move Task 3 made for `InventorySlotDisplay`.
+
+### QA-4 — equipment swap recurses infinitely and loses an item
+
+**Repro:** drop a 2H weapon onto the equipped bow while a shield is also equipped. The bow moves to the inventory; the shield is deleted. Console: `StackOverflowException` (recursion `TryAddToContainer:36 → AddAtPosition:76 → TrySwap:117 → …`) and, when trying to re-equip the shield afterwards, `KeyNotFoundException: key '(13, 0)'` at `CharacterEquipment.cs:32`.
+
+**Mechanism:**
+- `CharacterEquipment.TrySwap` re-homes each displaced item via `item.Sender.TryAddToContainer(...)`. Equipped items are stored as `new Package(this, …)`, so `Sender` is the equipment itself, and `CharacterEquipment.TryAddToContainer` has a "Force swap" fallback with no give-up condition. 2H displaces bow → re-equip bow → weapon slots full → force-swap bow into `(12,0)` → displaces 2H → re-equip 2H → force-swap → … forever. The `// TODO: check for item loss, else revert` at `CharacterEquipment.cs:128` is where the shield is dropped.
+- `CharacterEquipment.cs:32` uses the raw `StoredPackages[x]` indexer inside the force-swap `.Where(...)` instead of `TryGetValue`; it throws whenever a type-specific position is not a stored key (e.g. `(13,0)` while the 2H is keyed at `(12,0)`).
+
+**Fix (not yet scoped):** a proper `CharacterEquipment` swap rewrite — a recursion guard / give-up in the force-swap path, `TryGetValue` at line 32, and real item-loss handling (revert, or hand the loser to the cursor / drop to floor). Bigger than "cursor anchoring"; candidate for its own issue. Touches the same `CharacterEquipment.cs:118` line Task 5 rewrites, so coordinate.
+
+---
+
 ## Follow-ups (out of scope)
 
 - **Cell size has two sources.** `DragProvider.slotSize` and `GridLayoutGroup.cellSize` must agree or the drop rule drifts; `InventorySlotDisplay.SetDisplaySize` also folds in `gridLayout.spacing`, which `DragGeometry` assumes is zero. Worth deriving one from the other.
