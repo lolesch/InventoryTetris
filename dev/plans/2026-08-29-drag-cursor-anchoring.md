@@ -264,7 +264,7 @@ feat: extract the drag placement maths into a testable assembly
 
 Fixes bug 4. `Position` (the integer cell) already comes from the pressed slot, because Unity routes drag events to the object that received pointer-down — only the *fraction* is sampled 10 px late. This task makes both come from the same instant.
 
-- [ ] **Step 1: Record the press on `AbstractSlotDisplay`**
+- [x] **Step 1: Record the press on `AbstractSlotDisplay`**
 
 Add `IPointerDownHandler` to the interface list and:
 
@@ -303,7 +303,9 @@ and widen the abstract signature:
 protected abstract void MoveItem(PointerEventData eventData, Vector2 pointerPosition);
 ```
 
-- [ ] **Step 2: Take the pointer position in `DragProvider.SetPackage`**
+- [x] **Step 2: Take the pointer position in `DragProvider.SetPackage`**
+
+`Vector2Int * float` does not compile, so the size line landed as `itemDisplay.sizeDelta = (Vector2)dimensions * slotSize;` and the origin argument as `(Vector2)Origin.transform.position / transform.lossyScale` (cast the numerator, same idiom as the existing `SetToMousePosition`).
 
 Replace the `Input.mousePosition` read in `SetPosition` with the passed position and delegate to `DragGeometry`:
 
@@ -334,19 +336,21 @@ Add the field that replaces the `// slotSize` literals:
 [SerializeField] private float slotSize = 60f;
 ```
 
-- [ ] **Step 3: Follow the signature through every override**
+- [x] **Step 3: Follow the signature through every override**
 
 `MoveItem(PointerEventData eventData, Vector2 pointerPosition)` in all five subclasses. Every `SetPackage(this, package, offset)` call inside a `MoveItem` gains `, pointerPosition`. The `SetPackage` calls inside `DropItem` are dealt with in Tasks 4 and 5 — for now pass `Input.mousePosition` there to keep it compiling, and expect the harness to still show bugs 1–3.
 
-- [ ] **Step 4: Recompile → green; run the harness**
+`CharacterEquipment.TrySwap` (`CharacterEquipment.cs:118`) also calls `SetPackage` and is not in this task's file list — it took `Input.mousePosition` too, to keep it compiling. Task 5 converts it to `ReplacePackage`.
 
-`BUG 4` must now read `cursor inside item? yes` for the drag-start case. Update the harness's `EdgeGrab` to call the new signature. Bugs 1–3 are expected to still be red.
+- [x] **Step 4: Recompile → green; run the harness**
 
-- [ ] **Step 5: Play-mode check**
+Compiles clean (verified through the unity-mcp bridge, with a `DELIBERATE_SENTINEL_ERROR` negative control). Harness: `BUG 4` "anchored at pointer-down (now)" reads `cursor inside item? yes` (was `NO`, pivot `(-0.133, 0.5)` → `(0.033, 0.5)`); bugs 1–3 still red as expected. `EdgeGrab` was rewritten to pass an explicit press position rather than fake the cursor with grid placement.
+
+- [ ] **Step 5: Play-mode check** ← *needs a human*
 
 Press on an item's outer frame and drag outward briskly. The item must keep the grip from where you pressed, not from 10 px later.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit** — `f2b742c`
 
 ```
 fix: anchor the drag to the pointer-down position, not the drag threshold
