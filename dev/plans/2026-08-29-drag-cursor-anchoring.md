@@ -240,7 +240,7 @@ The rest pin the specific numbers this bug was measured at:
 
 Every assertion in `DragGeometryTests` was also executed against the real `DragGeometry` through `Unity_RunCommand` (the bridge cannot drive NUnit, but `DragGeometry` is public so its methods can be called directly) — 21/21 pass. The values are discriminating: the shipped rule returns `(4,4)` and `(3,2)` where these return `(5,3)` and `(4,1)`.
 
-- [ ] **Step 5b: Run All → green** ← *needs a human: `Window ▸ General ▸ Test Runner ▸ EditMode ▸ Run All`*
+- [x] **Step 5b: Run All → green** — human ran `Window ▸ General ▸ Test Runner ▸ EditMode ▸ Run All` after Task 6, all green (`InventorySystem.Data.Tests` + `InventorySystem.Geometry.Tests`).
 
 Confirms the NUnit wiring, not the maths. If the round-trip test fails, the transcription of `GrabPivot` is wrong — compare against `DragProvider.SetPosition` line by line before touching `DropPosition`.
 
@@ -346,7 +346,7 @@ Add the field that replaces the `// slotSize` literals:
 
 Compiles clean (verified through the unity-mcp bridge, with a `DELIBERATE_SENTINEL_ERROR` negative control). Harness: `BUG 4` "anchored at pointer-down (now)" reads `cursor inside item? yes` (was `NO`, pivot `(-0.133, 0.5)` → `(0.033, 0.5)`); bugs 1–3 still red as expected. `EdgeGrab` was rewritten to pass an explicit press position rather than fake the cursor with grid placement.
 
-- [ ] **Step 5: Play-mode check** ← *needs a human*
+- [x] **Step 5: Play-mode check** — human play-tested after Task 5, pass: pressing an item's outer frame and dragging outward keeps the grip from the press point.
 
 Press on an item's outer frame and drag outward briskly. The item must keep the grip from where you pressed, not from 10 px later.
 
@@ -453,7 +453,7 @@ Delete the `/* TODO: match position offset based on most overlapping slots */` b
 
 - [x] **Step 4: Recompile → green; run the harness** — compiled clean through the unity-mcp bridge (0 errors, only an unrelated Unity-AI-Assistant network warning). Harness: `BUG 1` reads `match` for the 1×1 (`(5,3)`, 69.4 %) and the 2×3 (`(4,1)`, 86.6 %); BUGs 2 and 3 still red as expected. Harness updated to read the drop cell from `provider.TryGetDropPosition` instead of `hovered - positionOffset`.
 
-- [ ] **Step 5: Play-mode check** ← *needs a human*
+- [x] **Step 5: Play-mode check** — human play-tested after Task 5, pass: a 1×1 dropped where it visually sat, and the red tint tracked the visual footprint.
 
 Drag a 1×1 so it visibly sits mostly over a neighbouring slot and drop. It must land where it looked. Verify the red tint appears exactly when the item's *visual* footprint covers two or more items.
 
@@ -511,7 +511,7 @@ package = Container.AddAtPosition(positionToAdd, package);
 
 - [x] **Step 3: Recompile → green; run the harness** — compiled clean through the unity-mcp bridge (0 errors, negative control confirmed the pipeline reports). Harness `Scenario` BUG 2 rewritten to mirror the gated `DropItem` against a throwaway blocked container: the 2×3 over two items reads `CanPlaceAt=False`, pivot `(0.542, 0.028)` unchanged, `(0, 0)` px jump — *"rejected drop keeps the grip"*. (A 1×1 covers one cell and can never collide with two items, so it is only ever rejected out of bounds; the harness notes this.) BUG 1 still `match`, BUG 3 still red (Task 5), BUG 4 still fixed.
 
-- [ ] **Step 4: Play-mode check** ← *needs a human*
+- [x] **Step 4: Play-mode check** — human play-tested after Task 5, pass: a 2×3 straddling two items stayed held and unmoved on click; a wrong-type equipment slot kept the item too.
 
 Hold a 2×3 over a spot where it straddles two items (tint goes red) and click. The item must stay under the cursor, unmoved, still held. Also try an equipment slot with the wrong item type — it must stay held too.
 
@@ -594,7 +594,7 @@ In `CharacterEquipment.cs:118`, replace `SetPackage(DragProvider.Instance.Hovere
 
 - [x] **Step 3: Recompile → green; run the harness** — compiled clean via the unity-mcp bridge (0 console errors; the rebuilt `Assembly-CSharp.dll` carries `ReplacePackage` / `EndDrag`; the harness itself calls `provider.ReplacePackage` so a successful run is an integration check). Harness `BUG 3` reads `pivot=(0.5, 0.5)`, `cursor inside the item? yes` for **both** the 1×1↔1×1 and the 2×3→1×1 swap. BUG 1 / BUG 2 / BUG 4 unchanged.
 
-- [ ] **Step 4: Play-mode check** ← *needs a human*
+- [x] **Step 4: Play-mode check** — human play-tested after Task 5, pass: 2×3-onto-1×1 and plain 1×1↔1×1 swaps both centre the swapped-out item on the cursor; sell / floor / vendor-buyback sinks still work. QA-2 (stale preview) and QA-4 (2H-over-bow+shield recursion) persist as expected — both out of scope, recorded below.
 
 Drop a 2×3 onto a 1×1. The 1×1 must appear centred under the cursor and follow it with no gap. Also do a plain 1×1 ↔ 1×1 swap (QA-1) — it must centre too. Repeat for a two-handed weapon over a filled off-hand (**note QA-4: a 2H over bow+shield still recurses / loses the shield — pre-existing, not this task**). Sell slot, floor slot and vendor buyback still work. QA-2 (stale preview after a swap) is *not* fixed here — expect it to persist.
 
@@ -609,9 +609,9 @@ fix: centre a swapped-out item on the cursor instead of inheriting the old grip
 ## Task 6: Remove the harness and verify
 
 **Files:**
-- Delete: `Assets/Scripts/_DragDropHarness.cs` (+ `.meta`)
+- Delete: `Assets/Scripts/_DragDropHarness.cs` (+ `.meta`) — untracked on every branch, so removal is a no-op for git; this task's commit is the plan tick-off.
 
-- [ ] **Step 1: Full manual pass**
+- [x] **Step 1: Full manual pass** — human ran all seven scenarios in play mode, all pass.
 
 With every fix in, in play mode:
 
@@ -623,7 +623,7 @@ With every fix in, in play mode:
 6. Equipment slots, the sell slot, the floor slot and the vendor buyback path all still work.
 7. Click-to-pick-up (no drag) still works — it shares `MoveItem`.
 
-- [ ] **Step 2: Grep the instrumentation out**
+- [x] **Step 2: Grep the instrumentation out** — `_DragDropHarness.cs` + `.meta` deleted; `grep -rn "DEBUG-d1a9" Assets/` returns nothing (the only other hit is this plan file). No committed code ever referenced `DragDropHarness`.
 
 ```bash
 grep -rn "DEBUG-d1a9" Assets/
@@ -631,9 +631,9 @@ grep -rn "DEBUG-d1a9" Assets/
 
 Must return nothing.
 
-- [ ] **Step 3: Recompile → green, Run All → green**
+- [x] **Step 3: Recompile → green, Run All → green** — forced recompile via the unity-mcp bridge: `isCompilationSuccessful: true`, console 0 errors / 0 warnings. Human ran EditMode Run All: all green.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```
 chore: drop the drag/drop diagnosis harness
