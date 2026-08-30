@@ -29,7 +29,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
             package = Container.AddAtPosition(Position, package);
 
-            DragProvider.Instance.SetPackage(this, package, Vector2Int.zero, Input.mousePosition);
+            /// Nothing back if it just equipped; the previously-equipped item if it swapped.
+            /// Either way it is centred on the cursor, not given a stale grip.
+            DragProvider.Instance.ReplacePackage(package);
 
             Container.InvokeRefresh();
             DragProvider.Instance.Origin.Container?.InvokeRefresh();

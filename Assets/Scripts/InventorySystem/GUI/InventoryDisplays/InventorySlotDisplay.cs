@@ -35,7 +35,10 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
             package = Container.AddAtPosition(positionToAdd, package);
 
-            DragProvider.Instance.SetPackage(this, package, DragProvider.Instance.PositionOffset, Input.mousePosition);
+            /// Whatever AddAtPosition handed back - nothing (it landed, drag ends) or the
+            /// item it displaced (a swap). A displaced item is centred on the cursor, never
+            /// given this drop's positionOffset, which describes a footprint it may not have.
+            DragProvider.Instance.ReplacePackage(package);
 
             Container.InvokeRefresh();
             DragProvider.Instance.Origin.Container?.InvokeRefresh();

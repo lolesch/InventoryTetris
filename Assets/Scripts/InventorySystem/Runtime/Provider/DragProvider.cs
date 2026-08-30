@@ -147,48 +147,84 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
             SetHoveredSlot(Origin);
 
+            var dimensions = AbstractItem.GetDimensions(package.Item.Dimensions);
+
+            itemDisplay.sizeDelta = (Vector2)dimensions * slotSize;
+
+            /// Anchor the grip to where the pointer went down, not to Input.mousePosition
+            /// as it reads here - by OnBeginDrag time the cursor has already travelled the
+            /// 10px drag threshold, and pivoting to that is what let the item slip its grip.
+            itemDisplay.pivot = DragGeometry.GrabPivot(
+                pointerPosition / transform.lossyScale,
+                (Vector2)Origin.transform.position / transform.lossyScale,
+                dimensions,
+                positionOffset,
+                slotSize);
+
             RefreshDisplay(package);
+            SetToMousePosition();
+        }
 
-            void RefreshDisplay(Package package)
+        /// <summary>
+        /// A different package is now in hand - a swap handed the displaced item over. It is
+        /// centred on the cursor: the previous item's positionOffset describes a footprint
+        /// this one does not have, and reusing it left small items floating a fixed distance
+        /// from the pointer.
+        /// </summary>
+        public void ReplacePackage(Package package)
+        {
+            if (!package.IsValid)
             {
-                SetPosition(package);
-
-                if (icon)
-                {
-                    icon.sprite = package.Item.Icon;
-                    icon.color = Color.white;
-                }
-
-                /// The drag display is an ItemDisplay instance but nothing repainted it, so a
-                /// dragged item lost its rarity for the length of the drag. The frame carries
-                /// rarity here, exactly as it does in a slot.
-                if (frame)
-                    frame.color = WithAlpha(AbstractItem.GetRarityColor(package.Item.Rarity), frameAlpha);
-
-                if (amount)
-                    amount.text = 1 < package.Amount ? package.Amount.ToString() : string.Empty;
-
-                itemDisplay.gameObject.SetActive(true);
-
-                void SetPosition(Package package)
-                {
-                    var dimensions = AbstractItem.GetDimensions(package.Item.Dimensions);
-
-                    itemDisplay.sizeDelta = (Vector2)dimensions * slotSize;
-
-                    /// Anchor the grip to where the pointer went down, not to Input.mousePosition
-                    /// as it reads here - by OnBeginDrag time the cursor has already travelled the
-                    /// 10px drag threshold, and pivoting to that is what let the item slip its grip.
-                    itemDisplay.pivot = DragGeometry.GrabPivot(
-                        pointerPosition / transform.lossyScale,
-                        (Vector2)Origin.transform.position / transform.lossyScale,
-                        dimensions,
-                        positionOffset,
-                        slotSize);
-
-                    SetToMousePosition();
-                }
+                EndDrag();
+                return;
             }
+
+            DraggingPackage = package;
+            PositionOffset = Vector2Int.zero;
+
+            var dimensions = AbstractItem.GetDimensions(package.Item.Dimensions);
+
+            itemDisplay.sizeDelta = (Vector2)dimensions * slotSize;
+            itemDisplay.pivot = DragGeometry.HandOverPivot;
+
+            RefreshDisplay(package);
+            SetToMousePosition();
+        }
+
+        /// <summary>
+        /// The drag is over - the package landed, or a sink (sell slot, floor) consumed it.
+        /// Clears the hand and hides the display; the sinks used to hand an empty Package to
+        /// SetPackage purely to reach this.
+        /// </summary>
+        public void EndDrag()
+        {
+            DraggingPackage = default;
+            PositionOffset = Vector2Int.zero;
+
+            itemDisplay.gameObject.SetActive(false);
+        }
+
+        /// Paints the drag display for the package now in hand - icon, rarity frame, stack
+        /// amount - then shows it. Size and pivot are the caller's: a grab keeps the grip it
+        /// was picked up by, a hand-over centres on the cursor.
+        private void RefreshDisplay(Package package)
+        {
+            if (icon)
+            {
+                icon.sprite = package.Item.Icon;
+                icon.color = Color.white;
+            }
+
+            /// The drag display is an ItemDisplay instance but nothing repainted it, so a
+            /// dragged item lost its rarity for the length of the drag. The frame carries
+            /// rarity here, exactly as it does in a slot.
+            if (frame)
+                frame.color = WithAlpha(AbstractItem.GetRarityColor(package.Item.Rarity), frameAlpha);
+
+            if (amount)
+                amount.text = 1 < package.Amount ? package.Amount.ToString() : string.Empty;
+
+            itemDisplay.gameObject.SetActive(true);
         }
 
         public void SetHoveredSlot(AbstractSlotDisplay slot) => Hovered = slot;
