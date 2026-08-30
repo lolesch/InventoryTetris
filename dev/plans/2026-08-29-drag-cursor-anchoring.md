@@ -533,6 +533,8 @@ fix: keep holding the item when a drop cannot land
 
 Fixes bug 3. After Task 4 the only way `DropItem` reaches the drag display is a real handover: the package landed (drag ends) or it swapped (a *different* item is now in hand). Neither wants the old item's `positionOffset`.
 
+> See **QA findings** below: QA-1 confirms bug 3 in play-test and notes it also affects same-footprint swaps. QA-2 (stale hover preview after a swap) is adjacent — decide here whether to fix it as a **Task 5b** or fold it into Step 2.
+
 - [ ] **Step 1: Add `ReplacePackage` and `EndDrag` to `DragProvider`**
 
 ```csharp
@@ -592,7 +594,7 @@ In `CharacterEquipment.cs:118`, replace `SetPackage(DragProvider.Instance.Hovere
 
 - [ ] **Step 4: Play-mode check**
 
-Drop a 2×3 onto a 1×1. The 1×1 must appear centred under the cursor and follow it with no gap. Repeat for a two-handed weapon over a filled off-hand.
+Drop a 2×3 onto a 1×1. The 1×1 must appear centred under the cursor and follow it with no gap. Also do a plain 1×1 ↔ 1×1 swap (QA-1) — it must centre too. Repeat for a two-handed weapon over a filled off-hand. If QA-2 is being fixed here, check the hover preview now describes the item left in the slot, not the one picked up.
 
 - [ ] **Step 5: Commit**
 
@@ -634,6 +636,28 @@ Must return nothing.
 ```
 chore: drop the drag/drop diagnosis harness
 ```
+
+---
+
+## QA findings — 2026-08-30 (play-test after Task 3)
+
+Two symptoms found while play-testing the swap path. Neither is a Task 3 regression; both are on the drop/handover surface this plan already owns.
+
+### QA-1 — a swapped-in item is not centred on the cursor
+
+**Repro:** drag any item, drop it onto a slot that already holds one. The displaced item is picked up but hangs off the cursor by a fixed offset instead of sitting under it.
+
+This is **bug 3**, and it is broader than the table row: it is *not* limited to a different footprint (2×3 → 1×1). Even a same-size 1×1 ↔ 1×1 swap is off, because `InventorySlotDisplay.DropItem` still re-anchors the displaced package through `SetPackage(this, package, PositionOffset, …)` — feeding the *outgoing* item's `PositionOffset` and `Origin` to the *incoming* one.
+
+**Fix:** Task 5, as written — `ReplacePackage(package)` with `DragGeometry.HandOverPivot`. When doing Task 5, widen Step 4's play check to include a plain 1×1 ↔ 1×1 swap, not just 2×3 → 1×1.
+
+### QA-2 — the hover preview/tooltip keeps the swapped-out item after a swap
+
+**Repro:** hover a slot holding item B long enough for its preview/tooltip to fade in, then drop item A onto it. A now sits in the slot and B is in hand, but the preview still shows **B** (the item now on the cursor), not **A** (the item now in the slot).
+
+**Suspected mechanism:** `AbstractSlotDisplay.DropItem` ends with `FadeInPreview()`, which reads `Container.TryGetItemAt(ref position, out …)` at the slot's own `Position`. After Task 3 the drop follows the visual, so `positionToAdd` (where A lands) is often *not* `this.Position` — A can land on a neighbouring cell. `TryGetItemAt` at `Position` then finds nothing, the fade-in coroutine never starts, and the stale B preview from the pre-drop hover is never replaced. `FadeOutPreview()` is only wired to `OnPointerExit`, so standing still after the drop leaves it stale.
+
+**Fix (not yet scoped):** the preview after a drop should describe whatever the player is now hovering — refresh it from `positionToAdd` (or re-run the hover logic against the cursor's real slot), and clear it explicitly when the drop leaves the slot empty. Candidate: a small **Task 5b** alongside the handover change, or fold into Task 5 Step 2. Decide when picking up Task 5.
 
 ---
 
