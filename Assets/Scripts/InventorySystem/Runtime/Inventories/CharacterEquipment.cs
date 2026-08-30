@@ -115,7 +115,7 @@ namespace ToolSmiths.InventorySystem.Inventories
                 {
                     var current = previouslyEquipped[i];
                     if (!package.Sender.TryAddToContainer(ref current))
-                        DragProvider.Instance.SetPackage(DragProvider.Instance.Hovered, previouslyEquipped[i], Vector2Int.zero);
+                        DragProvider.Instance.SetPackage(DragProvider.Instance.Hovered, previouslyEquipped[i], Vector2Int.zero, Input.mousePosition);
                     previouslyEquipped[i] = current;
                 }
 

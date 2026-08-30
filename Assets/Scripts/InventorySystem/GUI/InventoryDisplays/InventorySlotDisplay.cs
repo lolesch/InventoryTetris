@@ -48,7 +48,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
             package = Container.AddAtPosition(positionToAdd, package);
 
-            DragProvider.Instance.SetPackage(this, package, positionOffset);
+            DragProvider.Instance.SetPackage(this, package, positionOffset, Input.mousePosition);
 
             Container.InvokeRefresh();
             DragProvider.Instance.Origin.Container?.InvokeRefresh();
@@ -75,7 +75,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             display.anchorMax = new Vector2(0, 1);
         }
 
-        protected override void MoveItem(PointerEventData eventData)
+        protected override void MoveItem(PointerEventData eventData, Vector2 pointerPosition)
         {
             if (Container == null)
                 return;
@@ -103,7 +103,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                             _ = Container.RemoveAtPosition(position, package);
 
                             if (InventoryProvider.Instance.Equipment.TryAddToContainer(ref package))
-                                DragProvider.Instance.SetPackage(this, package, Vector2Int.zero);
+                                DragProvider.Instance.SetPackage(this, package, Vector2Int.zero, pointerPosition);
                             else
                                 _ = Container.TryAddToContainer(ref package);
 
@@ -134,7 +134,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                         containerToMoveTo = InventoryProvider.Instance.Inventory;
 
                     if (containerToMoveTo.TryAddToContainer(ref package))
-                        DragProvider.Instance.SetPackage(this, package, Vector2Int.zero);
+                        DragProvider.Instance.SetPackage(this, package, Vector2Int.zero, pointerPosition);
                     else
                         _ = Container.AddAtPosition(position, package);
 
@@ -147,7 +147,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
                 var positionOffset = Position - position;
 
-                DragProvider.Instance.SetPackage(this, package, positionOffset);
+                DragProvider.Instance.SetPackage(this, package, positionOffset, pointerPosition);
                 #endregion DRAG ITEM
             }
 

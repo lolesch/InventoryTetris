@@ -1,5 +1,6 @@
 using TMPro;
 using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Geometry;
 using ToolSmiths.InventorySystem.GUI.InventoryDisplays;
 using ToolSmiths.InventorySystem.Items;
 using UnityEngine;
@@ -20,6 +21,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         [Tooltip("The authored scrim colour the background returns to. Captured at Awake; the forbidden tint replaces it.")]
         [SerializeField, ReadOnly] private Color initialColor;
         [SerializeField] private TextMeshProUGUI amount;
+
+        [Tooltip("Pixels per inventory cell. Must match the GridLayoutGroup cellSize the slots are laid out with.")]
+        [SerializeField] private float slotSize = 60f;
 
         //private Canvas rootCanvas;
 
@@ -135,7 +139,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             itemDisplay.anchoredPosition = (Vector2)Input.mousePosition / itemDisplay.lossyScale;
         }
 
-        public void SetPackage(AbstractSlotDisplay slot, Package package, Vector2Int positionOffset)
+        public void SetPackage(AbstractSlotDisplay slot, Package package, Vector2Int positionOffset, Vector2 pointerPosition)
         {
             Origin = slot;
             DraggingPackage = package;
@@ -176,26 +180,17 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
                 {
                     var dimensions = AbstractItem.GetDimensions(package.Item.Dimensions);
 
-                    itemDisplay.sizeDelta = dimensions * 60; // slotSize
+                    itemDisplay.sizeDelta = (Vector2)dimensions * slotSize;
 
-                    var pointerRelativeToOrigin = (Vector2)(Input.mousePosition - Origin.transform.position) / transform.lossyScale;
-
-                    /// pointerPosition is in pixelCoordinates anchored TopLeft
-                    var pivot = pointerRelativeToOrigin / 60; // slotSize
-                    /// convert to screenCoordinates anchored BottomLeft
-                    pivot.y += 1;
-                    /// scale to match item dimensions
-                    pivot /= dimensions;
-
-                    /// The positionOffset was calculated in InventorySpace (anchored TopLeft)
-                    positionOffset.y -= dimensions.y - 1;
-                    /// convert to screenCoordinates anchored BottomLeft
-                    positionOffset.y *= -1;
-
-                    var positionPivot = (Vector2)positionOffset;
-                    positionPivot /= dimensions;
-
-                    itemDisplay.pivot = pivot + positionPivot;
+                    /// Anchor the grip to where the pointer went down, not to Input.mousePosition
+                    /// as it reads here - by OnBeginDrag time the cursor has already travelled the
+                    /// 10px drag threshold, and pivoting to that is what let the item slip its grip.
+                    itemDisplay.pivot = DragGeometry.GrabPivot(
+                        pointerPosition / transform.lossyScale,
+                        (Vector2)Origin.transform.position / transform.lossyScale,
+                        dimensions,
+                        positionOffset,
+                        slotSize);
 
                     SetToMousePosition();
                 }

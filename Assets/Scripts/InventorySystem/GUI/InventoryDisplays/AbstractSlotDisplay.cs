@@ -16,7 +16,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
     // TODO: inherit AbstractDisplay or rename this pattern
     [System.Serializable]
     [RequireComponent(typeof(RectTransform))]
-    internal abstract class AbstractSlotDisplay : MonoBehaviour, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler, IPointerEnterHandler, IPointerExitHandler
+    internal abstract class AbstractSlotDisplay : MonoBehaviour, IPointerDownHandler, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler, IPointerEnterHandler, IPointerExitHandler
     {
         [field: SerializeField, ReadOnly] public AbstractDimensionalContainer Container { get; private set; }
         [field: SerializeField, ReadOnly] public Vector2Int Position { get; private set; }
@@ -74,12 +74,19 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 debugPosition.text = InventoryProvider.Instance.ShowDebugPositions ? Position.ToString() : "";
         }
 
+        /// Where the pointer went down on this slot. OnBeginDrag only fires once Unity's 10px
+        /// drag threshold is crossed, by which time the cursor can already be outside the item -
+        /// anchoring to that reading is what made the item jump away from the cursor on grab.
+        private Vector2 pressPosition;
+
+        public void OnPointerDown(PointerEventData eventData) => pressPosition = eventData.position;
+
         public void OnPointerClick(PointerEventData eventData)
         {
             if (DragProvider.Instance.IsDragging)
                 DropItem(DragProvider.Instance.DraggingPackage);
             else
-                MoveItem(eventData);
+                MoveItem(eventData, pressPosition);
         }
 
         public void OnPointerExit(PointerEventData eventData)
@@ -171,7 +178,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             if (DragProvider.Instance.IsDragging)
                 DropItem(DragProvider.Instance.DraggingPackage);
             else
-                MoveItem(eventData);
+                MoveItem(eventData, pressPosition);
         }
 
         /// required for OnBeginDrag() to work => #ThanksUnity
@@ -181,7 +188,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         public void OnDrop(PointerEventData eventData) => DropItem(DragProvider.Instance.DraggingPackage);
 
-        protected abstract void MoveItem(PointerEventData eventData);
+        protected abstract void MoveItem(PointerEventData eventData, Vector2 pointerPosition);
 
         protected void FadeInPreview()
         {

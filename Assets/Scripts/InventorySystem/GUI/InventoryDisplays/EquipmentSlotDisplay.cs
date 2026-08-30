@@ -26,7 +26,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 {
                     package = Container.AddAtPosition(Position, package);
 
-                    DragProvider.Instance.SetPackage(this, package, Vector2Int.zero);
+                    DragProvider.Instance.SetPackage(this, package, Vector2Int.zero, Input.mousePosition);
 
                     Container.InvokeRefresh();
                     DragProvider.Instance.Origin.Container?.InvokeRefresh();
@@ -51,7 +51,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 background.color *= new Color(1, 1, 1, .4f);
         }
 
-        protected override void MoveItem(PointerEventData eventData)
+        protected override void MoveItem(PointerEventData eventData, Vector2 pointerPosition)
         {
             if (Container == null)
                 return;
@@ -72,7 +72,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 _ = Container.RemoveAtPosition(position, package);
 
                 if (InventoryProvider.Instance.Inventory.TryAddToContainer(ref package))
-                    DragProvider.Instance.SetPackage(this, package, Vector2Int.zero);
+                    DragProvider.Instance.SetPackage(this, package, Vector2Int.zero, pointerPosition);
                 else
                     _ = Container.AddAtPosition(position, package);
 
@@ -87,7 +87,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 _ = Container.RemoveAtPosition(position, package);
 
                 if (InventoryProvider.Instance.Stash.TryAddToContainer(ref package))
-                    DragProvider.Instance.SetPackage(this, package, Vector2Int.zero);
+                    DragProvider.Instance.SetPackage(this, package, Vector2Int.zero, pointerPosition);
                 else
                     _ = Container.AddAtPosition(position, package);
 
@@ -101,7 +101,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             // can equipment displays ever have an offset? See above => SetPackage is using Vector2Int.zero
             var positionOffset = Position - position;
 
-            DragProvider.Instance.SetPackage(this, package, positionOffset);
+            DragProvider.Instance.SetPackage(this, package, positionOffset, pointerPosition);
             #endregion DRAG ITEM
         }
     }
