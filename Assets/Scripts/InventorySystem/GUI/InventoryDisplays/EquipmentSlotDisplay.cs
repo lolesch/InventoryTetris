@@ -1,3 +1,4 @@
+using System.Linq;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
@@ -21,18 +22,17 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
             var allowedPositions = CharacterEquipment.GetTypeSpecificPositions(item.EquipmentType);
 
-            foreach (var position in allowedPositions)
-                if (Position == position)
-                {
-                    package = Container.AddAtPosition(Position, package);
+            /// Wrong slot for this item's type: the item stays in hand untouched, the same
+            /// contract bug 2 gives a rejected drop on the inventory grid - no re-anchor.
+            if (!allowedPositions.Contains(Position))
+                return;
 
-                    DragProvider.Instance.SetPackage(this, package, Vector2Int.zero, Input.mousePosition);
+            package = Container.AddAtPosition(Position, package);
 
-                    Container.InvokeRefresh();
-                    DragProvider.Instance.Origin.Container?.InvokeRefresh();
+            DragProvider.Instance.SetPackage(this, package, Vector2Int.zero, Input.mousePosition);
 
-                    break;
-                }
+            Container.InvokeRefresh();
+            DragProvider.Instance.Origin.Container?.InvokeRefresh();
 
             FadeInPreview(); // TODO: see if the package should propagate to FadeInPreview
         }

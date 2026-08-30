@@ -172,11 +172,27 @@ namespace ToolSmiths.InventorySystem.Inventories
                         return false;
 
                 return true;
-
-                bool IsWithinDimensions(Vector2Int position) =>
-                   -1 < position.x && position.x < Dimensions.x &&
-                   -1 < position.y && position.y < Dimensions.y;
             }
+        }
+
+        /// Whether <paramref name="position"/> lies inside the container grid. Shared by
+        /// IsEmptySpace and CanPlaceAt so both agree on where the edges are.
+        private bool IsWithinDimensions(Vector2Int position) =>
+            -1 < position.x && position.x < Dimensions.x &&
+            -1 < position.y && position.y < Dimensions.y;
+
+        /// <summary>
+        /// Whether a drop at this position would land at all: inside the container, and
+        /// overlapping at most one stored item. 0 overlaps drops into empty space, 1 swaps
+        /// (AddAtPosition handles both); 2+ places nothing, and the caller must keep dragging.
+        /// </summary>
+        public bool CanPlaceAt(Vector2Int position, Vector2Int dimension)
+        {
+            foreach (var requiredPosition in CalculateRequiredPositions(position, dimension))
+                if (!IsWithinDimensions(requiredPosition))
+                    return false;
+
+            return GetStoredItemsAt(position, dimension).Count <= 1;
         }
 
         public bool TryGetPackageAt(Vector2Int position, out Package package) => StoredPackages.TryGetValue(position, out package);

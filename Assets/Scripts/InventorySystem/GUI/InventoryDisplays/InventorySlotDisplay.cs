@@ -27,6 +27,12 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             if (!DragProvider.Instance.TryGetDropPosition(this, out var positionToAdd))
                 return;
 
+            /// Nothing would land here - out of bounds, or 2+ items in the way. The item
+            /// stays in hand exactly as the player is holding it; re-anchoring past this
+            /// point is what snapped a rejected drop onto the grid.
+            if (!Container.CanPlaceAt(positionToAdd, AbstractItem.GetDimensions(package.Item.Dimensions)))
+                return;
+
             package = Container.AddAtPosition(positionToAdd, package);
 
             DragProvider.Instance.SetPackage(this, package, DragProvider.Instance.PositionOffset, Input.mousePosition);
