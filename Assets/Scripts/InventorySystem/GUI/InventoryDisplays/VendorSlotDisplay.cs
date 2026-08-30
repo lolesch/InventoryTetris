@@ -94,7 +94,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             display.anchorMax = new Vector2(0, 1);
         }
 
-        protected override void MoveItem(PointerEventData eventData)
+        protected override void MoveItem(PointerEventData eventData, Vector2 pointerPosition)
         {
             if (Container == null)
                 return;
@@ -136,7 +136,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
             var positionOffset = Position - position;
 
-            DragProvider.Instance.SetPackage(this, package, positionOffset);
+            DragProvider.Instance.SetPackage(this, package, positionOffset, pointerPosition);
             #endregion BUY: DRAG
         }
 
@@ -161,7 +161,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             var copper = new Package(Container, ItemProvider.Instance.GenerateCurrency(Data.Enums.CurrencyType.Copper), currency.Copper);
             _ = InventoryProvider.Instance.Inventory.TryAddToContainer(ref copper);
 
-            DragProvider.Instance.SetPackage(this, new Package(), Vector2Int.zero);
+            /// A sell sink: the item is gone and the drag is over. Was SetPackage with an
+            /// empty Package purely to hide the display.
+            DragProvider.Instance.EndDrag();
 
             Container?.InvokeRefresh();
             DragProvider.Instance.Origin.Container?.InvokeRefresh();

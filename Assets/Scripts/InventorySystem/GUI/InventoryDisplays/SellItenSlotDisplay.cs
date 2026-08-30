@@ -33,7 +33,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             var copper = new Package(Container, ItemProvider.Instance.GenerateCurrency(Data.Enums.CurrencyType.Copper), currency.Copper);
             _ = InventoryProvider.Instance.Inventory.TryAddToContainer(ref copper);
 
-            DragProvider.Instance.SetPackage(this, new Package(), Vector2Int.zero);
+            /// A sink: the item is sold and the drag is over. Was SetPackage with an empty
+            /// Package purely to hide the display.
+            DragProvider.Instance.EndDrag();
 
             Container?.InvokeRefresh();
             DragProvider.Instance.Origin.Container?.InvokeRefresh();
@@ -41,6 +43,6 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             FadeInPreview(); // TODO: see if the package should propagate to FadeInPreview
         }
 
-        protected override void MoveItem(PointerEventData eventData) { }
+        protected override void MoveItem(PointerEventData eventData, Vector2 pointerPosition) { }
     }
 }

@@ -14,12 +14,14 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         public CanvasGroup CanvasGroup => canvasGroup != null ? canvasGroup : canvasGroup = GetComponent<CanvasGroup>();
         protected override void DropItem(Package package)
         {
-            DragProvider.Instance.SetPackage(this, new Package(), Vector2Int.zero);
+            /// A sink: the item is gone (no floor container to receive it) and the drag is
+            /// over. Was SetPackage with an empty Package purely to hide the display.
+            DragProvider.Instance.EndDrag();
 
             DragProvider.Instance.Origin.Container?.InvokeRefresh();
         }
 
-        protected override void MoveItem(PointerEventData eventData) { }
+        protected override void MoveItem(PointerEventData eventData, Vector2 pointerPosition) { }
 
         private void Update() => CanvasGroup.interactable = DragProvider.Instance.IsDragging;
     }

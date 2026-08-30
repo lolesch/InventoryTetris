@@ -22,33 +22,23 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             if (!package.IsValid)
                 return;
 
-            var positionOffset = DragProvider.Instance.PositionOffset;
+            /// One rule, read off the drag display's real rect - the same answer the red
+            /// overlap tint uses, so where it looks like it will land is where it lands.
+            if (!DragProvider.Instance.TryGetDropPosition(this, out var positionToAdd))
+                return;
 
-            var positionToAdd = Position - positionOffset;
-
-            /* TODO: match position offset based on most overlappin slots
-            /// pointerPosition is in pixelCoordinates anchored TopLeft
-            var pointerRelativeToThis = (Vector2)(Input.mousePosition - transform.position) / transform.lossyScale;
-
-            var pointerOffsetPercent = pointerRelativeToThis / (transform as RectTransform).rect.size;
-            //Debug.LogError($"pointerOffsetPercent: {pointerOffsetPercent}");
-            /// match offset addition
-            pointerOffsetPercent.y += 1;
-
-            var pointerOffsettedByHalfASlotSize = pointerOffsetPercent - new Vector2(.5f, .5f);
-            //Debug.LogError($"pointer offsetted by half: {pointerOffsettedByHalfASlotSize}");
-
-            var mouseOffset = new Vector2Int(Mathf.FloorToInt(pointerOffsettedByHalfASlotSize.x), -Mathf.CeilToInt(pointerOffsettedByHalfASlotSize.y));
-            Debug.LogError($"mouseOffsetFloored: {mouseOffset}");
-
-            Debug.LogError($"positionToAdd: {positionToAdd}");
-            Debug.LogError($"positionOffset: {positionToAdd + mouseOffset}");
-            positionToAdd += mouseOffset;
-            */
+            /// Nothing would land here - out of bounds, or 2+ items in the way. The item
+            /// stays in hand exactly as the player is holding it; re-anchoring past this
+            /// point is what snapped a rejected drop onto the grid.
+            if (!Container.CanPlaceAt(positionToAdd, AbstractItem.GetDimensions(package.Item.Dimensions)))
+                return;
 
             package = Container.AddAtPosition(positionToAdd, package);
 
-            DragProvider.Instance.SetPackage(this, package, positionOffset);
+            /// Whatever AddAtPosition handed back - nothing (it landed, drag ends) or the
+            /// item it displaced (a swap). A displaced item is centred on the cursor, never
+            /// given this drop's positionOffset, which describes a footprint it may not have.
+            DragProvider.Instance.ReplacePackage(package);
 
             Container.InvokeRefresh();
             DragProvider.Instance.Origin.Container?.InvokeRefresh();
@@ -75,7 +65,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             display.anchorMax = new Vector2(0, 1);
         }
 
-        protected override void MoveItem(PointerEventData eventData)
+        protected override void MoveItem(PointerEventData eventData, Vector2 pointerPosition)
         {
             if (Container == null)
                 return;
@@ -103,7 +93,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                             _ = Container.RemoveAtPosition(position, package);
 
                             if (InventoryProvider.Instance.Equipment.TryAddToContainer(ref package))
-                                DragProvider.Instance.SetPackage(this, package, Vector2Int.zero);
+                                DragProvider.Instance.SetPackage(this, package, Vector2Int.zero, pointerPosition);
                             else
                                 _ = Container.TryAddToContainer(ref package);
 
@@ -134,7 +124,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                         containerToMoveTo = InventoryProvider.Instance.Inventory;
 
                     if (containerToMoveTo.TryAddToContainer(ref package))
-                        DragProvider.Instance.SetPackage(this, package, Vector2Int.zero);
+                        DragProvider.Instance.SetPackage(this, package, Vector2Int.zero, pointerPosition);
                     else
                         _ = Container.AddAtPosition(position, package);
 
@@ -147,7 +137,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
                 var positionOffset = Position - position;
 
-                DragProvider.Instance.SetPackage(this, package, positionOffset);
+                DragProvider.Instance.SetPackage(this, package, positionOffset, pointerPosition);
                 #endregion DRAG ITEM
             }
 

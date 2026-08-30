@@ -1,3 +1,4 @@
+using System.Linq;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
@@ -21,18 +22,19 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
             var allowedPositions = CharacterEquipment.GetTypeSpecificPositions(item.EquipmentType);
 
-            foreach (var position in allowedPositions)
-                if (Position == position)
-                {
-                    package = Container.AddAtPosition(Position, package);
+            /// Wrong slot for this item's type: the item stays in hand untouched, the same
+            /// contract bug 2 gives a rejected drop on the inventory grid - no re-anchor.
+            if (!allowedPositions.Contains(Position))
+                return;
 
-                    DragProvider.Instance.SetPackage(this, package, Vector2Int.zero);
+            package = Container.AddAtPosition(Position, package);
 
-                    Container.InvokeRefresh();
-                    DragProvider.Instance.Origin.Container?.InvokeRefresh();
+            /// Nothing back if it just equipped; the previously-equipped item if it swapped.
+            /// Either way it is centred on the cursor, not given a stale grip.
+            DragProvider.Instance.ReplacePackage(package);
 
-                    break;
-                }
+            Container.InvokeRefresh();
+            DragProvider.Instance.Origin.Container?.InvokeRefresh();
 
             FadeInPreview(); // TODO: see if the package should propagate to FadeInPreview
         }
@@ -51,7 +53,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 background.color *= new Color(1, 1, 1, .4f);
         }
 
-        protected override void MoveItem(PointerEventData eventData)
+        protected override void MoveItem(PointerEventData eventData, Vector2 pointerPosition)
         {
             if (Container == null)
                 return;
@@ -72,7 +74,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 _ = Container.RemoveAtPosition(position, package);
 
                 if (InventoryProvider.Instance.Inventory.TryAddToContainer(ref package))
-                    DragProvider.Instance.SetPackage(this, package, Vector2Int.zero);
+                    DragProvider.Instance.SetPackage(this, package, Vector2Int.zero, pointerPosition);
                 else
                     _ = Container.AddAtPosition(position, package);
 
@@ -87,7 +89,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 _ = Container.RemoveAtPosition(position, package);
 
                 if (InventoryProvider.Instance.Stash.TryAddToContainer(ref package))
-                    DragProvider.Instance.SetPackage(this, package, Vector2Int.zero);
+                    DragProvider.Instance.SetPackage(this, package, Vector2Int.zero, pointerPosition);
                 else
                     _ = Container.AddAtPosition(position, package);
 
@@ -101,7 +103,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             // can equipment displays ever have an offset? See above => SetPackage is using Vector2Int.zero
             var positionOffset = Position - position;
 
-            DragProvider.Instance.SetPackage(this, package, positionOffset);
+            DragProvider.Instance.SetPackage(this, package, positionOffset, pointerPosition);
             #endregion DRAG ITEM
         }
     }
