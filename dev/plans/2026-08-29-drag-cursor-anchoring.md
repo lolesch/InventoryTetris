@@ -362,11 +362,13 @@ fix: anchor the drag to the pointer-down position, not the drag threshold
 
 **Files:**
 - Modify: `Assets/Scripts/InventorySystem/Runtime/Provider/DragProvider.cs`
-- Modify: `InventorySlotDisplay.cs`, `VendorSlotDisplay.cs`
+- Modify: `InventorySlotDisplay.cs`, ~~`VendorSlotDisplay.cs`~~
 
 Fixes bug 1, and keeps the red overlap tint honest by making it read the same answer.
 
-- [ ] **Step 1: Add `TryGetDropPosition` to `DragProvider`**
+> **Plan correction (2026-08-30, during execution):** `VendorSlotDisplay.DropItem` is **not** a grid-placement drop — it is a sell sink, byte-for-byte the same shape as `SellItenSlotDisplay.DropItem` (remove from origin → mint currency → hide the drag display). It has no `positionOffset` / `AddAtPosition` to swap, so Task 3 touched only `DragProvider` + `InventorySlotDisplay`. **This also invalidates Task 5 Step 2's instruction to convert `VendorSlotDisplay.DropItem` to `ReplacePackage`** — it should be treated as a sink there too (`SetPackage(this, new Package(), …)` → `EndDrag()`), alongside `SellItenSlotDisplay` and `DropToFloorSlotDisplay`.
+
+- [x] **Step 1: Add `TryGetDropPosition` to `DragProvider`** — landed. `Input.mousePosition` / `hovered.transform.position` are cast `(Vector2)` before the `/ transform.lossyScale` divide, the same idiom Task 2 established for `SetPosition`.
 
 ```csharp
 /// <summary>
@@ -393,7 +395,7 @@ public bool TryGetDropPosition(AbstractSlotDisplay hovered, out Vector2Int posit
 }
 ```
 
-- [ ] **Step 2: Point `HighlightOverlappingSlots` at it**
+- [x] **Step 2: Point `HighlightOverlappingSlots` at it** — landed. The whole pivot-decoding block and the dead `requiredPositions` / `usedPositions` comment are gone; the two early-return guards collapsed into the single `TryGetDropPosition` check.
 
 Replace the whole pivot-decoding block (the `positionPivot` / `positionDiff` / `positionToAdd` derivation) with:
 
@@ -425,7 +427,7 @@ void HighlightOverlappingSlots()
 
 Delete the commented-out `requiredPositions` / `usedPositions` block below it while you are in there — it describes an approach this task supersedes.
 
-- [ ] **Step 3: Use it in `InventorySlotDisplay.DropItem`**
+- [x] **Step 3: Use it in `InventorySlotDisplay.DropItem`** — landed, incl. deleting the `/* TODO: match position offset… */` block. `VendorSlotDisplay.DropItem` untouched (see plan correction above); `EquipmentSlotDisplay` needs no drop rule.
 
 ```csharp
 protected override void DropItem(Package package)
@@ -449,15 +451,13 @@ protected override void DropItem(Package package)
 
 Delete the `/* TODO: match position offset based on most overlapping slots */` block — this task is that TODO. Apply the same `TryGetDropPosition` swap in `VendorSlotDisplay.DropItem`. `EquipmentSlotDisplay` places at its own fixed `Position` and needs no drop rule.
 
-- [ ] **Step 4: Recompile → green; run the harness**
+- [x] **Step 4: Recompile → green; run the harness** — compiled clean through the unity-mcp bridge (0 errors, only an unrelated Unity-AI-Assistant network warning). Harness: `BUG 1` reads `match` for the 1×1 (`(5,3)`, 69.4 %) and the 2×3 (`(4,1)`, 86.6 %); BUGs 2 and 3 still red as expected. Harness updated to read the drop cell from `provider.TryGetDropPosition` instead of `hovered - positionOffset`.
 
-`BUG 1` must read `match` for both the 1×1 and the 2×3. Bugs 2 and 3 stay red — `DropItem` still re-anchors.
-
-- [ ] **Step 5: Play-mode check**
+- [ ] **Step 5: Play-mode check** ← *needs a human*
 
 Drag a 1×1 so it visibly sits mostly over a neighbouring slot and drop. It must land where it looked. Verify the red tint appears exactly when the item's *visual* footprint covers two or more items.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit** — `90c429e`
 
 ```
 fix: drop the item where it looks, not where the grab cell says
