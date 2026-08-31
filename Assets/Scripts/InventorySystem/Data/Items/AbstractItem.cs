@@ -20,7 +20,7 @@ namespace ToolSmiths.InventorySystem.Items
         // consider changing to prefix/suffix system
         /// keep this as list (vs array) since crafting migth add/remove Affixes
         [field: SerializeField] public List<CharacterStatModifier> Affixes { get; protected set; } = new List<CharacterStatModifier>();
-        public float SellValue => CalculateGoldValue();
+        public float SellValue => CalculateValue();
 
         // TODO: handle overTime effects => Stats != Effects --> see ARPG_Combat for DoT_effects
         public new abstract string ToString();
@@ -71,7 +71,7 @@ namespace ToolSmiths.InventorySystem.Items
             return affixes;
         }
 
-        protected virtual float CalculateGoldValue()
+        protected virtual float CalculateValue()
         {
             var amount = 0f;
 
@@ -374,12 +374,16 @@ namespace ToolSmiths.InventorySystem.Items
             Affixes = new List<CharacterStatModifier>();
 
             Dimensions = ItemSize.OneByOne;
+            // Deliberately NOT the conversion ratio - coins no longer auto-upgrade at a
+            // full stack, so this is purely how much of each coin fits in one cell.
+            // A full stack is a clean conversion: 120 iron -> 24 copper, 60 copper ->
+            // 5 silver, 20 silver -> exactly 1 gold.
             StackLimit = CurrencyType switch
             {
-                CurrencyType.Copper => (ItemStack)20u,
-                CurrencyType.Iron => (ItemStack)12,
-                CurrencyType.Silver => (ItemStack)5,
-                CurrencyType.Gold => (ItemStack)999,
+                CurrencyType.Iron => (ItemStack)120u,
+                CurrencyType.Copper => (ItemStack)60u,
+                CurrencyType.Silver => (ItemStack)20u,
+                CurrencyType.Gold => (ItemStack)12u,
 
                 CurrencyType.NONE => ItemStack.NONE,
                 _ => ItemStack.NONE,
@@ -388,12 +392,12 @@ namespace ToolSmiths.InventorySystem.Items
 
         public override string ToString() => $"{CurrencyType}".Colored(GetRarityColor(Rarity));
 
-        protected override float CalculateGoldValue() => CurrencyType switch
+        protected override float CalculateValue() => CurrencyType switch
         {
-            CurrencyType.Copper => 1f,
-            CurrencyType.Iron => Currency.copperToIron,
-            CurrencyType.Silver => Currency.copperToSilver,
-            CurrencyType.Gold => Currency.copperToGold,
+            CurrencyType.Iron => 1f,
+            CurrencyType.Copper => Currency.ironToCopper,
+            CurrencyType.Silver => Currency.ironToSilver,
+            CurrencyType.Gold => Currency.ironToGold,
 
             CurrencyType.NONE => 0f,
             _ => 0f,

@@ -224,7 +224,7 @@ namespace ToolSmiths.InventorySystem.Inventories
                     gold += package.Value.Amount;
             }
 
-            return new Currency( copper, iron, silver, gold );
+            return new Currency( iron, copper, silver, gold );
         }
     }
 }
