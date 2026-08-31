@@ -15,11 +15,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         {
             Debug.LogWarning($"{name.ColoredComponent()} {"died!".Colored(Color.red)}", this);
 
-            var randomEquipment = ItemProvider.Instance.GenerateRandomLoot();
+            var loot = ItemProvider.Instance.GenerateRandomLoot();
 
-            foreach (var item in randomEquipment)
+            foreach (var package in loot)
                 //rework to drop items on the floor
-                _ = CharacterProvider.Instance.Player.PickUpItem(new Package(null, item, 1u));
+                _ = CharacterProvider.Instance.Player.PickUpItem(package);
 
             // TODO: use event instead?
             CharacterProvider.Instance.Player.GainExperience(experience, CharacterLevel);

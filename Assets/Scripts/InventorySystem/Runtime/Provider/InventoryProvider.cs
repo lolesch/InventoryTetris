@@ -81,21 +81,16 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         public void AddRandomLoot()
         {
-            var items = ItemProvider.Instance.GenerateRandomLoot(Amount);
+            var loot = ItemProvider.Instance.GenerateRandomLoot(Amount);
 
-            for (var i = 0; i < items.Count; i++)
-                _ = CharacterProvider.Instance.Player.PickUpItem(new Package(null, items[i], 1u));
+            for (var i = 0; i < loot.Count; i++)
+                _ = CharacterProvider.Instance.Player.PickUpItem(loot[i]);
         }
 
         public void AddRandomCurrency()
         {
-            var randomCurrency = ItemProvider.Instance.GenerateRandomCurrency();
-
             for (var i = 0; i < Amount; i++)
-            {
-                var package = new Package(null, randomCurrency, 1u);
-                _ = CharacterProvider.Instance.Player.PickUpItem(package);
-            }
+                _ = CharacterProvider.Instance.Player.PickUpItem(ItemProvider.Instance.GenerateRandomCurrency());
         }
 
         public void RemoveAllItems(AbstractDimensionalContainer container)

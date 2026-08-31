@@ -26,6 +26,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         [SerializeField] private EquipmentTypeDistribution jewelryDistribution;
         [SerializeField] private ConsumableTypeDistribution consumableTypeDistribution;
         [SerializeField] private CurrencyTypeDistribution currencyTypeDistribution;
+        [SerializeField] private CurrencyDropTable currencyDropTable;
 
         [Header("Uniques")]
         [SerializeField] private List<AbstractItemObject> Amulets;
@@ -55,9 +56,9 @@ namespace ToolSmiths.InventorySystem.Inventories
         // TODO: make it a serialized dictionary
         [SerializeField] private List<Sprite> CurrencyIcons = new();
 
-        public List<AbstractItem> GenerateRandomLoot(uint amount = 1)
+        public List<Package> GenerateRandomLoot(uint amount = 1)
         {
-            var generatedLoot = new List<AbstractItem>();
+            var generatedLoot = new List<Package>();
             /// calculates the number of items to drop
             CalculateBonusDrops(ref amount);
 
@@ -73,19 +74,19 @@ namespace ToolSmiths.InventorySystem.Inventories
             }
         }
 
-        private AbstractItem GenerateRandomItem()
+        private Package GenerateRandomItem()
         {
             /// selects item type
             var itemCategory = itemCategoryDistribution.GetRandomEnumerator();
 
             return itemCategory switch
             {
-                ItemCategory.Equipment => GenerateRandomEquipment(),
-                ItemCategory.Consumable => GenerateRandomConsumable(),
+                ItemCategory.Equipment => new Package(null, GenerateRandomEquipment(), 1u),
+                ItemCategory.Consumable => new Package(null, GenerateRandomConsumable(), 1u),
                 ItemCategory.Currency => GenerateRandomCurrency(),
 
-                ItemCategory.NONE => null,
-                _ => null,
+                ItemCategory.NONE => default,
+                _ => default,
             };
         }
 
@@ -267,11 +268,21 @@ namespace ToolSmiths.InventorySystem.Inventories
                 };
         }
 
-        public AbstractItem GenerateRandomCurrency()
+        public Package GenerateRandomCurrency()
         {
             var currency = currencyTypeDistribution.GetRandomEnumerator();
 
-            return GenerateCurrency(currency);
+            if (currencyDropTable == null)
+            {
+                Debug.LogError($"{nameof(ItemProvider)}: {nameof(currencyDropTable)} is not assigned - no currency will drop");
+                return default;
+            }
+
+            var amount = currencyDropTable.RollAmount(currency);
+
+            return amount == 0u
+                ? default
+                : new Package(null, GenerateCurrency(currency), amount);
         }
 
         public AbstractItem GenerateCurrency(CurrencyType currencyType) => new CurrencyItem(currencyType);
