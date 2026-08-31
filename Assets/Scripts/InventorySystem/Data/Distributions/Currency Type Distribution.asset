@@ -17,12 +17,12 @@ MonoBehaviour:
   - name: NONE
     Enumeration: 0
     Quantity: 0
-  - name: Iron
-    Enumeration: 1
-    Quantity: 8
   - name: Copper
-    Enumeration: 2
+    Enumeration: 1
     Quantity: 4
+  - name: Iron
+    Enumeration: 2
+    Quantity: 8
   - name: Silver
     Enumeration: 3
     Quantity: 2
@@ -34,16 +34,16 @@ MonoBehaviour:
   - name: NONE
     Enumeration: 0
     Probability: 0
-  - name: Iron
-    Enumeration: 1
-    Probability: 0.53333336
-  - name: Copper
-    Enumeration: 2
-    Probability: 0.26666668
-  - name: Silver
-    Enumeration: 3
-    Probability: 0.13333334
   - name: Gold
     Enumeration: 4
     Probability: 0.06666667
-  exampleResults: 01000000010000000100000001000000010000000100000001000000010000000200000003000000
+  - name: Silver
+    Enumeration: 3
+    Probability: 0.13333334
+  - name: Iron
+    Enumeration: 2
+    Probability: 0.26666668
+  - name: Copper
+    Enumeration: 1
+    Probability: 0.53333336
+  exampleResults: 01000000010000000100000001000000010000000100000002000000020000000300000004000000
