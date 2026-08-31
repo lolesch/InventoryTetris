@@ -1,1 +1,17 @@
 theme: jekyll-theme-cayman
+
+# Agent-facing config lives under docs/ because the tools that own it hardcode
+# those paths (setup-matt-pocock-skills writes docs/agents/, domain-modeling
+# writes docs/adr/). It is not site content — keep it out of the published site.
+#
+# Paths are relative to this directory, which is the Pages source root
+# (Pages builds from branch GitPage, path /docs).
+#
+# NOTE: setting `exclude` REPLACES Jekyll's built-in default list
+# (.sass-cache, .jekyll-cache, gemfiles, Gemfile, Gemfile.lock, node_modules,
+# vendor/bundle, vendor/cache, vendor/gems, vendor/ruby). None of those exist
+# under docs/, so overriding is safe today. If a Gemfile or node_modules is ever
+# added here, re-add the defaults alongside these entries.
+exclude:
+  - agents
+  - adr
