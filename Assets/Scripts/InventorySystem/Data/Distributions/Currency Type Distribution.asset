@@ -19,13 +19,13 @@ MonoBehaviour:
     Quantity: 0
   - name: Copper
     Enumeration: 1
-    Quantity: 4
+    Quantity: 40
   - name: Iron
     Enumeration: 2
-    Quantity: 8
+    Quantity: 40
   - name: Silver
     Enumeration: 3
-    Quantity: 2
+    Quantity: 8
   - name: Gold
     Enumeration: 4
     Quantity: 1
