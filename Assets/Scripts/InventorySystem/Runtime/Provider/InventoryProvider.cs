@@ -136,8 +136,8 @@ namespace ToolSmiths.InventorySystem.Inventories
         public void SetItemToBooks() => AddConsumable(ConsumableType.Book);
         public void SetItemToPotions() => AddConsumable(ConsumableType.Potion);
 
-        public void SetItemToIron() => AddCurrency(CurrencyType.Copper);
-        public void SetItemToCopper() => AddCurrency(CurrencyType.Iron);
+        public void SetItemToIron() => AddCurrency(CurrencyType.Iron);
+        public void SetItemToCopper() => AddCurrency(CurrencyType.Copper);
         public void SetItemToSilver() => AddCurrency(CurrencyType.Silver);
         public void SetItemToGold() => AddCurrency(CurrencyType.Gold);
 
