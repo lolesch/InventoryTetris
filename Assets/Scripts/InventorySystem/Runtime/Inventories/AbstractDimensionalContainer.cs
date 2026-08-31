@@ -16,6 +16,14 @@ namespace ToolSmiths.InventorySystem.Inventories
         [field: SerializeField] public readonly Vector2Int Dimensions;
         public int Capacity => Dimensions.x * Dimensions.y;
 
+        /// <summary>
+        /// Containers that fold small coins into larger denominations the moment they
+        /// arrive, rather than leaving that to the player. False everywhere today; a
+        /// future stash subclasses <see cref="CharacterInventory"/> and overrides this
+        /// to true, which is the whole "everything becomes gold in the bank" behaviour.
+        /// </summary>
+        public virtual bool AutoConsolidate => false;
+
         public event Action<Dictionary<Vector2Int, Package>> OnContentChanged;
 
         [field: SerializeField] public Dictionary<Vector2Int, Package> StoredPackages { get; protected set; } = new();

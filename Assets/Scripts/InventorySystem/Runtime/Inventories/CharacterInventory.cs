@@ -23,6 +23,9 @@ namespace ToolSmiths.InventorySystem.Inventories
             /// TryAddToEmpty
             _ = TryAddAtEmpty(ref package);
 
+            if (AutoConsolidate)
+                Consolidate();
+
             InvokeRefresh();
 
             return 0 == package.Amount;
@@ -145,9 +148,10 @@ namespace ToolSmiths.InventorySystem.Inventories
         }
 
         /// <summary>
-        /// Returns change coins to the inventory, largest denomination first. Each
-        /// denomination of a valid change amount is always below its stack limit
-        /// (the overshoot at any denomination is less than that denomination's value).
+        /// Returns coins to the inventory, largest denomination first. Used both for
+        /// change (where each denomination is always below its stack limit) and for
+        /// <see cref="Consolidate"/> (where it may not be - TryAddToContainer spills
+        /// the overflow into further cells).
         /// The full-inventory edge (change dropped) is acknowledged - see
         /// dev/specs/2026-08-26-shop-currency-followups.md section 2.
         /// </summary>
@@ -191,6 +195,52 @@ namespace ToolSmiths.InventorySystem.Inventories
             }
 
             return new Currency( iron, copper, silver, gold );
+        }
+
+        private bool isConsolidating;
+
+        /// <summary>
+        /// Folds every stored coin into the largest denominations that fit, leaving the
+        /// remainder as loose change. Value-preserving: Total before == Total after.
+        /// Re-entrancy is guarded because <see cref="AddChange"/> re-enters
+        /// <see cref="TryAddToContainer"/>, which is where <see cref="AutoConsolidate"/>
+        /// is honoured.
+        /// </summary>
+        public void Consolidate()
+        {
+            if (isConsolidating)
+                return;
+
+            var wallet = CalculateCash();
+
+            if (0u == wallet.Total)
+                return;
+
+            var consolidated = new Currency(wallet.Total);
+
+            if (consolidated.Iron == wallet.Iron
+                && consolidated.Copper == wallet.Copper
+                && consolidated.Silver == wallet.Silver
+                && consolidated.Gold == wallet.Gold)
+                return; // already canonical - don't churn the grid
+
+            isConsolidating = true;
+
+            try
+            {
+                RemoveCurrency(CurrencyType.Iron, wallet.Iron);
+                RemoveCurrency(CurrencyType.Copper, wallet.Copper);
+                RemoveCurrency(CurrencyType.Silver, wallet.Silver);
+                RemoveCurrency(CurrencyType.Gold, wallet.Gold);
+
+                AddChange(consolidated);
+            }
+            finally
+            {
+                isConsolidating = false;
+            }
+
+            InvokeRefresh();
         }
     }
 }

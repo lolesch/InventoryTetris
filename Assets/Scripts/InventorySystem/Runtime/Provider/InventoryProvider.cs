@@ -143,6 +143,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         public void ToggleAutoEquip() => Equipment.autoEquip = !Equipment.autoEquip;
         public void SortPlayerInventory() => Inventory.Sort();
+        public void ConsolidatePlayerCurrency() => Inventory.Consolidate();
         public void SortPlayerStash() => Stash.Sort();
 
         public void ClearPlayerEquipment() => RemoveAllItems(Equipment);
