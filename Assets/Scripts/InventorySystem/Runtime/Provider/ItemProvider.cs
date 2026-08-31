@@ -287,8 +287,8 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         public AbstractItem GenerateCurrency(CurrencyType currencyType) => new CurrencyItem(currencyType);
 
-        // magic find re-enabled in the RarityMagicFind task
-        private ItemRarity GetRandomRarity() => itemRarityDistribution.Roll();
+        private ItemRarity GetRandomRarity() =>
+            itemRarityDistribution.Roll(CharacterProvider.Instance.Player.GetStatValue(StatName.IncreasedItemRarity));
 
         // TODO: equipmentType defines the list of icons 
         // TODO: rarity defines what icon within the list

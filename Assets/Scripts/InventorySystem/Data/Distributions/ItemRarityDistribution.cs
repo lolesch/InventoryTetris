@@ -1,4 +1,5 @@
 using ToolSmiths.InventorySystem.Data.Enums;
+using ToolSmiths.InventorySystem.Probability;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Data.Distributions
@@ -22,5 +23,19 @@ namespace ToolSmiths.InventorySystem.Data.Distributions
             1f                              // 1 for the killing player
             + AlliesWithinRange() * 1f      // 1 more for each partied player within two screens
             + RemainingPlayers() * 0.5f;    // 0.5 for each remaining player (unpartied or far)
+
+        /// <summary>
+        /// Rolls a rarity with magic find applied as Diablo II's rarest-first cascade.
+        /// A magic find of 0 is identical to <see cref="AbstractProbabilityDistribution{T}.Roll"/>.
+        /// P(NoDrop) is unchanged at every magic-find value.
+        /// </summary>
+        public ItemRarity Roll(float magicFind)
+        {
+            if (magicFind <= 0f)
+                return Roll();
+
+            var cascaded = RarityMagicFind.Apply(Probabilities, magicFind);
+            return ProbabilityTable<ItemRarity>.Sample(cascaded, Random.Range(0f, 1f));
+        }
     }
 }
