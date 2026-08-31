@@ -27498,6 +27498,7 @@ MonoBehaviour:
   jewelryDistribution: {fileID: 11400000, guid: 54faba0152fdb8849ad9223e39a69145, type: 2}
   consumableTypeDistribution: {fileID: 11400000, guid: ca398d20cb0869a4ebef17325eeb1d21, type: 2}
   currencyTypeDistribution: {fileID: 11400000, guid: 9cd2eb73a0c901c4fa216cf2fe099481, type: 2}
+  currencyDropTable: {fileID: 11400000, guid: c47ab8125364fb141818083bd5391695, type: 2}
   Amulets:
   - {fileID: 11400000, guid: b19d9e41f7a59ae44946a83314ef6a55, type: 2}
   - {fileID: 11400000, guid: f5bef30ed8acf8a4d9fee3d05c03e30a, type: 2}

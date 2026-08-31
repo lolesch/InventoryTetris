@@ -36,14 +36,14 @@ MonoBehaviour:
     Probability: 0
   - name: Gold
     Enumeration: 4
-    Probability: 0.06666667
+    Probability: 0.011235955
   - name: Silver
     Enumeration: 3
-    Probability: 0.13333334
-  - name: Iron
-    Enumeration: 2
-    Probability: 0.26666668
+    Probability: 0.08988764
   - name: Copper
     Enumeration: 1
-    Probability: 0.53333336
-  exampleResults: 01000000010000000100000001000000010000000100000002000000020000000300000004000000
+    Probability: 0.4494382
+  - name: Iron
+    Enumeration: 2
+    Probability: 0.4494382
+  exampleResults: 01000000010000000100000001000000010000000200000002000000020000000300000003000000
