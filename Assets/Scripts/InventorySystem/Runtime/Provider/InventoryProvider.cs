@@ -79,15 +79,6 @@ namespace ToolSmiths.InventorySystem.Inventories
             }
         }
 
-        private void AddCurrency(CurrencyType currencyType)
-        {
-            for (var i = 0; i < Amount; i++)
-            {
-                var randomCurrency = ItemProvider.Instance.GenerateCurrency(currencyType);
-                _ = CharacterProvider.Instance.Player.PickUpItem(new Package(null, randomCurrency, 1u));
-            }
-        }
-
         public void AddRandomLoot()
         {
             var items = ItemProvider.Instance.GenerateRandomLoot(Amount);
@@ -135,11 +126,6 @@ namespace ToolSmiths.InventorySystem.Inventories
         public void SetItemToArrows() => AddConsumable(ConsumableType.Arrow);
         public void SetItemToBooks() => AddConsumable(ConsumableType.Book);
         public void SetItemToPotions() => AddConsumable(ConsumableType.Potion);
-
-        public void SetItemToIron() => AddCurrency(CurrencyType.Iron);
-        public void SetItemToCopper() => AddCurrency(CurrencyType.Copper);
-        public void SetItemToSilver() => AddCurrency(CurrencyType.Silver);
-        public void SetItemToGold() => AddCurrency(CurrencyType.Gold);
 
         public void ToggleAutoEquip() => Equipment.autoEquip = !Equipment.autoEquip;
         public void SortPlayerInventory() => Inventory.Sort();
