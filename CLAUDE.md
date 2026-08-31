@@ -29,7 +29,13 @@ The published site at <https://lolesch.github.io/InventoryTetris/> is built from
 **`GitPage` branch**, path `/docs` (verified via `gh api repos/lolesch/InventoryTetris/pages`).
 Nothing under `docs/` on `main` is published today.
 
-`docs/agents/` is agent configuration, not site content. If `main` is ever merged into
-`GitPage`, **exclude `docs/agents/`** — Jekyll would otherwise render those files as
-public pages at `/agents/*.html`. `docs/adr/` and a root `CONTEXT.md`, once they exist,
-carry the same caveat.
+`docs/agents/` is agent configuration, not site content, and so is the `docs/adr/`
+directory `/domain-modeling` will create. Both are excluded from the built site by
+`exclude:` in `docs/_config.yml`, which is kept byte-identical on `main` and `GitPage`
+so a merge in either direction cannot resolve the protection away.
+
+That exclude is the enforcement; prefer leaving `docs/agents/` and `docs/adr/` out of a
+`main` -> `GitPage` merge anyway. Without it these files would be *published*, though
+not rendered: Jekyll copies files with no YAML front matter to the destination verbatim,
+so they would be fetchable at `/agents/issue-tracker.md` rather than turned into HTML.
+A root `CONTEXT.md` sits outside `docs/` and is never part of the site.
