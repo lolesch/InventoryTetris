@@ -103,7 +103,10 @@ namespace ToolSmiths.InventorySystem.Probability
             }
 
             var f = failWeight > 0f ? failWeight : 0f;
-            var pFail = FailIndex >= 0 && f > 0f ? f / (f + successSum) : 0f; // Task 3 adds the exponent
+            var e = failExponent > 0f ? failExponent : 1f;
+            var pFail = FailIndex >= 0 && f > 0f
+                ? MathF.Pow(f / (f + successSum), e)
+                : 0f;
             if (pFail < 0f) pFail = 0f;
             else if (pFail > 1f) pFail = 1f;
 
