@@ -81,10 +81,10 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             void TryAddToInventory()
             {
-                if (ItemStack.Single < package.Item.StackLimit)
+                if (1u < package.Item.StackLimit)
                     Debug.LogWarning($"EquipmentItems should not be stackable! {package.Item.StackLimit}");
 
-                var amount = Math.Min(package.Amount, (uint)package.Item.StackLimit);
+                var amount = Math.Min(package.Amount, package.Item.StackLimit);
 
                 if (StoredPackages.TryAdd(position, new Package(this, package.Item, amount)))
                 {

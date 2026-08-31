@@ -26,6 +26,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         [SerializeField] private EquipmentTypeDistribution jewelryDistribution;
         [SerializeField] private ConsumableTypeDistribution consumableTypeDistribution;
         [SerializeField] private CurrencyTypeDistribution currencyTypeDistribution;
+        [SerializeField] private CurrencyDropTable currencyDropTable;
 
         [Header("Uniques")]
         [SerializeField] private List<AbstractItemObject> Amulets;
@@ -55,9 +56,9 @@ namespace ToolSmiths.InventorySystem.Inventories
         // TODO: make it a serialized dictionary
         [SerializeField] private List<Sprite> CurrencyIcons = new();
 
-        public List<AbstractItem> GenerateRandomLoot(uint amount = 1)
+        public List<Package> GenerateRandomLoot(uint amount = 1)
         {
-            var generatedLoot = new List<AbstractItem>();
+            var generatedLoot = new List<Package>();
             /// calculates the number of items to drop
             CalculateBonusDrops(ref amount);
 
@@ -73,25 +74,25 @@ namespace ToolSmiths.InventorySystem.Inventories
             }
         }
 
-        private AbstractItem GenerateRandomItem()
+        private Package GenerateRandomItem()
         {
             /// selects item type
-            var itemCategory = itemCategoryDistribution.GetRandomEnumerator();
+            var itemCategory = itemCategoryDistribution.Roll();
 
             return itemCategory switch
             {
-                ItemCategory.Equipment => GenerateRandomEquipment(),
-                ItemCategory.Consumable => GenerateRandomConsumable(),
+                ItemCategory.Equipment => new Package(null, GenerateRandomEquipment(), 1u),
+                ItemCategory.Consumable => new Package(null, GenerateRandomConsumable(), 1u),
                 ItemCategory.Currency => GenerateRandomCurrency(),
 
-                ItemCategory.NONE => null,
-                _ => null,
+                ItemCategory.NONE => default,
+                _ => default,
             };
         }
 
         public AbstractItem GenerateRandomEquipment()
         {
-            var equipmentCategory = equipmentCategoryDistribution.GetRandomEnumerator();
+            var equipmentCategory = equipmentCategoryDistribution.Roll();
 
             return equipmentCategory switch
             {
@@ -105,7 +106,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         private AbstractItem GenerateRandomArmament()
         {
-            var equipmentType = armamentsDistribution.GetRandomEnumerator();
+            var equipmentType = armamentsDistribution.Roll();
 
             return equipmentType switch
             {
@@ -125,7 +126,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         private AbstractItem GenerateRandomWeapon()
         {
-            var weaponCategory = weaponCategoryDistribution.GetRandomEnumerator();
+            var weaponCategory = weaponCategoryDistribution.Roll();
 
             return weaponCategory switch
             {
@@ -139,7 +140,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         private AbstractItem GenerateRandomOneHand()
         {
-            var equipmentType = oneHandDistribution.GetRandomEnumerator();
+            var equipmentType = oneHandDistribution.Roll();
 
             return equipmentType switch
             {
@@ -152,7 +153,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         private AbstractItem GenerateRandomTwoHand()
         {
-            var equipmentType = twoHandDistribution.GetRandomEnumerator();
+            var equipmentType = twoHandDistribution.Roll();
 
             return equipmentType switch
             {
@@ -165,7 +166,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         private AbstractItem GenerateRandomOffHand()
         {
-            var equipmentType = offHandDistribution.GetRandomEnumerator();
+            var equipmentType = offHandDistribution.Roll();
 
             return equipmentType switch
             {
@@ -178,7 +179,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         private AbstractItem GenerateRandomJewelry()
         {
-            var equipmentType = jewelryDistribution.GetRandomEnumerator();
+            var equipmentType = jewelryDistribution.Roll();
 
             return equipmentType switch
             {
@@ -247,7 +248,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         private AbstractItem GenerateRandomConsumable()
         {
-            var consumable = consumableTypeDistribution.GetRandomEnumerator();
+            var consumable = consumableTypeDistribution.Roll();
 
             return GenerateRandomOfConsumableType(consumable);
         }
@@ -267,17 +268,27 @@ namespace ToolSmiths.InventorySystem.Inventories
                 };
         }
 
-        public AbstractItem GenerateRandomCurrency()
+        public Package GenerateRandomCurrency()
         {
-            var currency = currencyTypeDistribution.GetRandomEnumerator();
+            var currency = currencyTypeDistribution.Roll();
 
-            return GenerateCurrency(currency);
+            if (currencyDropTable == null)
+            {
+                Debug.LogError($"{nameof(ItemProvider)}: {nameof(currencyDropTable)} is not assigned - no currency will drop");
+                return default;
+            }
+
+            var amount = currencyDropTable.RollAmount(currency);
+
+            return amount == 0u
+                ? default
+                : new Package(null, GenerateCurrency(currency), amount);
         }
 
         public AbstractItem GenerateCurrency(CurrencyType currencyType) => new CurrencyItem(currencyType);
 
-        // TODO: implement falloff => ATM 300% will always drop legendaries
-        private ItemRarity GetRandomRarity() => itemRarityDistribution.GetRandomEnumerator(CharacterProvider.Instance.Player.GetStatValue(StatName.IncreasedItemRarity));
+        private ItemRarity GetRandomRarity() =>
+            itemRarityDistribution.Roll(CharacterProvider.Instance.Player.GetStatValue(StatName.IncreasedItemRarity));
 
         // TODO: equipmentType defines the list of icons 
         // TODO: rarity defines what icon within the list

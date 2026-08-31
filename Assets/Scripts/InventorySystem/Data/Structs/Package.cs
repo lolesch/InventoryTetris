@@ -18,7 +18,7 @@ namespace ToolSmiths.InventorySystem.Data
             Item = item;
             Amount = amount;
 
-            if (item != null && (uint)item.StackLimit < amount)
+            if (item != null && item.StackLimit < amount)
                 Debug.LogWarning($"The Package you constructed contains more items than the item's stacking limit!");
         }
 
@@ -27,7 +27,7 @@ namespace ToolSmiths.InventorySystem.Data
 
         [field: SerializeField] public uint Amount { get; private set; }
 
-        public readonly uint SpaceLeft => (uint)Item.StackLimit - Amount;
+        public readonly uint SpaceLeft => Item.StackLimit - Amount;
         public readonly bool IsValid => Item != null && 0 < Amount;
 
         /// <summary>Tries to add to the amount (within stacking limit).</summary>

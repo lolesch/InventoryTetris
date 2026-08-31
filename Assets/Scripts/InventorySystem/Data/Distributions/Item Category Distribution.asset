@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dd1a5cce5fa443e4497522dca83bc16e, type: 3}
   m_Name: Item Category Distribution
   m_EditorClassIdentifier: 
-  failQuantity: 0
+  failWeight: 0
   quantities:
   - name: NONE
     Enumeration: 0
@@ -26,18 +26,3 @@ MonoBehaviour:
   - name: Currency
     Enumeration: 3
     Quantity: 1
-  successProbability: 1
-  probabilities:
-  - name: NONE
-    Enumeration: 0
-    Probability: 0
-  - name: Consumable
-    Enumeration: 1
-    Probability: 0.16666667
-  - name: Equipment
-    Enumeration: 2
-    Probability: 0.6666667
-  - name: Currency
-    Enumeration: 3
-    Probability: 0.16666667
-  exampleResults: 01000000020000000200000002000000020000000200000002000000020000000200000002000000

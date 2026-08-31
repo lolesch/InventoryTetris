@@ -23,6 +23,9 @@ namespace ToolSmiths.InventorySystem.Inventories
             /// TryAddToEmpty
             _ = TryAddAtEmpty(ref package);
 
+            if (AutoConsolidate)
+                Consolidate();
+
             InvokeRefresh();
 
             return 0 == package.Amount;
@@ -48,7 +51,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             void TryAddToInventory()
             {
-                var amount = Math.Min(package.Amount, (uint)package.Item.StackLimit);
+                var amount = Math.Min(package.Amount, package.Item.StackLimit);
 
                 if (StoredPackages.TryAdd(position, new Package(this, package.Item, amount)))
                     _ = package.ReduceAmount(amount);
@@ -65,43 +68,9 @@ namespace ToolSmiths.InventorySystem.Inventories
                 var addedAmount = storedPackage.IncreaseAmount(package.Amount);
                 _ = package.ReduceAmount(addedAmount);
 
-                if ( storedPackage.Item is CurrencyItem currencyItem )
-                    if ( storedPackage.Amount == (uint)storedPackage.Item.StackLimit ) // full stack
-                        if ( CheckForCurrencyUpgrade() )
-                            return true;
-
                 StoredPackages[storedPosition] = storedPackage;
 
                 return true;
-
-                bool CheckForCurrencyUpgrade()
-                {
-                    var higherCurrency = UpgradeCurrency( currencyItem );
-
-                    if (higherCurrency != storedPackage.Item)
-                    {
-                        RemoveAtPosition(storedPosition, storedPackage);
-
-                        storedPackage = new Package(storedPackage.Sender, higherCurrency, 1u);
-
-                        if (TryAddToContainer(ref storedPackage))
-                            return true;
-                    }
-
-                    return false;
-
-                    AbstractItem UpgradeCurrency(CurrencyItem currencyItem) => currencyItem.CurrencyType switch
-                    {
-                        Data.Enums.CurrencyType.Copper => new CurrencyItem(Data.Enums.CurrencyType.Iron),
-                        Data.Enums.CurrencyType.Iron => new CurrencyItem(Data.Enums.CurrencyType.Silver),
-                        Data.Enums.CurrencyType.Silver => new CurrencyItem(Data.Enums.CurrencyType.Gold),
-
-                        // no upgrade
-                        Data.Enums.CurrencyType.Gold => currencyItem,
-                        Data.Enums.CurrencyType.NONE => currencyItem,
-                        _ => currencyItem,
-                    };
-                }
             }
 
             void TrySwap(Package storedPackage, Vector2Int storedPosition)
@@ -179,9 +148,10 @@ namespace ToolSmiths.InventorySystem.Inventories
         }
 
         /// <summary>
-        /// Returns change coins to the inventory, largest denomination first. Each
-        /// denomination of a valid change amount is always below its stack limit
-        /// (the overshoot at any denomination is less than that denomination's value).
+        /// Returns coins to the inventory, largest denomination first. Used both for
+        /// change (where each denomination is always below its stack limit) and for
+        /// <see cref="Consolidate"/> (where it may not be - TryAddToContainer spills
+        /// the overflow into further cells).
         /// The full-inventory edge (change dropped) is acknowledged - see
         /// dev/specs/2026-08-26-shop-currency-followups.md section 2.
         /// </summary>
@@ -224,7 +194,53 @@ namespace ToolSmiths.InventorySystem.Inventories
                     gold += package.Value.Amount;
             }
 
-            return new Currency( copper, iron, silver, gold );
+            return new Currency( iron, copper, silver, gold );
+        }
+
+        private bool isConsolidating;
+
+        /// <summary>
+        /// Folds every stored coin into the largest denominations that fit, leaving the
+        /// remainder as loose change. Value-preserving: Total before == Total after.
+        /// Re-entrancy is guarded because <see cref="AddChange"/> re-enters
+        /// <see cref="TryAddToContainer"/>, which is where <see cref="AutoConsolidate"/>
+        /// is honoured.
+        /// </summary>
+        public void Consolidate()
+        {
+            if (isConsolidating)
+                return;
+
+            var wallet = CalculateCash();
+
+            if (0u == wallet.Total)
+                return;
+
+            var consolidated = new Currency(wallet.Total);
+
+            if (consolidated.Iron == wallet.Iron
+                && consolidated.Copper == wallet.Copper
+                && consolidated.Silver == wallet.Silver
+                && consolidated.Gold == wallet.Gold)
+                return; // already canonical - don't churn the grid
+
+            isConsolidating = true;
+
+            try
+            {
+                RemoveCurrency(CurrencyType.Iron, wallet.Iron);
+                RemoveCurrency(CurrencyType.Copper, wallet.Copper);
+                RemoveCurrency(CurrencyType.Silver, wallet.Silver);
+                RemoveCurrency(CurrencyType.Gold, wallet.Gold);
+
+                AddChange(consolidated);
+            }
+            finally
+            {
+                isConsolidating = false;
+            }
+
+            InvokeRefresh();
         }
     }
 }

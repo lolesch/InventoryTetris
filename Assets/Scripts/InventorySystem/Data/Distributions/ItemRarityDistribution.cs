@@ -1,4 +1,5 @@
-﻿using ToolSmiths.InventorySystem.Data.Enums;
+using ToolSmiths.InventorySystem.Data.Enums;
+using ToolSmiths.InventorySystem.Probability;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Data.Distributions
@@ -10,14 +11,31 @@ namespace ToolSmiths.InventorySystem.Data.Distributions
         [SerializeField, Range(1, 8)] private int exampleTotalPlayerCount = 1;
         [SerializeField, Range(0, 7)] private int exampleAlliedPlayerCount = 7;
 
-        private int AlliesWithinRange() => Application.isPlaying ? 0 : Mathf.FloorToInt(Mathf.Min(exampleTotalPlayerCount - 1f, exampleAlliedPlayerCount)); // TODO: requires real inplementation
+        // TODO: real player detection. Until multiplayer exists, the preview fields drive
+        // this identically in edit and play mode — the old `Application.isPlaying ? 0`
+        // branch made the two disagree (spec defect #3).
+        private int AlliesWithinRange() =>
+            Mathf.FloorToInt(Mathf.Min(exampleTotalPlayerCount - 1f, exampleAlliedPlayerCount));
 
         private int RemainingPlayers() => exampleTotalPlayerCount - 1 - AlliesWithinRange();
 
-        protected override int GetFailExponent() =>
-            Mathf.FloorToInt(1f                         // 1 for the killing player
-            + AlliesWithinRange() * 1f                  // 1 more for each player that is a) partied with the killing player && b) within two screens
-            + RemainingPlayers() * 0.5f);               // 0.5 for each remaining player (either unpartied or far away).
-                                                        // => rounded down   
+        protected override float GetFailExponent() =>
+            1f                              // 1 for the killing player
+            + AlliesWithinRange() * 1f      // 1 more for each partied player within two screens
+            + RemainingPlayers() * 0.5f;    // 0.5 for each remaining player (unpartied or far)
+
+        /// <summary>
+        /// Rolls a rarity with magic find applied as Diablo II's rarest-first cascade.
+        /// A magic find of 0 is identical to <see cref="AbstractProbabilityDistribution{T}.Roll"/>.
+        /// P(NoDrop) is unchanged at every magic-find value.
+        /// </summary>
+        public ItemRarity Roll(float magicFind)
+        {
+            if (magicFind <= 0f)
+                return Roll();
+
+            var cascaded = RarityMagicFind.Apply(Probabilities, magicFind);
+            return ProbabilityTable<ItemRarity>.Sample(cascaded, Random.Range(0f, 1f));
+        }
     }
 }

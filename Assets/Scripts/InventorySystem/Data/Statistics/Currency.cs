@@ -6,40 +6,46 @@ namespace ToolSmiths.InventorySystem.Data
     [Serializable]
     public struct Currency
     {
-        [field: SerializeField] public uint Copper { get; private set; }
         [field: SerializeField] public uint Iron { get; private set; }
+        [field: SerializeField] public uint Copper { get; private set; }
         [field: SerializeField] public uint Silver { get; private set; }
         [field: SerializeField] public uint Gold { get; private set; }
 
-        public static readonly uint copperToIron = 20u;
-        public static readonly uint copperToSilver = 240u;
-        public static readonly uint copperToGold = 1200u;
-        public static readonly uint ironToSilver = copperToSilver / copperToIron; // = 12
-        public static readonly uint silverToGold = copperToGold / copperToSilver; // = 5
+        /// Denomination ladder: iron -> copper -> silver -> gold at 5 / 12 / 20.
+        /// Iron is the base unit - the cheapest metal, and the one almost never
+        /// coined, because it is heavy, brittle when cast, and rusts. Mirrors
+        /// pound-shilling-pence: 12 pence = 1 shilling, 20 shillings = 1 pound.
+        /// The ratios multiply to the same 1200 as the old 20/12/5 ladder, so gold
+        /// keeps its value and no item price needs retuning.
+        public static readonly uint ironToCopper = 5u;
+        public static readonly uint ironToSilver = 60u;
+        public static readonly uint ironToGold = 1200u;
+        public static readonly uint copperToSilver = ironToSilver / ironToCopper; // = 12
+        public static readonly uint silverToGold = ironToGold / ironToSilver;     // = 20
 
-        public readonly uint Total => Copper + Iron * copperToIron + Silver * copperToSilver + Gold * copperToGold;
+        public readonly uint Total => Iron + Copper * ironToCopper + Silver * ironToSilver + Gold * ironToGold;
 
         public Currency( uint total )
         {
             // Carry the remainder down instead of re-deriving it at each denomination:
             // 3 divisions + 3 modulos instead of 3 + 6, and each div/mod pair on the
             // same operands is one hardware division.
-            Gold = total / copperToGold;
+            Gold = total / ironToGold;
 
-            var rest = total % copperToGold;
-            Silver = rest / copperToSilver;
+            var rest = total % ironToGold;
+            Silver = rest / ironToSilver;
 
-            rest %= copperToSilver;
-            Iron = rest / copperToIron;
-            Copper = rest % copperToIron;
+            rest %= ironToSilver;
+            Copper = rest / ironToCopper;
+            Iron = rest % ironToCopper;
         }
 
         public Currency( float total ) => this = new Currency( (uint)Mathf.Abs( total ) );
 
-        public Currency(uint copper, uint iron, uint silver, uint gold)
+        public Currency(uint iron, uint copper, uint silver, uint gold)
         {
-            Copper = copper;
             Iron = iron;
+            Copper = copper;
             Silver = silver;
             Gold = gold;
         }
@@ -62,12 +68,12 @@ namespace ToolSmiths.InventorySystem.Data
 
             uint paid = 0u;
 
-            var copper = Take(Copper, 1u);
-            var iron = Take(Iron, copperToIron);
-            var silver = Take(Silver, copperToSilver);
-            var gold = Take(Gold, copperToGold);
+            var iron = Take(Iron, 1u);
+            var copper = Take(Copper, ironToCopper);
+            var silver = Take(Silver, ironToSilver);
+            var gold = Take(Gold, ironToGold);
 
-            toRemove = new Currency(copper, iron, silver, gold);
+            toRemove = new Currency(iron, copper, silver, gold);
             change = new Currency(paid - owed); // paid >= owed is guaranteed once Total >= owed
             return true;
 
@@ -85,6 +91,6 @@ namespace ToolSmiths.InventorySystem.Data
             }
         }
 
-        public readonly override string ToString() => $"{Gold}G, {Silver}S, {Iron}I, {Copper}C ({Total})";
+        public readonly override string ToString() => $"{Gold}G, {Silver}S, {Copper}C, {Iron}I ({Total})";
     }
 }

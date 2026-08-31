@@ -79,32 +79,18 @@ namespace ToolSmiths.InventorySystem.Inventories
             }
         }
 
-        private void AddCurrency(CurrencyType currencyType)
-        {
-            for (var i = 0; i < Amount; i++)
-            {
-                var randomCurrency = ItemProvider.Instance.GenerateCurrency(currencyType);
-                _ = CharacterProvider.Instance.Player.PickUpItem(new Package(null, randomCurrency, 1u));
-            }
-        }
-
         public void AddRandomLoot()
         {
-            var items = ItemProvider.Instance.GenerateRandomLoot(Amount);
+            var loot = ItemProvider.Instance.GenerateRandomLoot(Amount);
 
-            for (var i = 0; i < items.Count; i++)
-                _ = CharacterProvider.Instance.Player.PickUpItem(new Package(null, items[i], 1u));
+            for (var i = 0; i < loot.Count; i++)
+                _ = CharacterProvider.Instance.Player.PickUpItem(loot[i]);
         }
 
         public void AddRandomCurrency()
         {
-            var randomCurrency = ItemProvider.Instance.GenerateRandomCurrency();
-
             for (var i = 0; i < Amount; i++)
-            {
-                var package = new Package(null, randomCurrency, 1u);
-                _ = CharacterProvider.Instance.Player.PickUpItem(package);
-            }
+                _ = CharacterProvider.Instance.Player.PickUpItem(ItemProvider.Instance.GenerateRandomCurrency());
         }
 
         public void RemoveAllItems(AbstractDimensionalContainer container)
@@ -136,13 +122,9 @@ namespace ToolSmiths.InventorySystem.Inventories
         public void SetItemToBooks() => AddConsumable(ConsumableType.Book);
         public void SetItemToPotions() => AddConsumable(ConsumableType.Potion);
 
-        public void SetItemToIron() => AddCurrency(CurrencyType.Copper);
-        public void SetItemToCopper() => AddCurrency(CurrencyType.Iron);
-        public void SetItemToSilver() => AddCurrency(CurrencyType.Silver);
-        public void SetItemToGold() => AddCurrency(CurrencyType.Gold);
-
         public void ToggleAutoEquip() => Equipment.autoEquip = !Equipment.autoEquip;
         public void SortPlayerInventory() => Inventory.Sort();
+        public void ConsolidatePlayerCurrency() => Inventory.Consolidate();
         public void SortPlayerStash() => Stash.Sort();
 
         public void ClearPlayerEquipment() => RemoveAllItems(Equipment);

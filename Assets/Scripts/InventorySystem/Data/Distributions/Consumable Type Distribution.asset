@@ -12,32 +12,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0cb2ec967031bd84c8eae251ba377929, type: 3}
   m_Name: Consumable Type Distribution
   m_EditorClassIdentifier: 
-  failQuantity: 0
+  failWeight: 0
   quantities:
   - name: NONE
     Enumeration: 0
     Quantity: 0
-  - name: Arrows
+  - name: Arrow
     Enumeration: 1
     Quantity: 5
-  - name: Books
+  - name: Book
     Enumeration: 2
     Quantity: 1
-  - name: Potions
+  - name: Potion
     Enumeration: 3
     Quantity: 3
-  successProbability: 1
-  probabilities:
-  - name: NONE
-    Enumeration: 0
-    Probability: 0
-  - name: Arrows
-    Enumeration: 1
-    Probability: 0.5555556
-  - name: Books
-    Enumeration: 2
-    Probability: 0.11111111
-  - name: Potions
-    Enumeration: 3
-    Probability: 0.33333334
-  exampleResults: 01000000010000000100000001000000010000000200000002000000020000000300000003000000

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 184587034d2510040944ccff415ce996, type: 3}
   m_Name: Equipment Category Distribution
   m_EditorClassIdentifier: 
-  failQuantity: 0
+  failWeight: 0
   quantities:
   - name: NONE
     Enumeration: 0
@@ -26,18 +26,3 @@ MonoBehaviour:
   - name: Jewelry
     Enumeration: 3
     Quantity: 1
-  successProbability: 1
-  probabilities:
-  - name: NONE
-    Enumeration: 0
-    Probability: 0
-  - name: Jewelry
-    Enumeration: 3
-    Probability: 0.14285715
-  - name: Armaments
-    Enumeration: 1
-    Probability: 0.2857143
-  - name: Weapons
-    Enumeration: 2
-    Probability: 0.5714286
-  exampleResults: 01000000010000000200000002000000020000000200000002000000020000000200000003000000
