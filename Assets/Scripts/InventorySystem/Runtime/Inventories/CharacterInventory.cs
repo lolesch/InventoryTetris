@@ -65,43 +65,9 @@ namespace ToolSmiths.InventorySystem.Inventories
                 var addedAmount = storedPackage.IncreaseAmount(package.Amount);
                 _ = package.ReduceAmount(addedAmount);
 
-                if ( storedPackage.Item is CurrencyItem currencyItem )
-                    if ( storedPackage.Amount == (uint)storedPackage.Item.StackLimit ) // full stack
-                        if ( CheckForCurrencyUpgrade() )
-                            return true;
-
                 StoredPackages[storedPosition] = storedPackage;
 
                 return true;
-
-                bool CheckForCurrencyUpgrade()
-                {
-                    var higherCurrency = UpgradeCurrency( currencyItem );
-
-                    if (higherCurrency != storedPackage.Item)
-                    {
-                        RemoveAtPosition(storedPosition, storedPackage);
-
-                        storedPackage = new Package(storedPackage.Sender, higherCurrency, 1u);
-
-                        if (TryAddToContainer(ref storedPackage))
-                            return true;
-                    }
-
-                    return false;
-
-                    AbstractItem UpgradeCurrency(CurrencyItem currencyItem) => currencyItem.CurrencyType switch
-                    {
-                        Data.Enums.CurrencyType.Copper => new CurrencyItem(Data.Enums.CurrencyType.Iron),
-                        Data.Enums.CurrencyType.Iron => new CurrencyItem(Data.Enums.CurrencyType.Silver),
-                        Data.Enums.CurrencyType.Silver => new CurrencyItem(Data.Enums.CurrencyType.Gold),
-
-                        // no upgrade
-                        Data.Enums.CurrencyType.Gold => currencyItem,
-                        Data.Enums.CurrencyType.NONE => currencyItem,
-                        _ => currencyItem,
-                    };
-                }
             }
 
             void TrySwap(Package storedPackage, Vector2Int storedPosition)
