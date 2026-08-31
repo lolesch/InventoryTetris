@@ -1,7 +1,9 @@
 # Rebuild the probability distribution system behind a testable seam
 
 Date: 2026-08-30
-Status: Ready for implementation
+Status: Shipped 2026-08-31 - all 10 tasks, `3ad558c`..`48c4534` on `main`
+(ProbabilityTable, the fail exponent, WeightMigration.Remap, MagicFindCascade, the
+thin adapter, the non-dirtying inspector, and the asset reserialization).
 Base: cut from `feature/currency-redesign`.
 
 ## Problem Statement
