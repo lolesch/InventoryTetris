@@ -44,6 +44,40 @@ namespace ToolSmiths.InventorySystem.Probability
 
         public float ProbabilityOf(T outcome) => _probabilities[IndexOfValue(outcome)];
 
+        /// <summary>
+        /// Single-pass CDF walk. <paramref name="roll"/> is expected in [0, 1]. A roll of 0
+        /// returns the first non-zero-probability outcome; a roll at or past the final
+        /// threshold returns the last non-zero outcome — never a phantom default(T).
+        /// </summary>
+        public T Sample(float roll) => Sample(_probabilities, roll);
+
+        /// <summary>
+        /// Samples an arbitrary probability vector in enum-declaration order — the path the
+        /// magic-find cascade takes, so the game has exactly one sampler.
+        /// </summary>
+        public static T Sample(IReadOnlyList<float> probabilities, float roll)
+        {
+            if (probabilities is null)
+                throw new ArgumentNullException(nameof(probabilities));
+
+            var cumulative = 0f;
+            var lastNonZero = -1;
+
+            for (var i = 0; i < probabilities.Count; i++)
+            {
+                if (probabilities[i] <= 0f)
+                    continue;
+
+                lastNonZero = i;
+                cumulative += probabilities[i];
+
+                if (roll <= cumulative)
+                    return Outcomes[i];
+            }
+
+            return Outcomes[lastNonZero >= 0 ? lastNonZero : probabilities.Count - 1];
+        }
+
         private static float[] Compute(IReadOnlyList<float> weights, float failWeight, float failExponent)
         {
             var result = new float[weights.Count];
