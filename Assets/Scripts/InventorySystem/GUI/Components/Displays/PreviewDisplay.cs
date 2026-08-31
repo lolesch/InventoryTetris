@@ -59,7 +59,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                 icon.sprite = package.Item.Icon;
 
             if (amount)
-                amount.text = 1 < package.Amount ? $"{package.Amount}/{(int)package.Item.StackLimit}" : string.Empty;
+                amount.text = 1 < package.Amount ? $"{package.Amount}/{package.Item.StackLimit}" : string.Empty;
 
             if (goldValue)
                 goldValue.RefreshDisplay(0f <= priceOverride
@@ -112,7 +112,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                 icon.sprite = package.Item.Icon;
 
             if (amount)
-                amount.text = 1 < package.Amount ? $"{package.Amount}/{(int)package.Item.StackLimit}" : string.Empty;
+                amount.text = 1 < package.Amount ? $"{package.Amount}/{package.Item.StackLimit}" : string.Empty;
 
             if (goldValue)
                 goldValue.RefreshDisplay(new Currency(package.Item.SellValue)); //? $"{package.Item.GoldValue}" : string.Empty;

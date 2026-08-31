@@ -52,7 +52,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         // => this should simply check if a stack of the same item is at the drop position and add it.
         protected bool TryStack(ref Package package)
         {
-            if (!package.IsValid || package.Item.StackLimit <= ItemStack.Single)
+            if (!package.IsValid || package.Item.StackLimit <= 1u)
                 return false;
 
             var positions = StoredPackages.Keys.ToList();

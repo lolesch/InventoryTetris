@@ -14,7 +14,7 @@ namespace ToolSmiths.InventorySystem.Items
     {
         [field: SerializeField] public Sprite Icon { get; protected set; } = null;
         [field: SerializeField] public ItemSize Dimensions { get; protected set; } = ItemSize.OneByOne;
-        [field: SerializeField] public ItemStack StackLimit { get; protected set; } = ItemStack.Single;
+        [field: SerializeField] public uint StackLimit { get; protected set; } = 1u;
         [field: SerializeField] public ItemRarity Rarity { get; protected set; } = ItemRarity.Common;
 
         // consider changing to prefix/suffix system
@@ -128,7 +128,7 @@ namespace ToolSmiths.InventorySystem.Items
             ConsumableType = consumableType;
             Rarity = rarity;
 
-            StackLimit = ItemStack.StackOfTen; // TODO: Get type specific stack limit
+            StackLimit = 10u; // TODO: Get type specific stack limit
 
             Icon = ItemProvider.Instance.GetIcon(ConsumableType, Rarity);
             Dimensions = GetDimension(ConsumableType);
@@ -232,7 +232,7 @@ namespace ToolSmiths.InventorySystem.Items
             EquipmentType = equipmentType;
             Rarity = rarity;
 
-            StackLimit = ItemStack.Single;
+            StackLimit = 1u;
 
             Icon = ItemProvider.Instance.GetIcon(EquipmentType, Rarity);
             Dimensions = GetDimension(EquipmentType);
@@ -380,13 +380,13 @@ namespace ToolSmiths.InventorySystem.Items
             // 5 silver, 20 silver -> exactly 1 gold.
             StackLimit = CurrencyType switch
             {
-                CurrencyType.Iron => (ItemStack)120u,
-                CurrencyType.Copper => (ItemStack)60u,
-                CurrencyType.Silver => (ItemStack)20u,
-                CurrencyType.Gold => (ItemStack)12u,
+                CurrencyType.Iron => 120u,
+                CurrencyType.Copper => 60u,
+                CurrencyType.Silver => 20u,
+                CurrencyType.Gold => 12u,
 
-                CurrencyType.NONE => ItemStack.NONE,
-                _ => ItemStack.NONE,
+                CurrencyType.NONE => 0u,
+                _ => 0u,
             };
         }
 
