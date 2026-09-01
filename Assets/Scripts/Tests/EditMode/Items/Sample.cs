@@ -1,5 +1,6 @@
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
+using ToolSmiths.InventorySystem.Items;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Tests.EditMode.Items
@@ -18,5 +19,11 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Items
             StatName stat = StatName.Health, int min = 1, int max = 100, float value = 50f,
             StatModifierType type = StatModifierType.FlatAdd) =>
             new(stat, new StatModifier(new Vector2Int(min, max), value, type));
+
+        /// <summary>One entry in a definition's affix pool, for the generator's roll tests.</summary>
+        public static AffixSlot Slot(
+            StatName stat = StatName.Health, int min = 10, int max = 20,
+            StatModifierType type = StatModifierType.FlatAdd, float weight = 1f) =>
+            new(stat, min, max, type, weight);
     }
 }
