@@ -439,20 +439,54 @@ Draw Phase 0b from **Appendix B** below + the recorded Spike Log, as a fresh pla
 
 ## Spike Log
 
-*(Task 2 step 5 fills this in.)*
+Run 2026-09-01 (issue #4). Verification: **Unity 6000.3.9f1 batch-mode EditMode run**
+(`Unity.exe -runTests -batchmode -testPlatform EditMode`) — the unity-mcp bridge was
+not connected this session, so the Editor-closed batch path was used. UTF is **1.6.0**.
+Spike test: `Assets/Scripts/Tests/EditMode/Inventories/Editor/ContainerSeamSpike.cs` —
+two `[Test]`s that `new CharacterInventory(new Vector2Int(4,4))`, one adding a
+`Package` built with a test-local `FakeItem : AbstractItem` (empty ctor, `protected`
+`StackLimit` setter — no singleton on `AbstractItem`'s own construction path) and
+asserting `StoredPackages` holds exactly it.
 
-**Baseline (Task 1 step 1):** _EditMode Run All = ___ / ___ passing._
+**Baseline:** EditMode Run All = **77 / 77** passing (`InventorySystem.Data.Tests` 28,
+`.Geometry.Tests` 15, `.Probability.Tests` 34).
 
-**Option A — `Editor/` folder, no asmdef:** _compiles? / discovered by Test Runner? /
-passes?_
+**Option A — `Editor/` folder, no asmdef → `Assembly-CSharp-Editor`:** ✅ **works.**
+Compiles (0 errors, 0 new warnings). The `<test-run>` went to **79 / 79** — both spike
+cases discovered under `Assembly-CSharp-Editor.dll` and green; the three existing
+assemblies unchanged at 28 / 15 / 34. Negative control passed: flipping the count
+assertion to `EqualTo(7)` produced exactly one failure at the edited line
+(`Expected: property Count equal to 7 / But was: 1`), proving the batch run recompiles
+the file and the test exercises the real `TryAddToContainer` path, not a stale
+assembly. `Assembly-CSharp-Editor` auto-references `Assembly-CSharp` and, with
+`UNITY_INCLUDE_TESTS` defined, carries the nunit + TestRunner references UTF's
+discovery needs.
 
-**Option B — asmdef references `Assembly-CSharp`:** _exact compiler message._
+**Option B — asmdef naming `Assembly-CSharp`:** not tried — Option A (cheaper) already
+gave a green test, which is the spike's stop condition. (Known: the compiler rejects
+`Assembly-CSharp` as an asmdef reference — "Assembly with name 'Assembly-CSharp' is
+not allowed to be referenced from an assembly definition file".)
 
-**Option C — Test Framework predefined-assembly setting:** _exists in UTF ___? /
-surfaces the test?_
+**Option C — Test Framework predefined-assembly setting:** not tried — not needed.
+Option A surfaces the test without any project-settings change.
 
-**Decision:** _`predefined-assembly testing works` → Phase 0 closes at Task 3a_ **/**
-_`extraction needed` → Phase 0b planned separately from Appendix B._
+**Decision: `predefined-assembly testing works` → Phase 0 closes at Task 3a.** The
+container core (`AbstractDimensionalContainer` / `CharacterInventory` /
+`CharacterEquipment` / `Package` / `AbstractItem`) is reachable from an EditMode test
+with **zero extraction and zero behaviour change**. Issue #4's five acceptance criteria
+are all met by the Editor-folder seam.
+
+**Known limitation of this seam (the case for the extraction as a follow-up):** an
+`Assembly-CSharp-Editor` test can only reach container behaviour that does *not* touch
+the `CharacterProvider` / `DragProvider` / `ItemProvider` singletons — so
+`CharacterInventory` add / stack / sort are coverable, but `CharacterEquipment` swap
+(where QA-4 lives, `CharacterEquipment.cs:91,118`) is not, and there is no per-module
+`InventorySystem.Containers.Tests` asmdef. ADR-0007 still wants
+`InventorySystem.Containers` extracted, and Phase 2's `ItemTransaction` is specified to
+live in it. That extraction is a **separate ticket** per issue #4 ("Don't fold the
+extraction into this ticket") and per Task 3b below — filed as **issue #15**
+(`blocked-by #4`, `blocking #9`), drawn from Appendix B. It was ADR-0007's assumption
+that this spike would *fail* and force the extraction now; it did not.
 
 ---
 
