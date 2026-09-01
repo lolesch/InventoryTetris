@@ -2,12 +2,23 @@
 
 Unity inventory/loot prototype. Source lives under `Assets/`; there is no `src/`.
 
-## Specs and plans
+## Specs and tickets
 
-Design specs go in `dev/specs/YYYY-MM-DD-<topic>-design.md`, implementation plans in
-`dev/plans/YYYY-MM-DD-<topic>.md`. Commit them with a `docs:` prefix and a body
-paragraph summarising the decision. When a skill defaults to writing a spec or plan
-somewhere else (e.g. `docs/superpowers/specs/`), write it to `dev/` instead.
+Design specs go in `dev/specs/YYYY-MM-DD-<topic>-design.md`, committed with a `docs:`
+prefix and a body paragraph summarising the decision. If `/to-spec` — or any skill —
+defaults to writing the spec somewhere else (an issue body, a `docs/` subfolder), put
+it in `dev/specs/` instead.
+
+Implementation work is broken out of a spec with `/to-tickets` into GitHub Issues
+(`lolesch/InventoryTetris`), then built one issue at a time with `/implement` (TDD via
+`/tdd`, closed with `/code-review`). Execute inline, never via subagents. **There is no
+per-phase implementation-plan document** — the issue is the unit of work; if one does
+not fit a single context window, split it into more issues rather than write a plan.
+
+`dev/plans/` holds the plans written before this switch (2026-09-01). They are still
+valid to execute as written — the foundational-rework Phase 0 plan
+(`2026-08-31-foundational-rework-phase-0.md`) is referenced by issues #3–#4. Don't add
+new files there.
 
 ## Agent skills
 

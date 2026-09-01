@@ -1,8 +1,9 @@
 # Foundational Rework — Phase 0 Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to
-> implement this plan task-by-task (this project's standing rule is inline
-> execution, not subagent dispatch). Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** execute this plan inline, task-by-task, in the current
+> session — never by dispatching subagents (project rule). Steps use checkbox
+> (`- [ ]`) syntax for tracking. This is issues #3 and #4 of the foundational-rework
+> epic (#2); later phases are GitHub Issues, not plan documents.
 
 **Goal:** Make the InventorySystem value types reachable from EditMode test
 assemblies, and settle — by spike — how the container core (`AbstractDimensionalContainer`,
