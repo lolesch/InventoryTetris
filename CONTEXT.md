@@ -96,6 +96,11 @@ The player's spendable money, wherever the coins physically sit. Currently not a
 
 ## Loot
 
+**Loot**:
+The items and coins a kill or a cleared Encounter yields. It drops live during a Run,
+not as a bundle handed over on Recall.
+_Avoid_: haul, spoils, bounty, take, rewards
+
 **Distribution**:
 An authored, weighted set of outcomes — which category drops, which rarity, which coin.
 _Avoid_: table (reserve that for the loot table), chances
@@ -113,3 +118,47 @@ Magic, remainder is Common. Distinct from scaling weights, which is what it is n
 The share of a roll that yields nothing. Held out of the cascade so magic find cannot
 change how often you get a drop, only how good it is.
 _Avoid_: no-drop chance, miss, empty
+
+## Runs
+
+**Run**:
+One trip from Town to a Location and back — the unit the loop turns on. It ends in a
+Recall or the hero's Death. Its two states are named `InTown` and `InField`.
+_Avoid_: expedition, sortie, mission, session; "run" here is the loot trip, not a
+test run
+
+**Field**:
+Everything on the Location side of a Run, as opposed to Town — "the hero is in the
+field" means a Run is underway.
+_Avoid_: the wild, outside, overworld, world map
+
+**Town**:
+The safe hub every Run starts and ends in, and where inventory management has its full
+tools. A Run *state*, never a Location.
+_Avoid_: base, camp, hub, hideout; town as a map destination
+
+**Location**:
+One authored field destination the hero can be Sent to. It carries the source level
+and the loot table a Run there rolls against.
+_Avoid_: level, zone, area, stage, node, dungeon, map
+
+**Encounter**:
+One fight against one group of enemies at a Location. A Run is a series of Encounters;
+loot and XP settle up each time one is cleared.
+_Avoid_: wave (reserve that for staged spawns inside a single Encounter, if it ever
+lands), battle, fight, combat
+
+**Send**:
+The player action that starts a Run — choose a Location, commit the hero. Transitions
+`InTown → InField`.
+_Avoid_: deploy, dispatch, embark, launch
+
+**Recall**:
+The player action that ends a Run with everything earned so far kept. Transitions
+`InField → InTown`.
+_Avoid_: retreat, extract, return, flee, escape
+
+**Death**:
+The other way a Run ends — the hero is downed in the Field and returns to Town under a
+penalty. Not a game-over.
+_Avoid_: defeat, loss, game over, fail, wipe
