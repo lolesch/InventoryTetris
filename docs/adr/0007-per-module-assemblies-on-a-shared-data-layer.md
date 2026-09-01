@@ -25,7 +25,10 @@ The layers, bottom to top:
   One layer above `Data`, the same way AutoBattler keeps `ItemFactory` in `Container`
   rather than `Data`. Built in Phase 1 of the foundational rework.
 - **`InventorySystem.Containers`** — the four containers, `Package`, the **Transaction**.
-  Extracted by issue #4's spike (its committed fallback) and finished in Phase 2.
+  Extracted by **issue #15** (`blocked-by #4`) and finished in Phase 2. Issue #4's spike
+  was expected to fail and force this now; instead it found a working
+  `Assembly-CSharp-Editor` test seam, so the extraction was split out rather than folded
+  into #4.
 - **`InventorySystem.Runtime`** then **`InventorySystem.GUI`** — providers, character,
   the debug harness, then every display and drag surface. Last, because they depend on
   everything and hold the singletons the lower layers must stop calling.
@@ -39,11 +42,17 @@ name reads the same as the namespace it contains.
 The blocker is not folder layout — it is the twelve `Provider.Instance` calls that pin
 `AbstractDimensionalContainer`, `CharacterEquipment`, `CharacterInventory` and
 `AbstractItem`'s constructors to `Assembly-CSharp`. The graph therefore arrives one seam
-at a time, each landing on green: issue #4 extracts `Containers` and breaks the provider
+at a time, each landing on green: issue #15 extracts `Containers` and breaks the provider
 coupling with injected interfaces or events; Phase 1 does the same for the Roll. A
 big-bang "asmdef everything" pass is rejected — it surfaces every circular reference at
 once with no tested intermediate state, which is the failure mode the rework spec is
 built to avoid.
+
+Issue #4 (the container test-seam spike) closed without extracting: it proved a plain
+`Editor/` folder compiling into `Assembly-CSharp-Editor` reaches the container core from
+an EditMode test with zero moves. That seam cannot reach the singleton-coupled
+`CharacterEquipment` paths and gives no per-module test asmdef, so #15 still stands — it
+just is not on the Phase 0 critical path.
 
 `InventorySystem.Statistics` is **not** a separate assembly. `MutableFloat`,
 `StatModifier` and `CharacterStatModifier` already live in `InventorySystem.Data`;
