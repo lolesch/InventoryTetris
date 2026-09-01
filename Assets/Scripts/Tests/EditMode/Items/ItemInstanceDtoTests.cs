@@ -1,11 +1,9 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
-using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Items;
-using UnityEngine;
+using static ToolSmiths.InventorySystem.Tests.EditMode.Items.Sample;
 
 namespace ToolSmiths.InventorySystem.Tests.EditMode.Items
 {
@@ -18,10 +16,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Items
     [TestFixture]
     public sealed class ItemInstanceDtoTests
     {
-        private static CharacterStatModifier Affix(StatName stat, int min, int max, float value, StatModifierType type) =>
-            new(stat, new StatModifier(new Vector2Int(min, max), value, type));
-
-        private static ItemInstance Sample(ItemRarity rarity, int affixCount, int itemLevel)
+        private static ItemInstance Rolled(ItemRarity rarity, int affixCount, int itemLevel)
         {
             var pool = new[]
             {
@@ -40,7 +35,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Items
             [Values(0, 1, 3, 4)] int affixCount,
             [Values(1, 42, 100)] int itemLevel)
         {
-            var original = Sample(rarity, affixCount, itemLevel);
+            var original = Rolled(rarity, affixCount, itemLevel);
 
             var restored = ItemInstance.FromDto(original.ToDto());
 
@@ -68,7 +63,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Items
             var back = restored.Affixes.Single();
             Assert.That(back.Stat, Is.EqualTo(StatName.MagicResist));
             Assert.That(back.Modifier.Value, Is.EqualTo(47f));
-            Assert.That(back.Modifier.Range, Is.EqualTo(new Vector2Int(5, 80)));
+            Assert.That(back.Modifier.Range.x, Is.EqualTo(5), "rangeMin");
+            Assert.That(back.Modifier.Range.y, Is.EqualTo(80), "rangeMax");
             Assert.That(back.Modifier.Type, Is.EqualTo(StatModifierType.PercentAdd));
         }
 

@@ -21,9 +21,15 @@ The layers, bottom to top:
   edits and is reachable from a test; its engine reference stays on. Mirrors
   AutoBattler's `Data` deliberately — a Definition is a template a test needs *and* an
   asset a designer opens, so it belongs with the enums, not one layer up.
-- **`InventorySystem.Items`** — `ItemInstance`, the **Roll**, the generator. Unity-free.
-  One layer above `Data`, the same way AutoBattler keeps `ItemFactory` in `Container`
-  rather than `Data`. Built in Phase 1 of the foundational rework.
+- **`InventorySystem.Items`** — `ItemInstance`, the **Roll**, the generator. One layer
+  above `Data`, the same way AutoBattler keeps `ItemFactory` in `Container` rather than
+  `Data`. Built in Phase 1 of the foundational rework (issue #5 landed the contract:
+  `ItemDefinition`, `ItemInstance`, `IItemCatalog`, `ItemView`). "Unity-free" here means
+  no `ScriptableObject`, `MonoBehaviour`, scene or singleton — every type is
+  constructible in a test with a fake. The engine *reference* stays on, as it does for
+  `Data`: affixes are `CharacterStatModifier` (→ `Vector2Int`) and `ItemView` returns a
+  `Color`. `ItemDefinition` and `ItemInstance` name no Unity type via `using`; `ItemView`
+  is the display-facing helper that does.
 - **`InventorySystem.Containers`** — the four containers, `Package`, the **Transaction**.
   Extracted by **issue #15** (`blocked-by #4`) and finished in Phase 2. Issue #4's spike
   was expected to fail and force this now; instead it found a working

@@ -8,12 +8,14 @@ namespace ToolSmiths.InventorySystem.Items
     /// The runtime reads a display needs about a stored item - footprint, stack limit,
     /// name, rarity colour - resolved from an <see cref="ItemInstance"/> plus the catalog
     /// its definition lives in. The scattered <c>static</c> switches on <c>AbstractItem</c>
-    /// (<c>GetRarityColor</c>, <c>GetDimensions</c>) collapse onto this one type.
+    /// (<c>GetRarityColor</c>, <c>GetDimensions</c>) collapse onto this one type; the
+    /// originals are removed when <c>AbstractItem</c> is deleted in the cutover (issue #8),
+    /// so until then the two copies run in parallel.
     ///
-    /// This is the only type in the assembly that names <see cref="UnityEngine"/> value
-    /// types (<see cref="Color"/>, <see cref="Vector2Int"/>): it exists to feed the
-    /// displays. The roll path - <see cref="ItemDefinition"/>, <see cref="ItemInstance"/>,
-    /// the generator - does not go through here.
+    /// This type deals in <see cref="Color"/> and <see cref="Vector2Int"/> because it
+    /// exists to feed the displays - the roll path (<see cref="ItemDefinition"/>,
+    /// <see cref="ItemInstance"/>, the generator) does not go through here and names no
+    /// Unity type via <c>using</c>.
     /// </summary>
     public readonly struct ItemView
     {
@@ -28,9 +30,9 @@ namespace ToolSmiths.InventorySystem.Items
 
         /// <summary>
         /// Pairs an instance with its definition from <paramref name="catalog"/>. Throws
-        /// <see cref="KeyNotFoundException"/> (via the catalog) when the instance's
-        /// definition id is not in the catalog - a stored item whose template was deleted
-        /// fails here, loudly, instead of rendering as a blank.
+        /// <see cref="System.Collections.Generic.KeyNotFoundException"/> (via the catalog)
+        /// when the instance's definition id is not in the catalog - a stored item whose
+        /// template was deleted fails here, loudly, instead of rendering as a blank.
         /// </summary>
         public static ItemView Resolve(ItemInstance instance, IItemCatalog catalog)
         {

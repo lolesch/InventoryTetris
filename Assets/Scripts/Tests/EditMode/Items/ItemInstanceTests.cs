@@ -4,7 +4,7 @@ using NUnit.Framework;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Items;
-using UnityEngine;
+using static ToolSmiths.InventorySystem.Tests.EditMode.Items.Sample;
 
 namespace ToolSmiths.InventorySystem.Tests.EditMode.Items
 {
@@ -16,11 +16,6 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Items
     [TestFixture]
     public sealed class ItemInstanceTests
     {
-        private static CharacterStatModifier Affix(
-            StatName stat = StatName.Health, int min = 1, int max = 100, float value = 50f,
-            StatModifierType type = StatModifierType.FlatAdd) =>
-            new(stat, new StatModifier(new Vector2Int(min, max), value, type));
-
         [Test]
         public void Constructor_CopiesTheAffixList_SoAMutationAfterwardsDoesNotLeakIn()
         {

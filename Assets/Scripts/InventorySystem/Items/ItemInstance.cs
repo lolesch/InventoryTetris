@@ -126,12 +126,22 @@ namespace ToolSmiths.InventorySystem.Items
                 hash = (hash * 31) + (DefinitionId?.GetHashCode() ?? 0);
                 hash = (hash * 31) + (int)Rarity;
                 hash = (hash * 31) + ItemLevel;
-                hash = (hash * 31) + Affixes.Count;
+                foreach (var affix in Affixes)
+                {
+                    hash = (hash * 31) + (int)affix.Stat;
+                    hash = (hash * 31) + affix.Modifier.Value.GetHashCode();
+                    hash = (hash * 31) + (int)affix.Modifier.Type;
+                }
                 return hash;
             }
         }
 
-        /// <summary>Affix equality that compares the whole modifier - range included - unlike <c>StatModifier.Equals</c>.</summary>
+        /// <summary>
+        /// Compares the whole modifier, range included. <c>StatModifier.Equals</c> ignores
+        /// the range and <c>CharacterStatModifier</c> has no equality of its own, so neither
+        /// can stand in here; fixing that belongs in <c>InventorySystem.Data</c>, not this
+        /// ticket.
+        /// </summary>
         private static bool SameAffix(CharacterStatModifier a, CharacterStatModifier b) =>
             a.Stat == b.Stat
             && a.Modifier.Range == b.Modifier.Range
