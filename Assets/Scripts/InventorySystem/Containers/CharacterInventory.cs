@@ -84,9 +84,9 @@ namespace ToolSmiths.InventorySystem.Inventories
 
                 TryAddToInventory();
 
-                // The one displaced item is handed straight back; a routed move (issue #10)
-                // re-homes it through its ItemTransaction (cursor -> origin -> inventory) and
-                // rolls the whole swap back if it finds no home.
+                // The one displaced item is handed straight back; a drag swap (issue #10)
+                // re-homes it to the hand, and a routed move that cannot place it rolls the
+                // whole swap back.
                 package = storedPackage;
             }
         }

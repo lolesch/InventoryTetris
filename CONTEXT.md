@@ -60,10 +60,13 @@ _Avoid_: shop, vendor container, merchant
 
 **Displacement**:
 What happens when a placement pushes stored items out of the way — e.g. equipping a
-two-hander over a weapon and off-hand. Each displaced item is re-homed in a fixed order:
-the freed cursor (takes one item), then the origin container, then the player inventory.
-A player-driven move always executes — a single displaced item just goes in hand — and
-only a *second* item that no container will take rolls the whole move back.
+two-hander over a weapon and off-hand. The item directly under the drop point is the
+swap partner: a drag sends it to the hand, a right-click swaps it back into the origin
+container and only overflows to the hand if that is full. Any *other* displaced item —
+a two-hander's collateral off-hand — must go back to a container; if it will not fit, the
+whole move rolls back. At most one item ever lands in the hand, and at most one homeless
+item can veto a move. A right-click unequip and a shift quick-move follow the same
+overflow rule: into the target container, or the hand if it is full — they always execute.
 _Avoid_: swap (a swap is one specific displacement), eviction
 
 **Transaction**:

@@ -115,14 +115,21 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             void TrySwap(List<Vector2Int> positions)
             {
+                var dropPosition = position;
                 var previouslyEquipped = new List<Package>();
+                var collateral = new List<Package>();
+                var underDrop = default(Package);
 
-                foreach (var position in positions)
-                    if (StoredPackages.TryGetValue(position, out var storedPackage))
+                foreach (var occupied in positions)
+                    if (StoredPackages.TryGetValue(occupied, out var storedPackage))
                         if (storedPackage.Item != null && 0 < storedPackage.Amount)
                         {
                             previouslyEquipped.Add(storedPackage);
-                            _ = RemoveAtPosition(position, storedPackage);
+                            if (occupied == dropPosition)
+                                underDrop = storedPackage;
+                            else
+                                collateral.Add(storedPackage);
+                            _ = RemoveAtPosition(occupied, storedPackage);
                         }
 
                 TryAddToInventory();
@@ -132,16 +139,43 @@ namespace ToolSmiths.InventorySystem.Inventories
 
                 if (ActiveTransaction != null)
                 {
-                    // Routed move (issue #10): re-home each displaced item through the
-                    // transaction's fixed cursor -> origin -> inventory order. No
-                    // package.Sender recursion, no inline cursor handover - a displaced item
-                    // that finds no home aborts the transaction and the whole swap rolls back.
-                    for (var i = previouslyEquipped.Count; i-- > 0;)
+                    // Routed move (issue #10). The item directly under the drop is the swap
+                    // partner; a 2H over a weapon and off-hand also sheds one collateral item.
+                    if (ActiveTransaction.SwapsInPlace)
                     {
-                        var displaced = previouslyEquipped[i];
-                        if (!ActiveTransaction.TryReHome(ref displaced))
-                            break;
-                        previouslyEquipped[i] = displaced;
+                        // Right-click: every displaced item swaps back into the origin, and
+                        // at most one that will not re-fit overflows to the hand. A second
+                        // homeless item aborts and the whole equip rolls back.
+                        foreach (var displaced in collateral)
+                        {
+                            var reHomed = displaced;
+                            if (!ActiveTransaction.TryReHomeToContainerOrHand(ref reHomed))
+                                break;
+                        }
+
+                        if (underDrop.IsValid && !ActiveTransaction.Aborted)
+                        {
+                            var reHomed = underDrop;
+                            _ = ActiveTransaction.TryReHomeToContainerOrHand(ref reHomed);
+                        }
+                    }
+                    else
+                    {
+                        // Drag: the collateral off-hand must swap into the origin or the
+                        // whole move rolls back; the swap partner goes to the hand, exactly
+                        // as a plain one-item swap does.
+                        foreach (var displaced in collateral)
+                        {
+                            var reHomed = displaced;
+                            if (!ActiveTransaction.TryReHomeToContainer(ref reHomed))
+                                break;
+                        }
+
+                        if (underDrop.IsValid && !ActiveTransaction.Aborted)
+                        {
+                            var reHomed = underDrop;
+                            _ = ActiveTransaction.TryReHomeToHandOrContainer(ref reHomed);
+                        }
                     }
 
                     package = default;

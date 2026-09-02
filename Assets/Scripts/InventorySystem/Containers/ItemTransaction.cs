@@ -35,6 +35,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         private readonly CursorHolder cursor;
         private bool finished;
         private bool aborted;
+        private bool swapInPlace;
 
         /// <param name="cursor">The drag cursor as a one-capacity destination for a
         /// displaced item, or null when a move cannot touch the cursor (auto-sort, a
@@ -72,10 +73,10 @@ namespace ToolSmiths.InventorySystem.Inventories
         public ItemTransaction(params AbstractDimensionalContainer[] containers) : this(null, containers) { }
 
         /// <summary>
-        /// Names the containers a displaced item is re-homed through, in order, after the
-        /// freed cursor - the origin the incoming item came from, then the player inventory
-        /// (issue #10's fixed landing order). Each must already be enrolled. Fluent: call it
-        /// on the constructor result. Nulls and repeats are ignored.
+        /// Names the containers a displaced item is re-homed through, in order - normally
+        /// just the one container the incoming item came from, so a swap stays "in place"
+        /// (issue #10). Each must already be enrolled. Fluent: call it on the constructor
+        /// result. Nulls and repeats are ignored.
         /// </summary>
         public ItemTransaction ReHomeThrough(params AbstractDimensionalContainer[] destinations)
         {
@@ -99,30 +100,94 @@ namespace ToolSmiths.InventorySystem.Inventories
         public bool Aborted => aborted;
 
         /// <summary>
-        /// Re-homes one displaced item: the freed cursor first (one item, only while it is
-        /// still free), then each <see cref="ReHomeThrough"/> destination in order, at any
-        /// free space. Nothing takes it - the transaction is aborted and the whole move
-        /// rolls back on <see cref="Commit"/>.
+        /// Marks this move as a right-click "swap in place": a displaced item is re-homed
+        /// through the <see cref="ReHomeThrough"/> containers first and only overflows to
+        /// the hand. A drag leaves this unset, and the item the player dropped onto goes
+        /// straight to the hand. Fluent; no effect on a move that displaces nothing.
+        /// </summary>
+        public ItemTransaction SwapInPlace()
+        {
+            swapInPlace = true;
+            return this;
+        }
+
+        /// <summary>Whether <see cref="SwapInPlace"/> was set.</summary>
+        public bool SwapsInPlace => swapInPlace;
+
+        /// <summary>
+        /// Re-homes the item a drag dropped onto - the swap partner: the freed cursor first
+        /// (the hand), and only if the hand is somehow already taken, each
+        /// <see cref="ReHomeThrough"/> destination in order. Nothing takes it - the move is
+        /// aborted and <see cref="Commit"/> rolls back.
         /// </summary>
         /// <returns>False when the item found no home; <paramref name="package"/> is then
         /// whatever could not be placed.</returns>
-        public bool TryReHome(ref Package package)
+        public bool TryReHomeToHandOrContainer(ref Package package)
         {
             if (!package.IsValid)
                 return true;
 
-            if (cursor != null && cursor.TryHold(package))
-            {
-                package = default;
+            if (TryPlaceInHand(ref package) || TryPlaceInChain(ref package))
                 return true;
-            }
 
+            aborted = true;
+            return false;
+        }
+
+        /// <summary>
+        /// Re-homes a displaced item to a container only - each <see cref="ReHomeThrough"/>
+        /// destination in order, at any free space - never the hand. A two-hander's
+        /// collateral off-hand takes this path: it swaps back into the origin, or the whole
+        /// move rolls back.
+        /// </summary>
+        public bool TryReHomeToContainer(ref Package package)
+        {
+            if (!package.IsValid)
+                return true;
+
+            if (TryPlaceInChain(ref package))
+                return true;
+
+            aborted = true;
+            return false;
+        }
+
+        /// <summary>
+        /// Re-homes a displaced item through the <see cref="ReHomeThrough"/> containers
+        /// first and, only if none has room, into the hand. The right-click "swap in place"
+        /// path, and the always-executes unequip / quick-move overflow. A second item that
+        /// reaches an already-full hand aborts the move.
+        /// </summary>
+        public bool TryReHomeToContainerOrHand(ref Package package)
+        {
+            if (!package.IsValid)
+                return true;
+
+            if (TryPlaceInChain(ref package) || TryPlaceInHand(ref package))
+                return true;
+
+            aborted = true;
+            return false;
+        }
+
+        /// <summary>Tries each <see cref="ReHomeThrough"/> container in order, at any free space.</summary>
+        private bool TryPlaceInChain(ref Package package)
+        {
             foreach (var destination in reHomeChain)
                 if (destination.TryAddToContainer(ref package))
                     return true;
 
-            aborted = true;
             return false;
+        }
+
+        /// <summary>Hands the item to the freed cursor, once, while it is still free.</summary>
+        private bool TryPlaceInHand(ref Package package)
+        {
+            if (cursor == null || !cursor.TryHold(package))
+                return false;
+
+            package = default;
+            return true;
         }
 
         /// <summary>
@@ -161,7 +226,7 @@ namespace ToolSmiths.InventorySystem.Inventories
                 return;
 
             // A re-home that found no home leaves the move un-completable: commit becomes a
-            // rollback, so a caller that does not check TryReHome / Aborted still stays safe.
+            // rollback, so a caller that does not check the re-home result / Aborted stays safe.
             if (aborted)
             {
                 Dispose();

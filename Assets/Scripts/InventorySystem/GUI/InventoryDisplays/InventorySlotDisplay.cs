@@ -35,20 +35,20 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 return;
 
             /// The whole drop runs inside one transaction (issue #10): the placement mutates
-            /// a working copy, a displaced item is re-homed in the fixed
-            /// cursor -> origin -> inventory order, and the move either commits as a unit or
+            /// a working copy, and the item the drag landed on goes to the hand - a drag
+            /// swap always puts the displaced item in hand. The move commits as a unit or
             /// rolls back leaving the dragged item in hand. Commit fires the container
             /// refreshes and hands the cursor its displaced item.
             var origin = DragProvider.Instance.Origin?.Container;
             var inventory = InventoryProvider.Instance.Inventory;
             var cursor = new CursorHolder(DragProvider.Instance);
 
-            using (var transaction = new ItemTransaction(cursor, Container, origin, inventory).ReHomeThrough(origin, inventory))
+            using (var transaction = new ItemTransaction(cursor, Container, origin ?? inventory).ReHomeThrough(origin ?? inventory))
             {
                 var displaced = Container.AddAtPosition(positionToAdd, package);
 
                 if (displaced.IsValid)
-                    _ = transaction.TryReHome(ref displaced);
+                    _ = transaction.TryReHomeToHandOrContainer(ref displaced);
 
                 if (transaction.Aborted)
                     return;
@@ -111,16 +111,15 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
                     if (category == ItemCategory.Equipment)
                     {
-                        /// Route the equip through a transaction (issue #10): remove here,
-                        /// equip there, re-home whatever the equip displaces. A player-driven
-                        /// move always executes - a displaced item that will not fit the
-                        /// origin or the inventory goes in hand (the cursor), and only a
-                        /// second homeless item rolls the whole move back.
+                        /// Route the equip through a transaction (issue #10) as a right-click
+                        /// "swap in place": remove here, equip there, and swap whatever the
+                        /// equip displaces back into this same container. A player-driven move
+                        /// always executes - one displaced item that will not re-fit overflows
+                        /// to the hand, and only a second homeless item rolls the move back.
                         var equipment = InventoryProvider.Instance.Equipment;
-                        var inventory = InventoryProvider.Instance.Inventory;
                         var cursor = new CursorHolder(DragProvider.Instance);
 
-                        using var transaction = new ItemTransaction(cursor, Container, equipment, inventory).ReHomeThrough(Container, inventory);
+                        using var transaction = new ItemTransaction(cursor, Container, equipment).ReHomeThrough(Container).SwapInPlace();
 
                         _ = Container.RemoveAtPosition(position, package);
                         _ = equipment.TryAddToContainer(ref package);
@@ -153,14 +152,17 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                     else if (Container == InventoryProvider.Instance.Stash)
                         containerToMoveTo = InventoryProvider.Instance.Inventory;
 
-                    /// Atomic remove-here / add-there (issue #10): a target with no room
-                    /// leaves the item exactly where it was.
-                    using var transaction = new ItemTransaction(Container, containerToMoveTo);
+                    /// Player-driven quick-move (issue #10): the item leaves its slot and
+                    /// lands in the other container, or - if that is full - in hand. It never
+                    /// just stays put.
+                    var cursor = new CursorHolder(DragProvider.Instance);
+
+                    using var transaction = new ItemTransaction(cursor, Container, containerToMoveTo).ReHomeThrough(containerToMoveTo);
 
                     _ = Container.RemoveAtPosition(position, package);
+                    _ = transaction.TryReHomeToContainerOrHand(ref package);
 
-                    if (containerToMoveTo.TryAddToContainer(ref package))
-                        transaction.Commit();
+                    transaction.Commit();
 
                     return;
                 }

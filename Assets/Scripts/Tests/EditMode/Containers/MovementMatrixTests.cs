@@ -14,9 +14,11 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
     /// <see cref="ItemTransaction"/> conserves value, applies affixes only while a thing is
     /// equipped, and leaves the right package (or none) on the cursor. Each test opens the
     /// transaction the way the slot displays do - a <see cref="CursorHolder"/>, the touched
-    /// containers enrolled, the fixed <c>cursor -> origin -> inventory</c> re-home order - and
-    /// drives the move through <see cref="AbstractDimensionalContainer.AddAtPosition"/> /
-    /// <see cref="AbstractDimensionalContainer.RemoveAtPosition"/> / <c>Sort</c>.
+    /// containers enrolled, the origin container as the re-home target - and drives the move
+    /// through <see cref="AbstractDimensionalContainer.AddAtPosition"/> /
+    /// <see cref="AbstractDimensionalContainer.RemoveAtPosition"/> / <c>Sort</c>. The item
+    /// under a drag's drop point goes to the hand; a right-click swaps it back into the
+    /// origin and only overflows to the hand; a 2H's collateral off-hand is container-only.
     /// </summary>
     [TestFixture]
     public sealed class MovementMatrixTests
@@ -81,7 +83,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var displaced = target.AddAtPosition(at, inHand);
 
             if (displaced.IsValid)
-                _ = transaction.TryReHome(ref displaced);
+                _ = transaction.TryReHomeToHandOrContainer(ref displaced);
 
             if (transaction.Aborted)
                 return false; // inHand is untouched - the dragged item stays in hand
@@ -93,14 +95,14 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 
         /// <summary>
         /// Right-click equip, exactly as <c>InventorySlotDisplay.MoveItem</c> runs it: remove
-        /// from <paramref name="source"/>, equip, re-home displaced gear through cursor -&gt;
-        /// source -&gt; inventory. A player-driven move always executes unless a second item
-        /// is left homeless.
+        /// from <paramref name="source"/>, equip as a "swap in place", and swap displaced gear
+        /// back into <paramref name="source"/> - overflowing at most one item to the hand.
+        /// A player-driven move always executes unless a second item is left homeless.
         /// </summary>
         private static bool RightClickEquip(CursorHolder cursor, CharacterInventory source, CharacterEquipment equipment,
-            CharacterInventory playerInventory, Vector2Int position, Package stored)
+            Vector2Int position, Package stored)
         {
-            using var transaction = new ItemTransaction(cursor, source, equipment, playerInventory).ReHomeThrough(source, playerInventory);
+            using var transaction = new ItemTransaction(cursor, source, equipment).ReHomeThrough(source).SwapInPlace();
 
             _ = source.RemoveAtPosition(position, stored);
             var package = new Package(source, stored.Item, stored.Amount);
@@ -124,9 +126,24 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 
             _ = equipment.RemoveAtPosition(slot, stored);
             var package = new Package(equipment, stored.Item, stored.Amount);
+            _ = transaction.TryReHomeToContainerOrHand(ref package);
 
-            if (!inventory.TryAddToContainer(ref package))
-                _ = cursor.TryHold(package);
+            transaction.Commit();
+        }
+
+        /// <summary>
+        /// Shift quick-move, exactly as the slot displays run it: the item leaves
+        /// <paramref name="source"/> and lands in <paramref name="target"/>, or - if that is
+        /// full - in the hand. Always executes.
+        /// </summary>
+        private static void ShiftQuickMove(CursorHolder cursor, AbstractDimensionalContainer source,
+            AbstractDimensionalContainer target, Vector2Int position, Package stored)
+        {
+            using var transaction = new ItemTransaction(cursor, source, target).ReHomeThrough(target);
+
+            _ = source.RemoveAtPosition(position, stored);
+            var package = new Package(source, stored.Item, stored.Amount);
+            _ = transaction.TryReHomeToContainerOrHand(ref package);
 
             transaction.Commit();
         }
@@ -298,7 +315,38 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         }
 
         [Test]
-        public void InventoryToEquipment_TwoHandedOverWeaponAndOffHand_WithRoom_ReHomesBothDisplacedItems()
+        public void InventoryToEquipment_DragTwoHandedOverASingleWeapon_PutsTheOldWeaponInHand()
+        {
+            var stats = new FakeStatReceiver();
+            var sink = new FakeCursorSink();
+            var cursor = new CursorHolder(sink);
+            var equipment = Equipment(stats, sink);
+            var inventory = Inventory();
+
+            var worn = new Package(inventory, Sword(6f), 1u);
+            _ = equipment.TryAddToContainer(ref worn);
+            var wornInstance = equipment.StoredPackages.Values.Single().Item;
+            stats.Added.Clear();
+            stats.Removed.Clear();
+
+            var incoming = new Package(inventory, GreatSword(15f), 1u);
+            _ = inventory.TryAddToContainer(ref incoming);
+            var before = Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values);
+
+            var inHand = PickUp(inventory, inventory.StoredPackages.Keys.Single());
+            var committed = Drop(cursor, equipment, SlotFor(EquipmentType.GreatSword), ref inHand, inventory);
+
+            Assert.That(committed, Is.True);
+            Assert.That(equipment.StoredPackages.Values.Single().Item.DefinitionId, Is.EqualTo(GreatSwordId));
+            Assert.That(sink.Replaced.Single().Item, Is.SameAs(wornInstance), "the old weapon is in hand");
+            Assert.That(inventory.StoredPackages, Is.Empty, "nothing went to the inventory");
+            Assert.That(stats.Added.Select(a => a.Modifier.Value), Is.EquivalentTo(new[] { 15f }));
+            Assert.That(stats.Removed.Select(a => a.Modifier.Value), Is.EquivalentTo(new[] { 6f }));
+            AssertConserved(before, Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values, sink.Replaced, new[] { inHand }));
+        }
+
+        [Test]
+        public void InventoryToEquipment_DragTwoHandedOverWeaponAndOffHand_WithRoom_WeaponToHandOffHandToOrigin()
         {
             var stats = new FakeStatReceiver();
             var sink = new FakeCursorSink();
@@ -310,6 +358,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             _ = equipment.TryAddToContainer(ref weapon);
             var offHand = new Package(inventory, Shield(3f), 1u);
             _ = equipment.TryAddToContainer(ref offHand);
+            var wornWeapon = equipment.StoredPackages[SlotFor(EquipmentType.Sword)].Item;
             stats.Added.Clear();
             stats.Removed.Clear();
 
@@ -323,18 +372,16 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 
             Assert.That(committed, Is.True);
             Assert.That(equipment.StoredPackages.Values.Single().Item, Is.SameAs(incomingInstance), "only the 2H is worn");
-            Assert.That(sink.Replaced, Has.Count.EqualTo(1), "one displaced item goes to the freed cursor");
-            var displacedIds = sink.Replaced.Select(p => p.Item.DefinitionId)
-                .Concat(inventory.StoredPackages.Values.Select(p => p.Item.DefinitionId));
-            Assert.That(displacedIds, Is.EquivalentTo(new[] { SwordId, ShieldId }),
-                "both displaced items re-homed - one on the cursor, the other in the origin inventory");
+            Assert.That(sink.Replaced.Single().Item, Is.SameAs(wornWeapon), "the weapon under the drop point is in hand");
+            Assert.That(inventory.StoredPackages.Values.Single().Item.DefinitionId, Is.EqualTo(ShieldId),
+                "the collateral off-hand swapped into the origin inventory, never the hand");
             Assert.That(stats.Added.Select(a => a.Modifier.Value), Is.EquivalentTo(new[] { 15f }));
             Assert.That(stats.Removed.Select(a => a.Modifier.Value), Is.EquivalentTo(new[] { 6f, 3f }));
             AssertConserved(before, Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values, sink.Replaced, new[] { inHand }));
         }
 
         [Test]
-        public void InventoryToEquipment_TwoHandedOverWeaponAndOffHand_WithNoRoom_RollsBackAndLeavesAffixesUntouched()
+        public void InventoryToEquipment_DragTwoHandedOverWeaponAndOffHand_WhenTheOffHandCannotSwapBack_RollsBack()
         {
             var stats = new FakeStatReceiver();
             var sink = new FakeCursorSink();
@@ -358,12 +405,12 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 
             var committed = Drop(cursor, equipment, SlotFor(EquipmentType.GreatSword), ref inHand, inventory);
 
-            Assert.That(committed, Is.False, "the second displaced item has nowhere to go");
+            Assert.That(committed, Is.False, "the collateral off-hand cannot swap into the full origin");
             Assert.That(equipment.StoredPackages.Values.Select(p => p.Item), Is.EquivalentTo(wornBefore), "gear unchanged");
             Assert.That(inHand.IsValid, Is.True, "the 2H is still in hand");
             Assert.That(stats.Added, Is.Empty);
             Assert.That(stats.Removed, Is.Empty, "the swap's stat churn was queued and dropped");
-            Assert.That(sink.Replaced, Is.Empty);
+            Assert.That(sink.Replaced, Is.Empty, "the weapon under the drop never reached the hand - the move rolled back first");
             AssertConserved(before, Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values, sink.Replaced, new[] { inHand }));
         }
 
@@ -434,7 +481,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         }
 
         [Test]
-        public void RightClickEquip_TwoHandedOverWeaponAndOffHand_FullInventory_EquipsAndPutsTheOverflowInHand()
+        public void RightClickEquip_TwoHandedFromInventory_SwapsTheDisplacedGearIntoTheVacatedCells()
         {
             var stats = new FakeStatReceiver();
             var sink = new FakeCursorSink();
@@ -456,15 +503,78 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var twoHander = inventory.StoredPackages[new Vector2Int(0, 0)];
             var before = Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values);
 
-            var committed = RightClickEquip(cursor, inventory, equipment, inventory, new Vector2Int(0, 0), twoHander);
+            var committed = RightClickEquip(cursor, inventory, equipment, new Vector2Int(0, 0), twoHander);
+
+            Assert.That(committed, Is.True);
+            Assert.That(equipment.StoredPackages.Values.Single().Item.DefinitionId, Is.EqualTo(GreatSwordId), "the 2H is worn");
+            Assert.That(sink.Replaced, Is.Empty, "the 2H vacated two cells - both displaced items re-fit, nothing went to the hand");
+            Assert.That(inventory.StoredPackages.Values.Select(p => p.Item.DefinitionId),
+                Is.EquivalentTo(new[] { SwordId, ShieldId, ArrowId, ArrowId }));
+            Assert.That(stats.Added.Select(a => a.Modifier.Value), Is.EquivalentTo(new[] { 15f }));
+            Assert.That(stats.Removed.Select(a => a.Modifier.Value), Is.EquivalentTo(new[] { 6f, 3f }));
+            AssertConserved(before, Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values, sink.Replaced));
+        }
+
+        [Test]
+        public void RightClickEquip_OneHandWhileTwoHandedWorn_SendsTheDisplacedTwoHanderToHandWhenItCannotReFit()
+        {
+            var stats = new FakeStatReceiver();
+            var sink = new FakeCursorSink();
+            var cursor = new CursorHolder(sink);
+            var equipment = Equipment(stats, sink);
+            var inventory = Inventory(2, 1);
+
+            var worn = new Package(inventory, GreatSword(20f), 1u);
+            _ = equipment.TryAddToContainer(ref worn);
+            var wornTwoHander = equipment.StoredPackages.Values.Single().Item;
+            stats.Added.Clear();
+            stats.Removed.Clear();
+
+            _ = inventory.AddAtPosition(new Vector2Int(0, 0), new Package(inventory, Sword(6f), 1u));
+            _ = inventory.AddAtPosition(new Vector2Int(1, 0), new Package(inventory, Arrows(), 1u));
+            var oneHand = inventory.StoredPackages[new Vector2Int(0, 0)];
+            var before = Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values);
+
+            var committed = RightClickEquip(cursor, inventory, equipment, new Vector2Int(0, 0), oneHand);
 
             Assert.That(committed, Is.True, "a player-driven equip is not refused for lack of inventory room");
-            Assert.That(equipment.StoredPackages.Values.Single().Item.DefinitionId, Is.EqualTo(GreatSwordId), "the 2H is worn");
-            Assert.That(sink.Replaced, Has.Count.EqualTo(1), "one displaced item went to the hand");
-            var homes = sink.Replaced.Select(p => p.Item.DefinitionId)
-                .Concat(inventory.StoredPackages.Values.Select(p => p.Item.DefinitionId));
-            Assert.That(homes, Is.EquivalentTo(new[] { SwordId, ShieldId, ArrowId, ArrowId }), "the other displaced item took the space the 2H vacated");
+            Assert.That(equipment.StoredPackages.Values.Single().Item.DefinitionId, Is.EqualTo(SwordId), "the 1H is worn");
+            Assert.That(sink.Replaced.Single().Item, Is.SameAs(wornTwoHander), "the 2x1 will not fit the single freed cell - it overflows to the hand");
+            Assert.That(stats.Added.Select(a => a.Modifier.Value), Is.EquivalentTo(new[] { 6f }));
+            Assert.That(stats.Removed.Select(a => a.Modifier.Value), Is.EquivalentTo(new[] { 20f }));
             AssertConserved(before, Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values, sink.Replaced));
+        }
+
+        [Test]
+        public void RightClickEquip_WhenBothDisplacedItemsAreHomeless_RollsBackTheWholeEquip()
+        {
+            var stats = new FakeStatReceiver();
+            var sink = new FakeCursorSink();
+            var cursor = new CursorHolder(sink);
+            var equipment = Equipment(stats, sink);
+            var source = new CappedInventory(new Vector2Int(4, 1), acceptLimit: 0);
+
+            var weapon = new Package(source, Sword(6f), 1u);
+            _ = equipment.TryAddToContainer(ref weapon);
+            var offHand = new Package(source, Shield(3f), 1u);
+            _ = equipment.TryAddToContainer(ref offHand);
+            var wornBefore = equipment.StoredPackages.Values.Select(p => p.Item).ToList();
+            stats.Added.Clear();
+            stats.Removed.Clear();
+
+            _ = source.AddAtPosition(new Vector2Int(0, 0), new Package(source, GreatSword(15f), 1u));
+            var twoHander = source.StoredPackages[new Vector2Int(0, 0)];
+            var before = Units(equipment.StoredPackages.Values, source.StoredPackages.Values);
+
+            var committed = RightClickEquip(cursor, source, equipment, new Vector2Int(0, 0), twoHander);
+
+            Assert.That(committed, Is.False, "two homeless displaced items - the equip is refused");
+            Assert.That(equipment.StoredPackages.Values.Select(p => p.Item), Is.EquivalentTo(wornBefore), "gear unchanged");
+            Assert.That(source.StoredPackages[new Vector2Int(0, 0)].Item, Is.SameAs(twoHander.Item), "the 2H is back in the source");
+            Assert.That(stats.Added, Is.Empty);
+            Assert.That(stats.Removed, Is.Empty);
+            Assert.That(sink.Replaced, Is.Empty);
+            AssertConserved(before, Units(equipment.StoredPackages.Values, source.StoredPackages.Values, sink.Replaced));
         }
 
         // ── Equipment -> Equipment ─────────────────────────────────────────
@@ -540,6 +650,49 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             Assert.That(stats.Added.Select(a => a.Modifier.Value), Is.EquivalentTo(new[] { 13f }));
             Assert.That(stats.Removed.Select(a => a.Modifier.Value), Is.EquivalentTo(new[] { 6f }));
             AssertConserved(before, Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values, sink.Replaced, new[] { inHand }));
+        }
+
+        // ── Shift quick-move ──────────────────────────────────────────────
+
+        [Test]
+        public void ShiftQuickMove_WhenTheTargetHasRoom_MovesTheItemAcross()
+        {
+            var sink = new FakeCursorSink();
+            var cursor = new CursorHolder(sink);
+            var source = Inventory();
+            var target = Inventory();
+
+            _ = source.AddAtPosition(new Vector2Int(0, 0), new Package(source, Helm(4f), 1u));
+            var stored = source.StoredPackages[new Vector2Int(0, 0)];
+            var before = Units(source.StoredPackages.Values);
+
+            ShiftQuickMove(cursor, source, target, new Vector2Int(0, 0), stored);
+
+            Assert.That(source.StoredPackages, Is.Empty);
+            Assert.That(target.StoredPackages.Values.Single().Item, Is.SameAs(stored.Item));
+            Assert.That(sink.Replaced, Is.Empty);
+            AssertConserved(before, Units(source.StoredPackages.Values, target.StoredPackages.Values, sink.Replaced));
+        }
+
+        [Test]
+        public void ShiftQuickMove_WhenTheTargetIsFull_PutsTheItemInHand()
+        {
+            var sink = new FakeCursorSink();
+            var cursor = new CursorHolder(sink);
+            var source = Inventory();
+            var target = Inventory(1, 1);
+
+            _ = target.AddAtPosition(new Vector2Int(0, 0), new Package(target, Arrows(), 1u));
+            _ = source.AddAtPosition(new Vector2Int(0, 0), new Package(source, Helm(4f), 1u));
+            var stored = source.StoredPackages[new Vector2Int(0, 0)];
+            var before = Units(source.StoredPackages.Values, target.StoredPackages.Values);
+
+            ShiftQuickMove(cursor, source, target, new Vector2Int(0, 0), stored);
+
+            Assert.That(source.StoredPackages, Is.Empty, "the item always leaves the source");
+            Assert.That(target.StoredPackages.Values.Single().Item.DefinitionId, Is.EqualTo(ArrowId), "the target is untouched");
+            Assert.That(sink.Replaced.Single().Item, Is.SameAs(stored.Item), "a full target sends it to the hand");
+            AssertConserved(before, Units(source.StoredPackages.Values, target.StoredPackages.Values, sink.Replaced));
         }
 
         // ── QA-4 regression pin (the give-up condition itself is #12) ───────

@@ -30,21 +30,22 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             if (!allowedPositions.Contains(Position))
                 return;
 
-            /// The whole equip runs inside one transaction (issue #10): a 2H over a weapon
-            /// and off-hand re-homes both displaced items in the fixed
-            /// cursor -> origin -> inventory order, or - if one has nowhere to go - rolls the
-            /// swap back and leaves the incoming item in hand. Commit fires the container
-            /// refreshes, applies the worn affixes and hands the cursor its displaced item.
+            /// The whole equip runs inside one transaction (issue #10): the weapon under the
+            /// drop goes to the hand, exactly as a plain swap does; a 2H also sheds a
+            /// collateral off-hand, which swaps back into the origin container or - with
+            /// nowhere to go - rolls the whole move back and leaves the 2H in hand. Commit
+            /// fires the container refreshes, applies the worn affixes and hands the cursor
+            /// its displaced item.
             var origin = DragProvider.Instance.Origin?.Container;
             var inventory = InventoryProvider.Instance.Inventory;
             var cursor = new CursorHolder(DragProvider.Instance);
 
-            using (var transaction = new ItemTransaction(cursor, Container, origin, inventory).ReHomeThrough(origin, inventory))
+            using (var transaction = new ItemTransaction(cursor, Container, origin ?? inventory).ReHomeThrough(origin ?? inventory))
             {
                 var displaced = Container.AddAtPosition(Position, package);
 
                 if (displaced.IsValid)
-                    _ = transaction.TryReHome(ref displaced);
+                    _ = transaction.TryReHomeToHandOrContainer(ref displaced);
 
                 if (transaction.Aborted)
                     return;
@@ -100,9 +101,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 using var transaction = new ItemTransaction(cursor, Container, inventory).ReHomeThrough(inventory);
 
                 _ = Container.RemoveAtPosition(position, package);
-
-                if (!inventory.TryAddToContainer(ref package))
-                    _ = cursor.TryHold(package);
+                _ = transaction.TryReHomeToContainerOrHand(ref package);
 
                 transaction.Commit();
 
@@ -114,14 +113,18 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             #region QUICK MOVE ITEM
             if (Input.GetKey(KeyCode.LeftShift))
             {
+                /// Player-driven quick-move (issue #10): the item comes off into the stash,
+                /// or - if it is full - into the hand. Always executes; the affix lift rides
+                /// the commit.
                 var stash = InventoryProvider.Instance.Stash;
+                var cursor = new CursorHolder(DragProvider.Instance);
 
-                using var transaction = new ItemTransaction(Container, stash);
+                using var transaction = new ItemTransaction(cursor, Container, stash).ReHomeThrough(stash);
 
                 _ = Container.RemoveAtPosition(position, package);
+                _ = transaction.TryReHomeToContainerOrHand(ref package);
 
-                if (stash.TryAddToContainer(ref package))
-                    transaction.Commit();
+                transaction.Commit();
 
                 return;
             }
