@@ -25,7 +25,9 @@ namespace ToolSmiths.InventorySystem.Data
         }
 
         [field: SerializeField] public AbstractDimensionalContainer Sender { get; private set; }
-        [field: SerializeField] public ItemInstance Item { get; private set; }
+        // Not [SerializeField]: ItemInstance is a plain, non-[Serializable] class - a saved
+        // container round-trips through ItemInstanceDto, not Unity serialization (see the spec).
+        public ItemInstance Item { get; private set; }
 
         [field: SerializeField] public uint Amount { get; private set; }
 

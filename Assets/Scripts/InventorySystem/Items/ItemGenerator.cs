@@ -105,7 +105,9 @@ namespace ToolSmiths.InventorySystem.Items
 
             CombineSameStatModifiers(affixes);
 
-            return new ItemInstance(definition.Id, rarity, itemLevel < 0 ? 0 : itemLevel, affixes);
+            // ItemInstance's constructor guards a negative itemLevel; callers pass a
+            // RollContext.SourceLevel (already clamped) or a literal.
+            return new ItemInstance(definition.Id, rarity, itemLevel, affixes);
         }
 
         /// <summary>

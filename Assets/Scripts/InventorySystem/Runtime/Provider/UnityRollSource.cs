@@ -10,6 +10,8 @@ namespace ToolSmiths.InventorySystem.Inventories
     /// </summary>
     internal sealed class UnityRollSource : IRollSource
     {
-        public float Next() => Random.value;
+        // Random.value is [0, 1] inclusive; IRollSource is [0, 1). Nudge the endpoint in so
+        // the adapter matches the contract (and the seeded test source's half-open range).
+        public float Next() => Mathf.Min(Random.value, 0.99999994f);
     }
 }

@@ -97,9 +97,12 @@ namespace ToolSmiths.InventorySystem.Inventories
             {
                 instances = generator.RollLoot(LootContext(), (int)amount);
             }
-            catch (Exception e)
+            catch (InvalidOperationException e)
             {
-                Debug.LogError($"{nameof(ItemProvider)}: the loot roll failed - {e.Message}", this);
+                // "the loot table carries no drop mass" - a misconfigured distribution. Logged
+                // rather than thrown so a kill does not break the death handler; a genuine bug
+                // (NRE from the generator) still propagates loudly.
+                Debug.LogError($"{nameof(ItemProvider)}: the loot table cannot roll - {e.Message}", this);
                 return loot;
             }
 
