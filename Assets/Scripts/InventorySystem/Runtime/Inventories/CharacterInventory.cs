@@ -36,7 +36,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             if (!package.IsValid)
                 return package;
 
-            var dimensions = AbstractItem.GetDimensions(package.Item.Dimensions);
+            var dimensions = ItemView.Of(package.Item).Dimensions;
 
             if (IsEmptySpace(position, dimensions, out var otherItems))
                 TryAddToInventory();
@@ -51,7 +51,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             void TryAddToInventory()
             {
-                var amount = Math.Min(package.Amount, package.Item.StackLimit);
+                var amount = Math.Min(package.Amount, ItemView.Of(package.Item).StackLimit);
 
                 if (StoredPackages.TryAdd(position, new Package(this, package.Item, amount)))
                     _ = package.ReduceAmount(amount);
@@ -62,7 +62,7 @@ namespace ToolSmiths.InventorySystem.Inventories
                 if (0 == storedPackage.SpaceLeft)
                     return false;
 
-                if (!package.Item.Equals(storedPackage.Item))
+                if (!package.Item.StacksWith(storedPackage.Item, ItemView.Of(package.Item).StackLimit))
                     return false;
 
                 var addedAmount = storedPackage.IncreaseAmount(package.Amount);
@@ -90,11 +90,14 @@ namespace ToolSmiths.InventorySystem.Inventories
             var requiredPositions = CalculateRequiredPositions(position, dimension);
 
             foreach (var package in StoredPackages)
-                for (var x = package.Key.x; x < package.Key.x + AbstractItem.GetDimensions(package.Value.Item.Dimensions).x; x++)
-                    for (var y = package.Key.y; y < package.Key.y + AbstractItem.GetDimensions(package.Value.Item.Dimensions).y; y++)
+            {
+                var itemDimensions = ItemView.Of(package.Value.Item).Dimensions;
+                for (var x = package.Key.x; x < package.Key.x + itemDimensions.x; x++)
+                    for (var y = package.Key.y; y < package.Key.y + itemDimensions.y; y++)
                         foreach (var requiredPosition in requiredPositions)
                             if (new Vector2Int(x, y) == requiredPosition)
                                 otherPackagePositions.Add(package.Key);
+            }
 
             return otherPackagePositions.Distinct().ToList();
         }
@@ -135,7 +138,8 @@ namespace ToolSmiths.InventorySystem.Inventories
                 if (!StoredPackages.TryGetValue(position, out var stored))
                     continue;
 
-                if (stored.Item is not CurrencyItem coin || coin.CurrencyType != type)
+                var definition = ItemView.Of(stored.Item).Definition;
+                if (definition.Category != ItemCategory.Currency || definition.CurrencyType != type)
                     continue;
 
                 var take = Math.Min(amount, stored.Amount);
@@ -167,7 +171,7 @@ namespace ToolSmiths.InventorySystem.Inventories
                 if (0u == count)
                     return;
 
-                var package = new Package(this, ItemProvider.Instance.GenerateCurrency(type), count);
+                var package = new Package(this, ItemProvider.Instance.MintCurrency(type), count);
                 _ = TryAddToContainer(ref package);
             }
         }
@@ -181,16 +185,17 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             foreach (var package in StoredPackages)
             {
-                if (package.Value.Item is not CurrencyItem currencyItem)
+                var definition = ItemView.Of(package.Value.Item).Definition;
+                if (definition.Category != ItemCategory.Currency)
                     continue;
 
-                if (currencyItem.CurrencyType == CurrencyType.Copper)
+                if (definition.CurrencyType == CurrencyType.Copper)
                     copper += package.Value.Amount;
-                else if (currencyItem.CurrencyType == CurrencyType.Iron)
+                else if (definition.CurrencyType == CurrencyType.Iron)
                     iron += package.Value.Amount;
-                else if (currencyItem.CurrencyType == CurrencyType.Silver)
+                else if (definition.CurrencyType == CurrencyType.Silver)
                     silver += package.Value.Amount;
-                else if (currencyItem.CurrencyType == CurrencyType.Gold)
+                else if (definition.CurrencyType == CurrencyType.Gold)
                     gold += package.Value.Amount;
             }
 

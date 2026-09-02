@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using NUnit.Framework;
+using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Items;
 using UnityEngine;
+using static ToolSmiths.InventorySystem.Tests.EditMode.Items.Sample;
 
 namespace ToolSmiths.InventorySystem.Tests.EditMode.Items
 {
@@ -95,6 +97,63 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Items
         {
             Assert.That(() => ItemView.Resolve(null, new InMemoryItemCatalog()), Throws.ArgumentNullException);
             Assert.That(() => ItemView.Resolve(Instance("x"), null), Throws.ArgumentNullException);
+        }
+
+        // ── the ambient Catalog / Of(...) - the terse form the runtime call sites use ──
+
+        [TearDown]
+        public void ClearAmbientCatalog() => ItemView.Catalog = null;
+
+        [Test]
+        public void Of_ResolvesAgainstTheAmbientCatalog()
+        {
+            ItemView.Catalog = new InMemoryItemCatalog(new FakeItemDefinition { Id = "belt", Footprint = ItemSize.TwoByOne });
+
+            Assert.That(ItemView.Of(Instance("belt")).Footprint, Is.EqualTo(ItemSize.TwoByOne));
+        }
+
+        [Test]
+        public void Of_WithNoCatalogSet_ThrowsInsteadOfNullReferencing()
+        {
+            ItemView.Catalog = null;
+
+            Assert.That(() => ItemView.Of(Instance("belt")), Throws.InvalidOperationException);
+        }
+
+        // ── SellValue - the AbstractItem/CurrencyItem value switches, moved verbatim ──
+
+        [Test]
+        public void SellValue_ForEquipment_SumsAbsValueTimesGoldRatioOverTheAffixes()
+        {
+            var definition = new FakeItemDefinition { Id = "chest", Category = ItemCategory.Equipment };
+            var instance = new ItemInstance("chest", ItemRarity.Rare, 1, new[]
+            {
+                Affix(StatName.Health, 0, 100, 10f),  // 10 * 2.67
+                Affix(StatName.Armor, 0, 100, 5f),    //  5 * 20
+            });
+
+            var view = ItemView.Resolve(instance, new InMemoryItemCatalog(definition));
+
+            Assert.That(view.SellValue, Is.EqualTo((10f * 2.67f) + (5f * 20f)).Within(0.001f));
+        }
+
+        [TestCase(CurrencyType.Iron, 1f)]
+        [TestCase(CurrencyType.Copper, 5f)]    // Currency.ironToCopper
+        [TestCase(CurrencyType.Gold, 1200f)]   // Currency.ironToGold
+        public void SellValue_ForCurrency_IsTheDenominationValue(CurrencyType currency, float expected)
+        {
+            var definition = new FakeItemDefinition { Id = "coin", Category = ItemCategory.Currency, CurrencyType = currency };
+            var view = ItemView.Resolve(new ItemInstance("coin", ItemRarity.Common, 0, null), new InMemoryItemCatalog(definition));
+
+            Assert.That(view.SellValue, Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void Icon_ForAFakeDefinitionWithNoAdapter_IsNull()
+        {
+            var view = ItemView.Resolve(Instance("x"), new InMemoryItemCatalog(new FakeItemDefinition { Id = "x" }));
+
+            Assert.That(view.Icon, Is.Null);
         }
     }
 }

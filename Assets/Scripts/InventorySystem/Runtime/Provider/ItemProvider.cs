@@ -1,391 +1,275 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Distributions;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Runtime.Provider;
-using Submodules.Utility.Extensions;
 using ToolSmiths.InventorySystem.Utility.Extensions;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Inventories
 {
+    /// <summary>
+    /// The Unity entry point to the loot roll. Since the Phase 1 cutover (issue #8) it owns
+    /// three things - the authored <see cref="ItemCatalogAsset"/>, the two distribution
+    /// <see cref="AbstractProbabilityDistribution"/>s that form the global loot table
+    /// (<see cref="DistributionLootTable"/>), and the currency drop table - and delegates
+    /// every roll to a pure <see cref="ItemGenerator"/>. The ~30 <c>GenerateRandomX</c> methods that
+    /// were a hand-unrolled decision tree are gone: adding an item type is a new definition
+    /// in the catalog, not another switch arm.
+    ///
+    /// It also publishes the catalog to <see cref="ItemView.Catalog"/> so the container core
+    /// and the slot displays - still in <c>Assembly-CSharp</c> until the #15 extraction - can
+    /// resolve a stored <see cref="ItemInstance"/> to its template.
+    /// </summary>
     public class ItemProvider : AbstractProvider<ItemProvider>
     {
+        [Tooltip("Stat-icon lookup for the character and item-stat displays. Not on the roll path.")]
         public ItemTypeData ItemTypeData;
 
-        [Header("Distributions")]
+        [Header("Catalog")]
+        [SerializeField] private ItemCatalogAsset catalog;
+
+        [Header("Loot table")]
         [SerializeField] private ItemCategoryDistribution itemCategoryDistribution;
         [SerializeField] private ItemRarityDistribution itemRarityDistribution;
-        [SerializeField] private EquipmentCategoryDistribution equipmentCategoryDistribution;
-        [SerializeField] private EquipmentTypeDistribution armamentsDistribution;
-        [SerializeField] private WeaponCategoryDistribution weaponCategoryDistribution;
-        [SerializeField] private EquipmentTypeDistribution oneHandDistribution;
-        [SerializeField] private EquipmentTypeDistribution twoHandDistribution;
-        [SerializeField] private EquipmentTypeDistribution offHandDistribution;
-        [SerializeField] private EquipmentTypeDistribution jewelryDistribution;
-        [SerializeField] private ConsumableTypeDistribution consumableTypeDistribution;
+
+        [Header("Currency")]
         [SerializeField] private CurrencyTypeDistribution currencyTypeDistribution;
         [SerializeField] private CurrencyDropTable currencyDropTable;
-
-        [Header("Uniques")]
-        [SerializeField] private List<AbstractItemObject> Amulets;
-        [SerializeField] private List<AbstractItemObject> Rings;
-        [Space]
-        [SerializeField] private List<AbstractItemObject> Belts;
-        [SerializeField] private List<AbstractItemObject> Boots;
-        [SerializeField] private List<AbstractItemObject> Bracers;
-        [SerializeField] private List<AbstractItemObject> Chests;
-        [SerializeField] private List<AbstractItemObject> Cloaks;
-        [SerializeField] private List<AbstractItemObject> Gloves;
-        [SerializeField] private List<AbstractItemObject> Helmets;
-        [SerializeField] private List<AbstractItemObject> Pants;
-        [SerializeField] private List<AbstractItemObject> Shoulder;
-        [Space]
-        [SerializeField] private List<AbstractItemObject> Swords;
-        [SerializeField] private List<AbstractItemObject> Bows;
-        [SerializeField] private List<AbstractItemObject> Crossbows;
-        [SerializeField] private List<AbstractItemObject> GreatSwords;
-        [SerializeField] private List<AbstractItemObject> Quiver;
-        [SerializeField] private List<AbstractItemObject> Shields;
-        [Space]
-        [SerializeField] private List<AbstractItemObject> Arrows;
-        [SerializeField] private List<AbstractItemObject> Books;
-        [SerializeField] private List<AbstractItemObject> Potions;
-        [Space]
         // TODO: make it a serialized dictionary
         [SerializeField] private List<Sprite> CurrencyIcons = new();
 
-        public List<Package> GenerateRandomLoot(uint amount = 1)
+        private ItemGenerator generator;
+        private DistributionLootTable lootTable;
+
+        private void Awake() => EnsureInitialized();
+
+        /// <summary>
+        /// The authored catalog, for the call sites that resolve a stored instance back to
+        /// its definition. Same object as <see cref="ItemView.Catalog"/>.
+        /// </summary>
+        public IItemCatalog Catalog
         {
-            var generatedLoot = new List<Package>();
-            /// calculates the number of items to drop
-            CalculateBonusDrops(ref amount);
+            get
+            {
+                EnsureInitialized();
+                return catalog;
+            }
+        }
 
-            for (var i = 0; i < amount; i++)
-                generatedLoot.Add(GenerateRandomItem());
+        private void EnsureInitialized()
+        {
+            if (generator != null)
+                return;
 
-            return generatedLoot;
+            if (catalog == null)
+            {
+                Debug.LogError($"{nameof(ItemProvider)}: no {nameof(catalog)} assigned - no item can be rolled", this);
+                return;
+            }
 
-            static void CalculateBonusDrops(ref uint amount)
+            lootTable = new DistributionLootTable(itemCategoryDistribution, itemRarityDistribution);
+            generator = new ItemGenerator(catalog, new UnityRollSource());
+            ItemView.Catalog = catalog;
+        }
+
+        // ── loot ────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Rolls <paramref name="amount"/> drops (plus the player's <c>IncreasedItemQuantity</c>
+        /// bonus) against the global loot table. A currency drop comes back as a rolled coin
+        /// pile; everything else is a single item. Was <c>GenerateRandomLoot</c>.
+        /// </summary>
+        public List<Package> RollLoot(uint amount = 1u)
+        {
+            EnsureInitialized();
+
+            var loot = new List<Package>();
+            if (generator == null)
+                return loot;
+
+            AddBonusDrops(ref amount);
+
+            IReadOnlyList<ItemInstance> instances;
+            try
+            {
+                instances = generator.RollLoot(LootContext(), (int)amount);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"{nameof(ItemProvider)}: the loot roll failed - {e.Message}", this);
+                return loot;
+            }
+
+            for (var i = 0; i < instances.Count; i++)
+            {
+                var package = ToPackage(instances[i]);
+                if (package.IsValid)
+                    loot.Add(package);
+            }
+
+            return loot;
+
+            static void AddBonusDrops(ref uint amount)
             {
                 var bonusDrops = CharacterProvider.Instance.Player.GetStatValue(StatName.IncreasedItemQuantity);
                 amount += (uint)(bonusDrops / 100f); // TODO: requires a better formula
             }
         }
 
-        private Package GenerateRandomItem()
+        /// <summary>
+        /// Turns a rolled instance into a stored package. A currency instance is re-minted as
+        /// a Common coin (loot coins never carry a rarity tint, as before) with a pile size
+        /// from the drop table; anything else is one item.
+        /// </summary>
+        private Package ToPackage(ItemInstance instance)
         {
-            /// selects item type
-            var itemCategory = itemCategoryDistribution.Roll();
+            var definition = catalog.Definition(instance.DefinitionId);
 
-            return itemCategory switch
-            {
-                ItemCategory.Equipment => new Package(null, GenerateRandomEquipment(), 1u),
-                ItemCategory.Consumable => new Package(null, GenerateRandomConsumable(), 1u),
-                ItemCategory.Currency => GenerateRandomCurrency(),
+            if (definition.Category != ItemCategory.Currency)
+                return new Package(null, instance, 1u);
 
-                ItemCategory.NONE => default,
-                _ => default,
-            };
+            var pile = currencyDropTable != null ? currencyDropTable.RollAmount(definition.CurrencyType) : 1u;
+            return pile == 0u
+                ? default
+                : new Package(null, MintCurrency(definition.CurrencyType), pile);
         }
 
-        public AbstractItem GenerateRandomEquipment()
+        // ── currency ────────────────────────────────────────────────────────
+
+        /// <summary>Rolls a coin type, then a pile size for it. Was <c>GenerateRandomCurrency</c>.</summary>
+        public Package RollCurrency()
         {
-            var equipmentCategory = equipmentCategoryDistribution.Roll();
-
-            return equipmentCategory switch
-            {
-                EquipmentCategory.Armaments => GenerateRandomArmament(),
-                EquipmentCategory.Weapons => GenerateRandomWeapon(),
-                EquipmentCategory.Jewelry => GenerateRandomJewelry(),
-
-                _ => null,
-            };
-        }
-
-        private AbstractItem GenerateRandomArmament()
-        {
-            var equipmentType = armamentsDistribution.Roll();
-
-            return equipmentType switch
-            {
-                EquipmentType.Belt => GenerateRandomBelt(),
-                EquipmentType.Boots => GenerateRandomBoots(),
-                EquipmentType.Bracers => GenerateRandomBracers(),
-                EquipmentType.Chest => GenerateRandomChest(),
-                EquipmentType.Cloak => GenerateRandomCloak(),
-                EquipmentType.Gloves => GenerateRandomGloves(),
-                EquipmentType.Helm => GenerateRandomHelm(),
-                EquipmentType.Pants => GenerateRandomPants(),
-                EquipmentType.Shoulders => GenerateRandomShoulders(),
-
-                _ => null,
-            };
-        }
-
-        private AbstractItem GenerateRandomWeapon()
-        {
-            var weaponCategory = weaponCategoryDistribution.Roll();
-
-            return weaponCategory switch
-            {
-                WeaponCategory.Weapon_1H => GenerateRandomOneHand(),
-                WeaponCategory.Weapon_2H => GenerateRandomTwoHand(),
-                WeaponCategory.Offhand => GenerateRandomOffHand(),
-
-                _ => null,
-            };
-        }
-
-        private AbstractItem GenerateRandomOneHand()
-        {
-            var equipmentType = oneHandDistribution.Roll();
-
-            return equipmentType switch
-            {
-                EquipmentType.Sword => GenerateRandomSword(),
-                EquipmentType.Bow => GenerateRandomBow(),
-
-                _ => null,
-            };
-        }
-
-        private AbstractItem GenerateRandomTwoHand()
-        {
-            var equipmentType = twoHandDistribution.Roll();
-
-            return equipmentType switch
-            {
-                EquipmentType.Crossbow => GenerateRandomCrossbow(),
-                EquipmentType.GreatSword => GenerateRandomGreatSword(),
-
-                _ => null,
-            };
-        }
-
-        private AbstractItem GenerateRandomOffHand()
-        {
-            var equipmentType = offHandDistribution.Roll();
-
-            return equipmentType switch
-            {
-                EquipmentType.Shield => GenerateRandomShield(),
-                EquipmentType.Quiver => GenerateRandomQuiver(),
-
-                _ => null,
-            };
-        }
-
-        private AbstractItem GenerateRandomJewelry()
-        {
-            var equipmentType = jewelryDistribution.Roll();
-
-            return equipmentType switch
-            {
-                EquipmentType.Amulet => GenerateRandomAmulet(),
-                EquipmentType.Ring => GenerateRandomRing(),
-
-                _ => null,
-            };
-        }
-
-        public AbstractItem GenerateRandomBelt() => GenerateRandomOfEquipmentType(EquipmentType.Belt);
-        public AbstractItem GenerateRandomBoots() => GenerateRandomOfEquipmentType(EquipmentType.Boots);
-        public AbstractItem GenerateRandomBracers() => GenerateRandomOfEquipmentType(EquipmentType.Bracers);
-        public AbstractItem GenerateRandomChest() => GenerateRandomOfEquipmentType(EquipmentType.Chest);
-        public AbstractItem GenerateRandomCloak() => GenerateRandomOfEquipmentType(EquipmentType.Cloak);
-        public AbstractItem GenerateRandomGloves() => GenerateRandomOfEquipmentType(EquipmentType.Gloves);
-        public AbstractItem GenerateRandomHelm() => GenerateRandomOfEquipmentType(EquipmentType.Helm);
-        public AbstractItem GenerateRandomPants() => GenerateRandomOfEquipmentType(EquipmentType.Pants);
-        public AbstractItem GenerateRandomShoulders() => GenerateRandomOfEquipmentType(EquipmentType.Shoulders);
-        public AbstractItem GenerateRandomSword() => GenerateRandomOfEquipmentType(EquipmentType.Sword);
-        public AbstractItem GenerateRandomBow() => GenerateRandomOfEquipmentType(EquipmentType.Bow);
-        public AbstractItem GenerateRandomCrossbow() => GenerateRandomOfEquipmentType(EquipmentType.Crossbow);
-        public AbstractItem GenerateRandomGreatSword() => GenerateRandomOfEquipmentType(EquipmentType.GreatSword);
-        public AbstractItem GenerateRandomShield() => GenerateRandomOfEquipmentType(EquipmentType.Shield);
-        public AbstractItem GenerateRandomQuiver() => GenerateRandomOfEquipmentType(EquipmentType.Quiver);
-        public AbstractItem GenerateRandomAmulet() => GenerateRandomOfEquipmentType(EquipmentType.Amulet);
-        public AbstractItem GenerateRandomRing() => GenerateRandomOfEquipmentType(EquipmentType.Ring);
-
-        public AbstractItem GenerateRandomOfEquipmentType(EquipmentType equipmentType)
-        {
-            var rarity = GetRandomRarity();
-            return rarity == ItemRarity.NoDrop
-                ? null
-                : equipmentType switch
-                {
-                    EquipmentType.ARMAMENTS => GenerateRandomArmament(),
-                    EquipmentType.Belt => new EquipmentItem(EquipmentType.Belt, rarity),
-                    EquipmentType.Boots => new EquipmentItem(EquipmentType.Boots, rarity),
-                    EquipmentType.Bracers => new EquipmentItem(EquipmentType.Bracers, rarity),
-                    EquipmentType.Chest => new EquipmentItem(EquipmentType.Chest, rarity),
-                    EquipmentType.Cloak => new EquipmentItem(EquipmentType.Cloak, rarity),
-                    EquipmentType.Gloves => new EquipmentItem(EquipmentType.Gloves, rarity),
-                    EquipmentType.Helm => new EquipmentItem(EquipmentType.Helm, rarity),
-                    EquipmentType.Pants => new EquipmentItem(EquipmentType.Pants, rarity),
-                    EquipmentType.Shoulders => new EquipmentItem(EquipmentType.Shoulders, rarity),
-
-                    EquipmentType.ONEHANDEDWEAPONS => GenerateRandomOneHand(),
-                    EquipmentType.Sword => new EquipmentItem(EquipmentType.Sword, rarity),
-                    EquipmentType.Bow => new EquipmentItem(EquipmentType.Bow, rarity),
-
-                    EquipmentType.TWOHANDEDWEAPONS => GenerateRandomTwoHand(),
-                    EquipmentType.Crossbow => new EquipmentItem(EquipmentType.Crossbow, rarity),
-                    EquipmentType.GreatSword => new EquipmentItem(EquipmentType.GreatSword, rarity),
-
-                    EquipmentType.OFFHANDS => GenerateRandomOffHand(),
-                    EquipmentType.Shield => new EquipmentItem(EquipmentType.Shield, rarity),
-                    EquipmentType.Quiver => new EquipmentItem(EquipmentType.Quiver, rarity),
-
-                    EquipmentType.JEWELRY => GenerateRandomJewelry(),
-                    EquipmentType.Amulet => new EquipmentItem(EquipmentType.Amulet, rarity),
-                    EquipmentType.Ring => new EquipmentItem(EquipmentType.Ring, rarity),
-
-                    _ => null,
-                };
-        }
-
-        private AbstractItem GenerateRandomConsumable()
-        {
-            var consumable = consumableTypeDistribution.Roll();
-
-            return GenerateRandomOfConsumableType(consumable);
-        }
-
-        public AbstractItem GenerateRandomOfConsumableType(ConsumableType consumableType)
-        {
-            var rarity = GetRandomRarity();
-            return rarity == ItemRarity.NoDrop
-                ? null
-                : consumableType switch
-                {
-                    ConsumableType.Arrow => new ConsumableItem(ConsumableType.Arrow, rarity),
-                    ConsumableType.Book => new ConsumableItem(ConsumableType.Book, rarity),
-                    ConsumableType.Potion => new ConsumableItem(ConsumableType.Potion, rarity),
-
-                    _ => null,
-                };
-        }
-
-        public Package GenerateRandomCurrency()
-        {
-            var currency = currencyTypeDistribution.Roll();
+            EnsureInitialized();
 
             if (currencyDropTable == null)
             {
-                Debug.LogError($"{nameof(ItemProvider)}: {nameof(currencyDropTable)} is not assigned - no currency will drop");
+                Debug.LogError($"{nameof(ItemProvider)}: {nameof(currencyDropTable)} is not assigned - no currency will drop", this);
                 return default;
             }
 
-            var amount = currencyDropTable.RollAmount(currency);
+            var type = currencyTypeDistribution.Roll();
+            var amount = currencyDropTable.RollAmount(type);
 
-            return amount == 0u
-                ? default
-                : new Package(null, GenerateCurrency(currency), amount);
+            return amount == 0u ? default : new Package(null, MintCurrency(type), amount);
         }
 
-        public AbstractItem GenerateCurrency(CurrencyType currencyType) => new CurrencyItem(currencyType);
-
-        private ItemRarity GetRandomRarity() =>
-            itemRarityDistribution.Roll(CharacterProvider.Instance.Player.GetStatValue(StatName.IncreasedItemRarity));
-
-        // TODO: equipmentType defines the list of icons 
-        // TODO: rarity defines what icon within the list
-        public Sprite GetIcon(EquipmentType equipmentType, ItemRarity rarity)
+        /// <summary>
+        /// A single coin of <paramref name="type"/> as an <see cref="ItemInstance"/> - no
+        /// affixes, Common, item level 0. Was <c>GenerateCurrency</c>; the callers that pay
+        /// out change and sale proceeds mint their coins here.
+        /// </summary>
+        public ItemInstance MintCurrency(CurrencyType type)
         {
-            var unique = GetUnique(equipmentType);
+            EnsureInitialized();
 
-            return unique?.Icon;
+            var definition = DefinitionOfCurrency(type);
+            return definition == null
+                ? null
+                : new ItemInstance(definition.Id, ItemRarity.Common, 0, null);
         }
 
-        public Sprite GetIcon(ConsumableType consumableType, ItemRarity rarity)
+        // ── debug helpers (the InventoryProvider buttons) ───────────────────
+
+        /// <summary>Rolls a random equipment item of any type. Was <c>GenerateRandomEquipment</c>.</summary>
+        public ItemInstance RollEquipment() => RollFrom(PickDefinition(ItemCategory.Equipment, _ => true));
+
+        /// <summary>
+        /// Rolls a random equipment item of <paramref name="type"/>. <paramref name="type"/>
+        /// may be a concrete type (<c>Belt</c>) or a category marker (<c>ONEHANDEDWEAPONS</c>),
+        /// matching the old <c>GenerateRandomOfEquipmentType</c> switch.
+        /// </summary>
+        public ItemInstance RollEquipment(EquipmentType type) =>
+            RollFrom(PickDefinition(ItemCategory.Equipment, d => EquipmentTypeMatches(type, d.EquipmentType)));
+
+        /// <summary>Rolls a random consumable of <paramref name="type"/>. Was <c>GenerateRandomOfConsumableType</c>.</summary>
+        public ItemInstance RollConsumable(ConsumableType type) =>
+            RollFrom(PickDefinition(ItemCategory.Consumable, d => d.ConsumableType == type));
+
+        private ItemInstance RollFrom(ItemDefinition definition)
         {
-            var unique = GetUnique(consumableType);
+            EnsureInitialized();
 
-            return unique?.Icon;
+            if (generator == null || definition == null)
+                return null;
+
+            var rarity = itemRarityDistribution.Roll(PlayerMagicFind());
+            return rarity == ItemRarity.NoDrop ? null : generator.Roll(definition, rarity, 0);
         }
+
+        // ── icons ───────────────────────────────────────────────────────────
 
         public Sprite GetIcon(CurrencyType currencyType) => currencyType switch
         {
-            CurrencyType.Copper => CurrencyIcons[0],
-            CurrencyType.Iron => CurrencyIcons[1],
-            CurrencyType.Silver => CurrencyIcons[2],
-            CurrencyType.Gold => CurrencyIcons[3],
+            CurrencyType.Copper => CurrencyIcons.Count > 0 ? CurrencyIcons[0] : null,
+            CurrencyType.Iron => CurrencyIcons.Count > 1 ? CurrencyIcons[1] : null,
+            CurrencyType.Silver => CurrencyIcons.Count > 2 ? CurrencyIcons[2] : null,
+            CurrencyType.Gold => CurrencyIcons.Count > 3 ? CurrencyIcons[3] : null,
 
             CurrencyType.NONE => null,
             _ => null,
         };
 
-        public AbstractItem GetUnique(EquipmentType equipmentType)
+        // ── internals ───────────────────────────────────────────────────────
+
+        private RollContext LootContext() => new(lootTable, sourceLevel: 0, magicFind: PlayerMagicFind());
+
+        private static float PlayerMagicFind() =>
+            CharacterProvider.Instance.Player.GetStatValue(StatName.IncreasedItemRarity);
+
+        private ItemDefinition DefinitionOfCurrency(CurrencyType type)
         {
-            // TODO: individual probabilityDistribution for each equipment type
-            // var unique = correspondingTypeDistribution.GetRandomEnumerator();
-            // => player level sensitive ?
+            foreach (var definition in catalog.OfCategory(ItemCategory.Currency))
+                if (definition.CurrencyType == type)
+                    return definition;
 
-            var uniquesOfType = equipmentType switch
-            {
-                EquipmentType.ARMAMENTS => null,
-                EquipmentType.Belt => Belts,
-                EquipmentType.Boots => Boots,
-                EquipmentType.Bracers => Bracers,
-                EquipmentType.Chest => Chests,
-                EquipmentType.Cloak => Cloaks,
-                EquipmentType.Gloves => Gloves,
-                EquipmentType.Helm => Helmets,
-                EquipmentType.Pants => Pants,
-                EquipmentType.Shoulders => Shoulder,
-
-                EquipmentType.ONEHANDEDWEAPONS => null,
-                EquipmentType.Sword => Swords,
-                EquipmentType.Bow => Bows,
-
-                EquipmentType.TWOHANDEDWEAPONS => null,
-                EquipmentType.Crossbow => Crossbows,
-                EquipmentType.GreatSword => GreatSwords,
-
-                EquipmentType.OFFHANDS => null,
-                EquipmentType.Shield => Shields,
-                EquipmentType.Quiver => Quiver,
-
-                EquipmentType.JEWELRY => null,
-                EquipmentType.Amulet => Amulets,
-                EquipmentType.Ring => Rings,
-
-                _ => null,
-            };
-
-            return GetUniqueFromList(uniquesOfType);
+            Debug.LogError($"{nameof(ItemProvider)}: the catalog has no currency definition for {type}", this);
+            return null;
         }
 
-        public AbstractItem GetUnique(ConsumableType consumableType)
+        /// <summary>
+        /// Uniform reservoir sample of the catalog's definitions in a category that pass
+        /// <paramref name="filter"/> - the debug-helper mirror of <c>ItemGenerator.PickDefinition</c>
+        /// (base items and uniques both eligible).
+        /// </summary>
+        private ItemDefinition PickDefinition(ItemCategory category, Func<ItemDefinition, bool> filter)
         {
-            // TODO: individual probabilityDistribution for each equipment type
-            // var unique = correspondingTypeDistribution.GetRandomEnumerator();
-            // => player level sensitive ?
+            ItemDefinition chosen = null;
+            var seen = 0;
 
-            var uniquesOfType = consumableType switch
+            foreach (var candidate in catalog.OfCategory(category))
             {
-                ConsumableType.Arrow => Arrows,
-                ConsumableType.Book => Books,
-                ConsumableType.Potion => Potions,
+                if (!filter(candidate))
+                    continue;
 
-                _ => null,
-            };
-
-            return GetUniqueFromList(uniquesOfType);
-        }
-
-        private static AbstractItem GetUniqueFromList(List<AbstractItemObject> uniquesOfType)
-        {
-            if (uniquesOfType.Count <= 0)
-            {
-                Debug.LogWarning($"No unique available");
-                return null;
+                seen++;
+                if (chosen == null || UnityEngine.Random.value * seen < 1f)
+                    chosen = candidate;
             }
 
-            var index = Random.Range(0, uniquesOfType.Count);
-            return uniquesOfType[index].GetItem();
+            if (chosen == null)
+                Debug.LogWarning($"{nameof(ItemProvider)}: the catalog has no {category} definition matching the request");
+
+            return chosen;
         }
+
+        /// <summary>
+        /// Whether a definition's <paramref name="have"/> type satisfies a requested
+        /// <paramref name="want"/> that may be a category marker
+        /// (<c>ARMAMENTS</c>/<c>ONEHANDEDWEAPONS</c>/<c>TWOHANDEDWEAPONS</c>/<c>OFFHANDS</c>/<c>JEWELRY</c>).
+        /// The ranges are the ones the enum's own tooltips document.
+        /// </summary>
+        private static bool EquipmentTypeMatches(EquipmentType want, EquipmentType have) => want switch
+        {
+            EquipmentType.NONE => true,
+            EquipmentType.ARMAMENTS => have > EquipmentType.ARMAMENTS && have < EquipmentType.ONEHANDEDWEAPONS,
+            EquipmentType.ONEHANDEDWEAPONS => have > EquipmentType.ONEHANDEDWEAPONS && have < EquipmentType.TWOHANDEDWEAPONS,
+            EquipmentType.TWOHANDEDWEAPONS => have > EquipmentType.TWOHANDEDWEAPONS && have < EquipmentType.OFFHANDS,
+            EquipmentType.OFFHANDS => have > EquipmentType.OFFHANDS && have < EquipmentType.JEWELRY,
+            EquipmentType.JEWELRY => have > EquipmentType.JEWELRY,
+            _ => have == want,
+        };
     }
 }

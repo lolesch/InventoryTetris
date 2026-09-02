@@ -52,13 +52,17 @@ namespace ToolSmiths.InventorySystem.Inventories
         // => this should simply check if a stack of the same item is at the drop position and add it.
         protected bool TryStack(ref Package package)
         {
-            if (!package.IsValid || package.Item.StackLimit <= 1u)
+            if (!package.IsValid)
+                return false;
+
+            var stackLimit = ItemView.Of(package.Item).StackLimit;
+            if (stackLimit <= 1u)
                 return false;
 
             var positions = StoredPackages.Keys.ToList();
 
             for (var i = 0; i < positions.Count && 0 < package.Amount; i++)
-                if (StoredPackages[positions[i]].Item.Equals(package.Item))
+                if (StoredPackages[positions[i]].Item.StacksWith(package.Item, stackLimit))
                     if (0 < StoredPackages[positions[i]].SpaceLeft)
                         package = AddAtPosition(positions[i], package);
 
@@ -70,7 +74,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             if (!package.IsValid)
                 return false;
 
-            var dimensions = AbstractItem.GetDimensions(package.Item.Dimensions);
+            var dimensions = ItemView.Of(package.Item).Dimensions;
 
             for (var x = 0; x < Dimensions.x && 0 < package.Amount; x++)
                 for (var y = 0; y < Dimensions.y && 0 < package.Amount; y++)
@@ -128,12 +132,12 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             return package;
 
-            void FindAllEqualItems(AbstractItem item, out List<Vector2Int> positions)
+            void FindAllEqualItems(ItemInstance item, out List<Vector2Int> positions)
             {
                 positions = new List<Vector2Int>();
 
                 foreach (var package in StoredPackages)
-                    if (package.Value.Item == item)
+                    if (ReferenceEquals(package.Value.Item, item))
                         positions.Add(package.Key);
 
                 _ = positions.OrderBy(v => v.x);
@@ -209,13 +213,15 @@ namespace ToolSmiths.InventorySystem.Inventories
         public void Sort()
         {
             var sortedValues = StoredPackages.Values
-                .OrderByDescending(x => x.Item.Dimensions)  // by size     //AbstractItem.GetDimensions(x.Item.Dimensions).sqrMagnitude)
-                .ThenBy(x => x.Item is CurrencyItem)        // by itemType (equipment before consumables before currency)
-                .ThenBy(x => x.Item is ConsumableItem)
-                .ThenBy(x => x.Item is EquipmentItem)
-                .ThenByDescending(x => x.Item.Rarity)       // by rarity
-                .ThenByDescending(x => x.Item.SellValue)    // by goldValue
-                .ThenBy(x => x.Item.ToString())             // by name
+                .Select(package => (package, view: ItemView.Of(package.Item)))
+                .OrderByDescending(x => x.view.Footprint)                                     // by size
+                .ThenBy(x => x.view.Definition.Category == ItemCategory.Currency)             // by itemType (equipment before consumables before currency)
+                .ThenBy(x => x.view.Definition.Category == ItemCategory.Consumable)
+                .ThenBy(x => x.view.Definition.Category == ItemCategory.Equipment)
+                .ThenByDescending(x => x.package.Item.Rarity)                                 // by rarity
+                .ThenByDescending(x => x.view.SellValue)                                      // by goldValue
+                .ThenBy(x => x.view.DisplayName)                                              // by name
+                .Select(x => x.package)
                 .ToList();
 
             foreach (var package in sortedValues)

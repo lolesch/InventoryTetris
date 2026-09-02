@@ -257,14 +257,14 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
                     if (icon)
                     {
-                        icon.sprite = package.Item.Icon;
+                        icon.sprite = ItemView.Of(package.Item).Icon;
                         icon.color = Color.white;
                     }
 
                     if (amount)
                         amount.text = 1 < package.Amount ? package.Amount.ToString() : string.Empty;
 
-                    var rarityColor = AbstractItem.GetRarityColor(package.Item.Rarity);
+                    var rarityColor = ItemView.RarityColorOf(package.Item.Rarity);
 
                     if (frame)
                         frame.color = rarityColor;

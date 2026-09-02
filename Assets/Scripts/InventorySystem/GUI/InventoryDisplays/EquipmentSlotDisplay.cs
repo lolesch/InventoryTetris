@@ -1,5 +1,6 @@
 using System.Linq;
 using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Runtime.Provider;
@@ -13,14 +14,16 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
     internal sealed class EquipmentSlotDisplay : AbstractSlotDisplay
     {
-        [field: SerializeField] public EquipmentItem DebugItem;
-
         protected override void DropItem(Package package)
         {
-            if (!package.IsValid || package.Item is not EquipmentItem item)
+            if (!package.IsValid)
                 return;
 
-            var allowedPositions = CharacterEquipment.GetTypeSpecificPositions(item.EquipmentType);
+            var definition = ItemView.Of(package.Item).Definition;
+            if (definition.Category != ItemCategory.Equipment)
+                return;
+
+            var allowedPositions = CharacterEquipment.GetTypeSpecificPositions(definition.EquipmentType);
 
             /// Wrong slot for this item's type: the item stays in hand untouched, the same
             /// contract bug 2 gives a rejected drop on the inventory grid - no re-anchor.
@@ -65,7 +68,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
             FadeOutPreview();
 
-            if (package.Item is not EquipmentItem)
+            if (ItemView.Of(package.Item).Definition.Category != ItemCategory.Equipment)
                 Debug.LogWarning("Something went wrong!");
 
             #region UNEQUIP ITEM

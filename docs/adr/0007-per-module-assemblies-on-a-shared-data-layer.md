@@ -77,3 +77,27 @@ later call — once the module set stops moving.
 Until a module is extracted, its behaviour cannot be tested without a scene. That is the
 standing justification for issue #4's spike and for every "reachable from a test" line
 in `dev/specs/2026-08-31-foundational-rework-design.md`.
+
+## Amendment — issue #8: the authored adapters live in `InventorySystem.Items`
+
+The layer sketch above says `Data` "hosts Item Definitions", and the `InventorySystem.Items`
+bullet says "Unity-free here means no `ScriptableObject`". Issue #7 landed
+`ItemDefinitionAsset : ScriptableObject, ItemDefinition` and
+`ItemCatalogAsset : ScriptableObject, IItemCatalog` in `InventorySystem.Items`, not `Data`,
+following where issue #5 put the interface — and issue #8's cutover deletes `AbstractItem`,
+leaving `InventorySystem.Items` the sole home of the item model. That is the accepted
+shape, and the two lines above are read as follows:
+
+- **"Unity-free" scopes to the roll *path*, not the whole assembly.** `ItemDefinition`,
+  `ItemInstance`, `ItemGenerator`, `RollContext`, `LootTable`, `IRollSource` name no
+  `ScriptableObject` / `MonoBehaviour` / scene / singleton and are each constructible in a
+  test with a fake. `ItemDefinitionAsset` and `ItemCatalogAsset` are the *authored
+  adapters* over that path — the same "thin `ScriptableObject` over a pure core" pattern
+  `MutableFloat` and `Currency` follow, just co-located with the core rather than one layer
+  down. Tests use `InMemoryItemCatalog` / `FakeItemDefinition`, never the assets.
+- **`Data` still hosts the enums and the Distribution assets**; it does not host Item
+  Definitions. The AutoBattler mirror (a Definition belongs "with the enums") is not copied
+  here — the definition contract sits with the generator that reads it.
+- The container core reaches the catalog through an ambient `ItemView.Catalog` static
+  (`ItemProvider.Awake` sets it) until issue #15 extracts `InventorySystem.Containers` and
+  injects it. That static is the last item-model coupling `Assembly-CSharp` keeps.

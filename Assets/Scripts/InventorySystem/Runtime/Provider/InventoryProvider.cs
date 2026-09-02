@@ -65,7 +65,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         {
             for (var i = 0; i < Amount; i++)
             {
-                var randomEquipment = ItemProvider.Instance.GenerateRandomOfEquipmentType(equipmentType);
+                var randomEquipment = ItemProvider.Instance.RollEquipment(equipmentType);
                 _ = CharacterProvider.Instance.Player.PickUpItem(new Package(null, randomEquipment, 1u));
             }
         }
@@ -74,14 +74,14 @@ namespace ToolSmiths.InventorySystem.Inventories
         {
             for (var i = 0; i < Amount; i++)
             {
-                var randomConsumable = ItemProvider.Instance.GenerateRandomOfConsumableType(consumableType);
+                var randomConsumable = ItemProvider.Instance.RollConsumable(consumableType);
                 _ = CharacterProvider.Instance.Player.PickUpItem(new Package(null, randomConsumable, 1u));
             }
         }
 
         public void AddRandomLoot()
         {
-            var loot = ItemProvider.Instance.GenerateRandomLoot(Amount);
+            var loot = ItemProvider.Instance.RollLoot(Amount);
 
             for (var i = 0; i < loot.Count; i++)
                 _ = CharacterProvider.Instance.Player.PickUpItem(loot[i]);
@@ -90,7 +90,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         public void AddRandomCurrency()
         {
             for (var i = 0; i < Amount; i++)
-                _ = CharacterProvider.Instance.Player.PickUpItem(ItemProvider.Instance.GenerateRandomCurrency());
+                _ = CharacterProvider.Instance.Player.PickUpItem(ItemProvider.Instance.RollCurrency());
         }
 
         public void RemoveAllItems(AbstractDimensionalContainer container)
@@ -136,7 +136,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             for (var i = 0; i < 20; i++)
             {
-                var item = ItemProvider.Instance.GenerateRandomEquipment();
+                var item = ItemProvider.Instance.RollEquipment();
 
                 var package = new Package(null, item, 1u);
 

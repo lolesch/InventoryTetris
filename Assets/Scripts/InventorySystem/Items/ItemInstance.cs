@@ -31,6 +31,29 @@ namespace ToolSmiths.InventorySystem.Items
         /// <summary>Implicit, rolled and unique modifiers, already combined into one list. Read-only.</summary>
         public IReadOnlyList<CharacterStatModifier> Affixes { get; }
 
+        /// <summary>
+        /// True when this instance carries rolled, one-of-a-kind state - which is what stops
+        /// it from merging into a stack with another instance of the same definition. Today
+        /// that is "has any affix"; sockets and an identified flag will <c>||</c> in here as
+        /// they land. Currency and a plain (zero-affix) consumable have none, so they stack.
+        /// </summary>
+        public bool HasInstanceState => Affixes.Count > 0;
+
+        /// <summary>
+        /// Whether this instance may merge into a stack with <paramref name="other"/>
+        /// (<c>CONTEXT.md</c> "Package"): same definition, a stack limit above one, and
+        /// neither side carrying instance state. Equipment (stack limit 1) never reaches a
+        /// true here. <paramref name="stackLimit"/> is the definition's
+        /// <see cref="ItemDefinition.BaseStackLimit"/>, resolved by the caller through
+        /// <see cref="ItemView"/>.
+        /// </summary>
+        public bool StacksWith(ItemInstance other, uint stackLimit) =>
+            other != null
+            && stackLimit > 1u
+            && string.Equals(DefinitionId, other.DefinitionId, StringComparison.Ordinal)
+            && !HasInstanceState
+            && !other.HasInstanceState;
+
         public ItemInstance(string definitionId, ItemRarity rarity, int itemLevel,
             IReadOnlyList<CharacterStatModifier> affixes)
         {

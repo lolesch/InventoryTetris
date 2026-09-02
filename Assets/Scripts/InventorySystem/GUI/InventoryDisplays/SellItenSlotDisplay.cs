@@ -1,5 +1,6 @@
 ﻿using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Inventories;
+using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Runtime.Provider;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -21,16 +22,16 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
             _ = (DragProvider.Instance.Origin.Container?.RemoveFromContainer(packageToMove));
 
-            var currency = new Currency(packageToMove.Item.SellValue * packageToMove.Amount);
+            var currency = new Currency(ItemView.Of(packageToMove.Item).SellValue * packageToMove.Amount);
 
             //TODO: handle item loss if inventory is full
-            var gold = new Package(Container, ItemProvider.Instance.GenerateCurrency(Data.Enums.CurrencyType.Gold), currency.Gold);
+            var gold = new Package(Container, ItemProvider.Instance.MintCurrency(Data.Enums.CurrencyType.Gold), currency.Gold);
             _ = InventoryProvider.Instance.Inventory.TryAddToContainer(ref gold);
-            var silver = new Package(Container, ItemProvider.Instance.GenerateCurrency(Data.Enums.CurrencyType.Silver), currency.Silver);
+            var silver = new Package(Container, ItemProvider.Instance.MintCurrency(Data.Enums.CurrencyType.Silver), currency.Silver);
             _ = InventoryProvider.Instance.Inventory.TryAddToContainer(ref silver);
-            var iron = new Package(Container, ItemProvider.Instance.GenerateCurrency(Data.Enums.CurrencyType.Iron), currency.Iron);
+            var iron = new Package(Container, ItemProvider.Instance.MintCurrency(Data.Enums.CurrencyType.Iron), currency.Iron);
             _ = InventoryProvider.Instance.Inventory.TryAddToContainer(ref iron);
-            var copper = new Package(Container, ItemProvider.Instance.GenerateCurrency(Data.Enums.CurrencyType.Copper), currency.Copper);
+            var copper = new Package(Container, ItemProvider.Instance.MintCurrency(Data.Enums.CurrencyType.Copper), currency.Copper);
             _ = InventoryProvider.Instance.Inventory.TryAddToContainer(ref copper);
 
             /// A sink: the item is sold and the drag is over. Was SetPackage with an empty

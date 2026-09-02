@@ -74,7 +74,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
                     return;
                 }
 
-                var storedPositions = Hovered.Container.GetStoredItemsAt(positionToAdd, AbstractItem.GetDimensions(DraggingPackage.Item.Dimensions));
+                var storedPositions = Hovered.Container.GetStoredItemsAt(positionToAdd, ItemView.Of(DraggingPackage.Item).Dimensions);
 
                 if (background)
                     /// Assigned rather than multiplied so it stays red whatever the scrim is
@@ -103,7 +103,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             position = DragGeometry.DropPosition(
                 (Vector2)Input.mousePosition / transform.lossyScale,
                 itemDisplay.pivot,
-                AbstractItem.GetDimensions(DraggingPackage.Item.Dimensions),
+                ItemView.Of(DraggingPackage.Item).Dimensions,
                 (Vector2)hovered.transform.position / transform.lossyScale,
                 hovered.Position,
                 slotSize);
@@ -147,7 +147,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
             SetHoveredSlot(Origin);
 
-            var dimensions = AbstractItem.GetDimensions(package.Item.Dimensions);
+            var dimensions = ItemView.Of(package.Item).Dimensions;
 
             itemDisplay.sizeDelta = (Vector2)dimensions * slotSize;
 
@@ -182,7 +182,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             DraggingPackage = package;
             PositionOffset = Vector2Int.zero;
 
-            var dimensions = AbstractItem.GetDimensions(package.Item.Dimensions);
+            var dimensions = ItemView.Of(package.Item).Dimensions;
 
             itemDisplay.sizeDelta = (Vector2)dimensions * slotSize;
             itemDisplay.pivot = DragGeometry.HandOverPivot;
@@ -211,7 +211,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         {
             if (icon)
             {
-                icon.sprite = package.Item.Icon;
+                icon.sprite = ItemView.Of(package.Item).Icon;
                 icon.color = Color.white;
             }
 
@@ -219,7 +219,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             /// dragged item lost its rarity for the length of the drag. The frame carries
             /// rarity here, exactly as it does in a slot.
             if (frame)
-                frame.color = WithAlpha(AbstractItem.GetRarityColor(package.Item.Rarity), frameAlpha);
+                frame.color = WithAlpha(ItemView.RarityColorOf(package.Item.Rarity), frameAlpha);
 
             if (amount)
                 amount.text = 1 < package.Amount ? package.Amount.ToString() : string.Empty;

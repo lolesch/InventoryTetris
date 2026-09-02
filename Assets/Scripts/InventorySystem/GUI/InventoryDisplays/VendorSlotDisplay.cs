@@ -14,7 +14,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         private GridLayoutGroup gridLayout;
 
         internal const float Markup = 1.5f;
-        internal static float BuyPrice(AbstractItem item) => item.SellValue * Markup;
+        internal static float BuyPrice(ItemInstance item) => ItemView.Of(item).SellValue * Markup;
 
         /// The same "forbidden" feedback the drag display gives an item that cannot be
         /// placed (see DragProvider.HighlightOverlappingSlots): red is assigned rather
@@ -83,9 +83,10 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 gridLayout = GetComponentInParent<GridLayoutGroup>();
             if (gridLayout)
             {
-                var additionalSpacing = gridLayout.spacing * new Vector2(AbstractItem.GetDimensions(package.Item.Dimensions).x - 1, AbstractItem.GetDimensions(package.Item.Dimensions).y - 1);
+                var itemDimensions = ItemView.Of(package.Item).Dimensions;
+                var additionalSpacing = gridLayout.spacing * new Vector2(itemDimensions.x - 1, itemDimensions.y - 1);
 
-                display.sizeDelta = gridLayout.cellSize * AbstractItem.GetDimensions(package.Item.Dimensions) + additionalSpacing;
+                display.sizeDelta = gridLayout.cellSize * itemDimensions + additionalSpacing;
             }
 
             display.anchoredPosition = new Vector2(display.sizeDelta.x * .5f, display.sizeDelta.y * -.5f);
@@ -149,16 +150,16 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
             _ = (DragProvider.Instance.Origin.Container?.RemoveFromContainer(packageToMove));
 
-            var currency = new Currency(packageToMove.Item.SellValue * packageToMove.Amount);
+            var currency = new Currency(ItemView.Of(packageToMove.Item).SellValue * packageToMove.Amount);
 
             //TODO: handle item loss if inventory is full
-            var gold = new Package(Container, ItemProvider.Instance.GenerateCurrency(Data.Enums.CurrencyType.Gold), currency.Gold);
+            var gold = new Package(Container, ItemProvider.Instance.MintCurrency(Data.Enums.CurrencyType.Gold), currency.Gold);
             _ = InventoryProvider.Instance.Inventory.TryAddToContainer(ref gold);
-            var silver = new Package(Container, ItemProvider.Instance.GenerateCurrency(Data.Enums.CurrencyType.Silver), currency.Silver);
+            var silver = new Package(Container, ItemProvider.Instance.MintCurrency(Data.Enums.CurrencyType.Silver), currency.Silver);
             _ = InventoryProvider.Instance.Inventory.TryAddToContainer(ref silver);
-            var iron = new Package(Container, ItemProvider.Instance.GenerateCurrency(Data.Enums.CurrencyType.Iron), currency.Iron);
+            var iron = new Package(Container, ItemProvider.Instance.MintCurrency(Data.Enums.CurrencyType.Iron), currency.Iron);
             _ = InventoryProvider.Instance.Inventory.TryAddToContainer(ref iron);
-            var copper = new Package(Container, ItemProvider.Instance.GenerateCurrency(Data.Enums.CurrencyType.Copper), currency.Copper);
+            var copper = new Package(Container, ItemProvider.Instance.MintCurrency(Data.Enums.CurrencyType.Copper), currency.Copper);
             _ = InventoryProvider.Instance.Inventory.TryAddToContainer(ref copper);
 
             /// A sell sink: the item is gone and the drag is over. Was SetPackage with an

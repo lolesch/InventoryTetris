@@ -307,6 +307,53 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Items
             Assert.That(loot[1], Is.Not.SameAs(loot[2]));
         }
 
+        // ── the targeted overloads (the ItemProvider debug helpers) ────────
+
+        [Test]
+        public void Roll_GivenADefinition_SkipsCategoryAndDefinitionSelection()
+        {
+            // Catalog holds a consumable too; the targeted roll must still return the
+            // equipment definition it was handed, whatever the category odds say.
+            var chest = Equipment("chest");
+            var catalog = new InMemoryItemCatalog(chest, new FakeItemDefinition { Id = "potion", Category = ItemCategory.Consumable });
+            var generator = new ItemGenerator(catalog, new SeededRollSource(1));
+
+            var instance = generator.Roll(chest, new RollContext(FakeLootTable.Fixed(ItemCategory.Consumable, ItemRarity.Rare)));
+
+            Assert.That(instance.DefinitionId, Is.EqualTo("chest"));
+            Assert.That(instance.Rarity, Is.EqualTo(ItemRarity.Rare));
+        }
+
+        [Test]
+        public void Roll_GivenADefinitionAndRarity_NeedsNoLootTable()
+        {
+            var pool = new[] { Slot(StatName.Health), Slot(StatName.Armor), Slot(StatName.MagicResist) };
+            var generator = Generator(Equipment("chest", pool), new SeededRollSource(4));
+
+            var instance = generator.Roll(new FakeItemDefinition { Id = "chest", Category = ItemCategory.Equipment, AffixPool = pool }, ItemRarity.Rare, itemLevel: 12);
+
+            Assert.That(instance.Rarity, Is.EqualTo(ItemRarity.Rare));
+            Assert.That(instance.ItemLevel, Is.EqualTo(12));
+            Assert.That(instance.Affixes, Has.Count.EqualTo(3));
+        }
+
+        [Test]
+        public void Roll_GivenNoDropRarity_Throws()
+        {
+            var generator = Generator(Equipment("chest"), new ConstantRollSource(0f));
+
+            Assert.That(() => generator.Roll(new FakeItemDefinition { Id = "chest" }, ItemRarity.NoDrop, 0),
+                Throws.ArgumentException);
+        }
+
+        [Test]
+        public void Roll_GivenNullDefinition_Throws()
+        {
+            var generator = Generator(Equipment("chest"), new ConstantRollSource(0f));
+
+            Assert.That(() => generator.Roll(null, ItemRarity.Common, 0), Throws.ArgumentNullException);
+        }
+
         // ── loud failure, never silent ─────────────────────────────────────
 
         [Test]

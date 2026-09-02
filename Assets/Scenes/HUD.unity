@@ -9769,6 +9769,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ItemTypeData: {fileID: 11400000, guid: be7b2766279a25b4bbc708817fa006cb, type: 2}
+  catalog: {fileID: 11400000, guid: 0a6b9cc013fb6514389c3c806b51a50e, type: 2}
   itemCategoryDistribution: {fileID: 11400000, guid: ae878e2503b01aa4f8df8fc578e7a993, type: 2}
   itemRarityDistribution: {fileID: 11400000, guid: 1d3181e9dd35dea49b7900e07374d206, type: 2}
   equipmentCategoryDistribution: {fileID: 11400000, guid: 8f1d7ef58b3daaa45972073ee8a8532b, type: 2}
@@ -9780,6 +9781,7 @@ MonoBehaviour:
   jewelryDistribution: {fileID: 11400000, guid: 54faba0152fdb8849ad9223e39a69145, type: 2}
   consumableTypeDistribution: {fileID: 11400000, guid: ca398d20cb0869a4ebef17325eeb1d21, type: 2}
   currencyTypeDistribution: {fileID: 11400000, guid: 9cd2eb73a0c901c4fa216cf2fe099481, type: 2}
+  currencyDropTable: {fileID: 11400000, guid: c47ab8125364fb141818083bd5391695, type: 2}
   Amulets:
   - {fileID: 11400000, guid: b19d9e41f7a59ae44946a83314ef6a55, type: 2}
   - {fileID: 11400000, guid: f5bef30ed8acf8a4d9fee3d05c03e30a, type: 2}

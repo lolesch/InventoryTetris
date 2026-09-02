@@ -1,5 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Runtime.Provider;
@@ -30,7 +31,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             /// Nothing would land here - out of bounds, or 2+ items in the way. The item
             /// stays in hand exactly as the player is holding it; re-anchoring past this
             /// point is what snapped a rejected drop onto the grid.
-            if (!Container.CanPlaceAt(positionToAdd, AbstractItem.GetDimensions(package.Item.Dimensions)))
+            if (!Container.CanPlaceAt(positionToAdd, ItemView.Of(package.Item).Dimensions))
                 return;
 
             package = Container.AddAtPosition(positionToAdd, package);
@@ -54,9 +55,10 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 gridLayout = GetComponentInParent<GridLayoutGroup>();
             if (gridLayout)
             {
-                var additionalSpacing = gridLayout.spacing * new Vector2(AbstractItem.GetDimensions(package.Item.Dimensions).x - 1, AbstractItem.GetDimensions(package.Item.Dimensions).y - 1);
+                var itemDimensions = ItemView.Of(package.Item).Dimensions;
+                var additionalSpacing = gridLayout.spacing * new Vector2(itemDimensions.x - 1, itemDimensions.y - 1);
 
-                display.sizeDelta = gridLayout.cellSize * AbstractItem.GetDimensions(package.Item.Dimensions) + additionalSpacing;
+                display.sizeDelta = gridLayout.cellSize * itemDimensions + additionalSpacing;
             }
 
             display.anchoredPosition = new Vector2(display.sizeDelta.x * .5f, display.sizeDelta.y * -.5f);
@@ -79,26 +81,27 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 #region USE ITEM
                 if (eventData.button == PointerEventData.InputButton.Right)
                 {
-                    switch (package.Item)
+                    var category = ItemView.Of(package.Item).Definition.Category;
+
+                    if (category == ItemCategory.Consumable)
                     {
-                        case ConsumableItem:
-                            Debug.Log($"Consuming {package.Item.ToString()}");
+                        Debug.Log($"Consuming {ItemView.Of(package.Item).DisplayName}");
 
-                            _ = Container.RemoveAtPosition(position, new Package(Container, package.Item, 1)); // only consume one amount
+                        _ = Container.RemoveAtPosition(position, new Package(Container, package.Item, 1)); // only consume one amount
 
-                            return;
+                        return;
+                    }
 
-                        case EquipmentItem:
-                        {
-                            _ = Container.RemoveAtPosition(position, package);
+                    if (category == ItemCategory.Equipment)
+                    {
+                        _ = Container.RemoveAtPosition(position, package);
 
-                            if (InventoryProvider.Instance.Equipment.TryAddToContainer(ref package))
-                                DragProvider.Instance.SetPackage(this, package, Vector2Int.zero, pointerPosition);
-                            else
-                                _ = Container.TryAddToContainer(ref package);
+                        if (InventoryProvider.Instance.Equipment.TryAddToContainer(ref package))
+                            DragProvider.Instance.SetPackage(this, package, Vector2Int.zero, pointerPosition);
+                        else
+                            _ = Container.TryAddToContainer(ref package);
 
-                            return;
-                        }
+                        return;
                     }
                 }
                 #endregion USE ITEM

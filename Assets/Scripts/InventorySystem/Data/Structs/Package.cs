@@ -12,22 +12,24 @@ namespace ToolSmiths.InventorySystem.Data
     public struct Package
     {
         /// <summary>The package contains an amount of items and can be stored inside containers</summary>
-        public Package(AbstractDimensionalContainer sender, AbstractItem item, uint amount)
+        public Package(AbstractDimensionalContainer sender, ItemInstance item, uint amount)
         {
             Sender = sender;
             Item = item;
             Amount = amount;
 
-            if (item != null && item.StackLimit < amount)
+            // ItemView.Catalog is unset during deserialization and in the pure container
+            // tests that build a package before wiring a catalog - skip the check then.
+            if (item != null && ItemView.Catalog != null && ItemView.Of(item).StackLimit < amount)
                 Debug.LogWarning($"The Package you constructed contains more items than the item's stacking limit!");
         }
 
         [field: SerializeField] public AbstractDimensionalContainer Sender { get; private set; }
-        [field: SerializeField] public AbstractItem Item { get; private set; }
+        [field: SerializeField] public ItemInstance Item { get; private set; }
 
         [field: SerializeField] public uint Amount { get; private set; }
 
-        public readonly uint SpaceLeft => Item.StackLimit - Amount;
+        public readonly uint SpaceLeft => ItemView.Of(Item).StackLimit - Amount;
         public readonly bool IsValid => Item != null && 0 < Amount;
 
         /// <summary>Tries to add to the amount (within stacking limit).</summary>

@@ -49,13 +49,42 @@ namespace ToolSmiths.InventorySystem.Items
                 throw new InvalidOperationException(
                     "the loot table's category odds carry no drop mass - nothing can be rolled");
 
-            var definition = PickDefinition(category);
+            return Roll(PickDefinition(category), context);
+        }
+
+        /// <summary>
+        /// Rolls one item of a <em>given</em> definition - the post-selection half of
+        /// <see cref="Roll(RollContext)"/>. The rarity still comes from
+        /// <see cref="RollContext.Table"/>'s rarity odds (with magic find cascaded); only the
+        /// category-and-definition pick is skipped.
+        /// </summary>
+        public ItemInstance Roll(ItemDefinition definition, RollContext context)
+        {
+            if (context.Table is null)
+                throw new ArgumentException("the roll context carries no loot table", nameof(context));
 
             var rarity = ProbabilityTable<ItemRarity>.Sample(
                 RarityCascade.Apply(context.Table.RarityOdds, context.MagicFind), rolls.Next());
             if (rarity == default)
                 throw new InvalidOperationException(
                     "the loot table's rarity odds carry no drop mass - nothing can be rolled");
+
+            return Roll(definition, rarity, context.SourceLevel);
+        }
+
+        /// <summary>
+        /// Rolls one item of a given definition <em>at a given rarity</em> - the innermost
+        /// primitive, no loot table needed. This is what the debug UI on <c>ItemProvider</c>
+        /// reaches for ("roll me a belt"): the caller has already decided the definition and
+        /// the rarity. Throws when <paramref name="rarity"/> is the fail bucket
+        /// (<c>NoDrop</c>) - that is not an item.
+        /// </summary>
+        public ItemInstance Roll(ItemDefinition definition, ItemRarity rarity, int itemLevel)
+        {
+            if (definition is null)
+                throw new ArgumentNullException(nameof(definition));
+            if (rarity == default)
+                throw new ArgumentException("NoDrop is the fail bucket, not a rarity to roll at", nameof(rarity));
 
             var implicitStats = definition.ImplicitStats;
             var uniqueAffixes = definition.IsUnique ? definition.UniqueAffixes : null;
@@ -76,7 +105,7 @@ namespace ToolSmiths.InventorySystem.Items
 
             CombineSameStatModifiers(affixes);
 
-            return new ItemInstance(definition.Id, rarity, context.SourceLevel, affixes);
+            return new ItemInstance(definition.Id, rarity, itemLevel < 0 ? 0 : itemLevel, affixes);
         }
 
         /// <summary>

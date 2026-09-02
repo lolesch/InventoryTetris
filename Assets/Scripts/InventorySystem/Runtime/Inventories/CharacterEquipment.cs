@@ -18,7 +18,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         public override bool TryAddToContainer(ref Package package)
         {
-            if (!package.IsValid || package.Item is not EquipmentItem)
+            if (!package.IsValid || !IsEquipment(package.Item))
                 return false;
 
             _ = TryAddAtEmpty(ref package);
@@ -26,11 +26,11 @@ namespace ToolSmiths.InventorySystem.Inventories
             /// Force swap with current equipment
             if (0 < package.Amount)
             {
-                var equipmentItem = package.Item as EquipmentItem;
+                var equipmentType = EquipmentTypeOf(package.Item);
 
-                var equipmentPositions = GetTypeSpecificPositions(equipmentItem.EquipmentType);
+                var equipmentPositions = GetTypeSpecificPositions(equipmentType);
                 var preferedPosition = equipmentPositions.Where(x => StoredPackages[x].Item != null
-                && (StoredPackages[x].Item as EquipmentItem).EquipmentType != equipmentItem.EquipmentType);
+                && EquipmentTypeOf(StoredPackages[x].Item) != equipmentType);
                 var position = preferedPosition.Any() ? preferedPosition.First() : equipmentPositions[0];
 
                 package = AddAtPosition(position, package);
@@ -43,12 +43,13 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         protected override bool TryAddAtEmpty(ref Package package)
         {
-            if (!package.IsValid || package.Item is not EquipmentItem)
+            if (!package.IsValid || !IsEquipment(package.Item))
                 return false;
 
-            var dimensions = IsTwoHandedWeapon((package.Item as EquipmentItem).EquipmentType) ? new Vector2Int(2, 1) : new Vector2Int(1, 1);
+            var equipmentType = EquipmentTypeOf(package.Item);
+            var dimensions = IsTwoHandedWeapon(equipmentType) ? new Vector2Int(2, 1) : new Vector2Int(1, 1);
 
-            var typePositions = GetTypeSpecificPositions((package.Item as EquipmentItem).EquipmentType);
+            var typePositions = GetTypeSpecificPositions(equipmentType);
 
             foreach (var position in typePositions)
                 if (IsEmptySpace(position, dimensions, out _))
@@ -64,10 +65,10 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         public override Package AddAtPosition(Vector2Int position, Package package)
         {
-            if (!package.IsValid || package.Item is not EquipmentItem)
+            if (!package.IsValid || !IsEquipment(package.Item))
                 return package;
 
-            var dimensions = IsTwoHandedWeapon((package.Item as EquipmentItem).EquipmentType) ? new Vector2Int(2, 1) : new Vector2Int(1, 1);
+            var dimensions = IsTwoHandedWeapon(EquipmentTypeOf(package.Item)) ? new Vector2Int(2, 1) : new Vector2Int(1, 1);
 
             if (IsEmptySpace(position, dimensions, out var otherItems))
                 TryAddToInventory();
@@ -81,10 +82,11 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             void TryAddToInventory()
             {
-                if (1u < package.Item.StackLimit)
-                    Debug.LogWarning($"EquipmentItems should not be stackable! {package.Item.StackLimit}");
+                var stackLimit = ItemView.Of(package.Item).StackLimit;
+                if (1u < stackLimit)
+                    Debug.LogWarning($"EquipmentItems should not be stackable! {stackLimit}");
 
-                var amount = Math.Min(package.Amount, package.Item.StackLimit);
+                var amount = Math.Min(package.Amount, stackLimit);
 
                 if (StoredPackages.TryAdd(position, new Package(this, package.Item, amount)))
                 {
@@ -139,7 +141,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             foreach (var package in StoredPackages)
             {
-                var equipmentType = (package.Value.Item as EquipmentItem).EquipmentType;
+                var equipmentType = EquipmentTypeOf(package.Value.Item);
                 var dimensions = IsTwoHandedWeapon(equipmentType)
                     ? new Vector2Int(2, 1)
                     : new Vector2Int(1, 1);
@@ -153,6 +155,14 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             return otherPackagePositions.Distinct().ToList();
         }
+
+        /// <summary>Whether a stored instance is equipment at all - the check that was <c>is EquipmentItem</c>.</summary>
+        private static bool IsEquipment(ItemInstance item) =>
+            item != null && ItemView.Of(item).Definition.Category == ItemCategory.Equipment;
+
+        /// <summary>The slot type a stored instance fills - was <c>(item as EquipmentItem).EquipmentType</c>.</summary>
+        private static EquipmentType EquipmentTypeOf(ItemInstance item) =>
+            ItemView.Of(item).Definition.EquipmentType;
 
         public static bool IsTwoHandedWeapon(EquipmentType equipmentType) => equipmentType is > EquipmentType.TWOHANDEDWEAPONS and < EquipmentType.OFFHANDS;
 
