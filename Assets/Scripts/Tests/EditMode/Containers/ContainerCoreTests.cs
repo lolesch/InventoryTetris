@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using ToolSmiths.InventorySystem.Data;
@@ -21,56 +20,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
     [TestFixture]
     public sealed class ContainerCoreTests
     {
-        // A file-local ItemDefinition / IItemCatalog - the pure InventorySystem.Items.Tests
-        // fakes are in a separate test asmdef, and the contract is an interface precisely
-        // so a stand-in is a few lines.
-        private sealed class Definition : ItemDefinition
-        {
-            public string Id { get; set; } = "test.item";
-            public ItemCategory Category { get; set; } = ItemCategory.Equipment;
-            public ItemSize Footprint { get; set; } = ItemSize.OneByOne;
-            public uint BaseStackLimit { get; set; } = 1u;
-            public IReadOnlyList<AffixSlot> AffixPool { get; set; } = System.Array.Empty<AffixSlot>();
-            public IReadOnlyList<CharacterStatModifier> ImplicitStats { get; set; } = System.Array.Empty<CharacterStatModifier>();
-            public ItemRequirement Requirement { get; set; } = ItemRequirement.None;
-            public bool IsUnique { get; set; }
-            public IReadOnlyList<CharacterStatModifier> UniqueAffixes { get; set; } = System.Array.Empty<CharacterStatModifier>();
-            public EquipmentType EquipmentType { get; set; } = EquipmentType.NONE;
-            public ConsumableType ConsumableType { get; set; } = ConsumableType.NONE;
-            public CurrencyType CurrencyType { get; set; } = CurrencyType.NONE;
-        }
-
-        private sealed class Catalog : IItemCatalog
-        {
-            private readonly Dictionary<string, ItemDefinition> byId = new();
-            public Catalog With(ItemDefinition definition) { byId[definition.Id] = definition; return this; }
-
-            public ItemDefinition Definition(string id) =>
-                byId.TryGetValue(id, out var definition) ? definition : throw new KeyNotFoundException(id);
-
-            public IEnumerable<ItemDefinition> OfCategory(ItemCategory category)
-            {
-                foreach (var definition in byId.Values)
-                    if (definition.Category == category)
-                        yield return definition;
-            }
-        }
-
-        /// <summary>Records what CharacterEquipment applies to / lifts off the character.</summary>
-        private sealed class FakeStatReceiver : IStatReceiver
-        {
-            public readonly List<CharacterStatModifier> Added = new();
-            public readonly List<CharacterStatModifier> Removed = new();
-            public void AddItemStats(IReadOnlyList<CharacterStatModifier> stats) => Added.AddRange(stats);
-            public void RemoveItemStats(IReadOnlyList<CharacterStatModifier> stats) => Removed.AddRange(stats);
-        }
-
-        /// <summary>Records the packages a swap could not re-home in a container.</summary>
-        private sealed class FakeCursorSink : ICursorSink
-        {
-            public readonly List<Package> Replaced = new();
-            public void ReplacePackage(Package package) => Replaced.Add(package);
-        }
+        // The ItemDefinition / IItemCatalog stand-ins and the IStatReceiver / ICursorSink
+        // fakes live in ContainerTestFixtures.cs, shared with the other tests in this asmdef.
 
         private const string SwordId = "test.sword";
         private const string ArrowId = "test.arrow";
@@ -78,11 +29,11 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         private const string RingId = "test.ring";
 
         [SetUp]
-        public void SetCatalog() => ItemView.Catalog = new Catalog()
-            .With(new Definition { Id = SwordId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Sword, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
-            .With(new Definition { Id = ArrowId, Category = ItemCategory.Consumable, ConsumableType = ConsumableType.Arrow, Footprint = ItemSize.OneByOne, BaseStackLimit = 10u })
-            .With(new Definition { Id = HelmId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Helm, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
-            .With(new Definition { Id = RingId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Ring, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u });
+        public void SetCatalog() => ItemView.Catalog = new TestCatalog()
+            .With(new TestDefinition { Id = SwordId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Sword, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
+            .With(new TestDefinition { Id = ArrowId, Category = ItemCategory.Consumable, ConsumableType = ConsumableType.Arrow, Footprint = ItemSize.OneByOne, BaseStackLimit = 10u })
+            .With(new TestDefinition { Id = HelmId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Helm, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
+            .With(new TestDefinition { Id = RingId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Ring, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u });
 
         [TearDown]
         public void ClearCatalog() => ItemView.Catalog = null;
