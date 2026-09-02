@@ -1,0 +1,562 @@
+using System.Collections.Generic;
+using System.Linq;
+using NUnit.Framework;
+using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Data.Enums;
+using ToolSmiths.InventorySystem.Inventories;
+using ToolSmiths.InventorySystem.Items;
+using UnityEngine;
+
+namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
+{
+    /// <summary>
+    /// The movement matrix (issue #10): every non-vendor move routed through
+    /// <see cref="ItemTransaction"/> conserves value, applies affixes only while a thing is
+    /// equipped, and leaves the right package (or none) on the cursor. Each test opens the
+    /// transaction the way the slot displays do - a <see cref="CursorHolder"/>, the touched
+    /// containers enrolled, the fixed <c>cursor -> origin -> inventory</c> re-home order - and
+    /// drives the move through <see cref="AbstractDimensionalContainer.AddAtPosition"/> /
+    /// <see cref="AbstractDimensionalContainer.RemoveAtPosition"/> / <c>Sort</c>.
+    /// </summary>
+    [TestFixture]
+    public sealed class MovementMatrixTests
+    {
+        private const string SwordId = "test.sword";     // 1H, dual-wield
+        private const string GreatSwordId = "test.2h";   // 2H
+        private const string ShieldId = "test.shield";   // off-hand
+        private const string RingId = "test.ring";
+        private const string HelmId = "test.helm";
+        private const string ArrowId = "test.arrow";
+
+        [SetUp]
+        public void SetCatalog() => ItemView.Catalog = new TestCatalog()
+            .With(new TestDefinition { Id = SwordId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Sword, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
+            .With(new TestDefinition { Id = GreatSwordId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.GreatSword, Footprint = ItemSize.TwoByOne, BaseStackLimit = 1u })
+            .With(new TestDefinition { Id = ShieldId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Shield, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
+            .With(new TestDefinition { Id = RingId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Ring, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
+            .With(new TestDefinition { Id = HelmId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Helm, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
+            .With(new TestDefinition { Id = ArrowId, Category = ItemCategory.Consumable, ConsumableType = ConsumableType.Arrow, Footprint = ItemSize.OneByOne, BaseStackLimit = 20u });
+
+        [TearDown]
+        public void ClearCatalog() => ItemView.Catalog = null;
+
+        // ── fixtures ────────────────────────────────────────────────────────
+
+        private static CharacterStatModifier Affix(StatName stat, float value) =>
+            new(stat, new StatModifier(new Vector2Int(0, 100), value, StatModifierType.FlatAdd));
+
+        private static ItemInstance Sword(float damage) => new(SwordId, ItemRarity.Rare, 7, new[] { Affix(StatName.PhysicalDamage, damage) });
+        private static ItemInstance GreatSword(float damage) => new(GreatSwordId, ItemRarity.Rare, 9, new[] { Affix(StatName.PhysicalDamage, damage) });
+        private static ItemInstance Shield(float armor) => new(ShieldId, ItemRarity.Magic, 5, new[] { Affix(StatName.Armor, armor) });
+        private static ItemInstance Ring(float health) => new(RingId, ItemRarity.Magic, 3, new[] { Affix(StatName.Health, health) });
+        private static ItemInstance Helm(float armor) => new(HelmId, ItemRarity.Rare, 5, new[] { Affix(StatName.Armor, armor) });
+        private static ItemInstance Arrows() => new(ArrowId, ItemRarity.Common, 1, null);
+
+        private static CharacterInventory Inventory(int width = 4, int height = 4) => new(new Vector2Int(width, height));
+        private static CharacterEquipment Equipment(IStatReceiver stats = null, ICursorSink cursor = null) => new(new Vector2Int(14, 1), stats, cursor);
+
+        private static Vector2Int SlotFor(EquipmentType type) => CharacterEquipment.GetTypeSpecificPositions(type).First();
+
+        /// <summary>Drag-start: the slot display removes the item and the cursor now holds it. Not transactional.</summary>
+        private static Package PickUp(AbstractDimensionalContainer from, Vector2Int position)
+        {
+            Assert.That(from.TryGetPackageAt(position, out var stored), Is.True, $"nothing stored at {position}");
+            _ = from.RemoveAtPosition(position, stored);
+            return stored;
+        }
+
+        /// <summary>
+        /// The drop, exactly as <c>InventorySlotDisplay</c> / <c>EquipmentSlotDisplay</c>
+        /// run it. <paramref name="inHand"/> is cleared on a committed move and left intact
+        /// (still held) on a rollback.
+        /// </summary>
+        private static bool Drop(CursorHolder cursor, AbstractDimensionalContainer target, Vector2Int at, ref Package inHand,
+            params AbstractDimensionalContainer[] reHome)
+        {
+            var enrolled = new List<AbstractDimensionalContainer> { target };
+            enrolled.AddRange(reHome);
+
+            using var transaction = new ItemTransaction(cursor, enrolled.ToArray()).ReHomeThrough(reHome);
+
+            var displaced = target.AddAtPosition(at, inHand);
+
+            if (displaced.IsValid)
+                _ = transaction.TryReHome(ref displaced);
+
+            if (transaction.Aborted)
+                return false; // inHand is untouched - the dragged item stays in hand
+
+            transaction.Commit();
+            inHand = displaced; // default unless a partial stack was left, which the cursor then holds
+            return true;
+        }
+
+        /// <summary>
+        /// Every stored unit as its definition id - one entry per item in a stack. A stack
+        /// merge folds one instance into another, so conservation is counted by id + amount;
+        /// the tests that care about instance identity assert <c>Is.SameAs</c> directly.
+        /// </summary>
+        private static List<string> Units(params IEnumerable<Package>[] sources)
+        {
+            var units = new List<string>();
+
+            foreach (var source in sources)
+                foreach (var package in source)
+                    for (var i = 0; i < package.Amount; i++)
+                        if (package.Item != null)
+                            units.Add(package.Item.DefinitionId);
+
+            return units;
+        }
+
+        private static void AssertConserved(List<string> before, List<string> after) =>
+            Assert.That(after.OrderBy(x => x), Is.EqualTo(before.OrderBy(x => x)), "value was not conserved by the move");
+
+        // ── Inventory -> Inventory ──────────────────────────────────────────
+
+        [Test]
+        public void InventoryToInventory_RepositionToEmpty_MovesTheItemAndClearsTheHand()
+        {
+            var sink = new FakeCursorSink();
+            var cursor = new CursorHolder(sink);
+            var inventory = Inventory();
+
+            var seed = new Package(inventory, Sword(6f), 1u);
+            _ = inventory.TryAddToContainer(ref seed);
+            var from = inventory.StoredPackages.Keys.Single();
+            var instance = inventory.StoredPackages[from].Item;
+            var before = Units(inventory.StoredPackages.Values);
+
+            var inHand = PickUp(inventory, from);
+            var committed = Drop(cursor, inventory, new Vector2Int(2, 2), ref inHand, inventory);
+
+            Assert.That(committed, Is.True);
+            Assert.That(cursor.IsFree, Is.True, "a clean landing leaves the hand empty");
+            Assert.That(sink.Replaced, Is.Empty);
+            Assert.That(inventory.StoredPackages.Keys.Single(), Is.EqualTo(new Vector2Int(2, 2)));
+            Assert.That(inventory.StoredPackages[new Vector2Int(2, 2)].Item, Is.SameAs(instance));
+            AssertConserved(before, Units(inventory.StoredPackages.Values, sink.Replaced, new[] { inHand }));
+        }
+
+        [Test]
+        public void InventoryToInventory_SwapWithOneItem_PutsTheDisplacedItemOnTheCursor()
+        {
+            var sink = new FakeCursorSink();
+            var cursor = new CursorHolder(sink);
+            var inventory = Inventory();
+
+            var stay = new Package(inventory, Sword(6f), 1u);
+            _ = inventory.AddAtPosition(new Vector2Int(0, 0), stay);
+            var moving = new Package(inventory, Helm(4f), 1u);
+            _ = inventory.AddAtPosition(new Vector2Int(3, 3), moving);
+
+            var swordInstance = inventory.StoredPackages[new Vector2Int(0, 0)].Item;
+            var helmInstance = inventory.StoredPackages[new Vector2Int(3, 3)].Item;
+            var before = Units(inventory.StoredPackages.Values);
+
+            var inHand = PickUp(inventory, new Vector2Int(3, 3)); // the helm
+            var committed = Drop(cursor, inventory, new Vector2Int(0, 0), ref inHand, inventory);
+
+            Assert.That(committed, Is.True);
+            Assert.That(inventory.StoredPackages[new Vector2Int(0, 0)].Item, Is.SameAs(helmInstance));
+            Assert.That(sink.Replaced.Single().Item, Is.SameAs(swordInstance), "the displaced sword is on the cursor");
+            Assert.That(cursor.IsFree, Is.False);
+            AssertConserved(before, Units(inventory.StoredPackages.Values, sink.Replaced, new[] { inHand }));
+        }
+
+        [Test]
+        public void InventoryToInventory_MergeIntoAStack_ConservesEveryUnitInOneCell()
+        {
+            var sink = new FakeCursorSink();
+            var cursor = new CursorHolder(sink);
+            var inventory = Inventory();
+
+            var first = new Package(inventory, Arrows(), 8u);
+            _ = inventory.AddAtPosition(new Vector2Int(0, 0), first);
+            var second = new Package(inventory, Arrows(), 5u);
+            _ = inventory.AddAtPosition(new Vector2Int(3, 3), second);
+            var before = Units(inventory.StoredPackages.Values);
+
+            var inHand = PickUp(inventory, new Vector2Int(3, 3));
+            var committed = Drop(cursor, inventory, new Vector2Int(0, 0), ref inHand, inventory);
+
+            Assert.That(committed, Is.True);
+            Assert.That(inventory.StoredPackages, Has.Count.EqualTo(1));
+            Assert.That(inventory.StoredPackages.Values.Single().Amount, Is.EqualTo(13u));
+            Assert.That(cursor.IsFree, Is.True);
+            AssertConserved(before, Units(inventory.StoredPackages.Values, sink.Replaced, new[] { inHand }));
+        }
+
+        [Test]
+        public void InventoryToInventory_AFootprintStraddlingTwoItems_IsRejectedByCanPlaceAt()
+        {
+            var inventory = Inventory();
+
+            _ = inventory.AddAtPosition(new Vector2Int(0, 0), new Package(inventory, Sword(6f), 1u));
+            _ = inventory.AddAtPosition(new Vector2Int(1, 0), new Package(inventory, Helm(4f), 1u));
+
+            // A 2x1 dropped across (0,0) would overlap both stored items.
+            Assert.That(inventory.CanPlaceAt(new Vector2Int(0, 0), new Vector2Int(2, 1)), Is.False);
+        }
+
+        // ── Inventory -> Equipment ─────────────────────────────────────────
+
+        [Test]
+        public void InventoryToEquipment_EquipToEmptySlot_AppliesTheAffixOnCommit()
+        {
+            var stats = new FakeStatReceiver();
+            var sink = new FakeCursorSink();
+            var cursor = new CursorHolder(sink);
+            var equipment = Equipment(stats, sink);
+            var inventory = Inventory();
+
+            var seed = new Package(inventory, Helm(4f), 1u);
+            _ = inventory.TryAddToContainer(ref seed);
+            var seedPosition = inventory.StoredPackages.Keys.Single();
+            var before = Units(inventory.StoredPackages.Values);
+
+            var inHand = PickUp(inventory, seedPosition);
+            var committed = Drop(cursor, equipment, SlotFor(EquipmentType.Helm), ref inHand, inventory);
+
+            Assert.That(committed, Is.True);
+            Assert.That(equipment.StoredPackages.Values.Single().Item.DefinitionId, Is.EqualTo(HelmId));
+            Assert.That(stats.Added.Select(a => a.Stat), Is.EquivalentTo(new[] { StatName.Armor }));
+            Assert.That(stats.Removed, Is.Empty);
+            Assert.That(cursor.IsFree, Is.True);
+            AssertConserved(before, Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values, sink.Replaced, new[] { inHand }));
+        }
+
+        [Test]
+        public void InventoryToEquipment_SwapOneHandForOneHand_SwapsTheAffixesAndHandsTheOldWeaponOver()
+        {
+            var stats = new FakeStatReceiver();
+            var sink = new FakeCursorSink();
+            var cursor = new CursorHolder(sink);
+            var equipment = Equipment(stats, sink);
+            var inventory = Inventory();
+
+            var worn = new Package(inventory, Sword(6f), 1u);
+            _ = equipment.TryAddToContainer(ref worn);
+            var wornInstance = equipment.StoredPackages.Values.Single().Item;
+            stats.Added.Clear();
+            stats.Removed.Clear();
+
+            var incoming = new Package(inventory, Sword(11f), 1u);
+            _ = inventory.TryAddToContainer(ref incoming);
+            var incomingInstance = inventory.StoredPackages.Values.Single().Item;
+            var before = Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values);
+
+            var inHand = PickUp(inventory, inventory.StoredPackages.Keys.Single());
+            var committed = Drop(cursor, equipment, SlotFor(EquipmentType.Sword), ref inHand, inventory);
+
+            Assert.That(committed, Is.True);
+            Assert.That(equipment.StoredPackages.Values.Single().Item, Is.SameAs(incomingInstance));
+            Assert.That(sink.Replaced.Single().Item, Is.SameAs(wornInstance), "the old weapon is on the cursor");
+            Assert.That(stats.Added.Select(a => a.Modifier.Value), Is.EquivalentTo(new[] { 11f }));
+            Assert.That(stats.Removed.Select(a => a.Modifier.Value), Is.EquivalentTo(new[] { 6f }));
+            AssertConserved(before, Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values, sink.Replaced, new[] { inHand }));
+        }
+
+        [Test]
+        public void InventoryToEquipment_TwoHandedOverWeaponAndOffHand_WithRoom_ReHomesBothDisplacedItems()
+        {
+            var stats = new FakeStatReceiver();
+            var sink = new FakeCursorSink();
+            var cursor = new CursorHolder(sink);
+            var equipment = Equipment(stats, sink);
+            var inventory = Inventory();
+
+            var weapon = new Package(inventory, Sword(6f), 1u);
+            _ = equipment.TryAddToContainer(ref weapon);
+            var offHand = new Package(inventory, Shield(3f), 1u);
+            _ = equipment.TryAddToContainer(ref offHand);
+            stats.Added.Clear();
+            stats.Removed.Clear();
+
+            var incoming = new Package(inventory, GreatSword(15f), 1u);
+            _ = inventory.TryAddToContainer(ref incoming);
+            var incomingInstance = inventory.StoredPackages.Values.Single().Item;
+            var before = Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values);
+
+            var inHand = PickUp(inventory, inventory.StoredPackages.Keys.Single());
+            var committed = Drop(cursor, equipment, SlotFor(EquipmentType.GreatSword), ref inHand, inventory);
+
+            Assert.That(committed, Is.True);
+            Assert.That(equipment.StoredPackages.Values.Single().Item, Is.SameAs(incomingInstance), "only the 2H is worn");
+            Assert.That(sink.Replaced, Has.Count.EqualTo(1), "one displaced item goes to the freed cursor");
+            var displacedIds = sink.Replaced.Select(p => p.Item.DefinitionId)
+                .Concat(inventory.StoredPackages.Values.Select(p => p.Item.DefinitionId));
+            Assert.That(displacedIds, Is.EquivalentTo(new[] { SwordId, ShieldId }),
+                "both displaced items re-homed - one on the cursor, the other in the origin inventory");
+            Assert.That(stats.Added.Select(a => a.Modifier.Value), Is.EquivalentTo(new[] { 15f }));
+            Assert.That(stats.Removed.Select(a => a.Modifier.Value), Is.EquivalentTo(new[] { 6f, 3f }));
+            AssertConserved(before, Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values, sink.Replaced, new[] { inHand }));
+        }
+
+        [Test]
+        public void InventoryToEquipment_TwoHandedOverWeaponAndOffHand_WithNoRoom_RollsBackAndLeavesAffixesUntouched()
+        {
+            var stats = new FakeStatReceiver();
+            var sink = new FakeCursorSink();
+            var cursor = new CursorHolder(sink);
+            var equipment = Equipment(stats, sink);
+            var inventory = Inventory(1, 1);
+
+            var weapon = new Package(inventory, Sword(6f), 1u);
+            _ = equipment.TryAddToContainer(ref weapon);
+            var offHand = new Package(inventory, Shield(3f), 1u);
+            _ = equipment.TryAddToContainer(ref offHand);
+            var wornBefore = equipment.StoredPackages.Values.Select(p => p.Item).ToList();
+            stats.Added.Clear();
+            stats.Removed.Clear();
+
+            var filler = new Package(inventory, Arrows(), 1u);
+            _ = inventory.TryAddToContainer(ref filler);
+
+            var inHand = new Package(inventory, GreatSword(15f), 1u);
+            var before = Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values, new[] { inHand });
+
+            var committed = Drop(cursor, equipment, SlotFor(EquipmentType.GreatSword), ref inHand, inventory);
+
+            Assert.That(committed, Is.False, "the second displaced item has nowhere to go");
+            Assert.That(equipment.StoredPackages.Values.Select(p => p.Item), Is.EquivalentTo(wornBefore), "gear unchanged");
+            Assert.That(inHand.IsValid, Is.True, "the 2H is still in hand");
+            Assert.That(stats.Added, Is.Empty);
+            Assert.That(stats.Removed, Is.Empty, "the swap's stat churn was queued and dropped");
+            Assert.That(sink.Replaced, Is.Empty);
+            AssertConserved(before, Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values, sink.Replaced, new[] { inHand }));
+        }
+
+        [Test]
+        public void InventoryToEquipment_WrongEquipmentType_IsRejectedBeforeTheSlotIsTouched()
+        {
+            // EquipmentSlotDisplay.DropItem's guard: a slot only accepts its own type.
+            var ringSlot = SlotFor(EquipmentType.Ring);
+
+            Assert.That(CharacterEquipment.GetTypeSpecificPositions(EquipmentType.Helm), Has.None.EqualTo(ringSlot));
+            Assert.That(CharacterEquipment.GetTypeSpecificPositions(EquipmentType.GreatSword), Has.None.EqualTo(ringSlot));
+        }
+
+        // ── Equipment -> Inventory ─────────────────────────────────────────
+
+        [Test]
+        public void EquipmentToInventory_UnequipToEmpty_LiftsTheAffixOnCommit()
+        {
+            var stats = new FakeStatReceiver();
+            var equipment = Equipment(stats, new FakeCursorSink());
+            var inventory = Inventory();
+
+            var worn = new Package(inventory, Helm(4f), 1u);
+            _ = equipment.TryAddToContainer(ref worn);
+            var slot = equipment.StoredPackages.Keys.Single();
+            var stored = equipment.StoredPackages[slot];
+            stats.Added.Clear();
+            stats.Removed.Clear();
+            var before = Units(equipment.StoredPackages.Values);
+
+            // EquipmentSlotDisplay right-click unequip: remove here, add there, commit on success.
+            using (var transaction = new ItemTransaction(equipment, inventory))
+            {
+                _ = equipment.RemoveAtPosition(slot, stored);
+                var moving = new Package(inventory, stored.Item, stored.Amount);
+                Assert.That(inventory.TryAddToContainer(ref moving), Is.True);
+                transaction.Commit();
+            }
+
+            Assert.That(equipment.StoredPackages, Is.Empty);
+            Assert.That(inventory.StoredPackages.Values.Single().Item, Is.SameAs(stored.Item));
+            Assert.That(stats.Removed.Select(a => a.Stat), Is.EquivalentTo(new[] { StatName.Armor }));
+            AssertConserved(before, Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values));
+        }
+
+        [Test]
+        public void EquipmentToInventory_UnequipWithAFullInventory_RollsBackAndKeepsTheItemEquipped()
+        {
+            var stats = new FakeStatReceiver();
+            var equipment = Equipment(stats, new FakeCursorSink());
+            var inventory = Inventory(1, 1);
+
+            var worn = new Package(inventory, Helm(4f), 1u);
+            _ = equipment.TryAddToContainer(ref worn);
+            var slot = equipment.StoredPackages.Keys.Single();
+            var stored = equipment.StoredPackages[slot];
+            stats.Added.Clear();
+            stats.Removed.Clear();
+
+            var filler = new Package(inventory, Arrows(), 1u);
+            _ = inventory.TryAddToContainer(ref filler);
+            var before = Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values);
+
+            using (var transaction = new ItemTransaction(equipment, inventory))
+            {
+                _ = equipment.RemoveAtPosition(slot, stored);
+                var moving = new Package(inventory, stored.Item, stored.Amount);
+                if (inventory.TryAddToContainer(ref moving))
+                    transaction.Commit();
+            }
+
+            Assert.That(equipment.StoredPackages.Values.Single().Item, Is.SameAs(stored.Item), "still equipped");
+            Assert.That(stats.Removed, Is.Empty, "the stat lift was queued and dropped");
+            AssertConserved(before, Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values));
+        }
+
+        // ── Equipment -> Equipment ─────────────────────────────────────────
+
+        [Test]
+        public void EquipmentToEquipment_RingForRing_DisplacesTheWornRingOntoTheCursorAndSwapsAffixes()
+        {
+            var stats = new FakeStatReceiver();
+            var sink = new FakeCursorSink();
+            var cursor = new CursorHolder(sink);
+            var equipment = Equipment(stats, sink);
+            var inventory = Inventory();
+
+            var ringSlots = CharacterEquipment.GetTypeSpecificPositions(EquipmentType.Ring);
+            var a = new Package(inventory, Ring(10f), 1u);
+            _ = equipment.TryAddToContainer(ref a);
+            var b = new Package(inventory, Ring(20f), 1u);
+            _ = equipment.TryAddToContainer(ref b);
+            var wornInstance = equipment.StoredPackages[ringSlots[0]].Item;
+            var otherInstance = equipment.StoredPackages[ringSlots[1]].Item;
+            stats.Added.Clear();
+            stats.Removed.Clear();
+
+            var incoming = new Package(inventory, Ring(30f), 1u);
+            _ = inventory.TryAddToContainer(ref incoming);
+            var incomingInstance = inventory.StoredPackages.Values.Single().Item;
+            var before = Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values);
+
+            var inHand = PickUp(inventory, inventory.StoredPackages.Keys.Single());
+            var committed = Drop(cursor, equipment, ringSlots[0], ref inHand, equipment, inventory);
+
+            Assert.That(committed, Is.True);
+            Assert.That(equipment.StoredPackages[ringSlots[0]].Item, Is.SameAs(incomingInstance));
+            Assert.That(equipment.StoredPackages[ringSlots[1]].Item, Is.SameAs(otherInstance), "the other ring slot is untouched");
+            Assert.That(sink.Replaced.Single().Item, Is.SameAs(wornInstance));
+            Assert.That(stats.Added.Select(x => x.Modifier.Value), Is.EquivalentTo(new[] { 30f }));
+            Assert.That(stats.Removed.Select(x => x.Modifier.Value), Is.EquivalentTo(new[] { 10f }));
+            AssertConserved(before, Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values, sink.Replaced, new[] { inHand }));
+        }
+
+        [Test]
+        public void EquipmentToEquipment_OneHandForOneHandAcrossTheWeaponSlots_KeepsBothWeaponsAndSwapsAffixes()
+        {
+            var stats = new FakeStatReceiver();
+            var sink = new FakeCursorSink();
+            var cursor = new CursorHolder(sink);
+            var equipment = Equipment(stats, sink);
+            var inventory = Inventory();
+
+            var weaponSlots = CharacterEquipment.GetTypeSpecificPositions(EquipmentType.Sword);
+            var mainHand = new Package(inventory, Sword(6f), 1u);
+            _ = equipment.TryAddToContainer(ref mainHand);
+            var offHand = new Package(inventory, Sword(9f), 1u);
+            _ = equipment.TryAddToContainer(ref offHand);
+
+            var mainInstance = equipment.StoredPackages[weaponSlots[0]].Item;
+            var offInstance = equipment.StoredPackages[weaponSlots[1]].Item;
+            stats.Added.Clear();
+            stats.Removed.Clear();
+
+            var incoming = new Package(inventory, Sword(13f), 1u);
+            _ = inventory.TryAddToContainer(ref incoming);
+            var incomingInstance = inventory.StoredPackages.Values.Single().Item;
+            var before = Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values);
+
+            var inHand = PickUp(inventory, inventory.StoredPackages.Keys.Single());
+            var committed = Drop(cursor, equipment, weaponSlots[0], ref inHand, inventory);
+
+            Assert.That(committed, Is.True);
+            Assert.That(equipment.StoredPackages[weaponSlots[0]].Item, Is.SameAs(incomingInstance));
+            Assert.That(equipment.StoredPackages[weaponSlots[1]].Item, Is.SameAs(offInstance), "the other weapon slot is untouched");
+            Assert.That(sink.Replaced.Single().Item, Is.SameAs(mainInstance));
+            Assert.That(stats.Added.Select(a => a.Modifier.Value), Is.EquivalentTo(new[] { 13f }));
+            Assert.That(stats.Removed.Select(a => a.Modifier.Value), Is.EquivalentTo(new[] { 6f }));
+            AssertConserved(before, Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values, sink.Replaced, new[] { inHand }));
+        }
+
+        // ── QA-4 regression pin (the give-up condition itself is #12) ───────
+
+        [Test]
+        public void TwoHandedOverWeaponAndOffHand_NeverThrowsAndNeverLosesGear_OnEitherBranch()
+        {
+            foreach (var inventorySize in new[] { new Vector2Int(4, 4), new Vector2Int(1, 1) })
+            {
+                var stats = new FakeStatReceiver();
+                var sink = new FakeCursorSink();
+                var cursor = new CursorHolder(sink);
+                var equipment = Equipment(stats, sink);
+                var inventory = new CharacterInventory(inventorySize);
+
+                var weapon = new Package(inventory, Sword(6f), 1u);
+                _ = equipment.TryAddToContainer(ref weapon);
+                var offHand = new Package(inventory, Shield(3f), 1u);
+                _ = equipment.TryAddToContainer(ref offHand);
+
+                if (inventorySize == new Vector2Int(1, 1))
+                {
+                    var filler = new Package(inventory, Arrows(), 1u);
+                    _ = inventory.TryAddToContainer(ref filler);
+                }
+
+                var inHand = new Package(inventory, GreatSword(15f), 1u);
+                var before = Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values, new[] { inHand });
+
+                Assert.That(() => Drop(cursor, equipment, SlotFor(EquipmentType.GreatSword), ref inHand, inventory),
+                    Throws.Nothing, $"inventory {inventorySize}");
+
+                AssertConserved(before, Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values, sink.Replaced, new[] { inHand }));
+            }
+        }
+
+        // ── Sort ───────────────────────────────────────────────────────────
+
+        [Test]
+        public void Sort_RemoveAllThenReAdd_ConservesEveryItem()
+        {
+            var inventory = Inventory(6, 4);
+
+            _ = inventory.AddAtPosition(new Vector2Int(0, 0), new Package(inventory, Helm(4f), 1u));
+            _ = inventory.AddAtPosition(new Vector2Int(2, 1), new Package(inventory, Sword(6f), 1u));
+            _ = inventory.AddAtPosition(new Vector2Int(4, 3), new Package(inventory, Arrows(), 7u));
+            _ = inventory.AddAtPosition(new Vector2Int(5, 0), new Package(inventory, Ring(10f), 1u));
+            var before = Units(inventory.StoredPackages.Values);
+
+            inventory.Sort();
+
+            AssertConserved(before, Units(inventory.StoredPackages.Values));
+        }
+
+        [Test]
+        public void Sort_WhenTheReAddedLayoutWillNotReFit_RollsBackRatherThanDroppingItems()
+        {
+            var inventory = new CappedInventory(new Vector2Int(4, 4), acceptLimit: 2);
+
+            _ = inventory.AddAtPosition(new Vector2Int(0, 0), new Package(inventory, Helm(1f), 1u));
+            _ = inventory.AddAtPosition(new Vector2Int(1, 0), new Package(inventory, Helm(2f), 1u));
+            _ = inventory.AddAtPosition(new Vector2Int(2, 0), new Package(inventory, Helm(3f), 1u));
+            var before = Units(inventory.StoredPackages.Values);
+            var positionsBefore = inventory.StoredPackages.Keys.OrderBy(p => p.x).ToList();
+
+            inventory.Sort();
+
+            Assert.That(inventory.StoredPackages, Has.Count.EqualTo(3), "no item was dropped");
+            Assert.That(inventory.StoredPackages.Keys.OrderBy(p => p.x), Is.EqualTo(positionsBefore), "the pre-sort layout is restored");
+            AssertConserved(before, Units(inventory.StoredPackages.Values));
+        }
+
+        /// <summary>A <see cref="CharacterInventory"/> that refuses to re-accept items after
+        /// <paramref name="acceptLimit"/> calls - to prove <c>Sort</c> rolls the whole re-add
+        /// back rather than dropping what will not fit.</summary>
+        private sealed class CappedInventory : CharacterInventory
+        {
+            private readonly int acceptLimit;
+            private int reAdds;
+
+            public CappedInventory(Vector2Int dimensions, int acceptLimit) : base(dimensions) => this.acceptLimit = acceptLimit;
+
+            public override bool TryAddToContainer(ref Package package) =>
+                reAdds++ < acceptLimit && base.TryAddToContainer(ref package);
+        }
+    }
+}

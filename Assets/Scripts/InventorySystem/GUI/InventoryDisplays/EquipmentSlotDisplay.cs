@@ -30,14 +30,31 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             if (!allowedPositions.Contains(Position))
                 return;
 
-            package = Container.AddAtPosition(Position, package);
+            /// The whole equip runs inside one transaction (issue #10): a 2H over a weapon
+            /// and off-hand re-homes both displaced items in the fixed
+            /// cursor -> origin -> inventory order, or - if one has nowhere to go - rolls the
+            /// swap back and leaves the incoming item in hand. Commit fires the container
+            /// refreshes, applies the worn affixes and hands the cursor its displaced item.
+            var origin = DragProvider.Instance.Origin?.Container;
+            var inventory = InventoryProvider.Instance.Inventory;
+            var cursor = new CursorHolder(DragProvider.Instance);
 
-            /// Nothing back if it just equipped; the previously-equipped item if it swapped.
-            /// Either way it is centred on the cursor, not given a stale grip.
-            DragProvider.Instance.ReplacePackage(package);
+            using (var transaction = new ItemTransaction(cursor, Container, origin, inventory).ReHomeThrough(origin, inventory))
+            {
+                var displaced = Container.AddAtPosition(Position, package);
 
-            Container.InvokeRefresh();
-            DragProvider.Instance.Origin.Container?.InvokeRefresh();
+                if (displaced.IsValid)
+                    _ = transaction.TryReHome(ref displaced);
+
+                if (transaction.Aborted)
+                    return;
+
+                transaction.Commit();
+            }
+
+            /// A clean equip - nothing came back to the cursor, so the drag is over.
+            if (cursor.IsFree)
+                DragProvider.Instance.EndDrag();
 
             FadeInPreview(); // TODO: see if the package should propagate to FadeInPreview
         }
@@ -74,12 +91,17 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             #region UNEQUIP ITEM
             if (eventData.button == PointerEventData.InputButton.Right)
             {
+                /// Atomic unequip (issue #10): a full inventory leaves the item equipped and
+                /// its affixes applied - the stat lift is a commit-time effect, dropped on
+                /// rollback.
+                var inventory = InventoryProvider.Instance.Inventory;
+
+                using var transaction = new ItemTransaction(Container, inventory);
+
                 _ = Container.RemoveAtPosition(position, package);
 
-                if (InventoryProvider.Instance.Inventory.TryAddToContainer(ref package))
-                    DragProvider.Instance.SetPackage(this, package, Vector2Int.zero, pointerPosition);
-                else
-                    _ = Container.AddAtPosition(position, package);
+                if (inventory.TryAddToContainer(ref package))
+                    transaction.Commit();
 
                 return;
             }
@@ -89,12 +111,14 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             #region QUICK MOVE ITEM
             if (Input.GetKey(KeyCode.LeftShift))
             {
+                var stash = InventoryProvider.Instance.Stash;
+
+                using var transaction = new ItemTransaction(Container, stash);
+
                 _ = Container.RemoveAtPosition(position, package);
 
-                if (InventoryProvider.Instance.Stash.TryAddToContainer(ref package))
-                    DragProvider.Instance.SetPackage(this, package, Vector2Int.zero, pointerPosition);
-                else
-                    _ = Container.AddAtPosition(position, package);
+                if (stash.TryAddToContainer(ref package))
+                    transaction.Commit();
 
                 return;
             }

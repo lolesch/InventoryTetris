@@ -130,22 +130,38 @@ namespace ToolSmiths.InventorySystem.Inventories
                 if (0 < package.Amount)
                     Debug.LogWarning($"Something went wrong! remaining package will be overwritten: {package}");
 
-                // Still the pre-transaction path: the displaced items are re-homed by
-                // recursing into package.Sender and the cursor handover runs inline. Issue
-                // #10 rewrites this to open an ItemTransaction, re-home in the fixed
-                // cursor -> origin -> inventory order, and commit or roll the whole swap
-                // back - no Sender recursion, no inline ReplacePackage.
-                for (var i = previouslyEquipped.Count; i-- > 0;)
+                if (ActiveTransaction != null)
                 {
-                    var current = previouslyEquipped[i];
-                    if (!package.Sender.TryAddToContainer(ref current))
-                        cursorSink?.ReplacePackage(previouslyEquipped[i]);
-                    previouslyEquipped[i] = current;
+                    // Routed move (issue #10): re-home each displaced item through the
+                    // transaction's fixed cursor -> origin -> inventory order. No
+                    // package.Sender recursion, no inline cursor handover - a displaced item
+                    // that finds no home aborts the transaction and the whole swap rolls back.
+                    for (var i = previouslyEquipped.Count; i-- > 0;)
+                    {
+                        var displaced = previouslyEquipped[i];
+                        if (!ActiveTransaction.TryReHome(ref displaced))
+                            break;
+                        previouslyEquipped[i] = displaced;
+                    }
+
+                    package = default;
                 }
+                else
+                {
+                    // No transaction (AutoEquip / PickUpItem / a bare container test): the
+                    // pre-#10 behaviour - re-home through the sender, fall back to the
+                    // injected cursor. #12 gives the force-swap an explicit give-up and
+                    // deletes this branch.
+                    for (var i = previouslyEquipped.Count; i-- > 0;)
+                    {
+                        var current = previouslyEquipped[i];
+                        if (!package.Sender.TryAddToContainer(ref current))
+                            cursorSink?.ReplacePackage(previouslyEquipped[i]);
+                        previouslyEquipped[i] = current;
+                    }
 
-                package = previouslyEquipped.Where(x => x.Item != null && 0 < x.Amount).FirstOrDefault();
-
-                // TODO (#10): check for item loss, else revert
+                    package = previouslyEquipped.Where(x => x.Item != null && 0 < x.Amount).FirstOrDefault();
+                }
             }
         }
 

@@ -308,13 +308,35 @@ namespace ToolSmiths.InventorySystem.Inventories
                 .Select(x => x.package)
                 .ToList();
 
-            foreach (var package in sortedValues)
-                _ = RemoveFromContainer(package);
-
-            foreach (var package in sortedValues)
+            // Already inside a move: sort on that transaction's working copy - it owns the
+            // commit / rollback. Otherwise wrap the remove-all + re-add so a layout that
+            // will not re-fit rolls back rather than dropping the overflow (issue #10).
+            if (ActiveTransaction != null)
             {
-                var packageRef = package;
-                _ = TryAddToContainer(ref packageRef);
+                _ = SortInto(sortedValues);
+                return;
+            }
+
+            using var transaction = new ItemTransaction(this);
+
+            if (SortInto(sortedValues))
+                transaction.Commit();
+
+            bool SortInto(List<Package> values)
+            {
+                foreach (var package in values)
+                    _ = RemoveFromContainer(package);
+
+                var allPlaced = true;
+
+                foreach (var package in values)
+                {
+                    var packageRef = package;
+                    if (!TryAddToContainer(ref packageRef))
+                        allPlaced = false;
+                }
+
+                return allPlaced;
             }
         }
 

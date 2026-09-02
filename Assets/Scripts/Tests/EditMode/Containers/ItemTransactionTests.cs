@@ -378,6 +378,88 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             Assert.That(sink.Replaced, Is.Empty);
         }
 
+        // ── The re-home cascade (issue #10) ────────────────────────────────
+
+        [Test]
+        public void TryReHome_PutsTheDisplacedItemOnTheFreedCursorFirst()
+        {
+            var sink = new FakeCursorSink();
+            var cursor = new CursorHolder(sink);
+            var origin = Inventory();
+            var inventory = Inventory();
+            var displaced = new Package(origin, Sword(), 1u);
+
+            using (var transaction = new ItemTransaction(cursor, origin, inventory).ReHomeThrough(origin, inventory))
+            {
+                Assert.That(transaction.TryReHome(ref displaced), Is.True);
+                Assert.That(displaced.IsValid, Is.False, "the item is fully placed - on the cursor");
+                transaction.Commit();
+            }
+
+            Assert.That(sink.Replaced.Single().Item.DefinitionId, Is.EqualTo(SwordId));
+            Assert.That(origin.StoredPackages, Is.Empty);
+            Assert.That(inventory.StoredPackages, Is.Empty);
+        }
+
+        [Test]
+        public void TryReHome_WhenTheCursorIsAlreadyHolding_FallsThroughToTheFirstReHomeContainer()
+        {
+            var cursor = new CursorHolder(new FakeCursorSink());
+            var origin = Inventory();
+            var inventory = Inventory();
+
+            using var transaction = new ItemTransaction(cursor, origin, inventory).ReHomeThrough(origin, inventory);
+
+            var first = new Package(origin, Sword(), 1u);
+            _ = transaction.TryReHome(ref first); // takes the cursor
+
+            var second = new Package(origin, Helm(2f), 1u);
+            Assert.That(transaction.TryReHome(ref second), Is.True);
+            Assert.That(second.IsValid, Is.False);
+            Assert.That(origin.StoredPackages.Values.Single().Item.DefinitionId, Is.EqualTo(HelmId),
+                "the second displaced item landed in the origin container");
+        }
+
+        [Test]
+        public void TryReHome_WhenNothingCanTakeIt_AbortsTheTransactionAndCommitRollsBack()
+        {
+            var cursor = new CursorHolder(new FakeCursorSink());
+            var origin = Inventory(1, 1);
+            var inventory = Inventory(1, 1);
+
+            // Fill both re-home containers so the second displaced item has nowhere to go.
+            var originFiller = new Package(origin, Arrows(), 1u);
+            _ = origin.TryAddToContainer(ref originFiller);
+            var inventoryFiller = new Package(inventory, Arrows(), 1u);
+            _ = inventory.TryAddToContainer(ref inventoryFiller);
+
+            using (var transaction = new ItemTransaction(cursor, origin, inventory).ReHomeThrough(origin, inventory))
+            {
+                var first = new Package(origin, Sword(), 1u);
+                _ = transaction.TryReHome(ref first); // cursor
+
+                var second = new Package(origin, Helm(2f), 1u);
+                Assert.That(transaction.TryReHome(ref second), Is.False);
+                Assert.That(transaction.Aborted, Is.True);
+
+                transaction.Commit(); // aborted -> rolls back
+            }
+
+            Assert.That(origin.StoredPackages.Values.Select(p => p.Item.DefinitionId), Is.EquivalentTo(new[] { ArrowId }));
+            Assert.That(inventory.StoredPackages.Values.Select(p => p.Item.DefinitionId), Is.EquivalentTo(new[] { ArrowId }));
+        }
+
+        [Test]
+        public void ReHomeThrough_AContainerThatWasNeverEnrolled_Throws()
+        {
+            var enrolled = Inventory();
+            var stranger = Inventory();
+
+            using var transaction = new ItemTransaction(enrolled);
+
+            Assert.That(() => transaction.ReHomeThrough(stranger), Throws.InvalidOperationException);
+        }
+
         // ── Enrolment guards ───────────────────────────────────────────────
 
         [Test]

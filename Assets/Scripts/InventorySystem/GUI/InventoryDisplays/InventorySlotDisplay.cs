@@ -34,15 +34,32 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             if (!Container.CanPlaceAt(positionToAdd, ItemView.Of(package.Item).Dimensions))
                 return;
 
-            package = Container.AddAtPosition(positionToAdd, package);
+            /// The whole drop runs inside one transaction (issue #10): the placement mutates
+            /// a working copy, a displaced item is re-homed in the fixed
+            /// cursor -> origin -> inventory order, and the move either commits as a unit or
+            /// rolls back leaving the dragged item in hand. Commit fires the container
+            /// refreshes and hands the cursor its displaced item.
+            var origin = DragProvider.Instance.Origin?.Container;
+            var inventory = InventoryProvider.Instance.Inventory;
+            var cursor = new CursorHolder(DragProvider.Instance);
 
-            /// Whatever AddAtPosition handed back - nothing (it landed, drag ends) or the
-            /// item it displaced (a swap). A displaced item is centred on the cursor, never
-            /// given this drop's positionOffset, which describes a footprint it may not have.
-            DragProvider.Instance.ReplacePackage(package);
+            using (var transaction = new ItemTransaction(cursor, Container, origin, inventory).ReHomeThrough(origin, inventory))
+            {
+                var displaced = Container.AddAtPosition(positionToAdd, package);
 
-            Container.InvokeRefresh();
-            DragProvider.Instance.Origin.Container?.InvokeRefresh();
+                if (displaced.IsValid)
+                    _ = transaction.TryReHome(ref displaced);
+
+                if (transaction.Aborted)
+                    return;
+
+                transaction.Commit();
+            }
+
+            /// A clean landing - nothing came back to the cursor, so the drag is over.
+            /// A swap already handed the displaced item over on commit.
+            if (cursor.IsFree)
+                DragProvider.Instance.EndDrag();
 
             FadeInPreview(); // TODO: see if the package should propagate to FadeInPreview
         }
@@ -94,12 +111,19 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
                     if (category == ItemCategory.Equipment)
                     {
-                        _ = Container.RemoveAtPosition(position, package);
+                        /// Route the equip through a transaction (issue #10): remove here,
+                        /// equip there, re-home whatever the equip displaces back into this
+                        /// container - or roll the whole thing back. No cursor: a right-click
+                        /// equip is not a drag.
+                        var equipment = InventoryProvider.Instance.Equipment;
 
-                        if (InventoryProvider.Instance.Equipment.TryAddToContainer(ref package))
-                            DragProvider.Instance.SetPackage(this, package, Vector2Int.zero, pointerPosition);
-                        else
-                            _ = Container.TryAddToContainer(ref package);
+                        using var transaction = new ItemTransaction(Container, equipment).ReHomeThrough(Container);
+
+                        _ = Container.RemoveAtPosition(position, package);
+                        _ = equipment.TryAddToContainer(ref package);
+
+                        if (!transaction.Aborted)
+                            transaction.Commit();
 
                         return;
                     }
@@ -117,8 +141,6 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 #region QUICK MOVE ITEM
                 if (Input.GetKey(KeyCode.LeftShift))
                 {
-                    _ = Container.RemoveAtPosition(position, package);
-
                     var containerToMoveTo = Container; // rework to context based
 
                     if (Container == InventoryProvider.Instance.Inventory)
@@ -126,10 +148,14 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                     else if (Container == InventoryProvider.Instance.Stash)
                         containerToMoveTo = InventoryProvider.Instance.Inventory;
 
+                    /// Atomic remove-here / add-there (issue #10): a target with no room
+                    /// leaves the item exactly where it was.
+                    using var transaction = new ItemTransaction(Container, containerToMoveTo);
+
+                    _ = Container.RemoveAtPosition(position, package);
+
                     if (containerToMoveTo.TryAddToContainer(ref package))
-                        DragProvider.Instance.SetPackage(this, package, Vector2Int.zero, pointerPosition);
-                    else
-                        _ = Container.AddAtPosition(position, package);
+                        transaction.Commit();
 
                     return;
                 }

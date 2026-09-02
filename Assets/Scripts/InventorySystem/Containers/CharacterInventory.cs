@@ -84,7 +84,9 @@ namespace ToolSmiths.InventorySystem.Inventories
 
                 TryAddToInventory();
 
-                // TODO: check for item loss, else revert
+                // The one displaced item is handed straight back; a routed move (issue #10)
+                // re-homes it through its ItemTransaction (cursor -> origin -> inventory) and
+                // rolls the whole swap back if it finds no home.
                 package = storedPackage;
             }
         }
