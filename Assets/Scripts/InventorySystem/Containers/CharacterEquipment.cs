@@ -24,8 +24,11 @@ namespace ToolSmiths.InventorySystem.Inventories
             this.cursorSink = cursorSink;
         }
 
-        protected override void OnPackageRemoved(Package package) =>
-            statReceiver?.RemoveItemStats(package.Item.Affixes);
+        protected override void OnPackageRemoved(Package package)
+        {
+            var affixes = package.Item.Affixes;
+            RunOrQueue(() => statReceiver?.RemoveItemStats(affixes));
+        }
 
         [SerializeField] public bool autoEquip = true;
 
@@ -103,7 +106,8 @@ namespace ToolSmiths.InventorySystem.Inventories
 
                 if (StoredPackages.TryAdd(position, new Package(this, package.Item, amount)))
                 {
-                    statReceiver?.AddItemStats(package.Item.Affixes);
+                    var affixes = package.Item.Affixes;
+                    RunOrQueue(() => statReceiver?.AddItemStats(affixes));
 
                     _ = package.ReduceAmount(amount);
                 }
@@ -126,6 +130,11 @@ namespace ToolSmiths.InventorySystem.Inventories
                 if (0 < package.Amount)
                     Debug.LogWarning($"Something went wrong! remaining package will be overwritten: {package}");
 
+                // Still the pre-transaction path: the displaced items are re-homed by
+                // recursing into package.Sender and the cursor handover runs inline. Issue
+                // #10 rewrites this to open an ItemTransaction, re-home in the fixed
+                // cursor -> origin -> inventory order, and commit or roll the whole swap
+                // back - no Sender recursion, no inline ReplacePackage.
                 for (var i = previouslyEquipped.Count; i-- > 0;)
                 {
                     var current = previouslyEquipped[i];
@@ -134,13 +143,9 @@ namespace ToolSmiths.InventorySystem.Inventories
                     previouslyEquipped[i] = current;
                 }
 
-                //    if (0 < returningToSender.Amount)
-                //        DragProvider.Instance.SetPackage(DragProvider.Instance.Hovered, returningToSender, Vector2Int.zero);
-                //}
-
                 package = previouslyEquipped.Where(x => x.Item != null && 0 < x.Amount).FirstOrDefault();
 
-                // TODO: check for item loss, else revert
+                // TODO (#10): check for item loss, else revert
             }
         }
 

@@ -28,6 +28,91 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         [field: SerializeField] public Dictionary<Vector2Int, Package> StoredPackages { get; protected set; } = new();
 
+        // ── Transaction seam (issue #9) ─────────────────────────────────────
+        // While enrolled in an ItemTransaction, StoredPackages is a working copy: the
+        // placement code below mutates that copy, OnContentChanged is deferred, and any
+        // stat / cursor / currency side effect is queued onto the transaction. Commit
+        // writes the working copy back into this same dictionary instance; a rollback
+        // restores it. Nothing here changes when ActiveTransaction is null.
+
+        /// <summary>The transaction this container is currently enrolled in, or null.</summary>
+        internal ItemTransaction ActiveTransaction { get; private set; }
+
+        /// <summary>The real StoredPackages dictionary, parked while a transaction holds a working copy in its place.</summary>
+        private Dictionary<Vector2Int, Package> liveStoredPackages;
+
+        /// <summary>Enrol: snapshot StoredPackages into a working copy the move mutates in isolation.</summary>
+        internal void JoinTransaction(ItemTransaction transaction)
+        {
+            if (ActiveTransaction != null)
+                throw new InvalidOperationException($"{GetType().Name} is already enrolled in a transaction.");
+
+            ActiveTransaction = transaction;
+            liveStoredPackages = StoredPackages;
+            StoredPackages = new Dictionary<Vector2Int, Package>(liveStoredPackages);
+        }
+
+        /// <summary>
+        /// Commit: re-point <see cref="StoredPackages"/> at the original dictionary
+        /// instance, folding the working copy's entries back into it when the move
+        /// actually changed this container (<paramref name="contentsChanged"/>). An
+        /// enrolled-but-untouched container just detaches - its working copy is a faithful
+        /// copy of state nothing wrote to.
+        /// </summary>
+        internal void ApplyTransaction(bool contentsChanged)
+        {
+            if (contentsChanged)
+            {
+                var working = StoredPackages;
+
+                liveStoredPackages.Clear();
+                foreach (var entry in working)
+                    liveStoredPackages[entry.Key] = entry.Value;
+            }
+
+            StoredPackages = liveStoredPackages;
+            liveStoredPackages = null;
+            ActiveTransaction = null;
+        }
+
+        /// <summary>Rollback: discard the working copy, restore the pre-transaction state.</summary>
+        internal void DiscardTransaction()
+        {
+            StoredPackages = liveStoredPackages;
+            liveStoredPackages = null;
+            ActiveTransaction = null;
+        }
+
+        /// <summary>Fires <see cref="OnContentChanged"/> now, bypassing the transaction defer. Used by a commit.</summary>
+        internal void RaiseContentChangedNow() => OnContentChanged?.Invoke(StoredPackages);
+
+        /// <summary>
+        /// The one place a mutation announces it changed the container. Inline when there
+        /// is no transaction; recorded on the transaction (once per container, replayed at
+        /// commit) when there is one.
+        /// </summary>
+        private void RaiseContentChanged()
+        {
+            if (ActiveTransaction != null)
+                ActiveTransaction.NoteContentChanged(this);
+            else
+                OnContentChanged?.Invoke(StoredPackages);
+        }
+
+        /// <summary>
+        /// Runs <paramref name="effect"/> now, or - mid-transaction - queues it to run on
+        /// commit and be dropped on rollback. Every observable side effect of a mutation
+        /// beyond the container's own contents (a worn item's stat apply/remove, the drag
+        /// handover) goes through here so a rolled-back move leaves nothing behind.
+        /// </summary>
+        private protected void RunOrQueue(Action effect)
+        {
+            if (ActiveTransaction != null)
+                ActiveTransaction.QueueEffect(effect);
+            else
+                effect();
+        }
+
         // recipient/receiver <-> sender/returningAddress
         /// <summary>
         /// Tries to add the package to the container and updating the package to the state after adding => new Package()
@@ -43,7 +128,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             _ = TryStack(ref package);
             _ = TryAddAtEmpty(ref package);
 
-            OnContentChanged?.Invoke(StoredPackages);
+            RaiseContentChanged();
 
             return 0 == package.Amount;
         }
@@ -159,7 +244,7 @@ namespace ToolSmiths.InventorySystem.Inventories
                     _ = StoredPackages.Remove(position);
             }
 
-            OnContentChanged?.Invoke(StoredPackages);
+            RaiseContentChanged();
 
             return package;
         }
@@ -234,12 +319,13 @@ namespace ToolSmiths.InventorySystem.Inventories
         }
 
         /// <summary>
-        /// Fires <see cref="OnContentChanged"/> so the bound displays repaint. Public
-        /// because the slot displays in Assembly-CSharp drive a refresh after a move they
-        /// performed themselves; it was <c>protected internal</c> when they shared an
-        /// assembly with the container core.
+        /// Fires <see cref="OnContentChanged"/> so the bound displays repaint - or, mid
+        /// transaction, records the refresh to replay once on commit. Public because the
+        /// slot displays in Assembly-CSharp drive a refresh after a move they performed
+        /// themselves; it was <c>protected internal</c> when they shared an assembly with
+        /// the container core.
         /// </summary>
-        public void InvokeRefresh() => OnContentChanged?.Invoke(StoredPackages);
+        public void InvokeRefresh() => RaiseContentChanged();
 
         /// <summary>
         /// Hook fired for the stored package a <see cref="RemoveAtPosition"/> is about to
