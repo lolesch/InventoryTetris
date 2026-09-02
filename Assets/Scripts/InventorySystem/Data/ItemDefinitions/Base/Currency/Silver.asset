@@ -24,4 +24,4 @@ MonoBehaviour:
   equipmentType: 0
   consumableType: 0
   currencyType: 3
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: eb1a76efd1f6bba4fbd056a467f814a9, type: 3}
