@@ -50,12 +50,18 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         public void Awake()
         {
-            /// serialize inventories
-            Equipment = new(equipmentSize);
-            Inventory = new(inventorySize);
-            Stash = new(stashSize);
+            /// The container core lives in InventorySystem.Containers and names no
+            /// provider - it takes the character, the drag cursor and the coin minter
+            /// as interfaces here, where the four containers are newed up.
+            var statReceiver = CharacterProvider.Instance.Player;
+            var cursorSink = DragProvider.Instance;
+            var currencyMinter = ItemProvider.Instance;
 
-            Store = new(storeSize);
+            Equipment = new(equipmentSize, statReceiver, cursorSink);
+            Inventory = new(inventorySize, currencyMinter);
+            Stash = new(stashSize, currencyMinter);
+
+            Store = new(storeSize, currencyMinter);
             RestockStore();
 
             SetInventories();

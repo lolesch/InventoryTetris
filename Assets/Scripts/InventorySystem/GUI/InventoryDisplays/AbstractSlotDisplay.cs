@@ -9,7 +9,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-[assembly: InternalsVisibleTo("InventorySystem.Data.Tests")]
+[assembly: InternalsVisibleTo("InventorySystem.Containers.Tests")]
 
 namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 {

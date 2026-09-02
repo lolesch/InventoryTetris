@@ -148,8 +148,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         {
             if (TryGetItemAt(ref position, out var storedPackage))
             {
-                if (this is CharacterEquipment)
-                    CharacterProvider.Instance.Player.RemoveItemStats(storedPackage.Item.Affixes);
+                OnPackageRemoved(storedPackage);
 
                 var removed = storedPackage.ReduceAmount(package.Amount);
                 _ = package.ReduceAmount(removed);
@@ -234,6 +233,20 @@ namespace ToolSmiths.InventorySystem.Inventories
             }
         }
 
-        protected internal void InvokeRefresh() => OnContentChanged?.Invoke(StoredPackages);
+        /// <summary>
+        /// Fires <see cref="OnContentChanged"/> so the bound displays repaint. Public
+        /// because the slot displays in Assembly-CSharp drive a refresh after a move they
+        /// performed themselves; it was <c>protected internal</c> when they shared an
+        /// assembly with the container core.
+        /// </summary>
+        public void InvokeRefresh() => OnContentChanged?.Invoke(StoredPackages);
+
+        /// <summary>
+        /// Hook fired for the stored package a <see cref="RemoveAtPosition"/> is about to
+        /// take. Empty here; <see cref="CharacterEquipment"/> overrides it to lift the
+        /// removed item's affixes off the character it is worn by. Replaces a
+        /// <c>this is CharacterEquipment</c> downcast that reached a provider singleton.
+        /// </summary>
+        protected virtual void OnPackageRemoved(Package package) { }
     }
 }

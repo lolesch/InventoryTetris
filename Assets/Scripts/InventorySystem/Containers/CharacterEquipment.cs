@@ -4,7 +4,6 @@ using System.Linq;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Items;
-using ToolSmiths.InventorySystem.Runtime.Provider;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Inventories
@@ -12,7 +11,21 @@ namespace ToolSmiths.InventorySystem.Inventories
     [System.Serializable]
     public class CharacterEquipment : AbstractDimensionalContainer
     {
-        public CharacterEquipment(Vector2Int dimensions) : base(dimensions) { }
+        private readonly IStatReceiver statReceiver;
+        private readonly ICursorSink cursorSink;
+
+        /// <param name="statReceiver">The character worn items apply their affixes to.
+        /// Null in a pure container test that only exercises placement.</param>
+        /// <param name="cursorSink">Where a displaced item is handed when no container
+        /// will re-home it. Null in a test.</param>
+        public CharacterEquipment(Vector2Int dimensions, IStatReceiver statReceiver = null, ICursorSink cursorSink = null) : base(dimensions)
+        {
+            this.statReceiver = statReceiver;
+            this.cursorSink = cursorSink;
+        }
+
+        protected override void OnPackageRemoved(Package package) =>
+            statReceiver?.RemoveItemStats(package.Item.Affixes);
 
         [SerializeField] public bool autoEquip = true;
 
@@ -90,7 +103,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
                 if (StoredPackages.TryAdd(position, new Package(this, package.Item, amount)))
                 {
-                    CharacterProvider.Instance.Player.AddItemStats(package.Item.Affixes);
+                    statReceiver?.AddItemStats(package.Item.Affixes);
 
                     _ = package.ReduceAmount(amount);
                 }
@@ -117,7 +130,7 @@ namespace ToolSmiths.InventorySystem.Inventories
                 {
                     var current = previouslyEquipped[i];
                     if (!package.Sender.TryAddToContainer(ref current))
-                        DragProvider.Instance.ReplacePackage(previouslyEquipped[i]);
+                        cursorSink?.ReplacePackage(previouslyEquipped[i]);
                     previouslyEquipped[i] = current;
                 }
 

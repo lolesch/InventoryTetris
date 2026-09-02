@@ -23,7 +23,7 @@ namespace ToolSmiths.InventorySystem.Inventories
     /// and the slot displays - still in <c>Assembly-CSharp</c> until the #15 extraction - can
     /// resolve a stored <see cref="ItemInstance"/> to its template.
     /// </summary>
-    public class ItemProvider : AbstractProvider<ItemProvider>
+    public class ItemProvider : AbstractProvider<ItemProvider>, ICurrencyMinter
     {
         [Tooltip("Stat-icon lookup for the character and item-stat displays. Not on the roll path.")]
         public ItemTypeData ItemTypeData;

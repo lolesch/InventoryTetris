@@ -12,7 +12,7 @@ using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Runtime.Character
 {
-    public class LocalPlayer : BaseCharacter
+    public class LocalPlayer : BaseCharacter, IStatReceiver
     {
         //TODO: make the displayLogic its own component and design its layout individually and not via a pool
         [SerializeField] private CharacterStatDisplay characterStatPrefab;

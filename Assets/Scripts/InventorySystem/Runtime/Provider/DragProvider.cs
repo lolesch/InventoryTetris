@@ -2,6 +2,7 @@ using TMPro;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Geometry;
 using ToolSmiths.InventorySystem.GUI.InventoryDisplays;
+using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
 using UnityEngine;
 using UnityEngine.UI;
@@ -10,7 +11,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 {
     [System.Serializable]
     [RequireComponent(typeof(RectTransform))]
-    internal sealed class DragProvider : AbstractProvider<DragProvider>
+    internal sealed class DragProvider : AbstractProvider<DragProvider>, ICursorSink
     {
         public bool IsDragging => itemDisplay.gameObject.activeSelf;
 

@@ -11,7 +11,12 @@ namespace ToolSmiths.InventorySystem.Inventories
     [System.Serializable]
     public class CharacterInventory : AbstractDimensionalContainer
     {
-        public CharacterInventory(Vector2Int dimensions) : base(dimensions) { }
+        private readonly ICurrencyMinter currencyMinter;
+
+        /// <param name="currencyMinter">Mints the coins <see cref="TryPay"/> and
+        /// <see cref="Consolidate"/> hand back as change. Null in a test that does not
+        /// exercise the wallet paths.</param>
+        public CharacterInventory(Vector2Int dimensions, ICurrencyMinter currencyMinter = null) : base(dimensions) => this.currencyMinter = currencyMinter;
         public override bool TryAddToContainer(ref Package package)
         {
             if (!package.IsValid)
@@ -171,7 +176,11 @@ namespace ToolSmiths.InventorySystem.Inventories
                 if (0u == count)
                     return;
 
-                var package = new Package(this, ItemProvider.Instance.MintCurrency(type), count);
+                var coin = currencyMinter?.MintCurrency(type);
+                if (coin == null)
+                    return;
+
+                var package = new Package(this, coin, count);
                 _ = TryAddToContainer(ref package);
             }
         }

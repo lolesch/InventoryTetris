@@ -4,8 +4,11 @@ using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
 using UnityEngine;
 
-[assembly: InternalsVisibleTo("InventorySystem.Data.Tests")]
+[assembly: InternalsVisibleTo("InventorySystem.Containers.Tests")]
 
+// Package moved into the InventorySystem.Containers assembly with the container core
+// (#15); the ToolSmiths.InventorySystem.Data namespace is kept so no call site's
+// `using` changes. A namespace move to .Inventories is a separate cosmetic pass.
 namespace ToolSmiths.InventorySystem.Data
 {
     [Serializable]
