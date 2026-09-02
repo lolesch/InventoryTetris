@@ -60,8 +60,10 @@ _Avoid_: shop, vendor container, merchant
 
 **Displacement**:
 What happens when a placement pushes stored items out of the way — e.g. equipping a
-two-hander over a weapon and off-hand. Displaced items are re-homed in a fixed order, or
-the whole move is refused.
+two-hander over a weapon and off-hand. Each displaced item is re-homed in a fixed order:
+the freed cursor (takes one item), then the origin container, then the player inventory.
+A player-driven move always executes — a single displaced item just goes in hand — and
+only a *second* item that no container will take rolls the whole move back.
 _Avoid_: swap (a swap is one specific displacement), eviction
 
 **Transaction**:

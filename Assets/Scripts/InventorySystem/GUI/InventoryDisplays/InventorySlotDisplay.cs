@@ -112,18 +112,23 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                     if (category == ItemCategory.Equipment)
                     {
                         /// Route the equip through a transaction (issue #10): remove here,
-                        /// equip there, re-home whatever the equip displaces back into this
-                        /// container - or roll the whole thing back. No cursor: a right-click
-                        /// equip is not a drag.
+                        /// equip there, re-home whatever the equip displaces. A player-driven
+                        /// move always executes - a displaced item that will not fit the
+                        /// origin or the inventory goes in hand (the cursor), and only a
+                        /// second homeless item rolls the whole move back.
                         var equipment = InventoryProvider.Instance.Equipment;
+                        var inventory = InventoryProvider.Instance.Inventory;
+                        var cursor = new CursorHolder(DragProvider.Instance);
 
-                        using var transaction = new ItemTransaction(Container, equipment).ReHomeThrough(Container);
+                        using var transaction = new ItemTransaction(cursor, Container, equipment, inventory).ReHomeThrough(Container, inventory);
 
                         _ = Container.RemoveAtPosition(position, package);
                         _ = equipment.TryAddToContainer(ref package);
 
-                        if (!transaction.Aborted)
-                            transaction.Commit();
+                        if (transaction.Aborted)
+                            return;
+
+                        transaction.Commit();
 
                         return;
                     }

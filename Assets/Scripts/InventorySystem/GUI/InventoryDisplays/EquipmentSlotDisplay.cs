@@ -91,17 +91,20 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             #region UNEQUIP ITEM
             if (eventData.button == PointerEventData.InputButton.Right)
             {
-                /// Atomic unequip (issue #10): a full inventory leaves the item equipped and
-                /// its affixes applied - the stat lift is a commit-time effect, dropped on
-                /// rollback.
+                /// A player-driven unequip always executes (issue #10): the item lands in the
+                /// inventory, or - if it is full - in hand. The affix lift is a commit-time
+                /// effect either way.
                 var inventory = InventoryProvider.Instance.Inventory;
+                var cursor = new CursorHolder(DragProvider.Instance);
 
-                using var transaction = new ItemTransaction(Container, inventory);
+                using var transaction = new ItemTransaction(cursor, Container, inventory).ReHomeThrough(inventory);
 
                 _ = Container.RemoveAtPosition(position, package);
 
-                if (inventory.TryAddToContainer(ref package))
-                    transaction.Commit();
+                if (!inventory.TryAddToContainer(ref package))
+                    _ = cursor.TryHold(package);
+
+                transaction.Commit();
 
                 return;
             }

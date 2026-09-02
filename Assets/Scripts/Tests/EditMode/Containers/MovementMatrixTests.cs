@@ -92,6 +92,46 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         }
 
         /// <summary>
+        /// Right-click equip, exactly as <c>InventorySlotDisplay.MoveItem</c> runs it: remove
+        /// from <paramref name="source"/>, equip, re-home displaced gear through cursor -&gt;
+        /// source -&gt; inventory. A player-driven move always executes unless a second item
+        /// is left homeless.
+        /// </summary>
+        private static bool RightClickEquip(CursorHolder cursor, CharacterInventory source, CharacterEquipment equipment,
+            CharacterInventory playerInventory, Vector2Int position, Package stored)
+        {
+            using var transaction = new ItemTransaction(cursor, source, equipment, playerInventory).ReHomeThrough(source, playerInventory);
+
+            _ = source.RemoveAtPosition(position, stored);
+            var package = new Package(source, stored.Item, stored.Amount);
+            _ = equipment.TryAddToContainer(ref package);
+
+            if (transaction.Aborted)
+                return false;
+
+            transaction.Commit();
+            return true;
+        }
+
+        /// <summary>
+        /// Right-click unequip, exactly as <c>EquipmentSlotDisplay.MoveItem</c> runs it: the
+        /// item always comes off - into the inventory, or in hand if it is full.
+        /// </summary>
+        private static void RightClickUnequip(CursorHolder cursor, CharacterEquipment equipment, CharacterInventory inventory,
+            Vector2Int slot, Package stored)
+        {
+            using var transaction = new ItemTransaction(cursor, equipment, inventory).ReHomeThrough(inventory);
+
+            _ = equipment.RemoveAtPosition(slot, stored);
+            var package = new Package(equipment, stored.Item, stored.Amount);
+
+            if (!inventory.TryAddToContainer(ref package))
+                _ = cursor.TryHold(package);
+
+            transaction.Commit();
+        }
+
+        /// <summary>
         /// Every stored unit as its definition id - one entry per item in a stack. A stack
         /// merge folds one instance into another, so conservation is counted by id + amount;
         /// the tests that care about instance identity assert <c>Is.SameAs</c> directly.
@@ -340,10 +380,12 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         // ── Equipment -> Inventory ─────────────────────────────────────────
 
         [Test]
-        public void EquipmentToInventory_UnequipToEmpty_LiftsTheAffixOnCommit()
+        public void EquipmentToInventory_UnequipToEmpty_LandsInTheInventoryAndLiftsTheAffixOnCommit()
         {
             var stats = new FakeStatReceiver();
-            var equipment = Equipment(stats, new FakeCursorSink());
+            var sink = new FakeCursorSink();
+            var cursor = new CursorHolder(sink);
+            var equipment = Equipment(stats, sink);
             var inventory = Inventory();
 
             var worn = new Package(inventory, Helm(4f), 1u);
@@ -354,26 +396,22 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             stats.Removed.Clear();
             var before = Units(equipment.StoredPackages.Values);
 
-            // EquipmentSlotDisplay right-click unequip: remove here, add there, commit on success.
-            using (var transaction = new ItemTransaction(equipment, inventory))
-            {
-                _ = equipment.RemoveAtPosition(slot, stored);
-                var moving = new Package(inventory, stored.Item, stored.Amount);
-                Assert.That(inventory.TryAddToContainer(ref moving), Is.True);
-                transaction.Commit();
-            }
+            RightClickUnequip(cursor, equipment, inventory, slot, stored);
 
             Assert.That(equipment.StoredPackages, Is.Empty);
             Assert.That(inventory.StoredPackages.Values.Single().Item, Is.SameAs(stored.Item));
+            Assert.That(sink.Replaced, Is.Empty, "the inventory had room - nothing went in hand");
             Assert.That(stats.Removed.Select(a => a.Stat), Is.EquivalentTo(new[] { StatName.Armor }));
-            AssertConserved(before, Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values));
+            AssertConserved(before, Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values, sink.Replaced));
         }
 
         [Test]
-        public void EquipmentToInventory_UnequipWithAFullInventory_RollsBackAndKeepsTheItemEquipped()
+        public void EquipmentToInventory_UnequipWithAFullInventory_ComesOffIntoTheHand()
         {
             var stats = new FakeStatReceiver();
-            var equipment = Equipment(stats, new FakeCursorSink());
+            var sink = new FakeCursorSink();
+            var cursor = new CursorHolder(sink);
+            var equipment = Equipment(stats, sink);
             var inventory = Inventory(1, 1);
 
             var worn = new Package(inventory, Helm(4f), 1u);
@@ -387,17 +425,46 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             _ = inventory.TryAddToContainer(ref filler);
             var before = Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values);
 
-            using (var transaction = new ItemTransaction(equipment, inventory))
-            {
-                _ = equipment.RemoveAtPosition(slot, stored);
-                var moving = new Package(inventory, stored.Item, stored.Amount);
-                if (inventory.TryAddToContainer(ref moving))
-                    transaction.Commit();
-            }
+            RightClickUnequip(cursor, equipment, inventory, slot, stored);
 
-            Assert.That(equipment.StoredPackages.Values.Single().Item, Is.SameAs(stored.Item), "still equipped");
-            Assert.That(stats.Removed, Is.Empty, "the stat lift was queued and dropped");
-            AssertConserved(before, Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values));
+            Assert.That(equipment.StoredPackages, Is.Empty, "the item always comes off");
+            Assert.That(sink.Replaced.Single().Item, Is.SameAs(stored.Item), "a full inventory sends it to the hand");
+            Assert.That(stats.Removed.Select(a => a.Stat), Is.EquivalentTo(new[] { StatName.Armor }), "unequipped - affix lifted");
+            AssertConserved(before, Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values, sink.Replaced));
+        }
+
+        [Test]
+        public void RightClickEquip_TwoHandedOverWeaponAndOffHand_FullInventory_EquipsAndPutsTheOverflowInHand()
+        {
+            var stats = new FakeStatReceiver();
+            var sink = new FakeCursorSink();
+            var cursor = new CursorHolder(sink);
+            var equipment = Equipment(stats, sink);
+            var inventory = Inventory(4, 1);
+
+            var weapon = new Package(inventory, Sword(6f), 1u);
+            _ = equipment.TryAddToContainer(ref weapon);
+            var offHand = new Package(inventory, Shield(3f), 1u);
+            _ = equipment.TryAddToContainer(ref offHand);
+            stats.Added.Clear();
+            stats.Removed.Clear();
+
+            // 2H occupies (0,0)-(1,0); the rest of the row is full.
+            _ = inventory.AddAtPosition(new Vector2Int(0, 0), new Package(inventory, GreatSword(15f), 1u));
+            _ = inventory.AddAtPosition(new Vector2Int(2, 0), new Package(inventory, Arrows(), 1u));
+            _ = inventory.AddAtPosition(new Vector2Int(3, 0), new Package(inventory, Arrows(), 1u));
+            var twoHander = inventory.StoredPackages[new Vector2Int(0, 0)];
+            var before = Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values);
+
+            var committed = RightClickEquip(cursor, inventory, equipment, inventory, new Vector2Int(0, 0), twoHander);
+
+            Assert.That(committed, Is.True, "a player-driven equip is not refused for lack of inventory room");
+            Assert.That(equipment.StoredPackages.Values.Single().Item.DefinitionId, Is.EqualTo(GreatSwordId), "the 2H is worn");
+            Assert.That(sink.Replaced, Has.Count.EqualTo(1), "one displaced item went to the hand");
+            var homes = sink.Replaced.Select(p => p.Item.DefinitionId)
+                .Concat(inventory.StoredPackages.Values.Select(p => p.Item.DefinitionId));
+            Assert.That(homes, Is.EquivalentTo(new[] { SwordId, ShieldId, ArrowId, ArrowId }), "the other displaced item took the space the 2H vacated");
+            AssertConserved(before, Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values, sink.Replaced));
         }
 
         // ── Equipment -> Equipment ─────────────────────────────────────────
