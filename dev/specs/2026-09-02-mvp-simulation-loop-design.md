@@ -9,9 +9,16 @@ this spec is written now so `/to-tickets` can slice it and so the `RunState` /
 
 Supersedes the open questions in the research doc §6. New vocabulary is pinned in
 `CONTEXT.md` (**Session**, **Drop**, **Corpse**, sharpened **Location** / **Death** /
-**Denomination**). Two ADRs record the load-bearing choices: **ADR-0008** (the Encounter
-is a live simulation, not a resolved outcome) and **ADR-0009** (Death is corpse-recovery,
-not haul-forfeit).
+**Denomination**; **Strike**, **Cast**, **Engagement**, **Pack**, **Cast Threshold**
+from the combat grilling). Three ADRs record the load-bearing choices: **ADR-0008** (the
+Encounter is a live simulation, not a resolved outcome), **ADR-0009** (Death is
+corpse-recovery, not haul-forfeit), and **ADR-0010** (combat is a concurrent dual attack
+the player gears each half of).
+
+A follow-up grilling on 2026-09-02 reworked the combat model inside the Encounter — see
+*The combat model* under Implementation Decisions and **ADR-0010**. The rest of this spec
+predates it; where a section still describes one attack per tick or five sliders, that
+subsection and the ADR are authoritative.
 
 ---
 
@@ -30,7 +37,7 @@ choice, or a "keep the Rare belt or the room it needs", into a decision with sta
 
 ## Solution
 
-A **Run**: from **Town**, the player picks a **Location**, tunes five behaviour
+A **Run**: from **Town**, the player picks a **Location**, tunes six behaviour
 sliders, and **Sends** the hero. The Location runs a live fixed-timestep **Encounter**
 simulation the player watches in real time — resource globes drain, the XP bar fills,
 the inventory/equipment panel stays open and interactive. Enemies fall; **Loot** drops
@@ -87,8 +94,9 @@ quitting mid-Run banks what the hero already holds, discards the rest, and resum
     during the Encounter, so that I can re-gear or sort mid-fight.
 14. As a player, I want no recap or results screen, so that the globes and the bar *are*
     the readout and the loop never pauses for me to dismiss a dialog.
-15. As a player, I want the hero to auto-attack on its own attack-speed cadence, so that
-    `AttackSpeed` on gear is a visible rate, not a hidden number.
+15. As a player, I want the hero's Strike to land on its own attack-speed cadence and
+    its Cast on its own resource-fed cadence, so that `AttackSpeed` and
+    `ResourceRegeneration` on gear are visible rates, not hidden numbers (ADR-0010).
 16. As a player, I want enemies at a Location to hit back on their own cadence scaled by
     the Location's difficulty, so that a harder Location is visibly more dangerous.
 17. As a player, I want an Encounter to end when the enemy group is down and the next to
@@ -98,14 +106,19 @@ quitting mid-Run banks what the hero already holds, discards the rest, and resum
 
 ### Behaviour sliders
 
+> **ADR-0010 revised this list.** Story 21 is now the **Cast Threshold** (a hysteresis
+> knob, not a physical/magical mode switch), and a sixth slider — **Engagement**, the
+> kite-vs-dive count — is added. See *The combat model* under Implementation Decisions.
+
 19. As a player, I want a **retreat-at-HP** slider, so that the hero auto-Recalls when
     its health fraction drops below my threshold.
 20. As a player, I want a **recall-when-bag-full** slider, so that the hero auto-Recalls
     once the bag reaches my fill threshold rather than fighting on with nowhere to put
     loot.
-21. As a player, I want a **resource-reserve** slider, so that the hero uses its costly
-    magical attack only while its resource is above my reserve and falls back to the
-    cheap physical attack below it.
+21. As a player, I want a **cast-threshold** slider, so that the hero holds its Cast
+    until resource charges to my mark and then spends it down — a continuous trickle at
+    the low end, a saved-up burst at the high end — while its Strike keeps swinging
+    throughout (ADR-0010).
 22. As a player, I want a **loot-filter** slider that sets a minimum rarity, so that the
     hero only picks up drops at or above the quality I care about (Common = everything,
     Magic = skip Common, Rare = skip Common and Magic, Unique = only Unique).
@@ -144,8 +157,8 @@ quitting mid-Run banks what the hero already holds, discards the rest, and resum
     on Recall and on Death alike — so that the ground is never a second stash.
 37. As a player, I want an upgrade that drops into a full bag to force a real choice —
     drop something to make room, or leave the upgrade — so that bag space has a price.
-38. As a player, I want XP and banked coins to settle each time an Encounter is cleared,
-    so that a Run cut short by Recall still keeps what was already earned.
+38. As a player, I want XP and banked coins to settle **per kill**, so that a Run cut
+    short by Recall keeps everything earned up to the last enemy that fell (ADR-0010).
 
 ### Death and the Corpse
 
@@ -248,10 +261,13 @@ a test with fakes — the same rule `InventorySystem.Items` follows. It contains
   make the sim-speed slider drag every panel tween along with it (ADR-0008). The
   submodule's `Stopwatch` is fine for the Town regeneration timer, which needs neither a
   clamp nor speed-scaling.
-- **The Encounter simulation** — owns the tick loop, each combatant's attack cadence
-  (`1 / AttackSpeed`), the per-tick resource regeneration call, the end-of-Encounter
-  check (hero down, or the enemy group down), the short beat before the next Encounter,
-  and the evaluation of the `HeroBehaviour` triggers. It never references `BaseCharacter`.
+- **The Encounter simulation** — owns the tick loop, the hero's two attack cadences
+  (Strike `1 / AttackSpeed`, Cast `castCost / ResourceRegeneration`) and their target
+  selection, the enemy Strike cadence, the Roster/Pack spawn schedule against the
+  `Engagement` target, the per-tick resource regeneration call, the end-of-Encounter
+  check (hero down, or the Roster spent and cleared), the short beat before the next
+  Encounter, and the evaluation of the `HeroBehaviour` triggers. It never references
+  `BaseCharacter`. See *The combat model* (ADR-0010).
 - **`ICombatant`** — the only new interface. The sim reads `HealthFraction` /
   `ResourceFraction` / `AttackInterval` / `IsDown` and calls a strike method on cadence.
   The hero's implementation is a thin adapter in `Runtime` that forwards strikes to the
@@ -277,7 +293,7 @@ a test with fakes — the same rule `InventorySystem.Items` follows. It contains
   EncounterResult
   {
     RunOutcome  Outcome
-    int         XpGained          // applied live per Encounter clear; summed here
+    int         XpGained          // applied live per kill; summed here
     Currency    CurrencyBanked    // banked live to the Wallet; summed here
     int         XpLost            // Died only — progress toward next level, forfeited
     Currency    CurrencyFee       // Died only — withdrawn from the Wallet
@@ -287,30 +303,59 @@ a test with fakes — the same rule `InventorySystem.Items` follows. It contains
   }
   ```
 
-  Most of what a Run earns is applied *live* (XP on each Encounter clear via
-  `LocalPlayer`, coins to the Wallet as they drop, items into the bag on pickup), so
-  `EncounterResult` is a summary, not a delivery mechanism. Its one delivery job is the
-  Death case: `XpLost`, `CurrencyFee` and the Corpse hand-off.
+  Most of what a Run earns is applied *live* (XP per kill via `LocalPlayer`, coins to
+  the Wallet as they drop, items into the bag on pickup), so `EncounterResult` is a
+  summary, not a delivery mechanism. Its one delivery job is the Death case: `XpLost`,
+  `CurrencyFee` and the Corpse hand-off.
 
 - **The Corpse rules** — pure and testable: on Death the bag's contents snapshot into a
   single Corpse tagged with the `Location`; a Corpse already present is replaced (the
   old one's items are gone); the Corpse is recovered by re-entering its Location, which
   lays its items out as Drops to be picked back up; the Corpse is the one piece of
   mid-loop state the Session save carries.
-- **`HeroBehaviour`** — a plain serializable value with five fields, held in the Session
+- **`HeroBehaviour`** — a plain serializable value with six fields, held in the Session
   save, written by the sliders on their change event and read by the sim from the value
   (never polled):
 
   ```
   HeroBehaviour
   {
-    float     RetreatHealthFraction    // auto-Recall below this HP fraction
-    float     RecallBagFillFraction    // auto-Recall at or above this bag fill
-    float     ResourceReserveFraction  // magical attack only above this resource fraction
+    float      RetreatHealthFraction   // auto-Recall below this HP fraction
+    float      RecallBagFillFraction   // auto-Recall at or above this bag fill
+    float      CastThreshold           // charge Resource to this fraction, then Cast to empty (ADR-0010)
     ItemRarity LootFilterMinimum       // lowest rarity the hero will pick up
-    float     SimSpeed                 // 1..~8, applied as clock.Advance(dt * SimSpeed)
+    float      SimSpeed                // 1..~8, applied as clock.Advance(dt * SimSpeed)
+    int        Engagement              // enemies to keep engaged at once (ADR-0010)
   }
   ```
+
+### The combat model (ADR-0010)
+
+A follow-up grilling (2026-09-02) reworked what happens *inside* an Encounter. Full
+rationale and the open `/prototype` questions are in **ADR-0010**; the shape:
+
+- **Two concurrent attacks**, independent timers, one action resolved per tick. The
+  **Strike** is physical — flat `PhysicalDamage` on a `1 / AttackSpeed` cadence at the
+  lowest-HP enemy. The **Cast** is magical and area — flat `MagicalDamage` to each of
+  the 3 highest-HP enemies, cadence `castCost / ResourceRegeneration`. Both are innate;
+  gear only scales them. A physical build stacks `PhysicalDamage` + `AttackSpeed`, a
+  magical build stacks `MagicalDamage` + `Resource` + `ResourceRegeneration`.
+- **`CastThreshold`** replaces `ResourceReserveFraction` — a hysteresis knob: hold the
+  Cast until resource charges to the fraction, then Cast down to empty, then recharge.
+  Continuous chip at the low end, burst at the high end. Strikes run throughout.
+- **`Engagement`** is a sixth behaviour slider — the count of enemies the Encounter
+  keeps on the hero. A soft target the fight refills toward, not a ceiling: a **Pack**
+  (a `spawnBatch` of enemies entering together) overshoots it.
+- An Encounter fields enemies from a **Roster** (a `[min,max]` count on `LocationConfig`)
+  that spawn in singly or in Packs per a spawn profile (`spawnBatch`, `spawnInterval`,
+  `spawnJitter`). It clears when the Roster is spent and the last enemy is down. **XP
+  and coins are per kill** — clearing is a silent transition, and only Recall or Death
+  ends the Run. *(Finite Roster vs endless spawning is the `/prototype`'s call — issue
+  #18, folded into ADR-0010.)*
+- `CalculateDamageOutput` splits: the Strike drops its `× (1 + AttackSpeed · 0.01)`
+  term (double-counts against a real cadence); the Cast takes no `AttackSpeed` term.
+  The enemy archetype is Strike-only, every stat off `SourceLevel`. A future
+  `CastCostReduction` stat is the first depth lever, deferred.
 
 ### Loot flow
 
@@ -334,10 +379,13 @@ a test with fakes — the same rule `InventorySystem.Items` follows. It contains
 ### `LocationConfig` (a ScriptableObject adapter, in `Runtime` or `Data`)
 
 Authored per Location: a stable serialized id (same rule as `ItemDefinition.Id` — not an
-asset GUID), a display name, a fixed source level, an enemy archetype + count range, and
-a loot-table reference. Two assets for the MVP: an easy Location (low source level) and
-a harder one (higher source level, richer table). Town is **not** a `LocationConfig` —
-it is a `RunState`, and "go to Town" on the map is `Recall()`.
+asset GUID), a display name, a fixed source level, a loot-table reference, and (ADR-0010)
+the enemy archetype, the **Roster** range `[min,max]` an Encounter draws from, and the
+spawn profile — `spawnBatch [min,max]` (`[1,1]` is a pure trickle, `[4,4]` a charging
+Pack), `spawnInterval`, `spawnJitter`. Two assets for the MVP: an easy Location (low
+source level, small Roster, trickle) and a harder one (higher source level, richer
+table, bigger Roster, Packs). Town is **not** a `LocationConfig` — it is a `RunState`,
+and "go to Town" on the map is `Recall()`.
 
 ### Adapters (thin, in `Runtime` / `GUI`, smoke-tested in the editor)
 
@@ -348,10 +396,10 @@ it is a `RunState`, and "go to Town" on the map is `Recall()`.
   `Regenerate(deltaSeconds)` method a caller drives — the Encounter sim during a fight,
   a trivial `Stopwatch`-driven Town driver otherwise. This retires
   `// TODO: COMBAT TICK RATE`.
-- Applying `EncounterResult` and per-clear XP to `LocalPlayer`; banking coin Piles to
+- Applying `EncounterResult` and per-kill XP to `LocalPlayer`; banking coin Piles to
   the Wallet; snapshotting the bag into the Corpse store on Death; laying a recovered
   Corpse out as Drops.
-- The map panel (a radio group of Location toggles + Send / Recall buttons), the five
+- The map panel (a radio group of Location toggles + Send / Recall buttons), the six
   behaviour sliders wired to `HeroBehaviour` on their change event, and panel-visibility
   wiring that disables the Store and Stash toggles while `InField`.
 - The Corpse's line in the Session save (Location id + `ItemInstance` DTOs, reusing the
@@ -386,14 +434,16 @@ reaches for a private field or a tick counter.
 - **`CombatClock`** ports with its own 15 tests from AutoBattler — sub-interval
   accumulation, frame-rate independence, the spiral-of-death clamp, elapsed-time
   semantics.
-- **Modules under test:** `CombatClock`; the Encounter sim (cadence, per-tick regen
-  call, end detection, next-Encounter beat); the `RunState` FSM (transitions, running
-  totals, `Recall` vs `HandleDeath` outcomes); the Corpse rules (single instance,
-  per-Location tag, replace-on-second-Death, lay-out-on-recovery); `HeroBehaviour`
-  triggers (retreat fires at the HP fraction, recall fires at the bag-fill fraction,
-  resource-reserve selects the physical vs magical `DamageType`, the loot filter admits
-  and rejects by `ItemRarity` including the coin-denomination mapping); the loot count →
-  `RollContext` → `ItemGenerator` wiring.
+- **Modules under test:** `CombatClock`; the Encounter sim (the two hero cadences and
+  their target selection, the enemy cadence, the Roster/Pack spawn schedule against
+  `Engagement`, per-tick regen call, end detection, next-Encounter beat); the `RunState`
+  FSM (transitions, running totals, `Recall` vs `HandleDeath` outcomes); the Corpse
+  rules (single instance, per-Location tag, replace-on-second-Death, lay-out-on-recovery);
+  `HeroBehaviour` triggers (retreat fires at the HP fraction, recall fires at the
+  bag-fill fraction, `CastThreshold` gates a casting run by resource hysteresis,
+  `Engagement` caps the spawn refill, the loot filter admits and rejects by `ItemRarity`
+  including the coin-denomination mapping); the loot count → `RollContext` →
+  `ItemGenerator` wiring.
 - **Prior art:** `ItemGeneratorTests` (a pure generator driven by a fake `IRollSource`,
   with `InMemoryItemCatalog` / `FakeLootTable` / `FakeItemDefinition` helpers);
   `ProbabilityTableSampleTests` (roll-as-parameter determinism); `ContainerCoreTests`
@@ -409,18 +459,23 @@ reaches for a private field or a tick counter.
 
 - **Anything built before the foundational rework's three seams land** (ADR-0006).
 - **A recap or results screen** — ADR-0008; the globes and the XP bar are the readout.
-- **Combat depth** — skills, cooldowns, crit, status effects, targeting, positioning. The
-  existing physical / magical `DamageType` split *is* the skill system for the MVP. This
-  spec is about itemization, not abilities.
-- **A spatial Field** — no map to walk, no enemy positions, no aggro radius. An Encounter
-  is a group of enemies and a cadence exchange.
+- **Combat depth** — named skills, cooldowns, crit, status effects, resistances and
+  penetration, weapon classes. The **Strike** / **Cast** split *is* the skill system for
+  the MVP (ADR-0010). Targeting exists but is minimal and deterministic (lowest-HP /
+  3-highest-HP); the Cast's rhythm is a resource economy, not a cooldown. This spec is
+  about itemization, not abilities.
+- **A spatial Field** — no map to walk, no enemy positions, no movement, no aggro
+  radius. `Engagement` and `Packs` are enemy *counts*, never positions; an Encounter is
+  a group of enemies and a cadence exchange with a spawn schedule (ADR-0010).
 - **Enemy variety** — one parametric archetype scaled by source level. No per-monster
   assets, no bosses.
-- **Whether a Location's Encounters are finite or infinite**, and whether restarting a
-  Location rescales it. The MVP assumption is **infinite Encounters at fixed
-  difficulty** — Recall or Death is the only way a Run ends. The finite model (clear N
-  Encounters → Location done) and any rescale-on-restart are deferred to a `/prototype`
-  run during implementation, before the ticket that builds the Encounter driver.
+- **Finite vs endless — at two scales.** Whether a Location's Encounters are finite
+  (clear N → Location done) or endless, whether restarting rescales, *and* (ADR-0010)
+  whether an Encounter draws from a fixed **Roster** or spawns without end. The working
+  assumptions are endless Encounters at fixed difficulty and a finite Roster per
+  Encounter; all of it is deferred to one `/prototype` over the combat cluster (issue
+  #18, folded into ADR-0010), run before the Encounter driver and behaviour tickets
+  (#20 / #23).
 - **Progressive Location unlocks** — both Field Locations are open from the start. The
   `LocationConfig` shape leaves room to add an unlock gate later.
 - **A third+ Location, a node graph, or a generated map.**
@@ -432,8 +487,9 @@ reaches for a private field or a tick counter.
 - **Retiring the `InventoryProvider` god object** — the rework's own later tier. This
   spec must not add to it, but does not fix it.
 - **Exact balance numbers** — the Death XP-loss and currency-fee percentages, the revive
-  health fraction, tick interval, drop counts, slider ranges and the sim-speed curve are
-  knobs tuned in the `/prototype`, not fixed here.
+  health fraction, tick interval, drop counts, slider ranges, the sim-speed curve, and
+  (ADR-0010) the base Strike/Cast damages, `castCost`, the `CastThreshold` curve, Roster
+  and Pack sizes and timing are knobs tuned in the `/prototype`, not fixed here.
 
 ## Further Notes
 
@@ -449,8 +505,11 @@ reaches for a private field or a tick counter.
   every sim roll through the injected `IRollSource`.
 - **The Corpse is harsh for an MVP by the owner's own assessment** (ADR-0009) — accepted
   now, revisitable once the loop is actually played.
-- **`CONTEXT.md` and ADR-0008 / ADR-0009 are uncommitted** as of writing, alongside the
-  still-untracked research doc. They are part of this design and should land with it.
+- **The combat model was reworked after this spec first landed.** The 2026-09-02 combat
+  grilling produced ADR-0010, the `CONTEXT.md` **## Combat** section (Strike, Cast,
+  Engagement, Pack, Cast Threshold), the sharpened **Encounter** entry, and *The combat
+  model* subsection above. Sections written before it that still say "one attack per
+  tick" or "five sliders" are superseded there.
 - The research doc (`dev/specs/2026-09-01-mvp-simulation-loop-research.md`) remains the
   source for the sibling-project prior art, the external genre references, and the full
   options analysis behind each decision above.

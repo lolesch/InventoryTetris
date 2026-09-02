@@ -167,10 +167,12 @@ to the hero: Locations form a difficulty ladder a geared hero outgrows.
 _Avoid_: level, zone, area, stage, node, dungeon, map
 
 **Encounter**:
-One fight against one group of enemies at a Location. A Run is a series of Encounters;
-loot and XP settle up each time one is cleared.
-_Avoid_: wave (reserve that for staged spawns inside a single Encounter, if it ever
-lands), battle, fight, combat
+One fight at a Location. Its enemies arrive over the fight — singly, or in Packs that
+spike past the player's Engagement count — and it clears when they are all down; the
+next begins after a short beat. Loot drops and XP is granted per kill, not banked on
+the clear. Whether an Encounter draws from a fixed roster or spawns without end is a
+`/prototype` question (ADR-0010).
+_Avoid_: battle, fight, combat, wave (that is a Pack)
 
 **Send**:
 The player action that starts a Run — choose a Location, commit the hero. Transitions
@@ -187,3 +189,37 @@ The other way a Run ends — the hero is downed in the Field and returns to Town
 penalty: lost XP, a fee off banked currency, and the bag set aside as a Corpse.
 Equipped gear is never touched; not a game-over.
 _Avoid_: defeat, loss, game over, fail, wipe
+
+## Combat
+
+What happens inside an Encounter. Settled by the grilling of 2026-09-02; the numbers and
+the finite-vs-endless question are still a `/prototype` (ADR-0010).
+
+**Strike**:
+The hero's physical attack — one weapon hit on a `1 / AttackSpeed` cadence against the
+single lowest-HP enemy in the fight. Always available; gear only scales it.
+_Avoid_: swing, attack (a Cast attacks too), auto-attack, basic attack
+
+**Cast**:
+The hero's magical attack — flat `MagicalDamage` to each of the three highest-HP enemies
+at once, paced by how fast `Resource` regenerates against the cast cost. The area half
+of the kit.
+_Avoid_: spell, nuke, ability, skill
+
+**Engagement**:
+The player-set count of enemies an Encounter tries to keep on the hero at once. A soft
+target the fight refills toward as enemies fall — not a ceiling, because a Pack
+overshoots it. The kite-vs-dive knob.
+_Avoid_: aggression, aggro, cap, wave size
+
+**Pack**:
+Several enemies that enter an Encounter together, overshooting Engagement — a Location's
+way of forcing a spike of incoming hits the player cannot tune away. A single arrival,
+not a timed round.
+_Avoid_: wave, swarm, group (that is the Encounter's whole cast), ambush
+
+**Cast Threshold**:
+The `Resource` fraction the hero charges up to before it will start a run of Casts,
+after which it spends down to empty and recharges. Low is a continuous trickle of Casts;
+high is long silences broken by a burst.
+_Avoid_: resource reserve, mana gate, burst threshold
