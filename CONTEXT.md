@@ -77,7 +77,9 @@ _Avoid_: gold value, copper value
 
 **Denomination**:
 One rung of the coin ladder — iron, copper, silver, gold, cheapest first. The ladder is
-iron -5-> copper -12-> silver -20-> gold.
+iron -5-> copper -12-> silver -20-> gold. Each rung carries a fixed Rarity — iron
+Common, copper Magic, silver Rare, gold Unique — so a loot filter reads coins and items
+on one scale.
 _Avoid_: coin type, tier, currency (currency is the whole system)
 
 **Pile**:
@@ -101,6 +103,20 @@ The items and coins a kill or a cleared Encounter yields. It drops live during a
 not as a bundle handed over on Recall.
 _Avoid_: haul, spoils, bounty, take, rewards
 
+**Drop**:
+Loot lying on the ground at a Location — shed by a defeated enemy, or laid out from a
+Corpse when the hero returns for it — not yet picked up. Drops accumulate as enemies
+fall, never as one bundle at the end; a Drop still on the ground when the Run ends is
+gone, on Recall or Death alike.
+_Avoid_: pile (that is coins), ground loot, spill, cache
+
+**Corpse**:
+The hero's bag, set aside at the Location where they were downed. Death empties the bag
+into the Corpse; recovering it means re-entering that Location and picking the items
+back up. There is only ever one — a second Death destroys any Corpse still unclaimed —
+and it persists between Sessions until recovered.
+_Avoid_: grave, body, loot bag; remains (reserved for a possible future enemy corpse)
+
 **Distribution**:
 An authored, weighted set of outcomes — which category drops, which rarity, which coin.
 _Avoid_: table (reserve that for the loot table), chances
@@ -121,11 +137,18 @@ _Avoid_: no-drop chance, miss, empty
 
 ## Runs
 
+**Session**:
+The span of play between app start and quit. It contains many Runs and is the unit that
+persists — the hero, the four containers, the wallet and XP save per Session and resume
+`InTown` on the next launch. A Run never spans Sessions: quitting mid-Run banks what the
+hero already picked up and discards the rest.
+_Avoid_: playthrough, save file (the save is the Session's shadow, not the thing itself)
+
 **Run**:
 One trip from Town to a Location and back — the unit the loop turns on. It ends in a
 Recall or the hero's Death. Its two states are named `InTown` and `InField`.
-_Avoid_: expedition, sortie, mission, session; "run" here is the loot trip, not a
-test run
+_Avoid_: expedition, sortie, mission, session (a Session is the whole playtime, not one
+trip); "run" here is the loot trip, not a test run
 
 **Field**:
 Everything on the Location side of a Run, as opposed to Town — "the hero is in the
@@ -139,7 +162,8 @@ _Avoid_: base, camp, hub, hideout; town as a map destination
 
 **Location**:
 One authored field destination the hero can be Sent to. It carries the source level
-and the loot table a Run there rolls against.
+and the loot table a Run there rolls against. Its source level is fixed, never scaled
+to the hero: Locations form a difficulty ladder a geared hero outgrows.
 _Avoid_: level, zone, area, stage, node, dungeon, map
 
 **Encounter**:
@@ -160,5 +184,6 @@ _Avoid_: retreat, extract, return, flee, escape
 
 **Death**:
 The other way a Run ends — the hero is downed in the Field and returns to Town under a
-penalty. Not a game-over.
+penalty: lost XP, a fee off banked currency, and the bag set aside as a Corpse.
+Equipped gear is never touched; not a game-over.
 _Avoid_: defeat, loss, game over, fail, wipe
