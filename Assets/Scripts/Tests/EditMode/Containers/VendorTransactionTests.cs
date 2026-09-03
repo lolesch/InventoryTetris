@@ -56,28 +56,17 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         private const float SwordSellValue = 6f * 35f;                       // 210
         private static readonly float SwordBuyPrice = SwordSellValue * VendorTransaction.Markup; // 315
 
-        private CharacterInventory Wallet(int width = 4, int height = 4) => new(new Vector2Int(width, height), minter);
+        private Wallet NewWallet(int width = 4, int height = 4) =>
+            new(new CharacterInventory(new Vector2Int(width, height)), minter);
 
-        private void SeedCash(CharacterInventory wallet, CurrencyType type, uint count)
+        private void SeedCash(Wallet wallet, CurrencyType type, uint count)
         {
-            var package = new Package(wallet, minter.MintCurrency(type), count);
-            _ = wallet.TryAddToContainer(ref package);
+            var package = new Package(wallet.Container, minter.MintCurrency(type), count);
+            _ = wallet.Container.TryAddToContainer(ref package);
         }
 
-        /// The wallet's total spendable value in base units - the sum over its coin packages.
-        private static uint WalletValue(CharacterInventory wallet)
-        {
-            var total = 0u;
-
-            foreach (var package in wallet.StoredPackages.Values)
-            {
-                var view = ItemView.Of(package.Item);
-                if (view.Definition.Category == ItemCategory.Currency)
-                    total += (uint)view.SellValue * package.Amount;
-            }
-
-            return total;
-        }
+        /// The wallet's total spendable value in base units.
+        private static uint WalletValue(Wallet wallet) => wallet.Balance.Total;
 
         private static bool Holds(AbstractDimensionalContainer container, ItemInstance instance) =>
             container.StoredPackages.Values.Any(package => ReferenceEquals(package.Item, instance));
@@ -87,7 +76,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         [Test]
         public void Sell_MintsCoinsWorthTheSellValue_IntoTheWallet()
         {
-            var wallet = Wallet();
+            var wallet = NewWallet();
 
             VendorTransaction.Sell(new Package(null, Sword(), 1u), wallet);
 
@@ -97,7 +86,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         [Test]
         public void Sell_AddsToTheCashAlreadyInTheWallet()
         {
-            var wallet = Wallet();
+            var wallet = NewWallet();
             SeedCash(wallet, CurrencyType.Gold, 1u); // 1200
 
             VendorTransaction.Sell(new Package(null, Sword(), 1u), wallet);
@@ -108,7 +97,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         [Test]
         public void Sell_PricesTheWholeStack()
         {
-            var wallet = Wallet();
+            var wallet = NewWallet();
             // A five-copper pile: sell value is the denomination value (5) times the amount.
             var pile = new Package(null, minter.MintCurrency(CurrencyType.Copper), 5u);
 
@@ -120,7 +109,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         [Test]
         public void Sell_AnInvalidPackage_BanksNothing()
         {
-            var wallet = Wallet();
+            var wallet = NewWallet();
 
             VendorTransaction.Sell(default, wallet);
 
@@ -132,7 +121,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         [Test]
         public void Buy_PaysThePriceExactly_AndPlacesTheItem()
         {
-            var wallet = Wallet();
+            var wallet = NewWallet();
             SeedCash(wallet, CurrencyType.Gold, 1u); // 1200
             var store = new CharacterInventory(new Vector2Int(4, 4));
             var onShelf = new Package(store, Sword(), 1u);
@@ -144,14 +133,14 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 
             Assert.That(bought, Is.True);
             Assert.That(store.StoredPackages, Is.Empty, "the shelf no longer holds it");
-            Assert.That(Holds(wallet, instance), Is.True, "the bought item is in the bag");
+            Assert.That(Holds(wallet.Container, instance), Is.True, "the bought item is in the bag");
             Assert.That(WalletValue(wallet), Is.EqualTo(1200u - (uint)SwordBuyPrice), "the price was paid exactly");
         }
 
         [Test]
         public void Buy_WithNoInventoryRoom_RollsBack_AndChargesNothing()
         {
-            var wallet = Wallet(1, 1);
+            var wallet = NewWallet(1, 1);
             SeedCash(wallet, CurrencyType.Gold, 1u); // fills the wallet's only cell
             var store = new CharacterInventory(new Vector2Int(4, 4));
             var onShelf = new Package(store, Sword(), 1u);
@@ -163,14 +152,14 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 
             Assert.That(bought, Is.False);
             Assert.That(Holds(store, instance), Is.True, "the item stayed on the shelf");
-            Assert.That(Holds(wallet, instance), Is.False, "nothing landed in the full bag");
+            Assert.That(Holds(wallet.Container, instance), Is.False, "nothing landed in the full bag");
             Assert.That(WalletValue(wallet), Is.EqualTo(1200u), "no charge on a rolled-back buy");
         }
 
         [Test]
         public void Buy_WhenTheWalletCannotAfford_DoesNothing()
         {
-            var wallet = Wallet();
+            var wallet = NewWallet();
             SeedCash(wallet, CurrencyType.Iron, 100u); // 100 < 315
             var store = new CharacterInventory(new Vector2Int(4, 4));
             var onShelf = new Package(store, Sword(), 1u);
@@ -188,7 +177,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         [Test]
         public void Buy_LeavesTheStoreAndWalletEnrollableAgain()
         {
-            var wallet = Wallet();
+            var wallet = NewWallet();
             SeedCash(wallet, CurrencyType.Gold, 1u);
             var store = new CharacterInventory(new Vector2Int(4, 4));
             _ = store.AddAtPosition(new Vector2Int(0, 0), new Package(store, Sword(), 1u));
@@ -196,7 +185,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             _ = VendorTransaction.Buy(store, new Vector2Int(0, 0),
                 store.StoredPackages[new Vector2Int(0, 0)], wallet, SwordBuyPrice);
 
-            Assert.That(() => new ItemTransaction(store, wallet).Dispose(), Throws.Nothing);
+            Assert.That(() => new ItemTransaction(store, wallet.Container).Dispose(), Throws.Nothing);
         }
 
         // ── the markup rule ────────────────────────────────────────────────
