@@ -231,7 +231,7 @@ function step(st) {
   if (h.strikeTimer >= strikeInterval && st.enemies.length) {
     h.strikeTimer = Math.min(h.strikeTimer - strikeInterval, strikeInterval); // 1 action / tick
     const target = lowestHp(st.enemies);
-    const dmg = st.cfg.hero.physicalDamage; // enemies have no per-hit phys resist beyond armor
+    const dmg = st.cfg.hero.physicalDamage * (1 - st.arch.armor * 0.01); // enemy Armor mitigates the Strike
     applyToEnemy(st, target, dmg, ev);
     st.dmgStrike += dmg;
     ev.push({ t: 'strike', target: target?.id, dmg });

@@ -78,9 +78,12 @@ gear-proportional slice of the hard one.
 
 | build | easy (raw, retreat off) | hard ×1 (raw) | hard ×1.25 | lean |
 |---|---|---|---|---|
-| physical | sustains to 900 s cap, full HP | dies ~80 s, 31 kills, 725 XP/min | ~5 Enc, 61 kills | **longest raw survival**, lowest throughput |
-| magical | sustains to cap, full HP | dies ~50 s, 32 kills, **990 XP/min** | ~6 Enc, 75 kills | **~1.4× the XP/min** (AoE farm), dies soonest |
-| hybrid | sustains to cap, full HP | dies ~54 s, 24 kills, 730 XP/min | between | genuinely mid, no standout, no weakness |
+| physical | sustains to 900 s cap, full HP | dies ~80 s, 31 kills, ~710 XP/min | ~5 Enc, 61 kills | **longest raw survival**, lowest throughput |
+| magical | sustains to cap, full HP | dies ~50 s, 32 kills, **~990 XP/min** | ~6 Enc, 75 kills | **~1.4× the XP/min** (AoE farm), dies soonest |
+| hybrid | sustains to cap, full HP | dies ~50 s, 22 kills, ~700 XP/min | between | genuinely mid, no standout, no weakness |
+
+*(XP/min figures from the post-`arch.armor`-fix sweep; see `sweep-output.txt`. The
+pre-fix run had them ~2 % higher — no conclusion moved.)*
 
 The pacing asymmetry ADR-0010 wanted does show up: **physical wants Engagement low**
 (kite, kill fast 1-v-1 — Engagement 1 lasts 141 s vs Engagement 5's 42 s), **magical wants

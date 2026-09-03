@@ -328,7 +328,7 @@ const CombatModel = (() => {
     const si=1/st.cfg.hero.attackSpeed;
     if(h.strikeTimer>=si&&st.enemies.length){
       h.strikeTimer=Math.min(h.strikeTimer-si,si);
-      const tgt=lowestHp(st.enemies); const d=st.cfg.hero.physicalDamage;
+      const tgt=lowestHp(st.enemies); const d=st.cfg.hero.physicalDamage*(1-st.arch.armor*0.01);
       applyToEnemy(st,tgt,d,ev); st.dmgStrike+=d; ev.push({t:'strike'});
     }
     h.castTimer+=dt; const c=st.cfg.combat;
