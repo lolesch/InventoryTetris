@@ -34,17 +34,34 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             if (!Container.CanPlaceAt(positionToAdd, ItemView.Of(package.Item).Dimensions))
                 return;
 
-            package = Container.AddAtPosition(positionToAdd, package);
+            /// The whole drop runs inside one transaction (issue #10): the placement mutates
+            /// a working copy, and the item the drag landed on goes to the hand - a drag
+            /// swap always puts the displaced item in hand. The move commits as a unit or
+            /// rolls back leaving the dragged item in hand. Commit fires the container
+            /// refreshes and hands the cursor its displaced item.
+            var origin = DragProvider.Instance.Origin?.Container;
+            var inventory = InventoryProvider.Instance.Inventory;
+            var cursor = new CursorHolder(DragProvider.Instance);
 
-            /// Whatever AddAtPosition handed back - nothing (it landed, drag ends) or the
-            /// item it displaced (a swap). A displaced item is centred on the cursor, never
-            /// given this drop's positionOffset, which describes a footprint it may not have.
-            DragProvider.Instance.ReplacePackage(package);
+            using (var transaction = new ItemTransaction(cursor, Container, origin ?? inventory).ReHomeThrough(origin ?? inventory))
+            {
+                var displaced = Container.AddAtPosition(positionToAdd, package);
 
-            Container.InvokeRefresh();
-            DragProvider.Instance.Origin.Container?.InvokeRefresh();
+                if (displaced.IsValid)
+                    _ = transaction.TryReHomeToHandOrContainer(ref displaced);
 
-            FadeInPreview(); // TODO: see if the package should propagate to FadeInPreview
+                if (transaction.Aborted)
+                    return;
+
+                transaction.Commit();
+            }
+
+            /// A clean landing - nothing came back to the cursor, so the drag is over.
+            /// A swap already handed the displaced item over on commit.
+            if (cursor.IsFree)
+                DragProvider.Instance.EndDrag();
+
+            SyncPreviewAfterMove();
         }
 
         protected override void SetDisplaySize(RectTransform display, Package package)
@@ -94,13 +111,29 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
                     if (category == ItemCategory.Equipment)
                     {
+                        /// Route the equip through a transaction (issue #10) as a right-click
+                        /// "swap in place": remove here, equip there, and swap whatever the
+                        /// equip displaces back into this same container. A player-driven move
+                        /// always executes - one displaced item that will not re-fit overflows
+                        /// to the hand, and only a second homeless item rolls the move back.
+                        var equipment = InventoryProvider.Instance.Equipment;
+                        var cursor = new CursorHolder(DragProvider.Instance);
+
+                        using var transaction = new ItemTransaction(cursor, Container, equipment).ReHomeThrough(Container).SwapInPlace();
+
                         _ = Container.RemoveAtPosition(position, package);
+                        _ = equipment.TryAddToContainer(ref package);
 
-                        if (InventoryProvider.Instance.Equipment.TryAddToContainer(ref package))
-                            DragProvider.Instance.SetPackage(this, package, Vector2Int.zero, pointerPosition);
-                        else
-                            _ = Container.TryAddToContainer(ref package);
+                        if (transaction.Aborted)
+                            return;
 
+                        transaction.Commit();
+
+                        /// The displaced equipped item re-homes into this container, often
+                        /// into the very cell just vacated - i.e. back under the cursor. The
+                        /// leading FadeOutPreview dismissed the tooltip on the click; bring it
+                        /// back for whatever now sits here (issue #13).
+                        SyncPreviewAfterMove();
                         return;
                     }
                 }
@@ -117,8 +150,6 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 #region QUICK MOVE ITEM
                 if (Input.GetKey(KeyCode.LeftShift))
                 {
-                    _ = Container.RemoveAtPosition(position, package);
-
                     var containerToMoveTo = Container; // rework to context based
 
                     if (Container == InventoryProvider.Instance.Inventory)
@@ -126,10 +157,17 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                     else if (Container == InventoryProvider.Instance.Stash)
                         containerToMoveTo = InventoryProvider.Instance.Inventory;
 
-                    if (containerToMoveTo.TryAddToContainer(ref package))
-                        DragProvider.Instance.SetPackage(this, package, Vector2Int.zero, pointerPosition);
-                    else
-                        _ = Container.AddAtPosition(position, package);
+                    /// Player-driven quick-move (issue #10): the item leaves its slot and
+                    /// lands in the other container, or - if that is full - in hand. It never
+                    /// just stays put.
+                    var cursor = new CursorHolder(DragProvider.Instance);
+
+                    using var transaction = new ItemTransaction(cursor, Container, containerToMoveTo).ReHomeThrough(containerToMoveTo);
+
+                    _ = Container.RemoveAtPosition(position, package);
+                    _ = transaction.TryReHomeToContainerOrHand(ref package);
+
+                    transaction.Commit();
 
                     return;
                 }

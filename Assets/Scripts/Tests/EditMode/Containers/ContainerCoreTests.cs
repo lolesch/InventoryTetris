@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using ToolSmiths.InventorySystem.Data;
@@ -21,56 +20,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
     [TestFixture]
     public sealed class ContainerCoreTests
     {
-        // A file-local ItemDefinition / IItemCatalog - the pure InventorySystem.Items.Tests
-        // fakes are in a separate test asmdef, and the contract is an interface precisely
-        // so a stand-in is a few lines.
-        private sealed class Definition : ItemDefinition
-        {
-            public string Id { get; set; } = "test.item";
-            public ItemCategory Category { get; set; } = ItemCategory.Equipment;
-            public ItemSize Footprint { get; set; } = ItemSize.OneByOne;
-            public uint BaseStackLimit { get; set; } = 1u;
-            public IReadOnlyList<AffixSlot> AffixPool { get; set; } = System.Array.Empty<AffixSlot>();
-            public IReadOnlyList<CharacterStatModifier> ImplicitStats { get; set; } = System.Array.Empty<CharacterStatModifier>();
-            public ItemRequirement Requirement { get; set; } = ItemRequirement.None;
-            public bool IsUnique { get; set; }
-            public IReadOnlyList<CharacterStatModifier> UniqueAffixes { get; set; } = System.Array.Empty<CharacterStatModifier>();
-            public EquipmentType EquipmentType { get; set; } = EquipmentType.NONE;
-            public ConsumableType ConsumableType { get; set; } = ConsumableType.NONE;
-            public CurrencyType CurrencyType { get; set; } = CurrencyType.NONE;
-        }
-
-        private sealed class Catalog : IItemCatalog
-        {
-            private readonly Dictionary<string, ItemDefinition> byId = new();
-            public Catalog With(ItemDefinition definition) { byId[definition.Id] = definition; return this; }
-
-            public ItemDefinition Definition(string id) =>
-                byId.TryGetValue(id, out var definition) ? definition : throw new KeyNotFoundException(id);
-
-            public IEnumerable<ItemDefinition> OfCategory(ItemCategory category)
-            {
-                foreach (var definition in byId.Values)
-                    if (definition.Category == category)
-                        yield return definition;
-            }
-        }
-
-        /// <summary>Records what CharacterEquipment applies to / lifts off the character.</summary>
-        private sealed class FakeStatReceiver : IStatReceiver
-        {
-            public readonly List<CharacterStatModifier> Added = new();
-            public readonly List<CharacterStatModifier> Removed = new();
-            public void AddItemStats(IReadOnlyList<CharacterStatModifier> stats) => Added.AddRange(stats);
-            public void RemoveItemStats(IReadOnlyList<CharacterStatModifier> stats) => Removed.AddRange(stats);
-        }
-
-        /// <summary>Records the packages a swap could not re-home in a container.</summary>
-        private sealed class FakeCursorSink : ICursorSink
-        {
-            public readonly List<Package> Replaced = new();
-            public void ReplacePackage(Package package) => Replaced.Add(package);
-        }
+        // The ItemDefinition / IItemCatalog stand-ins and the IStatReceiver / ICursorSink
+        // fakes live in ContainerTestFixtures.cs, shared with the other tests in this asmdef.
 
         private const string SwordId = "test.sword";
         private const string ArrowId = "test.arrow";
@@ -78,11 +29,11 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         private const string RingId = "test.ring";
 
         [SetUp]
-        public void SetCatalog() => ItemView.Catalog = new Catalog()
-            .With(new Definition { Id = SwordId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Sword, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
-            .With(new Definition { Id = ArrowId, Category = ItemCategory.Consumable, ConsumableType = ConsumableType.Arrow, Footprint = ItemSize.OneByOne, BaseStackLimit = 10u })
-            .With(new Definition { Id = HelmId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Helm, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
-            .With(new Definition { Id = RingId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Ring, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u });
+        public void SetCatalog() => ItemView.Catalog = new TestCatalog()
+            .With(new TestDefinition { Id = SwordId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Sword, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
+            .With(new TestDefinition { Id = ArrowId, Category = ItemCategory.Consumable, ConsumableType = ConsumableType.Arrow, Footprint = ItemSize.OneByOne, BaseStackLimit = 10u })
+            .With(new TestDefinition { Id = HelmId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Helm, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
+            .With(new TestDefinition { Id = RingId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Ring, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u });
 
         [TearDown]
         public void ClearCatalog() => ItemView.Catalog = null;
@@ -182,8 +133,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 
         // ── CharacterEquipment + the injected interfaces ─────────────────────
 
-        private static CharacterEquipment Equipment(IStatReceiver stats = null, ICursorSink cursor = null) =>
-            new(new Vector2Int(14, 1), stats, cursor);
+        private static CharacterEquipment Equipment(IStatReceiver stats = null) =>
+            new(new Vector2Int(14, 1), stats);
 
         [Test]
         public void CharacterEquipment_WithNoInjectedDeps_StillEquipsAndUnequips()
@@ -232,10 +183,10 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         }
 
         [Test]
-        public void CharacterEquipment_EquippingIntoAnOccupiedSlot_SwapsAndReturnsTheOldItemToTheSender()
+        public void CharacterEquipment_EquippingIntoAnOccupiedSlot_HandsTheDisplacedItemBackThroughThePackage()
         {
             var stats = new FakeStatReceiver();
-            var equipment = Equipment(stats, new FakeCursorSink());
+            var equipment = Equipment(stats);
             var sender = new CharacterInventory(new Vector2Int(4, 4));
 
             var first = new Package(sender, Helm(2f), 1u);
@@ -244,10 +195,13 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var second = new Package(sender, Helm(9f), 1u);
             _ = equipment.TryAddToContainer(ref second);
 
-            // The new helm is worn; the old one is back in the sender.
+            // The new helm is worn; the displaced one comes back through `second` for the
+            // caller's transaction to re-home. Outside a transaction there is no sender /
+            // cursor fallback any more - that path was QA-4's recursion (issue #12).
             Assert.That(equipment.StoredPackages, Has.Count.EqualTo(1));
             Assert.That(equipment.StoredPackages.Values.Single().Item.Affixes[0].Modifier.Value, Is.EqualTo(9f));
-            Assert.That(sender.StoredPackages.Values.Select(p => p.Item.DefinitionId), Has.Some.EqualTo(HelmId));
+            Assert.That(second.Item?.DefinitionId, Is.EqualTo(HelmId), "the old helm was handed back");
+            Assert.That(second.Item.Affixes[0].Modifier.Value, Is.EqualTo(2f));
 
             // Stats: both helms applied on equip, the displaced one lifted.
             Assert.That(stats.Added.Count, Is.EqualTo(2));
@@ -255,28 +209,46 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         }
 
         [Test]
-        public void CharacterEquipment_WhenTheSenderCannotReHomeTheDisplacedItem_HandsItToTheCursorSink()
+        public void CharacterEquipment_ForceSwap_GivesUpInsteadOfRecursing_WhenAReHomeRoutesBackIntoAFullEquipment()
         {
-            var cursor = new FakeCursorSink();
-            var equipment = Equipment(new FakeStatReceiver(), cursor);
-            var fullSender = new CharacterInventory(new Vector2Int(1, 1));
+            // QA-4's StackOverflowException: a displaced item re-homed back into the
+            // equipment, which force-swapped again, without end. The force-swap now gives up
+            // on re-entry and the whole move rolls back (issue #12).
+            var stats = new FakeStatReceiver();
+            var equipment = Equipment(stats);
+            var bench = new CharacterInventory(new Vector2Int(4, 4));
 
-            // Fill the sender's only cell so the displaced ring has nowhere to land.
-            var filler = new Package(fullSender, Arrows(), 1u);
-            _ = fullSender.TryAddToContainer(ref filler);
+            var ringA = new Package(bench, Ring(1f), 1u);
+            _ = equipment.TryAddToContainer(ref ringA);
+            var ringB = new Package(bench, Ring(2f), 1u);
+            _ = equipment.TryAddToContainer(ref ringB); // both ring slots are now taken
+            var wornBefore = equipment.StoredPackages.Values.Select(p => p.Item).ToList();
 
-            var a = new Package(fullSender, Ring(1f), 1u);
-            _ = equipment.TryAddToContainer(ref a);
-            var b = new Package(fullSender, Ring(2f), 1u);
-            _ = equipment.TryAddToContainer(ref b);
-            var c = new Package(fullSender, Ring(3f), 1u);
-            _ = equipment.TryAddToContainer(ref c);
+            var loose = new Package(bench, Ring(3f), 1u);
+            _ = bench.TryAddToContainer(ref loose);
+            var benchSlot = bench.StoredPackages.Keys.Single();
+            var storedRing = bench.StoredPackages[benchSlot];
+            stats.Added.Clear();
+            stats.Removed.Clear();
 
-            // Two ring slots, three rings equipped in turn - the third swaps one out, and the
-            // full sender cannot take it, so it goes to the cursor.
-            Assert.That(equipment.StoredPackages, Has.Count.EqualTo(2));
-            Assert.That(cursor.Replaced, Has.Count.EqualTo(1));
-            Assert.That(cursor.Replaced.Single().Item.DefinitionId, Is.EqualTo(RingId));
+            Assert.That(() =>
+            {
+                // The only re-home target is the (full) equipment itself: the displaced ring
+                // cannot land, so the move aborts rather than swapping a second time.
+                using var transaction = new ItemTransaction(equipment, bench).ReHomeThrough(equipment).SwapInPlace();
+
+                _ = bench.RemoveAtPosition(benchSlot, storedRing);
+                var incoming = new Package(bench, storedRing.Item, storedRing.Amount);
+                _ = equipment.TryAddToContainer(ref incoming);
+
+                if (!transaction.Aborted)
+                    transaction.Commit();
+            }, Throws.Nothing);
+
+            Assert.That(equipment.StoredPackages.Values.Select(p => p.Item), Is.EquivalentTo(wornBefore), "gear unchanged - the move rolled back");
+            Assert.That(bench.StoredPackages.Values.Single().Item, Is.SameAs(storedRing.Item), "the loose ring is back on the bench");
+            Assert.That(stats.Added, Is.Empty);
+            Assert.That(stats.Removed, Is.Empty);
         }
     }
 }
