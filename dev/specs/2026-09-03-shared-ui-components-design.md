@@ -41,9 +41,21 @@ Ease.InOutQuad)` exactly the way they call `.DOFade(...)` today — no indirecti
 both projects reference. InventoryTetris deletes the DOTween plugin. AutoBattler gets a
 real button/toggle/panel framework, a prefab pool, and the shared version widget for free.
 
+The vestigial `TooltipRequester` — a `Selectable` from the coding-test origin whose
+`TooltipProvider` was never built, so its `tooltip` string reads nowhere — is the same
+mechanism as InventoryTetris's item preview and AutoBattler's `ItemTooltipController`:
+hover a source, resolve content, show it near the cursor after a delay with a fade,
+clamped to screen, debounced against rapid hover. That mechanism has been written twice,
+mechanism tangled with content each time, and InventoryTetris's QA-2 bug (issue #13) was a
+bug in its private copy. `Utility.UI` gains one `TooltipHost<T>` — the mechanism, content
+never named — with a default `string` renderer so a plain button tooltip works in any
+project that drops a host in the scene.
+
 The domain-coupled views (`CoinDisplay`, `CurrencyDisplay`, `CharacterStatDisplay`,
 `PreviewDisplay`, …) stay in InventoryTetris as adapters over the shared `IView<T>` seam and
-the existing providers.
+the existing providers. Refactoring InventoryTetris's `PreviewProvider` and AutoBattler's
+`ItemTooltipController` to *be* content adapters over `TooltipHost<T>` is the highest-value
+follow-up, but it is a separate spec (see Out of Scope).
 
 ## User Stories
 
@@ -109,11 +121,15 @@ the existing providers.
 24. As a developer, I want the misnamed `TooltipRequester` (whose tooltip calls are all
     commented out) renamed to something honest like `InteractiveElement`, so that the base
     class name reflects what it is: the shared `Selectable` + submit wiring.
-25. As a developer in InventoryTetris, I want the interactive element to surface a tooltip
-    through a nullable `ITooltipSink` the project sets at startup, so that the pointer
-    wiring is shared but the tooltip rendering stays in the app.
-26. As a developer in AutoBattler, I want the interactive element to work with no tooltip
-    sink set, so that I am not forced to build a tooltip system to use a button.
+25. As a developer, I want one `TooltipHost<T>` in `Utility.UI` that owns the hover-hint
+    mechanism — show-delay, cursor-follow, screen-clamp with pivot-flip, fade via `Tween`,
+    one-hint-at-a-time, rapid-hover debounce — with content left entirely to the caller and
+    the type generic from the first commit, so that this is never hand-rolled a third time
+    and adding richer content later is a new adapter, not a host redesign.
+26. As a developer, I want `TooltipHost` to ship a default `string` renderer and
+    `InteractiveElement` to render its `tooltip` through an ambient host — inert when none
+    is present — so that a plain button hint costs zero project code and AutoBattler is not
+    forced to place a host to use a button.
 27. As a developer, I want audio to stay behind the existing `PlayHoverSound()` /
     `PlayClickSound()` / `PlayToggleSound(bool)` virtual no-op hooks, so that the submodule
     never references an `AudioProvider`.
@@ -183,6 +199,7 @@ the existing providers.
 - Contents moved from `ToolSmiths.InventorySystem.GUI.*` to `Submodules.Utility.UI.*`:
   - The interaction family: `InteractiveElement` (renamed from `TooltipRequester`),
     `AbstractButton`, `AbstractToggle`, `RadioGroup`.
+  - The hover-hint mechanism: `TooltipHost<T>` plus its default `StringTooltipContent`.
   - Panels: `AbstractPanel`, plus the generic `PanelToggle`, `MultiplePanelToggle`,
     `LoadingScreenPanel`.
   - Helpers: `FirstSelected`, `RefreshLayoutOnEnable`, `RootCanvas`, `ScreenRotator`,
@@ -192,19 +209,33 @@ the existing providers.
 - `PrefabPool<T>` and `IObjectPool<T>` move to `Utility` core (`Tools/`), not `Utility.UI`
   — they are `MonoBehaviour`-generic with no UGUI dependency.
 
-### `TooltipRequester` becomes `InteractiveElement` with a tooltip seam
+### `TooltipRequester` becomes `InteractiveElement`; the tooltip mechanism becomes `TooltipHost<T>`
 
-- The class is renamed; its aspirational tooltip name goes away. It stays a `Selectable`
-  implementing `ISubmitHandler`, keeping the shared pointer/submit/select wiring.
-- The commented-out `TooltipProvider.Instance` calls become calls through a nullable
-  `ITooltipSink` (`Show(string)` / `Hide()`), a static hook the consumer sets once at
-  startup. This mirrors the `ItemView.Catalog` ambient static (ADR-0007) and the
-  `ICursorSink` / `IStatReceiver` interfaces injected at `InventoryProvider.Awake`
-  (foundational rework Phase 0b).
-- With no sink set the wiring is inert — AutoBattler uses buttons without a tooltip system.
-- The serialized `tooltip` string field stays on the component.
+- `TooltipRequester` is renamed to `InteractiveElement`. The aspirational tooltip name goes
+  away; it stays a `Selectable` implementing `ISubmitHandler`, keeping the shared
+  pointer / submit / select wiring. The serialized `tooltip` string field stays on it.
 - The unconditional `LogExtensions.Select(...)` call on every `OnSelect` is dropped (or
   left behind the existing `LogExtensions` toggle) — it is noise for a library.
+- `Utility.UI` gains **`TooltipHost<T>`**, a `MonoBehaviour` that owns the hover-hint
+  *mechanism* and names no content type: a show-delay, cursor-follow each frame, a
+  screen-edge clamp with pivot-flip by quadrant, a fade in / out via `Tween`, a
+  pending-show / visible / pending-hide state machine, and a debounce so a rapid
+  hover → exit → hover never flashes the panel. Rendering of `T` is the caller's — a
+  `Func<T, RectTransform>` or a small `ITooltipContent<T>` the host is handed.
+- The type is generic from the first commit; `T = string` is the first adapter, not a
+  special case. `TooltipHost` ships a default `StringTooltipContent` (one TMP line) and a
+  ready-to-drop prefab.
+- `InteractiveElement` finds an ambient `TooltipHost` (the `TooltipHost.Current` static it
+  sets in its own `OnEnable`, mirroring `ItemView.Catalog` from ADR-0007) and, when its
+  `tooltip` is non-empty, requests a string hint on pointer-enter / select and a hide on
+  exit / deselect. With no host in the scene the calls are inert — AutoBattler uses buttons
+  without placing a host.
+- This spec does **not** move InventoryTetris's `PreviewProvider` or the hover-preview
+  coroutine in `AbstractSlotDisplay` onto `TooltipHost`. That refactor — which deletes
+  `AbstractSlotDisplay`'s `hovering` / `FadeIn` / `clearStale` smear, turns `PreviewProvider`
+  into a `TooltipHost<ItemPreview>` content adapter, and de-duplicates the same ~150 lines
+  in AutoBattler's `ItemTooltipController` — is a separate spec (see Out of Scope).
+  `HoverPreview.Under(...)` stays untouched as that adapter's eventual data source.
 
 ### Policy exposed, not hard-coded
 
@@ -247,10 +278,10 @@ the existing providers.
    its local `BundleVersionView`.
 3. Port `AbstractButton`, `AbstractToggle`, `AbstractPanel` to the `Utility` tween API in
    place, verify in the Editor, delete `Assets/Plugins/Demigiant/`.
-4. Move the interaction family and panels into `Utility.UI`, with the
-   `TooltipRequester` -> `InteractiveElement` + `ITooltipSink` rename. Add
-   `docs/adr/0008-*` recording the "generic UI primitives live in the Utility submodule"
-   decision.
+4. Move the interaction family and panels into `Utility.UI`; rename `TooltipRequester` ->
+   `InteractiveElement`; add `TooltipHost<T>` + `StringTooltipContent` + prefab and wire
+   `InteractiveElement`'s `tooltip` string through an ambient host. Add `docs/adr/0008-*`
+   recording the "generic UI primitives live in the Utility submodule" decision.
 
 ## Testing Decisions
 
@@ -265,10 +296,14 @@ the existing providers.
   before; `Kill()` and `Kill(target)` cancel without firing `OnComplete`; a tween linked to
   a Unity object stops when that object is destroyed; repeated start/complete cycles do not
   grow the handle pool.
-- **Modules tested**: the `Utility` tweening core only. The `Utility.UI` `MonoBehaviour`s
-  are not unit-tested — the project's EditMode suite is pure-logic throughout, and
-  ADR-0007 records that scene-bound behaviour is out of test scope until a module is
-  extracted. These components are scene-bound by nature.
+- **Modules tested**: the `Utility` tweening core, and — if it falls out cheaply — the
+  `TooltipHost` show-delay / debounce / pending-state logic as a pure helper driven by a
+  hand-advanced clock (the same manual-`Tick` shape), separate from the `MonoBehaviour`
+  that owns positioning and fade. The rest of the `Utility.UI` `MonoBehaviour`s
+  (`AbstractPanel`, `AbstractButton`, `RadioGroup`, the `TooltipHost` component itself) are
+  not unit-tested — the project's EditMode suite is pure-logic throughout, and ADR-0007
+  records that scene-bound behaviour is out of test scope until a module is extracted.
+  These components are scene-bound by nature.
 - **Prior art**: `AutoBattler/Assets/Code/Tests/EditMode/Utility/TimerTests.cs` — same
   submodule, same manual-`Tick` style, same "Start schedules, does not act synchronously;
   Stop / cancel is silent" contract discipline. InventoryTetris's per-module `*.Tests`
@@ -290,8 +325,17 @@ the existing providers.
   a completion callback — the whole current need.
 - Adopting PrimeTween or LitMotion now. Evaluated and deferred; see Further Notes.
 - Migrating `DOTweenAnimation` inspector components — there are none.
-- Building a tooltip system in AutoBattler. The `ITooltipSink` seam is provided; wiring a
-  renderer behind it there is AutoBattler's call.
+- **Unifying the rich item tooltips onto `TooltipHost<T>`.** Refactoring InventoryTetris's
+  `PreviewProvider` + `AbstractSlotDisplay` hover coroutine into a `TooltipHost<ItemPreview>`
+  content adapter, and de-duplicating the same mechanism out of AutoBattler's 37 KB
+  `ItemTooltipController`, is the highest-value follow-up — it permanently retires the
+  QA-2 bug class (issue #13) and cuts ~150 duplicated lines per repo. It is deferred to its
+  own spec because it refactors just-stabilised domain code on the same `AbstractSlotDisplay`
+  hover surface the trade-flow epic (#29–#33) also touches, and because "de-duplicate a
+  mechanism across two repos" deserves its own user stories and test plan. This spec ships
+  `TooltipHost<T>` generic so that follow-up is an adapter, not a redesign.
+- Building the item-tooltip content in AutoBattler. `TooltipHost<T>` is provided; wiring
+  `BuildTooltip` behind it there is AutoBattler's call.
 - A shared UI theme / skin system (colours, sprites, fonts). This spec is behavioural
   primitives only.
 - Deleting `VisibleCursorRequester` / `DonstDestroyOnLoad` / `ShowNameOnHover` — optional
@@ -316,6 +360,15 @@ the existing providers.
 - **`BundleVersionView` is the concrete proof of value.** The submodule already ships
   `BundleVersionSetter.GetVersion()`; AutoBattler wrote the `MonoBehaviour` to surface it;
   InventoryTetris never displays the version. One shared widget fixes both.
+- **`TooltipHost` is the same story, larger.** `TooltipRequester` was `CodingTest_TF`'s
+  intended generic tooltip path; its `TooltipProvider` was never built, so the base class
+  and its `tooltip` field are dead weight. Meanwhile the rich path — hover a thing, show a
+  card near the cursor after a delay — was implemented independently in InventoryTetris
+  (`PreviewProvider` + a coroutine in `AbstractSlotDisplay`) and in AutoBattler
+  (`ItemTooltipController`), each tangling the mechanism into its content. `TooltipHost<T>`
+  is the mechanism named once. It has three real content adapters waiting — a plain string,
+  InventoryTetris's `ItemPreview`, AutoBattler's `ItemTooltip` — which is why the content
+  seam is worth cutting where the animation seam was not.
 - **Submodule mechanics**: the two repos consume `Utility` at the same commit from
   different remote URLs (`https://` in InventoryTetris, `git@` in AutoBattler). A submodule
   change propagates by a pointer bump in each. The submodule has no test assembly of its
