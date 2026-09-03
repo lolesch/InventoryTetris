@@ -109,6 +109,9 @@ quitting mid-Run banks what the hero already holds, discards the rest, and resum
 > **ADR-0010 revised this list.** Story 21 is now the **Cast Threshold** (a hysteresis
 > knob, not a physical/magical mode switch), and a sixth slider — **Engagement**, the
 > kite-vs-dive count — is added. See *The combat model* under Implementation Decisions.
+> The issue-#18 `/prototype` found Cast Threshold barely moves outcomes on a continuous
+> spawn — it stays a slider but as a feel knob, not a build choice (see *prototype
+> findings*).
 
 19. As a player, I want a **retreat-at-HP** slider, so that the hero auto-Recalls when
     its health fraction drops below my threshold.
@@ -116,9 +119,10 @@ quitting mid-Run banks what the hero already holds, discards the rest, and resum
     once the bag reaches my fill threshold rather than fighting on with nowhere to put
     loot.
 21. As a player, I want a **cast-threshold** slider, so that the hero holds its Cast
-    until resource charges to my mark and then spends it down — a continuous trickle at
-    the low end, a saved-up burst at the high end — while its Strike keeps swinging
-    throughout (ADR-0010).
+    until resource charges to my mark and then spends it down — continuous, evenly-spaced
+    Casts at the low end, clumped Casts at the high end — while its Strike keeps swinging
+    throughout (ADR-0010; the `/prototype` found this changes the *rhythm* of the Cast,
+    not the Encounter's outcome).
 22. As a player, I want a **loot-filter** slider that sets a minimum rarity, so that the
     hero only picks up drops at or above the quality I care about (Common = everything,
     Magic = skip Common, Rare = skip Common and Magic, Unique = only Unique).
@@ -332,7 +336,8 @@ a test with fakes — the same rule `InventorySystem.Items` follows. It contains
 ### The combat model (ADR-0010)
 
 A follow-up grilling (2026-09-02) reworked what happens *inside* an Encounter. Full
-rationale and the open `/prototype` questions are in **ADR-0010**; the shape:
+rationale is in **ADR-0010**, and its *Prototype outcome* section records what the
+issue-#18 `/prototype` settled (summarised below). The shape:
 
 - **Two concurrent attacks**, independent timers, one action resolved per tick. The
   **Strike** is physical — flat `PhysicalDamage` on a `1 / AttackSpeed` cadence at the
@@ -342,20 +347,61 @@ rationale and the open `/prototype` questions are in **ADR-0010**; the shape:
   magical build stacks `MagicalDamage` + `Resource` + `ResourceRegeneration`.
 - **`CastThreshold`** replaces `ResourceReserveFraction` — a hysteresis knob: hold the
   Cast until resource charges to the fraction, then Cast down to empty, then recharge.
-  Continuous chip at the low end, burst at the high end. Strikes run throughout.
+  Continuous chip of Casts at the low end, clumped Casts at the high end. Strikes run
+  throughout. *(The prototype found this is a feel knob, not a power knob — see below.)*
 - **`Engagement`** is a sixth behaviour slider — the count of enemies the Encounter
   keeps on the hero. A soft target the fight refills toward, not a ceiling: a **Pack**
   (a `spawnBatch` of enemies entering together) overshoots it.
-- An Encounter fields enemies from a **Roster** (a `[min,max]` count on `LocationConfig`)
-  that spawn in singly or in Packs per a spawn profile (`spawnBatch`, `spawnInterval`,
-  `spawnJitter`). It clears when the Roster is spent and the last enemy is down. **XP
-  and coins are per kill** — clearing is a silent transition, and only Recall or Death
-  ends the Run. *(Finite Roster vs endless spawning is the `/prototype`'s call — issue
-  #18, folded into ADR-0010.)*
+- An Encounter fields enemies from a fixed **Roster** (a `[min,max]` count on
+  `LocationConfig`) that spawn in singly or in Packs per a spawn profile (`spawnBatch`,
+  `spawnInterval`, `spawnJitter`). It clears when the Roster is spent and the last enemy
+  is down. **XP and coins are per kill** — clearing is a silent transition, and only
+  Recall or Death ends the Run. *(The `/prototype` confirmed the fixed Roster: continuous
+  spawning erases the Encounter as a unit and lowers throughput — issue #18, ADR-0010
+  Prototype outcome.)*
 - `CalculateDamageOutput` splits: the Strike drops its `× (1 + AttackSpeed · 0.01)`
   term (double-counts against a real cadence); the Cast takes no `AttackSpeed` term.
   The enemy archetype is Strike-only, every stat off `SourceLevel`. A future
   `CastCostReduction` stat is the first depth lever, deferred.
+
+### The combat model — prototype findings (issue #18)
+
+The `/prototype` (a single-file logic sim, `dev/prototypes/2026-09-03-combat-cluster/`,
+throwaway branch `prototype/combat-cluster`; 150–200 seeded Runs per case) resolved
+ADR-0010's three open questions. Full detail in that folder's `FINDINGS.md` and in
+ADR-0010's *Prototype outcome*; the load-bearing results:
+
+- **Finite vs endless — settled both scales.** The Encounter keeps a **fixed Roster**;
+  a Run is an **endless** series of Encounters at a fixed source level with **no
+  encounter cap and no restart-rescale**. A realistic Run always ends on a Recall
+  trigger (bag-full ≈ 5 Encounters on the easy Location, retreat-HP ≈ 1–2 on the hard
+  one) or Death — a `finiteEncounters` cap fires in <1 % of Runs and is dead config. The
+  fixed-difficulty ladder is carried entirely by **equipped gear**: a build crosses from
+  "worn down in ~50 s" to "out-clears the spawn indefinitely" over roughly a 1.25–1.5×
+  gear-power swing. This moves the *Finite vs endless* item out of Out of Scope.
+- **The bag is the whole "return to Town" pressure.** With fixed difficulty and no bag
+  limit, a geared build farms a Location forever. Bag capacity and the loot-filter
+  default are loop-load-bearing, and the harder Location should stay attritional even
+  for a geared hero.
+- **Physical, magical and hybrid are each viable** — each sustains the easy Location
+  indefinitely and clears a gear-proportional slice of the hard one. It is *not* a
+  two-way choice and hybrid is not dominated. Lean (a finding, not a blocker): magical
+  is the area-farm build (≈ 1.4× the XP/min) with the thinnest raw survival; physical
+  lasts longest raw and opens hard Locations at lower gear; hybrid trades the extremes
+  for no soft spot. Physical wants Engagement low (kite); magical wants Engagement 3–4
+  (feed the Cast); a Pack overshoots any Engagement.
+- **`CastThreshold` is a texture knob, not a power knob** — sweeping it 0.05 → 0.95
+  moved throughput < 0.3 %. A saved burst does not pay for itself against a continuous
+  spawn. The slider stays (six sliders), reframed as continuous-vs-clumped Casts; it
+  gains real weight only when pre-chargeable elites/bosses exist. Slider story 21 and
+  `HeroBehaviour.CastThreshold` take the softened wording.
+- **Constant starting points** (the prototype file is the tuning surface): `castCost`
+  16, `castTargets` 3, `castCadence` 0.35 s, `tick` 0.1 s, `beat` 1 s; enemy archetype
+  `stat = base + perLevel · SourceLevel^exp` with exponents barely above linear (Health
+  ≈ `17 + 19·S^1.11`, Damage ≈ `0.9 + 0.8·S`, Armor ≈ `0.65·S %`, AttackSpeed ≈ 0.8
+  flat); easy Location `Roster [8,8] / spawnBatch [1,1] / interval 2.4 s`, hard
+  `Roster [12,12] / spawnBatch [2,4] / interval 3.6 s`; `xpPerKill` authored per
+  Location (≈ 16 easy … 30 hard).
 
 ### Loot flow
 
@@ -379,13 +425,17 @@ rationale and the open `/prototype` questions are in **ADR-0010**; the shape:
 ### `LocationConfig` (a ScriptableObject adapter, in `Runtime` or `Data`)
 
 Authored per Location: a stable serialized id (same rule as `ItemDefinition.Id` — not an
-asset GUID), a display name, a fixed source level, a loot-table reference, and (ADR-0010)
-the enemy archetype, the **Roster** range `[min,max]` an Encounter draws from, and the
-spawn profile — `spawnBatch [min,max]` (`[1,1]` is a pure trickle, `[4,4]` a charging
-Pack), `spawnInterval`, `spawnJitter`. Two assets for the MVP: an easy Location (low
-source level, small Roster, trickle) and a harder one (higher source level, richer
-table, bigger Roster, Packs). Town is **not** a `LocationConfig` — it is a `RunState`,
-and "go to Town" on the map is `Recall()`.
+asset GUID), a display name, a fixed source level, a loot-table reference, an
+`xpPerKill`, and (ADR-0010) the fixed **Roster** range `[min,max]` an Encounter draws
+from and the spawn profile — `spawnBatch [min,max]` (`[1,1]` is a pure trickle, `[4,4]` a
+charging Pack), `spawnInterval`, `spawnJitter`. It carries **no** encounter-count or
+completion field (the issue-#18 `/prototype` killed the finite-Run mode) and **no**
+per-Location enemy curves — the enemy archetype is one shared constant set in the
+`Encounter` module that reads only `SourceLevel`. Two assets for the MVP: an easy
+Location (`SourceLevel 2, Roster [8,8], spawnBatch [1,1], interval 2.4`) and a harder one
+(`SourceLevel 5, Roster [12,12], spawnBatch [2,4], interval 3.6`, richer table, more XP).
+Town is **not** a `LocationConfig` — it is a `RunState`, and "go to Town" on the map is
+`Recall()`.
 
 ### Adapters (thin, in `Runtime` / `GUI`, smoke-tested in the editor)
 
@@ -469,13 +519,9 @@ reaches for a private field or a tick counter.
   a group of enemies and a cadence exchange with a spawn schedule (ADR-0010).
 - **Enemy variety** — one parametric archetype scaled by source level. No per-monster
   assets, no bosses.
-- **Finite vs endless — at two scales.** Whether a Location's Encounters are finite
-  (clear N → Location done) or endless, whether restarting rescales, *and* (ADR-0010)
-  whether an Encounter draws from a fixed **Roster** or spawns without end. The working
-  assumptions are endless Encounters at fixed difficulty and a finite Roster per
-  Encounter; all of it is deferred to one `/prototype` over the combat cluster (issue
-  #18, folded into ADR-0010), run before the Encounter driver and behaviour tickets
-  (#20 / #23).
+- **Finite vs endless — at two scales.** *Resolved* by the issue-#18 `/prototype` — moved
+  up to *The combat model — prototype findings*. Fixed Roster per Encounter; endless
+  Encounters at fixed difficulty; no encounter cap, no restart-rescale.
 - **Progressive Location unlocks** — both Field Locations are open from the start. The
   `LocationConfig` shape leaves room to add an unlock gate later.
 - **A third+ Location, a node graph, or a generated map.**
@@ -487,9 +533,12 @@ reaches for a private field or a tick counter.
 - **Retiring the `InventoryProvider` god object** — the rework's own later tier. This
   spec must not add to it, but does not fix it.
 - **Exact balance numbers** — the Death XP-loss and currency-fee percentages, the revive
-  health fraction, tick interval, drop counts, slider ranges, the sim-speed curve, and
-  (ADR-0010) the base Strike/Cast damages, `castCost`, the `CastThreshold` curve, Roster
-  and Pack sizes and timing are knobs tuned in the `/prototype`, not fixed here.
+  health fraction, drop counts, slider ranges and the sim-speed curve remain unfixed. The
+  combat constants (base Strike/Cast damages, `castCost`, the two cadences, `tick`, the
+  enemy `SourceLevel` curves, Roster and Pack sizes and timing) now have `/prototype`
+  starting points — recorded in *The combat model — prototype findings* and ADR-0010,
+  with `dev/prototypes/2026-09-03-combat-cluster/` as the live tuning surface — but they
+  are still starting points, not frozen.
 
 ## Further Notes
 
@@ -509,7 +558,10 @@ reaches for a private field or a tick counter.
   grilling produced ADR-0010, the `CONTEXT.md` **## Combat** section (Strike, Cast,
   Engagement, Pack, Cast Threshold), the sharpened **Encounter** entry, and *The combat
   model* subsection above. Sections written before it that still say "one attack per
-  tick" or "five sliders" are superseded there.
+  tick" or "five sliders" are superseded there. The issue-#18 `/prototype` (2026-09-03)
+  then resolved that model's three open questions — *The combat model — prototype
+  findings* and ADR-0010's *Prototype outcome* are authoritative on finite-vs-endless,
+  build viability and the combat constants.
 - The research doc (`dev/specs/2026-09-01-mvp-simulation-loop-research.md`) remains the
   source for the sibling-project prior art, the external genre references, and the full
   options analysis behind each decision above.

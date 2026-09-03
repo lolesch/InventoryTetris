@@ -172,11 +172,12 @@ to the hero: Locations form a difficulty ladder a geared hero outgrows.
 _Avoid_: level, zone, area, stage, node, dungeon, map
 
 **Encounter**:
-One fight at a Location. Its enemies arrive over the fight — singly, or in Packs that
-spike past the player's Engagement count — and it clears when they are all down; the
-next begins after a short beat. Loot drops and XP is granted per kill, not banked on
-the clear. Whether an Encounter draws from a fixed roster or spawns without end is a
-`/prototype` question (ADR-0010).
+One fight at a Location. It draws a fixed **Roster** of enemies (a `[min,max]` count on
+the Location) that arrive over the fight — singly, or in Packs that spike past the
+player's Engagement count — and it clears when the Roster is spent and the last enemy is
+down; the next begins after a short beat. Loot drops and XP is granted per kill, not
+banked on the clear. A Location runs Encounters endlessly at a fixed difficulty; only
+Recall or Death ends the Run (issue-#18 `/prototype`, ADR-0010).
 _Avoid_: battle, fight, combat, wave (that is a Pack)
 
 **Send**:
@@ -197,8 +198,10 @@ _Avoid_: defeat, loss, game over, fail, wipe
 
 ## Combat
 
-What happens inside an Encounter. Settled by the grilling of 2026-09-02; the numbers and
-the finite-vs-endless question are still a `/prototype` (ADR-0010).
+What happens inside an Encounter. Settled by the grilling of 2026-09-02 and the
+issue-#18 `/prototype` of 2026-09-03 (ADR-0010): fixed Roster, endless Encounters at
+fixed difficulty, physical / magical / hybrid all viable. Combat constants have
+prototype starting points but are not frozen.
 
 **Strike**:
 The hero's physical attack — one weapon hit on a `1 / AttackSpeed` cadence against the
@@ -225,6 +228,8 @@ _Avoid_: wave, swarm, group (that is the Encounter's whole cast), ambush
 
 **Cast Threshold**:
 The `Resource` fraction the hero charges up to before it will start a run of Casts,
-after which it spends down to empty and recharges. Low is a continuous trickle of Casts;
-high is long silences broken by a burst.
+after which it spends down to empty and recharges. Low is a continuous, evenly-spaced
+stream of Casts; high is the same Casts arriving clumped. A rhythm knob, not a power one
+— the `/prototype` found it barely moves an Encounter's outcome against a continuous
+spawn (ADR-0010).
 _Avoid_: resource reserve, mana gate, burst threshold
