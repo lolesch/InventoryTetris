@@ -13,9 +13,6 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
     {
         private GridLayoutGroup gridLayout;
 
-        internal const float Markup = 1.5f;
-        internal static float BuyPrice(ItemInstance item) => ItemView.Of(item).SellValue * Markup;
-
         /// The same "forbidden" feedback the drag display gives an item that cannot be
         /// placed (see DragProvider.HighlightOverlappingSlots): red is assigned rather
         /// than multiplied in, so rarity cannot shift it, and it stays see-through so the
@@ -72,7 +69,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
             var wallet = InventoryProvider.Instance.Inventory;
 
-            return wallet == null || wallet.CanAfford(BuyPrice(displayedPackage.Item));
+            return wallet == null || wallet.CanAfford(VendorTransaction.BuyPrice(displayedPackage.Item));
         }
 
         protected override void SetDisplaySize(RectTransform display, Package package)
@@ -106,7 +103,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 return;
 
             var wallet = InventoryProvider.Instance.Inventory;
-            var price = BuyPrice(package.Item);
+            var price = VendorTransaction.BuyPrice(package.Item);
 
             if (!wallet.CanAfford(price))
                 return;
@@ -117,19 +114,18 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             #region BUY: IMMEDIATE MOVE
             if (eventData.button == PointerEventData.InputButton.Right || Input.GetKey(KeyCode.LeftShift))
             {
-                _ = Container.RemoveAtPosition(position, package);
-
-                if (wallet.TryAddToContainer(ref package))
-                    _ = wallet.TryPay(price); // affordability already confirmed
-                else
-                    _ = Container.AddAtPosition(position, package); // bounced back to the shelf, no charge
+                /// One transaction (issue #11): the item leaves the shelf and lands in the
+                /// bag, and the price is paid, as a unit. No room in the bag rolls the whole
+                /// thing back - the item stays on the shelf and nothing is charged.
+                _ = VendorTransaction.Buy(Container, position, package, wallet, price);
 
                 return;
             }
             #endregion BUY: IMMEDIATE MOVE
 
-            // Drag: the drag system has no clean cancel/refund path; that gap is
-            // pre-existing and deferred (follow-ups spec).
+            // Drag: a pick-up, not a completed move - the drag system still has no clean
+            // cancel/refund path, so payment stays at pick-up. That gap is pre-existing and
+            // deferred (follow-ups spec).
             #region BUY: DRAG
             _ = Container.RemoveAtPosition(position, package);
 
@@ -146,24 +142,11 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             if (!package.IsValid || package.Sender == Container)
                 return;
 
-            var packageToMove = DragProvider.Instance.DraggingPackage;
+            /// Dropping an item onto the shelf is a sale, exactly as the dedicated sell slot
+            /// (SellItenSlotDisplay) handles it: the item is already in hand from the drag,
+            /// its value is banked into the wallet on commit (issue #11), and the drag ends.
+            VendorTransaction.Sell(package, InventoryProvider.Instance.Inventory);
 
-            _ = (DragProvider.Instance.Origin.Container?.RemoveFromContainer(packageToMove));
-
-            var currency = new Currency(ItemView.Of(packageToMove.Item).SellValue * packageToMove.Amount);
-
-            //TODO: handle item loss if inventory is full
-            var gold = new Package(Container, ItemProvider.Instance.MintCurrency(Data.Enums.CurrencyType.Gold), currency.Gold);
-            _ = InventoryProvider.Instance.Inventory.TryAddToContainer(ref gold);
-            var silver = new Package(Container, ItemProvider.Instance.MintCurrency(Data.Enums.CurrencyType.Silver), currency.Silver);
-            _ = InventoryProvider.Instance.Inventory.TryAddToContainer(ref silver);
-            var iron = new Package(Container, ItemProvider.Instance.MintCurrency(Data.Enums.CurrencyType.Iron), currency.Iron);
-            _ = InventoryProvider.Instance.Inventory.TryAddToContainer(ref iron);
-            var copper = new Package(Container, ItemProvider.Instance.MintCurrency(Data.Enums.CurrencyType.Copper), currency.Copper);
-            _ = InventoryProvider.Instance.Inventory.TryAddToContainer(ref copper);
-
-            /// A sell sink: the item is gone and the drag is over. Was SetPackage with an
-            /// empty Package purely to hide the display.
             DragProvider.Instance.EndDrag();
 
             Container?.InvokeRefresh();

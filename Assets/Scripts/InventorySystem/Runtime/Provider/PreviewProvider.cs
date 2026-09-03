@@ -77,7 +77,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
                 var index = Input.GetKey(KeyCode.LeftControl) ? 1 : 0;
                 var priceOverride = slot is VendorSlotDisplay && package.Item != null
-                    ? VendorSlotDisplay.BuyPrice(package.Item)
+                    ? VendorTransaction.BuyPrice(package.Item)
                     : -1f;
 
                 hoveredItem.RefreshDisplay(package, equippedItems[index], priceOverride);

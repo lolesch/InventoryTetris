@@ -65,4 +65,24 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         public readonly List<Package> Replaced = new();
         public void ReplacePackage(Package package) => Replaced.Add(package);
     }
+
+    /// <summary>
+    /// Mints a coin per denomination, ids resolved from the catalog it is handed - the
+    /// test stand-in for <c>ItemProvider</c> on the <see cref="ICurrencyMinter"/> seam.
+    /// </summary>
+    internal sealed class FakeCurrencyMinter : ICurrencyMinter
+    {
+        private readonly IItemCatalog catalog;
+
+        public FakeCurrencyMinter(IItemCatalog catalog) => this.catalog = catalog;
+
+        public ItemInstance MintCurrency(CurrencyType type)
+        {
+            foreach (var definition in catalog.OfCategory(ItemCategory.Currency))
+                if (definition.CurrencyType == type)
+                    return new ItemInstance(definition.Id, ItemRarity.Common, 0, null);
+
+            return null;
+        }
+    }
 }

@@ -120,7 +120,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             RemoveCurrency(CurrencyType.Gold, toRemove.Gold);
 
             if (0u < change.Total)
-                AddChange(change);
+                Deposit(change);
 
             return true;
         }
@@ -159,19 +159,20 @@ namespace ToolSmiths.InventorySystem.Inventories
         }
 
         /// <summary>
-        /// Returns coins to the inventory, largest denomination first. Used both for
-        /// change (where each denomination is always below its stack limit) and for
-        /// <see cref="Consolidate"/> (where it may not be - TryAddToContainer spills
-        /// the overflow into further cells).
-        /// The full-inventory edge (change dropped) is acknowledged - see
+        /// Banks <paramref name="amount"/> into the wallet as minted coins, largest
+        /// denomination first. The one coin-mint path: buy-change and <see cref="Consolidate"/>
+        /// (where a denomination may exceed its stack limit - TryAddToContainer spills the
+        /// overflow into further cells) call it, and so does a vendor sale
+        /// (<see cref="VendorTransaction.Sell"/>), which is why it is public.
+        /// The full-inventory edge (coins dropped) is acknowledged - see
         /// dev/specs/2026-08-26-shop-currency-followups.md section 2.
         /// </summary>
-        private void AddChange(Currency change)
+        public void Deposit(Currency amount)
         {
-            AddCoins(CurrencyType.Gold, change.Gold);
-            AddCoins(CurrencyType.Silver, change.Silver);
-            AddCoins(CurrencyType.Iron, change.Iron);
-            AddCoins(CurrencyType.Copper, change.Copper);
+            AddCoins(CurrencyType.Gold, amount.Gold);
+            AddCoins(CurrencyType.Silver, amount.Silver);
+            AddCoins(CurrencyType.Iron, amount.Iron);
+            AddCoins(CurrencyType.Copper, amount.Copper);
 
             void AddCoins(CurrencyType type, uint count)
             {
@@ -218,7 +219,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// <summary>
         /// Folds every stored coin into the largest denominations that fit, leaving the
         /// remainder as loose change. Value-preserving: Total before == Total after.
-        /// Re-entrancy is guarded because <see cref="AddChange"/> re-enters
+        /// Re-entrancy is guarded because <see cref="Deposit"/> re-enters
         /// <see cref="TryAddToContainer"/>, which is where <see cref="AutoConsolidate"/>
         /// is honoured.
         /// </summary>
@@ -249,7 +250,7 @@ namespace ToolSmiths.InventorySystem.Inventories
                 RemoveCurrency(CurrencyType.Silver, wallet.Silver);
                 RemoveCurrency(CurrencyType.Gold, wallet.Gold);
 
-                AddChange(consolidated);
+                Deposit(consolidated);
             }
             finally
             {
