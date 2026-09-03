@@ -1,0 +1,254 @@
+using System.Linq;
+using NUnit.Framework;
+using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Data.Enums;
+using ToolSmiths.InventorySystem.Inventories;
+using ToolSmiths.InventorySystem.Items;
+using UnityEngine;
+
+namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
+{
+    /// <summary>
+    /// The container core - <see cref="AbstractDimensionalContainer"/> and subclasses,
+    /// <see cref="Package"/> - lives in the <c>InventorySystem.Containers</c> assembly
+    /// (issue #15), which this asmdef references directly. The provider singletons the
+    /// core used to reach through <c>.Instance</c> are now the injected
+    /// <see cref="IStatReceiver"/> / <see cref="ICursorSink"/> / <see cref="ICurrencyMinter"/>,
+    /// so the equipment swap paths - unreachable from the Phase 0 <c>Assembly-CSharp-Editor</c>
+    /// seam - are covered here with fakes.
+    /// </summary>
+    [TestFixture]
+    public sealed class ContainerCoreTests
+    {
+        // The ItemDefinition / IItemCatalog stand-ins and the IStatReceiver / ICursorSink
+        // fakes live in ContainerTestFixtures.cs, shared with the other tests in this asmdef.
+
+        private const string SwordId = "test.sword";
+        private const string ArrowId = "test.arrow";
+        private const string HelmId = "test.helm";
+        private const string RingId = "test.ring";
+
+        [SetUp]
+        public void SetCatalog() => ItemView.Catalog = new TestCatalog()
+            .With(new TestDefinition { Id = SwordId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Sword, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
+            .With(new TestDefinition { Id = ArrowId, Category = ItemCategory.Consumable, ConsumableType = ConsumableType.Arrow, Footprint = ItemSize.OneByOne, BaseStackLimit = 10u })
+            .With(new TestDefinition { Id = HelmId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Helm, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
+            .With(new TestDefinition { Id = RingId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Ring, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u });
+
+        [TearDown]
+        public void ClearCatalog() => ItemView.Catalog = null;
+
+        private static CharacterStatModifier Affix(StatName stat, float value) =>
+            new(stat, new StatModifier(new Vector2Int(0, 100), value, StatModifierType.FlatAdd));
+
+        private static ItemInstance Sword() => new(SwordId, ItemRarity.Rare, 7, new[]
+        {
+            Affix(StatName.PhysicalDamage, 6f),
+        });
+
+        private static ItemInstance Arrows() => new(ArrowId, ItemRarity.Common, 1, null);
+
+        private static ItemInstance Helm(float armor) => new(HelmId, ItemRarity.Rare, 5, new[] { Affix(StatName.Armor, armor) });
+        private static ItemInstance Ring(float value) => new(RingId, ItemRarity.Magic, 3, new[] { Affix(StatName.Health, value) });
+
+        [Test]
+        public void CharacterInventory_NewlyConstructed_IsEmptyWithTheGivenCapacity()
+        {
+            var inventory = new CharacterInventory(new Vector2Int(4, 4));
+
+            Assert.That(inventory.StoredPackages, Is.Empty);
+            Assert.That(inventory.Capacity, Is.EqualTo(16));
+        }
+
+        [Test]
+        public void CharacterInventory_AfterAddingAPackage_HoldsExactlyThatItem()
+        {
+            var inventory = new CharacterInventory(new Vector2Int(4, 4));
+            var package = new Package(inventory, Sword(), 1u);
+
+            var accepted = inventory.TryAddToContainer(ref package);
+
+            Assert.That(accepted, Is.True);
+            Assert.That(inventory.StoredPackages, Has.Count.EqualTo(1));
+            Assert.That(package.Amount, Is.EqualTo(0u));
+        }
+
+        [Test]
+        public void CharacterInventory_TwoPlainConsumables_MergeIntoOneStack()
+        {
+            var inventory = new CharacterInventory(new Vector2Int(4, 4));
+
+            var first = new Package(inventory, Arrows(), 4u);
+            _ = inventory.TryAddToContainer(ref first);
+            var second = new Package(inventory, Arrows(), 3u);
+            _ = inventory.TryAddToContainer(ref second);
+
+            Assert.That(inventory.StoredPackages, Has.Count.EqualTo(1));
+            Assert.That(inventory.StoredPackages.Values.Single().Amount, Is.EqualTo(7u));
+        }
+
+        [Test]
+        public void Container_RoundTripsThroughThePersistableShape()
+        {
+            // The persistence constraint the foundational-rework spec bakes in now: a
+            // container's state must be expressible as [{ x, y, definitionId + instance DTO,
+            // amount }], with Package.Sender never serialized. No save file is written - this
+            // asserts the shape is sufficient.
+            var source = new CharacterInventory(new Vector2Int(4, 4));
+
+            var swordPackage = new Package(source, Sword(), 1u);
+            _ = source.TryAddToContainer(ref swordPackage);
+            var arrowPackage = new Package(source, Arrows(), 5u);
+            _ = source.TryAddToContainer(ref arrowPackage);
+
+            // Flatten to the persistable rows.
+            var rows = source.StoredPackages
+                .Select(entry => (
+                    x: entry.Key.x,
+                    y: entry.Key.y,
+                    dto: entry.Value.Item.ToDto(),
+                    amount: entry.Value.Amount))
+                .ToList();
+
+            Assert.That(rows, Has.Count.EqualTo(2));
+
+            // Rebuild a fresh container from the rows alone.
+            var restored = new CharacterInventory(new Vector2Int(4, 4));
+            foreach (var row in rows)
+                _ = restored.AddAtPosition(
+                    new Vector2Int(row.x, row.y),
+                    new Package(restored, ItemInstance.FromDto(row.dto), row.amount));
+
+            Assert.That(restored.StoredPackages.Keys, Is.EquivalentTo(source.StoredPackages.Keys));
+
+            foreach (var position in source.StoredPackages.Keys)
+            {
+                var before = source.StoredPackages[position];
+                var after = restored.StoredPackages[position];
+
+                Assert.That(after.Item, Is.EqualTo(before.Item), $"instance at {position}");
+                Assert.That(after.Amount, Is.EqualTo(before.Amount), $"amount at {position}");
+            }
+        }
+
+        // ── CharacterEquipment + the injected interfaces ─────────────────────
+
+        private static CharacterEquipment Equipment(IStatReceiver stats = null) =>
+            new(new Vector2Int(14, 1), stats);
+
+        [Test]
+        public void CharacterEquipment_WithNoInjectedDeps_StillEquipsAndUnequips()
+        {
+            var equipment = Equipment();
+            var sender = new CharacterInventory(new Vector2Int(4, 4));
+
+            var package = new Package(sender, Helm(4f), 1u);
+            var equipped = equipment.TryAddToContainer(ref package);
+
+            Assert.That(equipped, Is.True);
+            Assert.That(equipment.StoredPackages, Has.Count.EqualTo(1));
+
+            var stored = equipment.StoredPackages.Single();
+            _ = equipment.RemoveAtPosition(stored.Key, stored.Value);
+
+            Assert.That(equipment.StoredPackages, Is.Empty);
+        }
+
+        [Test]
+        public void CharacterEquipment_OnEquip_AppliesTheItemsAffixesThroughTheStatReceiver()
+        {
+            var stats = new FakeStatReceiver();
+            var equipment = Equipment(stats);
+
+            var package = new Package(new CharacterInventory(new Vector2Int(4, 4)), Helm(4f), 1u);
+            _ = equipment.TryAddToContainer(ref package);
+
+            Assert.That(stats.Added.Select(a => a.Stat), Is.EquivalentTo(new[] { StatName.Armor }));
+            Assert.That(stats.Removed, Is.Empty);
+        }
+
+        [Test]
+        public void CharacterEquipment_RemoveAtPosition_LiftsTheItemsAffixesBackOff()
+        {
+            var stats = new FakeStatReceiver();
+            var equipment = Equipment(stats);
+
+            var package = new Package(new CharacterInventory(new Vector2Int(4, 4)), Helm(4f), 1u);
+            _ = equipment.TryAddToContainer(ref package);
+            var stored = equipment.StoredPackages.Single();
+
+            _ = equipment.RemoveAtPosition(stored.Key, stored.Value);
+
+            Assert.That(stats.Removed.Select(a => a.Stat), Is.EquivalentTo(new[] { StatName.Armor }));
+        }
+
+        [Test]
+        public void CharacterEquipment_EquippingIntoAnOccupiedSlot_HandsTheDisplacedItemBackThroughThePackage()
+        {
+            var stats = new FakeStatReceiver();
+            var equipment = Equipment(stats);
+            var sender = new CharacterInventory(new Vector2Int(4, 4));
+
+            var first = new Package(sender, Helm(2f), 1u);
+            _ = equipment.TryAddToContainer(ref first);
+
+            var second = new Package(sender, Helm(9f), 1u);
+            _ = equipment.TryAddToContainer(ref second);
+
+            // The new helm is worn; the displaced one comes back through `second` for the
+            // caller's transaction to re-home. Outside a transaction there is no sender /
+            // cursor fallback any more - that path was QA-4's recursion (issue #12).
+            Assert.That(equipment.StoredPackages, Has.Count.EqualTo(1));
+            Assert.That(equipment.StoredPackages.Values.Single().Item.Affixes[0].Modifier.Value, Is.EqualTo(9f));
+            Assert.That(second.Item?.DefinitionId, Is.EqualTo(HelmId), "the old helm was handed back");
+            Assert.That(second.Item.Affixes[0].Modifier.Value, Is.EqualTo(2f));
+
+            // Stats: both helms applied on equip, the displaced one lifted.
+            Assert.That(stats.Added.Count, Is.EqualTo(2));
+            Assert.That(stats.Removed.Count, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void CharacterEquipment_ForceSwap_GivesUpInsteadOfRecursing_WhenAReHomeRoutesBackIntoAFullEquipment()
+        {
+            // QA-4's StackOverflowException: a displaced item re-homed back into the
+            // equipment, which force-swapped again, without end. The force-swap now gives up
+            // on re-entry and the whole move rolls back (issue #12).
+            var stats = new FakeStatReceiver();
+            var equipment = Equipment(stats);
+            var bench = new CharacterInventory(new Vector2Int(4, 4));
+
+            var ringA = new Package(bench, Ring(1f), 1u);
+            _ = equipment.TryAddToContainer(ref ringA);
+            var ringB = new Package(bench, Ring(2f), 1u);
+            _ = equipment.TryAddToContainer(ref ringB); // both ring slots are now taken
+            var wornBefore = equipment.StoredPackages.Values.Select(p => p.Item).ToList();
+
+            var loose = new Package(bench, Ring(3f), 1u);
+            _ = bench.TryAddToContainer(ref loose);
+            var benchSlot = bench.StoredPackages.Keys.Single();
+            var storedRing = bench.StoredPackages[benchSlot];
+            stats.Added.Clear();
+            stats.Removed.Clear();
+
+            Assert.That(() =>
+            {
+                // The only re-home target is the (full) equipment itself: the displaced ring
+                // cannot land, so the move aborts rather than swapping a second time.
+                using var transaction = new ItemTransaction(equipment, bench).ReHomeThrough(equipment).SwapInPlace();
+
+                _ = bench.RemoveAtPosition(benchSlot, storedRing);
+                var incoming = new Package(bench, storedRing.Item, storedRing.Amount);
+                _ = equipment.TryAddToContainer(ref incoming);
+
+                if (!transaction.Aborted)
+                    transaction.Commit();
+            }, Throws.Nothing);
+
+            Assert.That(equipment.StoredPackages.Values.Select(p => p.Item), Is.EquivalentTo(wornBefore), "gear unchanged - the move rolled back");
+            Assert.That(bench.StoredPackages.Values.Single().Item, Is.SameAs(storedRing.Item), "the loose ring is back on the bench");
+            Assert.That(stats.Added, Is.Empty);
+            Assert.That(stats.Removed, Is.Empty);
+        }
+    }
+}

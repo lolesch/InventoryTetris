@@ -1,7 +1,10 @@
 # Transactional item movement, and the equipment-swap QA fixes
 
 Date: 2026-08-30
-Status: Ready for planning
+Status: Superseded, never implemented. Only the spec itself (`fb805b5`) is on `main`.
+`dev/specs/2026-08-31-foundational-rework-design.md` re-orders this work: the
+`ItemTransaction` seam now lands *after* the item-model split, folded in there as
+Phase 2. Everything else here still stands - read it through that spec, not alone.
 Base: `feature/mutablefloat-port` @ `3e9a7d4` (pushed). Cut a new branch from there —
 suggested `feature/item-movement-model`. Do **not** rebase onto `main`.
 

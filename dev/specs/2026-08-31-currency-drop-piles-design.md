@@ -1,7 +1,10 @@
 # Currency drop piles — Phase 2 of the currency redesign
 
 Date: 2026-08-31
-Status: approved design, not yet implemented
+Status: Shipped 2026-08-31 - `4330704`..`7eee33b` on `main`.
+KNOWN GAP: only `Example.unity` was wired to the Currency Drop Table asset
+(guid `c47ab812...`); `HUD.unity` has zero references to it, so the drop table is
+unset in that scene. Task 6 of the plan asked for both.
 Base: `feature/currency-redesign` (Phase 0/1 shipped — `727c742`..`8daa96b`)
 
 Implements **Phase 2** of `dev/specs/2026-08-30-currency-redesign-design.md`

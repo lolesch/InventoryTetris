@@ -1,7 +1,8 @@
 # Foundational rework — the item model, the transaction seam, the wallet
 
 Date: 2026-08-31
-Status: Scoping spec — cut implementation plans from this; it is not itself a plan.
+Status: Scoping spec — it is not itself a plan. Sliced into GitHub epic #2 with
+sub-issues #3–#14 on 2026-09-01 (`/to-tickets`); build those with `/implement`.
 Base: to be cut after `feature/probability-distribution-rebuild` lands — the item
 generator leans on `ProbabilityTable<T>`.
 

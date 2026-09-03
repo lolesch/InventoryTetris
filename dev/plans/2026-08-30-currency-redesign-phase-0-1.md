@@ -1,6 +1,6 @@
 # Currency Redesign — Phase 0 & 1 Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan inline, task-by-task, with a review checkpoint after each task. Steps use checkbox (`- [ ]`) syntax for tracking. Do **not** dispatch subagents for this work.
+> **For agentic workers:** execute this plan inline in the current session, task-by-task, with a review checkpoint after each task — never dispatch subagents (project rule). Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Coins stop being carry digits. The ladder becomes iron → copper → silver → gold at 5 / 12 / 20, stack limits are decoupled from the ratios, and full stacks no longer auto-upgrade — the player consolidates on purpose.
 

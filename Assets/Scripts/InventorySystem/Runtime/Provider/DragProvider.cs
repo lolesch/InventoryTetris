@@ -2,6 +2,7 @@ using TMPro;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Geometry;
 using ToolSmiths.InventorySystem.GUI.InventoryDisplays;
+using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
 using UnityEngine;
 using UnityEngine.UI;
@@ -10,7 +11,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 {
     [System.Serializable]
     [RequireComponent(typeof(RectTransform))]
-    internal sealed class DragProvider : AbstractProvider<DragProvider>
+    internal sealed class DragProvider : AbstractProvider<DragProvider>, ICursorSink
     {
         public bool IsDragging => itemDisplay.gameObject.activeSelf;
 
@@ -65,26 +66,23 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
             void HighlightOverlappingSlots()
             {
-                /// Every early return has to clear the tint. Bailing out while a previous
-                /// slot's red is still on screen is what made large items look undroppable
-                /// over the floor and sell slots, which have no container of their own.
-                if (!TryGetDropPosition(Hovered, out var positionToAdd))
-                {
-                    ResetOverlapTint();
+                if (!background)
                     return;
-                }
 
-                var storedPositions = Hovered.Container.GetStoredItemsAt(positionToAdd, AbstractItem.GetDimensions(DraggingPackage.Item.Dimensions));
+                /// One rule, shared with the drop (issue #12): each slot display answers
+                /// WouldAcceptDrop exactly the way its own DropItem behaves - CanPlaceAt at
+                /// the pixel-derived cell for the inventory grid, the fixed type-specific
+                /// slot for the paper-doll equipment layout, always-yes for a container-less
+                /// sink (the floor, the sell slot). Red only while the cursor is over a real
+                /// slot that would turn the drop away; hovering nothing clears it.
+                var refused = Hovered != null && !Hovered.WouldAcceptDrop(DraggingPackage);
 
-                if (background)
-                    /// Assigned rather than multiplied so it stays red whatever the scrim is
-                    /// tinted to; colour multiplication is component-wise and only lands on red
-                    /// while the scrim happens to be white.
-                    /// 0 overlaps drops into empty space, 1 swaps with the item already there
-                    /// (AddAtPosition handles both). Only 2+ cannot be placed at all.
-                    background.color = 1 < storedPositions.Count
-                        ? WithAlpha(Color.red, initialColor.a)
-                        : initialColor;
+                /// Assigned rather than multiplied so it stays red whatever the scrim is
+                /// tinted to; colour multiplication is component-wise and only lands on red
+                /// while the scrim happens to be white.
+                background.color = refused
+                    ? WithAlpha(Color.red, initialColor.a)
+                    : initialColor;
             }
         }
 
@@ -103,7 +101,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             position = DragGeometry.DropPosition(
                 (Vector2)Input.mousePosition / transform.lossyScale,
                 itemDisplay.pivot,
-                AbstractItem.GetDimensions(DraggingPackage.Item.Dimensions),
+                ItemView.Of(DraggingPackage.Item).Dimensions,
                 (Vector2)hovered.transform.position / transform.lossyScale,
                 hovered.Position,
                 slotSize);
@@ -116,12 +114,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             color.a = alpha;
 
             return color;
-        }
-
-        private void ResetOverlapTint()
-        {
-            if (background)
-                background.color = initialColor;
         }
 
         private void SetToMousePosition()
@@ -147,7 +139,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
             SetHoveredSlot(Origin);
 
-            var dimensions = AbstractItem.GetDimensions(package.Item.Dimensions);
+            var dimensions = ItemView.Of(package.Item).Dimensions;
 
             itemDisplay.sizeDelta = (Vector2)dimensions * slotSize;
 
@@ -182,7 +174,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             DraggingPackage = package;
             PositionOffset = Vector2Int.zero;
 
-            var dimensions = AbstractItem.GetDimensions(package.Item.Dimensions);
+            var dimensions = ItemView.Of(package.Item).Dimensions;
 
             itemDisplay.sizeDelta = (Vector2)dimensions * slotSize;
             itemDisplay.pivot = DragGeometry.HandOverPivot;
@@ -211,7 +203,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         {
             if (icon)
             {
-                icon.sprite = package.Item.Icon;
+                icon.sprite = ItemView.Of(package.Item).Icon;
                 icon.color = Color.white;
             }
 
@@ -219,7 +211,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             /// dragged item lost its rarity for the length of the drag. The frame carries
             /// rarity here, exactly as it does in a slot.
             if (frame)
-                frame.color = WithAlpha(AbstractItem.GetRarityColor(package.Item.Rarity), frameAlpha);
+                frame.color = WithAlpha(ItemView.RarityColorOf(package.Item.Rarity), frameAlpha);
 
             if (amount)
                 amount.text = 1 < package.Amount ? package.Amount.ToString() : string.Empty;

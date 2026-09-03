@@ -1,7 +1,8 @@
 # Port MutableFloat from GlyphsHero, rebuild CharacterStat on composition
 
 Date: 2026-08-13
-Status: Approved
+Status: Shipped — ported in `a20be2f`, scene/prefab re-serialized in `6483741`;
+reached `main` via `d0b8a5e`.
 
 ## Problem
 

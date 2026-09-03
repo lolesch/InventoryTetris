@@ -12,7 +12,7 @@ using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Runtime.Character
 {
-    public class LocalPlayer : BaseCharacter
+    public class LocalPlayer : BaseCharacter, IStatReceiver
     {
         //TODO: make the displayLogic its own component and design its layout individually and not via a pool
         [SerializeField] private CharacterStatDisplay characterStatPrefab;
@@ -88,7 +88,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             }
         }
 
-        public void AddItemStats(List<CharacterStatModifier> stats)
+        public void AddItemStats(IReadOnlyList<CharacterStatModifier> stats)
         {
             var resources = new StatName[] { StatName.Health, StatName.Resource, StatName.Shield, StatName.Experience };
 
@@ -113,7 +113,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             UpdateStatDisplays();
         }
 
-        public void RemoveItemStats(List<CharacterStatModifier> stats)
+        public void RemoveItemStats(IReadOnlyList<CharacterStatModifier> stats)
         {
             var resources = new StatName[] { StatName.Health, StatName.Resource, StatName.Shield, StatName.Experience };
             foreach (var itemStat in stats)
@@ -146,7 +146,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
         public bool PickUpItem(Package package)
         {
-            if (package.Item is EquipmentItem)
+            if (package.Item != null && ItemView.Of(package.Item).Definition.Category == ItemCategory.Equipment)
             {
                 var equipment = InventoryProvider.Instance.Equipment;
 

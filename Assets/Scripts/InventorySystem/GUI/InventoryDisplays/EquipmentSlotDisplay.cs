@@ -1,5 +1,5 @@
-using System.Linq;
 using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Runtime.Provider;
@@ -13,31 +13,59 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
     internal sealed class EquipmentSlotDisplay : AbstractSlotDisplay
     {
-        [field: SerializeField] public EquipmentItem DebugItem;
-
         protected override void DropItem(Package package)
         {
-            if (!package.IsValid || package.Item is not EquipmentItem item)
+            if (!package.IsValid || Container is not CharacterEquipment equipment)
                 return;
 
-            var allowedPositions = CharacterEquipment.GetTypeSpecificPositions(item.EquipmentType);
-
-            /// Wrong slot for this item's type: the item stays in hand untouched, the same
-            /// contract bug 2 gives a rejected drop on the inventory grid - no re-anchor.
-            if (!allowedPositions.Contains(Position))
+            /// One predicate for the drop and the red "can't drop" tint (issue #12): a wrong
+            /// category, a slot this type is not allowed in, or a slot that cannot take the
+            /// item even with its swap - the item stays in hand untouched, exactly as a
+            /// rejected drop on the inventory grid does.
+            if (!equipment.CanEquipAt(Position, package.Item))
                 return;
 
-            package = Container.AddAtPosition(Position, package);
+            /// The whole equip runs inside one transaction (issue #10): the weapon under the
+            /// drop goes to the hand, exactly as a plain swap does; a 2H also sheds a
+            /// collateral off-hand, which swaps back into the origin container or - with
+            /// nowhere to go - rolls the whole move back and leaves the 2H in hand. Commit
+            /// fires the container refreshes, applies the worn affixes and hands the cursor
+            /// its displaced item.
+            var origin = DragProvider.Instance.Origin?.Container;
+            var inventory = InventoryProvider.Instance.Inventory;
+            var cursor = new CursorHolder(DragProvider.Instance);
 
-            /// Nothing back if it just equipped; the previously-equipped item if it swapped.
-            /// Either way it is centred on the cursor, not given a stale grip.
-            DragProvider.Instance.ReplacePackage(package);
+            using (var transaction = new ItemTransaction(cursor, Container, origin ?? inventory).ReHomeThrough(origin ?? inventory))
+            {
+                var displaced = Container.AddAtPosition(Position, package);
 
-            Container.InvokeRefresh();
-            DragProvider.Instance.Origin.Container?.InvokeRefresh();
+                if (displaced.IsValid)
+                    _ = transaction.TryReHomeToHandOrContainer(ref displaced);
 
-            FadeInPreview(); // TODO: see if the package should propagate to FadeInPreview
+                if (transaction.Aborted)
+                    return;
+
+                transaction.Commit();
+            }
+
+            /// A clean equip - nothing came back to the cursor, so the drag is over.
+            if (cursor.IsFree)
+                DragProvider.Instance.EndDrag();
+
+            SyncPreviewAfterMove();
         }
+
+        /// <summary>
+        /// The equipment slots are a paper-doll, not a uniform grid (issue #12): the base's
+        /// pixel-derived drop position and the item's inventory-bag footprint are both
+        /// meaningless here. Defer to <see cref="CharacterEquipment.CanEquipAt"/> - the same
+        /// predicate <see cref="DropItem"/> gates on - so the item lands at this slot's own
+        /// fixed position, checked with the equipment layout's footprint rule.
+        /// </summary>
+        public override bool WouldAcceptDrop(Package package)
+            => package.IsValid
+            && Container is CharacterEquipment equipment
+            && equipment.CanEquipAt(Position, package.Item);
 
         public void Refresh2HandSlotDisplay(Package package)
         {
@@ -65,18 +93,24 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
             FadeOutPreview();
 
-            if (package.Item is not EquipmentItem)
+            if (ItemView.Of(package.Item).Definition.Category != ItemCategory.Equipment)
                 Debug.LogWarning("Something went wrong!");
 
             #region UNEQUIP ITEM
             if (eventData.button == PointerEventData.InputButton.Right)
             {
-                _ = Container.RemoveAtPosition(position, package);
+                /// A player-driven unequip always executes (issue #10): the item lands in the
+                /// inventory, or - if it is full - in hand. The affix lift is a commit-time
+                /// effect either way.
+                var inventory = InventoryProvider.Instance.Inventory;
+                var cursor = new CursorHolder(DragProvider.Instance);
 
-                if (InventoryProvider.Instance.Inventory.TryAddToContainer(ref package))
-                    DragProvider.Instance.SetPackage(this, package, Vector2Int.zero, pointerPosition);
-                else
-                    _ = Container.AddAtPosition(position, package);
+                using var transaction = new ItemTransaction(cursor, Container, inventory).ReHomeThrough(inventory);
+
+                _ = Container.RemoveAtPosition(position, package);
+                _ = transaction.TryReHomeToContainerOrHand(ref package);
+
+                transaction.Commit();
 
                 return;
             }
@@ -86,12 +120,18 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             #region QUICK MOVE ITEM
             if (Input.GetKey(KeyCode.LeftShift))
             {
-                _ = Container.RemoveAtPosition(position, package);
+                /// Player-driven quick-move (issue #10): the item comes off into the stash,
+                /// or - if it is full - into the hand. Always executes; the affix lift rides
+                /// the commit.
+                var stash = InventoryProvider.Instance.Stash;
+                var cursor = new CursorHolder(DragProvider.Instance);
 
-                if (InventoryProvider.Instance.Stash.TryAddToContainer(ref package))
-                    DragProvider.Instance.SetPackage(this, package, Vector2Int.zero, pointerPosition);
-                else
-                    _ = Container.AddAtPosition(position, package);
+                using var transaction = new ItemTransaction(cursor, Container, stash).ReHomeThrough(stash);
+
+                _ = Container.RemoveAtPosition(position, package);
+                _ = transaction.TryReHomeToContainerOrHand(ref package);
+
+                transaction.Commit();
 
                 return;
             }

@@ -1,0 +1,17 @@
+{
+    "name": "InventorySystem.Containers",
+    "rootNamespace": "",
+    "references": [
+        "InventorySystem.Data",
+        "InventorySystem.Items"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

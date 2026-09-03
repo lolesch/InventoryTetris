@@ -1,7 +1,12 @@
 # Currency redesign — denominations, consolidation, drops
 
 Date: 2026-08-30
-Status: approved design, not yet implemented
+Status: Phases 0-2 shipped; Phase 3 still deferred.
+Phase 0/1 landed in `727c742`..`8daa96b` (ladder, decoupled stack limits, manual
+consolidation, Consolidate button). Phase 2 was designed separately and shipped as
+`dev/specs/2026-08-31-currency-drop-piles-design.md`. The income-split measurement
+this spec asked for before Phase 2 shipped was NOT done - see
+`dev/specs/2026-08-31-item-value-open-questions.md` for why.
 
 ## Problem
 

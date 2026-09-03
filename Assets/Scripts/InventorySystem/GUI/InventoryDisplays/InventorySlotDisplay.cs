@@ -1,5 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Runtime.Provider;
@@ -30,20 +31,37 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             /// Nothing would land here - out of bounds, or 2+ items in the way. The item
             /// stays in hand exactly as the player is holding it; re-anchoring past this
             /// point is what snapped a rejected drop onto the grid.
-            if (!Container.CanPlaceAt(positionToAdd, AbstractItem.GetDimensions(package.Item.Dimensions)))
+            if (!Container.CanPlaceAt(positionToAdd, ItemView.Of(package.Item).Dimensions))
                 return;
 
-            package = Container.AddAtPosition(positionToAdd, package);
+            /// The whole drop runs inside one transaction (issue #10): the placement mutates
+            /// a working copy, and the item the drag landed on goes to the hand - a drag
+            /// swap always puts the displaced item in hand. The move commits as a unit or
+            /// rolls back leaving the dragged item in hand. Commit fires the container
+            /// refreshes and hands the cursor its displaced item.
+            var origin = DragProvider.Instance.Origin?.Container;
+            var inventory = InventoryProvider.Instance.Inventory;
+            var cursor = new CursorHolder(DragProvider.Instance);
 
-            /// Whatever AddAtPosition handed back - nothing (it landed, drag ends) or the
-            /// item it displaced (a swap). A displaced item is centred on the cursor, never
-            /// given this drop's positionOffset, which describes a footprint it may not have.
-            DragProvider.Instance.ReplacePackage(package);
+            using (var transaction = new ItemTransaction(cursor, Container, origin ?? inventory).ReHomeThrough(origin ?? inventory))
+            {
+                var displaced = Container.AddAtPosition(positionToAdd, package);
 
-            Container.InvokeRefresh();
-            DragProvider.Instance.Origin.Container?.InvokeRefresh();
+                if (displaced.IsValid)
+                    _ = transaction.TryReHomeToHandOrContainer(ref displaced);
 
-            FadeInPreview(); // TODO: see if the package should propagate to FadeInPreview
+                if (transaction.Aborted)
+                    return;
+
+                transaction.Commit();
+            }
+
+            /// A clean landing - nothing came back to the cursor, so the drag is over.
+            /// A swap already handed the displaced item over on commit.
+            if (cursor.IsFree)
+                DragProvider.Instance.EndDrag();
+
+            SyncPreviewAfterMove();
         }
 
         protected override void SetDisplaySize(RectTransform display, Package package)
@@ -54,9 +72,10 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 gridLayout = GetComponentInParent<GridLayoutGroup>();
             if (gridLayout)
             {
-                var additionalSpacing = gridLayout.spacing * new Vector2(AbstractItem.GetDimensions(package.Item.Dimensions).x - 1, AbstractItem.GetDimensions(package.Item.Dimensions).y - 1);
+                var itemDimensions = ItemView.Of(package.Item).Dimensions;
+                var additionalSpacing = gridLayout.spacing * new Vector2(itemDimensions.x - 1, itemDimensions.y - 1);
 
-                display.sizeDelta = gridLayout.cellSize * AbstractItem.GetDimensions(package.Item.Dimensions) + additionalSpacing;
+                display.sizeDelta = gridLayout.cellSize * itemDimensions + additionalSpacing;
             }
 
             display.anchoredPosition = new Vector2(display.sizeDelta.x * .5f, display.sizeDelta.y * -.5f);
@@ -79,26 +98,43 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 #region USE ITEM
                 if (eventData.button == PointerEventData.InputButton.Right)
                 {
-                    switch (package.Item)
+                    var category = ItemView.Of(package.Item).Definition.Category;
+
+                    if (category == ItemCategory.Consumable)
                     {
-                        case ConsumableItem:
-                            Debug.Log($"Consuming {package.Item.ToString()}");
+                        Debug.Log($"Consuming {ItemView.Of(package.Item).DisplayName}");
 
-                            _ = Container.RemoveAtPosition(position, new Package(Container, package.Item, 1)); // only consume one amount
+                        _ = Container.RemoveAtPosition(position, new Package(Container, package.Item, 1)); // only consume one amount
 
+                        return;
+                    }
+
+                    if (category == ItemCategory.Equipment)
+                    {
+                        /// Route the equip through a transaction (issue #10) as a right-click
+                        /// "swap in place": remove here, equip there, and swap whatever the
+                        /// equip displaces back into this same container. A player-driven move
+                        /// always executes - one displaced item that will not re-fit overflows
+                        /// to the hand, and only a second homeless item rolls the move back.
+                        var equipment = InventoryProvider.Instance.Equipment;
+                        var cursor = new CursorHolder(DragProvider.Instance);
+
+                        using var transaction = new ItemTransaction(cursor, Container, equipment).ReHomeThrough(Container).SwapInPlace();
+
+                        _ = Container.RemoveAtPosition(position, package);
+                        _ = equipment.TryAddToContainer(ref package);
+
+                        if (transaction.Aborted)
                             return;
 
-                        case EquipmentItem:
-                        {
-                            _ = Container.RemoveAtPosition(position, package);
+                        transaction.Commit();
 
-                            if (InventoryProvider.Instance.Equipment.TryAddToContainer(ref package))
-                                DragProvider.Instance.SetPackage(this, package, Vector2Int.zero, pointerPosition);
-                            else
-                                _ = Container.TryAddToContainer(ref package);
-
-                            return;
-                        }
+                        /// The displaced equipped item re-homes into this container, often
+                        /// into the very cell just vacated - i.e. back under the cursor. The
+                        /// leading FadeOutPreview dismissed the tooltip on the click; bring it
+                        /// back for whatever now sits here (issue #13).
+                        SyncPreviewAfterMove();
+                        return;
                     }
                 }
                 #endregion USE ITEM
@@ -114,8 +150,6 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 #region QUICK MOVE ITEM
                 if (Input.GetKey(KeyCode.LeftShift))
                 {
-                    _ = Container.RemoveAtPosition(position, package);
-
                     var containerToMoveTo = Container; // rework to context based
 
                     if (Container == InventoryProvider.Instance.Inventory)
@@ -123,10 +157,17 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                     else if (Container == InventoryProvider.Instance.Stash)
                         containerToMoveTo = InventoryProvider.Instance.Inventory;
 
-                    if (containerToMoveTo.TryAddToContainer(ref package))
-                        DragProvider.Instance.SetPackage(this, package, Vector2Int.zero, pointerPosition);
-                    else
-                        _ = Container.AddAtPosition(position, package);
+                    /// Player-driven quick-move (issue #10): the item leaves its slot and
+                    /// lands in the other container, or - if that is full - in hand. It never
+                    /// just stays put.
+                    var cursor = new CursorHolder(DragProvider.Instance);
+
+                    using var transaction = new ItemTransaction(cursor, Container, containerToMoveTo).ReHomeThrough(containerToMoveTo);
+
+                    _ = Container.RemoveAtPosition(position, package);
+                    _ = transaction.TryReHomeToContainerOrHand(ref package);
+
+                    transaction.Commit();
 
                     return;
                 }
