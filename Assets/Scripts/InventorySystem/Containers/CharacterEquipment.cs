@@ -89,9 +89,14 @@ namespace ToolSmiths.InventorySystem.Inventories
             if (!package.IsValid || !IsEquipment(package.Item))
                 return package;
 
+            // A two-hander dropped on the off-hand slot its 2-wide footprint fills still
+            // anchors at the weapon slot (issue #42); `position` stays the cell the player
+            // actually dropped on so TrySwap can still tell what is directly under the drop.
+            var anchor = AnchorOf(position, package.Item);
+
             var dimensions = SlotFootprintOf(package.Item);
 
-            if (IsEmptySpace(position, dimensions, out var otherItems))
+            if (IsEmptySpace(anchor, dimensions, out var otherItems))
                 TryAddToInventory();
             /// equipping a 2H might displace a weapon *and* an off-hand
             else if (otherItems.Count is > 0 and <= 2 && !midForceSwap)
@@ -117,7 +122,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
                 var amount = Math.Min(package.Amount, stackLimit);
 
-                if (StoredPackages.TryAdd(position, new Package(this, package.Item, amount)))
+                if (StoredPackages.TryAdd(anchor, new Package(this, package.Item, amount)))
                 {
                     var affixes = package.Item.Affixes;
                     RunOrQueue(() => statReceiver?.AddItemStats(affixes));
@@ -136,7 +141,10 @@ namespace ToolSmiths.InventorySystem.Inventories
                     if (StoredPackages.TryGetValue(occupied, out var storedPackage))
                         if (storedPackage.Item != null && 0 < storedPackage.Amount)
                         {
-                            if (occupied == dropPosition)
+                            // The swap partner is whatever the drop cell lands *on* - so a
+                            // two-hander keyed at (12,0) is the partner for a drop on (13,0)
+                            // its footprint spans, not miscounted as collateral (issue #42).
+                            if (FootprintContains(occupied, SlotFootprintOf(storedPackage.Item), dropPosition))
                                 underDrop = storedPackage;
                             else
                                 collateral.Add(storedPackage);
@@ -234,10 +242,19 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// the 1-tall equipment row and reddened every hover of a helm or a sword over its
         /// own empty slot.
         /// </summary>
-        public bool CanEquipAt(Vector2Int position, ItemInstance item) =>
-            IsEquipment(item)
-            && GetTypeSpecificPositions(EquipmentTypeOf(item)).Contains(position)
-            && CanPlaceAt(position, SlotFootprintOf(item));
+        public bool CanEquipAt(Vector2Int position, ItemInstance item)
+        {
+            if (!IsEquipment(item))
+                return false;
+
+            // A two-hander hovered over the off-hand slot it visually fills resolves to its
+            // weapon-slot anchor - so the tint accepts the drop the same place AddAtPosition
+            // will land it (issue #42).
+            var anchor = AnchorOf(position, item);
+
+            return GetTypeSpecificPositions(EquipmentTypeOf(item)).Contains(anchor)
+                && CanPlaceAt(anchor, SlotFootprintOf(item));
+        }
 
         public override List<Vector2Int> GetStoredItemsAt(Vector2Int position, Vector2Int dimension)
         {
@@ -270,6 +287,28 @@ namespace ToolSmiths.InventorySystem.Inventories
             ItemView.Of(item).Definition.EquipmentType;
 
         public static bool IsTwoHandedWeapon(EquipmentType equipmentType) => equipmentType is > EquipmentType.TWOHANDEDWEAPONS and < EquipmentType.OFFHANDS;
+
+        /// <summary>
+        /// The slot <see cref="AddAtPosition"/> keys <paramref name="item"/> under for a drop
+        /// on <paramref name="position"/>. A two-hander dropped anywhere under its own 2-wide
+        /// footprint - including the off-hand slot it visually fills - anchors at the weapon
+        /// slot (issue #42); every other item is keyed where it was dropped.
+        /// </summary>
+        private static Vector2Int AnchorOf(Vector2Int position, ItemInstance item)
+        {
+            var equipmentType = EquipmentTypeOf(item);
+
+            if (!IsTwoHandedWeapon(equipmentType))
+                return position;
+
+            var anchor = GetTypeSpecificPositions(equipmentType)[0];
+            return FootprintContains(anchor, SlotFootprint(equipmentType), position) ? anchor : position;
+        }
+
+        /// <summary>Whether the <paramref name="footprint"/>-sized rect keyed at <paramref name="key"/> covers <paramref name="cell"/>.</summary>
+        private static bool FootprintContains(Vector2Int key, Vector2Int footprint, Vector2Int cell) =>
+            key.x <= cell.x && cell.x < key.x + footprint.x &&
+            key.y <= cell.y && cell.y < key.y + footprint.y;
 
         /// <summary>
         /// The slots a worn item spans in the 14x1 equipment strip: two for a two-hander,

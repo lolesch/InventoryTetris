@@ -418,6 +418,151 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         }
 
         [Test]
+        public void InventoryToEquipment_DragOneHandOntoTheWeaponSlot_WhileTwoHandedWorn_PutsTheTwoHanderInHand()
+        {
+            // The control for the case below: a 2H worn (keyed at the weapon slot), a 1H
+            // dropped on that same weapon slot - the displaced 2H goes to the hand.
+            var stats = new FakeStatReceiver();
+            var sink = new FakeCursorSink();
+            var cursor = new CursorHolder(sink);
+            var equipment = Equipment(stats);
+            var inventory = Inventory();
+
+            var worn = new Package(inventory, GreatSword(15f), 1u);
+            _ = equipment.TryAddToContainer(ref worn);
+            var wornTwoHander = equipment.StoredPackages.Values.Single().Item;
+            stats.Added.Clear();
+            stats.Removed.Clear();
+
+            var incoming = new Package(inventory, Sword(6f), 1u);
+            _ = inventory.TryAddToContainer(ref incoming);
+            var incomingInstance = inventory.StoredPackages.Values.Single().Item;
+            var before = Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values);
+
+            var inHand = PickUp(inventory, inventory.StoredPackages.Keys.Single());
+            var committed = Drop(cursor, equipment, SlotFor(EquipmentType.Sword), ref inHand, inventory);
+
+            Assert.That(committed, Is.True);
+            Assert.That(equipment.StoredPackages.Values.Single().Item, Is.SameAs(incomingInstance), "the 1H is worn");
+            Assert.That(sink.Replaced.Single().Item, Is.SameAs(wornTwoHander), "the displaced 2H is in hand");
+            Assert.That(inventory.StoredPackages, Is.Empty, "nothing went to the inventory");
+            AssertConserved(before, Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values, sink.Replaced, new[] { inHand }));
+        }
+
+        [Test]
+        public void InventoryToEquipment_DragOffHandOntoTheOffHandSlot_WhileTwoHandedWorn_PutsTheTwoHanderInHand()
+        {
+            // Issue #42.1: a 2H is keyed only at the weapon slot (12,0), but its 2-wide
+            // footprint fills the off-hand slot (13,0) too. Dropping an off-hand on (13,0)
+            // replaces that 2H exactly as dropping a 1H on (12,0) does, so the displaced 2H
+            // must reach the hand the same way - not be misfiled as collateral and shoved
+            // into the inventory.
+            var stats = new FakeStatReceiver();
+            var sink = new FakeCursorSink();
+            var cursor = new CursorHolder(sink);
+            var equipment = Equipment(stats);
+            var inventory = Inventory();
+
+            var worn = new Package(inventory, GreatSword(15f), 1u);
+            _ = equipment.TryAddToContainer(ref worn);
+            var wornTwoHander = equipment.StoredPackages.Values.Single().Item;
+            stats.Added.Clear();
+            stats.Removed.Clear();
+
+            var incoming = new Package(inventory, Shield(4f), 1u);
+            _ = inventory.TryAddToContainer(ref incoming);
+            var incomingInstance = inventory.StoredPackages.Values.Single().Item;
+            var before = Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values);
+
+            var inHand = PickUp(inventory, inventory.StoredPackages.Keys.Single());
+            var committed = Drop(cursor, equipment, SlotFor(EquipmentType.Shield), ref inHand, inventory);
+
+            Assert.That(committed, Is.True);
+            Assert.That(equipment.StoredPackages.Values.Single().Item, Is.SameAs(incomingInstance), "only the off-hand is worn");
+            Assert.That(sink.Replaced.Single().Item, Is.SameAs(wornTwoHander),
+                "the displaced 2H is in hand, exactly as the 1H-on-(12,0) case");
+            Assert.That(inventory.StoredPackages, Is.Empty, "the 2H never touched the inventory");
+            Assert.That(stats.Removed.Select(a => a.Modifier.Value), Is.EquivalentTo(new[] { 15f }));
+            AssertConserved(before, Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values, sink.Replaced, new[] { inHand }));
+        }
+
+        [Test]
+        public void InventoryToEquipment_DragTwoHandedOntoTheOffHandSlot_EquipsAtTheWeaponAnchor()
+        {
+            // Issue #42.2: a 2H fills the off-hand slot when worn, so dropping one *on* that
+            // slot equips it - anchored back at the weapon slot - rather than bouncing off a
+            // red tint. The off-hand it lands over is the item under the drop: it goes to
+            // the hand.
+            var stats = new FakeStatReceiver();
+            var sink = new FakeCursorSink();
+            var cursor = new CursorHolder(sink);
+            var equipment = Equipment(stats);
+            var inventory = Inventory();
+
+            var worn = new Package(inventory, Shield(3f), 1u);
+            _ = equipment.TryAddToContainer(ref worn);
+            var wornOffHand = equipment.StoredPackages.Values.Single().Item;
+            stats.Added.Clear();
+            stats.Removed.Clear();
+
+            var incoming = new Package(inventory, GreatSword(15f), 1u);
+            _ = inventory.TryAddToContainer(ref incoming);
+            var incomingInstance = inventory.StoredPackages.Values.Single().Item;
+            var before = Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values);
+
+            var inHand = PickUp(inventory, inventory.StoredPackages.Keys.Single());
+            var committed = Drop(cursor, equipment, SlotFor(EquipmentType.Shield), ref inHand, inventory);
+
+            Assert.That(committed, Is.True);
+            Assert.That(equipment.StoredPackages.Keys.Single(), Is.EqualTo(SlotFor(EquipmentType.GreatSword)),
+                "the 2H anchored at the weapon slot though it was dropped on the off-hand slot");
+            Assert.That(equipment.StoredPackages.Values.Single().Item, Is.SameAs(incomingInstance));
+            Assert.That(sink.Replaced.Single().Item, Is.SameAs(wornOffHand), "the displaced off-hand is in hand");
+            Assert.That(stats.Added.Select(a => a.Modifier.Value), Is.EquivalentTo(new[] { 15f }));
+            Assert.That(stats.Removed.Select(a => a.Modifier.Value), Is.EquivalentTo(new[] { 3f }));
+            AssertConserved(before, Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values, sink.Replaced, new[] { inHand }));
+        }
+
+        [Test]
+        public void InventoryToEquipment_DragTwoHandedOntoTheOffHandSlot_OverAWeaponAndAnOffHand_OffHandToHandWeaponToOrigin()
+        {
+            // Issue #42.2 x #12: a 2H dropped on the off-hand slot while both hands are full
+            // still resolves to the (12,0) anchor and runs the legal two-overlap double-swap.
+            // The item under the drop is the off-hand (it goes to the hand); the weapon is
+            // collateral (container only) - the mirror of dropping the 2H on the weapon slot.
+            var stats = new FakeStatReceiver();
+            var sink = new FakeCursorSink();
+            var cursor = new CursorHolder(sink);
+            var equipment = Equipment(stats);
+            var inventory = Inventory();
+
+            var weapon = new Package(inventory, Sword(6f), 1u);
+            _ = equipment.TryAddToContainer(ref weapon);
+            var offHand = new Package(inventory, Shield(3f), 1u);
+            _ = equipment.TryAddToContainer(ref offHand);
+            var wornOffHand = equipment.StoredPackages[SlotFor(EquipmentType.Shield)].Item;
+            stats.Added.Clear();
+            stats.Removed.Clear();
+
+            var incoming = new Package(inventory, GreatSword(15f), 1u);
+            _ = inventory.TryAddToContainer(ref incoming);
+            var incomingInstance = inventory.StoredPackages.Values.Single().Item;
+            var before = Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values);
+
+            var inHand = PickUp(inventory, inventory.StoredPackages.Keys.Single());
+            var committed = Drop(cursor, equipment, SlotFor(EquipmentType.Shield), ref inHand, inventory);
+
+            Assert.That(committed, Is.True);
+            Assert.That(equipment.StoredPackages.Keys.Single(), Is.EqualTo(SlotFor(EquipmentType.GreatSword)), "only the 2H is worn, at its anchor");
+            Assert.That(equipment.StoredPackages.Values.Single().Item, Is.SameAs(incomingInstance));
+            Assert.That(sink.Replaced.Single().Item, Is.SameAs(wornOffHand), "the off-hand under the drop point is in hand");
+            Assert.That(inventory.StoredPackages.Values.Single().Item.DefinitionId, Is.EqualTo(SwordId),
+                "the collateral weapon swapped into the origin inventory, never the hand");
+            Assert.That(stats.Removed.Select(a => a.Modifier.Value), Is.EquivalentTo(new[] { 6f, 3f }));
+            AssertConserved(before, Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values, sink.Replaced, new[] { inHand }));
+        }
+
+        [Test]
         public void InventoryToEquipment_WrongEquipmentType_IsRejectedBeforeTheSlotIsTouched()
         {
             // EquipmentSlotDisplay.DropItem's guard: a slot only accepts its own type.
@@ -823,6 +968,32 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 
             // An empty slot takes its item outright.
             Assert.That(equipment.CanPlaceAt(helmSlot, oneBy), Is.True);
+        }
+
+        [Test]
+        public void CanEquipAt_ATwoHanderOverTheOffHandSlot_ResolvesToTheWeaponAnchor()
+        {
+            // Issue #42.2: the red "can't drop" tint (WouldAcceptDrop -> CanEquipAt) must
+            // accept a 2H hovered over the off-hand slot its footprint fills - resolving to
+            // the weapon-slot anchor - and still reject it over an unrelated slot.
+            var equipment = Equipment();
+            var inventory = Inventory();
+
+            var weaponSlot = SlotFor(EquipmentType.GreatSword); // (12,0)
+            var offHandSlot = SlotFor(EquipmentType.Shield);    // (13,0)
+            var helmSlot = SlotFor(EquipmentType.Helm);
+
+            Assert.That(equipment.CanEquipAt(offHandSlot, GreatSword(15f)), Is.True, "empty strip - 2H over the off-hand slot");
+            Assert.That(equipment.CanEquipAt(weaponSlot, GreatSword(15f)), Is.True, "empty strip - 2H over the weapon slot");
+            Assert.That(equipment.CanEquipAt(helmSlot, GreatSword(15f)), Is.False, "a 2H over the helm slot is still turned away");
+
+            var shield = new Package(inventory, Shield(3f), 1u);
+            _ = equipment.TryAddToContainer(ref shield);
+            Assert.That(equipment.CanEquipAt(offHandSlot, GreatSword(15f)), Is.True, "2H over a worn off-hand - a one-item swap at the anchor");
+
+            var weapon = new Package(inventory, Sword(6f), 1u);
+            _ = equipment.TryAddToContainer(ref weapon);
+            Assert.That(equipment.CanEquipAt(offHandSlot, GreatSword(15f)), Is.True, "2H over a worn 1H + off-hand - the legal double-swap");
         }
 
         [Test]
