@@ -1,0 +1,3 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:VisualElement name="EdgeGlow_05" style="flex-grow: 1; background-image: none; background-color: rgb(0, 137, 255); -unity-material: url(&quot;project://database/Assets/UIShaderEffects-EdgeEffects/UIToolkit/Effects/EdgeGlow_05/EdgeGlow_05_UIToolkit.mat?fileID=2100000&amp;guid=340f9b90d78b70341833496814cc64d9&amp;type=2#EdgeGlow_05_UIToolkit&quot;); scale: 0.88 0.88 0.88; -unity-background-image-tint-color: rgb(255, 255, 255);"/>
+</ui:UXML>

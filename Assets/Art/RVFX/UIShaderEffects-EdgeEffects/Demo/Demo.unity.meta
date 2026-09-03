@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: b06e72778e695b44aa8c26d90bfa09c5
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 291229
+  packageName: UI Shader Effects - Edge Effects
+  packageVersion: 2.0.0
+  assetPath: Assets/RVFX/UIShaderEffects-EdgeEffects/Demo/Demo.unity
+  uploadId: 811684

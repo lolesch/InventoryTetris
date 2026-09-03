@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: 7db18f9ee188be745804c0fe146778d9
+ScriptedImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 2
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+  script: {fileID: 12388, guid: 0000000000000000e000000000000000, type: 0}
+  disableValidation: 0
+  unsupportedSelectorAction: 0
+AssetOrigin:
+  serializedVersion: 1
+  productId: 291229
+  packageName: UI Shader Effects - Edge Effects
+  packageVersion: 2.0.0
+  assetPath: Assets/RVFX/UIShaderEffects-EdgeEffects/UIToolkit/Demo/UnityDefaultRuntimeTheme.tss
+  uploadId: 811684

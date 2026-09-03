@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 12ac2fa45c375c143b5e7e09686a8c01
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 291229
+  packageName: UI Shader Effects - Edge Effects
+  packageVersion: 2.0.0
+  assetPath: Assets/RVFX/UIShaderEffects-EdgeEffects/Effects/Material/Icon_08.mat
+  uploadId: 811684

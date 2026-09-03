@@ -1,0 +1,7 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:VisualElement name="EdgeGlow_14_01" style="flex-grow: 1; background-image: none; background-color: rgb(48, 41, 6); -unity-material: url(&quot;project://database/Assets/UIShaderEffects-EdgeEffects/UIToolkit/Effects/EdgeGlow_14/EdgeGlow_14_01_UIToolkit.mat?fileID=2100000&amp;guid=e971c5e0c7427b94ba284f77db52ba5f&amp;type=2#EdgeGlow_14_01_UIToolkit&quot;); scale: 1 1;">
+        <ui:VisualElement name="EdgeGlow_14_02" style="flex-grow: 1; background-image: none; background-color: rgb(255, 175, 0); -unity-material: url(&quot;project://database/Assets/UIShaderEffects-EdgeEffects/UIToolkit/Effects/EdgeGlow_14/EdgeGlow_14_02_UIToolkit.mat?fileID=2100000&amp;guid=e11be3ef36c19e346afa512452cc7c04&amp;type=2#EdgeGlow_14_02_UIToolkit&quot;); scale: 1 1;">
+            <ui:VisualElement name="EdgeGlow_14_03" style="flex-grow: 1; background-image: none; background-color: rgb(255, 255, 255); -unity-material: url(&quot;project://database/Assets/UIShaderEffects-EdgeEffects/UIToolkit/Effects/EdgeGlow_14/EdgeGlow_14_03_UIToolkit.mat?fileID=2100000&amp;guid=f6e2c49949600ad4f9c8fabe683bf208&amp;type=2#EdgeGlow_14_03_UIToolkit&quot;); scale: 0.75 0.75 0.75;"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,0 +1,7 @@
+Note: UI Builder Color Mismatch (Known Issue):
+UI Toolkit’s UI Builder preview currently renders in Gamma color space.
+If your project uses Linear color space, colors in the UI Builder may look different from the actual Game View.
+This is a known issue, and Unity is aware of it.
+
+Recommended Workflow:
+Always adjust colors while viewing the Game View, not the UI Builder preview.

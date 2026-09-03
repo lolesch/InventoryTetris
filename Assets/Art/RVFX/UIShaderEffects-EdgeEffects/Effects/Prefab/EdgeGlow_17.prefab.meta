@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 9a2490aee4566674aa26567e65bffa8c
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 291229
+  packageName: UI Shader Effects - Edge Effects
+  packageVersion: 2.0.0
+  assetPath: Assets/RVFX/UIShaderEffects-EdgeEffects/Effects/Prefab/EdgeGlow_17.prefab
+  uploadId: 811684

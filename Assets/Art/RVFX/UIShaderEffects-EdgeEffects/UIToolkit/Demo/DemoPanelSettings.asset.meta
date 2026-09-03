@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: f180bcc8b3282444db93cd94e7e27ec4
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 291229
+  packageName: UI Shader Effects - Edge Effects
+  packageVersion: 2.0.0
+  assetPath: Assets/RVFX/UIShaderEffects-EdgeEffects/UIToolkit/Demo/DemoPanelSettings.asset
+  uploadId: 811684

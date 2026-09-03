@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 848064ca3403a4c4682689174a1fb0a7
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 291229
+  packageName: UI Shader Effects - Edge Effects
+  packageVersion: 2.0.0
+  assetPath: Assets/RVFX/UIShaderEffects-EdgeEffects/Effects/Material/EdgeGlow_04.mat
+  uploadId: 811684

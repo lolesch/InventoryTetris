@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 7fb54d616e120ad499ed8c63472a6b9b
+ShaderImporter:
+  externalObjects: {}
+  defaultTextures: []
+  nonModifiableTextures: []
+  preprocessorOverride: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 291229
+  packageName: UI Shader Effects - Edge Effects
+  packageVersion: 2.0.0
+  assetPath: Assets/RVFX/UIShaderEffects-EdgeEffects/Shader/EdgeEffect_Electric_Additive.shader
+  uploadId: 811684

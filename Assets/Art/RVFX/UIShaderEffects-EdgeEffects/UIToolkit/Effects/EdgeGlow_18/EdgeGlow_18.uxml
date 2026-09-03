@@ -1,0 +1,7 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:VisualElement name="EdgeGlow_18_Mask" style="flex-grow: 1; background-image: none; background-color: rgba(0, 0, 0, 0); -unity-material: none; scale: 0.8 0.8 0.8; overflow: hidden;">
+        <ui:VisualElement name="EdgeGlow_18_01" style="flex-grow: 1; background-image: none; background-color: rgb(255, 255, 255); -unity-material: url(&quot;project://database/Assets/UIShaderEffects-EdgeEffects/UIToolkit/Effects/EdgeGlow_18/EdgeGlow_18_01_UIToolkit.mat?fileID=2100000&amp;guid=07e2361d5a8ca5a49aa86c639d2e8820&amp;type=2#EdgeGlow_18_01_UIToolkit&quot;); scale: 1 1; overflow: visible;">
+            <ui:VisualElement name="EdgeGlow_18_02" style="flex-grow: 1; background-image: none; background-color: rgb(255, 255, 255); -unity-material: url(&quot;project://database/Assets/UIShaderEffects-EdgeEffects/UIToolkit/Effects/EdgeGlow_18/EdgeGlow_18_02_UIToolkit.mat?fileID=2100000&amp;guid=a74e09e458955d840942949eab895f4c&amp;type=2#EdgeGlow_18_02_UIToolkit&quot;); scale: 1 1; overflow: visible;"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 07e2361d5a8ca5a49aa86c639d2e8820
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 291229
+  packageName: UI Shader Effects - Edge Effects
+  packageVersion: 2.0.0
+  assetPath: Assets/RVFX/UIShaderEffects-EdgeEffects/UIToolkit/Effects/EdgeGlow_18/EdgeGlow_18_01_UIToolkit.mat
+  uploadId: 811684

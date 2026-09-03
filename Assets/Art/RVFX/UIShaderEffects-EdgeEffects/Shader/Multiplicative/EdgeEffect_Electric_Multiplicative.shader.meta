@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 5a2852811f4df29459f9d3165067b47e
+ShaderImporter:
+  externalObjects: {}
+  defaultTextures: []
+  nonModifiableTextures: []
+  preprocessorOverride: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 291229
+  packageName: UI Shader Effects - Edge Effects
+  packageVersion: 2.0.0
+  assetPath: Assets/RVFX/UIShaderEffects-EdgeEffects/Shader/Multiplicative/EdgeEffect_Electric_Multiplicative.shader
+  uploadId: 811684
