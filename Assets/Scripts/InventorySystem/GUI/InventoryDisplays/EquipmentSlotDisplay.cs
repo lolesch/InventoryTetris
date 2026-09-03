@@ -60,6 +60,25 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             FadeInPreview(); // TODO: see if the package should propagate to FadeInPreview
         }
 
+        /// <summary>
+        /// The equipment slots are a paper-doll, not a uniform grid, so the pixel-derived
+        /// drop position the base uses is meaningless here (issue #12) - it drifts off the
+        /// 14x1 logical row and reddened every hover. Mirror <see cref="DropItem"/> instead:
+        /// the item lands at this slot's own fixed position, and only when the slot is one
+        /// this equipment type is allowed in.
+        /// </summary>
+        public override bool WouldAcceptDrop(Package package)
+        {
+            if (!package.IsValid || Container == null)
+                return false;
+
+            var definition = ItemView.Of(package.Item).Definition;
+
+            return definition.Category == ItemCategory.Equipment
+                && CharacterEquipment.GetTypeSpecificPositions(definition.EquipmentType).Contains(Position)
+                && Container.CanPlaceAt(Position, ItemView.Of(package.Item).Dimensions);
+        }
+
         public void Refresh2HandSlotDisplay(Package package)
         {
             RefreshSlotDisplay(package);

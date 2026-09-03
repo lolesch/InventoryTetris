@@ -66,28 +66,23 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
             void HighlightOverlappingSlots()
             {
-                /// Every early return has to clear the tint. Bailing out while a previous
-                /// slot's red is still on screen is what made large items look undroppable
-                /// over the floor and sell slots, which have no container of their own.
-                if (!TryGetDropPosition(Hovered, out var positionToAdd))
-                {
-                    ResetOverlapTint();
+                if (!background)
                     return;
-                }
 
-                /// One rule, shared with the drop (issue #12): CanPlaceAt is the same check
-                /// AddAtPosition places by, and CharacterEquipment overrides it to accept the
-                /// legal 2H double-swap - so the tint can never redden a drop that would land,
-                /// nor stay clear on one that would not.
-                var canPlace = Hovered.Container.CanPlaceAt(positionToAdd, ItemView.Of(DraggingPackage.Item).Dimensions);
+                /// One rule, shared with the drop (issue #12): each slot display answers
+                /// WouldAcceptDrop exactly the way its own DropItem behaves - CanPlaceAt at
+                /// the pixel-derived cell for the inventory grid, the fixed type-specific
+                /// slot for the paper-doll equipment layout, always-yes for a container-less
+                /// sink (the floor, the sell slot). Red only while the cursor is over a real
+                /// slot that would turn the drop away; hovering nothing clears it.
+                var refused = Hovered != null && !Hovered.WouldAcceptDrop(DraggingPackage);
 
-                if (background)
-                    /// Assigned rather than multiplied so it stays red whatever the scrim is
-                    /// tinted to; colour multiplication is component-wise and only lands on red
-                    /// while the scrim happens to be white.
-                    background.color = canPlace
-                        ? initialColor
-                        : WithAlpha(Color.red, initialColor.a);
+                /// Assigned rather than multiplied so it stays red whatever the scrim is
+                /// tinted to; colour multiplication is component-wise and only lands on red
+                /// while the scrim happens to be white.
+                background.color = refused
+                    ? WithAlpha(Color.red, initialColor.a)
+                    : initialColor;
             }
         }
 
@@ -119,12 +114,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             color.a = alpha;
 
             return color;
-        }
-
-        private void ResetOverlapTint()
-        {
-            if (background)
-                background.color = initialColor;
         }
 
         private void SetToMousePosition()

@@ -137,6 +137,14 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             #endregion BUY: DRAG
         }
 
+        /// <summary>
+        /// Dropping onto the shelf is a sale, not a placement (issue #12): it takes any
+        /// item that is not already the vendor's, so the drop tint must not read the
+        /// shelf's own grid the way the base does. Mirrors <see cref="DropItem"/>'s guard.
+        /// </summary>
+        public override bool WouldAcceptDrop(Package package) =>
+            package.IsValid && package.Sender != Container;
+
         protected override void DropItem(Package package)
         {
             if (!package.IsValid || package.Sender == Container)

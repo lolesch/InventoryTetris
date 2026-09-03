@@ -231,6 +231,28 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         protected abstract void DropItem(Package package);
 
+        /// <summary>
+        /// Whether <see cref="DropItem"/> would place <paramref name="package"/> if the
+        /// player released it over this slot now - the exact predicate the drag display's
+        /// red "can't drop" tint shows, so the warning and the drop can never disagree
+        /// (issue #12). The base answers for a uniform grid, via
+        /// <see cref="DragProvider.TryGetDropPosition"/> +
+        /// <see cref="AbstractDimensionalContainer.CanPlaceAt"/>; a sink with no container
+        /// of its own (the floor, the sell slot) takes anything;
+        /// <see cref="EquipmentSlotDisplay"/> overrides it for the paper-doll layout.
+        /// </summary>
+        public virtual bool WouldAcceptDrop(Package package)
+        {
+            if (!package.IsValid)
+                return false;
+
+            if (Container == null)
+                return true;
+
+            return DragProvider.Instance.TryGetDropPosition(this, out var position)
+                && Container.CanPlaceAt(position, ItemView.Of(package.Item).Dimensions);
+        }
+
         protected virtual void SetDisplaySize(RectTransform display, Package package) { }
 
         public virtual void RefreshSlotDisplay(Package package)
