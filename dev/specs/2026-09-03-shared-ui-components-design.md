@@ -1,8 +1,14 @@
 ---
-status: draft
+status: sliced to epic #36 (issues #37–#41), 2026-09-03
 ---
 
 # Shared UI primitives move into the Utility submodule, and the submodule owns tweening
+
+> Sliced by `/to-tickets` into epic
+> [#36](https://github.com/lolesch/InventoryTetris/issues/36) + sub-issues #37–#41.
+> Frontier: #37 (tween core) and #38 (`Utility.UI` + helpers) start immediately; #39
+> (DOTween port) needs #37; #40 (move the interaction family) needs #38 + #39; #41
+> (`TooltipHost<T>`) needs #37 + #40.
 
 ## Problem Statement
 
