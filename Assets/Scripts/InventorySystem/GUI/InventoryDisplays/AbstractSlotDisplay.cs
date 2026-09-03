@@ -190,18 +190,38 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         protected abstract void MoveItem(PointerEventData eventData, Vector2 pointerPosition);
 
-        protected void FadeInPreview()
+        protected void FadeInPreview() => RefreshHoverPreview(clearStale: false);
+
+        /// <summary>
+        /// Bring the hover preview in line with the container cell the cursor rests over
+        /// (<see cref="Position"/>) after a move this slot just performed. The drop follows
+        /// the drag visual and routinely lands a cell away, so the cursor can now sit on the
+        /// item that just landed or on a cell a swap emptied by sending its occupant to the
+        /// hand. Unlike the hover path this wipes a stale preview up front instead of leaving
+        /// the carried-away item frozen there until a pointer-exit (issue #13, QA-2).
+        /// </summary>
+        protected void SyncPreviewAfterMove() => RefreshHoverPreview(clearStale: true);
+
+        /// <summary>
+        /// The one path that decides what the hover preview shows: whatever
+        /// <see cref="HoverPreview.Under"/> finds under <see cref="Position"/>, faded in the
+        /// same way a hover would so a rapid drag-drop-drag never flashes the panel. On a
+        /// plain hover the cell is only ever gaining an item; after a move
+        /// (<paramref name="clearStale"/>) it may instead have been vacated, so clear first.
+        /// </summary>
+        private void RefreshHoverPreview(bool clearStale)
         {
-            if (Container == null)
-                return;
+            hovering = false;
 
-            var position = Position;
+            if (clearStale)
+                PreviewProvider.Instance.RefreshPreviewDisplay(new Package(Container, null, 0), this);
 
-            if (Container.TryGetItemAt(ref position, out var hoveredIten))
-                if (hoveredIten.Item != null && 0 < hoveredIten.Amount)
-                    _ = StartCoroutine(FadeIn(hoveredIten, position));
+            var package = HoverPreview.Under(Container, Position);
 
-            IEnumerator FadeIn(Package package, Vector2Int storedPosition)
+            if (package.IsValid)
+                _ = StartCoroutine(FadeIn(package));
+
+            IEnumerator FadeIn(Package toShow)
             {
                 hovering = true;
 
@@ -215,7 +235,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
                     if (canFadeIn && hovering)
                     {
-                        PreviewProvider.Instance.RefreshPreviewDisplay(package, this);
+                        PreviewProvider.Instance.RefreshPreviewDisplay(toShow, this);
                         hovering = false;
                     }
                 }

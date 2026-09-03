@@ -52,7 +52,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             if (cursor.IsFree)
                 DragProvider.Instance.EndDrag();
 
-            FadeInPreview(); // TODO: see if the package should propagate to FadeInPreview
+            SyncPreviewAfterMove();
         }
 
         /// <summary>

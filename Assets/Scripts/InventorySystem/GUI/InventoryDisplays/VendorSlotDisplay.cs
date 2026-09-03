@@ -160,7 +160,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             Container?.InvokeRefresh();
             DragProvider.Instance.Origin.Container?.InvokeRefresh();
 
-            FadeInPreview(); // TODO: see if the package should propagate to FadeInPreview
+            SyncPreviewAfterMove();
         }
     }
 }
