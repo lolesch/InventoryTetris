@@ -519,6 +519,32 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         }
 
         [Test]
+        public void RightClickEquip_TheSwappedOutItem_LandsBackUnderTheCursorWhereTheHoverPreviewFindsIt()
+        {
+            // Issue #13: right-click a helm in the bag while a helm is worn. The worn helm
+            // swaps back into the cell just vacated - straight under the cursor - so the
+            // hover-preview seam must describe it there (the slot display re-opens the
+            // tooltip for whatever HoverPreview.Under reports at Position after the swap).
+            var cursor = new CursorHolder(new FakeCursorSink());
+            var equipment = Equipment(new FakeStatReceiver());
+            var inventory = Inventory(2, 1);
+
+            var worn = new Package(inventory, Helm(4f), 1u);
+            _ = equipment.TryAddToContainer(ref worn);
+            var wornInstance = equipment.StoredPackages.Values.Single().Item;
+
+            var cell = new Vector2Int(0, 0);
+            _ = inventory.AddAtPosition(cell, new Package(inventory, Helm(9f), 1u));
+
+            var committed = RightClickEquip(cursor, inventory, equipment, cell, inventory.StoredPackages[cell]);
+
+            Assert.That(committed, Is.True);
+            Assert.That(equipment.StoredPackages.Values.Single().Item.DefinitionId, Is.EqualTo(HelmId), "the new helm is worn");
+            Assert.That(HoverPreview.Under(inventory, cell).Item, Is.SameAs(wornInstance),
+                "the swapped-out helm is under the cursor and the preview seam finds it");
+        }
+
+        [Test]
         public void RightClickEquip_OneHandWhileTwoHandedWorn_SendsTheDisplacedTwoHanderToHandWhenItCannotReFit()
         {
             var stats = new FakeStatReceiver();

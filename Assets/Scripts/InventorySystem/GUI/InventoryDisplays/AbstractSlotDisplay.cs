@@ -194,11 +194,13 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         /// <summary>
         /// Bring the hover preview in line with the container cell the cursor rests over
-        /// (<see cref="Position"/>) after a move this slot just performed. The drop follows
-        /// the drag visual and routinely lands a cell away, so the cursor can now sit on the
-        /// item that just landed or on a cell a swap emptied by sending its occupant to the
-        /// hand. Unlike the hover path this wipes a stale preview up front instead of leaving
-        /// the carried-away item frozen there until a pointer-exit (issue #13, QA-2).
+        /// (<see cref="Position"/>) after a swap this slot performed. The cursor has not
+        /// moved, so the cell may now hold the item the swap landed there - a drop follows
+        /// the drag visual and often lands a cell over; a right-click "swap in place"
+        /// re-homes the displaced item into the vacated cell, i.e. straight back under the
+        /// cursor - or be empty because its occupant went to the hand or another container.
+        /// Unlike the hover path this wipes a stale preview up front instead of leaving the
+        /// old item frozen there until a pointer-exit (issue #13, QA-2).
         /// </summary>
         protected void SyncPreviewAfterMove() => RefreshHoverPreview(clearStale: true);
 

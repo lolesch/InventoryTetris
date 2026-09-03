@@ -129,6 +129,11 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
                         transaction.Commit();
 
+                        /// The displaced equipped item re-homes into this container, often
+                        /// into the very cell just vacated - i.e. back under the cursor. The
+                        /// leading FadeOutPreview dismissed the tooltip on the click; bring it
+                        /// back for whatever now sits here (issue #13).
+                        SyncPreviewAfterMove();
                         return;
                     }
                 }
