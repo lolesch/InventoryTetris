@@ -28,6 +28,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         private const string ShieldId = "test.shield";   // off-hand
         private const string RingId = "test.ring";
         private const string HelmId = "test.helm";
+        private const string PlateHelmId = "test.platehelm"; // a helm with a real 2x2 bag footprint
         private const string ArrowId = "test.arrow";
 
         [SetUp]
@@ -37,6 +38,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             .With(new TestDefinition { Id = ShieldId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Shield, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
             .With(new TestDefinition { Id = RingId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Ring, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
             .With(new TestDefinition { Id = HelmId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Helm, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
+            .With(new TestDefinition { Id = PlateHelmId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Helm, Footprint = ItemSize.TwoByTwo, BaseStackLimit = 1u })
             .With(new TestDefinition { Id = ArrowId, Category = ItemCategory.Consumable, ConsumableType = ConsumableType.Arrow, Footprint = ItemSize.OneByOne, BaseStackLimit = 20u });
 
         [TearDown]
@@ -52,6 +54,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         private static ItemInstance Shield(float armor) => new(ShieldId, ItemRarity.Magic, 5, new[] { Affix(StatName.Armor, armor) });
         private static ItemInstance Ring(float health) => new(RingId, ItemRarity.Magic, 3, new[] { Affix(StatName.Health, health) });
         private static ItemInstance Helm(float armor) => new(HelmId, ItemRarity.Rare, 5, new[] { Affix(StatName.Armor, armor) });
+        private static ItemInstance PlateHelm(float armor) => new(PlateHelmId, ItemRarity.Rare, 5, new[] { Affix(StatName.Armor, armor) });
         private static ItemInstance Arrows() => new(ArrowId, ItemRarity.Common, 1, null);
 
         private static CharacterInventory Inventory(int width = 4, int height = 4) => new(new Vector2Int(width, height));
@@ -794,6 +797,40 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 
             // An empty slot takes its item outright.
             Assert.That(equipment.CanPlaceAt(helmSlot, oneBy), Is.True);
+        }
+
+        [Test]
+        public void CanEquipAt_ResolvesTheFootprintFromTheEquipmentLayout_NotTheItemsBagShape()
+        {
+            var equipment = Equipment();
+            var helmSlot = SlotFor(EquipmentType.Helm);
+
+            // A real helm is 2x2 in the bag. The equipment strip is 14x1, so that footprint
+            // runs off the row - routing ItemView.Dimensions into CanPlaceAt reddened every
+            // hover of a helm (or a sword, or any non-1x1 item) over its own empty slot
+            // (issue #12). CanEquipAt must use the paper-doll's own 1-slot footprint.
+            var bulkyHelm = PlateHelm(4f);
+            Assert.That(ItemView.Of(bulkyHelm).Dimensions, Is.EqualTo(new Vector2Int(2, 2)), "premise: the helm is 2x2 in the bag");
+
+            Assert.That(equipment.CanEquipAt(helmSlot, bulkyHelm), Is.True, "helm over its own empty slot");
+
+            // Wrong slot for the type, and a non-equipment item, are still turned away.
+            Assert.That(equipment.CanEquipAt(SlotFor(EquipmentType.Sword), bulkyHelm), Is.False, "helm over the weapon slot");
+            Assert.That(equipment.CanEquipAt(helmSlot, Arrows()), Is.False, "a consumable is not equipment");
+
+            // A second helm over the worn one is a plain one-slot swap.
+            var worn = new Package(equipment, bulkyHelm, 1u);
+            _ = equipment.TryAddToContainer(ref worn);
+            Assert.That(equipment.CanEquipAt(helmSlot, PlateHelm(9f)), Is.True, "swap with the worn helm");
+
+            // A 2H spans two slots via SlotFootprintOf, not its bag footprint: over a worn
+            // 1H + off-hand it is the legal double-swap CanPlaceAt accepts (<= 2 overlaps).
+            var freshEquipment = Equipment();
+            var oneHander = new Package(freshEquipment, Sword(6f), 1u);
+            _ = freshEquipment.TryAddToContainer(ref oneHander);
+            var shield = new Package(freshEquipment, Shield(3f), 1u);
+            _ = freshEquipment.TryAddToContainer(ref shield);
+            Assert.That(freshEquipment.CanEquipAt(SlotFor(EquipmentType.GreatSword), GreatSword(15f)), Is.True, "2H double-swap over 1H + off-hand");
         }
 
         // ── Sort ───────────────────────────────────────────────────────────

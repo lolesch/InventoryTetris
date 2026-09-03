@@ -68,7 +68,7 @@ namespace ToolSmiths.InventorySystem.Inventories
                 return false;
 
             var equipmentType = EquipmentTypeOf(package.Item);
-            var dimensions = IsTwoHandedWeapon(equipmentType) ? new Vector2Int(2, 1) : new Vector2Int(1, 1);
+            var dimensions = SlotFootprint(equipmentType);
 
             var typePositions = GetTypeSpecificPositions(equipmentType);
 
@@ -89,7 +89,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             if (!package.IsValid || !IsEquipment(package.Item))
                 return package;
 
-            var dimensions = IsTwoHandedWeapon(EquipmentTypeOf(package.Item)) ? new Vector2Int(2, 1) : new Vector2Int(1, 1);
+            var dimensions = SlotFootprintOf(package.Item);
 
             if (IsEmptySpace(position, dimensions, out var otherItems))
                 TryAddToInventory();
@@ -223,6 +223,22 @@ namespace ToolSmiths.InventorySystem.Inventories
             return otherItems.Count is > 0 and <= 2;
         }
 
+        /// <summary>
+        /// Whether <see cref="AddAtPosition"/> would place <paramref name="item"/> at
+        /// <paramref name="position"/> right now: it is equipment, <paramref name="position"/>
+        /// is a slot this equipment type is allowed in, and the slot - with the swap it may
+        /// trigger - can take it. The exact predicate <c>EquipmentSlotDisplay.DropItem</c>
+        /// gates on, so the red "can't drop" tint and the drop can never disagree (issue #12).
+        /// The footprint is <see cref="SlotFootprintOf"/> - the paper-doll layout's own rule -
+        /// never the item's inventory-bag <see cref="ItemView.Dimensions"/>, which runs off
+        /// the 1-tall equipment row and reddened every hover of a helm or a sword over its
+        /// own empty slot.
+        /// </summary>
+        public bool CanEquipAt(Vector2Int position, ItemInstance item) =>
+            IsEquipment(item)
+            && GetTypeSpecificPositions(EquipmentTypeOf(item)).Contains(position)
+            && CanPlaceAt(position, SlotFootprintOf(item));
+
         public override List<Vector2Int> GetStoredItemsAt(Vector2Int position, Vector2Int dimension)
         {
             List<Vector2Int> otherPackagePositions = new();
@@ -233,10 +249,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             foreach (var package in StoredPackages)
             {
-                var equipmentType = EquipmentTypeOf(package.Value.Item);
-                var dimensions = IsTwoHandedWeapon(equipmentType)
-                    ? new Vector2Int(2, 1)
-                    : new Vector2Int(1, 1);
+                var dimensions = SlotFootprint(EquipmentTypeOf(package.Value.Item));
 
                 for (var x = package.Key.x; x < package.Key.x + dimensions.x; x++)
                     for (var y = package.Key.y; y < package.Key.y + dimensions.y; y++)
@@ -257,6 +270,17 @@ namespace ToolSmiths.InventorySystem.Inventories
             ItemView.Of(item).Definition.EquipmentType;
 
         public static bool IsTwoHandedWeapon(EquipmentType equipmentType) => equipmentType is > EquipmentType.TWOHANDEDWEAPONS and < EquipmentType.OFFHANDS;
+
+        /// <summary>
+        /// The slots a worn item spans in the 14x1 equipment strip: two for a two-hander,
+        /// one for everything else. This is the paper-doll layout's own footprint rule; an
+        /// item's <see cref="ItemView.Dimensions"/> is its inventory-bag shape and is
+        /// meaningless here (issue #12).
+        /// </summary>
+        public static Vector2Int SlotFootprintOf(ItemInstance item) => SlotFootprint(EquipmentTypeOf(item));
+
+        private static Vector2Int SlotFootprint(EquipmentType equipmentType) =>
+            IsTwoHandedWeapon(equipmentType) ? new Vector2Int(2, 1) : new Vector2Int(1, 1);
 
         public static Vector2Int[] GetTypeSpecificPositions(EquipmentType equipment) => equipment switch
         {
