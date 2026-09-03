@@ -1,0 +1,78 @@
+
+===== Q2: is each build viable? RAW (retreat OFF, bag OFF) — can it out-sustain the Location? =====
+--- easy ---
+physical             death    0 enc 57 kills 456 dur   900s xp/min 475.6 settledHP    1 | Timeout:200
+magical              death    0 enc 55 kills 446 dur   900s xp/min 464.9 settledHP    1 | Timeout:200
+hybrid               death    0 enc 56 kills 455 dur   900s xp/min   474 settledHP    1 | Timeout:200
+--- hard ---
+physical             death    1 enc  2 kills  31 dur  79.1s xp/min 724.6 settledHP    0 | Died:200
+magical              death    1 enc  2 kills  32 dur  50.7s xp/min 986.8 settledHP  0.1 | Died:200
+hybrid               death    1 enc  2 kills  24 dur  53.7s xp/min 729.1 settledHP    0 | Died:200
+
+===== Q2b: each build at its BEST engagement vs hard (retreat OFF, bag OFF) =====
+--- physical ---
+engagement 1         death    1 enc  4 kills  55 dur 141.1s xp/min 719.2 settledHP    0 | Died:150
+engagement 2         death    1 enc  2 kills  31 dur  79.1s xp/min 725.5 settledHP    0 | Died:150
+engagement 3         death    1 enc  2 kills  24 dur  59.7s xp/min 702.1 settledHP    0 | Died:150
+engagement 4         death    1 enc  1 kills  18 dur  46.1s xp/min 564.2 settledHP  0.1 | Died:150
+engagement 5         death    1 enc  1 kills  17 dur  42.4s xp/min 527.4 settledHP  0.1 | Died:150
+--- magical ---
+engagement 1         death    1 enc  3 kills  46 dur  80.9s xp/min 1047.8 settledHP    0 | Died:150
+engagement 2         death    1 enc  3 kills  43 dur  71.7s xp/min 1093.4 settledHP    0 | Died:150
+engagement 3         death    1 enc  3 kills  38 dur    62s xp/min 1106.5 settledHP    0 | Died:150
+engagement 4         death    1 enc  2 kills  32 dur    51s xp/min 993.4 settledHP  0.1 | Died:150
+engagement 5         death    1 enc  2 kills  28 dur  45.6s xp/min 891.4 settledHP  0.1 | Died:150
+--- hybrid ---
+engagement 1         death    1 enc  3 kills  42 dur   103s xp/min 765.7 settledHP    0 | Died:150
+engagement 2         death    1 enc  2 kills  32 dur    71s xp/min 829.7 settledHP    0 | Died:150
+engagement 3         death    1 enc  2 kills  24 dur  53.9s xp/min 733.4 settledHP    0 | Died:150
+engagement 4         death    1 enc  1 kills  18 dur  40.6s xp/min 555.7 settledHP  0.1 | Died:150
+engagement 5         death    1 enc  1 kills  16 dur    37s xp/min 495.8 settledHP  0.1 | Died:150
+
+===== Q2c: gear multiplier — how much gear opens hard? (physical & magical, best engagement) =====
+--- physical ---
+x1                   death    1 enc  2 kills  31 dur  79.1s xp/min 725.5 settledHP    0 | Died:150
+x1.1                 death    1 enc  3 kills  45 dur    89s xp/min 920.5 settledHP    0 | Died:150
+x1.25                death    1 enc  5 kills  61 dur 109.4s xp/min 1026.8 settledHP    0 | Died:150
+x1.4                 death    1 enc  6 kills  73 dur 125.4s xp/min 1077.1 settledHP    0 | Died:150
+x1.6                 death    1 enc 10 kills 126 dur 181.6s xp/min 1267.3 settledHP    0 | Died:150
+--- magical ---
+x1                   death    1 enc  2 kills  32 dur    51s xp/min 993.4 settledHP  0.1 | Died:150
+x1.1                 death    1 enc  4 kills  56 dur  79.9s xp/min 1291.9 settledHP  0.1 | Died:150
+x1.25                death    1 enc  6 kills  75 dur 105.4s xp/min 1332.7 settledHP    0 | Died:150
+x1.4                 death 0.99 enc 40 kills 480 dur 574.8s xp/min 1482.4 settledHP    0 | Died:148 Timeout:2
+x1.6                 death 0.68 enc 56 kills 679 dur 816.5s xp/min 1482.1 settledHP    0 | Died:102 Timeout:48
+
+===== Q1a: REALISTIC run (retreat@HP 0.25 + bag-full 0.9 ON) — what ends a Run? =====
+physical @ easy      death    0 enc  5 kills  43 dur  81.3s xp/min 497.1 settledHP    1 | Recalled:Bag:200
+magical @ easy       death    0 enc  5 kills  42 dur  81.2s xp/min 487.1 settledHP    1 | Recalled:Bag:200
+hybrid @ easy        death    0 enc  5 kills  42 dur  79.8s xp/min 496.3 settledHP    1 | Recalled:Bag:200
+physical @ hard      death    0 enc  2 kills  24 dur  61.4s xp/min 688.8 settledHP  0.3 | Recalled:HP:200
+magical @ hard       death    0 enc  2 kills  25 dur    40s xp/min 774.6 settledHP  0.3 | Recalled:HP:194 Recalled:Bag:6
+hybrid @ hard        death    0 enc  1 kills  16 dur    37s xp/min 510.2 settledHP  0.3 | Recalled:HP:200
+
+===== Q1b: endless spawn (finiteRoster OFF) — is the Encounter still a unit? =====
+physical @ easy      death    0 enc  0 kills  42 dur  95.5s xp/min 414.1 settledHP    1 | Recalled:Bag:150
+hybrid @ easy        death    0 enc  0 kills  42 dur  95.7s xp/min 413.6 settledHP    1 | Recalled:Bag:150
+physical @ hard      death    0 enc  0 kills  20 dur  50.8s xp/min 620.7 settledHP  0.3 | Recalled:HP:150
+hybrid @ hard        death    0 enc  0 kills  15 dur  32.5s xp/min   459 settledHP  0.3 | Recalled:HP:150
+
+===== Q1c: finite Run (encounterCap 8) vs endless — easy, realistic =====
+physical endless     death    0 enc  5 kills  43 dur  82.4s xp/min 497.2 settledHP    1 | Recalled:Bag:150
+physical cap8        death    0 enc  5 kills  43 dur  82.4s xp/min 497.2 settledHP    1 | Recalled:Bag:150
+magical endless      death    0 enc  5 kills  42 dur  82.3s xp/min 486.5 settledHP    1 | Recalled:Bag:150
+magical cap8         death    0 enc  5 kills  42 dur  82.3s xp/min 486.4 settledHP    1 | Recalled:Bag:149 Recalled:Cap:1
+hybrid endless       death    0 enc  5 kills  42 dur  80.6s xp/min 495.8 settledHP    1 | Recalled:Bag:150
+hybrid cap8          death    0 enc  5 kills  42 dur  80.6s xp/min 495.8 settledHP    1 | Recalled:Bag:149 Recalled:Cap:1
+
+===== Q3: CastThreshold — trickle vs burst (magical @ hard eng4, retreat OFF bag OFF) =====
+threshold 0.05       death    1 enc  3 kills  36 dur  57.6s xp/min 1052.7 settledHP  0.1 | Died:150
+threshold 0.2        death    1 enc  2 kills  34 dur  54.8s xp/min 1030.9 settledHP  0.1 | Died:150
+threshold 0.4        death    1 enc  2 kills  32 dur    51s xp/min 993.4 settledHP  0.1 | Died:150
+threshold 0.6        death    1 enc  2 kills  31 dur  50.8s xp/min 976.2 settledHP  0.1 | Died:150
+threshold 0.8        death    1 enc  3 kills  36 dur  59.7s xp/min 1012.1 settledHP  0.1 | Died:150
+threshold 0.95       death    1 enc  2 kills  30 dur  51.1s xp/min 942.1 settledHP    0 | Died:150
+
+===== traces =====
+  physical @ hard eng2 (retreat off): cleared 2 killed 30 | Died | t30 CLR1(hp66%)  t60 CLR2(hp28%)  t77 Died(hp0%)
+  magical @ hard eng4 (retreat off): cleared 3 killed 36 | Died | t17 CLR1(hp75%)  t37 CLR2(hp39%)  t56 CLR3(hp9%)  t61 Died(hp0%)
