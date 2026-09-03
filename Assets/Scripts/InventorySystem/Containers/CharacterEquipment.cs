@@ -12,17 +12,15 @@ namespace ToolSmiths.InventorySystem.Inventories
     public class CharacterEquipment : AbstractDimensionalContainer
     {
         private readonly IStatReceiver statReceiver;
-        private readonly ICursorSink cursorSink;
+
+        /// <summary>Guards the force-swap against re-entering itself: a displaced item
+        /// re-homing back through this container must not trigger a second swap (issue #12).</summary>
+        private bool midForceSwap;
 
         /// <param name="statReceiver">The character worn items apply their affixes to.
         /// Null in a pure container test that only exercises placement.</param>
-        /// <param name="cursorSink">Where a displaced item is handed when no container
-        /// will re-home it. Null in a test.</param>
-        public CharacterEquipment(Vector2Int dimensions, IStatReceiver statReceiver = null, ICursorSink cursorSink = null) : base(dimensions)
-        {
+        public CharacterEquipment(Vector2Int dimensions, IStatReceiver statReceiver = null) : base(dimensions) =>
             this.statReceiver = statReceiver;
-            this.cursorSink = cursorSink;
-        }
 
         protected override void OnPackageRemoved(Package package)
         {
@@ -45,8 +43,13 @@ namespace ToolSmiths.InventorySystem.Inventories
                 var equipmentType = EquipmentTypeOf(package.Item);
 
                 var equipmentPositions = GetTypeSpecificPositions(equipmentType);
-                var preferedPosition = equipmentPositions.Where(x => StoredPackages[x].Item != null
-                && EquipmentTypeOf(StoredPackages[x].Item) != equipmentType);
+                // TryGetValue, not the raw indexer (issue #12): a type-specific position is
+                // not always a live key - a 2H is keyed only at the weapon slot, so reading
+                // StoredPackages[(13,0)] for the off-hand threw KeyNotFoundException.
+                var preferedPosition = equipmentPositions.Where(x =>
+                    StoredPackages.TryGetValue(x, out var stored)
+                    && stored.Item != null
+                    && EquipmentTypeOf(stored.Item) != equipmentType);
                 var position = preferedPosition.Any() ? preferedPosition.First() : equipmentPositions[0];
 
                 package = AddAtPosition(position, package);
@@ -54,7 +57,9 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             InvokeRefresh();
 
-            return true;
+            // A force-swap that gave up (issue #12) leaves the item unplaced; report that so
+            // a re-home cascade routing through here can fail cleanly instead of losing it.
+            return 0 == package.Amount;
         }
 
         protected override bool TryAddAtEmpty(ref Package package)
@@ -88,9 +93,17 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             if (IsEmptySpace(position, dimensions, out var otherItems))
                 TryAddToInventory();
-            /// equipping a 2H might return two 1H
-            else if (otherItems.Count <= 2)
-                TrySwap(otherItems);
+            /// equipping a 2H might displace a weapon *and* an off-hand
+            else if (otherItems.Count is > 0 and <= 2 && !midForceSwap)
+            {
+                // Explicit give-up (issue #12): the swap re-homes the gear it displaces, and
+                // if a re-home routes an item back through this container it must not start a
+                // second swap - that unbounded recursion was QA-4's StackOverflowException.
+                // The re-home fails instead, and the transaction rolls the whole move back.
+                midForceSwap = true;
+                try { TrySwap(otherItems); }
+                finally { midForceSwap = false; }
+            }
 
             InvokeRefresh();
 
@@ -116,7 +129,6 @@ namespace ToolSmiths.InventorySystem.Inventories
             void TrySwap(List<Vector2Int> positions)
             {
                 var dropPosition = position;
-                var previouslyEquipped = new List<Package>();
                 var collateral = new List<Package>();
                 var underDrop = default(Package);
 
@@ -124,7 +136,6 @@ namespace ToolSmiths.InventorySystem.Inventories
                     if (StoredPackages.TryGetValue(occupied, out var storedPackage))
                         if (storedPackage.Item != null && 0 < storedPackage.Amount)
                         {
-                            previouslyEquipped.Add(storedPackage);
                             if (occupied == dropPosition)
                                 underDrop = storedPackage;
                             else
@@ -182,21 +193,34 @@ namespace ToolSmiths.InventorySystem.Inventories
                 }
                 else
                 {
-                    // No transaction (AutoEquip / PickUpItem / a bare container test): the
-                    // pre-#10 behaviour - re-home through the sender, fall back to the
-                    // injected cursor. #12 gives the force-swap an explicit give-up and
-                    // deletes this branch.
-                    for (var i = previouslyEquipped.Count; i-- > 0;)
-                    {
-                        var current = previouslyEquipped[i];
-                        if (!package.Sender.TryAddToContainer(ref current))
-                            cursorSink?.ReplacePackage(previouslyEquipped[i]);
-                        previouslyEquipped[i] = current;
-                    }
+                    // No transaction (a bare container test): hand the displaced gear back
+                    // through `package`, exactly as CharacterInventory.AddAtPosition does.
+                    // Every player-driven swap runs inside an ItemTransaction, which owns the
+                    // re-home cascade and the commit / rollback; the pre-#10 path that
+                    // re-homed through package.Sender - the source of QA-4's recursion - is
+                    // gone (issue #12).
+                    if (0 < collateral.Count)
+                        Debug.LogWarning($"{GetType().Name}: a 2H double-swap needs an ItemTransaction to re-home both displaced items; {collateral.Count} would be dropped.");
 
-                    package = previouslyEquipped.Where(x => x.Item != null && 0 < x.Amount).FirstOrDefault();
+                    package = underDrop.IsValid ? underDrop : collateral.FirstOrDefault();
                 }
             }
+        }
+
+        /// <summary>
+        /// The same verdict <see cref="AddAtPosition"/> places by (issue #12), so the red
+        /// "can't drop" tint agrees with the drop: in bounds, and a two-hander landing over
+        /// a weapon <em>and</em> an off-hand legally displaces both - up to two overlaps
+        /// still place, where a plain container accepts only one.
+        /// </summary>
+        public override bool CanPlaceAt(Vector2Int position, Vector2Int dimension)
+        {
+            if (IsEmptySpace(position, dimension, out var otherItems))
+                return true;
+
+            // IsEmptySpace returns false with an empty list when the footprint runs off the
+            // grid; a populated list means a real overlap the swap can take.
+            return otherItems.Count is > 0 and <= 2;
         }
 
         public override List<Vector2Int> GetStoredItemsAt(Vector2Int position, Vector2Int dimension)

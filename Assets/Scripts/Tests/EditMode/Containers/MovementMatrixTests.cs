@@ -55,7 +55,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         private static ItemInstance Arrows() => new(ArrowId, ItemRarity.Common, 1, null);
 
         private static CharacterInventory Inventory(int width = 4, int height = 4) => new(new Vector2Int(width, height));
-        private static CharacterEquipment Equipment(IStatReceiver stats = null, ICursorSink cursor = null) => new(new Vector2Int(14, 1), stats, cursor);
+        private static CharacterEquipment Equipment(IStatReceiver stats = null) => new(new Vector2Int(14, 1), stats);
 
         private static Vector2Int SlotFor(EquipmentType type) => CharacterEquipment.GetTypeSpecificPositions(type).First();
 
@@ -264,7 +264,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var stats = new FakeStatReceiver();
             var sink = new FakeCursorSink();
             var cursor = new CursorHolder(sink);
-            var equipment = Equipment(stats, sink);
+            var equipment = Equipment(stats);
             var inventory = Inventory();
 
             var seed = new Package(inventory, Helm(4f), 1u);
@@ -289,7 +289,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var stats = new FakeStatReceiver();
             var sink = new FakeCursorSink();
             var cursor = new CursorHolder(sink);
-            var equipment = Equipment(stats, sink);
+            var equipment = Equipment(stats);
             var inventory = Inventory();
 
             var worn = new Package(inventory, Sword(6f), 1u);
@@ -320,7 +320,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var stats = new FakeStatReceiver();
             var sink = new FakeCursorSink();
             var cursor = new CursorHolder(sink);
-            var equipment = Equipment(stats, sink);
+            var equipment = Equipment(stats);
             var inventory = Inventory();
 
             var worn = new Package(inventory, Sword(6f), 1u);
@@ -351,7 +351,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var stats = new FakeStatReceiver();
             var sink = new FakeCursorSink();
             var cursor = new CursorHolder(sink);
-            var equipment = Equipment(stats, sink);
+            var equipment = Equipment(stats);
             var inventory = Inventory();
 
             var weapon = new Package(inventory, Sword(6f), 1u);
@@ -386,7 +386,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var stats = new FakeStatReceiver();
             var sink = new FakeCursorSink();
             var cursor = new CursorHolder(sink);
-            var equipment = Equipment(stats, sink);
+            var equipment = Equipment(stats);
             var inventory = Inventory(1, 1);
 
             var weapon = new Package(inventory, Sword(6f), 1u);
@@ -432,7 +432,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var stats = new FakeStatReceiver();
             var sink = new FakeCursorSink();
             var cursor = new CursorHolder(sink);
-            var equipment = Equipment(stats, sink);
+            var equipment = Equipment(stats);
             var inventory = Inventory();
 
             var worn = new Package(inventory, Helm(4f), 1u);
@@ -458,7 +458,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var stats = new FakeStatReceiver();
             var sink = new FakeCursorSink();
             var cursor = new CursorHolder(sink);
-            var equipment = Equipment(stats, sink);
+            var equipment = Equipment(stats);
             var inventory = Inventory(1, 1);
 
             var worn = new Package(inventory, Helm(4f), 1u);
@@ -486,7 +486,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var stats = new FakeStatReceiver();
             var sink = new FakeCursorSink();
             var cursor = new CursorHolder(sink);
-            var equipment = Equipment(stats, sink);
+            var equipment = Equipment(stats);
             var inventory = Inventory(4, 1);
 
             var weapon = new Package(inventory, Sword(6f), 1u);
@@ -521,7 +521,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var stats = new FakeStatReceiver();
             var sink = new FakeCursorSink();
             var cursor = new CursorHolder(sink);
-            var equipment = Equipment(stats, sink);
+            var equipment = Equipment(stats);
             var inventory = Inventory(2, 1);
 
             var worn = new Package(inventory, GreatSword(20f), 1u);
@@ -551,7 +551,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var stats = new FakeStatReceiver();
             var sink = new FakeCursorSink();
             var cursor = new CursorHolder(sink);
-            var equipment = Equipment(stats, sink);
+            var equipment = Equipment(stats);
             var source = new CappedInventory(new Vector2Int(4, 1), acceptLimit: 0);
 
             var weapon = new Package(source, Sword(6f), 1u);
@@ -585,7 +585,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var stats = new FakeStatReceiver();
             var sink = new FakeCursorSink();
             var cursor = new CursorHolder(sink);
-            var equipment = Equipment(stats, sink);
+            var equipment = Equipment(stats);
             var inventory = Inventory();
 
             var ringSlots = CharacterEquipment.GetTypeSpecificPositions(EquipmentType.Ring);
@@ -621,7 +621,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var stats = new FakeStatReceiver();
             var sink = new FakeCursorSink();
             var cursor = new CursorHolder(sink);
-            var equipment = Equipment(stats, sink);
+            var equipment = Equipment(stats);
             var inventory = Inventory();
 
             var weaponSlots = CharacterEquipment.GetTypeSpecificPositions(EquipmentType.Sword);
@@ -705,7 +705,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
                 var stats = new FakeStatReceiver();
                 var sink = new FakeCursorSink();
                 var cursor = new CursorHolder(sink);
-                var equipment = Equipment(stats, sink);
+                var equipment = Equipment(stats);
                 var inventory = new CharacterInventory(inventorySize);
 
                 var weapon = new Package(inventory, Sword(6f), 1u);
@@ -727,6 +727,73 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 
                 AssertConserved(before, Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values, sink.Replaced, new[] { inHand }));
             }
+        }
+
+        [Test]
+        public void EquippingAnOffHand_WhileATwoHanderIsWorn_DoesNotThrowKeyNotFound_AndKeepsBothItems()
+        {
+            // QA-4: the force-swap read StoredPackages[(13,0)] with the raw indexer while a
+            // 2H was keyed only at (12,0) - KeyNotFoundException the moment the player tried
+            // to add an off-hand. TryGetValue now (issue #12).
+            var stats = new FakeStatReceiver();
+            var sink = new FakeCursorSink();
+            var cursor = new CursorHolder(sink);
+            var equipment = Equipment(stats);
+            var inventory = Inventory(4, 1);
+
+            var worn = new Package(inventory, GreatSword(15f), 1u);
+            _ = equipment.TryAddToContainer(ref worn);
+            var wornTwoHander = equipment.StoredPackages.Values.Single().Item;
+            stats.Added.Clear();
+            stats.Removed.Clear();
+
+            _ = inventory.AddAtPosition(new Vector2Int(0, 0), new Package(inventory, Shield(3f), 1u));
+            var shield = inventory.StoredPackages[new Vector2Int(0, 0)];
+            var before = Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values);
+
+            var committed = false;
+            Assert.That(() => committed = RightClickEquip(cursor, inventory, equipment, new Vector2Int(0, 0), shield),
+                Throws.Nothing);
+
+            Assert.That(committed, Is.True);
+            Assert.That(equipment.StoredPackages.Values.Single().Item.DefinitionId, Is.EqualTo(ShieldId), "the off-hand is worn");
+            Assert.That(inventory.StoredPackages.Values.Select(p => p.Item), Has.Some.SameAs(wornTwoHander), "the 2H swapped back into the inventory");
+            Assert.That(stats.Added.Select(a => a.Modifier.Value), Is.EquivalentTo(new[] { 3f }));
+            Assert.That(stats.Removed.Select(a => a.Modifier.Value), Is.EquivalentTo(new[] { 15f }));
+            AssertConserved(before, Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values, sink.Replaced));
+        }
+
+        // ── QA-3: one rule for the "can't drop" tint and the drop (issue #12) ──
+
+        [Test]
+        public void CanPlaceAt_OnEquipment_ReturnsTheSameVerdictTheDropRuleDoes()
+        {
+            var equipment = Equipment();
+            var inventory = Inventory();
+
+            var weaponSlot = SlotFor(EquipmentType.Sword);   // (12,0)
+            var offHandSlot = SlotFor(EquipmentType.Shield); // (13,0) - the grid's last cell
+            var helmSlot = SlotFor(EquipmentType.Helm);
+            var twoBy = new Vector2Int(2, 1);
+            var oneBy = new Vector2Int(1, 1);
+
+            var weapon = new Package(inventory, Sword(6f), 1u);
+            _ = equipment.TryAddToContainer(ref weapon);
+            var offHand = new Package(inventory, Shield(3f), 1u);
+            _ = equipment.TryAddToContainer(ref offHand);
+
+            // A 2H over the weapon + off-hand legally displaces both - AddAtPosition allows
+            // it (otherItems.Count <= 2), so the tint must not redden it.
+            Assert.That(equipment.CanPlaceAt(weaponSlot, twoBy), Is.True, "legal 2H double-swap");
+
+            // A 2H starting on the off-hand slot runs off the 14-wide grid - it can never land.
+            Assert.That(equipment.CanPlaceAt(offHandSlot, twoBy), Is.False, "2H off the grid edge");
+
+            // A 1H onto the occupied weapon slot is a plain one-item swap.
+            Assert.That(equipment.CanPlaceAt(weaponSlot, oneBy), Is.True);
+
+            // An empty slot takes its item outright.
+            Assert.That(equipment.CanPlaceAt(helmSlot, oneBy), Is.True);
         }
 
         // ── Sort ───────────────────────────────────────────────────────────

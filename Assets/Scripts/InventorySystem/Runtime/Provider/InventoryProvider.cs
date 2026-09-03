@@ -51,13 +51,13 @@ namespace ToolSmiths.InventorySystem.Inventories
         public void Awake()
         {
             /// The container core lives in InventorySystem.Containers and names no
-            /// provider - it takes the character, the drag cursor and the coin minter
-            /// as interfaces here, where the four containers are newed up.
+            /// provider - it takes the character and the coin minter as interfaces here,
+            /// where the four containers are newed up. The drag cursor is wrapped per-move
+            /// as a CursorHolder by the slot displays, so the containers no longer hold one.
             var statReceiver = CharacterProvider.Instance.Player;
-            var cursorSink = DragProvider.Instance;
             var currencyMinter = ItemProvider.Instance;
 
-            Equipment = new(equipmentSize, statReceiver, cursorSink);
+            Equipment = new(equipmentSize, statReceiver);
             Inventory = new(inventorySize, currencyMinter);
             Stash = new(stashSize, currencyMinter);
 

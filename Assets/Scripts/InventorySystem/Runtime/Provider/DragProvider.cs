@@ -75,17 +75,19 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
                     return;
                 }
 
-                var storedPositions = Hovered.Container.GetStoredItemsAt(positionToAdd, ItemView.Of(DraggingPackage.Item).Dimensions);
+                /// One rule, shared with the drop (issue #12): CanPlaceAt is the same check
+                /// AddAtPosition places by, and CharacterEquipment overrides it to accept the
+                /// legal 2H double-swap - so the tint can never redden a drop that would land,
+                /// nor stay clear on one that would not.
+                var canPlace = Hovered.Container.CanPlaceAt(positionToAdd, ItemView.Of(DraggingPackage.Item).Dimensions);
 
                 if (background)
                     /// Assigned rather than multiplied so it stays red whatever the scrim is
                     /// tinted to; colour multiplication is component-wise and only lands on red
                     /// while the scrim happens to be white.
-                    /// 0 overlaps drops into empty space, 1 swaps with the item already there
-                    /// (AddAtPosition handles both). Only 2+ cannot be placed at all.
-                    background.color = 1 < storedPositions.Count
-                        ? WithAlpha(Color.red, initialColor.a)
-                        : initialColor;
+                    background.color = canPlace
+                        ? initialColor
+                        : WithAlpha(Color.red, initialColor.a);
             }
         }
 
