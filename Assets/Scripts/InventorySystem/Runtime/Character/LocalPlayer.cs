@@ -5,14 +5,14 @@ using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.GUI.Displays;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
-using ToolSmiths.InventorySystem.Runtime.Pools;
 using Submodules.Utility.Extensions;
+using Submodules.Utility.Tools;
 using ToolSmiths.InventorySystem.Utility.Extensions;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Runtime.Character
 {
-    public class LocalPlayer : BaseCharacter
+    public class LocalPlayer : BaseCharacter, IStatReceiver
     {
         //TODO: make the displayLogic its own component and design its layout individually and not via a pool
         [SerializeField] private CharacterStatDisplay characterStatPrefab;
@@ -50,11 +50,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
             foreach (var stat in statsAndResources)
             {
-                //TODO: extend prefabPool to support IDisplay<T> that update the Display(newData) before activating the object
+                //TODO: extend prefabPool to support IView<T> that update the Refresh(newData) before activating the object
 
                 var statDisplay = characterStatPool.GetObject(false);
 
-                statDisplay.RefreshDisplay(new(stat));
+                statDisplay.Refresh(new(stat));
 
                 statDisplay.gameObject.SetActive(true);
             }
@@ -88,7 +88,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             }
         }
 
-        public void AddItemStats(List<CharacterStatModifier> stats)
+        public void AddItemStats(IReadOnlyList<CharacterStatModifier> stats)
         {
             var resources = new StatName[] { StatName.Health, StatName.Resource, StatName.Shield, StatName.Experience };
 
@@ -113,7 +113,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             UpdateStatDisplays();
         }
 
-        public void RemoveItemStats(List<CharacterStatModifier> stats)
+        public void RemoveItemStats(IReadOnlyList<CharacterStatModifier> stats)
         {
             var resources = new StatName[] { StatName.Health, StatName.Resource, StatName.Shield, StatName.Experience };
             foreach (var itemStat in stats)
@@ -146,7 +146,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
         public bool PickUpItem(Package package)
         {
-            if (package.Item is EquipmentItem)
+            if (package.Item != null && ItemView.Of(package.Item).Definition.Category == ItemCategory.Equipment)
             {
                 var equipment = InventoryProvider.Instance.Equipment;
 

@@ -3,6 +3,7 @@ using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Inventories;
 using Submodules.Utility.Extensions;
+using Submodules.Utility.UI;
 using ToolSmiths.InventorySystem.Utility.Extensions;
 using UnityEngine;
 using UnityEngine.UI;
@@ -10,7 +11,7 @@ using static ToolSmiths.InventorySystem.GUI.Displays.CharacterStatModifierDispla
 
 namespace ToolSmiths.InventorySystem.GUI.Displays
 {
-    public class CharacterStatModifierDisplay : MonoBehaviour, IDisplay<CharacterStatModifierData>
+    public class CharacterStatModifierDisplay : MonoBehaviour, IView<CharacterStatModifierData>
     {
         public struct CharacterStatModifierData
         {
@@ -89,7 +90,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 
         [SerializeField] protected TextMeshProUGUI text;
 
-        public void RefreshDisplay(CharacterStatModifierData newData)
+        public void Refresh(CharacterStatModifierData newData)
         {
             icon.sprite = newData.icon;
             text.text = newData.displayText;

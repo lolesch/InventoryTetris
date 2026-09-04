@@ -1,6 +1,6 @@
 # Probability Distribution Rebuild — Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan inline, task-by-task, with a review checkpoint after each task. Steps use checkbox (`- [ ]`) syntax for tracking. Do **not** dispatch subagents for this work (project rule).
+> **For agentic workers:** execute this plan inline in the current session, task-by-task, with a review checkpoint after each task — never dispatch subagents (project rule). Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Extract the drop-table maths into a pure, generic, Unity-free `InventorySystem.Probability` assembly, reduce the ScriptableObjects to thin serialization adapters over it, and reimplement magic find as Diablo II's rarest-first cascade so `IncreasedItemRarity` makes good loot *more* common instead of shifting probability mass into the no-drop bucket.
 

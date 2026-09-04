@@ -1,17 +1,18 @@
 ﻿using TMPro;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Inventories;
+using Submodules.Utility.UI;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace ToolSmiths.InventorySystem.GUI.Displays
 {
-    public class CoinDisplay : MonoBehaviour, IDisplay<(CurrencyType type, uint amount)>
+    public class CoinDisplay : MonoBehaviour, IView<(CurrencyType type, uint amount)>
     {
         [SerializeField] private Image coinIcon;
         [SerializeField] private TextMeshProUGUI amountText;
 
-        public void RefreshDisplay((CurrencyType type, uint amount) newData)
+        public void Refresh((CurrencyType type, uint amount) newData)
         {
             if (0 == newData.amount)
             {
@@ -26,6 +27,6 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                 amountText.text = $"{newData.amount}";
         }
 
-        public void Display(CurrencyType type, uint amount) => RefreshDisplay((type, amount));
+        public void Display(CurrencyType type, uint amount) => Refresh((type, amount));
     }
 }

@@ -2,8 +2,9 @@
 using TMPro;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Items;
-using ToolSmiths.InventorySystem.Runtime.Pools;
 using Submodules.Utility.Extensions;
+using Submodules.Utility.Tools;
+using Submodules.Utility.UI;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -11,7 +12,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 {
     // TODO: inherit AbstractDisplay
     [RequireComponent(typeof(RectTransform))]
-    public class PreviewDisplay : MonoBehaviour, IDisplay<(Package package, Package compareTo)>
+    public class PreviewDisplay : MonoBehaviour, IView<(Package package, Package compareTo)>
     {
         [SerializeField] private Image icon;
         [SerializeField] private Image frame;
@@ -33,8 +34,8 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
             itemStatPool = new(itemStatPrefab);
         }
 
-        public void RefreshDisplay((Package package, Package compareTo) data) => RefreshDisplay(data.package, data.compareTo);
-        public void RefreshDisplay(Package package, Package compareTo, float priceOverride = -1f)
+        public void Refresh((Package package, Package compareTo) data) => Refresh(data.package, data.compareTo);
+        public void Refresh(Package package, Package compareTo, float priceOverride = -1f)
         {
             if (!package.IsValid)
             {
@@ -47,24 +48,25 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
              *  flavor text?
              */
 
-            var rarityColor = AbstractItem.GetRarityColor(package.Item.Rarity);
+            var view = ItemView.Of(package.Item);
+            var rarityColor = ItemView.RarityColorOf(package.Item.Rarity);
 
             if (itemName)
-                itemName.text = package.Item.ToString().Colored(rarityColor);
+                itemName.text = view.DisplayName.Colored(rarityColor);
 
             if (itemType)
-                itemType.text = package.Item.ToString();
+                itemType.text = view.DisplayName;
 
             if (icon)
-                icon.sprite = package.Item.Icon;
+                icon.sprite = view.Icon;
 
             if (amount)
-                amount.text = 1 < package.Amount ? $"{package.Amount}/{package.Item.StackLimit}" : string.Empty;
+                amount.text = 1 < package.Amount ? $"{package.Amount}/{view.StackLimit}" : string.Empty;
 
             if (goldValue)
-                goldValue.RefreshDisplay(0f <= priceOverride
+                goldValue.Refresh(0f <= priceOverride
                     ? new Currency(priceOverride)
-                    : new Currency(package.Item.SellValue));
+                    : new Currency(view.SellValue));
 
             if (frame)
                 frame.color = rarityColor;
@@ -84,7 +86,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 
                 var itemStat = itemStatPool.GetObject(false);
 
-                itemStat.RefreshDisplay(new(stat, compareTo));
+                itemStat.Refresh(new(stat, compareTo));
 
                 itemStat.gameObject.SetActive(true);
             }
@@ -92,7 +94,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
             gameObject.SetActive(true);
         }
 
-        public void RefreshDisplay(Package package)
+        public void Refresh(Package package)
         {
             if (!package.IsValid)
             {
@@ -100,22 +102,23 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                 return;
             }
 
-            var rarityColor = AbstractItem.GetRarityColor(package.Item.Rarity);
+            var view = ItemView.Of(package.Item);
+            var rarityColor = ItemView.RarityColorOf(package.Item.Rarity);
 
             if (itemName)
-                itemName.text = package.Item.ToString().Colored(rarityColor);
+                itemName.text = view.DisplayName.Colored(rarityColor);
 
             if (itemType)
-                itemType.text = package.Item.ToString();
+                itemType.text = view.DisplayName;
 
             if (icon)
-                icon.sprite = package.Item.Icon;
+                icon.sprite = view.Icon;
 
             if (amount)
-                amount.text = 1 < package.Amount ? $"{package.Amount}/{package.Item.StackLimit}" : string.Empty;
+                amount.text = 1 < package.Amount ? $"{package.Amount}/{view.StackLimit}" : string.Empty;
 
             if (goldValue)
-                goldValue.RefreshDisplay(new Currency(package.Item.SellValue)); //? $"{package.Item.GoldValue}" : string.Empty;
+                goldValue.Refresh(new Currency(view.SellValue)); //? $"{package.Item.GoldValue}" : string.Empty;
 
             if (frame)
                 frame.color = rarityColor;
@@ -135,7 +138,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 
                 var itemStat = itemStatPool.GetObject(false);
 
-                itemStat.RefreshDisplay(new(stat));
+                itemStat.Refresh(new(stat));
 
                 itemStat.gameObject.SetActive(true);
             }

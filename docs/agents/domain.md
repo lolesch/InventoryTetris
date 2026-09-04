@@ -8,10 +8,13 @@ How the engineering skills should consume this repo's domain documentation when 
 
 - **`CONTEXT.md`** at the repo root — the domain glossary.
 - **`docs/adr/`** — read ADRs that touch the area you're about to work in.
-- **`dev/specs/`** and **`dev/plans/`** — this repo's design specs and implementation
-  plans (`YYYY-MM-DD-<topic>-design.md` / `YYYY-MM-DD-<topic>.md`). These are
-  repo-specific and predate the skills; they are the richest source of intent for
-  in-flight work. Read the newest spec touching your area before proposing changes.
+- **`dev/specs/`** — this repo's design specs (`YYYY-MM-DD-<topic>-design.md`),
+  repo-specific and the richest source of intent for in-flight work. Read the newest
+  spec touching your area before proposing changes.
+- **`dev/plans/`** — implementation-plan documents written before the 2026-09-01
+  workflow switch. Historical, but still the ground truth for anything not yet built
+  (e.g. the foundational-rework Phase 0 plan). New implementation work is tracked as
+  GitHub Issues via `/to-tickets`, not as files here.
 
 If any of these files don't exist, **proceed silently**. Don't flag their absence; don't suggest creating them upfront. The `/domain-modeling` skill (reached via `/grill-with-docs` and `/improve-codebase-architecture`) creates them lazily when terms or decisions actually get resolved.
 

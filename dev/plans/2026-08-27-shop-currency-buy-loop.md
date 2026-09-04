@@ -1,6 +1,6 @@
 # Shop Currency Buy Loop Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan inline, task-by-task, with a review checkpoint after each task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** execute this plan inline in the current session, task-by-task, with a review checkpoint after each task — never dispatch subagents (project rule). Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Taking an item out of the Store deducts its buy price (`1.5 × SellValue`) from the player's coins, makes change, and shows at a glance which vendor items are affordable.
 

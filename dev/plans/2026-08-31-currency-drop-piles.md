@@ -1,6 +1,6 @@
 # Currency Drop Piles — Implementation Plan (Phase 2)
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan inline, task-by-task, with a review checkpoint after each task. Steps use checkbox (`- [ ]`) syntax. Do **not** dispatch subagents for this work (project rule).
+> **For agentic workers:** execute this plan inline in the current session, task-by-task, with a review checkpoint after each task — never dispatch subagents (project rule). Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** A currency drop becomes one roll that yields a *pile* of one coin type, amount from a per-type range, and the loot pipeline carries quantity end to end.
 

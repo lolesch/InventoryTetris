@@ -17,6 +17,10 @@ namespace ToolSmiths.InventorySystem.Inventories
         [field: SerializeField] public CharacterInventory Stash { get; private set; }
         [field: SerializeField] public CharacterInventory Store { get; private set; }
 
+        /// <summary>The player's spendable money, backed by <see cref="Inventory"/>'s coin
+        /// cells. The wallet, not the container, owns currency logic since issue #14.</summary>
+        public Wallet Wallet { get; private set; }
+
         [field: SerializeField] public bool ShowDebugPositions { get; private set; }
 
         [Space]
@@ -50,12 +54,20 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         public void Awake()
         {
-            /// serialize inventories
-            Equipment = new(equipmentSize);
+            /// The container core lives in InventorySystem.Containers and names no
+            /// provider - it takes the character and the coin minter as interfaces here,
+            /// where the four containers are newed up. The drag cursor is wrapped per-move
+            /// as a CursorHolder by the slot displays, so the containers no longer hold one.
+            var statReceiver = CharacterProvider.Instance.Player;
+            var currencyMinter = ItemProvider.Instance;
+
+            Equipment = new(equipmentSize, statReceiver);
             Inventory = new(inventorySize);
             Stash = new(stashSize);
-
             Store = new(storeSize);
+
+            Wallet = new Wallet(Inventory, currencyMinter);
+
             RestockStore();
 
             SetInventories();
@@ -65,7 +77,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         {
             for (var i = 0; i < Amount; i++)
             {
-                var randomEquipment = ItemProvider.Instance.GenerateRandomOfEquipmentType(equipmentType);
+                var randomEquipment = ItemProvider.Instance.RollEquipment(equipmentType);
                 _ = CharacterProvider.Instance.Player.PickUpItem(new Package(null, randomEquipment, 1u));
             }
         }
@@ -74,14 +86,14 @@ namespace ToolSmiths.InventorySystem.Inventories
         {
             for (var i = 0; i < Amount; i++)
             {
-                var randomConsumable = ItemProvider.Instance.GenerateRandomOfConsumableType(consumableType);
+                var randomConsumable = ItemProvider.Instance.RollConsumable(consumableType);
                 _ = CharacterProvider.Instance.Player.PickUpItem(new Package(null, randomConsumable, 1u));
             }
         }
 
         public void AddRandomLoot()
         {
-            var loot = ItemProvider.Instance.GenerateRandomLoot(Amount);
+            var loot = ItemProvider.Instance.RollLoot(Amount);
 
             for (var i = 0; i < loot.Count; i++)
                 _ = CharacterProvider.Instance.Player.PickUpItem(loot[i]);
@@ -90,7 +102,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         public void AddRandomCurrency()
         {
             for (var i = 0; i < Amount; i++)
-                _ = CharacterProvider.Instance.Player.PickUpItem(ItemProvider.Instance.GenerateRandomCurrency());
+                _ = CharacterProvider.Instance.Player.PickUpItem(ItemProvider.Instance.RollCurrency());
         }
 
         public void RemoveAllItems(AbstractDimensionalContainer container)
@@ -124,7 +136,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         public void ToggleAutoEquip() => Equipment.autoEquip = !Equipment.autoEquip;
         public void SortPlayerInventory() => Inventory.Sort();
-        public void ConsolidatePlayerCurrency() => Inventory.Consolidate();
+        public void ConsolidatePlayerCurrency() => Wallet.Consolidate();
         public void SortPlayerStash() => Stash.Sort();
 
         public void ClearPlayerEquipment() => RemoveAllItems(Equipment);
@@ -136,7 +148,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             for (var i = 0; i < 20; i++)
             {
-                var item = ItemProvider.Instance.GenerateRandomEquipment();
+                var item = ItemProvider.Instance.RollEquipment();
 
                 var package = new Package(null, item, 1u);
 

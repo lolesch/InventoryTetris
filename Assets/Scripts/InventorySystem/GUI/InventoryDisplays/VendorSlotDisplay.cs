@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
@@ -13,9 +12,6 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
     {
         private GridLayoutGroup gridLayout;
 
-        internal const float Markup = 1.5f;
-        internal static float BuyPrice(AbstractItem item) => item.SellValue * Markup;
-
         /// The same "forbidden" feedback the drag display gives an item that cannot be
         /// placed (see DragProvider.HighlightOverlappingSlots): red is assigned rather
         /// than multiplied in, so rarity cannot shift it, and it stays see-through so the
@@ -29,12 +25,12 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         {
             base.OnEnable();
 
-            var wallet = InventoryProvider.Instance.Inventory;
+            var wallet = InventoryProvider.Instance.Wallet;
 
             if (wallet != null)
             {
-                wallet.OnContentChanged -= OnWalletChanged;
-                wallet.OnContentChanged += OnWalletChanged;
+                wallet.OnBalanceChanged -= OnWalletChanged;
+                wallet.OnBalanceChanged += OnWalletChanged;
             }
         }
 
@@ -42,10 +38,10 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         {
             base.OnDisable();
 
-            var wallet = InventoryProvider.Instance.Inventory;
+            var wallet = InventoryProvider.Instance.Wallet;
 
             if (wallet != null)
-                wallet.OnContentChanged -= OnWalletChanged;
+                wallet.OnBalanceChanged -= OnWalletChanged;
         }
 
         /// Cached before the base runs, because refreshing the display repaints the
@@ -57,7 +53,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             base.RefreshSlotDisplay(package);
         }
 
-        private void OnWalletChanged(Dictionary<Vector2Int, Package> _) => RefreshBackground();
+        private void OnWalletChanged(Currency _) => RefreshBackground();
 
         protected override Color GetBackgroundColor() => CanAffordDisplayed()
             ? base.GetBackgroundColor()
@@ -70,9 +66,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             if (!displayedPackage.IsValid)
                 return true;
 
-            var wallet = InventoryProvider.Instance.Inventory;
+            var wallet = InventoryProvider.Instance.Wallet;
 
-            return wallet == null || wallet.CanAfford(BuyPrice(displayedPackage.Item));
+            return wallet == null || wallet.CanAfford(new Currency(VendorTransaction.BuyPrice(displayedPackage.Item)));
         }
 
         protected override void SetDisplaySize(RectTransform display, Package package)
@@ -83,9 +79,10 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 gridLayout = GetComponentInParent<GridLayoutGroup>();
             if (gridLayout)
             {
-                var additionalSpacing = gridLayout.spacing * new Vector2(AbstractItem.GetDimensions(package.Item.Dimensions).x - 1, AbstractItem.GetDimensions(package.Item.Dimensions).y - 1);
+                var itemDimensions = ItemView.Of(package.Item).Dimensions;
+                var additionalSpacing = gridLayout.spacing * new Vector2(itemDimensions.x - 1, itemDimensions.y - 1);
 
-                display.sizeDelta = gridLayout.cellSize * AbstractItem.GetDimensions(package.Item.Dimensions) + additionalSpacing;
+                display.sizeDelta = gridLayout.cellSize * itemDimensions + additionalSpacing;
             }
 
             display.anchoredPosition = new Vector2(display.sizeDelta.x * .5f, display.sizeDelta.y * -.5f);
@@ -104,10 +101,10 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             if (!Container.TryGetItemAt(ref position, out var package))
                 return;
 
-            var wallet = InventoryProvider.Instance.Inventory;
-            var price = BuyPrice(package.Item);
+            var wallet = InventoryProvider.Instance.Wallet;
+            var price = VendorTransaction.BuyPrice(package.Item);
 
-            if (!wallet.CanAfford(price))
+            if (!wallet.CanAfford(new Currency(price)))
                 return;
 
             FadeOutPreview();
@@ -116,23 +113,22 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             #region BUY: IMMEDIATE MOVE
             if (eventData.button == PointerEventData.InputButton.Right || Input.GetKey(KeyCode.LeftShift))
             {
-                _ = Container.RemoveAtPosition(position, package);
-
-                if (wallet.TryAddToContainer(ref package))
-                    _ = wallet.TryPay(price); // affordability already confirmed
-                else
-                    _ = Container.AddAtPosition(position, package); // bounced back to the shelf, no charge
+                /// One transaction (issue #11): the item leaves the shelf and lands in the
+                /// bag, and the price is paid, as a unit. No room in the bag rolls the whole
+                /// thing back - the item stays on the shelf and nothing is charged.
+                _ = VendorTransaction.Buy(Container, position, package, wallet, price);
 
                 return;
             }
             #endregion BUY: IMMEDIATE MOVE
 
-            // Drag: the drag system has no clean cancel/refund path; that gap is
-            // pre-existing and deferred (follow-ups spec).
+            // Drag: a pick-up, not a completed move - the drag system still has no clean
+            // cancel/refund path, so payment stays at pick-up. That gap is pre-existing and
+            // deferred (follow-ups spec).
             #region BUY: DRAG
             _ = Container.RemoveAtPosition(position, package);
 
-            _ = wallet.TryPay(price);
+            _ = wallet.TryPay(new Currency(price));
 
             var positionOffset = Position - position;
 
@@ -140,35 +136,30 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             #endregion BUY: DRAG
         }
 
+        /// <summary>
+        /// Dropping onto the shelf is a sale, not a placement (issue #12): it takes any
+        /// item that is not already the vendor's, so the drop tint must not read the
+        /// shelf's own grid the way the base does. Mirrors <see cref="DropItem"/>'s guard.
+        /// </summary>
+        public override bool WouldAcceptDrop(Package package) =>
+            package.IsValid && package.Sender != Container;
+
         protected override void DropItem(Package package)
         {
             if (!package.IsValid || package.Sender == Container)
                 return;
 
-            var packageToMove = DragProvider.Instance.DraggingPackage;
+            /// Dropping an item onto the shelf is a sale, exactly as the dedicated sell slot
+            /// (SellItenSlotDisplay) handles it: the item is already in hand from the drag,
+            /// its value is banked into the wallet on commit (issue #11), and the drag ends.
+            VendorTransaction.Sell(package, InventoryProvider.Instance.Wallet);
 
-            _ = (DragProvider.Instance.Origin.Container?.RemoveFromContainer(packageToMove));
-
-            var currency = new Currency(packageToMove.Item.SellValue * packageToMove.Amount);
-
-            //TODO: handle item loss if inventory is full
-            var gold = new Package(Container, ItemProvider.Instance.GenerateCurrency(Data.Enums.CurrencyType.Gold), currency.Gold);
-            _ = InventoryProvider.Instance.Inventory.TryAddToContainer(ref gold);
-            var silver = new Package(Container, ItemProvider.Instance.GenerateCurrency(Data.Enums.CurrencyType.Silver), currency.Silver);
-            _ = InventoryProvider.Instance.Inventory.TryAddToContainer(ref silver);
-            var iron = new Package(Container, ItemProvider.Instance.GenerateCurrency(Data.Enums.CurrencyType.Iron), currency.Iron);
-            _ = InventoryProvider.Instance.Inventory.TryAddToContainer(ref iron);
-            var copper = new Package(Container, ItemProvider.Instance.GenerateCurrency(Data.Enums.CurrencyType.Copper), currency.Copper);
-            _ = InventoryProvider.Instance.Inventory.TryAddToContainer(ref copper);
-
-            /// A sell sink: the item is gone and the drag is over. Was SetPackage with an
-            /// empty Package purely to hide the display.
             DragProvider.Instance.EndDrag();
 
             Container?.InvokeRefresh();
             DragProvider.Instance.Origin.Container?.InvokeRefresh();
 
-            FadeInPreview(); // TODO: see if the package should propagate to FadeInPreview
+            SyncPreviewAfterMove();
         }
     }
 }

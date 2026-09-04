@@ -15,7 +15,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         {
             Debug.LogWarning($"{name.ColoredComponent()} {"died!".Colored(Color.red)}", this);
 
-            var loot = ItemProvider.Instance.GenerateRandomLoot();
+            var loot = ItemProvider.Instance.RollLoot();
 
             foreach (var package in loot)
                 //rework to drop items on the floor

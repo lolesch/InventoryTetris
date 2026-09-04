@@ -32,6 +32,13 @@ namespace ToolSmiths.InventorySystem.Data
                 name = StatName.ToString();
             }
 
+            /// <summary>The authored roll range, before any rarity scaling. Read by the
+            /// <c>UniquesMigration</c> editor script to seed an <c>ItemDefinitionAsset</c>'s affix pool.</summary>
+            public Vector2Int RolledRange => Range;
+
+            /// <summary>The modifier type this slot rolls as. Read by <c>UniquesMigration</c>.</summary>
+            public StatModifierType ModifierType => DefaultModType;
+
             public StatModifier GetRandomRoll(ItemRarity rarity)
             {
                 /// ITEM AFFIX DESIGN BY RARITY:

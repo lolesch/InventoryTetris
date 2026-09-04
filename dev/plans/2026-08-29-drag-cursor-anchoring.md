@@ -1,6 +1,6 @@
 # Drag Cursor Anchoring Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan inline, task-by-task, with a review checkpoint after each task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** execute this plan inline in the current session, task-by-task, with a review checkpoint after each task — never dispatch subagents (project rule). Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** The item you are dragging goes where it looks like it goes. The grip you take at pointer-down is the grip you keep — through a rejected drop, through a swap, through the drag threshold.
 

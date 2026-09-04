@@ -1,4 +1,5 @@
-﻿using DG.Tweening;
+﻿using Submodules.Utility.Extensions;
+using Submodules.Utility.Tools.Tweening;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -13,9 +14,9 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
 
         //private readonly UnityEvent onClick = new UnityEvent();
 
-        protected override void OnEnable() => base.OnEnable();//onClick.RemoveListener(OnClick);//onClick.AddListener(OnClick);
+        protected override void OnEnable() => base.OnEnable();
 
-        protected override void OnDisable() => base.OnDisable();//onClick.RemoveListener(OnClick);//if (targetGraphic && DOTween.IsTweening(targetGraphic.transform))//    _ = DOTween.Kill(targetGraphic.transform);
+        protected override void OnDisable() => base.OnDisable();
 
         // TODO: disable the button for x seconds to disable button spaming
         protected abstract void OnClick();
@@ -104,7 +105,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
         private void Scale(bool condition, float factor)
         {
             if (targetGraphic)
-                _ = targetGraphic.transform.DOScale(condition ? factor : 1, .15f).SetEase(Ease.InOutSine);
+                _ = targetGraphic.transform.TweenScale(condition ? factor : 1f, .15f, Ease.InOutSine);
         }
 
         public virtual void PlayHoverSound() { } // => AudioProvider.Instance.PlayButtonHover();

@@ -1,7 +1,9 @@
 # Close the shop buy loop: charge the player when taking Store items
 
 Date: 2026-08-26
-Status: Approved
+Status: Shipped 2026-08-29 — `03c7c92` (charge on taking Store items), `5409607`
+(change-making tests), `1a39662` (1.5x buy price, pay-after-landing); on `main`.
+Deferred items were split into `dev/specs/2026-08-26-shop-currency-followups.md`.
 Resumes `82146cd "progress on spending cash when picking items from the shop"`.
 Base: cut `feature/shop-currency` from `feature/mutablefloat-port` (merge-ready,
 EditMode tests green) — not `origin/main`, which is pre-Unity-6000.3 and
