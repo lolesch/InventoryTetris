@@ -86,7 +86,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var displaced = target.AddAtPosition(at, inHand);
 
             if (displaced.IsValid)
-                _ = transaction.TryReHomeToHandOrContainer(ref displaced);
+                _ = transaction.TryReHomeToHandOrContainer(ref displaced, target, at);
 
             if (transaction.Aborted)
                 return false; // inHand is untouched - the dragged item stays in hand
@@ -129,7 +129,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 
             _ = equipment.RemoveAtPosition(slot, stored);
             var package = new Package(equipment, stored.Item, stored.Amount);
-            _ = transaction.TryReHomeToContainerOrHand(ref package);
+            _ = transaction.TryReHomeToContainerOrHand(ref package, equipment, slot);
 
             transaction.Commit();
         }
@@ -146,7 +146,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 
             _ = source.RemoveAtPosition(position, stored);
             var package = new Package(source, stored.Item, stored.Amount);
-            _ = transaction.TryReHomeToContainerOrHand(ref package);
+            _ = transaction.TryReHomeToContainerOrHand(ref package, source, position);
 
             transaction.Commit();
         }

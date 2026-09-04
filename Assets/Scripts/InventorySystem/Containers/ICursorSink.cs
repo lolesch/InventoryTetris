@@ -1,4 +1,5 @@
 using ToolSmiths.InventorySystem.Data;
+using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Inventories
 {
@@ -10,6 +11,12 @@ namespace ToolSmiths.InventorySystem.Inventories
     /// </summary>
     public interface ICursorSink
     {
-        void ReplacePackage(Package package);
+        /// <param name="package">The item now on the cursor.</param>
+        /// <param name="origin">The container <paramref name="package"/> was displaced
+        /// from - the swap partner's real home, not necessarily the container the drag
+        /// itself started at.</param>
+        /// <param name="originPosition">The cell in <paramref name="origin"/>
+        /// <paramref name="package"/> was displaced from.</param>
+        void ReplacePackage(Package package, AbstractDimensionalContainer origin, Vector2Int originPosition);
     }
 }

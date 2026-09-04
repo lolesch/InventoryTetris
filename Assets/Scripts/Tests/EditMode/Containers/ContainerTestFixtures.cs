@@ -4,6 +4,7 @@ using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
+using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 {
@@ -59,11 +60,21 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         public void RemoveItemStats(IReadOnlyList<CharacterStatModifier> stats) => Removed.AddRange(stats);
     }
 
-    /// <summary>Records the packages a move handed to the drag cursor.</summary>
+    /// <summary>
+    /// Records the packages a move handed to the drag cursor, alongside the container and
+    /// cell each was displaced from (issue #29 follow-up) - <see cref="Origins"/> is parallel
+    /// to <see cref="Replaced"/>, one entry per call.
+    /// </summary>
     internal sealed class FakeCursorSink : ICursorSink
     {
         public readonly List<Package> Replaced = new();
-        public void ReplacePackage(Package package) => Replaced.Add(package);
+        public readonly List<(AbstractDimensionalContainer Origin, Vector2Int OriginPosition)> Origins = new();
+
+        public void ReplacePackage(Package package, AbstractDimensionalContainer origin, Vector2Int originPosition)
+        {
+            Replaced.Add(package);
+            Origins.Add((origin, originPosition));
+        }
     }
 
     /// <summary>
