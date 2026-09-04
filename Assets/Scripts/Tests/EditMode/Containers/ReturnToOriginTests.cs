@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using ToolSmiths.InventorySystem.Data;
@@ -56,6 +57,35 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             Assert.That(from.TryGetPackageAt(position, out var stored), Is.True, $"nothing stored at {position}");
             _ = from.RemoveAtPosition(position, stored);
             return stored;
+        }
+
+        /// <summary>
+        /// The drop, exactly as <c>MovementMatrixTests.Drop</c> runs it - and, transitively,
+        /// exactly as <c>InventorySlotDisplay</c> / <c>EquipmentSlotDisplay</c> run it: the
+        /// target's <see cref="AbstractDimensionalContainer.AddAtPosition"/> returns whatever
+        /// it displaced (a plain container swap), or - for <see cref="CharacterEquipment"/> -
+        /// has already re-homed it internally, in which case it comes back invalid and there
+        /// is nothing left to do here.
+        /// </summary>
+        private static bool Drop(CursorHolder cursor, AbstractDimensionalContainer target, Vector2Int at, ref Package inHand,
+            params AbstractDimensionalContainer[] reHome)
+        {
+            var enrolled = new List<AbstractDimensionalContainer> { target };
+            enrolled.AddRange(reHome);
+
+            using var transaction = new ItemTransaction(cursor, enrolled.ToArray()).ReHomeThrough(reHome);
+
+            var displaced = target.AddAtPosition(at, inHand);
+
+            if (displaced.IsValid)
+                _ = transaction.TryReHomeToHandOrContainer(ref displaced, target, at);
+
+            if (transaction.Aborted)
+                return false;
+
+            transaction.Commit();
+            inHand = displaced;
+            return true;
         }
 
         // ── origin first ───────────────────────────────────────────────────
@@ -247,6 +277,89 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             _ = equipment.TryAddToContainer(ref worn);
 
             Assert.That(equipment.CanReturnTo(helmSlot, Helm(4f)), Is.False, "the slot is occupied, not empty");
+        }
+
+        // ── mid-drag swap hands the cursor the displaced item's real origin (issue #29 follow-up) ──
+        //
+        // DragProvider.CancelDrag used to compute the return-to cell from the drag's own
+        // pick-up (Origin/PositionOffset), set once at the start of the drag. A drop that
+        // displaces a *different* item onto the cursor (ICursorSink.ReplacePackage) never
+        // updated that: cancelling right after such a swap re-homed the swapped-out item
+        // against the original pick-up's cell, not the slot it actually came from. These
+        // tests drive the swap the way EquipmentSlotDisplay.DropItem does (CursorHolder +
+        // ItemTransaction, no GUI) and check the origin ICursorSink is told.
+
+        [Test]
+        public void Drop_DisplacingAWornRing_TellsTheCursorSinkTheRingsRealSlot_NotTheDragsOwnPickupSlot()
+        {
+            var sink = new FakeCursorSink();
+            var cursor = new CursorHolder(sink);
+            var equipment = Equipment();
+            var inventory = Inventory();
+
+            var ringSlots = CharacterEquipment.GetTypeSpecificPositions(EquipmentType.Ring);
+            var slotA = ringSlots[0];
+            var slotB = ringSlots[1];
+
+            var ringA = new Package(inventory, Ring(5f), 1u);
+            _ = equipment.AddAtPosition(slotA, ringA);
+            var ringB = new Package(inventory, Ring(8f), 1u);
+            _ = equipment.AddAtPosition(slotB, ringB);
+            var ringBInstance = equipment.StoredPackages[slotB].Item;
+
+            // The drag starts by lifting ringA off slotA - a different cell from the ring
+            // the drop is about to displace.
+            var inHand = PickUp(equipment, slotA);
+            var committed = Drop(cursor, equipment, slotB, ref inHand, inventory);
+
+            Assert.That(committed, Is.True);
+            Assert.That(sink.Replaced.Single().Item, Is.SameAs(ringBInstance), "ringB was displaced onto the cursor");
+
+            var (origin, originPosition) = sink.Origins.Single();
+            Assert.That(origin, Is.SameAs(equipment));
+            Assert.That(originPosition, Is.EqualTo(slotB), "the sink must be told ringB's real slot");
+            Assert.That(originPosition, Is.Not.EqualTo(slotA), "not the drag's own pick-up slot, which ringB never occupied");
+        }
+
+        [Test]
+        public void CancelAfterMidDragRingSwap_UsesTheDisplacedRingsRealSlot_NotTheStaleDragOrigin()
+        {
+            var sink = new FakeCursorSink();
+            var cursor = new CursorHolder(sink);
+            var equipment = Equipment();
+            var inventory = Inventory();
+
+            var ringSlots = CharacterEquipment.GetTypeSpecificPositions(EquipmentType.Ring);
+            var slotA = ringSlots[0];
+            var slotB = ringSlots[1];
+
+            var ringA = new Package(inventory, Ring(5f), 1u);
+            _ = equipment.AddAtPosition(slotA, ringA);
+            var ringB = new Package(inventory, Ring(8f), 1u);
+            _ = equipment.AddAtPosition(slotB, ringB);
+            var ringBInstance = equipment.StoredPackages[slotB].Item;
+
+            var inHand = PickUp(equipment, slotA); // the drag's own origin: slotA, now empty
+            var committed = Drop(cursor, equipment, slotB, ref inHand, inventory);
+            Assert.That(committed, Is.True);
+
+            var handed = sink.Replaced.Single();
+            var (realOrigin, realOriginPosition) = sink.Origins.Single();
+
+            // Sanity check the hazard the fix closes: the stale drag-origin slot is still a
+            // structurally valid, empty ring slot, so a cancel using it would have silently
+            // "succeeded" by re-equipping ringB somewhere it never lived.
+            Assert.That(equipment.CanReturnTo(slotA, handed.Item), Is.True,
+                "the stale origin still looks perfectly returnable - that's what made the old bug silent");
+
+            // Cancelling with the real, captured origin correctly sees slotB is now taken by
+            // ringA and falls back to the backpack instead of re-equipping at the stale slot.
+            var leftOnCursor = ReturnToOrigin.Return(handed, realOrigin, realOriginPosition, inventory);
+
+            Assert.That(leftOnCursor.IsValid, Is.False, "the cancel found a home");
+            Assert.That(equipment.StoredPackages[slotB].Item, Is.SameAs(ringA.Item), "slotB still correctly holds ringA");
+            Assert.That(equipment.StoredPackages.ContainsKey(slotA), Is.False, "the stale drag-origin slot never got ringB back");
+            Assert.That(inventory.StoredPackages.Values.Single().Item, Is.SameAs(ringBInstance), "ringB safely landed in the backpack instead");
         }
     }
 }

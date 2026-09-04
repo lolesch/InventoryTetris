@@ -36,6 +36,17 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
         public Vector2Int PositionOffset { get; private set; }
 
+        /// <summary>
+        /// Where <see cref="CancelDrag"/> returns the package currently in hand -
+        /// <see cref="Origin"/>'s container and cell at pick-up, or the real container and
+        /// cell a mid-drag swap displaced the current package from
+        /// (<see cref="ReplacePackage"/>). Deliberately separate from <see cref="Origin"/>,
+        /// which stays "where this drag interaction started" for the re-home-through target
+        /// the slot displays read off it.
+        /// </summary>
+        private AbstractDimensionalContainer returnOrigin;
+        private Vector2Int returnOriginPosition;
+
         private float frameAlpha = 1f;
 
 
@@ -134,6 +145,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             DraggingPackage = package;
             PositionOffset = positionOffset;
 
+            returnOrigin = slot != null ? slot.Container : null;
+            returnOriginPosition = slot != null ? slot.Position - positionOffset : default;
+
             if (!DraggingPackage.IsValid)
             {
                 itemDisplay.gameObject.SetActive(false);
@@ -165,8 +179,13 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         /// centred on the cursor: the previous item's positionOffset describes a footprint
         /// this one does not have, and reusing it left small items floating a fixed distance
         /// from the pointer.
+        ///
+        /// <para><paramref name="origin"/> and <paramref name="originPosition"/> are this
+        /// swapped-in package's real home - not wherever the drag itself started - so
+        /// <see cref="CancelDrag"/> returns it there instead of re-homing it against the
+        /// original pick-up's cell (issue #29's mid-drag-swap gap).</para>
         /// </summary>
-        public void ReplacePackage(Package package)
+        public void ReplacePackage(Package package, AbstractDimensionalContainer origin, Vector2Int originPosition)
         {
             if (!package.IsValid)
             {
@@ -176,6 +195,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
             DraggingPackage = package;
             PositionOffset = Vector2Int.zero;
+
+            returnOrigin = origin;
+            returnOriginPosition = originPosition;
 
             var dimensions = ItemView.Of(package.Item).Dimensions;
 
@@ -195,6 +217,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         {
             DraggingPackage = default;
             PositionOffset = Vector2Int.zero;
+
+            returnOrigin = null;
+            returnOriginPosition = default;
 
             itemDisplay.gameObject.SetActive(false);
         }
@@ -232,25 +257,21 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         /// during a drag as a drop attempt (<see cref="AbstractSlotDisplay.OnPointerClick"/>),
         /// so reusing right-click here would race that path instead of replacing it.
         ///
-        /// <para><b>Known gap:</b> <see cref="Origin"/> and <see cref="PositionOffset"/> only
-        /// describe the drag's original pick-up. After a mid-drag swap hands a different
-        /// Package to the cursor (<see cref="ReplacePackage"/>), cancelling re-homes that
-        /// swapped-out Package against the *first* pick-up's cell, not the slot it actually
-        /// came from - safe (nothing is lost; it lands in the backpack instead) but not
-        /// exactly right, and a re-equip's affix is not re-applied. <see cref="ICursorSink"/>
-        /// would need to carry the displaced item's real origin to close this; out of scope
-        /// here per the issue's "not a full audit" note.</para>
+        /// <para>The origin tracked for this is <c>returnOrigin</c>/<c>returnOriginPosition</c>,
+        /// not <see cref="Origin"/>/<see cref="PositionOffset"/>: a mid-drag swap that hands a
+        /// different Package to the cursor (<see cref="ReplacePackage"/>) updates those to the
+        /// swapped-out Package's real container and cell, so a cancel right after a swap
+        /// re-equips it - or falls back to the backpack - correctly instead of against the
+        /// first pick-up's now-unrelated cell.</para>
         /// </summary>
         public void CancelDrag()
         {
             if (!IsDragging || !DraggingPackage.IsValid)
                 return;
 
-            var origin = Origin != null ? Origin.Container : null;
-            var originPosition = Origin != null ? Origin.Position - PositionOffset : default;
             var backpack = InventoryProvider.Instance.Inventory;
 
-            var leftOnCursor = ReturnToOrigin.Return(DraggingPackage, origin, originPosition, backpack);
+            var leftOnCursor = ReturnToOrigin.Return(DraggingPackage, returnOrigin, returnOriginPosition, backpack);
 
             if (!leftOnCursor.IsValid)
                 EndDrag();

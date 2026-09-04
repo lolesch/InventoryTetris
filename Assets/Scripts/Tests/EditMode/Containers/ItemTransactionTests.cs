@@ -326,7 +326,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 
             using (var transaction = new ItemTransaction(cursor, inventory))
             {
-                Assert.That(cursor.TryHold(displaced), Is.True);
+                Assert.That(cursor.TryHold(displaced, inventory, Vector2Int.zero), Is.True);
                 Assert.That(cursor.IsFree, Is.False);
                 Assert.That(sink.Replaced, Is.Empty, "deferred to commit");
                 transaction.Commit();
@@ -343,7 +343,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var inventory = Inventory(2, 2);
 
             using (new ItemTransaction(cursor, inventory))
-                _ = cursor.TryHold(new Package(inventory, Sword(), 1u)); // no commit
+                _ = cursor.TryHold(new Package(inventory, Sword(), 1u), inventory, Vector2Int.zero); // no commit
 
             Assert.That(sink.Replaced, Is.Empty);
         }
@@ -354,8 +354,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var cursor = new CursorHolder(new FakeCursorSink());
             var inventory = Inventory(2, 2);
 
-            Assert.That(cursor.TryHold(new Package(inventory, Sword(), 1u)), Is.True);
-            Assert.That(cursor.TryHold(new Package(inventory, Arrows(), 1u)), Is.False);
+            Assert.That(cursor.TryHold(new Package(inventory, Sword(), 1u), inventory, Vector2Int.zero), Is.True);
+            Assert.That(cursor.TryHold(new Package(inventory, Arrows(), 1u), inventory, Vector2Int.zero), Is.False);
             Assert.That(cursor.IsFree, Is.False);
         }
 
@@ -389,7 +389,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 
             using (var transaction = new ItemTransaction(cursor, origin, inventory).ReHomeThrough(origin, inventory))
             {
-                Assert.That(transaction.TryReHomeToHandOrContainer(ref displaced), Is.True);
+                Assert.That(transaction.TryReHomeToHandOrContainer(ref displaced, origin, Vector2Int.zero), Is.True);
                 Assert.That(displaced.IsValid, Is.False, "the item is fully placed - on the cursor");
                 transaction.Commit();
             }
@@ -409,10 +409,10 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             using var transaction = new ItemTransaction(cursor, origin, inventory).ReHomeThrough(origin, inventory);
 
             var first = new Package(origin, Sword(), 1u);
-            _ = transaction.TryReHomeToHandOrContainer(ref first); // takes the cursor
+            _ = transaction.TryReHomeToHandOrContainer(ref first, origin, Vector2Int.zero); // takes the cursor
 
             var second = new Package(origin, Helm(2f), 1u);
-            Assert.That(transaction.TryReHomeToHandOrContainer(ref second), Is.True);
+            Assert.That(transaction.TryReHomeToHandOrContainer(ref second, origin, Vector2Int.zero), Is.True);
             Assert.That(second.IsValid, Is.False);
             Assert.That(origin.StoredPackages.Values.Single().Item.DefinitionId, Is.EqualTo(HelmId),
                 "the second displaced item landed in the origin container");
@@ -434,10 +434,10 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             using (var transaction = new ItemTransaction(cursor, origin, inventory).ReHomeThrough(origin, inventory))
             {
                 var first = new Package(origin, Sword(), 1u);
-                _ = transaction.TryReHomeToHandOrContainer(ref first); // cursor
+                _ = transaction.TryReHomeToHandOrContainer(ref first, origin, Vector2Int.zero); // cursor
 
                 var second = new Package(origin, Helm(2f), 1u);
-                Assert.That(transaction.TryReHomeToHandOrContainer(ref second), Is.False);
+                Assert.That(transaction.TryReHomeToHandOrContainer(ref second, origin, Vector2Int.zero), Is.False);
                 Assert.That(transaction.Aborted, Is.True);
 
                 transaction.Commit(); // aborted -> rolls back
@@ -479,11 +479,11 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             using (var transaction = new ItemTransaction(cursor, origin).ReHomeThrough(origin))
             {
                 var first = new Package(origin, Sword(), 1u);
-                Assert.That(transaction.TryReHomeToContainerOrHand(ref first), Is.True);
+                Assert.That(transaction.TryReHomeToContainerOrHand(ref first, origin, Vector2Int.zero), Is.True);
                 Assert.That(origin.StoredPackages.Values.Single().Item.DefinitionId, Is.EqualTo(SwordId), "the first went into the container");
 
                 var second = new Package(origin, Helm(2f), 1u);
-                Assert.That(transaction.TryReHomeToContainerOrHand(ref second), Is.True);
+                Assert.That(transaction.TryReHomeToContainerOrHand(ref second, origin, Vector2Int.zero), Is.True);
                 Assert.That(second.IsValid, Is.False, "the container is now full - the second went to the hand");
 
                 transaction.Commit();

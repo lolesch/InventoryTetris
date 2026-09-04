@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ToolSmiths.InventorySystem.Data;
+using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Inventories
 {
@@ -120,14 +121,20 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// <see cref="ReHomeThrough"/> destination in order. Nothing takes it - the move is
         /// aborted and <see cref="Commit"/> rolls back.
         /// </summary>
+        /// <param name="package">The item being re-homed.</param>
+        /// <param name="origin">The container <paramref name="package"/> is being displaced
+        /// from - forwarded to the cursor (issue #29) so a later cancel returns it there,
+        /// not to wherever the drag itself started.</param>
+        /// <param name="originPosition">The cell in <paramref name="origin"/>
+        /// <paramref name="package"/> was displaced from.</param>
         /// <returns>False when the item found no home; <paramref name="package"/> is then
         /// whatever could not be placed.</returns>
-        public bool TryReHomeToHandOrContainer(ref Package package)
+        public bool TryReHomeToHandOrContainer(ref Package package, AbstractDimensionalContainer origin, Vector2Int originPosition)
         {
             if (!package.IsValid)
                 return true;
 
-            if (TryPlaceInHand(ref package) || TryPlaceInChain(ref package))
+            if (TryPlaceInHand(ref package, origin, originPosition) || TryPlaceInChain(ref package))
                 return true;
 
             aborted = true;
@@ -158,12 +165,17 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// path, and the always-executes unequip / quick-move overflow. A second item that
         /// reaches an already-full hand aborts the move.
         /// </summary>
-        public bool TryReHomeToContainerOrHand(ref Package package)
+        /// <param name="package">The item being re-homed.</param>
+        /// <param name="origin">The container <paramref name="package"/> is being displaced
+        /// from - forwarded to the cursor (issue #29) so a later cancel returns it there.</param>
+        /// <param name="originPosition">The cell in <paramref name="origin"/>
+        /// <paramref name="package"/> was displaced from.</param>
+        public bool TryReHomeToContainerOrHand(ref Package package, AbstractDimensionalContainer origin, Vector2Int originPosition)
         {
             if (!package.IsValid)
                 return true;
 
-            if (TryPlaceInChain(ref package) || TryPlaceInHand(ref package))
+            if (TryPlaceInChain(ref package) || TryPlaceInHand(ref package, origin, originPosition))
                 return true;
 
             aborted = true;
@@ -181,9 +193,9 @@ namespace ToolSmiths.InventorySystem.Inventories
         }
 
         /// <summary>Hands the item to the freed cursor, once, while it is still free.</summary>
-        private bool TryPlaceInHand(ref Package package)
+        private bool TryPlaceInHand(ref Package package, AbstractDimensionalContainer origin, Vector2Int originPosition)
         {
-            if (cursor == null || !cursor.TryHold(package))
+            if (cursor == null || !cursor.TryHold(package, origin, originPosition))
                 return false;
 
             package = default;

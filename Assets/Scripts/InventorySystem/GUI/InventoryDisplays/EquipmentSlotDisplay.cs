@@ -40,7 +40,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 var displaced = Container.AddAtPosition(Position, package);
 
                 if (displaced.IsValid)
-                    _ = transaction.TryReHomeToHandOrContainer(ref displaced);
+                    _ = transaction.TryReHomeToHandOrContainer(ref displaced, Container, Position);
 
                 if (transaction.Aborted)
                     return;
@@ -108,7 +108,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 using var transaction = new ItemTransaction(cursor, Container, inventory).ReHomeThrough(inventory);
 
                 _ = Container.RemoveAtPosition(position, package);
-                _ = transaction.TryReHomeToContainerOrHand(ref package);
+                _ = transaction.TryReHomeToContainerOrHand(ref package, Container, position);
 
                 transaction.Commit();
 
@@ -129,7 +129,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 using var transaction = new ItemTransaction(cursor, Container, stash).ReHomeThrough(stash);
 
                 _ = Container.RemoveAtPosition(position, package);
-                _ = transaction.TryReHomeToContainerOrHand(ref package);
+                _ = transaction.TryReHomeToContainerOrHand(ref package, Container, position);
 
                 transaction.Commit();
 
