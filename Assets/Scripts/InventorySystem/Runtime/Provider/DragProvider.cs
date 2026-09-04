@@ -231,6 +231,15 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         /// Wired to Escape rather than right-click: a slot display already reads any click
         /// during a drag as a drop attempt (<see cref="AbstractSlotDisplay.OnPointerClick"/>),
         /// so reusing right-click here would race that path instead of replacing it.
+        ///
+        /// <para><b>Known gap:</b> <see cref="Origin"/> and <see cref="PositionOffset"/> only
+        /// describe the drag's original pick-up. After a mid-drag swap hands a different
+        /// Package to the cursor (<see cref="ReplacePackage"/>), cancelling re-homes that
+        /// swapped-out Package against the *first* pick-up's cell, not the slot it actually
+        /// came from - safe (nothing is lost; it lands in the backpack instead) but not
+        /// exactly right, and a re-equip's affix is not re-applied. <see cref="ICursorSink"/>
+        /// would need to carry the displaced item's real origin to close this; out of scope
+        /// here per the issue's "not a full audit" note.</para>
         /// </summary>
         public void CancelDrag()
         {
