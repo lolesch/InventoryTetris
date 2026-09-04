@@ -1,4 +1,5 @@
-﻿using ToolSmiths.InventorySystem.Runtime.Provider;
+﻿using Submodules.Utility.UI;
+using ToolSmiths.InventorySystem.Runtime.Provider;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.GUI.Components.Buttons

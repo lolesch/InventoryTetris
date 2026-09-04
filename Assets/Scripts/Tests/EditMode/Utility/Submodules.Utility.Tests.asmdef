@@ -3,6 +3,7 @@
     "rootNamespace": "",
     "references": [
         "Utility",
+        "Utility.UI",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],
