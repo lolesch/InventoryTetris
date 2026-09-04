@@ -296,6 +296,18 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         public bool TryGetPackageAt(Vector2Int position, out Package package) => StoredPackages.TryGetValue(position, out package);
 
+        /// <summary>
+        /// Whether <paramref name="item"/> can go back into this exact cell with nothing
+        /// displaced - the return-to-origin check (issue #29). Stricter than
+        /// <see cref="CanPlaceAt"/>: a cancelled or interrupted drag puts the item back only
+        /// where it left, never on top of whatever has since taken the cell, so this never
+        /// allows the swap <see cref="CanPlaceAt"/> does. <see cref="CharacterEquipment"/>
+        /// overrides it for the paper-doll layout - the equipment footprint rule, and a
+        /// rejection when the cell is not even a slot for the item's type.
+        /// </summary>
+        public virtual bool CanReturnTo(Vector2Int position, ItemInstance item) =>
+            item != null && IsEmptySpace(position, ItemView.Of(item).Dimensions, out _);
+
         // TODO package should implement IComparable
         public void Sort()
         {

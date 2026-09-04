@@ -59,6 +59,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         {
             if (IsDragging)
             {
+                if (Input.GetKeyDown(KeyCode.Escape))
+                    CancelDrag();
+
                 SetToMousePosition();
 
                 HighlightOverlappingSlots();
@@ -221,10 +224,28 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
         public void SetHoveredSlot(AbstractSlotDisplay slot) => Hovered = slot;
 
-        //public void ReturnToOrigin(Package package)
-        //{
-        //    // tell teh origin to add this package back to its position
-        //}
+        /// <summary>
+        /// Cancels the drag in progress and sends the held Package back where it came from
+        /// (issue #29): the exact origin cell if it is still free, the backpack if not, or -
+        /// with neither available - nowhere, leaving the item on the cursor exactly as it was.
+        /// Wired to Escape rather than right-click: a slot display already reads any click
+        /// during a drag as a drop attempt (<see cref="AbstractSlotDisplay.OnPointerClick"/>),
+        /// so reusing right-click here would race that path instead of replacing it.
+        /// </summary>
+        public void CancelDrag()
+        {
+            if (!IsDragging || !DraggingPackage.IsValid)
+                return;
+
+            var origin = Origin != null ? Origin.Container : null;
+            var originPosition = Origin != null ? Origin.Position - PositionOffset : default;
+            var backpack = InventoryProvider.Instance.Inventory;
+
+            var leftOnCursor = ReturnToOrigin.Return(DraggingPackage, origin, originPosition, backpack);
+
+            if (!leftOnCursor.IsValid)
+                EndDrag();
+        }
 
         //public void DropHere()
         //{
