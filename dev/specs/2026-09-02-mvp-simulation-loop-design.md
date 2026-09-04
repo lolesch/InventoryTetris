@@ -5,20 +5,26 @@ Status: **Design spec.** Decisions settled by the grilling session of 2026-09-02
 (`/grill-with-docs` over `dev/specs/2026-09-01-mvp-simulation-loop-research.md`, with a
 `/domain-modeling` pass). Built **after** the foundational rework lands (ADR-0006);
 this spec is written now so `/to-tickets` can slice it and so the `RunState` /
-`EncounterResult` shapes can constrain the save format (ADR-0006 consequence).
+`RunResult` shapes can constrain the save format (ADR-0006 consequence).
 
 Supersedes the open questions in the research doc §6. New vocabulary is pinned in
 `CONTEXT.md` (**Session**, **Drop**, **Corpse**, sharpened **Location** / **Death** /
 **Denomination**; **Strike**, **Cast**, **Engagement**, **Pack**, **Cast Threshold**
-from the combat grilling). Three ADRs record the load-bearing choices: **ADR-0008** (the
-Encounter is a live simulation, not a resolved outcome), **ADR-0009** (Death is
-corpse-recovery, not haul-forfeit), and **ADR-0010** (combat is a concurrent dual attack
-the player gears each half of).
+from the combat grilling; **Brute** / **Skirmisher** / **Spawn Profile** and the
+reworked **Encounter** / **Roster** from the issue-#18 `/prototype` pass 2). Three ADRs
+record the load-bearing choices: **ADR-0008** (the Encounter is a live simulation, not a
+resolved outcome), **ADR-0009** (Death is corpse-recovery, not haul-forfeit), and
+**ADR-0010** (combat is a concurrent dual attack the player gears each half of; amended
+twice for the `/prototype`).
 
-A follow-up grilling on 2026-09-02 reworked the combat model inside the Encounter — see
-*The combat model* under Implementation Decisions and **ADR-0010**. The rest of this spec
-predates it; where a section still describes one attack per tick or five sliders, that
-subsection and the ADR are authoritative.
+A follow-up grilling on 2026-09-02 reworked the combat model inside the Encounter, and
+the issue-#18 `/prototype` then ran twice — pass 1 settled finite-vs-endless and build
+viability, pass 2 (per the 2026-09-03 domain-modeling handoff) replaced the single enemy
+archetype with **two** (Brute / Skirmisher) and moved **XP to settle per Encounter
+clear**. See *The combat model* and *The combat model — prototype findings* under
+Implementation Decisions, and **ADR-0010**. The rest of this spec predates all of that;
+where a section still describes one attack per tick, five sliders, one enemy archetype,
+or per-kill XP, that subsection and the ADR are authoritative.
 
 ---
 
@@ -88,8 +94,10 @@ quitting mid-Run banks what the hero already holds, discards the rest, and resum
     see a gear change speed the enemy globe's drain.
 11. As a player, I want the hero's health and resource shown as ARPG-style globes, so
     that the sim's state is readable at a glance without a combat log.
-12. As a player, I want the XP bar to fill as Encounters are cleared, so that I feel
-    progress accruing during the Run, not only at the end.
+12. As a player, I want the XP bar to fill as each Encounter is cleared — the whole
+    Encounter's worth in one step, not a drip per kill — so that clearing an Encounter
+    is a felt beat and a Run cut short mid-Encounter visibly leaves XP on the table
+    (ADR-0010 *Second amendment*, issue #18 pass 2).
 13. As a player, I want the inventory and equipment panel to stay open and interactive
     during the Encounter, so that I can re-gear or sort mid-fight.
 14. As a player, I want no recap or results screen, so that the globes and the bar *are*
@@ -161,8 +169,12 @@ quitting mid-Run banks what the hero already holds, discards the rest, and resum
     on Recall and on Death alike — so that the ground is never a second stash.
 37. As a player, I want an upgrade that drops into a full bag to force a real choice —
     drop something to make room, or leave the upgrade — so that bag space has a price.
-38. As a player, I want XP and banked coins to settle **per kill**, so that a Run cut
-    short by Recall keeps everything earned up to the last enemy that fell (ADR-0010).
+38. As a player, I want loot Drops and banked coins to settle **per kill**, so that a
+    longer Run visibly earns more and a Recall keeps every coin and item picked up so
+    far. **XP is the exception** — it settles per Encounter clear (story 12): a Run
+    driven off mid-Encounter forfeits that Encounter's accrued XP, which is what gives
+    the Encounter boundary a consequence (ADR-0010 *Second amendment*, issue #18 pass 2;
+    this splits the original "XP and coins per kill").
 
 ### Death and the Corpse
 
@@ -245,12 +257,12 @@ quitting mid-Run banks what the hero already holds, discards the rest, and resum
 
 Nothing here is built until the foundational rework's three seams have landed — item
 split (Phase 1, done), the transaction (Phase 2, issues #9–#13 + #15), and the wallet
-(Phase 3, issue #14). The `Encounter` module sits *above* `InventorySystem.Containers`
+(Phase 3, issue #14). The `Simulation` module sits *above* `InventorySystem.Containers`
 and the wallet module in the assembly stack (ADR-0007) and needs both to exist. Writing
-the spec now is deliberate — ADR-0006 says the `RunState` and `EncounterResult` shapes
+the spec now is deliberate — ADR-0006 says the `RunState` and `RunResult` shapes
 must be sketched before the save system, and they are, below.
 
-### One new module: `InventorySystem.Encounter`
+### One new module: `InventorySystem.Simulation`
 
 A new Unity-free assembly, one layer above `InventorySystem.Containers` and the wallet
 module, below `InventorySystem.Runtime` (ADR-0007). Everything in it is constructible in
@@ -267,50 +279,59 @@ a test with fakes — the same rule `InventorySystem.Items` follows. It contains
   clamp nor speed-scaling.
 - **The Encounter simulation** — owns the tick loop, the hero's two attack cadences
   (Strike `1 / AttackSpeed`, Cast `castCost / ResourceRegeneration`) and their target
-  selection, the enemy Strike cadence, the Roster/Pack spawn schedule against the
-  `Engagement` target, the per-tick resource regeneration call, the end-of-Encounter
-  check (hero down, or the Roster spent and cleared), the short beat before the next
+  selection, the enemy Strike cadence, the per-type Roster/Pack spawn schedule against
+  the `Engagement` target, the per-tick resource regeneration call, the end-of-Encounter
+  check (hero down, or the Roster spent and cleared), the **per-Encounter XP pot that
+  settles on the clear** (ADR-0010 *Second amendment*), the short beat before the next
   Encounter, and the evaluation of the `HeroBehaviour` triggers. It never references
   `BaseCharacter`. See *The combat model* (ADR-0010).
 - **`ICombatant`** — the only new interface. The sim reads `HealthFraction` /
   `ResourceFraction` / `AttackInterval` / `IsDown` and calls a strike method on cadence.
   The hero's implementation is a thin adapter in `Runtime` that forwards strikes to the
   existing `BaseCharacter.DealDamageTo` / `ReceiveDamageFrom` path and reads and writes
-  the live `CharacterResource`s so the globes reflect sim state. The enemy is a pure
-  parametric archetype the `Encounter` module owns, its stats derived from the
-  Location's source level — no per-monster assets. Whether the existing
+  the live `CharacterResource`s so the globes reflect sim state. The enemy is one of
+  **two** pure parametric archetypes the `Simulation` module owns — **Brute** and
+  **Skirmisher** — their stats derived from the Location's source level; no per-monster
+  assets (ADR-0010 *Second amendment*). Whether the existing
   `DealDamageTo(BaseCharacter, …)` signature is widened to `ICombatant` or the hero
   adapter bridges by holding both sides as `BaseCharacter` is a first-ticket detail; the
   seam the sim sees is `ICombatant` either way.
 - **The `RunState` machine** — two states, `InTown` and `InField`. Transitions:
   `Send(location): InTown → InField`, `Recall(): InField → InTown`,
   `HandleDeath(): InField → InTown`. No `Traveling` state — Send and Recall are instant.
-  No `GameOver`. `RunState` owns the running Run totals (XP gained this Run, currency
+  No `GameOver`. `RunState` owns the running Run totals (XP settled this Run, currency
   banked this Run, Encounters cleared, elapsed) that the Death penalty is computed
-  against, and the reference to the current `Location`.
-- **`EncounterResult` / `RunOutcome`** — the frozen readout emitted when a Run ends.
+  against, and the reference to the current `Location`. It also holds the current
+  Encounter's **unsettled XP pot** — added to `XpSettled` on a `clear`, discarded on a
+  Recall or Death (ADR-0010 *Second amendment*).
+- **`RunResult` / `RunOutcome`** — the frozen readout emitted when a Run ends (renamed
+  from `EncounterResult`: it is Run-scoped, summed over every Encounter of the Run).
   Shape (a value type; encodes the decision more precisely than prose):
 
   ```
   enum RunOutcome { Recalled, Died }
 
-  EncounterResult
+  RunResult
   {
     RunOutcome  Outcome
-    int         XpGained          // applied live per kill; summed here
-    Currency    CurrencyBanked    // banked live to the Wallet; summed here
-    int         XpLost            // Died only — progress toward next level, forfeited
+    int         XpSettled         // settled per Encounter clear; summed here
+    int         XpForfeited       // the pot of the Encounter in progress at exit — lost
+    Currency    CurrencyBanked    // banked live to the Wallet per kill; summed here
+    int         XpLost            // Died only — progress toward next level, forfeited (penalty)
     Currency    CurrencyFee       // Died only — withdrawn from the Wallet
     int         EnemiesDefeated
-    int         EncountersCleared
+    int         EncountersCleared // = the number of XP settlements; a Run-progress readout
     float       Duration          // = CombatClock.ElapsedTime, summed
   }
   ```
 
-  Most of what a Run earns is applied *live* (XP per kill via `LocalPlayer`, coins to
-  the Wallet as they drop, items into the bag on pickup), so `EncounterResult` is a
-  summary, not a delivery mechanism. Its one delivery job is the Death case: `XpLost`,
-  `CurrencyFee` and the Corpse hand-off.
+  Most of what a Run earns is applied *live* (XP to `LocalPlayer` on each Encounter
+  clear, coins to the Wallet as they drop, items into the bag on pickup), so `RunResult`
+  is a summary, not a delivery mechanism. Its one delivery job is the Death case:
+  `XpLost`, `CurrencyFee` and the Corpse hand-off. `EncountersCleared` earns its place
+  now that it is the XP-settle count (story 12) — not a Death-penalty input, but the
+  honest "how far did this Run get" figure; `XpForfeited` is display-only, the visible
+  cost of bailing mid-Encounter.
 
 - **The Corpse rules** — pure and testable: on Death the bag's contents snapshot into a
   single Corpse tagged with the `Location`; a Corpse already present is replaced (the
@@ -335,9 +356,9 @@ a test with fakes — the same rule `InventorySystem.Items` follows. It contains
 
 ### The combat model (ADR-0010)
 
-A follow-up grilling (2026-09-02) reworked what happens *inside* an Encounter. Full
-rationale is in **ADR-0010**, and its *Prototype outcome* section records what the
-issue-#18 `/prototype` settled (summarised below). The shape:
+A follow-up grilling (2026-09-02) reworked what happens *inside* an Encounter, and the
+issue-#18 `/prototype` then ran twice. Full rationale is in **ADR-0010** (*Prototype
+outcome* for pass 1, *Second amendment* for pass 2); summarised below. The shape:
 
 - **Two concurrent attacks**, independent timers, one action resolved per tick. The
   **Strike** is physical — flat `PhysicalDamage` on a `1 / AttackSpeed` cadence at the
@@ -345,75 +366,95 @@ issue-#18 `/prototype` settled (summarised below). The shape:
   the 3 highest-HP enemies, cadence `castCost / ResourceRegeneration`. Both are innate;
   gear only scales them. A physical build stacks `PhysicalDamage` + `AttackSpeed`, a
   magical build stacks `MagicalDamage` + `Resource` + `ResourceRegeneration`.
+- **Two enemy archetypes** (pass 2), both Strike-only and parametric off `SourceLevel`:
+  **Brute** (bulky, slow, armored, low XP — the Cast, targeting highest-HP, lands on it)
+  and **Skirmisher** (fragile, fast, high XP — the Strike, targeting lowest-HP, lands on
+  it). A Location **Packs** one and trickles the other; both exist everywhere. The
+  packed archetype decides which build the Location favours — single-target physical
+  counters a Brute pack (few bulky bodies), area magical counters a Skirmisher swarm
+  (many fragile bodies).
 - **`CastThreshold`** replaces `ResourceReserveFraction` — a hysteresis knob: hold the
   Cast until resource charges to the fraction, then Cast down to empty, then recharge.
   Continuous chip of Casts at the low end, clumped Casts at the high end. Strikes run
-  throughout. *(The prototype found this is a feel knob, not a power knob — see below.)*
+  throughout. *(Both prototype passes found this is a feel knob, not a power knob.)*
 - **`Engagement`** is a sixth behaviour slider — the count of enemies the Encounter
   keeps on the hero. A soft target the fight refills toward, not a ceiling: a **Pack**
-  (a `spawnBatch` of enemies entering together) overshoots it.
-- An Encounter fields enemies from a fixed **Roster** (a `[min,max]` count on
-  `LocationConfig`) that spawn in singly or in Packs per a spawn profile (`spawnBatch`,
-  `spawnInterval`, `spawnJitter`). It clears when the Roster is spent and the last enemy
-  is down. **XP and coins are per kill** — clearing is a silent transition, and only
-  Recall or Death ends the Run. *(The `/prototype` confirmed the fixed Roster: continuous
-  spawning erases the Encounter as a unit and lowers throughput — issue #18, ADR-0010
-  Prototype outcome.)*
+  (a `packBatch` of the packed archetype entering together) overshoots it.
+- An Encounter fields a fixed **Roster** — a `[min,max]` count for **each** archetype on
+  `LocationConfig` — that spawns in per a **Spawn Profile**: the packed type in
+  `packBatch`-sized groups, the other one at a time, chosen each spawn tick by
+  `packedSpawnWeight` while both remain (`spawnInterval`, `spawnJitter`). It clears when
+  the whole Roster is spent and the last enemy is down. **Loot Drops and coin Piles shed
+  per kill; XP settles per Encounter clear** (pass 2), summed over the Roster — a Recall
+  or Death mid-Encounter forfeits the pot. Clearing is otherwise silent, and only Recall
+  or Death ends the Run. *(Pass 1 confirmed the fixed Roster: continuous spawning erases
+  the Encounter as a unit and lowers throughput.)*
 - `CalculateDamageOutput` splits: the Strike drops its `× (1 + AttackSpeed · 0.01)`
   term (double-counts against a real cadence); the Cast takes no `AttackSpeed` term.
-  The enemy archetype is Strike-only, every stat off `SourceLevel`. A future
-  `CastCostReduction` stat is the first depth lever, deferred.
+  A future `CastCostReduction` stat is the first depth lever, deferred.
 
 ### The combat model — prototype findings (issue #18)
 
 The `/prototype` (a single-file logic sim, `dev/prototypes/2026-09-03-combat-cluster/`,
-throwaway branch `prototype/combat-cluster`; 150–200 seeded Runs per case) resolved
-ADR-0010's three open questions. Full detail in that folder's `FINDINGS.md` and in
-ADR-0010's *Prototype outcome*; the load-bearing results:
+throwaway branch `prototype/combat-cluster`; also an interactive Artifact; 40–200 seeded
+Runs per case) ran twice. Full detail in that folder's `FINDINGS.md` and in ADR-0010
+(*Prototype outcome* + *Second amendment*); the load-bearing results:
+
+**Pass 1 — finite vs endless, build viability:**
 
 - **Finite vs endless — settled both scales.** The Encounter keeps a **fixed Roster**;
   a Run is an **endless** series of Encounters at a fixed source level with **no
   encounter cap and no restart-rescale**. A realistic Run always ends on a Recall
-  trigger (bag-full ≈ 5 Encounters on the easy Location, retreat-HP ≈ 1–2 on the hard
-  one) or Death — a `finiteEncounters` cap fires in <1 % of Runs and is dead config. The
-  fixed-difficulty ladder is carried entirely by **equipped gear**: a build crosses from
-  "worn down in ~50 s" to "out-clears the spawn indefinitely" over roughly a 1.25–1.5×
-  gear-power swing. This moves the *Finite vs endless* item out of Out of Scope.
+  trigger (bag-full or retreat-HP) or Death — a `finiteEncounters` cap fires in <1 % of
+  Runs and is dead config. The fixed-difficulty ladder is carried entirely by **equipped
+  gear**. This moves the *Finite vs endless* item out of Out of Scope.
 - **The bag is the whole "return to Town" pressure.** With fixed difficulty and no bag
   limit, a geared build farms a Location forever. Bag capacity and the loot-filter
   default are loop-load-bearing, and the harder Location should stay attritional even
   for a geared hero.
-- **Physical, magical and hybrid are each viable** — each sustains the easy Location
-  indefinitely and clears a gear-proportional slice of the hard one. It is *not* a
-  two-way choice and hybrid is not dominated. Lean (a finding, not a blocker): magical
-  is the area-farm build (≈ 1.4× the XP/min) with the thinnest raw survival; physical
-  lasts longest raw and opens hard Locations at lower gear; hybrid trades the extremes
-  for no soft spot. Physical wants Engagement low (kite); magical wants Engagement 3–4
-  (feed the Cast); a Pack overshoots any Engagement.
-- **`CastThreshold` is a texture knob, not a power knob** — sweeping it 0.05 → 0.95
-  moved throughput < 0.3 %. A saved burst does not pay for itself against a continuous
-  spawn. The slider stays (six sliders), reframed as continuous-vs-clumped Casts; it
-  gains real weight only when pre-chargeable elites/bosses exist. Slider story 21 and
-  `HeroBehaviour.CastThreshold` take the softened wording.
-- **Constant starting points** (the prototype file is the tuning surface): `castCost`
-  16, `castTargets` 3, `castCadence` 0.35 s, `tick` 0.1 s, `beat` 1 s; enemy archetype
-  `stat = base + perLevel · SourceLevel^exp` with exponents barely above linear (Health
-  ≈ `17 + 19·S^1.11`, Damage ≈ `0.9 + 0.8·S`, Armor ≈ `0.65·S %`, AttackSpeed ≈ 0.8
-  flat); easy Location `Roster [8,8] / spawnBatch [1,1] / interval 2.4 s`, hard
-  `Roster [12,12] / spawnBatch [2,4] / interval 3.6 s`; `xpPerKill` authored per
-  Location (≈ 16 easy … 30 hard).
+
+**Pass 2 — two archetypes, XP-on-clear (the 2026-09-03 handoff):**
+
+- **The packed archetype picks the build.** Raw-sustain sweeps at S5: physical
+  out-lasts magical ~2× against a **Brute** pack (single-target Strike for the few
+  bulky bodies); magical out-lasts physical ~1.5× against a **Skirmisher** pack
+  (3-target Cast for the swarm). AoE counters count, single-target counters bulk. Holds
+  with Engagement forced equal, so it is the damage *shape*.
+- **Build viability is ≈ 2.5-way** (sharpening pass 1's "all three viable"). Physical
+  and magical are poles, each owning a packed archetype; **hybrid owns nothing and
+  loses nothing badly** — 2nd everywhere (~75–85 % of the winner), on par on mixed
+  composition, the only build with no death-rate there. Weak-sense three-way viable;
+  strong-sense two-way — answering #18's "if it is a two-way choice, say so".
+- **XP settles per Encounter clear**, forfeited on a mid-Encounter Recall/Death (~half
+  an Encounter's worth). This gives the Encounter boundary a player-visible consequence
+  and defuses the Strike auto-focus worry (no per-kill XP to game). Loot Drops and coin
+  Piles stay per kill.
+- **Re-confirmed under two enemies:** fixed Roster · endless Encounters, no cap, no
+  rescale · `CastThreshold` still a texture knob (< 1 % throughput across its range;
+  keep the slider at six, keep the softened story-21 wording) · the bag is still the
+  whole return pressure.
+
+**Constant starting points** (the prototype file is the tuning surface): `castCost` 16,
+`castTargets` 3, `castCadence` 0.35 s, `tick` 0.1 s, `beat` 1 s. Build defence is a
+shared budget (Health 442 / Armor 27; hybrid spends leftover damage on 476 / 30). Two
+archetype curve-sets `stat = base + perLevel · SourceLevel^exp`, exponents near-linear —
+Brute `HP 26 + 24·S^1.12`, Skirmisher `HP 10 + 9·S^1.06`, full tables in `FINDINGS.md`.
+Two Locations: **Thornwood** (S2, Brute-packed, bag run) and **Ashfall** (S5,
+Skirmisher-packed, gear-gated, magical-leaning).
 
 ### Loot flow
 
-- When an enemy falls, the `Encounter` module decides a drop count (from the archetype
+- When an enemy falls, the `Simulation` module decides a drop count (from the archetype
   and the `IncreasedItemQuantity` multiplier, per the `ItemGenerator.RollLoot`
   docstring — the count is the caller's job) and calls the existing `ItemGenerator`
   with a `RollContext` built from the Location: `Table` = the Location's loot table,
   `SourceLevel` = the Location's source level, `MagicFind` = the hero's
-  `IncreasedItemRarity`. Rolled `ItemInstance`s become Drops.
+  `IncreasedItemRarity`. Rolled `ItemInstance`s become Drops. A Brute and a Skirmisher
+  may carry different drop counts / tables — a first-ticket detail, not fixed here.
 - Currency drops roll from the existing `CurrencyDropTable` and become coin **Piles** on
-  the ground, then auto-bank to the Wallet if the denomination's rarity passes the loot
-  filter.
+  the ground **per kill**, then auto-bank to the Wallet if the denomination's rarity
+  passes the loot filter. Coins are Loot, not an Encounter settlement — only XP settles
+  on the clear (story 38, ADR-0010 *Second amendment*).
 - Each Drop is tested against `HeroBehaviour.LootFilterMinimum`; a pass is then offered
   to the bag (the container's own Tetris-fit placement, from Phase 2). A Drop that
   passes the filter but does not fit stays on the ground. A Drop that fails the filter
@@ -424,18 +465,39 @@ ADR-0010's *Prototype outcome*; the load-bearing results:
 
 ### `LocationConfig` (a ScriptableObject adapter, in `Runtime` or `Data`)
 
-Authored per Location: a stable serialized id (same rule as `ItemDefinition.Id` — not an
-asset GUID), a display name, a fixed source level, a loot-table reference, an
-`xpPerKill`, and (ADR-0010) the fixed **Roster** range `[min,max]` an Encounter draws
-from and the spawn profile — `spawnBatch [min,max]` (`[1,1]` is a pure trickle, `[4,4]` a
-charging Pack), `spawnInterval`, `spawnJitter`. It carries **no** encounter-count or
-completion field (the issue-#18 `/prototype` killed the finite-Run mode) and **no**
-per-Location enemy curves — the enemy archetype is one shared constant set in the
-`Encounter` module that reads only `SourceLevel`. Two assets for the MVP: an easy
-Location (`SourceLevel 2, Roster [8,8], spawnBatch [1,1], interval 2.4`) and a harder one
-(`SourceLevel 5, Roster [12,12], spawnBatch [2,4], interval 3.6`, richer table, more XP).
-Town is **not** a `LocationConfig` — it is a `RunState`, and "go to Town" on the map is
-`Recall()`.
+Authored per Location (ADR-0010 *Second amendment* — pass 2 replaced the single `Roster`
++ `spawnBatch`):
+
+```
+LocationConfig : ScriptableObject
+{
+  string       Id                 // stable serialized, not the asset GUID
+  string       DisplayName
+  int          SourceLevel        // → RollContext.SourceLevel AND both archetype curve-sets
+  LootTableRef LootTable
+  EnemyType    Packed             // Brute | Skirmisher — Packs of this, singles of the other
+  Vector2Int   RosterBrute        // [min,max] Brutes per Encounter
+  Vector2Int   RosterSkirmisher   // [min,max] Skirmishers per Encounter
+  Vector2Int   PackBatch          // [3,5] = a real Pack ; [1,1] = trickle
+  float        PackedSpawnWeight  // P(next spawn draws the packed type) while both remain
+  float        SpawnInterval
+  float        SpawnJitter
+}
+```
+
+**No `xpPerKill`** — XP is the per-archetype `xp` curve, settled on the Encounter clear.
+**No** encounter-count / completion field (pass 1 killed the finite-Run mode). **No**
+per-Location enemy curves — the two archetype curve-sets are one shared constant set in
+the `Simulation` module that reads only `SourceLevel`. Validation: `Roster*.x ≥ 0`,
+`Roster*.y ≥ Roster*.x`, `RosterBrute.y + RosterSkirmisher.y ≥ 1`, `PackBatch.x ≥ 1`,
+`0 ≤ PackedSpawnWeight ≤ 1`, `SpawnInterval > 0`, non-empty loot table, stable non-GUID
+id.
+
+Two assets for the MVP: **Thornwood** (`SourceLevel 2, Packed Brute, RosterBrute [9,9],
+RosterSkirmisher [5,5], PackBatch [2,3]`) and **Ashfall** (`SourceLevel 5, Packed
+Skirmisher, RosterBrute [4,4], RosterSkirmisher [13,13], PackBatch [3,5],
+PackedSpawnWeight 0.7`, richer table). Town is **not** a `LocationConfig` — it is a
+`RunState`, and "go to Town" on the map is `Recall()`.
 
 ### Adapters (thin, in `Runtime` / `GUI`, smoke-tested in the editor)
 
@@ -446,9 +508,9 @@ Town is **not** a `LocationConfig` — it is a `RunState`, and "go to Town" on t
   `Regenerate(deltaSeconds)` method a caller drives — the Encounter sim during a fight,
   a trivial `Stopwatch`-driven Town driver otherwise. This retires
   `// TODO: COMBAT TICK RATE`.
-- Applying `EncounterResult` and per-kill XP to `LocalPlayer`; banking coin Piles to
-  the Wallet; snapshotting the bag into the Corpse store on Death; laying a recovered
-  Corpse out as Drops.
+- Applying `RunResult` and each Encounter's settled XP to `LocalPlayer`; banking coin
+  Piles to the Wallet per kill; snapshotting the bag into the Corpse store on Death;
+  laying a recovered Corpse out as Drops.
 - The map panel (a radio group of Location toggles + Send / Recall buttons), the six
   behaviour sliders wired to `HeroBehaviour` on their change event, and panel-visibility
   wiring that disables the Store and Stash toggles while `InField`.
@@ -469,15 +531,15 @@ Town is **not** a `LocationConfig` — it is a `RunState`, and "go to Town" on t
 
 ## Testing Decisions
 
-A good test here asserts **externally observable behaviour** of the pure `Encounter`
+A good test here asserts **externally observable behaviour** of the pure `Simulation`
 module — given these combatants, this clock delta sequence, this behaviour config, this
 fake roll source: the hero strikes on cadence, the Encounter ends when a side is down,
 XP and loot come out at these amounts, the Death penalty and Corpse are these. It never
 reaches for a private field or a tick counter.
 
-- **The seam is the `InventorySystem.Encounter` module boundary.** One new test
-  assembly, `InventorySystem.Encounter.Tests`, mirroring `InventorySystem.Items.Tests`
-  (`Assets/Scripts/Tests/EditMode/Encounter/`). It fakes `ICombatant` (both sides),
+- **The seam is the `InventorySystem.Simulation` module boundary.** One new test
+  assembly, `InventorySystem.Simulation.Tests`, mirroring `InventorySystem.Items.Tests`
+  (`Assets/Scripts/Tests/EditMode/Simulation/`). It fakes `ICombatant` (both sides),
   fakes `IRollSource` (the determinism seam already used by `ItemGeneratorTests` —
   `RollSources.cs`), uses a real `new()`-able `CharacterInventory` / `Wallet` from the
   post-rework code, and feeds `CombatClock` deltas by hand.
@@ -485,12 +547,16 @@ reaches for a private field or a tick counter.
   accumulation, frame-rate independence, the spiral-of-death clamp, elapsed-time
   semantics.
 - **Modules under test:** `CombatClock`; the Encounter sim (the two hero cadences and
-  their target selection, the enemy cadence, the Roster/Pack spawn schedule against
-  `Engagement`, per-tick regen call, end detection, next-Encounter beat); the `RunState`
-  FSM (transitions, running totals, `Recall` vs `HandleDeath` outcomes); the Corpse
-  rules (single instance, per-Location tag, replace-on-second-Death, lay-out-on-recovery);
-  `HeroBehaviour` triggers (retreat fires at the HP fraction, recall fires at the
-  bag-fill fraction, `CastThreshold` gates a casting run by resource hysteresis,
+  their target selection, the enemy cadence, the **per-type Roster / Pack spawn
+  schedule** against `Engagement` — packed type in `PackBatch` groups, other type
+  singly, `PackedSpawnWeight` split — per-tick regen call, end detection,
+  next-Encounter beat, **the XP pot: accrues per kill from each archetype's `xp` curve,
+  settles to `LocalPlayer` on the `clear`, is discarded if the Run exits first**); the
+  `RunState` FSM (transitions, running totals, `Recall` vs `HandleDeath` outcomes,
+  `XpForfeited` on a mid-Encounter exit); the Corpse rules (single instance, per-Location
+  tag, replace-on-second-Death, lay-out-on-recovery); `HeroBehaviour` triggers (retreat
+  fires at the HP fraction, recall fires at the bag-fill fraction, `CastThreshold` gates
+  a casting run by resource hysteresis — assert the *mechanic*, not a balance outcome —
   `Engagement` caps the spawn refill, the loot filter admits and rejects by `ItemRarity`
   including the coin-denomination mapping); the loot count → `RollContext` →
   `ItemGenerator` wiring.
@@ -517,8 +583,10 @@ reaches for a private field or a tick counter.
 - **A spatial Field** — no map to walk, no enemy positions, no movement, no aggro
   radius. `Engagement` and `Packs` are enemy *counts*, never positions; an Encounter is
   a group of enemies and a cadence exchange with a spawn schedule (ADR-0010).
-- **Enemy variety** — one parametric archetype scaled by source level. No per-monster
-  assets, no bosses.
+- **Enemy variety beyond the two archetypes** — pass 2 of the issue-#18 `/prototype`
+  reversed the single-archetype cut: **Brute** and **Skirmisher**, both parametric off
+  source level, differentiated per Location by which is Packed (see *The combat model*).
+  Still no per-monster assets, no bosses, no named enemies, no third archetype.
 - **Finite vs endless — at two scales.** *Resolved* by the issue-#18 `/prototype` — moved
   up to *The combat model — prototype findings*. Fixed Roster per Encounter; endless
   Encounters at fixed difficulty; no encounter cap, no restart-rescale.
@@ -535,10 +603,11 @@ reaches for a private field or a tick counter.
 - **Exact balance numbers** — the Death XP-loss and currency-fee percentages, the revive
   health fraction, drop counts, slider ranges and the sim-speed curve remain unfixed. The
   combat constants (base Strike/Cast damages, `castCost`, the two cadences, `tick`, the
-  enemy `SourceLevel` curves, Roster and Pack sizes and timing) now have `/prototype`
-  starting points — recorded in *The combat model — prototype findings* and ADR-0010,
-  with `dev/prototypes/2026-09-03-combat-cluster/` as the live tuning surface — but they
-  are still starting points, not frozen.
+  two archetype `SourceLevel` curves, per-type Roster and Pack sizes and timing) now have
+  `/prototype` starting points from both passes — recorded in *The combat model —
+  prototype findings* and ADR-0010, with `dev/prototypes/2026-09-03-combat-cluster/` (and
+  its Artifact) as the live tuning surface — but they are still starting points, not
+  frozen.
 
 ## Further Notes
 
@@ -554,14 +623,17 @@ reaches for a private field or a tick counter.
   every sim roll through the injected `IRollSource`.
 - **The Corpse is harsh for an MVP by the owner's own assessment** (ADR-0009) — accepted
   now, revisitable once the loop is actually played.
-- **The combat model was reworked after this spec first landed.** The 2026-09-02 combat
-  grilling produced ADR-0010, the `CONTEXT.md` **## Combat** section (Strike, Cast,
-  Engagement, Pack, Cast Threshold), the sharpened **Encounter** entry, and *The combat
-  model* subsection above. Sections written before it that still say "one attack per
-  tick" or "five sliders" are superseded there. The issue-#18 `/prototype` (2026-09-03)
-  then resolved that model's three open questions — *The combat model — prototype
-  findings* and ADR-0010's *Prototype outcome* are authoritative on finite-vs-endless,
-  build viability and the combat constants.
+- **The combat model was reworked after this spec first landed, then twice by the
+  `/prototype`.** The 2026-09-02 combat grilling produced ADR-0010, the `CONTEXT.md`
+  **## Combat** section, the sharpened **Encounter** entry, and *The combat model*
+  subsection above. The issue-#18 `/prototype` pass 1 (2026-09-03) resolved
+  finite-vs-endless and build viability; pass 2 (per the 2026-09-03 domain-modeling
+  handoff) replaced the single archetype with **Brute + Skirmisher**, moved **XP to
+  settle per Encounter clear**, renamed the module to **`InventorySystem.Simulation`**
+  and `EncounterResult` to **`RunResult`**, and added `CONTEXT.md` entries for **Brute**,
+  **Skirmisher**, **Spawn Profile** and **The hero** (Hero vs Player). *The combat model
+  — prototype findings*, ADR-0010's *Prototype outcome* and its *Second amendment* are
+  authoritative where any earlier text conflicts.
 - The research doc (`dev/specs/2026-09-01-mvp-simulation-loop-research.md`) remains the
   source for the sibling-project prior art, the external genre references, and the full
   options analysis behind each decision above.

@@ -104,9 +104,16 @@ The player's spendable money, wherever the coins physically sit. Currently not a
 ## Loot
 
 **Loot**:
-The items and coins a kill or a cleared Encounter yields. It drops live during a Run,
-not as a bundle handed over on Recall.
-_Avoid_: haul, spoils, bounty, take, rewards
+The items and coins a kill sheds. It drops live during a Run, **per kill**, not as a
+bundle handed over on Recall. XP is *not* Loot — it settles per Encounter clear (see
+**Encounter**), on its own rhythm.
+_Avoid_: haul, spoils, bounty, take, rewards; XP (a separate reward, separately timed)
+
+**Kill**:
+One enemy falling. It is the settle unit for **Loot** — each kill sheds its Drops and
+coin Piles on the spot — and nothing else: XP settles per Encounter clear, not per kill.
+"Per kill" and "on the clear" are the two reward rhythms; name which one you mean.
+_Avoid_: frag, takedown, defeat; "kill" as the XP unit
 
 **Drop**:
 Loot lying on the ground at a Location — shed by a defeated enemy, or laid out from a
@@ -140,6 +147,21 @@ The share of a roll that yields nothing. Held out of the cascade so magic find c
 change how often you get a drop, only how good it is.
 _Avoid_: no-drop chance, miss, empty
 
+## The hero
+
+**Hero**:
+The single persistent character a Session owns — the one that fights. During a Run the
+player never controls it directly; they set its behaviour sliders and its gear and it
+fights autonomously. One hero per Session for the MVP; picking from among several saved
+heroes is deferred.
+_Avoid_: character, unit, avatar, champion; "player" for the thing in the Field
+
+**Player**:
+The person at the keyboard. They choose the Location, tune the six sliders, judge when to
+Recall, and sort the bag in Town. Every player action is a decision *about* the hero,
+never a move *as* it — that is the whole loop.
+_Avoid_: user, you; "hero" for the one making the calls
+
 ## Runs
 
 **Session**:
@@ -166,19 +188,37 @@ tools. A Run *state*, never a Location.
 _Avoid_: base, camp, hub, hideout; town as a map destination
 
 **Location**:
-One authored field destination the hero can be Sent to. It carries the source level
-and the loot table a Run there rolls against. Its source level is fixed, never scaled
-to the hero: Locations form a difficulty ladder a geared hero outgrows.
+One authored field destination the hero can be Sent to. It carries the source level, the
+loot table a Run there rolls against, which enemy **archetype** it **Packs**, and its
+**Roster** and **Spawn Profile**. Its source level is fixed, never scaled to the hero:
+Locations form a difficulty ladder a geared hero outgrows. Two for the MVP — Thornwood
+(low source level, Brute-packed, a bag run) and Ashfall (high, Skirmisher-packed, a
+gear-gated wall).
 _Avoid_: level, zone, area, stage, node, dungeon, map
 
 **Encounter**:
-One fight at a Location. It draws a fixed **Roster** of enemies (a `[min,max]` count on
-the Location) that arrive over the fight — singly, or in Packs that spike past the
-player's Engagement count — and it clears when the Roster is spent and the last enemy is
-down; the next begins after a short beat. Loot drops and XP is granted per kill, not
-banked on the clear. A Location runs Encounters endlessly at a fixed difficulty; only
-Recall or Death ends the Run (issue-#18 `/prototype`, ADR-0010).
-_Avoid_: battle, fight, combat, wave (that is a Pack)
+One build-and-release of pressure at a Location — the pacing unit a Run is made of. It
+fields a fixed **Roster**; enemies arrive over it per the **Spawn Profile** — one
+archetype in **Packs**, the other singly — pressure mounts, and it clears when the Roster
+is spent and the last enemy is down. **XP settles here, on the clear**, summed over the
+Roster; a Run driven off mid-Encounter forfeits that Encounter's XP. Loot Drops and
+coin Piles fell per kill as it ran. A one-second beat, then the next builds. A Location
+runs Encounters endlessly at a fixed difficulty; only Recall or Death ends the Run
+(issue-#18 `/prototype` pass 2, ADR-0010).
+_Avoid_: battle, fight, combat, room; wave (a Pack is one arrival *within* an Encounter)
+
+**Roster**:
+The enemies one Encounter will field — authored on the Location as a `[min,max]` count
+for **each** archetype (so many Brutes, so many Skirmishers), rolled fresh per Encounter.
+The Encounter clears once the whole Roster is spent and dead. Just the counts — the
+arrival order is the **Spawn Profile**.
+_Avoid_: wave, party, squad, spawn list, the Encounter's cast
+
+**Spawn Profile**:
+How a Roster arrives: which archetype comes in **Packs** and which trickles in one at a
+time, the Pack size, how often a spawn fires, and the odds the next spawn is the packed
+type. The knob that makes two Locations of the same source level feel different.
+_Avoid_: spawn table, wave schedule, spawner, timeline
 
 **Send**:
 The player action that starts a Run — choose a Location, commit the hero. Transitions
@@ -198,9 +238,12 @@ _Avoid_: defeat, loss, game over, fail, wipe
 
 ## Combat
 
-What happens inside an Encounter. Settled by the grilling of 2026-09-02 and the
-issue-#18 `/prototype` of 2026-09-03 (ADR-0010): fixed Roster, endless Encounters at
-fixed difficulty, physical / magical / hybrid all viable. Combat constants have
+What happens inside an Encounter. Settled by the grilling of 2026-09-02 and the issue-#18
+`/prototype`, which ran twice (ADR-0010): fixed Roster, endless Encounters at fixed
+difficulty, **two enemy archetypes** (Brute / Skirmisher) with a Location Packing one,
+XP settling per Encounter clear. The packed archetype decides which build a Location
+favours — single-target **physical** counters a Brute pack, area **magical** counters a
+Skirmisher swarm, **hybrid** is the safe middle that owns neither. Combat constants have
 prototype starting points but are not frozen.
 
 **Strike**:
@@ -223,8 +266,23 @@ _Avoid_: aggression, aggro, cap, wave size
 **Pack**:
 Several enemies that enter an Encounter together, overshooting Engagement — a Location's
 way of forcing a spike of incoming hits the player cannot tune away. A single arrival,
-not a timed round.
+not a timed round. Only the packed archetype arrives in Packs; the other trickles in
+singly.
 _Avoid_: wave, swarm, group (that is the Encounter's whole cast), ambush
+
+**Brute**:
+The bulky enemy archetype — high health, slow hard hits, some Armor, low XP. The **Cast**
+(highest-HP targeting) tends to land on Brutes; a Pack of them is what a single-target
+physical build clears best, and what an area build grinds against. Parametric off the
+Location's source level.
+_Avoid_: tank, heavy, bruiser, ogre, elite
+
+**Skirmisher**:
+The fragile enemy archetype — low health, fast light hits, no Armor, high XP. The
+**Strike** (lowest-HP targeting) tends to pick off Skirmishers; a swarm of them is what
+an area magical build clears best, and what a single-target build gets overwhelmed by.
+Parametric off the Location's source level.
+_Avoid_: minion, add, runner, rusher, trash
 
 **Cast Threshold**:
 The `Resource` fraction the hero charges up to before it will start a run of Casts,

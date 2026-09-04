@@ -41,5 +41,7 @@ weigh.
 - Determinism for tests is free: `CombatClock.Advance(dt)` and
   `ProbabilityTable.Sample(roll)` are the same shape — the caller supplies the
   non-deterministic input (ADR-0005).
-- Not built until the foundational rework lands — the Encounter module needs `Items` /
-  `RollContext` from rework Phase 1 (ADR-0006).
+- Not built until the foundational rework lands — the `InventorySystem.Simulation` module
+  (the spec renamed it from `InventorySystem.Encounter`; **Encounter** stays a domain
+  term for the pressure-wave unit) needs `Items` / `RollContext` from rework Phase 1
+  (ADR-0006).
