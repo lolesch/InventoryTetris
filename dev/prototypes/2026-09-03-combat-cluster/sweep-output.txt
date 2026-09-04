@@ -1,78 +1,106 @@
 
-===== Q2: is each build viable? RAW (retreat OFF, bag OFF) — can it out-sustain the Location? =====
---- easy ---
-physical             death    0 enc 57 kills 456 dur   900s xp/min 475.6 settledHP    1 | Timeout:200
-magical              death    0 enc 55 kills 446 dur   900s xp/min 464.9 settledHP    1 | Timeout:200
-hybrid               death    0 enc 56 kills 455 dur   900s xp/min   474 settledHP    1 | Timeout:200
---- hard ---
-physical             death    1 enc  2 kills  31 dur  79.7s xp/min 712.5 settledHP    0 | Died:200
-magical              death    1 enc  2 kills  32 dur  50.7s xp/min 987.1 settledHP  0.1 | Died:200
-hybrid               death    1 enc  1 kills  22 dur  49.8s xp/min 696.7 settledHP    0 | Died:200
+############ Q-A : build x pack composition @ S5 — which build wins which pack?
+#  raw (retreat OFF, bag OFF), NATURAL engagement (phys 2 / mag 4 / hyb 3). higher enc = better.
+--- s5-brutepack ---
+physical               death    1 enc  8 killB  99.8 killS  40.4 ttkB   5.1s ttkS  1.1s dur 317.2s xp/min 811.8 inB/inS 1239.9/147.4 fbXp 184.9 settledHP     0 | Died:200
+magical                death    1 enc  4 killB  50.6 killS  20.5 ttkB   6.6s ttkS  1.5s dur 145.4s xp/min 889.2 inB/inS 747.6/124.5 fbXp 155.3 settledHP     0 | Died:200
+hybrid                 death    1 enc  6 killB  76.7 killS  31.1 ttkB   8.7s ttkS  1.4s dur 254.8s xp/min   763 inB/inS 1328.1/168.1 fbXp 194.2 settledHP     0 | Died:200
+--- s5-mixed ---
+physical               death    0 enc 24 killB 194.9 killS 217.2 ttkB   4.9s ttkS  0.7s dur   900s xp/min 1035.8 inB/inS 2096.3/567.7 fbXp    0 settledHP   0.8 | Timeout:200
+magical                death 0.12 enc 26 killB 207.9 killS 232.3 ttkB   4.7s ttkS  0.7s dur   900s xp/min 1113.4 inB/inS 2089.8/903.9 fbXp   18 settledHP   0.2 | Timeout:177 Died:23
+hybrid                 death 0.01 enc 24 killB 195.9 killS 218.2 ttkB   7.7s ttkS  1.3s dur   900s xp/min 1040.6 inB/inS 2890.8/927.2 fbXp    2 settledHP   0.4 | Timeout:198 Died:2
+--- s5-skirmpack ---
+physical               death    1 enc 11 killB  56.6 killS 139.7 ttkB   2.7s ttkS  2.2s dur 324.1s xp/min 1511.2 inB/inS 359.6/1075.8 fbXp 358.2 settledHP     0 | Died:200
+magical                death 0.99 enc 17 killB  88.6 killS 214.7 ttkB   4.7s ttkS  1.1s dur 526.6s xp/min 1437.6 inB/inS 885.3/1168.9 fbXp 378.3 settledHP     0 | Died:198 Timeout:2
+hybrid                 death    1 enc 14 killB  71.2 killS 174.8 ttkB   5.3s ttkS  2.4s dur 446.2s xp/min  1377 inB/inS 816.1/1472.2 fbXp 408.4 settledHP     0 | Died:200
+#  same, engagement forced to 3 for all — isolates damage SHAPE from the kite/dive stance
+--- s5-brutepack (eng3) ---
+physical               death    1 enc  4 killB  52.1 killS  20.8 ttkB   7.4s ttkS  1.1s dur 160.9s xp/min 793.4 inB/inS 842.9/ 85.7 fbXp 187.1 settledHP     0 | Died:200
+magical                death    1 enc  5 killB  65.2 killS  26.3 ttkB     6s ttkS  1.2s dur 185.8s xp/min 887.5 inB/inS 863.3/137.1 fbXp  170 settledHP     0 | Died:200
+hybrid                 death    1 enc  6 killB  76.7 killS  31.1 ttkB   8.7s ttkS  1.4s dur 254.8s xp/min   763 inB/inS 1328.1/168.1 fbXp 194.2 settledHP     0 | Died:200
+--- s5-mixed (eng3) ---
+physical               death    1 enc 13 killB 109.3 killS 119.4 ttkB   6.1s ttkS  0.9s dur   466s xp/min 1091.7 inB/inS  1480/379.6 fbXp 205.4 settledHP     0 | Died:200
+magical                death    0 enc 25 killB 207.9 killS 231.9 ttkB   4.7s ttkS  0.6s dur   900s xp/min 1098.5 inB/inS 2036.6/863.5 fbXp    0 settledHP   0.5 | Timeout:200
+hybrid                 death 0.01 enc 24 killB 195.9 killS 218.2 ttkB   7.7s ttkS  1.3s dur   900s xp/min 1040.6 inB/inS 2890.8/927.2 fbXp    2 settledHP   0.4 | Timeout:198 Died:2
+--- s5-skirmpack (eng3) ---
+physical               death    1 enc  9 killB  48.4 killS 120.6 ttkB     3s ttkS  2.2s dur   272s xp/min 1501.3 inB/inS   347/949.5 fbXp 390.3 settledHP     0 | Died:200
+magical                death 0.96 enc 18 killB  96.2 killS 232.6 ttkB   4.7s ttkS  1.1s dur 566.6s xp/min 1431.6 inB/inS 957.6/1237.3 fbXp 372.1 settledHP     0 | Died:192 Timeout:8
+hybrid                 death    1 enc 14 killB  71.2 killS 174.8 ttkB   5.3s ttkS  2.4s dur 446.2s xp/min  1377 inB/inS 816.1/1472.2 fbXp 408.4 settledHP     0 | Died:200
+#  and @ S2 (trivial content) — do builds separate at all?
+--- s2-brutepack ---
+physical               death    0 enc 34 killB 413.8 killS 171.5 ttkB   1.3s ttkS    0s dur   900s xp/min   635 inB/inS 728.8/ 60.5 fbXp    0 settledHP     1 | Timeout:200
+magical                death    0 enc 34 killB 417.3 killS   173 ttkB   1.1s ttkS  0.1s dur   900s xp/min 639.8 inB/inS 526.8/ 73.1 fbXp    0 settledHP     1 | Timeout:200
+hybrid                 death    0 enc 34 killB 415.5 killS 172.2 ttkB   1.5s ttkS  0.1s dur   900s xp/min 637.4 inB/inS 756.2/112.5 fbXp    0 settledHP     1 | Timeout:200
+--- s2-skirmpack ---
+physical               death    0 enc 34 killB 174.3 killS 420.9 ttkB   0.1s ttkS  0.1s dur   900s xp/min 902.5 inB/inS  37.1/268.2 fbXp    0 settledHP     1 | Timeout:200
+magical                death    0 enc 34 killB   170 killS 411.4 ttkB   0.8s ttkS  0.4s dur   900s xp/min   882 inB/inS 167.8/  317 fbXp    0 settledHP     1 | Timeout:200
+hybrid                 death    0 enc 34 killB 171.9 killS 415.4 ttkB   0.5s ttkS  0.5s dur   900s xp/min 892.3 inB/inS 102.7/402.5 fbXp    0 settledHP     1 | Timeout:200
 
-===== Q2b: each build at its BEST engagement vs hard (retreat OFF, bag OFF) =====
+############ Q-B : the canonical two Locations, REALISTIC run (retreat 0.25 + bag 0.9 on)
+--- thornwood ---
+physical               death    0 enc  4 killB    40 killS  20.9 ttkB   1.4s ttkS    0s dur  96.2s xp/min 610.5 inB/inS  68.7/  6.8 fbXp 98.2 settledHP     1 | Recalled:Bag:200
+magical                death    0 enc  4 killB  39.1 killS  20.3 ttkB   1.2s ttkS  0.2s dur  93.5s xp/min 609.5 inB/inS  51.5/  8.8 fbXp   98 settledHP     1 | Recalled:Bag:200
+hybrid                 death    0 enc  4 killB  39.6 killS  20.5 ttkB   1.4s ttkS  0.1s dur  93.3s xp/min 600.5 inB/inS  67.7/ 11.4 fbXp 111.3 settledHP     1 | Recalled:Bag:200
+--- ashfall ---
+physical               death    0 enc  2 killB  10.2 killS  38.8 ttkB     4s ttkS  2.7s dur  78.1s xp/min 1517.6 inB/inS 110.1/445.4 fbXp 381.2 settledHP   0.3 | Recalled:HP:157 Recalled:Bag:43
+magical                death    0 enc  3 killB  12.4 killS  45.3 ttkB   5.3s ttkS  1.9s dur  79.1s xp/min 1776.2 inB/inS   141/372.7 fbXp  408 settledHP   0.4 | Recalled:HP:65 Recalled:Bag:135
+hybrid                 death    0 enc  3 killB  11.9 killS  44.1 ttkB   5.9s ttkS  3.3s dur  91.2s xp/min 1535.5 inB/inS 152.2/524.5 fbXp 397.7 settledHP   0.4 | Recalled:HP:95 Recalled:Bag:105
+
+############ Q-C : auto-focus — is the lowest-HP Strike ignoring Brutes while Skirmishers live?
+#  hybrid, raw, both packed variants @ S5. Watch ttkB (Brute time-alive) vs incoming split.
+physical @ s5-brutepack death    1 enc  8 killB  99.8 killS  40.4 ttkB   5.1s ttkS  1.1s dur 317.2s xp/min 811.8 inB/inS 1239.9/147.4 fbXp 184.9 settledHP     0 | Died:200
+magical @ s5-brutepack death    1 enc  4 killB  50.6 killS  20.5 ttkB   6.6s ttkS  1.5s dur 145.4s xp/min 889.2 inB/inS 747.6/124.5 fbXp 155.3 settledHP     0 | Died:200
+hybrid @ s5-brutepack  death    1 enc  6 killB  76.7 killS  31.1 ttkB   8.7s ttkS  1.4s dur 254.8s xp/min   763 inB/inS 1328.1/168.1 fbXp 194.2 settledHP     0 | Died:200
+physical @ s5-skirmpack death    1 enc 11 killB  56.6 killS 139.7 ttkB   2.7s ttkS  2.2s dur 324.1s xp/min 1511.2 inB/inS 359.6/1075.8 fbXp 358.2 settledHP     0 | Died:200
+magical @ s5-skirmpack death 0.99 enc 17 killB  88.6 killS 214.7 ttkB   4.7s ttkS  1.1s dur 526.6s xp/min 1437.6 inB/inS 885.3/1168.9 fbXp 378.3 settledHP     0 | Died:198 Timeout:2
+hybrid @ s5-skirmpack  death    1 enc 14 killB  71.2 killS 174.8 ttkB   5.3s ttkS  2.4s dur 446.2s xp/min  1377 inB/inS 816.1/1472.2 fbXp 408.4 settledHP     0 | Died:200
+
+############ Q-D : gear multiplier — how much gear opens ashfall (S5 skirm-pack)?
 --- physical ---
-engagement 1         death    1 enc  4 kills  55 dur 142.6s xp/min 709.8 settledHP    0 | Died:150
-engagement 2         death    1 enc  2 kills  31 dur    80s xp/min 712.6 settledHP    0 | Died:150
-engagement 3         death    1 enc  1 kills  21 dur  55.5s xp/min 671.5 settledHP    0 | Died:150
-engagement 4         death    1 enc  1 kills  18 dur  46.6s xp/min 556.1 settledHP  0.1 | Died:150
-engagement 5         death    1 enc  1 kills  17 dur  42.8s xp/min 519.9 settledHP  0.1 | Died:150
+x1                     death    1 enc  4 killB  14.8 killS  53.3 ttkB     4s ttkS  2.7s dur 112.4s xp/min 1590.8 inB/inS   155/612.1 fbXp  356 settledHP     0 | Died:150
+x1.15                  death    1 enc  5 killB  21.7 killS    76 ttkB   3.1s ttkS  2.4s dur 135.5s xp/min 1819.7 inB/inS 162.4/763.5 fbXp  377 settledHP     0 | Died:150
+x1.3                   death    0 enc 48 killB 194.8 killS 637.9 ttkB   0.6s ttkS  0.6s dur   900s xp/min 2430.9 inB/inS 350.9/1426.6 fbXp    0 settledHP     1 | Timeout:150
+x1.5                   death    0 enc 49 killB 196.5 killS 642.9 ttkB   0.6s ttkS  0.5s dur   900s xp/min  2454 inB/inS 293.4/1323.9 fbXp    0 settledHP     1 | Timeout:150
 --- magical ---
-engagement 1         death    1 enc  3 kills  46 dur  80.5s xp/min 1047.8 settledHP    0 | Died:150
-engagement 2         death    1 enc  3 kills  43 dur  71.4s xp/min 1093.1 settledHP    0 | Died:150
-engagement 3         death    1 enc  3 kills  38 dur  62.1s xp/min 1105.3 settledHP    0 | Died:150
-engagement 4         death    1 enc  2 kills  32 dur    51s xp/min 993.1 settledHP  0.1 | Died:150
-engagement 5         death    1 enc  2 kills  28 dur  45.6s xp/min 891.7 settledHP  0.1 | Died:150
+x1                     death    1 enc  5 killB  20.6 killS  71.5 ttkB   5.2s ttkS    2s dur 126.2s xp/min 1862.3 inB/inS 232.5/592.9 fbXp 370.8 settledHP     0 | Died:150
+x1.15                  death    1 enc  9 killB  35.4 killS   119 ttkB   4.4s ttkS  1.5s dur 205.1s xp/min  1983 inB/inS 335.3/789.3 fbXp 373.4 settledHP     0 | Died:150
+x1.3                   death 0.11 enc 41 killB 163.6 killS 536.3 ttkB   3.5s ttkS  0.7s dur   900s xp/min 2084.6 inB/inS 1081.8/1936.2 fbXp 42.2 settledHP   0.3 | Timeout:133 Died:17
+x1.5                   death 0.05 enc 43 killB 172.2 killS   564 ttkB   2.5s ttkS  0.7s dur   900s xp/min 2166.6 inB/inS 930.6/2092.6 fbXp 26.1 settledHP   0.4 | Timeout:143 Died:7
 --- hybrid ---
-engagement 1         death    1 enc  3 kills  42 dur 105.1s xp/min 734.3 settledHP    0 | Died:150
-engagement 2         death    1 enc  2 kills  30 dur  70.8s xp/min 781.6 settledHP    0 | Died:150
-engagement 3         death    1 enc  1 kills  22 dur  50.1s xp/min 698.1 settledHP    0 | Died:150
-engagement 4         death    1 enc  1 kills  17 dur  41.1s xp/min 536.1 settledHP  0.1 | Died:150
-engagement 5         death    1 enc  1 kills  16 dur  37.3s xp/min 492.7 settledHP  0.1 | Died:150
+x1                     death    1 enc  4 killB  18.3 killS  64.9 ttkB   5.8s ttkS  3.3s dur 129.9s xp/min 1596.7 inB/inS 232.5/774.7 fbXp  386 settledHP     0 | Died:150
+x1.15                  death    1 enc 12 killB    47 killS 158.1 ttkB   4.3s ttkS  2.1s dur 281.2s xp/min 1949.7 inB/inS 426.8/1232.8 fbXp 402.1 settledHP     0 | Died:150
+x1.3                   death    1 enc 16 killB  65.2 killS 216.8 ttkB   3.3s ttkS    2s dur 358.5s xp/min 2090.2 inB/inS 454.7/1596.8 fbXp 386.6 settledHP     0 | Died:150
+x1.5                   death    0 enc 45 killB 181.6 killS 594.9 ttkB   1.9s ttkS  1.1s dur   900s xp/min 2268.6 inB/inS 736.7/2671.3 fbXp    0 settledHP   0.8 | Timeout:150
 
-===== Q2c: gear multiplier — how much gear opens hard? (physical & magical, best engagement) =====
---- physical ---
-x1                   death    1 enc  2 kills  31 dur    80s xp/min 712.6 settledHP    0 | Died:150
-x1.1                 death    1 enc  3 kills  39 dur  90.9s xp/min 805.8 settledHP    0 | Died:150
-x1.25                death    1 enc  5 kills  61 dur 109.4s xp/min 1026.8 settledHP    0 | Died:150
-x1.4                 death    1 enc  6 kills  73 dur 125.4s xp/min 1077.1 settledHP    0 | Died:150
-x1.6                 death    1 enc 10 kills 126 dur 181.6s xp/min 1267.3 settledHP    0 | Died:150
---- magical ---
-x1                   death    1 enc  2 kills  32 dur    51s xp/min 993.1 settledHP  0.1 | Died:150
-x1.1                 death    1 enc  4 kills  56 dur  79.9s xp/min  1292 settledHP  0.1 | Died:150
-x1.25                death    1 enc  6 kills  72 dur 100.5s xp/min  1328 settledHP    0 | Died:150
-x1.4                 death 0.99 enc 40 kills 480 dur 574.8s xp/min 1482.4 settledHP    0 | Died:148 Timeout:2
-x1.6                 death 0.69 enc 56 kills 675 dur 808.7s xp/min 1481.8 settledHP    0 | Died:104 Timeout:46
+############ Q-E : CastThreshold with two enemies (magical @ ashfall x1.3, raw)
+threshold 0.05         death    0 enc 32 killB 130.7 killS 428.1 ttkB   3.4s ttkS  0.8s dur 690.3s xp/min 2124.3 inB/inS 870.9/1610.4 fbXp 327.7 settledHP   0.3 | Recalled:HP:120 Timeout:30
+threshold 0.3          death    0 enc 42 killB 153.2 killS 502.2 ttkB   3.1s ttkS  0.7s dur   900s xp/min 2127.1 inB/inS  1007/1783.7 fbXp 196.9 settledHP   0.3 | Recalled:HP:73 Timeout:77
+threshold 0.6          death    0 enc 27 killB 110.7 killS 362.5 ttkB     3s ttkS  0.7s dur 573.6s xp/min 2126.1 inB/inS 695.2/1491.5 fbXp 365.2 settledHP   0.3 | Recalled:HP:142 Timeout:8
+threshold 0.9          death    0 enc 32 killB   124 killS 405.5 ttkB   1.8s ttkS  0.7s dur 723.2s xp/min 2038.4 inB/inS 791.4/1655.4 fbXp 242.8 settledHP   0.3 | Recalled:HP:108 Timeout:42
 
-===== Q1a: REALISTIC run (retreat@HP 0.25 + bag-full 0.9 ON) — what ends a Run? =====
-physical @ easy      death    0 enc  5 kills  43 dur  81.3s xp/min 497.1 settledHP    1 | Recalled:Bag:200
-magical @ easy       death    0 enc  5 kills  42 dur  81.2s xp/min 487.1 settledHP    1 | Recalled:Bag:200
-hybrid @ easy        death    0 enc  5 kills  42 dur  79.8s xp/min 496.3 settledHP    1 | Recalled:Bag:200
-physical @ hard      death    0 enc  1 kills  22 dur  58.2s xp/min 676.7 settledHP  0.3 | Recalled:HP:200
-magical @ hard       death    0 enc  2 kills  25 dur    40s xp/min 774.1 settledHP  0.3 | Recalled:HP:194 Recalled:Bag:6
-hybrid @ hard        death    0 enc  1 kills  16 dur    38s xp/min 494.4 settledHP  0.3 | Recalled:HP:200
+############ Q-F : per-Encounter XP settle — what does a mid-Encounter exit forfeit? (fbXp = XP lost)
+#  realistic (retreat+bag on): the exit lands near a clear, so forfeit is small
+physical @ thornwood   death    0 enc  4 killB    40 killS  20.9 ttkB   1.4s ttkS    0s dur  96.2s xp/min 610.5 inB/inS  68.7/  6.8 fbXp 98.2 settledHP     1 | Recalled:Bag:200
+magical @ thornwood    death    0 enc  4 killB  39.1 killS  20.3 ttkB   1.2s ttkS  0.2s dur  93.5s xp/min 609.5 inB/inS  51.5/  8.8 fbXp   98 settledHP     1 | Recalled:Bag:200
+hybrid @ thornwood     death    0 enc  4 killB  39.6 killS  20.5 ttkB   1.4s ttkS  0.1s dur  93.3s xp/min 600.5 inB/inS  67.7/ 11.4 fbXp 111.3 settledHP     1 | Recalled:Bag:200
+physical @ ashfall     death    0 enc  2 killB  10.2 killS  38.8 ttkB     4s ttkS  2.7s dur  78.1s xp/min 1517.6 inB/inS 110.1/445.4 fbXp 381.2 settledHP   0.3 | Recalled:HP:157 Recalled:Bag:43
+magical @ ashfall      death    0 enc  3 killB  12.4 killS  45.3 ttkB   5.3s ttkS  1.9s dur  79.1s xp/min 1776.2 inB/inS   141/372.7 fbXp  408 settledHP   0.4 | Recalled:HP:65 Recalled:Bag:135
+hybrid @ ashfall       death    0 enc  3 killB  11.9 killS  44.1 ttkB   5.9s ttkS  3.3s dur  91.2s xp/min 1535.5 inB/inS 152.2/524.5 fbXp 397.7 settledHP   0.4 | Recalled:HP:95 Recalled:Bag:105
+#  retreat OFF so Deaths happen mid-Encounter — the whole in-progress Encounter XP is lost
+physical @ ashfall die death  0.3 enc  3 killB  12.5 killS  46.2 ttkB     4s ttkS  2.7s dur  94.4s xp/min 1544.6 inB/inS 132.8/526.4 fbXp 403.3 settledHP   0.2 | Recalled:Bag:139 Died:61
+magical @ ashfall die  death 0.04 enc  3 killB  13.1 killS  47.8 ttkB   5.3s ttkS    2s dur  81.5s xp/min 1785.4 inB/inS 147.8/391.7 fbXp 431.8 settledHP   0.4 | Recalled:Bag:192 Died:8
+hybrid @ ashfall die   death 0.07 enc  3 killB  13.1 killS  47.7 ttkB   5.9s ttkS  3.3s dur  94.3s xp/min 1548.5 inB/inS 165.9/563.7 fbXp 399.3 settledHP   0.3 | Recalled:Bag:187 Died:13
 
-===== Q1b: endless spawn (finiteRoster OFF) — is the Encounter still a unit? =====
-physical @ easy      death    0 enc  0 kills  42 dur  95.5s xp/min 414.1 settledHP    1 | Recalled:Bag:150
-hybrid @ easy        death    0 enc  0 kills  42 dur  95.7s xp/min 413.6 settledHP    1 | Recalled:Bag:150
-physical @ hard      death    0 enc  0 kills  20 dur  50.9s xp/min 613.3 settledHP  0.3 | Recalled:HP:150
-hybrid @ hard        death    0 enc  0 kills  14 dur  32.1s xp/min 437.9 settledHP  0.3 | Recalled:HP:150
-
-===== Q1c: finite Run (encounterCap 8) vs endless — easy, realistic =====
-physical endless     death    0 enc  5 kills  43 dur  82.4s xp/min 497.2 settledHP    1 | Recalled:Bag:150
-physical cap8        death    0 enc  5 kills  43 dur  82.4s xp/min 497.2 settledHP    1 | Recalled:Bag:150
-magical endless      death    0 enc  5 kills  42 dur  82.3s xp/min 486.5 settledHP    1 | Recalled:Bag:150
-magical cap8         death    0 enc  5 kills  42 dur  82.3s xp/min 486.4 settledHP    1 | Recalled:Bag:149 Recalled:Cap:1
-hybrid endless       death    0 enc  5 kills  42 dur  80.6s xp/min 495.8 settledHP    1 | Recalled:Bag:150
-hybrid cap8          death    0 enc  5 kills  42 dur  80.6s xp/min 495.8 settledHP    1 | Recalled:Bag:149 Recalled:Cap:1
-
-===== Q3: CastThreshold — trickle vs burst (magical @ hard eng4, retreat OFF bag OFF) =====
-threshold 0.05       death    1 enc  3 kills  36 dur  57.6s xp/min 1052.2 settledHP  0.1 | Died:150
-threshold 0.2        death    1 enc  2 kills  34 dur  54.5s xp/min  1031 settledHP  0.1 | Died:150
-threshold 0.4        death    1 enc  2 kills  32 dur    51s xp/min 993.1 settledHP  0.1 | Died:150
-threshold 0.6        death    1 enc  2 kills  31 dur  50.9s xp/min 974.2 settledHP  0.1 | Died:150
-threshold 0.8        death    1 enc  3 kills  36 dur  59.8s xp/min 1013.1 settledHP  0.1 | Died:150
-threshold 0.95       death    1 enc  2 kills  30 dur  50.9s xp/min 932.4 settledHP    0 | Died:150
-
-===== traces =====
-  physical @ hard eng2 (retreat off): cleared 2 killed 30 | Died | t30 CLR1(hp66%)  t61 CLR2(hp28%)  t79 Died(hp0%)
-  magical @ hard eng4 (retreat off): cleared 3 killed 36 | Died | t17 CLR1(hp75%)  t37 CLR2(hp38%)  t56 CLR3(hp9%)  t61 Died(hp0%)
+############ traces
+  physical @ thornwood (realistic):
+    cleared 5  killed B45/S25  ongoing  xp 1268 (forfeit 0)
+    t23 CLR1(+256xp hp100%)  t49 CLR2(+256xp hp100%)  t72 CLR3(+253xp hp100%)  t97 CLR4(+253xp hp100%)  t119 CLR5(+250xp hp100%)
+  magical  @ thornwood (realistic):
+    cleared 4  killed B45/S24  ongoing  xp 1017 (forfeit 0)
+    t23 CLR1(+256xp hp100%)  t46 CLR2(+256xp hp100%)  t71 CLR3(+253xp hp100%)  t95 CLR4(+253xp hp99%)
+  physical @ ashfall x1.3 (raw):
+    cleared 8  killed B35/S117  ongoing  xp 6310 (forfeit 0)
+    t16 CLR1(+810xp hp100%)  t34 CLR2(+802xp hp100%)  t53 CLR3(+795xp hp100%)  t71 CLR4(+787xp hp100%)  t91 CLR5(+787xp hp99%)  t107 CLR6(+779xp hp98%)  t125 CLR7(+779xp hp100%)  t144 CLR8(+771xp hp100%)
+  magical  @ ashfall x1.3 (raw):
+    cleared 7  killed B30/S99  ongoing  xp 5539 (forfeit 0)
+    t20 CLR1(+810xp hp99%)  t41 CLR2(+802xp hp99%)  t63 CLR3(+795xp hp94%)  t87 CLR4(+787xp hp93%)  t106 CLR5(+787xp hp87%)  t126 CLR6(+779xp hp84%)  t147 CLR7(+779xp hp85%)

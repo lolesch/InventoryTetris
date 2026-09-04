@@ -1,188 +1,231 @@
 # Combat-cluster /prototype — findings (issue #18)
 
-Prototype: `combat-cluster-prototype.html` (single file) + `combat-model.js` / `sweep.mjs`
-(headless, `node sweep.mjs`). The model mirrors ADR-0010 and the live formulas
+Prototype: `combat-cluster-prototype.html` (single file, now an Artifact too) +
+`combat-model.js` / `sweep.mjs` (headless, `node sweep.mjs`). The model mirrors ADR-0010,
+the **two-enemy model** from the 2026-09-03 handoff, and the live formulas
 (`BaseCharacterExtensions.CalculateReceivingDamage` mitigation, `LocalPlayer.GainExperience`
-curve). Numbers below are from 150–200 seeded Runs per cell.
+curve). Numbers below are from 40–200 seeded Runs per cell; see `sweep-output.txt`.
 
 Hero power in the sim is **flat within a Run** — the live code only grows the XP bar on
-level-up (`LocalPlayer.GainExperience`), nothing else. The only thing that changes hero
-strength is equipped loot, modelled here as a gear multiplier ×1.0 / ×1.25 / ×1.5.
+level-up. The only thing that changes hero strength is equipped loot, modelled here as a
+gear multiplier ×1.0 / ×1.15 / ×1.3 / ×1.5.
+
+> **This is a rerun.** The first pass (single parametric archetype) settled fixed-Roster /
+> endless-Encounters / no-rescale, "CastThreshold is a texture knob", and the bag as the
+> whole return-to-Town pressure. All of that **still holds** under two enemies — re-confirmed
+> below. What is new: the two-enemy model, XP-on-clear, and the build↔pack matchup.
 
 ---
 
-## Q1 — Finite vs endless, at both scales, + rescale rule
+## The two-enemy model
 
-### Encounter scale → **fixed Roster. Keep it.**
+Two shared parametric archetypes, both `stat = base + perLevel · S^exp`, Strike-only.
+A Location **Packs** one and trickles the other in singly.
 
-With `finiteRoster:false` (endless spawn) the Encounter counter never advances: no clear,
-no beat, no "next Encounter". The fight is one unbounded stream trickling in to the
-Engagement target until the bag or HP ends the Run. Throughput is *lower* than with a
-Roster (easy: 414 vs 497 XP/min) because there is no clear→beat→reset rhythm and the
-spawn just paces itself to Engagement.
+| | Brute (A) | Skirmisher (B) |
+|---|---|---|
+| Health @ S2 / S5 | 78 / 172 | 29 / 60 |
+| raw damage @ S5 | 5.1 @ AS 0.55 = **2.8 DPS/body** | 3.0 @ AS 1.6 = **4.8 DPS/body** |
+| Armor % @ S5 | ~8 (Strike-resistant) | 0 |
+| xp @ S5 (pre-balance) | 23 | 53 |
+| role | few, bulky, hard slow hits, **Cast food** (highest-HP → Cast targets it) | many, fragile, fast light hits, **Strike food** (lowest-HP → Strike targets it) |
 
-The Roster `[min,max]` is the only thing that makes an Encounter a **unit** — the thing
-the "short beat, then the next" language in the spec and CONTEXT.md describes. Drop it and
-"Encounter" stops meaning anything; the Location becomes one long fight.
+`archetypes.brute` / `archetypes.skirmisher` curve-sets; `location` supplies only
+`SourceLevel`, `packed` (`'brute'|'skirmisher'`), `roster: {brute:[min,max], skirmisher:[min,max]}`,
+`packBatch`, `packedSpawnWeight`, and spawn timing. Both archetypes exist at every Location
+(handoff open-question 3, "both everywhere" lean confirmed as workable).
 
-**Decision:** an Encounter draws a fixed Roster `[min,max]`; it clears when the Roster is
-spent and the last enemy falls. `LocationConfig` carries `roster: [min,max]`.
-
-### Run scale → **endless Encounters, no cap, no rescale.**
-
-A realistic Run (retreat-at-HP + recall-at-bag-full both on) **always** ends on a Recall
-trigger or Death — never on "the Location is done":
-
-| build @ location | ends by | Encounters | duration |
-|---|---|---|---|
-| any @ easy | `Recalled:Bag` | ~5 | ~80 s |
-| any @ hard (×1 gear) | `Recalled:HP` | 1–2 | ~40–60 s |
-
-A `finiteEncounters` cap of 8 fires in **<1 %** of easy Runs — the bag fills at ~5
-clears, well short of it. A cap of 3 does bind, but it is redundant with "recall when the
-bag is 60 % full". **A finite-encounter Run mode is dead config** in the MVP: the bag (or
-the HP line) always bounds the Run first, and it is Session state to persist for zero
-behaviour change.
-
-**Rescale-on-restart:** not needed and actively harmful. There is no "restart" — a Run
-ends on Recall/Death and the Location is still there at the same difficulty. Fixed
-difficulty is a design pillar (CONTEXT.md *Location*: "never scaled to the hero… a
-difficulty ladder a geared hero outgrows"). The prototype shows the ladder works **through
-gear alone**: magical @ hard crosses from "dies at 105 s / 6 kills" to "out-clears the
-spawn and farms to the sim cap" between ×1.25 and ×1.5 gear. That cliff *is* the
-"outgrows the Location" mechanic; a rescale rule would fight it.
-
-**Decision:** a Location is an endless series of Encounters at a fixed source level. A Run
-ends only on Recall (manual, retreat-HP, or bag-full) or Death. No encounter cap, no
-completion state, no restart-rescale. `RunState` needs no "Location cleared" concept.
-
-### One caveat the prototype surfaces
-
-With endless Encounters + fixed difficulty + no bag limit, an over-geared build farms a
-Location **forever** (walkthrough 8: bag off → runs to the 900 s cap, never in danger).
-The **bag is the entire "come back to Town" pressure.** If bag capacity is generous or the
-loot filter is set strict, a geared player has no reason to Recall and the loop stalls.
-Implications: (a) bag capacity and the loot-filter defaults are loop-load-bearing, not
-just flavour; (b) the two "harder" Location should be tuned so even a well-geared hero
-takes visible attrition there (`minHealthFraction` settling below ~0.6), or it is pure
-idle.
+**Incoming aggregate** (3-pack + 1 single, hero Armor 27%): Skirmisher-packed ≈ **12.6**
+mitigated DPS vs Brute-packed ≈ **9.6**. A Skirmisher swarm hits harder in total than a
+Brute pack at equal S — that is why the S5 Skirmisher Location (Ashfall) is the wall and
+the S5 Brute Location is merely hard.
 
 ---
 
-## Q2 — Are physical / magical / hybrid each viable?
+## Q1 — Which build for which pack? (the new question)
 
-**Yes — all three. Not a two-way choice, and hybrid is not dominated.**
+**It is a two-axis choice: damage *shape* matched to the packed archetype, and Engagement
+stance.** Physical and magical are the two poles; hybrid is a valid middle that owns nothing.
 
-*Viable* here means: sustains the easy Location indefinitely, and clears a
-gear-proportional slice of the hard one.
+### Raw sustain @ S5, natural Engagement (retreat + bag OFF — how long can it out-sustain the pack?)
 
-| build | easy (raw, retreat off) | hard ×1 (raw) | hard ×1.25 | lean |
+| pack (S5, ~17 roster) | physical (eng 2) | magical (eng 4) | hybrid (eng 3) | winner |
 |---|---|---|---|---|
-| physical | sustains to 900 s cap, full HP | dies ~80 s, 31 kills, ~710 XP/min | ~5 Enc, 61 kills | **longest raw survival**, lowest throughput |
-| magical | sustains to cap, full HP | dies ~50 s, 32 kills, **~990 XP/min** | ~6 Enc, 75 kills | **~1.4× the XP/min** (AoE farm), dies soonest |
-| hybrid | sustains to cap, full HP | dies ~50 s, 22 kills, ~700 XP/min | between | genuinely mid, no standout, no weakness |
+| **Brute-packed** (12 B, 5 S) | **8 Enc / 317 s** | 4 / 145 | 6 / 255 | **physical**, ~2× magical |
+| **Mixed** (8 B, 9 S) | 24 / cap | 26 / cap *(12% died)* | 24 / cap *(1% died)* | wash — hybrid safest |
+| **Skirmisher-packed** (5 B, 12 S) | 11 / 324 | **17 / 527** | 14 / 446 | **magical**, ~1.5× physical |
 
-*(XP/min figures from the post-`arch.armor`-fix sweep; see `sweep-output.txt`. The
-pre-fix run had them ~2 % higher — no conclusion moved.)*
+Forcing Engagement to 3 for all three keeps the same ordering (physical best vs Brute,
+magical best vs Skirmisher), so it is the **damage shape**, not just the kite/dive stance.
 
-The pacing asymmetry ADR-0010 wanted does show up: **physical wants Engagement low**
-(kite, kill fast 1-v-1 — Engagement 1 lasts 141 s vs Engagement 5's 42 s), **magical wants
-Engagement 3–4** (feed the 3-target Cast — peak XP/min at Engagement 3). Hybrid is flat
-across Engagement.
+### Why (closed-form, `node calc.mjs`)
 
-**Meta lean (a finding, not a blocker):** magical is the farm build (higher XP/min via
-AoE), physical is the survival/progression build (lasts longest raw, opens hard Locations
-at lower gear). Hybrid trades the extremes for no soft spot. This is a healthy triangle
-for an itemisation game — no build is a trap, and the choice reads as "farm rate vs
-safety".
+- A **Brute pack** is high total-HP but **low count** (≈3 bodies). Physical's single-target
+  Strike (68 DPS @ S5, Strike-TTK 2.5 s per Brute) keeps pace with 3 bodies. Magical's Cast
+  hits the 3 highest-HP — i.e. the Brutes — at 6 s each but can only touch 3, and its Strike
+  is negligible, so a 4th Brute is untouched and incoming never drops.
+- A **Skirmisher pack** is low total-HP but **high count** (5+ bodies). Magical's 3-target
+  Cast clears them in parallel (Cast-TTK 2.1 s × 3). Physical's Strike takes one Skirmisher
+  per 0.6 s cadence (0.8 s TTK) while the rest of the swarm — 4.8 DPS each — chews the hero;
+  its Cast (2 DPS/target) does nothing.
+- **AoE counters numerosity; single-target counters bulk.** This is the opposite of the
+  naive "bring AoE for the pack of tanks" read.
 
-### Constants that make this true (starting points, tune by feel)
+### Hybrid
 
-Budget is one "geared level-N hero" split three ways:
+Second in **both** specialist packs — ~75–85 % of the winner's Encounter count — roughly on
+par on genuinely mixed composition, and the only build with **no death-rate** on mixed.
+Its damage budget is a true midpoint; the leftover goes into a thicker HP pool (476 vs 442,
+armor 30 vs 27), which is what keeps its bad matchup from being catastrophic.
+
+- **Three-way viable in the weak sense** — all three clear content and progress.
+- **Two-way in the strong sense** — only physical and magical are ever the *best* pick.
+- Hybrid's justification: a transitional build while you assemble gear for a pole, and a
+  no-hard-counter generalist. This directly answers #18's "if it is a two-way choice not
+  three-way, say so": it is **2.5-way**.
+
+### Engagement stance (still a real lever, per prototype 1)
+
+Physical wants Engagement **low** (kite — one body at a time; its Strike doesn't benefit
+from more targets). Magical wants Engagement **3–4** (feed the 3-target Cast). Hybrid is
+flat. Location **Packs overshoot any Engagement setting** and spike incoming — that is the
+Location's lever against a kiter (ADR-0010 intent), and `packBatch [3,5]` at Ashfall is it.
+
+---
+
+## Q2 — Finite vs endless (re-confirmed under two enemies)
+
+### Encounter scale → **fixed Roster** (now a per-type composition)
+
+With an unbounded roster the Encounter counter never advances — no clear, no beat, no XP
+settle (XP now settles *on the clear*, so endless spawn means **zero XP forever**). The
+Roster — `{brute:[min,max], skirmisher:[min,max]}` — is the only thing that makes an
+Encounter a unit. Keep it. `LocationConfig` carries the per-type roster.
+
+### Run scale → **endless Encounters, no cap, no rescale**
+
+| Location | build | ends by | Encounters | note |
+|---|---|---|---|---|
+| Thornwood (S2 Brute-pack) | any | `Recalled:Bag` | ~4 | full HP throughout — the bag is the only limiter |
+| Ashfall (S5 Skirm-pack) ×1 gear | any | `Recalled:HP` / `Died` | 2–3 | a wall; settled HP ~0.3 |
+| Ashfall ×1.3 gear | physical | farms to 900 s cap | 48+ | one-shot breakpoint on Skirmisher HP → sharp cliff |
+| Ashfall ×1.3 gear | magical | mostly farms (11% died) | 41 | opens more gradually |
+
+A `finiteEncounters` cap of 8 still fires in **<1 %** of realistic Runs — the bag or the HP
+line always bounds the Run first. Dead config. Fixed difficulty holds; the ladder is
+equipped gear (a ~1.15–1.3× swing crosses Ashfall from "dies at Enc 2" to "farms forever").
+No restart-rescale — a Run ends on Recall/Death and the Location is still there at the same
+S. `RunState` needs no "Location cleared" concept.
+
+### The caveat still stands
+
+Endless Encounters + fixed difficulty + no bag limit ⇒ an over-geared build farms a
+Location **forever** (walkthrough "Thornwood is a bag run" with bag off → 900 s cap, never
+in danger). **The bag is the entire "come back to Town" pressure.** Bag capacity and the
+loot-filter defaults are loop-load-bearing.
+
+---
+
+## Q3 — XP settles per Encounter clear (handoff decision 1)
+
+XP no longer drips per kill. Each kill adds `arch.xp · (1 + (S − heroLevel)/100)` to a
+**per-Encounter pot**; the pot pays out on the `clear` event and resets. A Run driven off
+mid-Encounter by Recall or Death **forfeits the whole pot**.
+
+- Realistic Runs forfeit little (the exit lands near a clear): **~0 XP at Thornwood, ~400
+  at Ashfall** (about half an Encounter).
+- A **Death** mid-Encounter forfeits ~185–410 XP depending on how deep it was — a real
+  sting that gives the Encounter boundary the player-visible consequence it was missing.
+- It **defuses the auto-focus worry** (handoff open-question 7): the lowest-HP Strike still
+  eats Skirmishers first (ttk ~1–3 s vs Brutes' 4–9 s), but with no per-kill XP that is
+  just sensible threat triage — kill the fast, numerous bodies first to cut incoming — not
+  an exploit. There is no "focus the high-XP target for early XP" play.
+- **Loot Drops stay per kill** (bag pressure accrues as bodies fall). **Coins**: the
+  prototype does not model banking cadence; the lean (physical `Pile` Drops that auto-bank
+  as they fall) is unaffected — recommend **per kill**, unchanged.
+
+---
+
+## Q4 — CastThreshold, re-checked with two enemies
+
+Sweeping CastThreshold 0.05 → 0.9 (magical @ Ashfall ×1.3):
+
+| threshold | Encounters | XP/min |
+|---|---|---|
+| 0.05 (constant chip) | 32 | 2124 |
+| 0.30 | 42 | 2127 |
+| 0.60 | 27 | 2126 |
+| 0.90 (long charge → burst) | 32 | 2038 |
+
+**XP/min moves < 1 %** until the very top of the range, where a long idle-charge is mildly
+*worse*. Two enemies do not rescue the "pack-deleting burst" — on a continuous spawn,
+deleting a pack a beat early just pulls the next one a beat closer. **Keep the slider
+(six sliders), soften ADR-0010's framing** to "continuous chip vs clumped Casts; a feel
+knob, not a power one". It earns real weight only when later content adds a pre-chargeable
+target (an elite with a health bar worth saving for) — the depth lever ADR-0010 defers.
+~0.3 is a reasonable default (enough charge for a small burst, no idle waste).
+
+---
+
+## Q5 — The constants (starting points, tune by feel)
+
+### Builds — equal defensive budget, damage shape is the differentiator
 
 | | physical | magical | hybrid |
 |---|---|---|---|
-| PhysicalDamage | 40 | 9 | 26 |
-| AttackSpeed | 1.6 | 1.0 | 1.3 |
-| MagicalDamage (per target) | 6 | 26 | 15 |
-| Resource / regen /s | 45 / 6 | 130 / 20 | 85 / 15 |
-| Health | 440 | 430 | 432 |
-| Armor % | 30 | 24 | 26 |
+| PhysicalDamage | 46 | 8 | 28 |
+| AttackSpeed | 1.6 | 1.0 | 1.35 |
+| MagicalDamage (per target) | 5 | 23 | 14 |
+| Resource / regen /s | 45 / 6 | 120 / 20 | 86 / 14 |
+| Health / regen /s | 442 / 3 | 442 / 3 | **476 / 4** |
+| Armor % | 27 | 27 | **30** |
+| CastThreshold | 0.30 | 0.40 | 0.35 |
+| Engagement | 2 | 4 | 3 |
+
+Physical & magical share defence exactly; hybrid spends its leftover damage budget on HP.
+Gear multiplier scales `physicalDamage`, `magicalDamage`, `health` by `m` and
+`attackSpeed` by `1 + (m−1)·0.4`.
+
+### Combat module constants
 
 - `castCost` **16** flat. `castTargets` **3**. `castCadence` **0.35 s** (burst ceiling).
 - Steady Cast cadence is emergent = `castCost / ResourceRegeneration` (magical ≈ 0.8 s,
-  hybrid ≈ 1.07 s). `castCadence` must stay **well below** that for any burst headroom
-  (see Q3).
-- Strike cadence = `1 / AttackSpeed`, unchanged.
-- CombatClock `tick` **0.1 s** (10 Hz — AutoBattler's default; fine, one action per
-  attack per tick, no attack lost below AttackSpeed 10). `beat` between Encounters **1 s**.
+  hybrid ≈ 1.14 s). `castCadence` must stay well below it for any burst headroom.
+- Strike cadence = `1 / AttackSpeed`, unchanged. ADR-0010's `× (1 + AttackSpeed·0.01)`
+  term stays dropped (a real cadence carries AttackSpeed through frequency).
+- CombatClock `tick` **0.1 s** (10 Hz). `beat` between Encounters **1 s**.
 
----
+### Archetype curves — `stat = base + perLevel · S^exp`
 
-## Q3 — The rest of the constants
-
-### Enemy archetype — `stat = base + perLevel · S^exp`, Strike only
-
-| stat | base | perLevel | exp | @ S2 | @ S5 |
-|---|---|---|---|---|---|
-| Health | 15–20 | 18–20 | 1.10–1.12 | ~55 | ~135 |
-| Damage (raw, pre-mitigation) | 0.8–1.0 | 0.7–0.85 | 1.0 | ~2.2 | ~6.0 |
-| Armor % | 0 | 0.5–0.8 | 1.0 | ~1 | ~4 |
-| AttackSpeed | 0.75–0.85 (flat, not on a curve) | | | | |
-| xpPerKill | 16 (easy) … 30 (hard) — authored per Location, not a curve | | | | |
-
-The exponent is barely above linear on purpose. `exp` ≥ 1.25 on Health makes hard
-un-openable at any realistic gear; `exp` ≥ 1.15 on Damage makes hard a one-shot wall.
-Keep both curves gentle and let the **source-level gap** (S2 vs S5) carry the difficulty
-difference.
-
-### Spawn profile (per Location)
-
-| | easy | hard |
+| | Brute | Skirmisher |
 |---|---|---|
-| Roster `[min,max]` | `[8,8]` | `[12,12]` |
-| initialSpawn | 2 | 3 |
-| spawnBatch `[min,max]` | `[1,1]` (pure trickle) | `[2,4]` (mixed, Packs) |
-| spawnInterval | 2.4 s | 3.6 s |
-| spawnJitter | ±0.6 s | ±0.9 s |
+| Health | base 26, perLevel 24, exp **1.12** | base 10, perLevel 9, exp **1.06** |
+| Damage (raw) | base 1.0, perLevel 0.82, exp 1.0 | base 0.5, perLevel 0.5, exp 1.0 |
+| Armor % | base 3, perLevel 0.9, exp 1.0 | base 0, perLevel 0, exp 1.0 |
+| AttackSpeed | 0.55 (flat) | 1.6 (flat) |
+| xp | base 5, perLevel 3.5, exp 1.0 | base 13, perLevel 8, exp 1.0 |
 
-`spawnBatch [4,4]` is a **pure** Pack — it overshoots any Engagement setting and spikes
-incoming damage; that is the Location's lever against a kiter (walkthrough 6, ADR-0010
-intent). `[1,1]` is a trickle Engagement can fully manage. A hard Location mixes them
-(`[2,4]`).
+Exponents stay near-linear on purpose — `exp ≥ 1.2` on Brute Health makes the hard
+Location un-openable at realistic gear; the **source-level gap** (S2 vs S5) carries the
+difficulty difference, not the curve shape.
 
-### CastThreshold — **a texture knob, not a power knob**
+### Locations authored for the MVP
 
-Sweeping CastThreshold 0.05 → 0.95 (magical @ hard, ×1.25 gear so fights last):
+| | Thornwood (Location 1) | Ashfall (Location 2) |
+|---|---|---|
+| SourceLevel | 2 | 5 |
+| packed | `brute` | `skirmisher` |
+| Roster | brute [9,9], skirmisher [5,5] | brute [4,4], skirmisher [13,13] |
+| packBatch | [2,3] | [3,5] |
+| packedSpawnWeight | 0.6 | 0.7 |
+| spawnInterval / jitter | 2.6 / ±0.7 s | 2.3 / ±0.7 s |
+| feel | tutorial bag-run, no build pressure | gear-gated wall, magical-leaning |
 
-| threshold | kills | duration | XP/min |
-|---|---|---|---|
-| 0.05 (constant chip) | ~511 | ~615 s | 1483 |
-| 0.4 | ~478 | ~576 s | 1482 |
-| 0.8 | ~455 | ~551 s | 1479 |
-| 0.95 (long charge → burst) | ~433 | ~525 s | 1481 |
-
-**XP/min moves < 0.3 %.** The "pack-deleting burst" ADR-0010 describes does not pay for
-itself on a **continuous** spawn: deleting a Pack two seconds early just pulls the next
-Pack two seconds closer. A high threshold is mildly *worse* (time spent not casting).
-Low-threshold (cast whenever `resource ≥ castCost`) is the marginal winner.
-
-Options, in order of preference:
-
-1. **Keep the slider, redocument it.** It is a *feel* knob — continuous Casts vs clumpy
-   Casts — not a build-defining one. It earns real weight only when later content adds a
-   pre-chargeable target (an elite/boss with a health bar worth saving a burst for) —
-   exactly the kind of depth lever ADR-0010 already defers. ADR-0010's "silence broken by
-   a pack-deleting burst" framing should be softened to "continuous chip vs clumped
-   Casts; not a power choice in the MVP".
-2. Cut it from the MVP sliders (back to five). Cast = "cast whenever `resource ≥
-   castCost`". Simplest, and loses nothing the prototype could measure.
-3. Redefine it as a **panic reserve** ("hold this fraction unless HP < 25 %") — the sweep
-   shows a held pool as an emergency dump is the only version that changes outcomes, and
-   only at high variance.
-
-Recommendation: **option 1** — cheapest change to ADR-0010, keeps the slider count at six,
-and the knob becomes genuinely interesting the moment elites exist.
+Location 1 Packs Brutes and Location 2 flips to Skirmishers, per the handoff. Note the
+S2 Location is too trivial to show the build↔pack lean live — the **isolation grid**
+(`s5-brutepack` / `s5-mixed` / `s5-skirmpack`, all S5) is where the axis is visible. A
+future hard **Brute** Location would demonstrate physical's edge the way Ashfall shows
+magical's.
 
 ---
 
@@ -190,52 +233,57 @@ and the knob becomes genuinely interesting the moment elites exist.
 
 ### For #25 (`LocationConfig`)
 
-Fields the prototype confirms it needs, and no more:
-
 ```
 LocationConfig : ScriptableObject
 {
-  string   Id;                 // stable serialized, not the asset GUID
-  string   DisplayName;
-  int      SourceLevel;        // → RollContext.SourceLevel AND every enemy stat
-  LootTableRef LootTable;      // → RollContext.Table
-  int      XpPerKill;          // authored per Location (16 easy … 30 hard), not a curve
-  Vector2Int Roster;           // [min,max] enemies per Encounter — FIXED roster confirmed
-  Vector2Int SpawnBatch;       // [1,1] trickle … [4,4] Pack
-  float    SpawnInterval;
-  float    SpawnJitter;
+  string      Id;                 // stable serialized, not the asset GUID
+  string      DisplayName;
+  int         SourceLevel;        // → RollContext.SourceLevel AND both archetype stat blocks
+  LootTableRef LootTable;
+  EnemyType   Packed;             // Brute | Skirmisher — Packs of this, singles of the other
+  Vector2Int  RosterBrute;        // [min,max] Brutes per Encounter
+  Vector2Int  RosterSkirmisher;   // [min,max] Skirmishers per Encounter
+  Vector2Int  PackBatch;          // [3,5] = a real Pack ; [1,1] = trickle
+  float       PackedSpawnWeight;  // P(next spawn draws the packed type) while both remain
+  float       SpawnInterval;
+  float       SpawnJitter;
 }
 ```
 
-- **No `EncounterCount` / `Finite` field** — Q1 killed the finite-Run mode.
-- **No enemy-curve fields** — the `base/perLevel/exp` curves are a single shared constant
-  set in the `Encounter` module (one archetype for the whole MVP). `LocationConfig` only
-  supplies `SourceLevel`; the archetype reads it. If per-Location enemy identity is wanted
-  later, that is an `EnemyArchetype` SO reference — out of scope for #25.
-- Author two: easy `SourceLevel 2, Roster [8,8], SpawnBatch [1,1], interval 2.4`; hard
-  `SourceLevel 5, Roster [12,12], SpawnBatch [2,4], interval 3.6`, richer loot table.
-- Validation: `Roster.x ≥ 1`, `Roster.y ≥ Roster.x`, `SpawnBatch.x ≥ 1`,
-  `SpawnInterval > 0`, non-empty loot table, stable non-GUID id.
+- **No `XpPerKill`** — XP is per-archetype (`archetype.xp` curve) and settles on the
+  Encounter clear, not per kill. Reverses the first prototype's `XpPerKill` field.
+- **No `EncounterCount` / `Finite` field** — Q2 killed the finite-Run mode.
+- **No per-Location enemy-curve fields** — the two `base/perLevel/exp` curve-sets are one
+  shared constant block in the Run/Encounter module. `LocationConfig` supplies only
+  `SourceLevel` + which archetype is `Packed` + the roster mix.
+- Author two: Thornwood and Ashfall as tabled above.
+- Validation: `Roster*.x ≥ 0`, `Roster*.y ≥ Roster*.x`, `RosterBrute.y + RosterSkirmisher.y ≥ 1`,
+  `PackBatch.x ≥ 1`, `0 ≤ PackedSpawnWeight ≤ 1`, `SpawnInterval > 0`, non-empty loot table.
 
 ### For #20 (the Encounter driver)
 
-- Build the **fixed-Roster** spawn schedule (Roster spent + last enemy down → clear →
-  `beat` → next). No endless-spawn branch.
-- The Encounter **never ends the Run** — only Recall/Death do. Clear is a silent
-  transition. `EnemiesDefeated` / `EncountersCleared` / `Duration` accumulate across the
-  sequence; XP + coins settle per kill (already in ADR-0010).
-- `CastThreshold` gates the Cast by resource hysteresis as specced — but the driver's
-  tests should assert the *mechanic* (holds below the fraction, burns to empty above it),
-  not any balance outcome, because there is no balance outcome to assert (Q3).
-- One archetype, Strike-only, all stats from `curve(base, perLevel, exp, SourceLevel)`.
-- `tick` 0.1 s, `beat` 1 s, `castCadence` 0.35 s as module constants (not on
-  `LocationConfig`, not on `HeroBehaviour`).
-- Deterministic: Roster size, batch size, spawn jitter, and the loot roll all pull from
-  the injected `IRollSource` (ADR-0005).
+- Fixed **per-type** Roster spawn schedule: packed type in `PackBatch`-sized groups, the
+  other one at a time, chosen each spawn tick by `PackedSpawnWeight` while both have
+  remainder; Roster spent + last body down → `clear` → `beat` → next. No endless-spawn branch.
+- **XP settles on `clear`**, summed over the Encounter's actual roster with each body's
+  per-archetype `xp` balanced by `(1 + (SourceLevel − heroLevel)/100)`. A `RunState` that
+  exits via Recall/Death **before** a `clear` forfeits the in-progress pot — this is the
+  Encounter boundary's teeth; test it.
+- The Encounter **never ends the Run** — only Recall/Death do. Clear is a silent transition.
+- `CastThreshold` gates the Cast by resource hysteresis as specced — but tests assert the
+  *mechanic* (holds below the fraction, burns to empty above), not a balance outcome (Q4).
+- Two archetypes, Strike-only, every stat from `curve(base, perLevel, exp, SourceLevel)`.
+- `tick` 0.1 s, `beat` 1 s, `castCadence` 0.35 s as module constants.
+- Deterministic: per-type roster size, spawn-type choice, batch size, spawn jitter, loot
+  roll all pull from the injected `IRollSource` (ADR-0005).
 
 ### For the spec's Out of Scope
 
-- "Finite vs endless — at two scales" → **resolved**, move to Implementation Decisions:
-  fixed Roster, endless Encounters, no cap, no rescale.
-- The `HeroBehaviour.CastThreshold` line stays (option 1) but the spec's slider story 21
-  and ADR-0010's burst framing get the softened wording.
+- "Enemy variety" → **retired**. The single-archetype cut is reversed: two archetypes,
+  parametric, differentiated per Location by which is Packed. Record the reversal (short
+  ADR or an amendment to ADR-0010's *Prototype outcome*).
+- "XP and coins are per kill" (ADR-0010) → **split**: XP per Encounter clear, loot Drops
+  and coins per kill. Story 12 ("XP bar fills as Encounters are cleared") is kept, story 38
+  splits.
+- `EncounterResult` → `RunResult` (Run-scoped), module `InventorySystem.Encounter` → a
+  Run-scoped name — prototype-independent renames from the handoff, land with the doc pass.
