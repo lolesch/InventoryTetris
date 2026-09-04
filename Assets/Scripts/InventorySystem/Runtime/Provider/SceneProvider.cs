@@ -1,8 +1,8 @@
 using System;
 using System.Collections;
-using ToolSmiths.InventorySystem.GUI.Components.Canvases;
 using ToolSmiths.InventorySystem.GUI.Panels;
 using Submodules.Utility.Extensions;
+using Submodules.Utility.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;

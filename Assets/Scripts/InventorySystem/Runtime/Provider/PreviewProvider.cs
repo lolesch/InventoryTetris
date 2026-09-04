@@ -62,7 +62,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             // TODO: if holding shift - compare the hovered item against the second equipment
 
             if (slot is EquipmentSlotDisplay)
-                hoveredItem.RefreshDisplay(package);
+                hoveredItem.Refresh(package);
             else
             {
                 var equippedItems = new Package[2];
@@ -80,9 +80,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
                     ? VendorTransaction.BuyPrice(package.Item)
                     : -1f;
 
-                hoveredItem.RefreshDisplay(package, equippedItems[index], priceOverride);
-                compareDisplay1.RefreshDisplay(equippedItems[0], package);
-                compareDisplay2.RefreshDisplay(equippedItems[1], package);
+                hoveredItem.Refresh(package, equippedItems[index], priceOverride);
+                compareDisplay1.Refresh(equippedItems[0], package);
+                compareDisplay2.Refresh(equippedItems[1], package);
 
                 (compareDisplay1.transform as RectTransform).pivot = showLeft ? Vector2.up : Vector2.one;
                 (compareDisplay2.transform as RectTransform).pivot = showLeft ? Vector2.up : Vector2.one;
