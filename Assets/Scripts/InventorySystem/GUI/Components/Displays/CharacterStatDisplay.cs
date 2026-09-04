@@ -4,13 +4,14 @@ using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Inventories;
 using Submodules.Utility.Extensions;
+using Submodules.Utility.UI;
 using UnityEngine;
 using UnityEngine.UI;
 using static ToolSmiths.InventorySystem.GUI.Displays.CharacterStatDisplay;
 
 namespace ToolSmiths.InventorySystem.GUI.Displays
 {
-    public class CharacterStatDisplay : MonoBehaviour, IDisplay<CharacterStatData>
+    public class CharacterStatDisplay : MonoBehaviour, IView<CharacterStatData>
     {
         public struct CharacterStatData
         {
@@ -51,7 +52,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 
         [SerializeField] protected TextMeshProUGUI text;
 
-        public void RefreshDisplay(CharacterStatData newData)
+        public void Refresh(CharacterStatData newData)
         {
             icon.sprite = newData.icon;
             text.text = newData.displayText;
