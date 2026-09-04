@@ -5,8 +5,8 @@ using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.GUI.Displays;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
-using ToolSmiths.InventorySystem.Runtime.Pools;
 using Submodules.Utility.Extensions;
+using Submodules.Utility.Tools;
 using ToolSmiths.InventorySystem.Utility.Extensions;
 using UnityEngine;
 
@@ -50,11 +50,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
             foreach (var stat in statsAndResources)
             {
-                //TODO: extend prefabPool to support IDisplay<T> that update the Display(newData) before activating the object
+                //TODO: extend prefabPool to support IView<T> that update the Refresh(newData) before activating the object
 
                 var statDisplay = characterStatPool.GetObject(false);
 
-                statDisplay.RefreshDisplay(new(stat));
+                statDisplay.Refresh(new(stat));
 
                 statDisplay.gameObject.SetActive(true);
             }

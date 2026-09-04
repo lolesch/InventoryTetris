@@ -2,17 +2,18 @@
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using Submodules.Utility.Extensions;
+using Submodules.Utility.UI;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.GUI.Displays
 {
-    public class CurrencyDisplay : MonoBehaviour, IDisplay<Currency>
+    public class CurrencyDisplay : MonoBehaviour, IView<Currency>
     {
         [SerializeField] private CoinDisplay[] coinDisplays = new CoinDisplay[4];
 
         [SerializeField] private TextMeshProUGUI totalText;
 
-        public void RefreshDisplay(Currency newData)
+        public void Refresh(Currency newData)
         {
             if (totalText)
                 totalText.text = $"({newData.Total})".Colored(Color.gray);
