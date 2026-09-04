@@ -232,6 +232,20 @@ namespace ToolSmiths.InventorySystem.Inventories
         }
 
         /// <summary>
+        /// Return-to-origin (issue #29) against the paper-doll layout: <paramref name="position"/>
+        /// must be a slot <paramref name="item"/>'s type is allowed in at all, and that slot
+        /// must be genuinely empty - measured with the equipment footprint rule
+        /// (<see cref="SlotFootprintOf"/>), never the item's inventory-bag
+        /// <see cref="ItemView.Dimensions"/>. Unlike <see cref="CanPlaceAt"/> this never
+        /// allows the swap; a cancelled drag that cannot re-key here falls through to the
+        /// backpack instead of displacing whatever is now worn.
+        /// </summary>
+        public override bool CanReturnTo(Vector2Int position, ItemInstance item) =>
+            IsEquipment(item)
+            && GetTypeSpecificPositions(EquipmentTypeOf(item)).Contains(position)
+            && IsEmptySpace(position, SlotFootprintOf(item), out _);
+
+        /// <summary>
         /// Whether <see cref="AddAtPosition"/> would place <paramref name="item"/> at
         /// <paramref name="position"/> right now: it is equipment, <paramref name="position"/>
         /// is a slot this equipment type is allowed in, and the slot - with the swap it may
