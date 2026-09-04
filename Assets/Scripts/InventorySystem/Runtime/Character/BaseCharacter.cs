@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Threading.Tasks;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using Submodules.Utility.Extensions;
@@ -48,6 +47,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             void CharacterResourceWarning() => Debug.LogWarning($"{name.ColoredComponent()} resource {"depleted".Colored(Color.red)}", this);
         }
 
+        // Seconds each resource has been empty, tracked across calls so Regenerate stays
+        // a pure function of elapsed time - see ResourceRegen.Step.
+        private float healthSecondsEmpty;
+        private float resourceSecondsEmpty;
+        private float shieldSecondsEmpty;
+
         protected void Update()
         {
             //TODO: COMBAT TICK RATE
@@ -55,22 +60,32 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             //interval += Time.deltaTime;
             //if(interval >= combatTickRate)
 
-            RegenerateResource(this.GetResource(StatName.Health), this.GetStat(StatName.HealthRegeneration).TotalValue, -1f);
-            RegenerateResource(this.GetResource(StatName.Resource), this.GetStat(StatName.ResourceRegeneration).TotalValue, 0f);
+            Regenerate(Time.deltaTime);
+        }
+
+        /// <summary>
+        /// Applies one step of Health, Resource and Shield regeneration for
+        /// <paramref name="deltaSeconds"/> of elapsed time. Driven from <see cref="Update"/> at
+        /// frame cadence today; the Encounter sim drives it from the combat tick later (issue #17,
+        /// the <c>COMBAT TICK RATE</c> marker above).
+        /// </summary>
+        public void Regenerate(float deltaSeconds)
+        {
+            healthSecondsEmpty = ResourceRegen.Step(
+                this.GetResource(StatName.Health),
+                this.GetStat(StatName.HealthRegeneration).TotalValue,
+                recoveryDelay: -1f, healthSecondsEmpty, deltaSeconds);
+
+            resourceSecondsEmpty = ResourceRegen.Step(
+                this.GetResource(StatName.Resource),
+                this.GetStat(StatName.ResourceRegeneration).TotalValue,
+                recoveryDelay: 0f, resourceSecondsEmpty, deltaSeconds);
 
             //TODO: design Shield recharge
-            RegenerateResource(this.GetResource(StatName.Shield), this.GetStat(StatName.HealthRegeneration).TotalValue, 2f);
-
-            static async void RegenerateResource(CharacterResource resource, float recoveryAmount, float recoveryDelay)
-            {
-                if (resource.IsDepleted)
-                    if (recoveryDelay < 0)
-                        return;
-                    else
-                        await Task.Delay(TimeSpan.FromSeconds(recoveryDelay));
-
-                _ = resource.AddToCurrent(recoveryAmount * Time.deltaTime);
-            }
+            shieldSecondsEmpty = ResourceRegen.Step(
+                this.GetResource(StatName.Shield),
+                this.GetStat(StatName.HealthRegeneration).TotalValue,
+                recoveryDelay: 2f, shieldSecondsEmpty, deltaSeconds);
         }
 
         [ContextMenu("ResetStatsAndResources")]

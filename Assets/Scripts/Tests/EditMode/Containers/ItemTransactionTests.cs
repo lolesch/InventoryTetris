@@ -148,8 +148,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         public void AMoveThatCannotReHomeADisplacedItem_LeavesEveryContainerTheCharacterSheetAndTheCursorUnchanged()
         {
             var stats = new FakeStatReceiver();
-            var cursor = new FakeCursorSink();
-            var equipment = new CharacterEquipment(new Vector2Int(14, 1), stats, cursor);
+            var equipment = new CharacterEquipment(new Vector2Int(14, 1), stats);
             var inventory = Inventory(1, 1);
 
             var wornHelm = new Package(inventory, Helm(4f), 1u);
@@ -180,7 +179,6 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             Assert.That(inventory.StoredPackages.Values.Select(p => p.Item.DefinitionId), Is.EquivalentTo(new[] { ArrowId }));
             Assert.That(stats.Added, Is.Empty);
             Assert.That(stats.Removed, Is.Empty, "the unequip's stat lift was queued and dropped");
-            Assert.That(cursor.Replaced, Is.Empty);
         }
 
         // ── OnContentChanged: deferred, then once per touched container ──────

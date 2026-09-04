@@ -281,8 +281,11 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// Whether a drop at this position would land at all: inside the container, and
         /// overlapping at most one stored item. 0 overlaps drops into empty space, 1 swaps
         /// (AddAtPosition handles both); 2+ places nothing, and the caller must keep dragging.
+        /// <see cref="CharacterEquipment"/> overrides this to accept the legal two-hander
+        /// double-swap its <see cref="AddAtPosition"/> allows (issue #12), so the red
+        /// "can't drop" tint and the drop rule stay one and the same check.
         /// </summary>
-        public bool CanPlaceAt(Vector2Int position, Vector2Int dimension)
+        public virtual bool CanPlaceAt(Vector2Int position, Vector2Int dimension)
         {
             foreach (var requiredPosition in CalculateRequiredPositions(position, dimension))
                 if (!IsWithinDimensions(requiredPosition))

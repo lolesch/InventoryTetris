@@ -1,4 +1,3 @@
-using System.Linq;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Inventories;
@@ -16,18 +15,14 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
     {
         protected override void DropItem(Package package)
         {
-            if (!package.IsValid)
+            if (!package.IsValid || Container is not CharacterEquipment equipment)
                 return;
 
-            var definition = ItemView.Of(package.Item).Definition;
-            if (definition.Category != ItemCategory.Equipment)
-                return;
-
-            var allowedPositions = CharacterEquipment.GetTypeSpecificPositions(definition.EquipmentType);
-
-            /// Wrong slot for this item's type: the item stays in hand untouched, the same
-            /// contract bug 2 gives a rejected drop on the inventory grid - no re-anchor.
-            if (!allowedPositions.Contains(Position))
+            /// One predicate for the drop and the red "can't drop" tint (issue #12): a wrong
+            /// category, a slot this type is not allowed in, or a slot that cannot take the
+            /// item even with its swap - the item stays in hand untouched, exactly as a
+            /// rejected drop on the inventory grid does.
+            if (!equipment.CanEquipAt(Position, package.Item))
                 return;
 
             /// The whole equip runs inside one transaction (issue #10): the weapon under the
@@ -57,8 +52,20 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             if (cursor.IsFree)
                 DragProvider.Instance.EndDrag();
 
-            FadeInPreview(); // TODO: see if the package should propagate to FadeInPreview
+            SyncPreviewAfterMove();
         }
+
+        /// <summary>
+        /// The equipment slots are a paper-doll, not a uniform grid (issue #12): the base's
+        /// pixel-derived drop position and the item's inventory-bag footprint are both
+        /// meaningless here. Defer to <see cref="CharacterEquipment.CanEquipAt"/> - the same
+        /// predicate <see cref="DropItem"/> gates on - so the item lands at this slot's own
+        /// fixed position, checked with the equipment layout's footprint rule.
+        /// </summary>
+        public override bool WouldAcceptDrop(Package package)
+            => package.IsValid
+            && Container is CharacterEquipment equipment
+            && equipment.CanEquipAt(Position, package.Item);
 
         public void Refresh2HandSlotDisplay(Package package)
         {

@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
@@ -26,12 +25,12 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         {
             base.OnEnable();
 
-            var wallet = InventoryProvider.Instance.Inventory;
+            var wallet = InventoryProvider.Instance.Wallet;
 
             if (wallet != null)
             {
-                wallet.OnContentChanged -= OnWalletChanged;
-                wallet.OnContentChanged += OnWalletChanged;
+                wallet.OnBalanceChanged -= OnWalletChanged;
+                wallet.OnBalanceChanged += OnWalletChanged;
             }
         }
 
@@ -39,10 +38,10 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         {
             base.OnDisable();
 
-            var wallet = InventoryProvider.Instance.Inventory;
+            var wallet = InventoryProvider.Instance.Wallet;
 
             if (wallet != null)
-                wallet.OnContentChanged -= OnWalletChanged;
+                wallet.OnBalanceChanged -= OnWalletChanged;
         }
 
         /// Cached before the base runs, because refreshing the display repaints the
@@ -54,7 +53,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             base.RefreshSlotDisplay(package);
         }
 
-        private void OnWalletChanged(Dictionary<Vector2Int, Package> _) => RefreshBackground();
+        private void OnWalletChanged(Currency _) => RefreshBackground();
 
         protected override Color GetBackgroundColor() => CanAffordDisplayed()
             ? base.GetBackgroundColor()
@@ -67,9 +66,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             if (!displayedPackage.IsValid)
                 return true;
 
-            var wallet = InventoryProvider.Instance.Inventory;
+            var wallet = InventoryProvider.Instance.Wallet;
 
-            return wallet == null || wallet.CanAfford(VendorTransaction.BuyPrice(displayedPackage.Item));
+            return wallet == null || wallet.CanAfford(new Currency(VendorTransaction.BuyPrice(displayedPackage.Item)));
         }
 
         protected override void SetDisplaySize(RectTransform display, Package package)
@@ -102,10 +101,10 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             if (!Container.TryGetItemAt(ref position, out var package))
                 return;
 
-            var wallet = InventoryProvider.Instance.Inventory;
+            var wallet = InventoryProvider.Instance.Wallet;
             var price = VendorTransaction.BuyPrice(package.Item);
 
-            if (!wallet.CanAfford(price))
+            if (!wallet.CanAfford(new Currency(price)))
                 return;
 
             FadeOutPreview();
@@ -129,13 +128,21 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             #region BUY: DRAG
             _ = Container.RemoveAtPosition(position, package);
 
-            _ = wallet.TryPay(price);
+            _ = wallet.TryPay(new Currency(price));
 
             var positionOffset = Position - position;
 
             DragProvider.Instance.SetPackage(this, package, positionOffset, pointerPosition);
             #endregion BUY: DRAG
         }
+
+        /// <summary>
+        /// Dropping onto the shelf is a sale, not a placement (issue #12): it takes any
+        /// item that is not already the vendor's, so the drop tint must not read the
+        /// shelf's own grid the way the base does. Mirrors <see cref="DropItem"/>'s guard.
+        /// </summary>
+        public override bool WouldAcceptDrop(Package package) =>
+            package.IsValid && package.Sender != Container;
 
         protected override void DropItem(Package package)
         {
@@ -145,14 +152,14 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             /// Dropping an item onto the shelf is a sale, exactly as the dedicated sell slot
             /// (SellItenSlotDisplay) handles it: the item is already in hand from the drag,
             /// its value is banked into the wallet on commit (issue #11), and the drag ends.
-            VendorTransaction.Sell(package, InventoryProvider.Instance.Inventory);
+            VendorTransaction.Sell(package, InventoryProvider.Instance.Wallet);
 
             DragProvider.Instance.EndDrag();
 
             Container?.InvokeRefresh();
             DragProvider.Instance.Origin.Container?.InvokeRefresh();
 
-            FadeInPreview(); // TODO: see if the package should propagate to FadeInPreview
+            SyncPreviewAfterMove();
         }
     }
 }

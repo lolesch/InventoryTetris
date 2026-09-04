@@ -17,6 +17,10 @@ namespace ToolSmiths.InventorySystem.Inventories
         [field: SerializeField] public CharacterInventory Stash { get; private set; }
         [field: SerializeField] public CharacterInventory Store { get; private set; }
 
+        /// <summary>The player's spendable money, backed by <see cref="Inventory"/>'s coin
+        /// cells. The wallet, not the container, owns currency logic since issue #14.</summary>
+        public Wallet Wallet { get; private set; }
+
         [field: SerializeField] public bool ShowDebugPositions { get; private set; }
 
         [Space]
@@ -51,17 +55,19 @@ namespace ToolSmiths.InventorySystem.Inventories
         public void Awake()
         {
             /// The container core lives in InventorySystem.Containers and names no
-            /// provider - it takes the character, the drag cursor and the coin minter
-            /// as interfaces here, where the four containers are newed up.
+            /// provider - it takes the character and the coin minter as interfaces here,
+            /// where the four containers are newed up. The drag cursor is wrapped per-move
+            /// as a CursorHolder by the slot displays, so the containers no longer hold one.
             var statReceiver = CharacterProvider.Instance.Player;
-            var cursorSink = DragProvider.Instance;
             var currencyMinter = ItemProvider.Instance;
 
-            Equipment = new(equipmentSize, statReceiver, cursorSink);
-            Inventory = new(inventorySize, currencyMinter);
-            Stash = new(stashSize, currencyMinter);
+            Equipment = new(equipmentSize, statReceiver);
+            Inventory = new(inventorySize);
+            Stash = new(stashSize);
+            Store = new(storeSize);
 
-            Store = new(storeSize, currencyMinter);
+            Wallet = new Wallet(Inventory, currencyMinter);
+
             RestockStore();
 
             SetInventories();
@@ -130,7 +136,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         public void ToggleAutoEquip() => Equipment.autoEquip = !Equipment.autoEquip;
         public void SortPlayerInventory() => Inventory.Sort();
-        public void ConsolidatePlayerCurrency() => Inventory.Consolidate();
+        public void ConsolidatePlayerCurrency() => Wallet.Consolidate();
         public void SortPlayerStash() => Stash.Sort();
 
         public void ClearPlayerEquipment() => RemoveAllItems(Equipment);

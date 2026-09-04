@@ -190,18 +190,40 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         protected abstract void MoveItem(PointerEventData eventData, Vector2 pointerPosition);
 
-        protected void FadeInPreview()
+        protected void FadeInPreview() => RefreshHoverPreview(clearStale: false);
+
+        /// <summary>
+        /// Bring the hover preview in line with the container cell the cursor rests over
+        /// (<see cref="Position"/>) after a swap this slot performed. The cursor has not
+        /// moved, so the cell may now hold the item the swap landed there - a drop follows
+        /// the drag visual and often lands a cell over; a right-click "swap in place"
+        /// re-homes the displaced item into the vacated cell, i.e. straight back under the
+        /// cursor - or be empty because its occupant went to the hand or another container.
+        /// Unlike the hover path this wipes a stale preview up front instead of leaving the
+        /// old item frozen there until a pointer-exit (issue #13, QA-2).
+        /// </summary>
+        protected void SyncPreviewAfterMove() => RefreshHoverPreview(clearStale: true);
+
+        /// <summary>
+        /// The one path that decides what the hover preview shows: whatever
+        /// <see cref="HoverPreview.Under"/> finds under <see cref="Position"/>, faded in the
+        /// same way a hover would so a rapid drag-drop-drag never flashes the panel. On a
+        /// plain hover the cell is only ever gaining an item; after a move
+        /// (<paramref name="clearStale"/>) it may instead have been vacated, so clear first.
+        /// </summary>
+        private void RefreshHoverPreview(bool clearStale)
         {
-            if (Container == null)
-                return;
+            hovering = false;
 
-            var position = Position;
+            if (clearStale)
+                PreviewProvider.Instance.RefreshPreviewDisplay(new Package(Container, null, 0), this);
 
-            if (Container.TryGetItemAt(ref position, out var hoveredIten))
-                if (hoveredIten.Item != null && 0 < hoveredIten.Amount)
-                    _ = StartCoroutine(FadeIn(hoveredIten, position));
+            var package = HoverPreview.Under(Container, Position);
 
-            IEnumerator FadeIn(Package package, Vector2Int storedPosition)
+            if (package.IsValid)
+                _ = StartCoroutine(FadeIn(package));
+
+            IEnumerator FadeIn(Package toShow)
             {
                 hovering = true;
 
@@ -215,7 +237,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
                     if (canFadeIn && hovering)
                     {
-                        PreviewProvider.Instance.RefreshPreviewDisplay(package, this);
+                        PreviewProvider.Instance.RefreshPreviewDisplay(toShow, this);
                         hovering = false;
                     }
                 }
@@ -230,6 +252,28 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         }
 
         protected abstract void DropItem(Package package);
+
+        /// <summary>
+        /// Whether <see cref="DropItem"/> would place <paramref name="package"/> if the
+        /// player released it over this slot now - the exact predicate the drag display's
+        /// red "can't drop" tint shows, so the warning and the drop can never disagree
+        /// (issue #12). The base answers for a uniform grid, via
+        /// <see cref="DragProvider.TryGetDropPosition"/> +
+        /// <see cref="AbstractDimensionalContainer.CanPlaceAt"/>; a sink with no container
+        /// of its own (the floor, the sell slot) takes anything;
+        /// <see cref="EquipmentSlotDisplay"/> overrides it for the paper-doll layout.
+        /// </summary>
+        public virtual bool WouldAcceptDrop(Package package)
+        {
+            if (!package.IsValid)
+                return false;
+
+            if (Container == null)
+                return true;
+
+            return DragProvider.Instance.TryGetDropPosition(this, out var position)
+                && Container.CanPlaceAt(position, ItemView.Of(package.Item).Dimensions);
+        }
 
         protected virtual void SetDisplaySize(RectTransform display, Package package) { }
 

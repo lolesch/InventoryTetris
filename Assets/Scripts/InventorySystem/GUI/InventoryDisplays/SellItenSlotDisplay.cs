@@ -21,14 +21,14 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             /// pick-up. The sale banks its value into the wallet as a commit-time effect on
             /// one transaction (issue #11), shared with VendorSlotDisplay; the sink swallows
             /// the item and the drag ends.
-            VendorTransaction.Sell(package, InventoryProvider.Instance.Inventory);
+            VendorTransaction.Sell(package, InventoryProvider.Instance.Wallet);
 
             DragProvider.Instance.EndDrag();
 
             Container?.InvokeRefresh();
             DragProvider.Instance.Origin.Container?.InvokeRefresh();
 
-            FadeInPreview(); // TODO: see if the package should propagate to FadeInPreview
+            SyncPreviewAfterMove();
         }
 
         protected override void MoveItem(PointerEventData eventData, Vector2 pointerPosition) { }

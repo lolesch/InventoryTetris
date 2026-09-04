@@ -1,13 +1,14 @@
-﻿using TMPro;
+﻿using Submodules.Utility.UI;
+using TMPro;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.GUI.Displays
 {
-    public class TestDisplay : MonoBehaviour, IDisplay<TextAndFontSize>
+    public class TestDisplay : MonoBehaviour, IView<TextAndFontSize>
     {
         [SerializeField] protected TextMeshProUGUI testText;
 
-        public void RefreshDisplay(TextAndFontSize newData)
+        public void Refresh(TextAndFontSize newData)
         {
             testText.text = newData.text;
             testText.fontSize = newData.fontSize;
@@ -18,7 +19,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
             if (testText == null)
                 testText = GetComponent<TextMeshProUGUI>();
 
-            RefreshDisplay(new("This is a test display - requires further implementation", testText.fontSize));
+            Refresh(new("This is a test display - requires further implementation", testText.fontSize));
         }
     }
 

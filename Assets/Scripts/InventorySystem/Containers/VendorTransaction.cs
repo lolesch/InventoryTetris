@@ -15,9 +15,9 @@ namespace ToolSmiths.InventorySystem.Inventories
     ///
     /// <para><c>VendorSlotDisplay</c> and <c>SellItenSlotDisplay</c> both route through here
     /// rather than each carrying a near-identical remove / add / coin-mint block. The
-    /// <c>Store</c> is still a <see cref="CharacterInventory"/> and the wallet is still the
-    /// player <see cref="CharacterInventory"/>; a dedicated vendor container and a
-    /// <c>Wallet</c> module are later work (the foundational-rework spec, Phase 3).</para>
+    /// <c>Store</c> is still a <see cref="CharacterInventory"/>; the <see cref="Wallet"/>
+    /// module owns the money (issue #14), and a dedicated vendor container is later work
+    /// (the foundational-rework spec).</para>
     /// </summary>
     public static class VendorTransaction
     {
@@ -31,9 +31,9 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// Banks the proceeds of a sale. <paramref name="soldItem"/> has already left every
         /// container - a drag sink consumed it - so this only mints its sell value into
         /// <paramref name="wallet"/>, as a commit-time effect on a transaction scoped to the
-        /// wallet.
+        /// wallet's backing container.
         /// </summary>
-        public static void Sell(Package soldItem, CharacterInventory wallet)
+        public static void Sell(Package soldItem, Wallet wallet)
         {
             if (wallet == null || !soldItem.IsValid)
                 return;
@@ -43,7 +43,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             if (0u == proceeds.Total)
                 return;
 
-            using var transaction = new ItemTransaction(wallet);
+            using var transaction = new ItemTransaction(wallet.Container);
 
             transaction.QueueEffect(() => wallet.Deposit(proceeds));
 
@@ -59,20 +59,22 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// </summary>
         /// <returns>Whether the purchase went through.</returns>
         public static bool Buy(AbstractDimensionalContainer store, Vector2Int position, Package onShelf,
-            CharacterInventory wallet, float price)
+            Wallet wallet, float price)
         {
-            if (store == null || wallet == null || !onShelf.IsValid || !wallet.CanAfford(price))
+            if (store == null || wallet == null || !onShelf.IsValid || !wallet.CanAfford(new Currency(price)))
                 return false;
 
-            using var transaction = new ItemTransaction(store, wallet);
+            var bag = wallet.Container;
+
+            using var transaction = new ItemTransaction(store, bag);
 
             _ = store.RemoveAtPosition(position, onShelf);
 
-            var incoming = new Package(wallet, onShelf.Item, onShelf.Amount);
-            if (!wallet.TryAddToContainer(ref incoming))
+            var incoming = new Package(bag, onShelf.Item, onShelf.Amount);
+            if (!bag.TryAddToContainer(ref incoming))
                 return false; // dispose rolls the removal back - item back on the shelf, no charge
 
-            transaction.QueueEffect(() => _ = wallet.TryPay(price));
+            transaction.QueueEffect(() => _ = wallet.TryPay(new Currency(price)));
 
             transaction.Commit();
             return true;
