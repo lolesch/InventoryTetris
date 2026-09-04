@@ -3,6 +3,7 @@
     "rootNamespace": "",
     "references": [
         "InventorySystem.Simulation",
+        "InventorySystem.Items",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

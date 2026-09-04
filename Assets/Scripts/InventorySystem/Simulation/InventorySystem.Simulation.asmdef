@@ -1,7 +1,9 @@
 {
     "name": "InventorySystem.Simulation",
     "rootNamespace": "",
-    "references": [],
+    "references": [
+        "InventorySystem.Items"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
