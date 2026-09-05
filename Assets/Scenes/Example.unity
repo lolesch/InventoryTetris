@@ -15313,8 +15313,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 935833214}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 352a2223d0efdab4e9e09f3d472f1897, type: 3}
-  m_Name: 
+  m_Script: {fileID: 11500000, guid: 3f2c54aa5aa14ea8b07430746ad516da, type: 3}
+  m_Name:
   m_EditorClassIdentifier: 
   m_Navigation:
     m_Mode: 3
@@ -15353,6 +15353,7 @@ MonoBehaviour:
   toggledOffSprite: {fileID: 0}
   toggledOnSprite: {fileID: 0}
   panel: {fileID: 433628011}
+  menuContextKind: 2
 --- !u!114 &935833217
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16533,8 +16534,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 1006962773}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 352a2223d0efdab4e9e09f3d472f1897, type: 3}
-  m_Name: 
+  m_Script: {fileID: 11500000, guid: 3f2c54aa5aa14ea8b07430746ad516da, type: 3}
+  m_Name:
   m_EditorClassIdentifier: 
   m_Navigation:
     m_Mode: 3
@@ -16573,6 +16574,7 @@ MonoBehaviour:
   toggledOffSprite: {fileID: 0}
   toggledOnSprite: {fileID: 0}
   panel: {fileID: 326590429}
+  menuContextKind: 1
 --- !u!114 &1006962775
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -18113,6 +18115,7 @@ GameObject:
   - component: {fileID: 1106788609}
   - component: {fileID: 1106788608}
   - component: {fileID: 1106788607}
+  - component: {fileID: 1106788610}
   m_Layer: 5
   m_Name: MenuToggles
   m_TagString: Untagged
@@ -18151,10 +18154,23 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 56427663e125e1643bdf7e7f665c39a6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   <ActivatedToggle>k__BackingField: {fileID: 1006962774}
-  <AllowSwitchOff>k__BackingField: 0
+  <AllowSwitchOff>k__BackingField: 1
+--- !u!114 &1106788610
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1106788605}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eeb67efe9997464b9e6af6104eb12428, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  menuToggles: {fileID: 1106788607}
 --- !u!114 &1106788608
 MonoBehaviour:
   m_ObjectHideFlags: 0
