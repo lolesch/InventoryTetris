@@ -239,6 +239,12 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// </summary>
         private ItemDefinition PickDefinition(ItemCategory category, Func<ItemDefinition, bool> filter)
         {
+            if (catalog == null)
+            {
+                Debug.LogError($"{nameof(ItemProvider)}: no {nameof(catalog)} assigned - cannot pick a {category} definition", this);
+                return null;
+            }
+
             ItemDefinition chosen = null;
             var seen = 0;
 

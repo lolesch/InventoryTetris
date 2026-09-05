@@ -8,11 +8,19 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
     public abstract class AbstractProvider<T> : MonoBehaviour where T : MonoBehaviour
     {
         private static T instance = null;
+        private static bool isQuitting = false;
 
         public static T Instance
         {
             get
             {
+                // A teardown-ordering pitfall: something disabling during shutdown (e.g. a
+                // display's OnDisable) can still ask for Instance after the real one was
+                // already destroyed, which would otherwise spin up a fresh, unconfigured
+                // instance that immediately leaks past scene teardown.
+                if (isQuitting)
+                    return instance;
+
                 if (instance == null)
                 {
                     if (!InstanceExists())
@@ -38,8 +46,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
                         /// instance as component of "non-root" gameObjects
                         if (instance.transform.parent != null)
                         {
-                            Debug.LogWarning($"{instance.name.Colored(Color.yellow)} is no root object and can't be moved by DonstDestroyOnLoad()", instance);
-                            // concider force reparent the GameObject as root
+                            Debug.LogWarning($"{instance.name.Colored(Color.yellow)} was not a root object - reparented so DontDestroyOnLoad() can persist it", instance);
+                            instance.transform.SetParent(null);
                         }
 
                         DisableRemainingCandidates(candidates);
@@ -95,5 +103,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         }
 
         protected void Reset() => name = GetProviderName();
+
+        private void OnApplicationQuit() => isQuitting = true;
     }
 }
