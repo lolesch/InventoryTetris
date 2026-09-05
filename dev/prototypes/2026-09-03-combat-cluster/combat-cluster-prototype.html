@@ -1,0 +1,1039 @@
+<title>Brute or Skirmisher</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --bg:#f7f4ef; --panel:#ffffff; --panel-2:#f1ece3; --ink:#20140f; --muted:#7a6f64;
+    --line:#e3dbce; --line-2:#d6ccba;
+    --accent:#c2410c; --accent-soft:#f0d9cc;
+    --hp:#c1352b; --res:#2563eb; --xp:#7c3aed;
+    --brute:#9a6b12; --brute-soft:#efe2c4;
+    --skirm:#0e7490; --skirm-soft:#cfe9ef;
+    --good:#1a7a42; --warn:#b45309; --bad:#b4241c;
+    --shadow:0 1px 2px rgba(35,24,15,.06), 0 8px 24px -12px rgba(35,24,15,.18);
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#14110f; --panel:#1e1a17; --panel-2:#262019; --ink:#ece4da; --muted:#948779;
+      --line:#332c25; --line-2:#403830;
+      --accent:#f0762f; --accent-soft:#3a2417;
+      --hp:#e8564a; --res:#5b8cf0; --xp:#a988f0;
+      --brute:#d9a441; --brute-soft:#3a2f18;
+      --skirm:#3fb6cf; --skirm-soft:#123138;
+      --good:#4cc47e; --warn:#e0a24a; --bad:#f0736b;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -14px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#14110f; --panel:#1e1a17; --panel-2:#262019; --ink:#ece4da; --muted:#948779;
+    --line:#332c25; --line-2:#403830;
+    --accent:#f0762f; --accent-soft:#3a2417;
+    --hp:#e8564a; --res:#5b8cf0; --xp:#a988f0;
+    --brute:#d9a441; --brute-soft:#3a2f18;
+    --skirm:#3fb6cf; --skirm-soft:#123138;
+    --good:#4cc47e; --warn:#e0a24a; --bad:#f0736b;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px -14px rgba(0,0,0,.6);
+  }
+
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.55 Barlow,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  .wrap{max-width:1200px;margin:0 auto;padding:26px 18px 90px}
+
+  h1{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:30px;
+    letter-spacing:.005em;margin:0 0 4px;text-wrap:balance;line-height:1.05}
+  h2{font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:15px;
+    text-transform:uppercase;letter-spacing:.11em;color:var(--muted);margin:30px 0 12px}
+  .lede{color:var(--muted);max-width:74ch;margin:0 0 4px}
+  .lede b{color:var(--ink);font-weight:600}
+  a{color:var(--accent)}
+
+  .verdict{display:flex;flex-wrap:wrap;gap:8px 22px;margin:16px 0 4px;padding:13px 16px;
+    background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:7px;box-shadow:var(--shadow)}
+  .verdict div{font-size:13.5px}
+  .verdict b{font-family:"Barlow Condensed",sans-serif;font-weight:600;text-transform:uppercase;
+    letter-spacing:.06em;color:var(--muted);font-size:12px;display:block;margin-bottom:1px}
+
+  .grid{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:16px;align-items:start}
+  @media(max-width:860px){.grid{grid-template-columns:1fr}}
+
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:15px;
+    box-shadow:var(--shadow)}
+  .panel + .panel{margin-top:14px}
+  .panel h3{font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:13px;
+    text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:0 0 11px}
+  .panel h3 .sub{text-transform:none;letter-spacing:0;font-family:Barlow;font-weight:400;font-size:11.5px}
+
+  button{font:inherit;font-size:13.5px;padding:6px 11px;border:1px solid var(--line-2);
+    background:var(--panel);color:var(--ink);border-radius:6px;cursor:pointer;transition:border-color .12s,background .12s}
+  button:hover{border-color:var(--accent)}
+  button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+  button.tiny{padding:3px 8px;font-size:12.5px}
+  button.ghost.on{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
+
+  .row{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin:7px 0}
+  .row:first-of-type{margin-top:0}
+  .row .tag{font-family:"Barlow Condensed",sans-serif;font-weight:600;text-transform:uppercase;
+    letter-spacing:.08em;font-size:11.5px;color:var(--muted);width:100%;margin-bottom:-2px}
+
+  label.k{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:3px 0;font-size:13px}
+  label.k > span{color:var(--muted);flex:1}
+  input[type=number]{width:74px;font:13px/1 "JetBrains Mono",ui-monospace,monospace;padding:4px 6px;
+    border:1px solid var(--line-2);border-radius:5px;background:var(--bg);color:var(--ink)}
+  input[type=checkbox]{width:15px;height:15px;accent-color:var(--accent)}
+  input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+  details{margin:7px 0;border-top:1px solid var(--line)}
+  details:first-of-type{border-top:0}
+  summary{cursor:pointer;color:var(--ink);font-family:"Barlow Condensed",sans-serif;font-weight:600;
+    font-size:13px;text-transform:uppercase;letter-spacing:.06em;padding:8px 0 4px;list-style-position:inside}
+  summary::-webkit-details-marker{color:var(--muted)}
+
+  .mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+  .barwrap{margin:9px 0 2px}
+  .barwrap .lab{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);
+    text-transform:uppercase;letter-spacing:.07em;font-family:"Barlow Condensed",sans-serif;font-weight:600}
+  .bar{height:15px;border-radius:3px;background:var(--panel-2);overflow:hidden;position:relative;border:1px solid var(--line)}
+  .bar > i{display:block;height:100%;transition:width .1s linear}
+  .split{display:flex;height:13px;border-radius:3px;overflow:hidden;border:1px solid var(--line);background:var(--panel-2)}
+  .split > i{height:100%}
+
+  .field{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;min-height:26px;
+    padding:8px;background:var(--panel-2);border-radius:6px;border:1px solid var(--line)}
+  .unit{width:58px}
+  .unit .cap{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);
+    font-family:"Barlow Condensed",sans-serif;font-weight:600;line-height:1;margin-bottom:2px}
+  .unit .bar{height:7px}
+  .unit.b .cap{color:var(--brute)} .unit.s .cap{color:var(--skirm)}
+
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);
+    border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-top:10px}
+  .stats > div{background:var(--panel);padding:7px 9px}
+  .stats .cap{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
+    font-family:"Barlow Condensed",sans-serif;font-weight:600}
+  .stats .val{font-family:"JetBrains Mono",monospace;font-variant-numeric:tabular-nums;font-size:16px;font-weight:500}
+  .stats .val .u{font-size:11px;color:var(--muted)}
+
+  .pill{display:inline-block;padding:1px 8px;border-radius:20px;font-size:11.5px;border:1px solid var(--line-2);
+    font-family:"Barlow Condensed",sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.06em;vertical-align:middle}
+  .pill.good{color:var(--good);border-color:var(--good)}
+  .pill.warn{color:var(--warn);border-color:var(--warn)}
+  .pill.bad{color:var(--bad);border-color:var(--bad)}
+  .pill.b{color:var(--brute);border-color:var(--brute)}
+  .pill.s{color:var(--skirm);border-color:var(--skirm)}
+
+  table{border-collapse:collapse;width:100%;font-size:13px;margin-top:4px}
+  th,td{border:1px solid var(--line);padding:5px 9px;text-align:right}
+  th:first-child,td:first-child{text-align:left}
+  thead th{background:var(--panel-2);font-family:"Barlow Condensed",sans-serif;font-weight:600;
+    text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-size:11.5px}
+  td.mn{font-family:"JetBrains Mono",monospace;font-variant-numeric:tabular-nums}
+  .scroll{overflow-x:auto}
+
+  .tabs{display:flex;flex-wrap:wrap;gap:3px;border-bottom:1px solid var(--line);margin-bottom:13px}
+  .tabs button{border:none;border-bottom:2px solid transparent;border-radius:0;padding:8px 10px;
+    color:var(--muted);font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:13px;
+    text-transform:uppercase;letter-spacing:.04em}
+  .tabs button:hover{color:var(--ink);border-color:var(--line-2)}
+  .tabs button.on{color:var(--accent);border-bottom-color:var(--accent);background:transparent}
+  .scn{display:none} .scn.on{display:block}
+  .scn > p{color:var(--muted);margin:0 0 10px;max-width:70ch}
+  .scn ol{margin:0;padding-left:20px} .scn li{margin:7px 0}
+  .flash{animation:fl .9s ease}
+  @keyframes fl{from{background:var(--accent);color:#fff;border-color:var(--accent)}to{}}
+
+  .note{color:var(--muted);font-size:13px;max-width:76ch}
+  .note code,.lede code,li code{font-family:"JetBrains Mono",monospace;font-size:12px;
+    background:var(--panel-2);border:1px solid var(--line);border-radius:4px;padding:0 4px}
+  .foot{margin-top:34px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <h1>Brute or Skirmisher &mdash; which build for which pack?</h1>
+  <p class="lede">
+    InventoryTetris MVP sim loop, issue <b>#18</b> rerun. ADR-0010 fixed combat's shape &mdash; concurrent
+    <b>Strike</b> (physical, single lowest-HP target) + <b>Cast</b> (magical, the 3 highest-HP targets),
+    a soft <b>Engagement</b> count, fixed <b>Roster</b>, endless Encounters. This pass adds the
+    <b>two-enemy model</b> from the 2026-09-03 handoff and asks the open question: with a Location
+    that <b>Packs</b> one archetype and trickles the other, does <b>physical / magical / hybrid</b>
+    each get a pack it owns &mdash; or is it a two-way choice? XP now settles <b>per Encounter clear</b>.
+  </p>
+
+  <div class="verdict" id="verdict">
+    <div><b>Brute</b> tanky &middot; slow &middot; armored &middot; low XP &mdash; Cast food</div>
+    <div><b>Skirmisher</b> fragile &middot; fast &middot; high XP &mdash; Strike food</div>
+    <div><b>Reading so far</b> physical&rarr;Brute packs, magical&rarr;Skirmisher packs, hybrid&rarr;mixed &amp; safe</div>
+  </div>
+
+  <div class="grid">
+    <!-- ================= LEFT : controls ================= -->
+    <div>
+      <div class="panel">
+        <h3>Setup</h3>
+        <div class="row"><span class="tag">Build</span>
+          <button data-build="physical">Physical</button>
+          <button data-build="magical">Magical</button>
+          <button data-build="hybrid">Hybrid</button>
+        </div>
+        <div class="row"><span class="tag">Location</span>
+          <button data-loc="thornwood">Thornwood</button>
+          <button data-loc="ashfall">Ashfall</button>
+        </div>
+        <div class="row"><span class="tag">Isolation grid <span class="mono" style="text-transform:none;letter-spacing:0">S5, ~17 roster</span></span>
+          <button data-loc="s5-brutepack">Brute-packed</button>
+          <button data-loc="s5-mixed">Mixed</button>
+          <button data-loc="s5-skirmpack">Skirm-packed</button>
+        </div>
+        <div class="row"><span class="tag">Gear multiplier <span class="mono" style="text-transform:none;letter-spacing:0">dmg + HP + a little AttackSpeed</span></span>
+          <button data-gear="1">&times;1.0</button>
+          <button data-gear="1.15">&times;1.15</button>
+          <button data-gear="1.3">&times;1.3</button>
+          <button data-gear="1.5">&times;1.5</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Run rules <span class="sub">&mdash; the #18 question</span></h3>
+        <label class="k"><span>Fixed Roster (Encounter = N enemies, then it clears)</span>
+          <input type="checkbox" id="finiteRoster" checked></label>
+        <label class="k"><span>Finite Run &mdash; stop after N Encounters</span>
+          <input type="checkbox" id="finiteEncounters"></label>
+        <label class="k"><span>&nbsp;&nbsp;encounterCap</span><input type="number" id="encounterCap" value="8" min="1"></label>
+        <label class="k"><span>Auto-Recall at retreat-HP fraction</span>
+          <input type="checkbox" id="retreatOn" checked></label>
+        <label class="k"><span>Auto-Recall at bag-full fraction</span>
+          <input type="checkbox" id="bagOn" checked></label>
+      </div>
+
+      <div class="panel">
+        <h3>Constants <span class="sub">&mdash; edit, then Reset</span></h3>
+        <details open><summary>Hero &mdash; two attacks &amp; six sliders</summary><div id="k-hero"></div></details>
+        <details><summary>Cast economy &amp; clock</summary><div id="k-combat"></div></details>
+        <details><summary>Brute archetype <span class="mono" style="text-transform:none;letter-spacing:0">stat = base + perLvl&middot;S^exp</span></summary><div id="k-brute"></div></details>
+        <details><summary>Skirmisher archetype</summary><div id="k-skirm"></div></details>
+        <details><summary>Location &mdash; roster mix &amp; spawn</summary><div id="k-loc"></div></details>
+        <details><summary>Loot &mdash; bag pressure</summary><div id="k-loot"></div></details>
+      </div>
+    </div>
+
+    <!-- ================= RIGHT : live state ================= -->
+    <div>
+      <div class="panel">
+        <h3>Live run <span id="phasePill" class="pill">&mdash;</span></h3>
+        <div class="row mono" style="justify-content:space-between;font-size:13px">
+          <span><b id="clock">0.0</b>s elapsed</span>
+          <span>Encounter <b id="encNo">1</b> &middot; cleared <b id="encCleared">0</b></span>
+          <span>Hero level <b id="lvl">1</b></span>
+        </div>
+
+        <div class="barwrap"><div class="lab"><span>Health</span><span class="mono" id="hpTxt"></span></div>
+          <div class="bar"><i id="hpBar" style="background:var(--hp);width:100%"></i></div></div>
+        <div class="barwrap"><div class="lab"><span>Resource <span id="castFlag"></span></span><span class="mono" id="resTxt"></span></div>
+          <div class="bar"><i id="resBar" style="background:var(--res);width:50%"></i></div></div>
+        <div class="barwrap"><div class="lab"><span>XP &mdash; settles on Encounter clear</span><span class="mono" id="xpTxt"></span></div>
+          <div class="bar"><i id="xpBar" style="background:var(--xp);width:0"></i></div>
+          <div class="mono" style="font-size:11px;color:var(--muted);margin-top:2px">
+            this Encounter's pot: <b id="potTxt">0</b> &middot; forfeited to Recall/Death: <b id="fbTxt">0</b></div></div>
+
+        <div class="row" style="justify-content:space-between;margin:12px 0 0">
+          <span class="tag" style="width:auto">Engaged (<span id="aliveN">0</span>) &mdash; <span style="color:var(--skirm)">Strike hits lowest</span>, <span style="color:var(--brute)">Cast hits 3 highest</span></span>
+        </div>
+        <div class="field" id="field"></div>
+
+        <div class="stats">
+          <div><div class="cap">Strike DPS</div><div class="val" id="dpsStrike">0</div></div>
+          <div><div class="cap">Cast DPS</div><div class="val" id="dpsCast">0</div></div>
+          <div><div class="cap">Incoming DPS</div><div class="val" id="dpsIn">0</div></div>
+          <div><div class="cap" style="color:var(--brute)">Brute kills</div><div class="val" id="kB">0 <span class="u">/ ttk <b id="ttkB">0</b>s</span></div></div>
+          <div><div class="cap" style="color:var(--skirm)">Skirm. kills</div><div class="val" id="kS">0 <span class="u">/ ttk <b id="ttkS">0</b>s</span></div></div>
+          <div><div class="cap">Bag fill</div><div class="val" id="bag">0<span class="u">%</span></div></div>
+        </div>
+        <div style="margin-top:8px">
+          <div class="lab" style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">
+            <span>incoming damage source</span><span class="mono" id="inSplitTxt">&mdash;</span></div>
+          <div class="split" id="inSplit"><i style="background:var(--brute);width:50%"></i><i style="background:var(--skirm);width:50%"></i></div>
+        </div>
+        <div id="outcome" style="margin-top:11px"></div>
+      </div>
+
+      <div class="panel">
+        <h3>Drive it</h3>
+        <div class="row">
+          <button id="playBtn" class="on">&#9654;&nbsp; Play</button>
+          <button data-step="0.1" class="tiny">+1 tick</button>
+          <button data-step="1" class="tiny">+1 s</button>
+          <button data-step="5" class="tiny">+5 s</button>
+          <label class="k" style="margin-left:6px"><span>sim&nbsp;speed</span><input type="number" id="simSpeed" value="6" min="1" max="60"></label>
+        </div>
+        <div class="row">
+          <button id="runEnc">Run one Encounter</button>
+          <button id="runRun">Run the whole Run</button>
+          <button id="reset">Reset</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Matchup grid <span class="sub">&mdash; median Encounters cleared, 40 seeded raw Runs per cell (retreat + bag off)</span></h3>
+        <div class="row"><button id="grid" class="on">Run the 3 &times; 3</button>
+          <span class="mono" id="gridNote" style="font-size:12px;color:var(--muted)"></span></div>
+        <div class="scroll" id="gridOut"></div>
+        <p class="note" id="gridRead" style="margin-top:9px"></p>
+      </div>
+
+      <div class="panel">
+        <h3>Batch <span class="sub">&mdash; 200 seeded Runs at the current settings</span></h3>
+        <div class="row"><button id="batch">Run 200</button> <span class="mono" id="batchNote" style="font-size:12px;color:var(--muted)"></span></div>
+        <div class="scroll" id="batchOut"></div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Guided walkthroughs</h2>
+  <div class="panel">
+    <div class="tabs" id="tabs"></div>
+    <div id="scns"></div>
+  </div>
+
+  <h2>What the headless sweeps already show</h2>
+  <div class="panel note">
+    <p style="margin-top:0">40&ndash;200 seeded Runs per cell, this file's model (<code>node sweep.mjs</code>):</p>
+    <ol>
+      <li><b>The packed archetype picks the build.</b> Raw sustain at S5: vs a <b>Brute pack</b> physical
+        lasts ~2&times; longer than magical (big single-target Strikes chew the few high-HP bodies); vs a
+        <b>Skirmisher pack</b> magical lasts ~1.5&times; longer than physical (the 3-target Cast clears the
+        swarm before it piles on). It's <b>count vs per-target HP</b> &mdash; AoE counters numerosity,
+        single-target counters bulk. Not the naive "AoE for the pack of tanks" read.</li>
+      <li><b>Hybrid owns nothing and loses nothing badly.</b> Second in both specialist packs (~75&ndash;85%
+        of the winner), roughly on par on genuinely <b>mixed</b> composition, and it's the only build that
+        clears mixed without a death-rate. Three-way viable in the weak sense (all progress); two-way in the
+        strong sense (only physical &amp; magical are ever the <i>best</i> pick). A discovered lean &mdash;
+        not a blocker, per #18.</li>
+      <li><b>Fixed Roster + endless Encounters holds</b> under two enemies. Thornwood (S2 Brute-pack): every
+        build farms it, <b>Recalled:Bag</b> at ~4 Encounters, full HP. Ashfall (S5 Skirm-pack) at &times;1 gear:
+        <b>Recalled:HP</b> or Death &mdash; a wall. Gear is still the ladder: physical crosses ashfall from
+        "dies at ~5 Encounters" to "farms to the cap" between &times;1.15 and &times;1.3 (a one-shot breakpoint
+        on Skirmisher HP), magical opens it more gradually.</li>
+      <li><b>XP-on-clear gives the Encounter boundary teeth.</b> A Run driven off mid-Encounter forfeits that
+        Encounter's whole pot &mdash; ~400 XP at ashfall, about half an Encounter. And it defuses the
+        auto-focus worry: the lowest-HP Strike still eats Skirmishers first (ttk ~1&ndash;3&nbsp;s vs Brutes'
+        4&ndash;9&nbsp;s), but with no per-kill XP that's just sensible threat triage, not an exploit.</li>
+      <li><b>CastThreshold is still a texture knob.</b> Sweeping 0.05&rarr;0.9 with two enemies moves XP/min
+        &lt;1% until the very top. ADR-0010's "pack-deleting burst" doesn't pay for itself against a
+        continuous spawn. Keep the slider, soften the framing.</li>
+      <li><b>The bag is still the whole "return to Town" pressure.</b> Turn it off and a capable build farms a
+        fixed-difficulty Location forever. Bag capacity + loot-filter defaults are loop-load-bearing.</li>
+    </ol>
+  </div>
+
+  <div class="foot">
+    Throwaway. Branch <code>prototype/combat-cluster</code>, folder <code>dev/prototypes/2026-09-03-combat-cluster/</code>.
+    The <code>&lt;script&gt;</code> model mirrors <code>combat-model.js</code> and is written to be lifted into the
+    Run/Encounter module (#19&ndash;#20); the numbers are the tuning target. Press buttons, watch the state,
+    note where it feels wrong &mdash; those are the bugs in the <i>idea</i>.
+  </div>
+</div>
+
+<script>
+/* ============================================================================
+ * combat-model  —  pure, no DOM. Byte-mirror of scratchpad/combat-model.js (v2).
+ * Two archetypes (Brute / Skirmisher), per-Encounter XP settle.
+ * ========================================================================== */
+const CombatModel = (() => {
+  function mulberry32(seed){let a=seed>>>0;return function(){a|=0;a=(a+0x6D2B79F5)|0;
+    let t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;
+    return((t^(t>>>14))>>>0)/4294967296;};}
+
+  const DEFAULT_CONFIG={
+    tick:0.1, beat:1.0, maxSeconds:900,
+    hero:{
+      physicalDamage:26, attackSpeed:1.3,
+      magicalDamage:15, resourceMax:85, resourceRegen:15,
+      health:442, healthRegen:3, armor:27,
+      castThreshold:0.4, engagement:3,
+      retreatHealthFraction:0.25, recallBagFillFraction:0.9,
+    },
+    combat:{ castCost:16, castCadence:0.35, castTargets:3 },
+    archetypes:{
+      brute:{ health:{base:26,perLevel:24,exp:1.12}, damage:{base:1.0,perLevel:0.82,exp:1.0},
+        armor:{base:3,perLevel:0.9,exp:1.0}, attackSpeed:0.55, xp:{base:5,perLevel:3.5,exp:1.0} },
+      skirmisher:{ health:{base:10,perLevel:9,exp:1.06}, damage:{base:0.5,perLevel:0.5,exp:1.0},
+        armor:{base:0,perLevel:0,exp:1.0}, attackSpeed:1.6, xp:{base:13,perLevel:8,exp:1.0} },
+    },
+    location:{
+      sourceLevel:2, packed:'brute',
+      roster:{ brute:[9,9], skirmisher:[5,5] },
+      packBatch:[2,3], packedSpawnWeight:0.6,
+      initialSpawn:2, spawnInterval:2.6, spawnJitter:0.7,
+    },
+    loot:{ keepChancePerKill:0.28, avgItemCells:4, bagCells:72 },
+    run:{ finiteEncounters:false, encounterCap:8 },
+  };
+
+  function deepMerge(base,over){
+    const out=Array.isArray(base)?base.slice():{...base};
+    for(const k of Object.keys(over||{})){const v=over[k];
+      out[k]=(v&&typeof v==='object'&&!Array.isArray(v)&&typeof base[k]==='object')
+        ? deepMerge(base[k],v):v;}
+    return out;
+  }
+  const curve=(c,S)=>c.base+c.perLevel*Math.pow(S,c.exp);
+  function enemyArchetypes(cfg){const S=cfg.location.sourceLevel;
+    const one=a=>({maxHealth:curve(a.health,S),damage:curve(a.damage,S),armor:curve(a.armor,S),
+      attackSpeed:a.attackSpeed,xp:curve(a.xp,S)});
+    return{brute:one(cfg.archetypes.brute),skirmisher:one(cfg.archetypes.skirmisher)};}
+  const other=t=>(t==='brute'?'skirmisher':'brute');
+  const z=()=>({brute:0,skirmisher:0});
+
+  function createState(config,seed){
+    const cfg=deepMerge(DEFAULT_CONFIG,config||{});
+    const rng=mulberry32(seed>>>0);
+    const arch=enemyArchetypes(cfg);
+    const st={cfg,rng,arch,time:0,phase:'fighting',beatUntil:0,outcome:null,
+      hero:{hp:cfg.hero.health,maxHp:cfg.hero.health,resource:cfg.hero.resourceMax*0.5,
+        strikeTimer:0,castTimer:0,casting:false,level:1,xp:0,xpMax:280},
+      encounter:0,encountersCleared:0,enemies:[],nextEnemyId:1,
+      spawned:z(),rosterN:z(),spawnTimer:0,
+      encounterXp:0,encounterXpByType:z(),
+      enemiesDefeated:0,killsByType:z(),xpGained:0,xpByType:z(),xpForfeited:0,
+      bagCells:0,itemsKept:0,minHealthFraction:1,
+      dmgStrike:0,dmgCast:0,dmgIn:0,
+      dmgStrikeByType:z(),dmgCastByType:z(),dmgInByType:z(),
+      ttkSamples:{brute:[],skirmisher:[]}};
+    beginEncounter(st);
+    return st;
+  }
+  const rollRange=(st,r)=>{const[l,h]=r;return Math.round(l+st.rng()*(h-l));};
+  const rollPack=st=>{const[l,h]=st.cfg.location.packBatch;return Math.max(1,Math.round(l+st.rng()*(h-l)));};
+  function spawnEnemy(st,type){const a=st.arch[type];
+    st.enemies.push({id:st.nextEnemyId++,type,hp:a.maxHealth,maxHp:a.maxHealth,bornAt:st.time,
+      strikeTimer:st.rng()*(1/a.attackSpeed)});
+    st.spawned[type]+=1;}
+  const rem=st=>({brute:st.rosterN.brute-st.spawned.brute,skirmisher:st.rosterN.skirmisher-st.spawned.skirmisher});
+  const spent=st=>{const r=rem(st);return r.brute<=0&&r.skirmisher<=0;};
+  function beginEncounter(st){
+    st.encounter+=1; st.enemies.length=0; st.spawned=z();
+    st.rosterN={brute:rollRange(st,st.cfg.location.roster.brute),
+      skirmisher:rollRange(st,st.cfg.location.roster.skirmisher)};
+    st.encounterXp=0; st.encounterXpByType=z();
+    st.spawnTimer=st.cfg.location.spawnInterval;
+    let left=st.cfg.location.initialSpawn;
+    for(const type of [st.cfg.location.packed,other(st.cfg.location.packed)])
+      while(left>0&&st.spawned[type]<st.rosterN[type]){spawnEnemy(st,type);left--;}
+    st.phase='fighting';
+  }
+
+  function step(st){
+    if(st.phase==='ended') return [];
+    const dt=st.cfg.tick, ev=[]; st.time+=dt;
+    if(st.time>st.cfg.maxSeconds){end(st,'Timeout');return ev;}
+    if(st.phase==='beat'){ if(st.time>=st.beatUntil) beginEncounter(st); regenHero(st,dt); return ev; }
+
+    const loc=st.cfg.location;
+    if(!spent(st)){
+      st.spawnTimer-=dt;
+      if(st.spawnTimer<=0&&st.enemies.length<st.cfg.hero.engagement){
+        const r=rem(st); let type;
+        if(r.brute>0&&r.skirmisher>0) type=st.rng()<loc.packedSpawnWeight?loc.packed:other(loc.packed);
+        else type=r.brute>0?'brute':'skirmisher';
+        let batch=type===loc.packed?rollPack(st):1;
+        batch=Math.min(batch,r[type]);
+        for(let i=0;i<batch;i++){spawnEnemy(st,type);ev.push({t:'spawn',type});}
+        st.spawnTimer=loc.spawnInterval+(st.rng()*2-1)*loc.spawnJitter;
+      }
+    }
+    regenHero(st,dt);
+
+    const h=st.hero;
+    h.strikeTimer+=dt;
+    const si=1/st.cfg.hero.attackSpeed;
+    if(h.strikeTimer>=si&&st.enemies.length){
+      h.strikeTimer=Math.min(h.strikeTimer-si,si);
+      const tgt=lowestHp(st.enemies);
+      const d=st.cfg.hero.physicalDamage*(1-st.arch[tgt.type].armor*0.01);
+      st.dmgStrike+=d; st.dmgStrikeByType[tgt.type]+=d;
+      applyToEnemy(st,tgt,d,ev);
+      ev.push({t:'strike',type:tgt.type});
+    }
+    h.castTimer+=dt; const c=st.cfg.combat;
+    if(h.castTimer>=c.castCadence){
+      h.castTimer=Math.min(h.castTimer-c.castCadence,c.castCadence);
+      if(!h.casting&&h.resource>=st.cfg.hero.castThreshold*st.cfg.hero.resourceMax) h.casting=true;
+      if(h.casting){
+        if(h.resource>=c.castCost&&st.enemies.length){
+          h.resource-=c.castCost;
+          const ts=highestHp(st.enemies,c.castTargets), per=st.cfg.hero.magicalDamage;
+          for(const tg of ts){st.dmgCast+=per;st.dmgCastByType[tg.type]+=per;applyToEnemy(st,tg,per,ev);}
+          ev.push({t:'cast',n:ts.length});
+        } else if(h.resource<c.castCost){ h.casting=false; }
+      }
+    }
+    for(const e of st.enemies){
+      const a=st.arch[e.type]; const ei=1/a.attackSpeed;
+      e.strikeTimer+=dt;
+      if(e.strikeTimer>=ei){
+        e.strikeTimer=Math.min(e.strikeTimer-ei,ei);
+        const mit=a.damage*(1-st.cfg.hero.armor*0.01);
+        h.hp-=mit; st.dmgIn+=mit; st.dmgInByType[e.type]+=mit;
+      }
+    }
+    h.hp=Math.max(0,h.hp);
+    st.minHealthFraction=Math.min(st.minHealthFraction,h.hp/h.maxHp);
+
+    if(h.hp<=0){ st.xpForfeited+=st.encounterXp; end(st,'Died'); ev.push({t:'end',outcome:'Died'}); return ev; }
+    st.enemies=st.enemies.filter(e=>e.hp>0);
+
+    if(spent(st)&&st.enemies.length===0){
+      st.encountersCleared+=1;
+      st.hero.xp+=st.encounterXp; st.xpGained+=st.encounterXp;
+      st.xpByType.brute+=st.encounterXpByType.brute; st.xpByType.skirmisher+=st.encounterXpByType.skirmisher;
+      while(st.hero.xp>=st.hero.xpMax){
+        st.hero.xp-=st.hero.xpMax; st.hero.level+=1; st.hero.xpMax+=st.hero.level*100+80;
+        ev.push({t:'levelup',level:st.hero.level});
+      }
+      ev.push({t:'clear',encounter:st.encounter,xp:Math.round(st.encounterXp)});
+      st.encounterXp=0; st.encounterXpByType=z();
+      if(st.cfg.run.finiteEncounters&&st.encountersCleared>=st.cfg.run.encounterCap){
+        end(st,'Recalled:Cap'); ev.push({t:'end',outcome:'Recalled:Cap'}); return ev;
+      }
+      st.phase='beat'; st.beatUntil=st.time+st.cfg.beat;
+    }
+    if(st.cfg.hero.retreatHealthFraction>0 && h.hp/h.maxHp<=st.cfg.hero.retreatHealthFraction){
+      st.xpForfeited+=st.encounterXp;
+      end(st,'Recalled:HP'); ev.push({t:'end',outcome:'Recalled:HP'}); return ev;
+    }
+    if(st.cfg.hero.recallBagFillFraction>0 && st.bagCells/st.cfg.loot.bagCells>=st.cfg.hero.recallBagFillFraction){
+      st.xpForfeited+=st.encounterXp;
+      end(st,'Recalled:Bag'); ev.push({t:'end',outcome:'Recalled:Bag'}); return ev;
+    }
+    return ev;
+  }
+
+  function regenHero(st,dt){
+    const h=st.hero;
+    if(h.hp>0) h.hp=Math.min(h.maxHp,h.hp+st.cfg.hero.healthRegen*dt);
+    h.resource=Math.min(st.cfg.hero.resourceMax,h.resource+st.cfg.hero.resourceRegen*dt);
+  }
+  function applyToEnemy(st,e,dmg,ev){
+    if(!e||e.hp<=0) return;
+    e.hp-=dmg;
+    if(e.hp<=0){
+      e.hp=0; st.enemiesDefeated+=1; st.killsByType[e.type]+=1;
+      st.ttkSamples[e.type].push(+(st.time-e.bornAt).toFixed(1));
+      const raw=st.arch[e.type].xp;
+      const bal=raw*(1+(st.cfg.location.sourceLevel-st.hero.level)/100);
+      st.encounterXp+=bal; st.encounterXpByType[e.type]+=bal;
+      if(st.rng()<st.cfg.loot.keepChancePerKill){ st.bagCells+=st.cfg.loot.avgItemCells; st.itemsKept+=1; }
+      ev&&ev.push({t:'kill',type:e.type});
+    }
+  }
+  function lowestHp(l){let b=null;for(const e of l)if(e.hp>0&&(!b||e.hp<b.hp))b=e;return b;}
+  function highestHp(l,n){return l.filter(e=>e.hp>0).sort((a,b)=>b.hp-a.hp).slice(0,n);}
+  function median(a){if(!a.length)return 0;const s=a.slice().sort((x,y)=>x-y);return s[Math.floor(s.length/2)];}
+  function end(st,outcome){
+    st.phase='ended';
+    st.outcome={outcome,encountersCleared:st.encountersCleared,enemiesDefeated:st.enemiesDefeated,
+      killsByType:{...st.killsByType},duration:Math.round(st.time*10)/10,heroLevelEnd:st.hero.level,
+      xpGained:Math.round(st.xpGained),
+      xpByType:{brute:Math.round(st.xpByType.brute),skirmisher:Math.round(st.xpByType.skirmisher)},
+      xpForfeited:Math.round(st.xpForfeited),
+      xpPerMin:+(st.xpGained/Math.max(1,st.time/60)).toFixed(0),
+      itemsKept:st.itemsKept,bagFill:+(st.bagCells/st.cfg.loot.bagCells).toFixed(2),
+      minHealthFraction:+st.minHealthFraction.toFixed(3),
+      dmgInByType:{brute:Math.round(st.dmgInByType.brute),skirmisher:Math.round(st.dmgInByType.skirmisher)},
+      dmgStrikeByType:{brute:Math.round(st.dmgStrikeByType.brute),skirmisher:Math.round(st.dmgStrikeByType.skirmisher)},
+      dmgCastByType:{brute:Math.round(st.dmgCastByType.brute),skirmisher:Math.round(st.dmgCastByType.skirmisher)},
+      ttkBrute:median(st.ttkSamples.brute),ttkSkirmisher:median(st.ttkSamples.skirmisher)};
+  }
+  function simulate(config,seed){
+    const st=createState(config,seed); let g=0;
+    const cap=Math.ceil(st.cfg.maxSeconds/st.cfg.tick)+10;
+    while(st.phase!=='ended'&&g++<cap) step(st);
+    if(st.phase!=='ended') end(st,'Timeout');
+    return st.outcome;
+  }
+  function sweep(config,seeds=200){
+    const rows=[];
+    for(let s=0;s<seeds;s++) rows.push(simulate(config,1000+s*7919));
+    const num=a=>a.slice().sort((x,y)=>x-y);
+    const med=a=>num(a)[Math.floor(a.length/2)]??0;
+    const mean=a=>a.reduce((x,y)=>x+y,0)/(a.length||1);
+    const died=rows.filter(r=>r.outcome==='Died');
+    const tally={}; for(const r of rows) tally[r.outcome]=(tally[r.outcome]||0)+1;
+    return {seeds,deathRate:+(died.length/rows.length).toFixed(3),
+      encMed:med(rows.map(r=>r.encountersCleared)),
+      killsMed:med(rows.map(r=>r.enemiesDefeated)),
+      durMean:+mean(rows.map(r=>r.duration)).toFixed(0),
+      xpPerMin:+mean(rows.map(r=>r.xpPerMin)).toFixed(0),
+      minHpMean:+mean(rows.map(r=>r.minHealthFraction)).toFixed(2),
+      fbXpMean:+mean(rows.map(r=>r.xpForfeited)).toFixed(0), tally};
+  }
+  return {mulberry32,DEFAULT_CONFIG,deepMerge,createState,step,simulate,sweep,enemyArchetypes,curve};
+})();
+
+/* ============================================================================
+ * page  —  thin shell over the model. Nothing here flows back into it.
+ * ========================================================================== */
+const DEF = { health:442, healthRegen:3, armor:27 };
+const BUILDS = {
+  physical:{ ...DEF, physicalDamage:46, attackSpeed:1.6, magicalDamage:5, resourceMax:45, resourceRegen:6,
+    castThreshold:0.3, engagement:2, retreatHealthFraction:0.25, recallBagFillFraction:0.9 },
+  magical:{ ...DEF, physicalDamage:8, attackSpeed:1.0, magicalDamage:23, resourceMax:120, resourceRegen:20,
+    castThreshold:0.4, engagement:4, retreatHealthFraction:0.25, recallBagFillFraction:0.9 },
+  hybrid:{ health:476, healthRegen:4, armor:30, physicalDamage:28, attackSpeed:1.35, magicalDamage:14,
+    resourceMax:86, resourceRegen:14, castThreshold:0.35, engagement:3,
+    retreatHealthFraction:0.25, recallBagFillFraction:0.9 },
+};
+const mix = o => CombatModel.deepMerge({
+  sourceLevel:5, packed:'brute', roster:{brute:[8,8],skirmisher:[6,6]},
+  packBatch:[2,3], packedSpawnWeight:0.6, initialSpawn:2, spawnInterval:2.6, spawnJitter:0.7,
+}, o);
+const LOCATIONS = {
+  thornwood:   mix({ sourceLevel:2, packed:'brute',      roster:{brute:[9,9],skirmisher:[5,5]} }),
+  ashfall:     mix({ sourceLevel:5, packed:'skirmisher', roster:{brute:[4,4],skirmisher:[13,13]},
+                     packBatch:[3,5], packedSpawnWeight:0.7, spawnInterval:2.3 }),
+  's5-brutepack':mix({ packed:'brute',      roster:{brute:[12,12],skirmisher:[5,5]} }),
+  's5-mixed':   mix({ packed:'brute',       roster:{brute:[8,8],skirmisher:[9,9]}, packBatch:[2,2], packedSpawnWeight:0.5 }),
+  's5-skirmpack':mix({ packed:'skirmisher', roster:{brute:[5,5],skirmisher:[12,12]} }),
+};
+const LOC_LABEL = { thornwood:'Thornwood', ashfall:'Ashfall',
+  's5-brutepack':'Brute-packed', 's5-mixed':'Mixed', 's5-skirmpack':'Skirm-packed' };
+
+let cfg = CombatModel.deepMerge(CombatModel.DEFAULT_CONFIG, {});
+let st  = CombatModel.createState(cfg, 1);
+let seed = 1, playing = false, gearMult = 1;
+let curBuild = 'hybrid', curLoc = 'thornwood';
+const dpsRing = [];
+
+const $ = s => document.querySelector(s);
+const el = (t,p={}) => Object.assign(document.createElement(t), p);
+const getPath = (o,p) => p.split('.').reduce((x,k)=>x==null?x:x[k], o);
+const setPath = (o,p,v) => { const ks=p.split('.'); const last=ks.pop();
+  ks.reduce((x,k)=>x[k],o)[last]=v; };
+
+const KNOBS = {
+  'k-hero':[
+    ['hero.physicalDamage','PhysicalDamage — flat per Strike'],
+    ['hero.attackSpeed','AttackSpeed — strikes/s, Strike cadence 1/AS'],
+    ['hero.magicalDamage','MagicalDamage — flat per Cast target'],
+    ['hero.resourceMax','Resource max'],
+    ['hero.resourceRegen','ResourceRegeneration /s'],
+    ['hero.health','Health'],
+    ['hero.healthRegen','HealthRegeneration /s'],
+    ['hero.armor','Armor — % incoming mitigation'],
+    ['hero.castThreshold','CastThreshold — charge to this frac, burn to 0'],
+    ['hero.engagement','Engagement — soft enemy count'],
+    ['hero.retreatHealthFraction','retreat-at-HP fraction'],
+    ['hero.recallBagFillFraction','recall-at-bag-full fraction'],
+  ],
+  'k-combat':[
+    ['combat.castCost','castCost — Resource per Cast'],
+    ['combat.castCadence','castCadence — min s between Casts'],
+    ['combat.castTargets','castTargets — AoE width'],
+    ['tick','tick — CombatClock interval (s)'],
+    ['beat','beat — pause between Encounters (s)'],
+    ['maxSeconds','sim safety cap (s)'],
+  ],
+  'k-brute':[
+    ['archetypes.brute.health.base','HP base'],['archetypes.brute.health.perLevel','HP perLevel'],['archetypes.brute.health.exp','HP exp'],
+    ['archetypes.brute.damage.base','dmg base'],['archetypes.brute.damage.perLevel','dmg perLevel'],
+    ['archetypes.brute.armor.base','armor base'],['archetypes.brute.armor.perLevel','armor perLevel'],
+    ['archetypes.brute.attackSpeed','AttackSpeed (flat)'],
+    ['archetypes.brute.xp.base','xp base'],['archetypes.brute.xp.perLevel','xp perLevel'],
+  ],
+  'k-skirm':[
+    ['archetypes.skirmisher.health.base','HP base'],['archetypes.skirmisher.health.perLevel','HP perLevel'],['archetypes.skirmisher.health.exp','HP exp'],
+    ['archetypes.skirmisher.damage.base','dmg base'],['archetypes.skirmisher.damage.perLevel','dmg perLevel'],
+    ['archetypes.skirmisher.attackSpeed','AttackSpeed (flat)'],
+    ['archetypes.skirmisher.xp.base','xp base'],['archetypes.skirmisher.xp.perLevel','xp perLevel'],
+  ],
+  'k-loc':[
+    ['location.sourceLevel','SourceLevel (S)'],
+    ['location.roster.brute.0','Roster Brutes min'],['location.roster.brute.1','Roster Brutes max'],
+    ['location.roster.skirmisher.0','Roster Skirm. min'],['location.roster.skirmisher.1','Roster Skirm. max'],
+    ['location.packBatch.0','packBatch min'],['location.packBatch.1','packBatch max (Pack size)'],
+    ['location.packedSpawnWeight','packedSpawnWeight — P(next = packed type)'],
+    ['location.initialSpawn','initialSpawn'],
+    ['location.spawnInterval','spawnInterval (s)'],['location.spawnJitter','spawnJitter (±s)'],
+  ],
+  'k-loot':[
+    ['loot.keepChancePerKill','keep-chance per kill'],
+    ['loot.avgItemCells','avg item footprint (cells)'],
+    ['loot.bagCells','bag capacity (cells)'],
+  ],
+};
+// which archetype is 'packed' is a string — a separate control
+function buildKnobs(){
+  for(const [host,list] of Object.entries(KNOBS)){
+    const wrap=$('#'+host); wrap.innerHTML='';
+    if(host==='k-loc'){
+      const lab=el('label',{className:'k'});
+      lab.append(el('span',{textContent:'packed archetype (Packs; other trickles)'}));
+      const sel=el('select'); sel.style.cssText='font:13px JetBrains Mono,monospace;padding:3px;border:1px solid var(--line-2);border-radius:5px;background:var(--bg);color:var(--ink)';
+      for(const v of ['brute','skirmisher']) sel.append(el('option',{value:v,textContent:v}));
+      sel.value=cfg.location.packed;
+      sel.dataset.path='location.packed';
+      sel.addEventListener('change',()=>{ setPath(cfg,'location.packed',sel.value); });
+      lab.append(sel); wrap.append(lab);
+    }
+    for(const [path,label] of list){
+      const lab=el('label',{className:'k'});
+      lab.append(el('span',{textContent:label}));
+      const inp=el('input',{type:'number',step:'any',value:getPath(cfg,path)});
+      inp.dataset.path=path;
+      inp.addEventListener('change',()=>{ setPath(cfg,path,+inp.value); });
+      lab.append(inp); wrap.append(lab);
+    }
+  }
+}
+let finiteRosterFlag = true;
+function syncKnobs(){
+  document.querySelectorAll('input[data-path]').forEach(i=>{ i.value=getPath(cfg,i.dataset.path); });
+  const sel=document.querySelector('select[data-path]'); if(sel) sel.value=cfg.location.packed;
+  $('#finiteRoster').checked = finiteRosterFlag;
+  $('#finiteEncounters').checked = cfg.run.finiteEncounters;
+  $('#encounterCap').value = cfg.run.encounterCap;
+  $('#retreatOn').checked = cfg.hero.retreatHealthFraction>0;
+  $('#bagOn').checked = cfg.hero.recallBagFillFraction>0;
+}
+
+function applyBuild(name){
+  curBuild=name;
+  cfg.hero=CombatModel.deepMerge(cfg.hero,BUILDS[name]);
+  applyGear(); reset();
+}
+function applyLoc(name){
+  curLoc=name;
+  cfg.location=CombatModel.deepMerge(cfg.location,LOCATIONS[name]);
+  reset();
+}
+function applyGear(){
+  const b=BUILDS[curBuild];
+  cfg.hero.physicalDamage=+(b.physicalDamage*gearMult).toFixed(1);
+  cfg.hero.magicalDamage =+(b.magicalDamage *gearMult).toFixed(1);
+  cfg.hero.health        =+((b.health||DEF.health)*gearMult).toFixed(0);
+  cfg.hero.attackSpeed   =+(b.attackSpeed*(1+(gearMult-1)*0.4)).toFixed(2);
+}
+
+function reset(){
+  playing=false; $('#playBtn').innerHTML='&#9654;&nbsp; Play'; $('#playBtn').classList.remove('on');
+  finiteRosterFlag = $('#finiteRoster').checked;
+  cfg.run.finiteEncounters = $('#finiteEncounters').checked;
+  cfg.run.encounterCap = +$('#encounterCap').value;
+  cfg.hero.retreatHealthFraction = $('#retreatOn').checked ? (cfg.hero.retreatHealthFraction||0.25) : 0;
+  if($('#retreatOn').checked && cfg.hero.retreatHealthFraction===0) cfg.hero.retreatHealthFraction=0.25;
+  cfg.hero.recallBagFillFraction = $('#bagOn').checked ? (cfg.hero.recallBagFillFraction||0.9) : 0;
+  if($('#bagOn').checked && cfg.hero.recallBagFillFraction===0) cfg.hero.recallBagFillFraction=0.9;
+  // "fixed Roster off" ⇒ enormous roster so it never spends (endless spawn)
+  const runCfg = CombatModel.deepMerge(cfg, finiteRosterFlag ? {} :
+    { location:{ roster:{ brute:[9999,9999], skirmisher:[9999,9999] } } });
+  st=CombatModel.createState(runCfg,seed);
+  dpsRing.length=0; syncKnobs(); render();
+}
+function advance(sec){
+  const n=Math.round(sec/cfg.tick);
+  for(let i=0;i<n&&st.phase!=='ended';i++) CombatModel.step(st);
+  sampleDps(); render();
+}
+function runEncounter(){
+  const c0=st.encountersCleared; let g=0;
+  while(st.phase!=='ended'&&st.encountersCleared===c0&&g++<40000) CombatModel.step(st);
+  sampleDps(); render();
+}
+function runRun(){ let g=0; while(st.phase!=='ended'&&g++<200000) CombatModel.step(st); sampleDps(); render(); }
+function sampleDps(){
+  dpsRing.push({t:st.time,s:st.dmgStrike,c:st.dmgCast,i:st.dmgIn});
+  while(dpsRing.length>2&&st.time-dpsRing[0].t>3) dpsRing.shift();
+}
+
+const pct = x => Math.max(0,Math.min(100,x*100)).toFixed(0)+'%';
+function render(){
+  const h=st.hero;
+  $('#clock').textContent=st.time.toFixed(1);
+  $('#encNo').textContent=st.encounter;
+  $('#encCleared').textContent=st.encountersCleared;
+  $('#lvl').textContent=h.level;
+  $('#hpBar').style.width=pct(h.hp/h.maxHp);
+  $('#hpTxt').textContent=Math.round(h.hp)+' / '+Math.round(h.maxHp);
+  $('#resBar').style.width=pct(h.resource/cfg.hero.resourceMax);
+  $('#resTxt').textContent=Math.round(h.resource)+' / '+Math.round(cfg.hero.resourceMax);
+  $('#castFlag').innerHTML=h.casting?'<span class="pill bad">bursting</span>':'<span class="pill">charging</span>';
+  $('#xpBar').style.width=pct(h.xp/h.xpMax);
+  $('#xpTxt').textContent=Math.round(h.xp)+' / '+Math.round(h.xpMax);
+  $('#potTxt').textContent=Math.round(st.encounterXp);
+  $('#fbTxt').textContent=Math.round(st.xpForfeited);
+  $('#aliveN').textContent=st.enemies.length;
+
+  const box=$('#field'); box.innerHTML='';
+  const sorted=st.enemies.slice().sort((a,b)=>b.hp-a.hp);
+  for(const e of sorted){
+    const u=el('div',{className:'unit '+(e.type==='brute'?'b':'s')});
+    u.append(el('div',{className:'cap',textContent:e.type==='brute'?'Brute':'Skirm'}));
+    const bar=el('div',{className:'bar'});
+    const f=e.hp/e.maxHp;
+    const col=e.type==='brute'?'var(--brute)':'var(--skirm)';
+    bar.append(el('i',{style:`width:${pct(f)};background:${col};opacity:${0.35+0.65*f}`}));
+    u.append(bar); box.append(u);
+  }
+  if(!st.enemies.length) box.append(el('span',{className:'mono',style:'color:var(--muted);font-size:12px',
+    textContent:st.phase==='beat'?'— beat —':st.phase==='ended'?'—':'(spawning…)'}));
+
+  const win = dpsRing.length>1 ? ((st.time-dpsRing[0].t)||1) : 1;
+  const dS = dpsRing.length>1 ? (st.dmgStrike-dpsRing[0].s)/win : 0;
+  const dC = dpsRing.length>1 ? (st.dmgCast -dpsRing[0].c)/win : 0;
+  const dI = dpsRing.length>1 ? (st.dmgIn   -dpsRing[0].i)/win : 0;
+  $('#dpsStrike').textContent=dS.toFixed(0);
+  $('#dpsCast').textContent=dC.toFixed(0);
+  $('#dpsIn').textContent=dI.toFixed(0);
+  $('#kB').innerHTML=st.killsByType.brute+' <span class="u">/ ttk <b>'+med(st.ttkSamples.brute)+'</b>s</span>';
+  $('#kS').innerHTML=st.killsByType.skirmisher+' <span class="u">/ ttk <b>'+med(st.ttkSamples.skirmisher)+'</b>s</span>';
+  $('#bag').innerHTML=Math.round(st.bagCells/cfg.loot.bagCells*100)+'<span class="u">%</span>';
+
+  const inB=st.dmgInByType.brute, inS=st.dmgInByType.skirmisher, inT=inB+inS;
+  const fb = inT>0 ? inB/inT : 0.5;
+  $('#inSplit').children[0].style.width=pct(fb);
+  $('#inSplit').children[1].style.width=pct(1-fb);
+  $('#inSplitTxt').textContent = inT>0 ? `${Math.round(fb*100)}% Brute / ${Math.round((1-fb)*100)}% Skirm` : '—';
+
+  const pp=$('#phasePill');
+  pp.className='pill '+(st.phase==='ended'?'bad':st.phase==='beat'?'warn':'good');
+  pp.textContent=st.phase==='ended'?st.outcome.outcome:st.phase;
+
+  const o=$('#outcome');
+  if(st.phase==='ended'){
+    const r=st.outcome;
+    o.innerHTML=`<div style="padding:11px 13px;background:var(--panel-2);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:6px;font-size:13px">
+      <b class="mono">${r.outcome}</b> after <b class="mono">${r.duration}s</b> &middot;
+      cleared <b class="mono">${r.encountersCleared}</b> &middot;
+      kills <b class="mono" style="color:var(--brute)">${r.killsByType.brute}B</b>/<b class="mono" style="color:var(--skirm)">${r.killsByType.skirmisher}S</b> &middot;
+      lvl ${r.heroLevelEnd} &middot; <b class="mono">${r.xpGained}</b> XP (<b class="mono">${r.xpForfeited}</b> forfeited) &middot;
+      <b class="mono">${r.xpPerMin}</b> XP/min &middot; lowest HP <b class="mono">${Math.round(r.minHealthFraction*100)}%</b></div>`;
+  } else o.innerHTML='';
+}
+const med = a => { if(!a.length) return 0; const s=a.slice().sort((x,y)=>x-y); return s[Math.floor(s.length/2)]; };
+
+let last=0;
+function frame(ts){
+  if(playing&&st.phase!=='ended'){
+    if(!last) last=ts;
+    const dtReal=Math.min(0.25,(ts-last)/1000); last=ts;
+    const n=Math.max(1,Math.round(dtReal*(+$('#simSpeed').value||1)/cfg.tick));
+    for(let i=0;i<n&&st.phase!=='ended';i++) CombatModel.step(st);
+    sampleDps(); render();
+  } else last=0;
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* ---- matchup grid ---- */
+const GRID_BUILDS = ['physical','magical','hybrid'];
+const GRID_PACKS  = ['s5-brutepack','s5-mixed','s5-skirmpack'];
+function runGrid(){
+  $('#gridNote').textContent='running 360 Runs…';
+  setTimeout(()=>{
+    const raw = { hero:{retreatHealthFraction:0,recallBagFillFraction:0}, loot:{keepChancePerKill:0} };
+    const cells = {};
+    for(const b of GRID_BUILDS) for(const p of GRID_PACKS){
+      const conf = CombatModel.deepMerge({ hero:BUILDS[b], location:LOCATIONS[p] }, raw);
+      cells[b+'|'+p] = CombatModel.sweep(conf, 40);
+    }
+    const enc = (b,p)=>cells[b+'|'+p].encMed;
+    const max = Math.max(...GRID_BUILDS.flatMap(b=>GRID_PACKS.map(p=>enc(b,p))),1);
+    const cellHtml = (b,p) => {
+      const s=cells[b+'|'+p]; const f=s.encMed/max;
+      const survived = s.tally.Timeout||0;
+      const bg = `color-mix(in srgb, var(--good) ${Math.round(f*72)}%, var(--panel))`;
+      return `<td class="mn" style="background:${bg}">${s.encMed}<span style="color:var(--muted);font-size:11px"> enc</span><br>
+        <span style="font-size:11px;color:var(--muted)">${survived}/40 survived · ${Math.round(s.deathRate*100)}% died</span></td>`;
+    };
+    let html='<table><thead><tr><th>build \\ pack</th>'+
+      GRID_PACKS.map(p=>`<th>${LOC_LABEL[p]}</th>`).join('')+'</tr></thead><tbody>';
+    for(const b of GRID_BUILDS)
+      html+=`<tr><td><b>${b[0].toUpperCase()+b.slice(1)}</b></td>`+GRID_PACKS.map(p=>cellHtml(b,p)).join('')+'</tr>';
+    html+='</tbody></table>';
+    $('#gridOut').innerHTML=html;
+    const win = p => GRID_BUILDS.reduce((a,b)=> enc(b,p)>enc(a,p)?b:a, GRID_BUILDS[0]);
+    $('#gridRead').innerHTML =
+      `Brute-packed &rarr; <b>${win('s5-brutepack')}</b>, mixed &rarr; <b>${win('s5-mixed')}</b>, `+
+      `skirm-packed &rarr; <b>${win('s5-skirmpack')}</b>. Higher = out-sustains the pack longer; `+
+      `green scales with median Encounters cleared before Death (900&nbsp;s cap = "survived").`;
+    $('#gridNote').textContent='';
+  },30);
+}
+
+/* ---- batch ---- */
+function runBatch(){
+  $('#batchNote').textContent='running…';
+  setTimeout(()=>{
+    const runCfg = CombatModel.deepMerge(cfg, finiteRosterFlag ? {} :
+      { location:{ roster:{ brute:[9999,9999], skirmisher:[9999,9999] } } });
+    const s=CombatModel.sweep(runCfg,200);
+    $('#batchNote').textContent='';
+    $('#batchOut').innerHTML=`<table><tbody>
+      <tr><td>death rate</td><td class="mn">${(s.deathRate*100).toFixed(0)}%</td></tr>
+      <tr><td>Encounters cleared (median)</td><td class="mn">${s.encMed}</td></tr>
+      <tr><td>kills (median)</td><td class="mn">${s.killsMed}</td></tr>
+      <tr><td>Run duration (mean)</td><td class="mn">${s.durMean}s</td></tr>
+      <tr><td>XP / min (mean)</td><td class="mn">${s.xpPerMin}</td></tr>
+      <tr><td>XP forfeited to exit (mean)</td><td class="mn">${s.fbXpMean}</td></tr>
+      <tr><td>lowest HP fraction (mean)</td><td class="mn">${(s.minHpMean*100).toFixed(0)}%</td></tr>
+      <tr><td>outcomes</td><td class="mn">${Object.entries(s.tally).map(([k,v])=>k+': '+v).join('<br>')}</td></tr>
+    </tbody></table>`;
+  },20);
+}
+
+/* ---- walkthroughs ---- */
+const SCENARIOS = [
+  { name:'Physical owns the Brute pack',
+    desc:'Physical vs a Brute-packed S5 Location, retreat OFF so you see the raw outcome. Then swap in magical and hybrid on the same pack. Physical out-lasts magical roughly 2&times; — the big single-target Strike is exactly what a handful of high-HP bodies needs, and physical\'s low Engagement keeps the slow hits spread thin.',
+    steps:[
+      ['Physical + Brute-packed, ×1, retreat OFF', ()=>{sB('physical');sL('s5-brutepack');sG(1);sC('retreatOn',false);}],
+      ['Run the whole Run', runRun],
+      ['Magical, same pack', ()=>sB('magical')],
+      ['Run the whole Run', runRun],
+      ['Hybrid, same pack', ()=>sB('hybrid')],
+      ['Run the whole Run', runRun],
+    ]},
+  { name:'Magical owns the Skirmisher pack',
+    desc:'Flip the pack: Skirmisher-packed S5, retreat OFF. Magical\'s 3-target Cast deletes the swarm before it stacks up incoming; physical\'s Strike can only take one Skirmisher per cadence while the rest of the pack chews on the hero. Watch the incoming-source bar — against a swarm the Skirmisher share climbs for physical, stays capped for magical.',
+    steps:[
+      ['Magical + Skirm-packed, ×1, retreat OFF', ()=>{sB('magical');sL('s5-skirmpack');sG(1);sC('retreatOn',false);}],
+      ['Run the whole Run', runRun],
+      ['Physical, same pack', ()=>sB('physical')],
+      ['Run the whole Run', runRun],
+      ['Hybrid, same pack', ()=>sB('hybrid')],
+      ['Run the whole Run', runRun],
+    ]},
+  { name:'Hybrid: never best, never a trap',
+    desc:'Run all three builds against the Mixed pack (equal Brutes + Skirmishers). They land close — hybrid a nose ahead, and it\'s the only one with no death-rate. Then check hybrid on each specialist pack: it comes 2nd every time, ~75–85% of the winner, never last. That is the whole hybrid case — no owned matchup, no catastrophic one.',
+    steps:[
+      ['Physical + Mixed, ×1, retreat OFF', ()=>{sB('physical');sL('s5-mixed');sG(1);sC('retreatOn',false);}],
+      ['Run the whole Run', runRun],
+      ['Magical + Mixed', ()=>sB('magical')],
+      ['Run the whole Run', runRun],
+      ['Hybrid + Mixed', ()=>sB('hybrid')],
+      ['Run the whole Run', runRun],
+      ['Hybrid vs Brute-packed', ()=>sL('s5-brutepack')],
+      ['Run the whole Run', runRun],
+      ['Hybrid vs Skirm-packed', ()=>sL('s5-skirmpack')],
+      ['Run the whole Run', runRun],
+    ]},
+  { name:'The matchup grid',
+    desc:'Press the grid button and read the diagonal. Brute-packed leans physical, skirm-packed leans magical, mixed is a wash. That triangle — plus each build\'s natural Engagement stance (physical kites at 2, magical brawls at 4) — is the answer to "which build for which pack".',
+    steps:[
+      ['Run the 3 × 3 grid', runGrid],
+      ['Physical + Brute-packed (see it live)', ()=>{sB('physical');sL('s5-brutepack');sG(1);sC('retreatOn',false);}],
+      ['Run the whole Run', runRun],
+      ['Magical + Skirm-packed', ()=>{sB('magical');sL('s5-skirmpack');}],
+      ['Run the whole Run', runRun],
+    ]},
+  { name:'Thornwood is a bag run',
+    desc:'The easy Location (S2, Brute-packed): every build clears it forever, full HP, and leaves the same way — Recalled:Bag at ~4 Encounters. The combat model is not the constraint here; the bag is. This is the case for endless Encounters — you leave when you are full, not when the Location is "done".',
+    steps:[
+      ['Physical + Thornwood, ×1', ()=>{sB('physical');sL('thornwood');sG(1);sC('retreatOn',true);sC('bagOn',true);}],
+      ['Run the whole Run', runRun],
+      ['Magical + Thornwood', ()=>sB('magical')],
+      ['Run the whole Run', runRun],
+      ['Hybrid + Thornwood', ()=>sB('hybrid')],
+      ['Run the whole Run', runRun],
+    ]},
+  { name:'Gear opens Ashfall — a cliff',
+    desc:'Ashfall (S5, Skirmisher-packed), retreat OFF, walk the gear multiplier. At ×1 the hero dies in ~2 Encounters. Physical crosses to "farms to the cap" between ×1.15 and ×1.3 — a one-shot breakpoint on Skirmisher HP makes it sharp. Magical opens it more gradually. Either way, gear is the ladder — no restart-rescale needed.',
+    steps:[
+      ['Physical + Ashfall, ×1, retreat OFF', ()=>{sB('physical');sL('ashfall');sG(1);sC('retreatOn',false);}],
+      ['Run the whole Run', runRun],
+      ['Gear ×1.15', ()=>sG(1.15)],
+      ['Run the whole Run', runRun],
+      ['Gear ×1.3', ()=>sG(1.3)],
+      ['Run the whole Run', runRun],
+      ['Magical instead, ×1.15', ()=>{sB('magical');sG(1.15);}],
+      ['Run the whole Run', runRun],
+    ]},
+  { name:'XP settles on the clear',
+    desc:'Hybrid + Ashfall, retreat ON. Step one Encounter and watch the XP bar stay flat while kills tick up — then jump on the clear. The "pot" line is the pending XP; the "forfeited" line is what a Recall or Death throws away. Drop retreat to a high fraction so it bails mid-Encounter and see the pot vanish. That forfeit is what makes the Encounter boundary matter.',
+    steps:[
+      ['Hybrid + Ashfall, ×1.3, retreat ON', ()=>{sB('hybrid');sL('ashfall');sG(1.3);sC('retreatOn',true);}],
+      ['Run one Encounter', runEncounter],
+      ['Run one more', runEncounter],
+      ['retreatHealthFraction → 0.6', ()=>sN('hero.retreatHealthFraction',0.6)],
+      ['Reset & run the whole Run', ()=>{reset();runRun();}],
+    ]},
+  { name:'Fixed Roster vs endless spawn',
+    desc:'Physical + Thornwood. With Fixed Roster ON, run one Encounter and watch it CLEAR, beat, and start the next. Turn Fixed Roster OFF and run 40 s: the Encounter counter never moves — enemies just trickle to the Engagement target forever. No Roster, no Encounter unit, no XP settle. Keep the Roster.',
+    steps:[
+      ['Physical + Thornwood, Fixed Roster ON', ()=>{sB('physical');sL('thornwood');sG(1);sC('finiteRoster',true);sC('retreatOn',true);}],
+      ['Run one Encounter', runEncounter],
+      ['Run one more', runEncounter],
+      ['Fixed Roster OFF', ()=>sC('finiteRoster',false)],
+      ['+40 s', ()=>advance(40)],
+      ['+40 s', ()=>advance(40)],
+    ]},
+  { name:'CastThreshold barely matters',
+    desc:'Magical + Ashfall, ×1.3 (so fights last), retreat OFF. Run at CastThreshold 0.05 (constant chip), then 0.9 (long charge → burst). Kills and duration move a few percent and not consistently either way. On a continuous spawn, deleting a pack a beat early just brings the next pack a beat closer. A feel knob, not a power one.',
+    steps:[
+      ['Magical + Ashfall ×1.3, thr 0.05, retreat OFF', ()=>{sB('magical');sL('ashfall');sG(1.3);sC('retreatOn',false);sN('hero.castThreshold',0.05);}],
+      ['Run the whole Run', runRun],
+      ['CastThreshold 0.9', ()=>sN('hero.castThreshold',0.9)],
+      ['Run the whole Run', runRun],
+      ['CastThreshold 0.35', ()=>sN('hero.castThreshold',0.35)],
+      ['Run the whole Run', runRun],
+    ]},
+];
+function sB(n){ applyBuild(n); document.querySelectorAll('[data-build]').forEach(x=>x.classList.toggle('on',x.dataset.build===n)); }
+function sL(n){ applyLoc(n); document.querySelectorAll('[data-loc]').forEach(x=>x.classList.toggle('on',x.dataset.loc===n)); }
+function sG(g){ gearMult=g; applyGear(); reset(); document.querySelectorAll('[data-gear]').forEach(x=>x.classList.toggle('on',+x.dataset.gear===g)); }
+function sC(id,v){ $('#'+id).checked=v; reset(); }
+function sN(path,v){ setPath(cfg,path,v); reset(); }
+
+function buildTabs(){
+  const tabs=$('#tabs'), scns=$('#scns');
+  SCENARIOS.forEach((s,i)=>{
+    const b=el('button',{textContent:(i+1)+'. '+s.name});
+    b.onclick=()=>{
+      document.querySelectorAll('#tabs button').forEach(x=>x.classList.remove('on'));
+      document.querySelectorAll('#scns .scn').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on'); scns.children[i].classList.add('on');
+    };
+    tabs.append(b);
+    const d=el('div',{className:'scn'});
+    d.innerHTML=`<p>${s.desc}</p>`;
+    const ol=el('ol');
+    s.steps.forEach(([label,fn])=>{
+      const li=el('li');
+      const btn=el('button',{className:'tiny',textContent:label});
+      btn.onclick=()=>{ fn(); btn.classList.add('flash'); setTimeout(()=>btn.classList.remove('flash'),900); };
+      li.append(btn); ol.append(li);
+    });
+    d.append(ol); scns.append(d);
+  });
+  tabs.children[0].click();
+}
+
+/* ---- wiring ---- */
+document.querySelectorAll('[data-build]').forEach(b=>b.onclick=()=>sB(b.dataset.build));
+document.querySelectorAll('[data-loc]').forEach(b=>b.onclick=()=>sL(b.dataset.loc));
+document.querySelectorAll('[data-gear]').forEach(b=>b.onclick=()=>sG(+b.dataset.gear));
+document.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>advance(+b.dataset.step));
+$('#playBtn').onclick=()=>{ playing=!playing;
+  $('#playBtn').innerHTML=playing?'&#10073;&#10073;&nbsp; Pause':'&#9654;&nbsp; Play';
+  $('#playBtn').classList.toggle('on',playing); };
+$('#runEnc').onclick=runEncounter;
+$('#runRun').onclick=runRun;
+$('#reset').onclick=reset;
+['finiteRoster','finiteEncounters','encounterCap','retreatOn','bagOn'].forEach(id=>$('#'+id).addEventListener('change',reset));
+$('#grid').onclick=runGrid;
+$('#batch').onclick=runBatch;
+
+/* ---- boot ---- */
+buildKnobs();
+applyLoc('thornwood');
+applyBuild('hybrid');
+document.querySelector('[data-build="hybrid"]').classList.add('on');
+document.querySelector('[data-loc="thornwood"]').classList.add('on');
+document.querySelector('[data-gear="1"]').classList.add('on');
+buildTabs();
+runGrid();
+</script>
