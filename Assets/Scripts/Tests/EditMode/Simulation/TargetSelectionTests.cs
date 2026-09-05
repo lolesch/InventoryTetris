@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
+using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Simulation;
 
 namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
@@ -23,6 +24,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             packBatch: new IntRange(2),
             packedSpawnWeight: 1f,
             spawnInterval: 1f,
+            table: FakeLootTable.ForCategory(ItemCategory.Equipment),
             spawnJitter: 0f,
             initialSpawn: 4);
 

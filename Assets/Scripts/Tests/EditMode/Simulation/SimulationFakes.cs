@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
