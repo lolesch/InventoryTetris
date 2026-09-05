@@ -113,10 +113,21 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             #region BUY: IMMEDIATE MOVE
             if (eventData.button == PointerEventData.InputButton.Right || Input.GetKey(KeyCode.LeftShift))
             {
-                /// One transaction (issue #11): the item leaves the shelf and lands in the
-                /// bag, and the price is paid, as a unit. No room in the bag rolls the whole
-                /// thing back - the item stays on the shelf and nothing is charged.
-                _ = VendorTransaction.Buy(Container, position, package, wallet, price);
+                /// One resolver for every quick-move (issue #30): the shelf's own shift-click
+                /// is always a buy, whatever panel is open - right-click buys the same way, so
+                /// both route through the same intent. One transaction (issue #11): the item
+                /// leaves the shelf and lands in the bag, and the price is paid, as a unit. No
+                /// room in the bag rolls the whole thing back - the item stays on the shelf and
+                /// nothing is charged.
+                var context = MenuContext.Instance;
+                var intent = QuickMoveResolver.Resolve(context.CurrentKind, Container,
+                    InventoryProvider.Instance.Inventory,
+                    InventoryProvider.Instance.Stash,
+                    InventoryProvider.Instance.Equipment,
+                    Container);
+
+                if (intent.Kind == QuickMoveIntentKind.Buy)
+                    _ = VendorTransaction.Buy(Container, position, package, wallet, price);
 
                 return;
             }

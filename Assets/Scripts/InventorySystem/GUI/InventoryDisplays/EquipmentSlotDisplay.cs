@@ -116,17 +116,28 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             }
             #endregion UNEQUIP ITEM
 
-            // TODO: trade context system
             #region QUICK MOVE ITEM
             if (Input.GetKey(KeyCode.LeftShift))
             {
-                /// Player-driven quick-move (issue #10): the item comes off into the stash,
-                /// or - if it is full - into the hand. Always executes; the affix lift rides
-                /// the commit.
-                var stash = InventoryProvider.Instance.Stash;
+                /// Quick-move follows the open panel (issue #30): equipment shift-clicks to
+                /// whichever panel is open. With the Stash open that is the stash, as always;
+                /// with neither panel open - or the Store open - nothing moves. The move
+                /// stays (issue #10): the item comes off, or - if the target is full - into
+                /// the hand; the affix lift rides the commit.
+                var context = MenuContext.Instance;
+                var intent = QuickMoveResolver.Resolve(context.CurrentKind, Container,
+                    InventoryProvider.Instance.Inventory,
+                    InventoryProvider.Instance.Stash,
+                    InventoryProvider.Instance.Equipment,
+                    InventoryProvider.Instance.Store);
+
+                if (intent.Kind != QuickMoveIntentKind.MoveToContainer)
+                    return;
+
+                var target = intent.Target;
                 var cursor = new CursorHolder(DragProvider.Instance);
 
-                using var transaction = new ItemTransaction(cursor, Container, stash).ReHomeThrough(stash);
+                using var transaction = new ItemTransaction(cursor, Container, target).ReHomeThrough(target);
 
                 _ = Container.RemoveAtPosition(position, package);
                 _ = transaction.TryReHomeToContainerOrHand(ref package, Container, position);

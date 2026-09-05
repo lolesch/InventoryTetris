@@ -146,23 +146,29 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                         package.ReduceAmount(package.Amount / 2);
                 #endregion SPLIT AMOUNT
 
-                // TODO: trade context system
                 #region QUICK MOVE ITEM
                 if (Input.GetKey(KeyCode.LeftShift))
                 {
-                    var containerToMoveTo = Container; // rework to context based
+                    /// Quick-move follows the open panel (issue #30): one pure resolver
+                    /// decides where shift-click sends the item. With the Stash open it is
+                    /// the same backpack ↔ Stash as always; with neither panel open - or the
+                    /// Store open, until the basket exists (#33) - nothing moves. The move
+                    /// itself is unchanged (issue #10): the item leaves its slot and lands in
+                    /// the other container, or - if that is full - in hand.
+                    var context = MenuContext.Instance;
+                    var intent = QuickMoveResolver.Resolve(context.CurrentKind, Container,
+                        InventoryProvider.Instance.Inventory,
+                        InventoryProvider.Instance.Stash,
+                        InventoryProvider.Instance.Equipment,
+                        InventoryProvider.Instance.Store);
 
-                    if (Container == InventoryProvider.Instance.Inventory)
-                        containerToMoveTo = InventoryProvider.Instance.Stash;
-                    else if (Container == InventoryProvider.Instance.Stash)
-                        containerToMoveTo = InventoryProvider.Instance.Inventory;
+                    if (intent.Kind != QuickMoveIntentKind.MoveToContainer)
+                        return;
 
-                    /// Player-driven quick-move (issue #10): the item leaves its slot and
-                    /// lands in the other container, or - if that is full - in hand. It never
-                    /// just stays put.
+                    var target = intent.Target;
                     var cursor = new CursorHolder(DragProvider.Instance);
 
-                    using var transaction = new ItemTransaction(cursor, Container, containerToMoveTo).ReHomeThrough(containerToMoveTo);
+                    using var transaction = new ItemTransaction(cursor, Container, target).ReHomeThrough(target);
 
                     _ = Container.RemoveAtPosition(position, package);
                     _ = transaction.TryReHomeToContainerOrHand(ref package, Container, position);
