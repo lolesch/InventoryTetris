@@ -4,6 +4,7 @@
     "references": [
         "InventorySystem.Simulation",
         "InventorySystem.Items",
+        "InventorySystem.Containers",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

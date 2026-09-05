@@ -1,5 +1,6 @@
 using System.Linq;
 using NUnit.Framework;
+using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Simulation;
 
 namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
@@ -34,6 +35,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
                 packBatch: new IntRange(1),          // trickle — no real Pack
                 packedSpawnWeight: 1f,
                 spawnInterval: 0.5f,
+                table: FakeLootTable.ForCategory(ItemCategory.Equipment),
                 spawnJitter: 0f,
                 initialSpawn: 2);
 
@@ -56,6 +58,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
                 packBatch: new IntRange(3),          // a real Pack of 3
                 packedSpawnWeight: 1f,
                 spawnInterval: 0.5f,
+                table: FakeLootTable.ForCategory(ItemCategory.Equipment),
                 spawnJitter: 0f,
                 initialSpawn: 1);
 
@@ -78,6 +81,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
                 packBatch: new IntRange(1),
                 packedSpawnWeight: 1f,
                 spawnInterval: 0.4f,
+                table: FakeLootTable.ForCategory(ItemCategory.Equipment),
                 spawnJitter: 0f,
                 initialSpawn: 1);
 
@@ -99,6 +103,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
                 packBatch: new IntRange(4),          // fixed → no roll drawn for it
                 packedSpawnWeight: 0.5f,
                 spawnInterval: 0.05f,                 // < tick, so every tick is a spawn tick
+                table: FakeLootTable.ForCategory(ItemCategory.Equipment),
                 spawnJitter: 0f,
                 initialSpawn: 0);
 
@@ -131,6 +136,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
                 packBatch: new IntRange(2),
                 packedSpawnWeight: 0.5f,
                 spawnInterval: 5f,
+                table: FakeLootTable.ForCategory(ItemCategory.Equipment),
                 spawnJitter: 0f,
                 initialSpawn: 3);
 

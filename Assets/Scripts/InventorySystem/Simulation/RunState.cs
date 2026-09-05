@@ -74,6 +74,14 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <summary>The result of the most recently finished Run, or <c>null</c> if none has finished yet.</summary>
         public RunResult? LastResult { get; private set; }
 
+        /// <summary>
+        /// Raised once a Run ends, on both outcomes — <see cref="Recall"/> and
+        /// <see cref="HandleDeath"/> alike. The loot flow (issue #24) subscribes to clear
+        /// whatever Drops are still on the ground, per CONTEXT.md's Drop entry: "a Drop still
+        /// on the ground when the Run ends is gone, on Recall or Death alike."
+        /// </summary>
+        public event Action RunEnded;
+
         // ─── transitions ────────────────────────────────────────────────────
 
         /// <summary>
@@ -206,6 +214,7 @@ namespace ToolSmiths.InventorySystem.Simulation
             ResetRunTotals();
             Phase = RunPhase.InTown;
             LastResult = result;
+            RunEnded?.Invoke();
         }
     }
 }

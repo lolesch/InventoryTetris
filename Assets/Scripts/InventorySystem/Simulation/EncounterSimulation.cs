@@ -81,6 +81,12 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// </summary>
         public int EngagementTarget { get; set; }
 
+        /// <summary>The Location this Encounter is fought at — its loot table and source level (issue #24).</summary>
+        public EncounterProfile Profile => _profile;
+
+        /// <summary>The hero fighting this Encounter — its live magic find and item quantity (issue #24).</summary>
+        public IHeroCombatant Hero => _hero;
+
         public SimulationPhase Phase { get; private set; } = SimulationPhase.Fighting;
 
         /// <summary>The live enemies, in spawn order. Read-only — the sim owns their lifetime.</summary>

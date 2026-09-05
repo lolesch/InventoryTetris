@@ -39,6 +39,20 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <summary>Hero level — the <c>(SourceLevel - Level)</c> term that balances settled XP.</summary>
         int Level { get; }
 
+        /// <summary>
+        /// The <c>IncreasedItemRarity</c> stat, as a percentage — feeds <c>RollContext.MagicFind</c>
+        /// on every loot roll a kill sheds (issue #24). 0 reproduces the authored rarity table
+        /// exactly (<see cref="ToolSmiths.InventorySystem.Items.RollContext"/>).
+        /// </summary>
+        float MagicFind { get; }
+
+        /// <summary>
+        /// The <c>IncreasedItemQuantity</c> stat, as a percentage — scales the per-kill drop
+        /// count on top of the archetype's base (issue #24; <c>ItemGenerator.RollLoot</c>'s
+        /// "the count is the caller's job" docstring).
+        /// </summary>
+        float IncreasedItemQuantity { get; }
+
         /// <summary>Spend <paramref name="amount"/> of Resource on a Cast. Never called for more than <see cref="Resource"/> holds.</summary>
         void SpendResource(float amount);
     }

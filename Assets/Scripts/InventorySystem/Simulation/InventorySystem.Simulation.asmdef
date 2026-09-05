@@ -2,7 +2,8 @@
     "name": "InventorySystem.Simulation",
     "rootNamespace": "",
     "references": [
-        "InventorySystem.Items"
+        "InventorySystem.Items",
+        "InventorySystem.Containers"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -12,5 +13,5 @@
     "autoReferenced": true,
     "defineConstraints": [],
     "versionDefines": [],
-    "noEngineReferences": true
+    "noEngineReferences": false
 }

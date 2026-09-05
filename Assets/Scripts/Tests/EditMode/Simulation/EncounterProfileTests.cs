@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Simulation;
 
 namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
@@ -23,7 +24,9 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             sourceLevel, EnemyArchetype.Brute,
             new IntRange(bruteMin, bruteMax), new IntRange(skirmisherMin, skirmisherMax),
             new IntRange(packBatchMin, packBatchMax),
-            packedSpawnWeight, spawnInterval, spawnJitter, initialSpawn);
+            packedSpawnWeight, spawnInterval,
+            FakeLootTable.ForCategory(ItemCategory.Equipment),
+            spawnJitter, initialSpawn);
 
         [Test]
         public void AValidProfile_Constructs() => Assert.That(() => Build(), Throws.Nothing);
@@ -63,6 +66,14 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         [Test]
         public void ANegativeSpawnJitter_Throws() =>
             Assert.That(() => Build(spawnJitter: -1f), Throws.InstanceOf<System.ArgumentException>());
+
+        [Test]
+        public void ANullLootTable_Throws() =>
+            Assert.That(() => new EncounterProfile(
+                3, EnemyArchetype.Brute,
+                new IntRange(1), new IntRange(1), new IntRange(1),
+                0.5f, 2f, table: null),
+                Throws.ArgumentNullException);
 
         [Test]
         public void RosterFor_ReturnsThePerArchetypeCount()

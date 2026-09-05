@@ -1,16 +1,17 @@
 using System;
+using ToolSmiths.InventorySystem.Items;
 
 namespace ToolSmiths.InventorySystem.Simulation
 {
     /// <summary>
     /// Everything the Encounter sim needs to run a series of Encounters at one Location: the
     /// source level both archetype curve-sets read, which archetype is Packed, a per-archetype
-    /// Roster count, and the Spawn Profile (Pack size, cadence, jitter, the packed-type odds).
+    /// Roster count, the Spawn Profile (Pack size, cadence, jitter, the packed-type odds), and
+    /// the loot table a kill there rolls against (issue #24).
     ///
     /// This is the plain, engine-free value the <c>LocationConfig</c> ScriptableObject (issue
-    /// #25) will map onto — no loot table, no display name, none of the authoring concerns
-    /// live here. Validation mirrors what #25 will enforce so a hand-built profile fails the
-    /// same way.
+    /// #25) will map onto — no display name, none of the authoring concerns live here.
+    /// Validation mirrors what #25 will enforce so a hand-built profile fails the same way.
     /// </summary>
     public sealed class EncounterProfile
     {
@@ -22,6 +23,7 @@ namespace ToolSmiths.InventorySystem.Simulation
             IntRange packBatch,
             float packedSpawnWeight,
             float spawnInterval,
+            LootTable table,
             float spawnJitter = 0f,
             int initialSpawn = 2)
         {
@@ -53,6 +55,7 @@ namespace ToolSmiths.InventorySystem.Simulation
             PackBatch = packBatch;
             PackedSpawnWeight = packedSpawnWeight;
             SpawnInterval = spawnInterval;
+            Table = table ?? throw new ArgumentNullException(nameof(table));
             SpawnJitter = spawnJitter;
             InitialSpawn = initialSpawn;
         }
@@ -77,6 +80,9 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         /// <summary>Bodies present when an Encounter opens, drawn packed-type-first.</summary>
         public int InitialSpawn { get; }
+
+        /// <summary>The loot table a kill at this Location rolls against (issue #24's <c>RollContext.Table</c>).</summary>
+        public LootTable Table { get; }
 
         public IntRange RosterFor(EnemyArchetype archetype) =>
             archetype == EnemyArchetype.Brute ? RosterBrute : RosterSkirmisher;

@@ -36,14 +36,21 @@ namespace ToolSmiths.InventorySystem.Simulation
         public readonly float AttackSpeed;
         /// <summary>XP this body is worth, before the <c>(SourceLevel - heroLevel)</c> balance term.</summary>
         public readonly StatCurve Xp;
+        /// <summary>
+        /// Item rolls this body sheds on a kill, before the hero's <c>IncreasedItemQuantity</c>
+        /// bonus (issue #24) — flat, not a curve. A first-ticket default; balancing per-archetype
+        /// drop counts is unfixed (spec "Loot flow").
+        /// </summary>
+        public readonly int LootRolls;
 
-        public EnemyArchetypeStats(StatCurve health, StatCurve damage, StatCurve armorPercent, float attackSpeed, StatCurve xp)
+        public EnemyArchetypeStats(StatCurve health, StatCurve damage, StatCurve armorPercent, float attackSpeed, StatCurve xp, int lootRolls)
         {
             Health = health;
             Damage = damage;
             ArmorPercent = armorPercent;
             AttackSpeed = attackSpeed;
             Xp = xp;
+            LootRolls = lootRolls;
         }
     }
 
@@ -60,14 +67,16 @@ namespace ToolSmiths.InventorySystem.Simulation
             damage: new StatCurve(1.0f, 0.82f, 1.0f),
             armorPercent: new StatCurve(3f, 0.9f, 1.0f),
             attackSpeed: 0.55f,
-            xp: new StatCurve(5f, 3.5f, 1.0f));
+            xp: new StatCurve(5f, 3.5f, 1.0f),
+            lootRolls: 1);
 
         public static readonly EnemyArchetypeStats Skirmisher = new(
             health: new StatCurve(10f, 9f, 1.06f),
             damage: new StatCurve(0.5f, 0.5f, 1.0f),
             armorPercent: new StatCurve(0f, 0f, 1.0f),
             attackSpeed: 1.6f,
-            xp: new StatCurve(13f, 8f, 1.0f));
+            xp: new StatCurve(13f, 8f, 1.0f),
+            lootRolls: 1);
 
         public static EnemyArchetypeStats Of(EnemyArchetype archetype) =>
             archetype == EnemyArchetype.Brute ? Brute : Skirmisher;

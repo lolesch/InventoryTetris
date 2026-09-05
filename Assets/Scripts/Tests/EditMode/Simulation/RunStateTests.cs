@@ -434,5 +434,50 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             Assert.That(ticks, Is.EqualTo(2));
             Assert.That(run.Encounter.Duration, Is.EqualTo(0.2f).Within(0.0001f));
         }
+
+        // ─── RunEnded (issue #24's ground-Drop clearing hook) ───────────────
+
+        [Test]
+        public void Recall_RaisesRunEnded()
+        {
+            var run = NewRun(OneShotHero());
+            run.Send(Skirmishers(3));
+
+            var raised = 0;
+            run.RunEnded += () => raised++;
+
+            run.Recall();
+
+            Assert.That(raised, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void HandleDeath_RaisesRunEnded()
+        {
+            var run = NewRun(FrailHero());
+            run.Send(Skirmishers(4));
+            DriveHeroDown(run);
+
+            var raised = 0;
+            run.RunEnded += () => raised++;
+
+            run.HandleDeath(xpTowardNextLevel: 0);
+
+            Assert.That(raised, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void RunEnded_IsNotRaised_WhileTheRunIsStillInField()
+        {
+            var run = NewRun(OneShotHero());
+            run.Send(Skirmishers(3));
+
+            var raised = 0;
+            run.RunEnded += () => raised++;
+
+            run.BankCurrency(10);
+
+            Assert.That(raised, Is.EqualTo(0));
+        }
     }
 }
