@@ -89,7 +89,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             corpse.Bury(secondLocation, new[] { Item("second-death-shield") });
 
             Assert.That(corpse.Location, Is.SameAs(secondLocation));
-            Assert.That(corpse.Items, Has.Exactly(1).Items);
+            Assert.That(corpse.Items, Has.Length.EqualTo(1));
             Assert.That(corpse.Items[0].DefinitionId, Is.EqualTo("second-death-shield"));
         }
 
@@ -102,7 +102,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
             corpse.Bury(location, new[] { Item("second-death-shield") });
 
-            Assert.That(corpse.Items, Has.Exactly(1).Items);
+            Assert.That(corpse.Items, Has.Length.EqualTo(1));
             Assert.That(corpse.Items[0].DefinitionId, Is.EqualTo("second-death-shield"));
         }
 
