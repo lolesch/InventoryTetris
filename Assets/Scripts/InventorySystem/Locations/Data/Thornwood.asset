@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d8db7f7c0ad2470abea0764beb817607, type: 3}
+  m_Name: Thornwood
+  m_EditorClassIdentifier: InventorySystem.Locations:ToolSmiths.InventorySystem.Locations.LocationConfig
+  id: location.thornwood
+  displayName: Thornwood
+  sourceLevel: 2
+  categoryDistribution: {fileID: 11400000, guid: 885350863192442eb4599e906cad58f1, type: 2}
+  rarityDistribution: {fileID: 11400000, guid: 910cb620edee49dfb9cc5596a6b90850, type: 2}
+  packed: 0
+  rosterBrute: {x: 9, y: 9}
+  rosterSkirmisher: {x: 5, y: 5}
+  packBatch: {x: 2, y: 3}
+  packedSpawnWeight: 0.5
+  spawnInterval: 2.4
+  spawnJitter: 0

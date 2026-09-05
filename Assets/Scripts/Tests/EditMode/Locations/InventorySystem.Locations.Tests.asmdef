@@ -1,0 +1,27 @@
+{
+    "name": "InventorySystem.Locations.Tests",
+    "rootNamespace": "",
+    "references": [
+        "InventorySystem.Locations",
+        "InventorySystem.Simulation",
+        "InventorySystem.Items",
+        "InventorySystem.Data",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d8db7f7c0ad2470abea0764beb817607, type: 3}
+  m_Name: Ashfall
+  m_EditorClassIdentifier: InventorySystem.Locations:ToolSmiths.InventorySystem.Locations.LocationConfig
+  id: location.ashfall
+  displayName: Ashfall
+  sourceLevel: 5
+  categoryDistribution: {fileID: 11400000, guid: cbc5775f9eef424aa06c7db5d3140581, type: 2}
+  rarityDistribution: {fileID: 11400000, guid: c0ef6d40179e4ca29973f661b1860adc, type: 2}
+  packed: 1
+  rosterBrute: {x: 4, y: 4}
+  rosterSkirmisher: {x: 13, y: 13}
+  packBatch: {x: 3, y: 5}
+  packedSpawnWeight: 0.7
+  spawnInterval: 3.6
+  spawnJitter: 0
