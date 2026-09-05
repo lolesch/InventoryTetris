@@ -6,8 +6,10 @@
         "InventorySystem.Simulation",
         "InventorySystem.Items",
         "InventorySystem.Data",
+        "InventorySystem.Distributions",
         "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner"
+        "UnityEditor.TestRunner",
+        "UnityEditor"
     ],
     "includePlatforms": [
         "Editor"

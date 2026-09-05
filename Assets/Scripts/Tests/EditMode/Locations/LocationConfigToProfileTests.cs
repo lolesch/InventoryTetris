@@ -45,7 +45,11 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Locations
         [Test]
         public void ToProfile_MapsTheAuthoredFields()
         {
+            var category = ScriptableObject.CreateInstance<ItemCategoryDistribution>();
+            var rarity = ScriptableObject.CreateInstance<ItemRarityDistribution>();
+
             var profile = Build(
+                category: category, rarity: rarity,
                 sourceLevel: 4,
                 packed: EnemyArchetype.Skirmisher,
                 rosterBrute: new Vector2Int(3, 3), rosterSkirmisher: new Vector2Int(7, 7),

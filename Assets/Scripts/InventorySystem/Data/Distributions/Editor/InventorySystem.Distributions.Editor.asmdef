@@ -1,12 +1,13 @@
 {
-    "name": "InventorySystem.Locations",
+    "name": "InventorySystem.Distributions.Editor",
     "rootNamespace": "",
     "references": [
-        "InventorySystem.Simulation",
-        "InventorySystem.Items",
-        "InventorySystem.Distributions"
+        "InventorySystem.Distributions",
+        "InventorySystem.Data"
     ],
-    "includePlatforms": [],
+    "includePlatforms": [
+        "Editor"
+    ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,

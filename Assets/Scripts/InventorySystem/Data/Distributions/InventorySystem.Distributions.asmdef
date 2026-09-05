@@ -1,10 +1,9 @@
 {
-    "name": "InventorySystem.Locations",
+    "name": "InventorySystem.Distributions",
     "rootNamespace": "",
     "references": [
-        "InventorySystem.Simulation",
-        "InventorySystem.Items",
-        "InventorySystem.Distributions"
+        "InventorySystem.Data",
+        "InventorySystem.Probability"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
