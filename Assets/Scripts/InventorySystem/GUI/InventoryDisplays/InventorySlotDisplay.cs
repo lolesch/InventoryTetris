@@ -34,6 +34,18 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             if (!Container.CanPlaceAt(positionToAdd, ItemView.Of(package.Item).Dimensions))
                 return;
 
+            /// A store purchase rides the placement as a commit-time effect (issue #31): the
+            /// price was read once at pick-up and is charged exactly and only when the item
+            /// actually lands here. No room, or can't afford, and the whole move rolls back -
+            /// item stays in hand, nothing charged, exactly the guarantee the atomic buy gives.
+            /// A purchase the player can't afford is rejected up front (item stays in hand), so
+            /// the queued payment can never fail at commit and strand an unpaid item in the bag.
+            var purchasePrice = DragProvider.Instance.PurchasePrice;
+            var wallet = InventoryProvider.Instance.Wallet;
+
+            if (purchasePrice is float price && !VendorTransaction.CanAffordBuy(wallet, price))
+                return;
+
             /// The whole drop runs inside one transaction (issue #10): the placement mutates
             /// a working copy, and the item the drag landed on goes to the hand - a drag
             /// swap always puts the displaced item in hand. The move commits as a unit or
@@ -45,6 +57,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
             using (var transaction = new ItemTransaction(cursor, Container, origin ?? inventory).ReHomeThrough(origin ?? inventory))
             {
+                if (purchasePrice is float purchase)
+                    VendorTransaction.QueuePurchasePayment(transaction, wallet, purchase);
+
                 var displaced = Container.AddAtPosition(positionToAdd, package);
 
                 if (displaced.IsValid)

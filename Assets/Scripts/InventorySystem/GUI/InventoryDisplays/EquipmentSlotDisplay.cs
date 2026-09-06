@@ -25,6 +25,18 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             if (!equipment.CanEquipAt(Position, package.Item))
                 return;
 
+            /// A store purchase rides the equip as a commit-time effect (issue #31): the price was
+            /// read once at pick-up and is charged exactly and only when the item actually
+            /// lands on the paperdoll. No room, or can't afford, and the whole move rolls back
+            /// - item stays in hand, nothing charged. A purchase the player can't afford is
+            /// rejected up front (item stays in hand), so the queued payment can never fail at
+            /// commit and strand an unpaid item equipped.
+            var purchasePrice = DragProvider.Instance.PurchasePrice;
+            var wallet = InventoryProvider.Instance.Wallet;
+
+            if (purchasePrice is float price && !VendorTransaction.CanAffordBuy(wallet, price))
+                return;
+
             /// The whole equip runs inside one transaction (issue #10): the weapon under the
             /// drop goes to the hand, exactly as a plain swap does; a 2H also sheds a
             /// collateral off-hand, which swaps back into the origin container or - with
@@ -37,6 +49,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
             using (var transaction = new ItemTransaction(cursor, Container, origin ?? inventory).ReHomeThrough(origin ?? inventory))
             {
+                if (purchasePrice is float purchase)
+                    VendorTransaction.QueuePurchasePayment(transaction, wallet, purchase);
+
                 var displaced = Container.AddAtPosition(Position, package);
 
                 if (displaced.IsValid)

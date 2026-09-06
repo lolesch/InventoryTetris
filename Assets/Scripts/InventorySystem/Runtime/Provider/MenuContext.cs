@@ -43,6 +43,14 @@ namespace ToolSmiths.InventorySystem.Inventories
         {
             var kind = KindOf(menuToggles.ActivatedToggle);
 
+            /// Closing the Store mid-drag returns a shelf purchase to the shelf, charge-free
+            /// (issue #31) - the same return-to-origin a drop-back or Escape cancel uses. The
+            /// guard is the Store→not-Store transition here, so opening the Stash or closing
+            /// all panels with a purchase in hand cannot strand or duplicate it. Ordinary
+            /// pick-ups are untouched.
+            if (CurrentKind == MenuContextKind.Store && kind != MenuContextKind.Store)
+                _ = DragProvider.Instance.ReturnStorePurchaseToShelf();
+
             CurrentKind = kind;
             CurrentContainer = ContainerOf(kind);
         }

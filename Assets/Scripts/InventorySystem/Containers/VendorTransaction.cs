@@ -51,6 +51,34 @@ namespace ToolSmiths.InventorySystem.Inventories
         }
 
         /// <summary>
+        /// Whether <paramref name="wallet"/> can pay <paramref name="price"/> base units.
+        /// The shared gate for the atomic buy and the dragging buy's drop - a purchase is
+        /// only ever made when the price is payable, whatever the input that brought the
+        /// item this far (issue #31).
+        /// </summary>
+        public static bool CanAffordBuy(Wallet wallet, float price) =>
+            wallet != null && wallet.CanAfford(new Currency(price));
+
+        /// <summary>
+        /// Queues the payment for a shelf purchase on <paramref name="transaction"/> - to
+        /// run exactly on commit and be dropped on rollback. Buying by drag reads the price
+        /// once at pick-up and pays that exact amount here, so the charge lands only when
+        /// the item is actually placed and a restock mid-drag cannot change the deal (issue
+        /// #31). Shared with the atomic <see cref="Buy"/> so the two buy paths queue the
+        /// same effect.
+        /// </summary>
+        /// <param name="transaction">The transaction placing the item. Null-safely ignored.</param>
+        /// <param name="wallet">The buyer's wallet; the charge runs against it on commit.</param>
+        /// <param name="price">The price shown at pick-up, in base units.</param>
+        public static void QueuePurchasePayment(ItemTransaction transaction, Wallet wallet, float price)
+        {
+            if (transaction == null || wallet == null)
+                return;
+
+            transaction.QueueEffect(() => _ = wallet.TryPay(new Currency(price)));
+        }
+
+        /// <summary>
         /// Buys the package at <paramref name="position"/> out of <paramref name="store"/>
         /// into <paramref name="wallet"/> for <paramref name="price"/> base units. On commit
         /// the item is placed and the price paid exactly; if the wallet cannot afford it or
@@ -61,7 +89,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         public static bool Buy(AbstractDimensionalContainer store, Vector2Int position, Package onShelf,
             Wallet wallet, float price)
         {
-            if (store == null || wallet == null || !onShelf.IsValid || !wallet.CanAfford(new Currency(price)))
+            if (store == null || wallet == null || !onShelf.IsValid || !CanAffordBuy(wallet, price))
                 return false;
 
             var bag = wallet.Container;
@@ -74,7 +102,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             if (!bag.TryAddToContainer(ref incoming))
                 return false; // dispose rolls the removal back - item back on the shelf, no charge
 
-            transaction.QueueEffect(() => _ = wallet.TryPay(new Currency(price)));
+            QueuePurchasePayment(transaction, wallet, price);
 
             transaction.Commit();
             return true;
