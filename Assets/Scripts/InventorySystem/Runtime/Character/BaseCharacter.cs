@@ -53,6 +53,14 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         private float resourceSecondsEmpty;
         private float shieldSecondsEmpty;
 
+        /// <summary>
+        /// While set, <see cref="Update"/> stops driving <see cref="Regenerate"/> — a caller owns
+        /// the regen tick instead. The Encounter sim sets this on the hero for the length of a Run
+        /// (issue #43) so its per-tick <c>Regenerate</c> call is not double-counted by the frame
+        /// loop; the Town path leaves it clear and keeps regenerating from <see cref="Update"/>.
+        /// </summary>
+        public bool SuppressRegen { get; set; }
+
         protected void Update()
         {
             //TODO: COMBAT TICK RATE
@@ -60,7 +68,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             //interval += Time.deltaTime;
             //if(interval >= combatTickRate)
 
-            Regenerate(Time.deltaTime);
+            if (!SuppressRegen)
+                Regenerate(Time.deltaTime);
         }
 
         /// <summary>
@@ -148,7 +157,16 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
         private static bool CanSpendResource(CharacterResource resource, float amount) => amount <= resource.CurrentValue;
 
-        public void ReceiveDamageFrom(BaseCharacter dealer, DamageType damageType, float incomingDamage)
+        public void ReceiveDamageFrom(BaseCharacter dealer, DamageType damageType, float incomingDamage) =>
+            ReceiveDamage(damageType, incomingDamage);
+
+        /// <summary>
+        /// The dealer-less incoming-damage path: mitigate by the matching resist, spend the
+        /// Shield, then the Health — identical to <see cref="ReceiveDamageFrom"/> minus the
+        /// (unused) dealer reference. The Encounter sim's enemies are not <see cref="BaseCharacter"/>s,
+        /// so the hero adapter (issue #43) routes their Strikes through here.
+        /// </summary>
+        public void ReceiveDamage(DamageType damageType, float incomingDamage)
         {
             var health = this.GetResource(StatName.Health);
 
