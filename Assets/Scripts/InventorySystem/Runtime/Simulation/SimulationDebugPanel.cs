@@ -52,6 +52,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 GUILayout.Label($"Hero HP {hero.HealthFraction * 100f:0}%   Resource {hero.ResourceFraction * 100f:0}%");
                 GUILayout.Label($"XP pot {encounter.UnsettledXp:0}   settled {encounter.SettledXp}");
                 GUILayout.Label($"Sim time {encounter.Duration:0.0}s");
+
+                var loot = provider.LootFlow;
+                if (loot != null)
+                    GUILayout.Label($"Ground drops {loot.GroundDrops.Count}   coins banked {run.CurrencyBanked}");
             }
 
             GUILayout.Space(6);
@@ -79,6 +83,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 GUILayout.Label($"Last Run: {result.Outcome}");
                 GUILayout.Label($"  kills {result.EnemiesDefeated}   cleared {result.EncountersCleared}");
                 GUILayout.Label($"  XP settled {result.XpSettled}   forfeited {result.XpForfeited}");
+                if (result.Outcome == RunOutcome.Died)
+                    GUILayout.Label($"  fee {result.CurrencyFee:n0}   XP lost {result.XpLost}");
+                else
+                    GUILayout.Label($"  banked {result.CurrencyBanked:n0}");
             }
 
             GUILayout.EndArea();

@@ -301,6 +301,78 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             Assert.That(lootFlow.GroundDrops, Is.Empty);
         }
 
+        // ─── the Corpserecovery seat ──────────────────────────────────────────
+        // A Death's Corpse is laid back out on re-entry (issue #22 / ADR-0009): recovered
+        // items go to the bag if they fit and to the ground otherwise. The ground half is a
+        // PlaceOnGround — the same GroundDrops list a Run-end clears.
+
+        [Test]
+        public void PlaceOnGround_AddsTheItemToTheGroundDropsList()
+        {
+            var sim = NewEncounter(OneShotHero(), Profiles.Solo(EnemyArchetype.Skirmisher));
+            var lootFlow = new LootFlow(sim, Admitting(ItemRarity.Common), new ItemGenerator(catalog, new SeededRollSource(1)),
+                new FakeCoinDropSource(), new CharacterInventory(new Vector2Int(10, 10)), NewWallet());
+
+            var recovered = new ItemInstance("fake.sword", ItemRarity.Common, 1, null);
+            lootFlow.PlaceOnGround(recovered);
+
+            Assert.That(lootFlow.GroundDrops, Has.Count.EqualTo(1));
+            Assert.That(lootFlow.GroundDrops[0], Is.SameAs(recovered));
+        }
+
+        // ─── AC: the Run tracks what coins bank, so Death's fee reads the real take ──
+
+        [Test]
+        public void ACoinPile_ThatPassesTheFilter_RaisesCoinsBanked_WithItsBaseUnitTotal()
+        {
+            var sim = NewEncounter(OneShotHero(), Profiles.Solo(EnemyArchetype.Skirmisher));
+            var wallet = NewWallet();
+            var coins = new FakeCoinDropSource((CurrencyType.Iron, 7u)); // 7 base units
+            var lootFlow = new LootFlow(sim, Admitting(ItemRarity.Common), new ItemGenerator(catalog, new SeededRollSource(1)),
+                coins, new CharacterInventory(new Vector2Int(10, 10)), wallet);
+
+            long banked = -1;
+            lootFlow.CoinsBanked += amount => banked = amount;
+
+            sim.Advance(0.1f);
+
+            Assert.That(banked, Is.EqualTo(7L), "iron is the base unit — 7 coins bank 7 base units");
+        }
+
+        [Test]
+        public void ACopperPile_ThatBanks_RaisesCoinsBanked_AtItsIronValue()
+        {
+            var sim = NewEncounter(OneShotHero(), Profiles.Solo(EnemyArchetype.Skirmisher));
+            var wallet = NewWallet();
+            var coins = new FakeCoinDropSource((CurrencyType.Copper, 3u)); // 3 × 5 iron = 15
+            var lootFlow = new LootFlow(sim, Admitting(ItemRarity.Common), new ItemGenerator(catalog, new SeededRollSource(1)),
+                coins, new CharacterInventory(new Vector2Int(10, 10)), wallet);
+
+            long banked = -1;
+            lootFlow.CoinsBanked += amount => banked = amount;
+
+            sim.Advance(0.1f);
+
+            Assert.That(banked, Is.EqualTo(15L));
+        }
+
+        [Test]
+        public void ACoinPile_ThatFailsTheFilter_DoesNotRaiseCoinsBanked()
+        {
+            var sim = NewEncounter(OneShotHero(), Profiles.Solo(EnemyArchetype.Skirmisher));
+            var wallet = NewWallet();
+            var coins = new FakeCoinDropSource((CurrencyType.Iron, 7u)); // iron is Common, filter is Unique
+            var lootFlow = new LootFlow(sim, Admitting(ItemRarity.Unique), new ItemGenerator(catalog, new SeededRollSource(1)),
+                coins, new CharacterInventory(new Vector2Int(10, 10)), wallet);
+
+            var raised = false;
+            lootFlow.CoinsBanked += _ => raised = true;
+
+            sim.Advance(0.1f);
+
+            Assert.That(raised, Is.False, "a Pile the filter rejects is never banked, so it never counts toward the Run take");
+        }
+
         // ─── constructor guards ───────────────────────────────────────────────
 
         [Test]

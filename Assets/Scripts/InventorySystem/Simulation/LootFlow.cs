@@ -65,6 +65,28 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// </summary>
         public void ClearGround() => _groundDrops.Clear();
 
+        /// <summary>
+        /// Seats <paramref name="item"/> on the ground — the corpse-recovery seat (issue #22):
+        /// a re-entry lays the Corpse's contents out, to the bag where they fit and here where
+        /// they do not, so a full bag stranding a recovery looks the same as a full bag
+        /// stranding a kill. Shares the one <see cref="GroundDrops"/> list a Run-end clears.
+        /// </summary>
+        public void PlaceOnGround(ItemInstance item)
+        {
+            if (item == null)
+                throw new ArgumentNullException(nameof(item));
+
+            _groundDrops.Add(item);
+        }
+
+        /// <summary>
+        /// Raised with the coin Pile's base-unit total each time a passed-filter Pile banks to
+        /// the Wallet. The Run tracks the take this way — <see cref="RunState.CurrencyBanked"/>,
+        /// the base the Death fee reads — so the engine-side driver feeds it
+        /// <see cref="RunState.BankCurrency"/> per kill.
+        /// </summary>
+        public event Action<long> CoinsBanked;
+
         private void OnEnemyDefeated(Enemy enemy)
         {
             RollItems(enemy);
@@ -117,9 +139,22 @@ namespace ToolSmiths.InventorySystem.Simulation
             if (amount == 0u || type == CurrencyType.NONE)
                 return;
 
-            if (_behaviour.AdmitsCoin(type))
-                _wallet.Deposit(CurrencyOf(type, amount));
+            if (!_behaviour.AdmitsCoin(type))
+                return;
+
+            _wallet.Deposit(CurrencyOf(type, amount));
+            CoinsBanked?.Invoke(BaseUnitsOf(type, amount));
         }
+
+        /// <summary>The Pile's value in iron base units (CONTEXT.md "Base Unit"), for the Run's take.</summary>
+        private static long BaseUnitsOf(CurrencyType type, uint amount) => type switch
+        {
+            CurrencyType.Iron => amount,
+            CurrencyType.Copper => checked((long)amount * Currency.ironToCopper),
+            CurrencyType.Silver => checked((long)amount * Currency.ironToSilver),
+            CurrencyType.Gold => checked((long)amount * Currency.ironToGold),
+            _ => 0L,
+        };
 
         /// <summary>The archetype's base roll count plus the hero's <c>IncreasedItemQuantity</c> bonus.</summary>
         private static int DropCountFor(Enemy enemy, IHeroCombatant hero)
