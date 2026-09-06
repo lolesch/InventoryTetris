@@ -37,6 +37,15 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         public Vector2Int PositionOffset { get; private set; }
 
         /// <summary>
+        /// The price, in base units, the vendor showed for the package now in hand, or null
+        /// when this is an ordinary pick-up. Set once at shelf pick-up for the length of the
+        /// drag and charged only when the item lands in a player container (issue #31). Making
+        /// it part of the drag hand is what lets a drop "pay the price shown at pick-up, even
+        /// across a restock" - the slot displays never re-read the price off the store.
+        /// </summary>
+        public float? PurchasePrice { get; private set; }
+
+        /// <summary>
         /// Where <see cref="CancelDrag"/> returns the package currently in hand -
         /// <see cref="Origin"/>'s container and cell at pick-up, or the real container and
         /// cell a mid-drag swap displaced the current package from
@@ -139,17 +148,22 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             itemDisplay.anchoredPosition = (Vector2)Input.mousePosition / itemDisplay.lossyScale;
         }
 
-        public void SetPackage(AbstractSlotDisplay slot, Package package, Vector2Int positionOffset, Vector2 pointerPosition)
+        /// <param name="purchasePrice">The vendor price this package was lifted off the shelf
+        /// at, or null for an ordinary pick-up. Only the Store passes one; the drop reads it
+        /// back to know how much to charge (issue #31).</param>
+        public void SetPackage(AbstractSlotDisplay slot, Package package, Vector2Int positionOffset, Vector2 pointerPosition, float? purchasePrice = null)
         {
             Origin = slot;
             DraggingPackage = package;
             PositionOffset = positionOffset;
+            PurchasePrice = purchasePrice;
 
             returnOrigin = slot != null ? slot.Container : null;
             returnOriginPosition = slot != null ? slot.Position - positionOffset : default;
 
             if (!DraggingPackage.IsValid)
             {
+                PurchasePrice = null;
                 itemDisplay.gameObject.SetActive(false);
                 return;
             }
@@ -195,6 +209,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
             DraggingPackage = package;
             PositionOffset = Vector2Int.zero;
+            PurchasePrice = null; // a displaced player item came to the hand, not a shelf purchase
 
             returnOrigin = origin;
             returnOriginPosition = originPosition;
@@ -217,6 +232,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         {
             DraggingPackage = default;
             PositionOffset = Vector2Int.zero;
+            PurchasePrice = null;
 
             returnOrigin = null;
             returnOriginPosition = default;
@@ -264,17 +280,38 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         /// re-equips it - or falls back to the backpack - correctly instead of against the
         /// first pick-up's now-unrelated cell.</para>
         /// </summary>
-        public void CancelDrag()
+        /// <returns>Whether the drag ended - the package found a home and the hand was
+        /// cleared. False when it is still on the cursor (nothing had room), so a caller can
+        /// decide whether to leave it there.</returns>
+        public bool CancelDrag()
         {
             if (!IsDragging || !DraggingPackage.IsValid)
-                return;
+                return false;
 
             var backpack = InventoryProvider.Instance.Inventory;
 
             var leftOnCursor = ReturnToOrigin.Return(DraggingPackage, returnOrigin, returnOriginPosition, backpack);
 
-            if (!leftOnCursor.IsValid)
-                EndDrag();
+            if (leftOnCursor.IsValid)
+                return false;
+
+            EndDrag();
+            return true;
+        }
+
+        /// <summary>
+        /// Sends a held shelf purchase back to the shelf with no charge (issue #31) - what a
+        /// Store-origin cancel, a drop back onto the shelf, and closing the Store mid-drag all
+        /// want. No-op unless the hand actually holds a store purchase: an ordinary pick-up
+        /// being returned, or a non-drag state, must not be yanked by the Store closing.
+        /// </summary>
+        /// <returns>Whether a purchase was in hand and the drag ended.</returns>
+        public bool ReturnStorePurchaseToShelf()
+        {
+            if (PurchasePrice == null)
+                return false;
+
+            return CancelDrag();
         }
 
         //public void DropHere()

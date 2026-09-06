@@ -104,15 +104,15 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             var wallet = InventoryProvider.Instance.Wallet;
             var price = VendorTransaction.BuyPrice(package.Item);
 
-            if (!wallet.CanAfford(new Currency(price)))
-                return;
-
             FadeOutPreview();
 
             // Right-click and shift-click both move the item straight to the inventory.
             #region BUY: IMMEDIATE MOVE
             if (eventData.button == PointerEventData.InputButton.Right || Input.GetKey(KeyCode.LeftShift))
             {
+                if (!VendorTransaction.CanAffordBuy(wallet, price))
+                    return;
+
                 /// One resolver for every quick-move (issue #30): the shelf's own shift-click
                 /// is always a buy, whatever panel is open - right-click buys the same way, so
                 /// both route through the same intent. One transaction (issue #11): the item
@@ -133,36 +133,51 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             }
             #endregion BUY: IMMEDIATE MOVE
 
-            // Drag: a pick-up, not a completed move - the drag system still has no clean
-            // cancel/refund path, so payment stays at pick-up. That gap is pre-existing and
-            // deferred (follow-ups spec).
+            // Drag: a pick-up, not a completed move - nothing is charged, and the price is
+            // read once and held on the cursor for the length of the drag (issue #31). It is
+            // paid only when the package lands in a player container; dropping it back on the
+            // shelf, cancelling (Esc) or closing the Store returns it with no charge.
             #region BUY: DRAG
             _ = Container.RemoveAtPosition(position, package);
 
-            _ = wallet.TryPay(new Currency(price));
-
             var positionOffset = Position - position;
 
-            DragProvider.Instance.SetPackage(this, package, positionOffset, pointerPosition);
+            DragProvider.Instance.SetPackage(this, package, positionOffset, pointerPosition, price);
             #endregion BUY: DRAG
         }
 
         /// <summary>
-        /// Dropping onto the shelf is a sale, not a placement (issue #12): it takes any
-        /// item that is not already the vendor's, so the drop tint must not read the
-        /// shelf's own grid the way the base does. Mirrors <see cref="DropItem"/>'s guard.
+        /// Dropping onto the shelf is a sale, not a placement (issue #12) - except for the
+        /// shelf's own item, which is a free return (issue #31). Either way the shelf accepts
+        /// the drop, so the red "can't drop" tint never reads its own grid the way the base
+        /// does. Mirrors <see cref="DropItem"/>'s routing.
         /// </summary>
-        public override bool WouldAcceptDrop(Package package) =>
-            package.IsValid && package.Sender != Container;
+        public override bool WouldAcceptDrop(Package package) => package.IsValid;
 
         protected override void DropItem(Package package)
         {
-            if (!package.IsValid || package.Sender == Container)
+            if (!package.IsValid)
                 return;
 
-            /// Dropping an item onto the shelf is a sale, exactly as the dedicated sell slot
-            /// (SellItenSlotDisplay) handles it: the item is already in hand from the drag,
-            /// its value is banked into the wallet on commit (issue #11), and the drag ends.
+            /// The shelf's own item coming back is a return to origin, not a sale (issue #31):
+            /// put it straight back on the cell it came from, charge nothing. The sell path is
+            /// the dedicated sell slot (SellItenSlotDisplay) - the drop-on-shelf sale is
+            /// removed by the Sell Basket (#32).
+            if (package.Sender == Container)
+            {
+                _ = DragProvider.Instance.CancelDrag();
+
+                Container?.InvokeRefresh();
+                DragProvider.Instance.Origin?.Container?.InvokeRefresh();
+
+                SyncPreviewAfterMove();
+
+                return;
+            }
+
+            /// Dropping a player item onto the shelf is a sale, exactly as the dedicated sell
+            /// slot (SellItenSlotDisplay) handles it: the item is already in hand from the
+            /// drag, its value is banked into the wallet on commit (issue #11), and the drag ends.
             VendorTransaction.Sell(package, InventoryProvider.Instance.Wallet);
 
             DragProvider.Instance.EndDrag();
