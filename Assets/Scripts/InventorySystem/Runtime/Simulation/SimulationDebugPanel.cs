@@ -40,7 +40,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             var run = provider.Run;
 
-            GUILayout.BeginArea(new Rect(12, 12, 300, 340), GUI.skin.box);
+            GUILayout.BeginArea(new Rect(12, 12, 300, 340), UnityEngine.GUI.skin.box);
             GUILayout.Label($"SIM   Run: {run.Phase}");
 
             var encounter = run.Encounter;
