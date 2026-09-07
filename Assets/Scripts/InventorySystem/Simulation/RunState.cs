@@ -82,6 +82,12 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// </summary>
         public event Action RunEnded;
 
+        /// <summary>
+        /// Raised on every phase transition — <see cref="Send"/> (→ InField) and
+        /// <see cref="EndRun"/> (→ InTown). The UI subscribes to toggle panels.
+        /// </summary>
+        public event Action<RunPhase> PhaseChanged;
+
         // ─── transitions ────────────────────────────────────────────────────
 
         /// <summary>
@@ -103,6 +109,7 @@ namespace ToolSmiths.InventorySystem.Simulation
             ResetRunTotals();
 
             Phase = RunPhase.InField;
+            PhaseChanged?.Invoke(Phase);
         }
 
         /// <summary>
@@ -214,6 +221,7 @@ namespace ToolSmiths.InventorySystem.Simulation
             ResetRunTotals();
             Phase = RunPhase.InTown;
             LastResult = result;
+            PhaseChanged?.Invoke(Phase);
             RunEnded?.Invoke();
         }
     }
