@@ -1,29 +1,26 @@
 using Submodules.Utility.UI;
 using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace ToolSmiths.InventorySystem.Runtime.Simulation
 {
     /// <summary>
     /// The map panel (issue #27): a <see cref="RadioGroup"/> of <see cref="LocationToggle"/>
-    /// items plus a <b>Send</b> button (InTown → InField) and a <b>Recall</b> button
-    /// (InField → InTown). Subscribes to <see cref="RunState.PhaseChanged"/> to show the
-    /// appropriate pair: Send while InTown, Recall while InField. The hero-down state is
-    /// handled by <see cref="SimulationProvider.HandleHeroDeath"/> in the driver — no UI
-    /// needed here.
+    /// items plus a plain "Town" <see cref="AbstractToggle" /> for recall. Clicking a field
+    /// location toggle sends the hero there (<see cref="SimulationProvider.Send"/>); clicking
+    /// the Town toggle recalls (<see cref="SimulationProvider.Recall"/>). No dedicated Send /
+    /// Recall buttons — the toggles are the actions.
     ///
-    /// Location selection is live: the player picks a toggle on the RadioGroup, then taps
-    /// Send. The panel reads <see cref="LocationToggle.Location"/> off the
-    /// <see cref="RadioGroup.ActivatedToggle"/> and hands it to
-    /// <see cref="SimulationProvider.Send"/>.
+    /// While <see cref="RunPhase.InField"/>, only the Town toggle is interactable — the
+    /// player must Recall before choosing a new destination. The
+    /// <see cref="RunPhaseUIBinding"/> handles CombatContext visibility; this panel fades in
+    /// via its parent <see cref="MultiplePanelToggle"/>.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class MapPanel : MonoBehaviour
     {
         [SerializeField] private RadioGroup locationGroup;
-        [SerializeField] private Button sendButton;
-        [SerializeField] private Button recallButton;
+        [SerializeField] private AbstractToggle townToggle;
 
         private void OnEnable()
         {
@@ -33,8 +30,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             var run = provider.Run;
             run.PhaseChanged += OnPhaseChanged;
 
-            sendButton.onClick.AddListener(OnSend);
-            recallButton.onClick.AddListener(OnRecall);
+            // Subscribe to all location toggles for send-on-click.
+            foreach (var toggle in locationGroup.GetComponentsInChildren<LocationToggle>(true))
+                toggle.OnToggle += OnLocationToggled;
+
+            if (townToggle != null)
+                townToggle.OnToggle += OnTownToggled;
 
             // Sync to current phase.
             OnPhaseChanged(run.Phase);
@@ -47,38 +48,56 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             provider.Run.PhaseChanged -= OnPhaseChanged;
 
-            sendButton.onClick.RemoveListener(OnSend);
-            recallButton.onClick.RemoveListener(OnRecall);
+            foreach (var toggle in locationGroup.GetComponentsInChildren<LocationToggle>(true))
+                toggle.OnToggle -= OnLocationToggled;
+
+            if (townToggle != null)
+                townToggle.OnToggle -= OnTownToggled;
         }
 
         private void OnPhaseChanged(RunPhase phase)
         {
             var inTown = phase == RunPhase.InTown;
-            SetInteractable(sendButton, inTown);
-            SetInteractable(recallButton, !inTown);
+
+            // In the field, only the Town toggle is interactable — the player
+            // must Recall before choosing a new destination.
+            foreach (var toggle in locationGroup.GetComponentsInChildren<LocationToggle>(true))
+                toggle.interactable = inTown;
+
+            if (townToggle != null)
+                townToggle.interactable = !inTown;
         }
 
-        private void OnSend()
+        /// <summary>Clicking a field location toggle sends the hero there immediately.</summary>
+        private void OnLocationToggled(bool isOn)
         {
+            if (!isOn) return;
+
             var provider = SimulationProvider.Instance;
             if (provider == null) return;
 
+            // Only send while in Town — in the field the toggle is non-interactable,
+            // but guard against edge cases (e.g. phase change mid-frame).
+            if (provider.Run.Phase != RunPhase.InTown) return;
+
             var toggle = locationGroup?.ActivatedToggle as LocationToggle;
-            if (toggle == null || toggle.Location == null)
-                return;
+            if (toggle == null || toggle.Location == null) return;
 
             provider.Send(toggle.Location);
         }
 
-        private void OnRecall()
+        /// <summary>Clicking the Town toggle recalls the hero immediately.</summary>
+        private void OnTownToggled(bool isOn)
         {
-            SimulationProvider.Instance?.Recall();
-        }
+            if (!isOn) return;
 
-        private static void SetInteractable(Button button, bool interactable)
-        {
-            if (button != null)
-                button.interactable = interactable;
+            var provider = SimulationProvider.Instance;
+            if (provider == null) return;
+
+            // Only recall while InField — in Town the toggle is non-interactable.
+            if (provider.Run.Phase != RunPhase.InField) return;
+
+            provider.Recall();
         }
     }
 }
