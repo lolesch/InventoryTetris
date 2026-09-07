@@ -53,30 +53,16 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         private float resourceSecondsEmpty;
         private float shieldSecondsEmpty;
 
-        /// <summary>
-        /// While set, <see cref="Update"/> stops driving <see cref="Regenerate"/> — a caller owns
-        /// the regen tick instead. The Encounter sim sets this on the hero for the length of a Run
-        /// (issue #43) so its per-tick <c>Regenerate</c> call is not double-counted by the frame
-        /// loop; the Town path leaves it clear and keeps regenerating from <see cref="Update"/>.
-        /// </summary>
-        public bool SuppressRegen { get; set; }
-
         protected void Update()
         {
-            //TODO: COMBAT TICK RATE
-            //var interval = 0f;
-            //interval += Time.deltaTime;
-            //if(interval >= combatTickRate)
-
-            if (!SuppressRegen)
-                Regenerate(Time.deltaTime);
+            // Regeneration is driven by the SimulationDriver at sim speed (issue #45).
         }
 
         /// <summary>
         /// Applies one step of Health, Resource and Shield regeneration for
-        /// <paramref name="deltaSeconds"/> of elapsed time. Driven from <see cref="Update"/> at
-        /// frame cadence today; the Encounter sim drives it from the combat tick later (issue #17,
-        /// the <c>COMBAT TICK RATE</c> marker above).
+        /// <paramref name="deltaSeconds"/> of elapsed time. Driven by
+        /// <see cref="Simulation.SimulationDriver"/> at sim speed, in both Town and Field
+        /// (issue #45). Dead heroes do not regenerate.
         /// </summary>
         public void Regenerate(float deltaSeconds)
         {

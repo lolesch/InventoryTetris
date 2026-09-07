@@ -65,6 +65,9 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// </summary>
         public void ClearGround() => _groundDrops.Clear();
 
+        /// <summary>Unsubscribes from the encounter's events so the LootFlow can be collected.</summary>
+        public void Dispose() => _encounter.EnemyDefeated -= OnEnemyDefeated;
+
         /// <summary>
         /// Seats <paramref name="item"/> on the ground — the corpse-recovery seat (issue #22):
         /// a re-entry lays the Corpse's contents out, to the bag where they fit and here where

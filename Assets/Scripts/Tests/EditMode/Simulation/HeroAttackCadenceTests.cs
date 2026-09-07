@@ -87,36 +87,5 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             Assert.That(enemy.Health, Is.EqualTo(enemy.MaxHealth));
         }
 
-        [Test]
-        public void Regenerate_IsCalledOncePerTick_ForTheHero()
-        {
-            var hero = new FakeHero { PhysicalDamage = 0f, MagicalDamage = 0f, Resource = 0f };
-            var sim = new EncounterSimulation(hero, Profiles.Solo(EnemyArchetype.Brute), new ConstantRollSource(0f), engagementTarget: 5);
-
-            for (var i = 0; i < 10; i++) sim.Advance(0.1f);
-
-            Assert.That(hero.RegenerateCalls, Is.EqualTo(10));
-        }
-
-        [Test]
-        public void Regenerate_TicksDuringTheBeatBetweenEncounters()
-        {
-            var hero = new FakeHero
-            {
-                PhysicalDamage = 10_000f, // one-shots the lone enemy
-                AttackSpeed = 10f,
-                MagicalDamage = 0f,
-                Resource = 0f,
-            };
-            var sim = new EncounterSimulation(hero, Profiles.Solo(EnemyArchetype.Skirmisher), new ConstantRollSource(0f), engagementTarget: 5,
-                new EncounterTuning { CastCadence = 0.05f, Beat = 0.5f });
-
-            sim.Advance(0.1f);                       // clears Encounter 1
-            Assert.That(sim.Phase, Is.EqualTo(SimulationPhase.Beat));
-            var callsAtClear = hero.RegenerateCalls;
-
-            sim.Advance(0.2f);                       // 2 ticks of beat
-            Assert.That(hero.RegenerateCalls, Is.EqualTo(callsAtClear + 2));
-        }
     }
 }

@@ -75,7 +75,6 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         public float MagicFind { get; set; }
         public float IncreasedItemQuantity { get; set; }
 
-        public int RegenerateCalls { get; private set; }
         public float PhysicalDamageTaken { get; private set; }
 
         public float HealthFraction => MaxHealth <= 0f ? 0f : Clamp01(Health / MaxHealth);
@@ -100,7 +99,6 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
         public void Regenerate(float deltaSeconds)
         {
-            RegenerateCalls++;
             if (Health > 0f)
                 Health = Math.Min(MaxHealth, Health + HealthRegenPerSecond * deltaSeconds);
             Resource = Math.Min(MaxResource, Resource + ResourceRegenPerSecond * deltaSeconds);

@@ -172,7 +172,6 @@ namespace ToolSmiths.InventorySystem.Simulation
 
             if (Phase == SimulationPhase.Beat)
             {
-                _hero.Regenerate(dt);
                 if (_clock.ElapsedTime >= _beatEndsAt)
                     BeginEncounter();
                 return;
@@ -180,7 +179,6 @@ namespace ToolSmiths.InventorySystem.Simulation
 
             RunSpawnSchedule(dt);
 
-            _hero.Regenerate(dt);
             for (var i = 0; i < _enemies.Count; i++)
                 _enemies[i].Regenerate(dt);
 

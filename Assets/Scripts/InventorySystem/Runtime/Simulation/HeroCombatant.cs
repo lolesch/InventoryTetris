@@ -16,9 +16,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// <em>not</em> fold in <c>CalculateDamageOutput</c>'s <c>AttackSpeed</c> term, which would
     /// double-count against a real cadence (ADR-0010). Incoming damage and Resource spend route
     /// through the existing <see cref="BaseCharacter"/> paths so the globes reflect sim state;
-    /// <see cref="Regenerate"/> forwards to <see cref="BaseCharacter.Regenerate"/>, which the
-    /// driver has suppressed on the frame loop for the length of the Run
-    /// (<see cref="BaseCharacter.SuppressRegen"/>).
+    /// <see cref="Regenerate"/> forwards to <see cref="BaseCharacter.Regenerate"/>, though the
+    /// <see cref="SimulationDriver"/> drives regen directly at sim speed (issue #45).
     /// </summary>
     public sealed class HeroCombatant : IHeroCombatant
     {

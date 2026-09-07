@@ -1,3 +1,5 @@
+using ToolSmiths.InventorySystem.Runtime.Character;
+using ToolSmiths.InventorySystem.Runtime.Provider;
 using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
 
@@ -22,11 +24,19 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             var provider = SimulationProvider.Instance;
             if (provider == null) return;
 
+            var simSpeed = Mathf.Max(0f, provider.Behaviour.SimSpeed);
+            var dt = Time.deltaTime * simSpeed;
+
+            // Regeneration belongs to the living hero at sim speed, in both Town and
+            // Field (issue #45). Dead heroes do not regenerate.
+            var hero = CharacterProvider.Instance?.Player;
+            if (hero != null && !hero.IsDead)
+                hero.Regenerate(dt);
+
             var run = provider.Run;
             if (run.Phase != RunPhase.InField) return;
 
-            var simSpeed = Mathf.Max(0f, provider.Behaviour.SimSpeed);
-            _ = run.Advance(Time.deltaTime * simSpeed);
+            _ = run.Advance(dt);
 
             if (run.HeroIsDown)
                 provider.HandleHeroDeath();

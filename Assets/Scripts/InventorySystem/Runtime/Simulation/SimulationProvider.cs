@@ -21,9 +21,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// <c>InventoryProvider</c> god object). It builds the <see cref="EncounterSimulation"/>
     /// through the factory <see cref="RunState"/> is handed — binding the live hero
     /// adapter, the <see cref="UnityRollSource"/> and <c>HeroBehaviour.Engagement</c> — and owns
-    /// the two seams the engine adds: while <see cref="RunPhase.InField"/> the sim drives the
-    /// hero's regen, so the hero's <see cref="BaseCharacter.SuppressRegen"/> is raised for the
-    /// duration and cleared when the Run ends (issue #43); and the loot / XP / Corpse delivery
+    /// the loot / XP / Corpse delivery
     /// (issue #44) that turns each Run into the loop the spec stories describe.
     ///
     /// The per-kill loot flow (issue #24) is rebuilt for each Encounter — a fresh
@@ -60,7 +58,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private readonly UnityRollSource _rolls = new();
 
         private RunState _run;
-        private BaseCharacter _suppressed;
         private LootFlow _lootFlow;
         private ItemGenerator _itemGenerator;
         private readonly Dictionary<LocationConfig, EncounterProfile> _profiles = new();
@@ -195,10 +192,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             var profile = ProfileFor(location);
             Run.Send(profile);
 
-            _suppressed = CharacterProvider.Instance.Player;
-            if (_suppressed != null)
-                _suppressed.SuppressRegen = true;
-
             RecoverCorpseAt(profile);
         }
 
@@ -233,7 +226,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// The Death case of <see cref="HandleHeroDeath"/>: bury the bag (its non-currency
         /// contents) as a Corpse tagged with the fall Location, clear those from the bag (the
         /// Wallet's coins and equipped gear are untouched — caller contract), withdraw the
-        /// currency fee from the Wallet and subtract the XP loss from the hero (ADR-0009).
+        /// currency fee from the Wallet and subtract the XP loss from the hero (ADR-0009),
+        /// then revive at full HP and full Resource — immediately Sendable (issue #45).
         /// </summary>
         private void DeliverDeath(RunResult result)
         {
@@ -247,11 +241,16 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (fee.Total > 0u)
                 _ = InventoryProvider.Instance.Wallet.TryPay(fee);
 
-            if (result.XpLost > 0 && SelectedLocation != null)
+            var player = CharacterProvider.Instance.Player;
+
+            if (result.XpLost > 0 && SelectedLocation != null && player != null)
+                _ = player.GetResource(StatName.Experience).RemoveFromCurrent(result.XpLost);
+
+            // Revive the hero at full HP and full Resource — immediately Sendable (issue #45).
+            if (player != null && player.IsDead)
             {
-                var player = CharacterProvider.Instance.Player;
-                if (player != null)
-                    _ = player.GetResource(StatName.Experience).RemoveFromCurrent(result.XpLost);
+                player.GetResource(StatName.Health).RefillCurrent();
+                player.GetResource(StatName.Resource).RefillCurrent();
             }
         }
 
@@ -324,15 +323,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private void OnRunEnded()
         {
             // CONTEXT.md "Drop": a Drop still on the ground when the Run ends is gone, on
-            // Recall or Death alike (issue #44). The flow itself dies with the Encounter.
+            // Recall or Death alike (issue #44). Unsubscribe first, then clear.
+            _lootFlow?.Dispose();
             _lootFlow?.ClearGround();
             _lootFlow = null;
-
-            if (_suppressed != null)
-            {
-                _suppressed.SuppressRegen = false;
-                _suppressed = null;
-            }
         }
     }
 }
