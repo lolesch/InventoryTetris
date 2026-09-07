@@ -53,8 +53,9 @@ namespace ToolSmiths.InventorySystem.Editor
             var slidersPanel = FindOrCreatePanel<BehaviourSlidersPanel>(combatContext.transform, "BehaviourSlidersPanel");
             SetupBehaviourSlidersPanel(slidersPanel);
 
-            // Wire panels into the MultiplePanelToggle — MapPanel shows in Town, hides in Field.
+            // Wire panels into the MultiplePanelToggle — both panels show in Town, hide in Field.
             WirePanelToggle(multiToggle, mapPanel.gameObject, addToTurnOn: true);
+            WirePanelToggle(multiToggle, slidersPanel.gameObject, addToTurnOn: true);
 
             // Register the RunPhaseUIBinding if missing.
             if (combatContext.GetComponent<RunPhaseUIBinding>() == null)
@@ -233,6 +234,10 @@ namespace ToolSmiths.InventorySystem.Editor
         private static void SetupBehaviourSlidersPanel(BehaviourSlidersPanel panel)
         {
             var go = panel.gameObject;
+
+            // Ensure required AbstractPanel components.
+            EnsureComponent<CanvasGroup>(go);
+            EnsureComponent<GraphicRaycaster>(go);
 
             // Layout: vertical group, right side, matching ItemPanel position.
             var rt = go.GetComponent<RectTransform>();

@@ -1,3 +1,4 @@
+using Submodules.Utility.UI;
 using ToolSmiths.InventorySystem.Simulation;
 using TMPro;
 using UnityEngine;
@@ -16,9 +17,13 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// <see cref="ItemRarity"/> values via <see cref="HeroBehaviour.RaritySteps"/>:
     /// 0=Common, 1=Magic, 2=Rare, 3=Unique. Whole number positions give a tactile snap;
     /// fractional values are rounded.
+    ///
+    /// Fades in/out via the parent <see cref="MultiplePanelToggle"/> on the Switch Context
+    /// button. Subscribes to slider events in <see cref="AbstractPanel.BeforeAppear"/> so
+    /// they are live as soon as the panel becomes visible.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class BehaviourSlidersPanel : MonoBehaviour
+    public sealed class BehaviourSlidersPanel : AbstractPanel
     {
         [Header("Hero behaviour sliders")]
         [SerializeField] private Slider retreatHealthSlider;
@@ -36,7 +41,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private TextMeshProUGUI _lootFilterValue;
         private TextMeshProUGUI _simSpeedValue;
 
-        private void OnEnable()
+        protected override void BeforeAppear()
         {
             var provider = SimulationProvider.Instance;
             if (provider == null) return;

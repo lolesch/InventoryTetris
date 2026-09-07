@@ -12,17 +12,16 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// Recall buttons — the toggles are the actions.
     ///
     /// While <see cref="RunPhase.InField"/>, only the Town toggle is interactable — the
-    /// player must Recall before choosing a new destination. The
-    /// <see cref="RunPhaseUIBinding"/> handles CombatContext visibility; this panel fades in
-    /// via its parent <see cref="MultiplePanelToggle"/>.
+    /// player must Recall before choosing a new destination. Fades in/out via the parent
+    /// <see cref="MultiplePanelToggle"/> on the Switch Context button.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class MapPanel : MonoBehaviour
+    public sealed class MapPanel : AbstractPanel
     {
         [SerializeField] private RadioGroup locationGroup;
         [SerializeField] private AbstractToggle townToggle;
 
-        private void OnEnable()
+        protected override void BeforeAppear()
         {
             var provider = SimulationProvider.Instance;
             if (provider == null) return;
@@ -39,6 +38,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             // Sync to current phase.
             OnPhaseChanged(run.Phase);
+        }
+
+        protected override void OnAppear()
+        {
+            base.OnAppear();
         }
 
         private void OnDisable()
