@@ -178,5 +178,87 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
             Assert.That(behaviour.AdmitsCoin(denomination), Is.EqualTo(admitted));
         }
+
+        // ─── sim-speed slider mapping (issue #27) ──────────────────────────
+
+        [TestCase(0f, 1f)]
+        [TestCase(0.5f, 2.828427f)]  // sqrt(8) ≈ 2.828
+        [TestCase(1f, 8f)]
+        public void SliderToSimSpeed_MapsLogarithmically(float slider, float expected)
+        {
+            var speed = HeroBehaviour.SliderToSimSpeed(slider);
+
+            Assert.That(speed, Is.EqualTo(expected).Within(0.001f));
+        }
+
+        [Test]
+        public void SliderToSimSpeed_NeverBelowOne()
+        {
+            Assert.That(HeroBehaviour.SliderToSimSpeed(-1f), Is.GreaterThanOrEqualTo(1f));
+        }
+
+        [TestCase(1f, 0f)]
+        [TestCase(8f, 1f)]
+        [TestCase(2.828427f, 0.5f)]
+        public void SimSpeedToSlider_IsInverseOfSliderToSimSpeed(float speed, float expectedSlider)
+        {
+            var slider = HeroBehaviour.SimSpeedToSlider(speed);
+
+            Assert.That(slider, Is.EqualTo(expectedSlider).Within(0.001f));
+        }
+
+        [Test]
+        public void SimSpeedToSlider_RoundTrip()
+        {
+            for (var t = 0f; t <= 1f; t += 0.1f)
+            {
+                var speed = HeroBehaviour.SliderToSimSpeed(t);
+                var roundTrip = HeroBehaviour.SimSpeedToSlider(speed);
+
+                Assert.That(roundTrip, Is.EqualTo(t).Within(0.001f),
+                    $"round-trip failed for slider value {t}");
+            }
+        }
+
+        // ─── loot-filter slider mapping (issue #27) ────────────────────────
+
+        [TestCase(ItemRarity.Common, 0)]
+        [TestCase(ItemRarity.Magic, 1)]
+        [TestCase(ItemRarity.Rare, 2)]
+        [TestCase(ItemRarity.Unique, 3)]
+        [TestCase(ItemRarity.NoDrop, 0)]  // NoDrop (0) is below Common → index 0
+        public void RarityIndex_MapsRarityToSliderIndex(ItemRarity rarity, int expected)
+        {
+            Assert.That(HeroBehaviour.RarityIndex(rarity), Is.EqualTo(expected));
+        }
+
+        [TestCase(0, ItemRarity.Common)]
+        [TestCase(1, ItemRarity.Magic)]
+        [TestCase(2, ItemRarity.Rare)]
+        [TestCase(3, ItemRarity.Unique)]
+        public void RarityForIndex_MapsSliderIndexToRarity(int index, ItemRarity expected)
+        {
+            Assert.That(HeroBehaviour.RarityForIndex(index), Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void RarityForIndex_ClampsOutOfBoundsIndices()
+        {
+            Assert.That(HeroBehaviour.RarityForIndex(-1), Is.EqualTo(ItemRarity.Common));
+            Assert.That(HeroBehaviour.RarityForIndex(99), Is.EqualTo(ItemRarity.Unique));
+        }
+
+        [Test]
+        public void RarityIndex_RoundTrip()
+        {
+            foreach (var rarity in HeroBehaviour.RaritySteps)
+            {
+                var index = HeroBehaviour.RarityIndex(rarity);
+                var roundTrip = HeroBehaviour.RarityForIndex(index);
+
+                Assert.That(roundTrip, Is.EqualTo(rarity),
+                    $"round-trip failed for rarity {rarity}");
+            }
+        }
     }
 }

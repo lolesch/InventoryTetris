@@ -1,3 +1,4 @@
+using System;
 using ToolSmiths.InventorySystem.Data.Enums;
 
 namespace ToolSmiths.InventorySystem.Simulation
@@ -95,5 +96,44 @@ namespace ToolSmiths.InventorySystem.Simulation
             CurrencyType.Gold => ItemRarity.Unique,
             _ => ItemRarity.NoDrop,
         };
+
+        // ─── slider mapping helpers (issue #27) ─────────────────────────────
+
+        /// <summary>
+        /// The discrete <see cref="ItemRarity"/> steps a loot-filter slider can select:
+        /// Common, Magic, Rare, Unique. Used by the UI slider and by
+        /// <see cref="RarityIndex"/> / <see cref="RarityForIndex"/>.
+        /// </summary>
+        public static readonly ItemRarity[] RaritySteps =
+        {
+            ItemRarity.Common,
+            ItemRarity.Magic,
+            ItemRarity.Rare,
+            ItemRarity.Unique,
+        };
+
+        /// <summary>
+        /// Logarithmic slider mapping: slider position [0,1] → sim speed [1, 8] via
+        /// <c>Math.Pow(8, t)</c>. Fine control at low speeds; no pause position.
+        /// </summary>
+        public static float SliderToSimSpeed(float sliderValue) =>
+            (float)Math.Pow(8.0, Math.Clamp(sliderValue, 0f, 1f));
+
+        /// <summary>Inverse of <see cref="SliderToSimSpeed"/>: sim speed → normalized slider position.</summary>
+        public static float SimSpeedToSlider(float simSpeed) =>
+            (float)Math.Log(Math.Max(1f, simSpeed), 8.0);
+
+        /// <summary>Map an <see cref="ItemRarity"/> to its index in <see cref="RaritySteps"/>.</summary>
+        public static int RarityIndex(ItemRarity rarity)
+        {
+            for (var i = 0; i < RaritySteps.Length; i++)
+                if (rarity <= RaritySteps[i])
+                    return i;
+            return RaritySteps.Length - 1;
+        }
+
+        /// <summary>Map a slider index (0..3) back to the corresponding <see cref="ItemRarity"/>.</summary>
+        public static ItemRarity RarityForIndex(int index) =>
+            RaritySteps[Math.Clamp(index, 0, RaritySteps.Length - 1)];
     }
 }

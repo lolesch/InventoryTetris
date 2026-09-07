@@ -6,13 +6,9 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.Runtime.Simulation
 {
     /// <summary>
-    /// The "minimal debug Send / Recall control" (issue #43) — a throwaway <see cref="OnGUI"/>
-    /// panel that drives the play-mode smoke gate: pick a Location and Send, watch the globe and
-    /// enemy counts move, Recall to end the Run. The polished map / sliders / panel-visibility UI
-    /// is issue #27, which deletes this.
-    ///
-    /// In the editor the Location list auto-fills from every authored <see cref="LocationConfig"/>
-    /// asset, so a bare scene with just the providers is enough to smoke-test.
+    /// OnGUI debug overlay for the combat context — shows live sim state (encounter, hero HP,
+    /// resource, XP, loot) and provides Send / Recall buttons for manual testing.
+    /// Auto-populates the Location list from authored <see cref="LocationConfig"/> assets.
     /// </summary>
     public sealed class SimulationDebugPanel : MonoBehaviour
     {
@@ -69,7 +65,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             }
             else if (run.HeroIsDown)
             {
-                GUILayout.Label("Hero down — returning to Town…");
+                GUILayout.Label("Hero down — returning to Town...");
             }
             else if (GUILayout.Button("Recall"))
             {

@@ -33,10 +33,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// <see cref="EncounterProfile"/> <em>reference</em>, so <see cref="_profiles"/> memoizes
     /// one profile per <see cref="LocationConfig"/> and Send / Bury / Recover all share it.
     ///
-    /// The frame-by-frame tick is <see cref="SimulationDriver"/>'s job; a debug Send / Recall
-    /// panel (<see cref="SimulationDebugPanel"/>) drives the smoke gate until the real map UI
-    /// lands (issue #27). Both are attached to this provider's GameObject on <see cref="Awake"/>
-    /// so a bare scene needs no wiring.
+    /// The frame-by-frame tick is <see cref="SimulationDriver"/>'s job; the real map UI
+    /// (<see cref="MapPanel"/>, issue #27) replaces the old debug panel. The driver is
+    /// attached to this provider's GameObject on <see cref="Awake"/> so a bare scene needs
+    /// no wiring.
     /// </summary>
     public sealed class SimulationProvider : AbstractProvider<SimulationProvider>
     {
@@ -83,9 +83,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         public LootFlow LootFlow => _lootFlow;
 
 #if UNITY_EDITOR
-        // Zero-setup smoke gate (issue #43): spawn the provider — and with it the driver and the
-        // debug panel — on entering play mode so a bare scene needs nothing added. Issue #27's
-        // real map UI replaces the panel and this hook goes with it.
+        // Zero-setup smoke gate (issue #43): spawn the provider — and with it the driver —
+        // on entering play mode so a bare scene needs nothing added.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void AutoSpawnForSmokeGate() => _ = Instance;
 #endif

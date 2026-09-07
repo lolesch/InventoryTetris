@@ -61,8 +61,13 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var sim = new EncounterSimulation(hero, Profiles.Solo(EnemyArchetype.Brute), new ConstantRollSource(0f), engagementTarget: 5, FastCast());
             var enemy = sim.Enemies[0];
 
-            // 3.05 s → Casts affordable at t = 1, 2, 3.
-            for (var i = 0; i < 31; i++) sim.Advance(0.1f);
+            // 3.1 s → Casts affordable at t = 1, 2, 3.
+            // Hero regen runs before the sim tick (issue #45 moved it to the driver).
+            for (var i = 0; i < 31; i++)
+            {
+                hero.Regenerate(0.1f);
+                sim.Advance(0.1f);
+            }
 
             Assert.That(enemy.MaxHealth - enemy.Health, Is.EqualTo(3f).Within(0.001f));
         }
@@ -82,7 +87,12 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var sim = new EncounterSimulation(hero, Profiles.Solo(EnemyArchetype.Brute), new ConstantRollSource(0f), engagementTarget: 5, FastCast());
             var enemy = sim.Enemies[0];
 
-            for (var i = 0; i < 50; i++) sim.Advance(0.1f); // 5 s — never affordable
+            // Hero regen runs before the sim tick (issue #45 moved it to the driver).
+            for (var i = 0; i < 50; i++)
+            {
+                hero.Regenerate(0.1f);
+                sim.Advance(0.1f); // 5 s — never affordable
+            }
 
             Assert.That(enemy.Health, Is.EqualTo(enemy.MaxHealth));
         }
