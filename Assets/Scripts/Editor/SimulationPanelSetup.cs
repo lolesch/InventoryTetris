@@ -23,7 +23,7 @@ namespace ToolSmiths.InventorySystem.Editor
         [MenuItem(MenuPath)]
         public static void Setup()
         {
-            // Find the CombatContext GameObject — it carries the MultiplePanelToggle.
+            // Find the CombatContext container and the Switch Context toggle.
             var combatContext = GameObject.Find("CombatContext");
             if (combatContext == null)
             {
@@ -31,10 +31,17 @@ namespace ToolSmiths.InventorySystem.Editor
                 return;
             }
 
-            var multiToggle = combatContext.GetComponent<MultiplePanelToggle>();
+            var switchContext = GameObject.Find("Switch Context");
+            if (switchContext == null)
+            {
+                Debug.LogError("SimulationPanelSetup: Switch Context not found in scene.");
+                return;
+            }
+
+            var multiToggle = switchContext.GetComponent<MultiplePanelToggle>();
             if (multiToggle == null)
             {
-                Debug.LogError("SimulationPanelSetup: CombatContext has no MultiplePanelToggle.");
+                Debug.LogError("SimulationPanelSetup: Switch Context has no MultiplePanelToggle.");
                 return;
             }
 
@@ -57,6 +64,13 @@ namespace ToolSmiths.InventorySystem.Editor
                 bindingSo.FindProperty("switchContext").objectReferenceValue = multiToggle;
                 bindingSo.ApplyModifiedPropertiesWithoutUndo();
                 Debug.Log("SimulationPanelSetup: Added RunPhaseUIBinding to CombatContext.");
+            }
+            else
+            {
+                // Ensure the existing binding points at the right MultiplePanelToggle.
+                var bindingSo = new SerializedObject(combatContext.GetComponent<RunPhaseUIBinding>());
+                bindingSo.FindProperty("switchContext").objectReferenceValue = multiToggle;
+                bindingSo.ApplyModifiedPropertiesWithoutUndo();
             }
 
             EditorUtility.SetDirty(combatContext);
