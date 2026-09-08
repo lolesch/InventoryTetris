@@ -14,6 +14,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// While <see cref="RunPhase.InField"/>, only the Town toggle is interactable — the
     /// player must Recall before choosing a new destination. Fades in/out via the parent
     /// <see cref="MultiplePanelToggle"/> on the Switch Context button.
+    ///
+    /// <see cref="AbstractPanel.BeforeAppear"/> runs on every fade-in and the panel stays
+    /// enabled between them, so <see cref="OnDisable"/> is not a reliable pair — a second
+    /// appear without a teardown would otherwise stack a second <c>PhaseChanged</c> /
+    /// <c>OnToggle</c> subscription and fire <see cref="SimulationProvider.Send"/> twice on one
+    /// click. Every subscription here is therefore made idempotent (detach before attach).
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class MapPanel : AbstractPanel
@@ -27,14 +33,23 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (provider == null) return;
 
             var run = provider.Run;
+
+            // Idempotent: BeforeAppear can run again before OnDisable ever does (see class doc).
+            run.PhaseChanged -= OnPhaseChanged;
             run.PhaseChanged += OnPhaseChanged;
 
             // Subscribe to all location toggles for send-on-click.
             foreach (var toggle in locationGroup.GetComponentsInChildren<LocationToggle>(true))
+            {
+                toggle.OnToggle -= OnLocationToggled;
                 toggle.OnToggle += OnLocationToggled;
+            }
 
             if (townToggle != null)
+            {
+                townToggle.OnToggle -= OnTownToggled;
                 townToggle.OnToggle += OnTownToggled;
+            }
 
             // Sync to current phase.
             OnPhaseChanged(run.Phase);
