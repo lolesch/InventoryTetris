@@ -147,43 +147,25 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         }
 
         /// <summary>
-        /// Dropping onto the shelf is a sale, not a placement (issue #12) - except for the
-        /// shelf's own item, which is a free return (issue #31). Either way the shelf accepts
-        /// the drop, so the red "can't drop" tint never reads its own grid the way the base
-        /// does. Mirrors <see cref="DropItem"/>'s routing.
+        /// The shelf only accepts its own item back (a free return to the cell it came from,
+        /// issue #31). A player Package dropped here is no longer a sale - the Sell Basket
+        /// (#32) is the only way to sell, so a non-shelf drop is turned away rather than
+        /// banked.
         /// </summary>
-        public override bool WouldAcceptDrop(Package package) => package.IsValid;
+        public override bool WouldAcceptDrop(Package package) => package.IsValid && package.Sender == Container;
 
         protected override void DropItem(Package package)
         {
-            if (!package.IsValid)
+            if (!package.IsValid || package.Sender != Container)
                 return;
 
             /// The shelf's own item coming back is a return to origin, not a sale (issue #31):
-            /// put it straight back on the cell it came from, charge nothing. The sell path is
-            /// the dedicated sell slot (SellItenSlotDisplay) - the drop-on-shelf sale is
-            /// removed by the Sell Basket (#32).
-            if (package.Sender == Container)
-            {
-                _ = DragProvider.Instance.CancelDrag();
-
-                Container?.InvokeRefresh();
-                DragProvider.Instance.Origin?.Container?.InvokeRefresh();
-
-                SyncPreviewAfterMove();
-
-                return;
-            }
-
-            /// Dropping a player item onto the shelf is a sale, exactly as the dedicated sell
-            /// slot (SellItenSlotDisplay) handles it: the item is already in hand from the
-            /// drag, its value is banked into the wallet on commit (issue #11), and the drag ends.
-            VendorTransaction.Sell(package, InventoryProvider.Instance.Wallet);
-
-            DragProvider.Instance.EndDrag();
+            /// put it straight back on the cell it came from, charge nothing. Any other
+            /// drop belongs to the Sell Basket (#32) - this shelf never sells.
+            _ = DragProvider.Instance.CancelDrag();
 
             Container?.InvokeRefresh();
-            DragProvider.Instance.Origin.Container?.InvokeRefresh();
+            DragProvider.Instance.Origin?.Container?.InvokeRefresh();
 
             SyncPreviewAfterMove();
         }
