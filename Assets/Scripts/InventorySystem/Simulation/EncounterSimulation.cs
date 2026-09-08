@@ -18,10 +18,17 @@ namespace ToolSmiths.InventorySystem.Simulation
     ///
     /// An Encounter clears when its Roster is spent and the last body falls: XP settles then,
     /// summed over the Roster; a short beat; the next Encounter. The sim runs Encounters
-    /// endlessly — only the hero going down (or an external <see cref="Abandon"/> on Recall /
-    /// Death, issue #21) ends it. Loot and coins are a per-kill concern layered on
-    /// <see cref="EnemyDefeated"/> by issue #24; the <c>CastThreshold</c> hysteresis and the
-    /// retreat / bag triggers are issue #23.
+    /// endlessly — only the hero going down, one of the <see cref="HeroBehaviour"/>'s own
+    /// auto-Recall triggers, or an external <see cref="Abandon"/> on Recall / Death (issue #21)
+    /// end it. Loot and coins are a per-kill concern layered on <see cref="EnemyDefeated"/> by
+    /// issue #24.
+    ///
+    /// The <see cref="HeroBehaviour"/> is the player's whole input to a Run (issue #23) and is
+    /// read live, never snapshotted, at four points: the spawn schedule refills toward
+    /// <see cref="EngagementTarget"/>, <see cref="ResolveCast"/> is gated by the
+    /// <c>CastThreshold</c> hysteresis latch, and both auto-Recall triggers — health and bag
+    /// fill — are checked once a tick, raising <see cref="RecallRequested"/>. Moving the sliders
+    /// mid-fight therefore changes the fight, which is the point of them.
     ///
     /// Engine-free and deterministic: every roll (Roster size, spawn type, Pack size, jitter,
     /// spawn desync) is drawn from the injected <see cref="IRollSource"/>, in that order.
@@ -32,6 +39,8 @@ namespace ToolSmiths.InventorySystem.Simulation
         private readonly IHeroCombatant _hero;
         private readonly EncounterProfile _profile;
         private readonly IRollSource _rolls;
+        private readonly HeroBehaviour _behaviour;
+        private readonly IBagGauge _bag;
         private readonly EncounterTuning _tuning;
         private readonly CombatClock _clock;
         private readonly List<Enemy> _enemies = new();
@@ -51,22 +60,32 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         private float _pot;
 
+        /// <param name="behaviour">
+        /// The player's live steering (issue #23) — Engagement, the Cast threshold and both
+        /// auto-Recall triggers. Held by reference, not copied: a slider moved mid-fight lands
+        /// on the next tick.
+        /// </param>
+        /// <param name="bag">
+        /// How full the hero's bag is, for <see cref="HeroBehaviour.ShouldRecallForBagFull"/>.
+        /// Optional — an Encounter built without one never fires the bag-full auto-Recall, which
+        /// is what a fight with no storage wired to it should do.
+        /// </param>
         public EncounterSimulation(
             IHeroCombatant hero,
             EncounterProfile profile,
             IRollSource rolls,
-            int engagementTarget,
-            EncounterTuning tuning = null)
+            HeroBehaviour behaviour,
+            EncounterTuning tuning = null,
+            IBagGauge bag = null)
         {
             _hero = hero ?? throw new ArgumentNullException(nameof(hero));
             _profile = profile ?? throw new ArgumentNullException(nameof(profile));
             _rolls = rolls ?? throw new ArgumentNullException(nameof(rolls));
-            if (engagementTarget < 1)
-                throw new ArgumentOutOfRangeException(nameof(engagementTarget), engagementTarget, "Engagement target must be at least 1.");
+            _behaviour = behaviour ?? throw new ArgumentNullException(nameof(behaviour));
+            _bag = bag;
 
             _tuning = tuning ?? new EncounterTuning();
             _tuning.Validate();
-            EngagementTarget = engagementTarget;
 
             _clock = new CombatClock(_tuning.Tick, _tuning.MaxTicksPerAdvance);
             _clock.OnTick += Step;
@@ -75,11 +94,14 @@ namespace ToolSmiths.InventorySystem.Simulation
         }
 
         /// <summary>
-        /// The soft count of enemies the fight refills toward (the Engagement slider — issue
-        /// #23 writes it on the slider's change event; the sim reads it every spawn tick). Not
-        /// a ceiling: a Pack that arrives while the count is below the target overshoots it.
+        /// The soft count of enemies the fight refills toward — <see cref="HeroBehaviour.Engagement"/>
+        /// read live, so raising it mid-Run refills toward the new target on the next spawn tick.
+        /// Not a ceiling: a Pack that arrives while the count is below the target overshoots it.
+        ///
+        /// Clamped to at least 1 rather than validated: the behaviour is a live value a slider
+        /// writes at any moment, so a zero has to be absorbed, not thrown mid-fight.
         /// </summary>
-        public int EngagementTarget { get; set; }
+        public int EngagementTarget => Math.Max(1, _behaviour.Engagement);
 
         /// <summary>The Location this Encounter is fought at — its loot table and source level (issue #24).</summary>
         public EncounterProfile Profile => _profile;
@@ -126,6 +148,19 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         /// <summary>Raised the tick the hero's health reaches 0.</summary>
         public event Action HeroDowned;
+
+        /// <summary>
+        /// Raised the tick one of <see cref="HeroBehaviour"/>'s auto-Recall triggers fires —
+        /// health at or below <c>RetreatHealthFraction</c>, or the bag filled to
+        /// <c>RecallBagFillFraction</c> (issue #23). The fight is already stopped and its
+        /// in-progress pot forfeited by the time this raises, exactly as a manual Recall would
+        /// leave it; the engine-side driver turns the signal into <see cref="RunState.Recall"/>
+        /// so the Run ends down the one path, with everything kept.
+        ///
+        /// Raised at most once per Encounter — the sim has <see cref="SimulationPhase.Ended"/>
+        /// and stops stepping, so a driver that ignores it simply leaves a stopped fight.
+        /// </summary>
+        public event Action RecallRequested;
 
         /// <summary>
         /// Bank <paramref name="deltaSeconds"/> of real time and run every whole tick now due
@@ -194,9 +229,29 @@ namespace ToolSmiths.InventorySystem.Simulation
                 return;
             }
 
+            // Checked after the death test, so a tick that both drops the hero below the auto-Recall
+            // fraction and kills it is a Death, not a Recall — the penalty is not dodgeable by
+            // the trigger racing it.
+            if (WantsToRecall())
+            {
+                ForfeitPot();
+                End();
+                RecallRequested?.Invoke();
+                return;
+            }
+
             if (RosterSpent && _enemies.Count == 0)
                 ClearEncounter();
         }
+
+        /// <summary>
+        /// Either of <see cref="HeroBehaviour"/>'s two auto-Recall triggers (issue #23), read
+        /// against this tick's health and bag fill. With no <see cref="IBagGauge"/> wired the
+        /// bag-full trigger cannot fire — there is nothing to measure.
+        /// </summary>
+        private bool WantsToRecall() =>
+            _behaviour.ShouldRecallForHealth(_hero.HealthFraction)
+            || (_bag != null && _behaviour.ShouldRecallForBagFull(_bag.FillFraction));
 
         // ─── spawning ────────────────────────────────────────────────────────
 
@@ -294,9 +349,12 @@ namespace ToolSmiths.InventorySystem.Simulation
 
             _castTimer = Math.Min(_castTimer - _tuning.CastCadence, _tuning.CastCadence);
 
-            // Issue #20 fires whenever a Cast is affordable; issue #23 layers the CastThreshold
-            // hysteresis (hold below a Resource fraction, then burn to empty) over this gate.
-            if (_hero.Resource < _hero.CastCost || _enemies.Count == 0) return;
+            // The CastThreshold latch is stepped every Cast opportunity, before the affordability
+            // and target tests short-circuit — it is a hysteresis on the pool, so it has to see
+            // the pool on every beat, not only on the beats a Cast could actually land.
+            var casting = _behaviour.ShouldCast(_hero.ResourceFraction);
+
+            if (!casting || _hero.Resource < _hero.CastCost || _enemies.Count == 0) return;
 
             _hero.SpendResource(_hero.CastCost);
 

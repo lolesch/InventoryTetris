@@ -54,9 +54,12 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             IHeroCombatant hero,
             RunPenalty penalty = default,
             EncounterTuning tuning = null,
-            int engagement = 10) =>
+            int engagement = 10,
+            HeroBehaviour behaviour = null,
+            IBagGauge bag = null) =>
             new(profile => new EncounterSimulation(
-                    hero, profile, new ConstantRollSource(0f), engagement, tuning ?? new EncounterTuning()),
+                    hero, profile, new ConstantRollSource(0f),
+                    behaviour ?? Behaviours.Engaging(engagement), tuning ?? new EncounterTuning(), bag),
                 penalty);
 
         private static EncounterProfile Skirmishers(int count) =>
@@ -478,6 +481,107 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             run.BankCurrency(10);
 
             Assert.That(raised, Is.EqualTo(0));
+        }
+
+        // ─── the behaviour's own retreat (issue #23) ─────────────────────────
+
+        /// <summary>A hero already under a 0.3 retreat fraction, that neither deals nor takes damage.</summary>
+        private static FakeHero RetreatingHero() => new()
+        {
+            MaxHealth = 100f,
+            Health = 25f,
+            PhysicalDamage = 0f,
+            MagicalDamage = 0f,
+            AttackSpeed = 0.01f,
+            ArmorPercent = 100f,
+            Resource = 0f,
+            Level = 5,
+        };
+
+        private static HeroBehaviour RetreatsAt(float healthFraction) => new()
+        {
+            Engagement = 10,
+            RetreatHealthFraction = healthFraction,
+        };
+
+        [Test]
+        public void ARetreatTrigger_MarksTheRunAsWantingToComeHome_WithoutEndingItItself()
+        {
+            var run = NewRun(RetreatingHero(), behaviour: RetreatsAt(0.3f));
+            run.Send(Skirmishers(3));
+
+            run.Advance(0.1f);
+
+            Assert.That(run.RecallRequested, Is.True);
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.InField),
+                "the sim only asks — the transition is the driver's, outside the tick that raised it");
+        }
+
+        [Test]
+        public void RecallRequested_IsFalse_WhileTheHeroIsHealthy()
+        {
+            var run = NewRun(RetreatingHero(), behaviour: RetreatsAt(0.1f));
+            run.Send(Skirmishers(3));
+
+            for (var i = 0; i < 50; i++) run.Advance(0.1f);
+
+            Assert.That(run.RecallRequested, Is.False);
+        }
+
+        [Test]
+        public void RecallingAfterARetreatRequest_EndsTheRunWithEverythingKept()
+        {
+            var run = NewRun(RetreatingHero(), behaviour: RetreatsAt(0.3f));
+            run.Send(Skirmishers(3));
+            run.BankCurrency(120);
+            run.Advance(0.1f);
+
+            var ended = 0;
+            run.RunEnded += () => ended++;
+
+            var result = run.Recall();
+
+            Assert.That(result.Outcome, Is.EqualTo(RunOutcome.Recalled), "a retreat is a Recall, not a Death");
+            Assert.That(result.CurrencyBanked, Is.EqualTo(120));
+            Assert.That(result.XpLost, Is.EqualTo(0));
+            Assert.That(result.CurrencyFee, Is.EqualTo(0));
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.InTown));
+            Assert.That(ended, Is.EqualTo(1), "down the one existing RunEnded path");
+        }
+
+        [Test]
+        public void RecallRequested_DoesNotSurvive_IntoTheNextRun()
+        {
+            var behaviour = RetreatsAt(0.3f);
+            var run = NewRun(RetreatingHero(), behaviour: behaviour);
+
+            run.Send(Skirmishers(3));
+            run.Advance(0.1f);
+            _ = run.Recall();
+            Assert.That(run.RecallRequested, Is.False, "cleared on the way out");
+
+            behaviour.RetreatHealthFraction = 0f; // the player pulled the slider back down
+            run.Send(Skirmishers(3));
+
+            Assert.That(run.RecallRequested, Is.False);
+        }
+
+        [Test]
+        public void ABagFullTrigger_ReachesTheRunTheSameWay()
+        {
+            var bag = new FakeBagGauge { FillFraction = 0.2f };
+            var behaviour = new HeroBehaviour { Engagement = 10, RecallBagFillFraction = 0.8f };
+
+            var run = NewRun(RetreatingHero(), behaviour: behaviour, bag: bag);
+            run.Send(Skirmishers(3));
+
+            run.Advance(0.1f);
+            Assert.That(run.RecallRequested, Is.False);
+
+            bag.FillFraction = 0.85f;
+            run.Advance(0.1f);
+
+            Assert.That(run.RecallRequested, Is.True);
         }
     }
 }

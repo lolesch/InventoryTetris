@@ -44,7 +44,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Locations
 
             // Thornwood: Packed Brute, PackBatch [2,3], SpawnInterval 2.4, engagement 3.
             // Initial spawn 2, then a Pack of 2 overshoots the engagement target and it holds.
-            var sim = new EncounterSimulation(InertHero(), profile, new LocationFakes.ConstantRollSource(0f), engagementTarget: 3);
+            var sim = new EncounterSimulation(InertHero(), profile, new LocationFakes.ConstantRollSource(0f), LocationFakes.Engaging(3));
 
             for (var i = 0; i < 200; i++) sim.Advance(0.1f); // 20 s
 
@@ -59,7 +59,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Locations
             var config = Load("Thornwood");
             var profile = config.ToProfile();
 
-            var sim = new EncounterSimulation(InertHero(), profile, new LocationFakes.ConstantRollSource(0f), engagementTarget: 3);
+            var sim = new EncounterSimulation(InertHero(), profile, new LocationFakes.ConstantRollSource(0f), LocationFakes.Engaging(3));
             for (var i = 0; i < 30; i++) sim.Advance(0.1f); // few ticks to field the initial spawn
 
             Assert.That(sim.Enemies.Count, Is.GreaterThan(0), "the initial spawn fields enemies");
@@ -76,7 +76,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Locations
             var config = Load("Ashfall");
             var profile = config.ToProfile();
 
-            var sim = new EncounterSimulation(InertHero(), profile, new LocationFakes.ConstantRollSource(0f), engagementTarget: 3);
+            var sim = new EncounterSimulation(InertHero(), profile, new LocationFakes.ConstantRollSource(0f), LocationFakes.Engaging(3));
 
             for (var i = 0; i < 200; i++) sim.Advance(0.1f);
 

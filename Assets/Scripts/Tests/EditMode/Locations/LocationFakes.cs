@@ -91,5 +91,12 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Locations
 
             private static float Clamp01(float v) => v < 0f ? 0f : v > 1f ? 1f : v;
         }
+
+        /// <summary>
+        /// The neutral <see cref="HeroBehaviour"/> these tests steer an Encounter with: the named
+        /// Engagement, no retreat trigger, no Cast hold. Locations tests are about the profile a
+        /// <c>LocationConfig</c> maps onto, not about the player's steering.
+        /// </summary>
+        internal static HeroBehaviour Engaging(int engagement) => new() { Engagement = engagement };
     }
 }

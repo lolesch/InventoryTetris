@@ -27,7 +27,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         public void Encounter_ClearsWhenTheRosterIsSpentAndTheLastEnemyFalls()
         {
             var sim = new EncounterSimulation(OneShotHero(), Profiles.Solo(EnemyArchetype.Skirmisher),
-                new ConstantRollSource(0f), engagementTarget: 5, ShortBeat());
+                new ConstantRollSource(0f), Behaviours.Engaging(5), ShortBeat());
 
             var clears = 0;
             sim.EncounterCleared += _ => clears++;
@@ -43,7 +43,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         public void AfterTheBeat_TheNextEncounterBuilds()
         {
             var sim = new EncounterSimulation(OneShotHero(), Profiles.Solo(EnemyArchetype.Skirmisher),
-                new ConstantRollSource(0f), engagementTarget: 5, ShortBeat());
+                new ConstantRollSource(0f), Behaviours.Engaging(5), ShortBeat());
 
             sim.Advance(0.1f);                 // clears Encounter 1 → Beat
             Assert.That(sim.CurrentEncounter, Is.EqualTo(1));
@@ -60,7 +60,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         {
             // Each Encounter fields 3 Skirmishers; the hero clears one per tick, one beat between.
             var sim = new EncounterSimulation(OneShotHero(), Profiles.Group(EnemyArchetype.Skirmisher, 3),
-                new ConstantRollSource(0f), engagementTarget: 10, ShortBeat());
+                new ConstantRollSource(0f), Behaviours.Engaging(10), ShortBeat());
 
             // Stop the instant the 4th Encounter clears — no partial next Encounter in the counts.
             for (var i = 0; i < 500 && sim.EncountersCleared < 4; i++) sim.Advance(0.1f);
@@ -73,7 +73,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         public void Duration_IsTheTickQuantisedElapsedTime()
         {
             var sim = new EncounterSimulation(new FakeHero { PhysicalDamage = 0f, MagicalDamage = 0f, Resource = 0f },
-                Profiles.Solo(EnemyArchetype.Brute), new ConstantRollSource(0f), engagementTarget: 5);
+                Profiles.Solo(EnemyArchetype.Brute), new ConstantRollSource(0f), Behaviours.Engaging(5));
 
             sim.Advance(0.25f); // 2 ticks, 0.05 banked
             sim.Advance(0.25f); // 0.30 banked+new → 3 ticks
@@ -89,7 +89,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         {
             var hero = new FakeHero { MaxHealth = 1f, Health = 1f, PhysicalDamage = 0f, MagicalDamage = 0f, Resource = 0f };
             var sim = new EncounterSimulation(hero, Profiles.Group(EnemyArchetype.Skirmisher, 4),
-                new ConstantRollSource(0f), engagementTarget: 10);
+                new ConstantRollSource(0f), Behaviours.Engaging(10));
 
             var downed = false;
             sim.HeroDowned += () => downed = true;
@@ -109,7 +109,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         {
             var hero = new FakeHero { MaxHealth = 1f, Health = 1f, PhysicalDamage = 0f, MagicalDamage = 0f, Resource = 0f };
             var sim = new EncounterSimulation(hero, Profiles.Group(EnemyArchetype.Skirmisher, 4),
-                new ConstantRollSource(0f), engagementTarget: 10);
+                new ConstantRollSource(0f), Behaviours.Engaging(10));
 
             // One coarse Advance that spans past the first lethal enemy Strike (t = 0.7 s).
             sim.Advance(5f);
@@ -122,7 +122,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         public void Abandon_EndsTheSim()
         {
             var sim = new EncounterSimulation(new FakeHero { PhysicalDamage = 0f, MagicalDamage = 0f, Resource = 0f },
-                Profiles.Solo(EnemyArchetype.Brute), new ConstantRollSource(0f), engagementTarget: 5);
+                Profiles.Solo(EnemyArchetype.Brute), new ConstantRollSource(0f), Behaviours.Engaging(5));
 
             sim.Advance(0.5f);
             var atAbandon = sim.Duration;
@@ -138,7 +138,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         public void OnlyTheHeroGoingDownEndsTheSim_NotClearingAnEncounter()
         {
             var sim = new EncounterSimulation(OneShotHero(), Profiles.Group(EnemyArchetype.Skirmisher, 2),
-                new ConstantRollSource(0f), engagementTarget: 10, ShortBeat());
+                new ConstantRollSource(0f), Behaviours.Engaging(10), ShortBeat());
 
             for (var i = 0; i < 300; i++) sim.Advance(0.1f);
 

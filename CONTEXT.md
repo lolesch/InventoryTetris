@@ -230,6 +230,14 @@ The player action that ends a Run with everything earned so far kept. Transition
 `InField → InTown`.
 _Avoid_: retreat, extract, return, flee, escape
 
+**Auto-Recall**:
+A Recall the hero performs on its own, because a behaviour slider the player set before
+or during the Run said to — health dropping to the retreat fraction, or the bag filling
+to the recall fraction. Same transition and same result as a clicked Recall: everything
+kept, no penalty. It is still the player's decision, made in advance; the hero never
+decides anything.
+_Avoid_: auto-retreat, bail, panic button, auto-flee
+
 **Death**:
 The other way a Run ends — the hero is downed in the Field and returns to Town under a
 penalty: lost XP, a fee off banked currency, and the bag set aside as a Corpse.

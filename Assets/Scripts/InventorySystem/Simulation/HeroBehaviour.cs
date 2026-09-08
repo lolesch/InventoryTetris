@@ -9,14 +9,19 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// change event (issue #27) — read live here, never polled by value snapshot.
     ///
     /// <see cref="ShouldRecallForHealth"/> and <see cref="ShouldRecallForBagFull"/> are the pure
-    /// predicates the engine-side adapter (issue #26) calls <c>RunState.Recall</c> from.
+    /// predicates <see cref="EncounterSimulation"/> checks every tick, raising the
+    /// <see cref="EncounterSimulation.RecallRequested"/> signal the engine-side driver turns
+    /// into a <see cref="RunState.Recall"/>.
     /// <see cref="ShouldCast"/> is the <see cref="CastThreshold"/> hysteresis latch (ADR-0010):
     /// hold below the fraction, then Cast every opportunity down to empty, then wait back up —
-    /// it never gates the Strike, because the Strike never asks it. <see cref="AdmitsItem"/> and
+    /// it never gates the Strike, because the Strike never asks it. The sim evaluates it once
+    /// per Cast cadence whether or not a Cast is affordable that beat, so the latch tracks the
+    /// pool continuously. <see cref="AdmitsItem"/> and
     /// <see cref="AdmitsCoin"/> are the loot filter, reading a coin denomination's fixed Rarity
     /// off CONTEXT.md's Denomination ladder (iron Common … gold Unique). <see cref="Engagement"/>
-    /// and <see cref="SimSpeed"/> are plain storage — the Encounter sim and the clock adapter
-    /// (issues #20, #26) read them directly.
+    /// is re-read by the sim's spawn schedule every spawn tick, so raising it mid-Run refills
+    /// toward the new target; <see cref="SimSpeed"/> is plain storage the clock adapter (issue
+    /// #26) reads directly.
     /// </summary>
     public sealed class HeroBehaviour
     {
@@ -33,13 +38,12 @@ namespace ToolSmiths.InventorySystem.Simulation
         public float RetreatHealthFraction { get; set; }
 
         /// <summary>
-        /// Auto-Recall fires at or above this bag fill fraction. Unlike
-        /// <see cref="RetreatHealthFraction"/>'s inert zero default, a default (0f)
-        /// <see cref="RecallBagFillFraction"/> fires <see cref="ShouldRecallForBagFull"/>
-        /// immediately for any fill — the caller (issue #27's slider) must write a real value
-        /// before this is read.
+        /// Auto-Recall fires at or above this bag fill fraction. Defaults to 1f — a bag with no
+        /// room left — so an unwritten value is as inert as <see cref="RetreatHealthFraction"/>'s
+        /// zero. A 0f written here does fire for any fill at all, empty bag included; that is the
+        /// slider's bottom position and it reads as "come home the moment anything drops".
         /// </summary>
-        public float RecallBagFillFraction { get; set; }
+        public float RecallBagFillFraction { get; set; } = 1f;
 
         /// <summary>
         /// The <see cref="ShouldCast"/> hysteresis latch's rising edge — charge Resource to this
@@ -68,13 +72,19 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <c>true</c> regardless of the fraction dropping back below it, releasing only once the
         /// pool is spent down to <see cref="EmptyResourceFraction"/> — the run then has to
         /// recharge to the threshold again to restart.
+        ///
+        /// The release is tested before the start rather than instead of it, so a run that ends
+        /// on this call can re-arm on the same call when the fraction still clears the threshold.
+        /// That only differs at <see cref="CastThreshold"/> 0 — "never hold" — where an
+        /// <c>else if</c> would drop one Cast every time the pool bottomed out.
         /// </summary>
         public bool ShouldCast(float resourceFraction)
         {
+            if (_castingRun && resourceFraction <= EmptyResourceFraction)
+                _castingRun = false;
+
             if (!_castingRun && resourceFraction >= CastThreshold)
                 _castingRun = true;
-            else if (_castingRun && resourceFraction <= EmptyResourceFraction)
-                _castingRun = false;
 
             return _castingRun;
         }
