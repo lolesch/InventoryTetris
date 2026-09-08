@@ -59,6 +59,12 @@ namespace ToolSmiths.InventorySystem.Inventories
             }
         }
 
+        /// <summary>The authored coin-denomination odds feed the live kill's coin Pile type (issue #44's <c>ICoinDropSource</c> adapter).</summary>
+        public CurrencyTypeDistribution CurrencyTypeDistribution => currencyTypeDistribution;
+
+        /// <summary>The authored per-coin pile-size ranges feed the live kill's coin Pile amount (issue #44's <c>ICoinDropSource</c> adapter).</summary>
+        public CurrencyDropTable CurrencyDropTable => currencyDropTable;
+
         private void EnsureInitialized()
         {
             if (generator != null)

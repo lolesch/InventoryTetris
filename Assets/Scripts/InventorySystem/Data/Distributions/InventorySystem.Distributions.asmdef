@@ -1,0 +1,17 @@
+{
+    "name": "InventorySystem.Distributions",
+    "rootNamespace": "",
+    "references": [
+        "InventorySystem.Data",
+        "InventorySystem.Probability"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

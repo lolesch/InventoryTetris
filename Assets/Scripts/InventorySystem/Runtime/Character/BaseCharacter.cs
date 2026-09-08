@@ -55,19 +55,14 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
         protected void Update()
         {
-            //TODO: COMBAT TICK RATE
-            //var interval = 0f;
-            //interval += Time.deltaTime;
-            //if(interval >= combatTickRate)
-
-            Regenerate(Time.deltaTime);
+            // Regeneration is driven by the SimulationDriver at sim speed (issue #45).
         }
 
         /// <summary>
         /// Applies one step of Health, Resource and Shield regeneration for
-        /// <paramref name="deltaSeconds"/> of elapsed time. Driven from <see cref="Update"/> at
-        /// frame cadence today; the Encounter sim drives it from the combat tick later (issue #17,
-        /// the <c>COMBAT TICK RATE</c> marker above).
+        /// <paramref name="deltaSeconds"/> of elapsed time. Driven by
+        /// <see cref="Simulation.SimulationDriver"/> at sim speed, in both Town and Field
+        /// (issue #45). Dead heroes do not regenerate.
         /// </summary>
         public void Regenerate(float deltaSeconds)
         {
@@ -148,7 +143,16 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
         private static bool CanSpendResource(CharacterResource resource, float amount) => amount <= resource.CurrentValue;
 
-        public void ReceiveDamageFrom(BaseCharacter dealer, DamageType damageType, float incomingDamage)
+        public void ReceiveDamageFrom(BaseCharacter dealer, DamageType damageType, float incomingDamage) =>
+            ReceiveDamage(damageType, incomingDamage);
+
+        /// <summary>
+        /// The dealer-less incoming-damage path: mitigate by the matching resist, spend the
+        /// Shield, then the Health — identical to <see cref="ReceiveDamageFrom"/> minus the
+        /// (unused) dealer reference. The Encounter sim's enemies are not <see cref="BaseCharacter"/>s,
+        /// so the hero adapter (issue #43) routes their Strikes through here.
+        /// </summary>
+        public void ReceiveDamage(DamageType damageType, float incomingDamage)
         {
             var health = this.GetResource(StatName.Health);
 
