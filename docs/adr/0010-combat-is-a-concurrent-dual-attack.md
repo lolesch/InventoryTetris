@@ -1,5 +1,5 @@
 ---
-status: accepted, not yet implemented — the /prototype (issue #18) has run twice; see "Prototype outcome" (pass 1) and "Second amendment" (pass 2)
+status: accepted — the /prototype (issue #18) has run twice; see "Prototype outcome" (pass 1) and "Second amendment" (pass 2)
 ---
 
 # Combat is a concurrent dual attack, one half geared for each damage type
