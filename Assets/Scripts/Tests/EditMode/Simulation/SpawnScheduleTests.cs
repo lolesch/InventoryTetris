@@ -39,7 +39,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
                 spawnJitter: 0f,
                 initialSpawn: 2);
 
-            var sim = new EncounterSimulation(InertHero(), profile, new ConstantRollSource(0f), engagementTarget: 3);
+            var sim = new EncounterSimulation(InertHero(), profile, new ConstantRollSource(0f), Behaviours.Engaging(3));
 
             for (var i = 0; i < 200; i++) sim.Advance(0.1f); // 20 s
 
@@ -62,7 +62,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
                 spawnJitter: 0f,
                 initialSpawn: 1);
 
-            var sim = new EncounterSimulation(InertHero(), profile, new ConstantRollSource(0f), engagementTarget: 2);
+            var sim = new EncounterSimulation(InertHero(), profile, new ConstantRollSource(0f), Behaviours.Engaging(2));
 
             // Long enough for the first post-initial spawn tick to fire.
             for (var i = 0; i < 10; i++) sim.Advance(0.1f);
@@ -85,7 +85,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
                 spawnJitter: 0f,
                 initialSpawn: 1);
 
-            var sim = new EncounterSimulation(InertHero(), profile, new ConstantRollSource(0f), engagementTarget: 10);
+            var sim = new EncounterSimulation(InertHero(), profile, new ConstantRollSource(0f), Behaviours.Engaging(10));
 
             for (var i = 0; i < 200; i++) sim.Advance(0.1f);
 
@@ -114,7 +114,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
                 0.9f, 0f, 0f,                      // tick 1 → 1 Skirmisher
                 0.1f, 0f, 0f, 0f, 0f, 0f);         // tick 2 → a Pack of 4 Brutes
 
-            var sim = new EncounterSimulation(InertHero(), profile, rolls, engagementTarget: 100);
+            var sim = new EncounterSimulation(InertHero(), profile, rolls, Behaviours.Engaging(100));
 
             sim.Advance(0.1f); // first spawn tick — a lone Skirmisher
             Assert.That(sim.AliveEnemyCount, Is.EqualTo(1));
@@ -140,7 +140,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
                 spawnJitter: 0f,
                 initialSpawn: 3);
 
-            var sim = new EncounterSimulation(InertHero(), profile, new ConstantRollSource(0f), engagementTarget: 10);
+            var sim = new EncounterSimulation(InertHero(), profile, new ConstantRollSource(0f), Behaviours.Engaging(10));
 
             // 3 bodies at open: packed (Skirmisher) fills first, so 3 Skirmishers before any Brute.
             Assert.That(sim.Enemies.Count(e => e.Archetype == EnemyArchetype.Skirmisher), Is.EqualTo(3));

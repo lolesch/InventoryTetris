@@ -12,9 +12,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// touches <see cref="Time.timeScale"/> (ADR-0008): sim-speed accelerates the fight only, so
     /// UI tweens and panel animations keep real time.
     ///
-    /// A downed hero is walked back to Town here too — <see cref="SimulationProvider.HandleHeroDeath"/>
-    /// is a no-op until the sim reports the hero down, then closes the Run once. The provider
-    /// attaches this component to its own GameObject, so it lives exactly as long as the provider.
+    /// Both ways out of the Field are walked back to Town here — a downed hero through
+    /// <see cref="SimulationProvider.HandleHeroDeath"/>, and a <see cref="HeroBehaviour"/>
+    /// auto-Recall trigger (issue #23) through <see cref="SimulationProvider.Recall"/>. Each is a
+    /// no-op until the sim raises its signal, so the driver can poll both every frame. The
+    /// provider attaches this component to its own GameObject, so it lives exactly as long as
+    /// the provider.
     /// </summary>
     [DefaultExecutionOrder(10)]
     public sealed class SimulationDriver : MonoBehaviour
@@ -38,8 +41,14 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             _ = run.Advance(dt);
 
+            // Both exits are read after the tick, never inside it: the sim raises its signal and
+            // stops, and the RunState transition happens out here. Death is tested first so a
+            // tick that trips both is a Death — the penalty is not dodgeable by an auto-Recall
+            // trigger racing it.
             if (run.HeroIsDown)
                 provider.HandleHeroDeath();
+            else if (run.RecallRequested)
+                _ = provider.Recall();
         }
     }
 }

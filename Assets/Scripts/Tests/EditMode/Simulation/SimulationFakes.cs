@@ -107,6 +107,23 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         private static float Clamp01(float v) => v < 0f ? 0f : v > 1f ? 1f : v;
     }
 
+    /// <summary>
+    /// <see cref="HeroBehaviour"/> presets. <see cref="Engaging"/> is the neutral one every test
+    /// that does not care about steering wants: the named Engagement, no retreat trigger, no
+    /// Cast hold — the sim behaves exactly as it did when it took a bare engagement target.
+    /// </summary>
+    internal static class Behaviours
+    {
+        /// <summary>Refill toward <paramref name="engagement"/>; every other trigger inert.</summary>
+        public static HeroBehaviour Engaging(int engagement) => new() { Engagement = engagement };
+    }
+
+    /// <summary>An <see cref="IBagGauge"/> whose fill a test sets directly, and re-sets mid-fight.</summary>
+    internal sealed class FakeBagGauge : IBagGauge
+    {
+        public float FillFraction { get; set; }
+    }
+
     internal static class Profiles
     {
         /// <summary>A single enemy of one archetype, no further spawns — isolates one target.</summary>

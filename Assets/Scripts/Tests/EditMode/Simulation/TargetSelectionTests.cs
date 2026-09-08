@@ -29,7 +29,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             initialSpawn: 4);
 
         private static EncounterSimulation NewSim(FakeHero hero) => new(
-            hero, MixedQuad(), new ConstantRollSource(0f), engagementTarget: 10,
+            hero, MixedQuad(), new ConstantRollSource(0f), Behaviours.Engaging(10),
             new EncounterTuning { CastCadence = 0.05f });
 
         private static FakeHero StrikerCaster() => new()
@@ -76,7 +76,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var hero = StrikerCaster();
             hero.PhysicalDamage = 20f; // burst the Strike target
             hero.MagicalDamage = 1f;   // barely erode the Brutes
-            var sim = new EncounterSimulation(hero, MixedQuad(), new ConstantRollSource(0f), engagementTarget: 10,
+            var sim = new EncounterSimulation(hero, MixedQuad(), new ConstantRollSource(0f), Behaviours.Engaging(10),
                 new EncounterTuning { CastCadence = 0.05f });
 
             var order = new List<EnemyArchetype>();

@@ -136,7 +136,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 throw new InvalidOperationException("No LocalPlayer on the CharacterProvider — cannot start an Encounter.");
 
             var hero = new HeroCombatant(player, Mathf.Max(0f, castCost));
-            var encounter = new EncounterSimulation(hero, profile, _rolls, Mathf.Max(1, Behaviour.Engagement));
+
+            // The behaviour goes in by reference, not as a snapshot of its values: the sliders
+            // (issue #27) write it live, and Engagement, the Cast threshold and both retreat
+            // triggers are all read off it inside the tick (issue #23).
+            var encounter = new EncounterSimulation(hero, profile, _rolls, Behaviour, bag: BagGauge());
 
             // XP settles on each Encounter clear, independent of whether a loot system is
             // configured (issue #44). GainExperience's monsterLevel is set to the hero's own
@@ -146,6 +150,18 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             WireLoot(encounter, player);
             return encounter;
+        }
+
+        /// <summary>
+        /// The bag-full retreat trigger's measuring stick (issue #23), or <c>null</c> when the
+        /// scene has no inventory wired — the fight then simply never auto-Recalls on a full bag,
+        /// the same way it earns no loot without an ItemProvider.
+        /// </summary>
+        private static IBagGauge BagGauge()
+        {
+            var provider = InventoryProvider.Instance;
+            var bag = provider != null ? provider.Inventory : null;
+            return bag != null ? new ContainerBagGauge(bag) : null;
         }
 
         /// <summary>
