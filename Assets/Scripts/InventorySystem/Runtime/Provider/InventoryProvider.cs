@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using TMPro;
 using ToolSmiths.InventorySystem.Data;
@@ -20,6 +21,9 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// <summary>The player's spendable money, backed by <see cref="Inventory"/>'s coin
         /// cells. The wallet, not the container, owns currency logic since issue #14.</summary>
         public Wallet Wallet { get; private set; }
+
+        public SidePanelContext ActiveSidePanel { get; private set; }
+        public event Action<SidePanelContext> OnSidePanelChanged;
 
         [field: SerializeField] public bool ShowDebugPositions { get; private set; }
 
@@ -50,6 +54,24 @@ namespace ToolSmiths.InventorySystem.Inventories
             StashDisplay.SetupDisplay(Stash);
 
             StoreDisplay.SetupDisplay(Store);
+        }
+
+        public void SetSidePanel(SidePanelContext context)
+        {
+            if (ActiveSidePanel == context)
+                return;
+
+            ActiveSidePanel = context;
+            OnSidePanelChanged?.Invoke(context);
+        }
+
+        public void ClearSidePanel(SidePanelContext context)
+        {
+            if (ActiveSidePanel == SidePanelContext.None || ActiveSidePanel != context)
+                return;
+
+            ActiveSidePanel = SidePanelContext.None;
+            OnSidePanelChanged?.Invoke(SidePanelContext.None);
         }
 
         public void Awake()
