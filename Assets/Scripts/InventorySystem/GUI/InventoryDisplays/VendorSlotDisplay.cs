@@ -1,6 +1,7 @@
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
+using ToolSmiths.InventorySystem.Runtime.Character;
 using ToolSmiths.InventorySystem.Runtime.Provider;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -116,7 +117,8 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 /// One transaction (issue #11): the item leaves the shelf and lands in the
                 /// bag, and the price is paid, as a unit. No room in the bag rolls the whole
                 /// thing back - the item stays on the shelf and nothing is charged.
-                _ = VendorTransaction.Buy(Container, position, package, wallet, price);
+                _ = VendorTransaction.Buy(Container, position, package, wallet, price,
+                    CharacterProvider.Instance.Player);
 
                 return;
             }

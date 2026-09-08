@@ -1,5 +1,7 @@
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Items;
+using ToolSmiths.InventorySystem.Runtime.Character;
+using ToolSmiths.InventorySystem.Runtime.Provider;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Inventories
@@ -52,26 +54,35 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         /// <summary>
         /// Buys the package at <paramref name="position"/> out of <paramref name="store"/>
-        /// into <paramref name="wallet"/> for <paramref name="price"/> base units. On commit
-        /// the item is placed and the price paid exactly; if the wallet cannot afford it or
-        /// has no room the whole move rolls back - the item stays on the shelf, nothing is
-        /// charged.
+        /// for <paramref name="price"/> base units, routing the item through the player's
+        /// acquisition entry point (<see cref="LocalPlayer.PickUpItem"/>) so auto-equip,
+        /// bag overflow, and stash fallback all apply. On commit the item is placed and the
+        /// price paid exactly; if the wallet cannot afford it or has no room anywhere the
+        /// whole move rolls back - the item stays on the shelf, nothing is charged.
         /// </summary>
+        /// <param name="player">The local player whose <see cref="LocalPlayer.PickUpItem"/>
+        /// decides placement. When null the item falls back to a direct bag add (test seam).</param>
         /// <returns>Whether the purchase went through.</returns>
         public static bool Buy(AbstractDimensionalContainer store, Vector2Int position, Package onShelf,
-            Wallet wallet, float price)
+            Wallet wallet, float price, LocalPlayer player = null)
         {
             if (store == null || wallet == null || !onShelf.IsValid || !wallet.CanAfford(new Currency(price)))
                 return false;
 
             var bag = wallet.Container;
+            var equipment = InventoryProvider.Instance?.Equipment;
+            var stash = InventoryProvider.Instance?.Stash;
 
-            using var transaction = new ItemTransaction(store, bag);
+            using var transaction = new ItemTransaction(store, bag, equipment, stash);
 
             _ = store.RemoveAtPosition(position, onShelf);
 
-            var incoming = new Package(bag, onShelf.Item, onShelf.Amount);
-            if (!bag.TryAddToContainer(ref incoming))
+            var incoming = new Package(player != null ? null : bag, onShelf.Item, onShelf.Amount);
+            var acquired = player != null
+                ? player.PickUpItem(incoming)
+                : bag.TryAddToContainer(ref incoming);
+
+            if (!acquired)
                 return false; // dispose rolls the removal back - item back on the shelf, no charge
 
             transaction.QueueEffect(() => _ = wallet.TryPay(new Currency(price)));

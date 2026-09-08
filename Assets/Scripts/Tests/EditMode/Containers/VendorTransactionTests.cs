@@ -197,5 +197,6 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 
             Assert.That(VendorTransaction.BuyPrice(sword), Is.EqualTo(SwordSellValue * VendorTransaction.Markup));
         }
+
     }
 }
