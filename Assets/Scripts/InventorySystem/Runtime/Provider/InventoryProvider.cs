@@ -22,8 +22,17 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// cells. The wallet, not the container, owns currency logic since issue #14.</summary>
         public Wallet Wallet { get; private set; }
 
-        public SidePanelContext ActiveSidePanel { get; private set; }
-        public event Action<SidePanelContext> OnSidePanelChanged;
+        /// <summary>Which town side panel is open (#54). The rule itself is the engine-free
+        /// <see cref="SidePanelState"/>; the provider only carries it to the scene.</summary>
+        private readonly SidePanelState sidePanel = new();
+
+        public SidePanelContext ActiveSidePanel => sidePanel.Active;
+
+        public event Action<SidePanelContext> OnSidePanelChanged
+        {
+            add => sidePanel.Changed += value;
+            remove => sidePanel.Changed -= value;
+        }
 
         [field: SerializeField] public bool ShowDebugPositions { get; private set; }
 
@@ -56,23 +65,9 @@ namespace ToolSmiths.InventorySystem.Inventories
             StoreDisplay.SetupDisplay(Store);
         }
 
-        public void SetSidePanel(SidePanelContext context)
-        {
-            if (ActiveSidePanel == context)
-                return;
+        public void SetSidePanel(SidePanelContext context) => sidePanel.Set(context);
 
-            ActiveSidePanel = context;
-            OnSidePanelChanged?.Invoke(context);
-        }
-
-        public void ClearSidePanel(SidePanelContext context)
-        {
-            if (ActiveSidePanel == SidePanelContext.None || ActiveSidePanel != context)
-                return;
-
-            ActiveSidePanel = SidePanelContext.None;
-            OnSidePanelChanged?.Invoke(SidePanelContext.None);
-        }
+        public void ClearSidePanel(SidePanelContext context) => sidePanel.Clear(context);
 
         public void Awake()
         {
