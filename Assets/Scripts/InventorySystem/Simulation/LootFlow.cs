@@ -24,7 +24,7 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// anything here — a caller (a test today, <see cref="RunState.RunEnded"/> for real, issue
     /// #26) calls it when a Run ends, on both outcomes (CONTEXT.md "Drop").
     /// </summary>
-    public sealed class LootFlow
+    public sealed class LootFlow : ILootGround
     {
         private readonly EncounterSimulation _encounter;
         private readonly HeroBehaviour _behaviour;
