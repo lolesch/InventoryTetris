@@ -1,5 +1,5 @@
 ---
-status: accepted, not yet implemented
+status: accepted
 ---
 
 # The Encounter is a live simulation the player watches, not a resolved outcome
