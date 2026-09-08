@@ -236,6 +236,11 @@ penalty: lost XP, a fee off banked currency, and the bag set aside as a Corpse.
 Equipped gear is never touched; not a game-over.
 _Avoid_: defeat, loss, game over, fail, wipe
 
+**Healer**:
+A Town action that instantly refills the hero's Health and Resource. A one-shot
+button today; will gain its own side panel later.
+_Avoid_: shrine, fountain, well
+
 ## Combat
 
 What happens inside an Encounter. Settled by the grilling of 2026-09-02 and the issue-#18
@@ -291,3 +296,39 @@ stream of Casts; high is the same Casts arriving clumped. A rhythm knob, not a p
 — the `/prototype` found it barely moves an Encounter's outcome against a continuous
 spawn (ADR-0010).
 _Avoid_: resource reserve, mana gate, burst threshold
+
+## Screen Layout
+
+**Minimap**:
+The centre-screen element that always shows. Two visual states — Town and Field — each
+with its own background art and button set. Drives panel open/close and Run transitions.
+_Avoid_: world map, compass, hud map
+
+**Side Panel**:
+A right-side panel that shows one of the town's interactable contexts at a time
+(Stash or Vendor today). Exactly one active at a time; the active one is tracked as
+`SidePanelContext` on the `InventoryProvider`, which the trade flow reads for
+shift-click routing.
+_Avoid_: tab, drawer, sidebar
+
+**Side Panel Context**:
+The enum (`None`, `Stash`, `Vendor`) that records which town side panel is currently
+open. Owned by the `InventoryProvider`, not by the UI toggles. The trade flow queries
+it to decide where shift-clicked items land.
+_Avoid_: trade target, active panel, current context
+
+**Combat Panel**:
+The left-side panel, visible only during `InField`. Holds behaviour sliders, enemy
+health bars and encounter stats. Fades in on Send, out on Recall/Death.
+_Avoid_: debug panel, sim panel, fight panel
+
+**Ability Hotbar**:
+A centre-bottom bar of ability icons (Strike, Cast) that flash on use and show
+cooldown overlays. Minimal v1 is flash-only; cooldown visuals are a follow-up.
+_Avoid_: skill bar, action bar, power bar
+
+**Ground Items List**:
+A pooled list of slot displays for items lying on the ground. Each entry shows the
+item name and icon, supports hover preview and click-to-pick-up. One slot per item,
+not spatial.
+_Avoid_: loot beam, drop list, world items
