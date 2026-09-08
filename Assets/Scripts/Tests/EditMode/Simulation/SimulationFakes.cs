@@ -124,6 +124,64 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         public float FillFraction { get; set; }
     }
 
+    // ─── run settlement (finding #2) ──────────────────────────────────────────
+
+    /// <summary>
+    /// An in-memory <see cref="ISettlementBag"/>. Seeded with the contents a Death would find;
+    /// <see cref="TryStore"/> refuses once <see cref="Capacity"/> instances are held (a
+    /// <c>null</c> capacity never fills). <see cref="TakeNonCurrencyContents"/> hands the seeded
+    /// contents back once and leaves the bag empty — currency is the port's caller's problem,
+    /// not modelled here.
+    /// </summary>
+    internal sealed class InMemorySettlementBag : ISettlementBag
+    {
+        private readonly List<ItemInstance> _contents;
+
+        public InMemorySettlementBag(params ItemInstance[] contents) => _contents = new List<ItemInstance>(contents);
+
+        /// <summary>Instances <see cref="TryStore"/> accepts before it starts refusing. <c>null</c> = unbounded.</summary>
+        public int? Capacity { get; set; }
+
+        /// <summary>Everything <see cref="TryStore"/> has accepted, in order.</summary>
+        public List<ItemInstance> Stored { get; } = new();
+
+        public IReadOnlyList<ItemInstance> TakeNonCurrencyContents()
+        {
+            var taken = _contents.ToArray();
+            _contents.Clear();
+            return taken;
+        }
+
+        public bool TryStore(ItemInstance item)
+        {
+            if (Capacity is { } cap && Stored.Count >= cap)
+                return false;
+
+            Stored.Add(item);
+            return true;
+        }
+    }
+
+    /// <summary>An <see cref="ISettlementLedger"/> that records each call rather than moving anything.</summary>
+    internal sealed class RecordingSettlementLedger : ISettlementLedger
+    {
+        public long? FeeCharged { get; private set; }
+        public int? XpForfeited { get; private set; }
+        public int ReviveCalls { get; private set; }
+
+        public void ChargeFee(long baseUnits) => FeeCharged = baseUnits;
+        public void ForfeitXp(int xp) => XpForfeited = xp;
+        public void ReviveIfDown() => ReviveCalls++;
+    }
+
+    /// <summary>An <see cref="ILootGround"/> that just collects what it is handed.</summary>
+    internal sealed class RecordingLootGround : ILootGround
+    {
+        public List<ItemInstance> Placed { get; } = new();
+
+        public void PlaceOnGround(ItemInstance item) => Placed.Add(item);
+    }
+
     internal static class Profiles
     {
         /// <summary>A single enemy of one archetype, no further spawns — isolates one target.</summary>

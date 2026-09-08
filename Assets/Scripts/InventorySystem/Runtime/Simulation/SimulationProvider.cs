@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Inventories;
@@ -20,18 +19,20 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// (spec <i>Persistence constraints</i>: its own provider, <b>not</b> a member on the
     /// <c>InventoryProvider</c> god object). It builds the <see cref="EncounterSimulation"/>
     /// through the factory <see cref="RunState"/> is handed — binding the live hero
-    /// adapter, the <see cref="UnityRollSource"/> and <c>HeroBehaviour.Engagement</c> — and owns
-    /// the loot / XP / Corpse delivery
-    /// (issue #44) that turns each Run into the loop the spec stories describe.
+    /// adapter, the <see cref="UnityRollSource"/> and <c>HeroBehaviour.Engagement</c> — and wires
+    /// the loot / XP / Corpse delivery (issue #44) that turns each Run into the loop the spec
+    /// stories describe.
     ///
     /// The per-kill loot flow (issue #24) is rebuilt for each Encounter — a fresh
     /// <see cref="LootFlow"/> against the real bag and <see cref="Wallet"/> — and drives
     /// <see cref="RunState.BankCurrency"/> per kill so the Death fee reads the real take. XP
-    /// settles to the LocalPlayer on each clear; a Death buries the bag as a Corpse, charges
-    /// the fee and XP loss, and the standing Corpse is laid back out on a matching re-entry.
-    /// The one correctness detail this file owns: <see cref="Corpse"/> matches by
+    /// settles to the LocalPlayer on each clear. The ADR-0009 Death penalty and the
+    /// corpse-recovery rules live in <see cref="RunSettlement"/> (finding #2); this file binds
+    /// its <see cref="ContainerSettlementBag"/> / <see cref="PlayerWalletLedger"/> ports and
+    /// hands <see cref="Send"/>'s re-entry the live loot ground.
+    /// The one correctness detail this file still owns: <see cref="Corpse"/> matches by
     /// <see cref="EncounterProfile"/> <em>reference</em>, so <see cref="_profiles"/> memoizes
-    /// one profile per <see cref="LocationConfig"/> and Send / Bury / Recover all share it.
+    /// one profile per <see cref="LocationConfig"/> and Send / Settle / Recover all share it.
     ///
     /// The frame-by-frame tick is <see cref="SimulationDriver"/>'s job; the real map UI
     /// (<see cref="MapPanel"/>, issue #27) replaces the old debug panel. The driver is
@@ -61,7 +62,16 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private LootFlow _lootFlow;
         private ItemGenerator _itemGenerator;
         private readonly Dictionary<LocationConfig, EncounterProfile> _profiles = new();
-        private readonly Corpse _corpse = new();
+        private RunSettlement _settlement;
+
+        /// <summary>
+        /// The ADR-0009 Death / recovery rules (finding #2), bound to the live bag, Wallet and
+        /// hero. Built lazily because the ports resolve their providers on each call - and held
+        /// for the provider's lifetime so the one standing <see cref="Corpse"/> persists across
+        /// Runs.
+        /// </summary>
+        private RunSettlement Settlement => _settlement ??= new RunSettlement(
+            new ContainerSettlementBag(), new PlayerWalletLedger());
 
         /// <summary>The Run FSM — <see cref="RunPhase.InTown"/> until a <see cref="Send"/>.</summary>
         public RunState Run => _run ??= BuildRun();
@@ -227,7 +237,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             var result = Run.HandleDeath(CurrentXpProgress());
             if (result.Outcome == RunOutcome.Died)
-                DeliverDeath(result);
+                Settlement.Settle(result, SelectedLocation != null ? ProfileFor(SelectedLocation) : null);
         }
 
         /// <summary>The hero's progress toward its next level, in XP — what the Death penalty's <c>XpLossFraction</c> is taken against.</summary>
@@ -238,67 +248,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         }
 
         /// <summary>
-        /// The Death case of <see cref="HandleHeroDeath"/>: bury the bag (its non-currency
-        /// contents) as a Corpse tagged with the fall Location, clear those from the bag (the
-        /// Wallet's coins and equipped gear are untouched — caller contract), withdraw the
-        /// currency fee from the Wallet and subtract the XP loss from the hero (ADR-0009),
-        /// then revive at full HP and full Resource — immediately Sendable (issue #45).
+        /// Lay the standing Corpse (if it is at <paramref name="profile"/>) back out — to the bag
+        /// where it fits, else the ground (or re-buried with no loot flow). The rules are
+        /// <see cref="RunSettlement.Recover"/>'s; this only hands it the live ground.
         /// </summary>
-        private void DeliverDeath(RunResult result)
-        {
-            var bag = InventoryProvider.Instance.Inventory;
-            var contents = BuryNonCurrency(bag);
-
-            if (SelectedLocation != null)
-                _corpse.Bury(ProfileFor(SelectedLocation), contents);
-
-            var fee = new Currency((uint)result.CurrencyFee);
-            if (fee.Total > 0u)
-                _ = InventoryProvider.Instance.Wallet.TryPay(fee);
-
-            var player = CharacterProvider.Instance.Player;
-
-            if (result.XpLost > 0 && SelectedLocation != null && player != null)
-                _ = player.GetResource(StatName.Experience).RemoveFromCurrent(result.XpLost);
-
-            // Revive the hero at full HP and full Resource — immediately Sendable (issue #45).
-            if (player != null && player.IsDead)
-            {
-                player.GetResource(StatName.Health).RefillCurrent();
-                player.GetResource(StatName.Resource).RefillCurrent();
-            }
-        }
-
-        /// <summary>
-        /// Lay the standing Corpse (if it is at <paramref name="profile"/>) back out: to the bag
-        /// where it fits, else on the ground via <see cref="LootFlow.PlaceOnGround"/> so it can be
-        /// picked back up / seen stranded. With no loot flow to hold the ground overflow the
-        /// leftover is re-buried rather than lost. A no-op with no Corpse or a mismatched Location.
-        /// </summary>
-        private void RecoverCorpseAt(EncounterProfile profile)
-        {
-            if (!_corpse.TryRecover(profile, out var drops))
-                return;
-
-            var bag = InventoryProvider.Instance.Inventory;
-            var stranded = new List<ItemInstance>();
-            foreach (var item in drops)
-            {
-                var package = new Package(bag, item, 1u);
-                if (bag.TryAddToContainer(ref package))
-                    continue;
-
-                if (_lootFlow != null)
-                    _lootFlow.PlaceOnGround(item);
-                else
-                    stranded.Add(item);
-            }
-
-            // No ground to strand them on this Run (no loot flow): keep the items on the
-            // Corpse for a later recovery rather than destroy the haul.
-            if (stranded.Count > 0)
-                _corpse.Bury(profile, stranded);
-        }
+        private void RecoverCorpseAt(EncounterProfile profile) => Settlement.Recover(profile, _lootFlow);
 
         /// <summary>
         /// The one memoized <see cref="EncounterProfile"/> per <see cref="LocationConfig"/> —
@@ -311,28 +265,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (!_profiles.TryGetValue(location, out var profile))
                 _profiles[location] = profile = location.ToProfile();
             return profile;
-        }
-
-        /// <summary>
-        /// Take the bag's non-currency packages — one pass: collect their contents (a stack of
-        /// <c>N</c> yields <c>N</c> instances, so a recovery re-stacks to the same count), remove
-        /// them from the bag, and hand the contents back for the Corpse. Coins stay with the
-        /// Wallet; equipped gear never lives here.
-        /// </summary>
-        private static ItemInstance[] BuryNonCurrency(AbstractDimensionalContainer bag)
-        {
-            var doomed = bag.StoredPackages
-                .Where(entry => ItemView.Of(entry.Value.Item).Definition.Category != ItemCategory.Currency)
-                .ToList();
-
-            var contents = doomed
-                .SelectMany(entry => Enumerable.Repeat(entry.Value.Item, (int)entry.Value.Amount))
-                .ToArray();
-
-            foreach (var entry in doomed)
-                _ = bag.RemoveAtPosition(entry.Key, entry.Value);
-
-            return contents;
         }
 
         private void OnRunEnded()
