@@ -164,11 +164,19 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 {
                     /// Quick-move follows the open side panel (issue #30): one pure resolver
                     /// decides where shift-click sends the item. With the Stash open it is
-                    /// the same backpack ↔ Stash as always; with neither panel open - or the
-                    /// Vendor open, until the basket exists (#33) - nothing moves. The move
-                    /// itself is unchanged (issue #10): the item leaves its slot and lands in
-                    /// the other container, or - if that is full - in hand.
+                    /// the same backpack ↔ Stash as always; with the Vendor open (issue #33)
+                    /// it is a shift-click sale - the item goes into the Sell Basket; with
+                    /// neither panel open nothing moves.
                     var intent = InventoryProvider.Instance.QuickMoveFor(Container);
+
+                    if (intent.Kind == QuickMoveIntentKind.SellBasket)
+                    {
+                        /// One transaction over the source and the basket: the item leaves
+                        /// this slot and lands in the basket with its origin remembered; a
+                        /// full basket leaves it where it is (#33).
+                        _ = SellBasketQuickMove.SendToBasket(InventoryProvider.Instance.Basket, Container, position);
+                        return;
+                    }
 
                     if (intent.Kind != QuickMoveIntentKind.MoveToContainer)
                         return;

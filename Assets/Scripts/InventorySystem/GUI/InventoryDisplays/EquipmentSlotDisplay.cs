@@ -134,10 +134,20 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             {
                 /// Quick-move follows the open side panel (issue #30): equipment shift-clicks
                 /// to whichever panel is open. With the Stash open that is the stash, as
-                /// always; with neither panel open - or the Vendor open - nothing moves. The
-                /// move stays (issue #10): the item comes off, or - if the target is full -
-                /// into the hand; the affix lift rides the commit.
+                /// always; with the Vendor open (issue #33) it is a shift-click sale - the
+                /// worn item unequips straight into the Sell Basket; with neither panel open
+                /// nothing moves. The move stays (issue #10): the affix lift rides the
+                /// commit.
                 var intent = InventoryProvider.Instance.QuickMoveFor(Container);
+
+                if (intent.Kind == QuickMoveIntentKind.SellBasket)
+                {
+                    /// One transaction over the paper-doll and the basket: the worn item
+                    /// unequips (its affixes lifted on commit) and lands in the basket with
+                    /// its origin remembered; a full basket leaves it where it is (#33).
+                    _ = SellBasketQuickMove.SendToBasket(InventoryProvider.Instance.Basket, Container, position);
+                    return;
+                }
 
                 if (intent.Kind != QuickMoveIntentKind.MoveToContainer)
                     return;

@@ -7,33 +7,42 @@ namespace ToolSmiths.InventorySystem.Inventories
     /// lifted into one tested place. Pure: it names no provider and no GUI, only the
     /// containers the caller already holds.
     ///
-    /// Wired rows (this ticket): with the Stash open, backpack ↔ Stash and equipment →
-    /// Stash, exactly as before; with neither panel open, nothing moves. The player's
-    /// containers in Vendor context return <see cref="QuickMoveIntentKind.None"/> until #33
-    /// fills them in once the Sell Basket exists. The vendor shelf's own shift-click is a
-    /// <see cref="QuickMoveIntentKind.Buy"/> in every context - buying stays a shelf-local
-    /// act.
+    /// Wired rows: with the Stash open, backpack ↔ Stash and equipment → Stash; with the
+    /// Vendor open (issue #33), backpack and equipment shift-clicks send to the Sell Basket
+    /// and a basket Package returns to the backpack; with neither panel open, nothing moves.
+    /// The vendor shelf's own shift-click is a <see cref="QuickMoveIntentKind.Buy"/> in every
+    /// context - buying stays a shelf-local act.
     /// </summary>
     public static class QuickMoveResolver
     {
+        /// <param name="basket">The Sell Basket's grid container - recognized as a quick-move
+        /// source so a basket shift-click returns its Package to the backpack.</param>
         public static QuickMoveIntent Resolve(SidePanelContext context, AbstractDimensionalContainer source,
             AbstractDimensionalContainer backpack, AbstractDimensionalContainer stash,
-            AbstractDimensionalContainer equipment, AbstractDimensionalContainer store)
+            AbstractDimensionalContainer equipment, AbstractDimensionalContainer store,
+            AbstractDimensionalContainer basket)
         {
             if (source == store)
                 return QuickMoveIntent.Buy;
 
-            if (context != SidePanelContext.Stash)
-                return QuickMoveIntent.None;
+            switch (context)
+            {
+                case SidePanelContext.Stash:
+                    if (source == backpack)
+                        return QuickMoveIntent.MoveTo(stash);
+                    if (source == stash)
+                        return QuickMoveIntent.MoveTo(backpack);
+                    if (source == equipment)
+                        return QuickMoveIntent.MoveTo(stash);
+                    break;
 
-            if (source == backpack)
-                return QuickMoveIntent.MoveTo(stash);
-
-            if (source == stash)
-                return QuickMoveIntent.MoveTo(backpack);
-
-            if (source == equipment)
-                return QuickMoveIntent.MoveTo(stash);
+                case SidePanelContext.Vendor:
+                    if (source == basket)
+                        return QuickMoveIntent.MoveTo(backpack);
+                    if (source == backpack || source == equipment)
+                        return QuickMoveIntent.SellBasket;
+                    break;
+            }
 
             return QuickMoveIntent.None;
         }
