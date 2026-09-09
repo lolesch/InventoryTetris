@@ -70,12 +70,42 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// <param name="transaction">The transaction placing the item. Null-safely ignored.</param>
         /// <param name="wallet">The buyer's wallet; the charge runs against it on commit.</param>
         /// <param name="price">The price shown at pick-up, in base units.</param>
-        public static void QueuePurchasePayment(ItemTransaction transaction, Wallet wallet, float price)
+        private static void QueuePurchasePayment(ItemTransaction transaction, Wallet wallet, float price)
         {
             if (transaction == null || wallet == null)
                 return;
 
             transaction.QueueEffect(() => _ = wallet.TryPay(new Currency(price)));
+        }
+
+        /// <summary>
+        /// Whether a drop carrying <paramref name="price"/> may proceed - and, if it is a
+        /// purchase that can be paid for, queues the payment on
+        /// <paramref name="transaction"/> at the same time.
+        ///
+        /// <para>Checking affordability and queueing the charge are one protocol with an
+        /// ordering rule: check first, so the queued payment cannot fail at commit and
+        /// strand an unpaid item in the bag. That rule used to live in a comment, restated
+        /// at each drop target, with nothing stopping a third one from queueing without
+        /// checking. Here the wrong order is unexpressible.</para>
+        ///
+        /// <para><paramref name="price"/> is null for an ordinary drop - not a purchase, so
+        /// there is nothing to check or charge and the drop proceeds untouched.</para>
+        /// </summary>
+        /// <returns>
+        /// False only when this is a purchase the wallet cannot pay for; the caller must
+        /// then abandon the drop, leaving the item in hand and nothing charged.
+        /// </returns>
+        public static bool TryQueuePurchase(ItemTransaction transaction, Wallet wallet, float? price)
+        {
+            if (price is not float amount)
+                return true;
+
+            if (!CanAffordBuy(wallet, amount))
+                return false;
+
+            QueuePurchasePayment(transaction, wallet, amount);
+            return true;
         }
 
         /// <summary>

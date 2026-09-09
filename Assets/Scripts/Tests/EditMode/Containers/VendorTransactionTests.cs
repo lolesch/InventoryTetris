@@ -217,15 +217,15 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         private static bool DragDrop(AbstractDimensionalContainer bag, Vector2Int at, ref Package inHand,
             Wallet wallet, float price)
         {
-            if (!VendorTransaction.CanAffordBuy(wallet, price))
-                return false;
-
             if (!bag.CanPlaceAt(at, ItemView.Of(inHand.Item).Dimensions))
                 return false; // no room - nothing lands, nothing charged
 
             var cursor = new CursorHolder(null);
             using var transaction = new ItemTransaction(cursor, bag);
-            VendorTransaction.QueuePurchasePayment(transaction, wallet, price);
+
+            if (!VendorTransaction.TryQueuePurchase(transaction, wallet, price))
+                return false; // can't afford - dispose rolls back, nothing lands, nothing charged
+
             var displaced = bag.AddAtPosition(at, inHand);
             if (displaced.IsValid)
                 _ = transaction.TryReHomeToHandOrContainer(ref displaced, bag, at);
@@ -358,6 +358,60 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var sword = Sword();
 
             Assert.That(VendorTransaction.BuyPrice(sword), Is.EqualTo(SwordSellValue * VendorTransaction.Markup));
+        }
+
+        // ── the check-then-queue protocol (TF#4) ───────────────────────────
+        // TryQueuePurchase is the whole ordering rule: affordability is checked before the
+        // charge is queued, so a queued payment can never fail at commit. These pin the
+        // three answers a drop target needs - not a purchase, affordable, unaffordable.
+
+        [Test]
+        public void TryQueuePurchase_NoPrice_LetsAnOrdinaryDropThrough_AndChargesNothing()
+        {
+            var wallet = NewWallet();
+            SeedCash(wallet, CurrencyType.Gold, 1u);
+            var before = WalletValue(wallet);
+
+            using var transaction = new ItemTransaction(wallet.Container);
+            var mayProceed = VendorTransaction.TryQueuePurchase(transaction, wallet, null);
+            transaction.Commit();
+
+            Assert.That(mayProceed, Is.True, "an ordinary drop is not a purchase - nothing to check");
+            Assert.That(WalletValue(wallet), Is.EqualTo(before), "nothing was queued, so nothing is charged");
+        }
+
+        [Test]
+        public void TryQueuePurchase_Affordable_QueuesTheChargeForCommit()
+        {
+            var wallet = NewWallet();
+            SeedCash(wallet, CurrencyType.Gold, 1u);
+            var before = WalletValue(wallet);
+
+            using var transaction = new ItemTransaction(wallet.Container);
+            var mayProceed = VendorTransaction.TryQueuePurchase(transaction, wallet, 100f);
+
+            Assert.That(mayProceed, Is.True);
+            Assert.That(WalletValue(wallet), Is.EqualTo(before), "queued, not charged - the effect waits for commit");
+
+            transaction.Commit();
+
+            Assert.That(WalletValue(wallet), Is.EqualTo(before - 100u), "commit charges exactly the queued price");
+        }
+
+        [Test]
+        public void TryQueuePurchase_Unaffordable_RefusesTheDrop_AndQueuesNothing()
+        {
+            var wallet = NewWallet();
+            SeedCash(wallet, CurrencyType.Copper, 1u);
+            var before = WalletValue(wallet);
+
+            using var transaction = new ItemTransaction(wallet.Container);
+            var mayProceed = VendorTransaction.TryQueuePurchase(transaction, wallet, before + 1_000f);
+            transaction.Commit();
+
+            Assert.That(mayProceed, Is.False, "the caller must abandon the drop");
+            Assert.That(WalletValue(wallet), Is.EqualTo(before),
+                "committing anyway charges nothing - the unaffordable price was never queued");
         }
     }
 }
