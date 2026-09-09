@@ -189,12 +189,16 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// <see cref="SwapInPlace(PackageOrigin)"/> anchor that names one of them is tried as
         /// an exact cell first (issue #34); otherwise, and on any container the anchor does
         /// not name, the item lands in the first free space.
+        /// <para>Every item routed here prefers the anchor cell, not only the swap partner -
+        /// a two-hander's collateral off-hand takes it too when the partner did not. That is
+        /// deliberate: the displaced gear all came from around the incoming item, so clustering
+        /// it back there beats scattering it from (0,0), and the first taker wins the one cell.</para>
         /// </summary>
         private bool TryPlaceInChain(ref Package package)
         {
             foreach (var destination in reHomeChain)
             {
-                if (swapAnchor.Container == destination
+                if (swapAnchor.IsKnown && swapAnchor.Container == destination
                     && destination.TryAddAtPosition(swapAnchor.Cell, ref package))
                     return true;
 

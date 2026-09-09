@@ -148,6 +148,9 @@ namespace ToolSmiths.InventorySystem.Inventories
             if (!package.IsValid || !CanReturnTo(position, package.Item))
                 return false;
 
+            // A displaced item in the re-home cascade is a single equipment piece, so this
+            // places it whole. A stack bigger than the item's limit would part-fill the cell
+            // and leave the caller to scan-place the rest - fine, just not exercised today.
             package = AddAtPosition(position, package);
 
             RaiseContentChanged();
