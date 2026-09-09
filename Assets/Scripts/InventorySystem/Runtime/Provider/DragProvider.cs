@@ -49,12 +49,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         /// Where <see cref="CancelDrag"/> returns the package currently in hand -
         /// <see cref="Origin"/>'s container and cell at pick-up, or the real container and
         /// cell a mid-drag swap displaced the current package from
-        /// (<see cref="ReplacePackage"/>). Deliberately separate from <see cref="Origin"/>,
+        /// (<see cref="ReplacePackage"/>) - one <see cref="PackageOrigin"/> either way.
+        /// Deliberately separate from <see cref="Origin"/>,
         /// which stays "where this drag interaction started" for the re-home-through target
         /// the slot displays read off it.
         /// </summary>
-        private AbstractDimensionalContainer returnOrigin;
-        private Vector2Int returnOriginPosition;
+        private PackageOrigin returnOrigin;
 
         private float frameAlpha = 1f;
 
@@ -188,8 +188,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             PositionOffset = positionOffset;
             PurchasePrice = purchasePrice;
 
-            returnOrigin = slot != null ? slot.Container : null;
-            returnOriginPosition = slot != null ? slot.Position - positionOffset : default;
+            returnOrigin = slot != null ? new PackageOrigin(slot.Container, slot.Position - positionOffset) : default;
 
             if (!DraggingPackage.IsValid)
             {
@@ -224,12 +223,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         /// this one does not have, and reusing it left small items floating a fixed distance
         /// from the pointer.
         ///
-        /// <para><paramref name="origin"/> and <paramref name="originPosition"/> are this
-        /// swapped-in package's real home - not wherever the drag itself started - so
-        /// <see cref="CancelDrag"/> returns it there instead of re-homing it against the
-        /// original pick-up's cell (issue #29's mid-drag-swap gap).</para>
+        /// <para><paramref name="from"/> is this swapped-in package's real home - not
+        /// wherever the drag itself started - so <see cref="CancelDrag"/> returns it there
+        /// instead of re-homing it against the original pick-up's cell (issue #29's
+        /// mid-drag-swap gap).</para>
         /// </summary>
-        public void ReplacePackage(Package package, AbstractDimensionalContainer origin, Vector2Int originPosition)
+        public void ReplacePackage(Package package, PackageOrigin from)
         {
             if (!package.IsValid)
             {
@@ -241,8 +240,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             PositionOffset = Vector2Int.zero;
             PurchasePrice = null; // a displaced player item came to the hand, not a shelf purchase
 
-            returnOrigin = origin;
-            returnOriginPosition = originPosition;
+            returnOrigin = from;
 
             var dimensions = ItemView.Of(package.Item).Dimensions;
 
@@ -264,8 +262,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             PositionOffset = Vector2Int.zero;
             PurchasePrice = null;
 
-            returnOrigin = null;
-            returnOriginPosition = default;
+            returnOrigin = default;
 
             itemDisplay.gameObject.SetActive(false);
         }
@@ -303,7 +300,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         /// during a drag as a drop attempt (<see cref="AbstractSlotDisplay.OnPointerClick"/>),
         /// so reusing right-click here would race that path instead of replacing it.
         ///
-        /// <para>The origin tracked for this is <c>returnOrigin</c>/<c>returnOriginPosition</c>,
+        /// <para>The origin tracked for this is <c>returnOrigin</c>,
         /// not <see cref="Origin"/>/<see cref="PositionOffset"/>: a mid-drag swap that hands a
         /// different Package to the cursor (<see cref="ReplacePackage"/>) updates those to the
         /// swapped-out Package's real container and cell, so a cancel right after a swap
@@ -320,7 +317,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
             var backpack = InventoryProvider.Instance.Inventory;
 
-            var leftOnCursor = ReturnToOrigin.Return(DraggingPackage, returnOrigin, returnOriginPosition, backpack);
+            var leftOnCursor = ReturnToOrigin.Return(DraggingPackage, returnOrigin.Container, returnOrigin.Cell, backpack);
 
             if (leftOnCursor.IsValid)
                 return false;

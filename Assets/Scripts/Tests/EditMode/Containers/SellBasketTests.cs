@@ -99,7 +99,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             Assert.That(origin.TryGetPackageAt(originCell, out var stored), Is.True, $"nothing stored at {originCell}");
             _ = origin.RemoveAtPosition(originCell, stored); // the drag pick-up lifts the item off the origin
             var inHand = stored;
-            return SellBasket.Stage(basket, ref inHand, new SellBasket.Origin(origin, originCell), at);
+            return SellBasket.Stage(basket, ref inHand, new PackageOrigin(origin, originCell), at);
         }
 
         // ── preview ─────────────────────────────────────────────────────────

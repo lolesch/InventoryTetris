@@ -175,14 +175,14 @@ namespace ToolSmiths.InventorySystem.Inventories
                         foreach (var (occupied, displaced) in collateral)
                         {
                             var reHomed = displaced;
-                            if (!ActiveTransaction.TryReHomeToContainerOrHand(ref reHomed, this, occupied))
+                            if (!ActiveTransaction.TryReHomeToContainerOrHand(ref reHomed, new PackageOrigin(this, occupied)))
                                 break;
                         }
 
                         if (underDrop.IsValid && !ActiveTransaction.Aborted)
                         {
                             var reHomed = underDrop;
-                            _ = ActiveTransaction.TryReHomeToContainerOrHand(ref reHomed, this, underDropPosition);
+                            _ = ActiveTransaction.TryReHomeToContainerOrHand(ref reHomed, new PackageOrigin(this, underDropPosition));
                         }
                     }
                     else
@@ -200,7 +200,7 @@ namespace ToolSmiths.InventorySystem.Inventories
                         if (underDrop.IsValid && !ActiveTransaction.Aborted)
                         {
                             var reHomed = underDrop;
-                            _ = ActiveTransaction.TryReHomeToHandOrContainer(ref reHomed, this, underDropPosition);
+                            _ = ActiveTransaction.TryReHomeToHandOrContainer(ref reHomed, new PackageOrigin(this, underDropPosition));
                         }
                     }
 

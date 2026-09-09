@@ -1,5 +1,4 @@
 using ToolSmiths.InventorySystem.Data;
-using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Inventories
 {
@@ -18,8 +17,7 @@ namespace ToolSmiths.InventorySystem.Inventories
     {
         private readonly ICursorSink sink;
         private Package pending;
-        private AbstractDimensionalContainer pendingOrigin;
-        private Vector2Int pendingOriginPosition;
+        private PackageOrigin pendingOrigin;
 
         /// <param name="sink">The drag cursor a held package is handed to on commit. Null
         /// in a test that only checks the holder's book-keeping.</param>
@@ -30,19 +28,18 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         /// <summary>
         /// Records the item the cursor will hold once the transaction commits, together
-        /// with the container and cell it is being displaced from - what a later cancel
+        /// with the origin it is being displaced from - what a later cancel
         /// must return it to (issue #29's mid-drag-swap gap). One capacity: a second call
         /// while already holding fails, and the caller moves on to the next destination.
         /// </summary>
         /// <returns>False when the holder is already full or the package is invalid.</returns>
-        public bool TryHold(Package package, AbstractDimensionalContainer origin, Vector2Int originPosition)
+        public bool TryHold(Package package, PackageOrigin from)
         {
             if (!IsFree || !package.IsValid)
                 return false;
 
             pending = package;
-            pendingOrigin = origin;
-            pendingOriginPosition = originPosition;
+            pendingOrigin = from;
             return true;
         }
 
@@ -50,15 +47,14 @@ namespace ToolSmiths.InventorySystem.Inventories
         internal void Apply()
         {
             if (pending.IsValid)
-                sink?.ReplacePackage(pending, pendingOrigin, pendingOriginPosition);
+                sink?.ReplacePackage(pending, pendingOrigin);
         }
 
         /// <summary>Rollback: forget the held package. The sink was never called.</summary>
         internal void Discard()
         {
             pending = default;
-            pendingOrigin = null;
-            pendingOriginPosition = default;
+            pendingOrigin = default;
         }
     }
 }

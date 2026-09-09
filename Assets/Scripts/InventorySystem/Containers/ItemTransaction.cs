@@ -122,19 +122,17 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// aborted and <see cref="Commit"/> rolls back.
         /// </summary>
         /// <param name="package">The item being re-homed.</param>
-        /// <param name="origin">The container <paramref name="package"/> is being displaced
-        /// from - forwarded to the cursor (issue #29) so a later cancel returns it there,
-        /// not to wherever the drag itself started.</param>
-        /// <param name="originPosition">The cell in <paramref name="origin"/>
-        /// <paramref name="package"/> was displaced from.</param>
+        /// <param name="from">Where <paramref name="package"/> is being displaced from -
+        /// forwarded to the cursor (issue #29) so a later cancel returns it there, not to
+        /// wherever the drag itself started.</param>
         /// <returns>False when the item found no home; <paramref name="package"/> is then
         /// whatever could not be placed.</returns>
-        public bool TryReHomeToHandOrContainer(ref Package package, AbstractDimensionalContainer origin, Vector2Int originPosition)
+        public bool TryReHomeToHandOrContainer(ref Package package, PackageOrigin from)
         {
             if (!package.IsValid)
                 return true;
 
-            if (TryPlaceInHand(ref package, origin, originPosition) || TryPlaceInChain(ref package))
+            if (TryPlaceInHand(ref package, from) || TryPlaceInChain(ref package))
                 return true;
 
             aborted = true;
@@ -166,16 +164,14 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// reaches an already-full hand aborts the move.
         /// </summary>
         /// <param name="package">The item being re-homed.</param>
-        /// <param name="origin">The container <paramref name="package"/> is being displaced
-        /// from - forwarded to the cursor (issue #29) so a later cancel returns it there.</param>
-        /// <param name="originPosition">The cell in <paramref name="origin"/>
-        /// <paramref name="package"/> was displaced from.</param>
-        public bool TryReHomeToContainerOrHand(ref Package package, AbstractDimensionalContainer origin, Vector2Int originPosition)
+        /// <param name="from">Where <paramref name="package"/> is being displaced from -
+        /// forwarded to the cursor (issue #29) so a later cancel returns it there.</param>
+        public bool TryReHomeToContainerOrHand(ref Package package, PackageOrigin from)
         {
             if (!package.IsValid)
                 return true;
 
-            if (TryPlaceInChain(ref package) || TryPlaceInHand(ref package, origin, originPosition))
+            if (TryPlaceInChain(ref package) || TryPlaceInHand(ref package, from))
                 return true;
 
             aborted = true;
@@ -193,9 +189,9 @@ namespace ToolSmiths.InventorySystem.Inventories
         }
 
         /// <summary>Hands the item to the freed cursor, once, while it is still free.</summary>
-        private bool TryPlaceInHand(ref Package package, AbstractDimensionalContainer origin, Vector2Int originPosition)
+        private bool TryPlaceInHand(ref Package package, PackageOrigin from)
         {
-            if (cursor == null || !cursor.TryHold(package, origin, originPosition))
+            if (cursor == null || !cursor.TryHold(package, from))
                 return false;
 
             package = default;

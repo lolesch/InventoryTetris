@@ -228,7 +228,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 
             var displaced = bag.AddAtPosition(at, inHand);
             if (displaced.IsValid)
-                _ = transaction.TryReHomeToHandOrContainer(ref displaced, bag, at);
+                _ = transaction.TryReHomeToHandOrContainer(ref displaced, new PackageOrigin(bag, at));
             transaction.Commit();
             return true;
         }

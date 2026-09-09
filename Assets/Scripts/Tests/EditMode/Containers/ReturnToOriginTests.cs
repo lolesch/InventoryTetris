@@ -78,7 +78,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var displaced = target.AddAtPosition(at, inHand);
 
             if (displaced.IsValid)
-                _ = transaction.TryReHomeToHandOrContainer(ref displaced, target, at);
+                _ = transaction.TryReHomeToHandOrContainer(ref displaced, new PackageOrigin(target, at));
 
             if (transaction.Aborted)
                 return false;

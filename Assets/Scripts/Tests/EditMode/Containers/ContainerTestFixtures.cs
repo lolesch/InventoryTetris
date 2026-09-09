@@ -61,19 +61,19 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
     }
 
     /// <summary>
-    /// Records the packages a move handed to the drag cursor, alongside the container and
-    /// cell each was displaced from (issue #29 follow-up) - <see cref="Origins"/> is parallel
-    /// to <see cref="Replaced"/>, one entry per call.
+    /// Records the packages a move handed to the drag cursor, alongside the origin each was
+    /// displaced from (issue #29 follow-up) - <see cref="Origins"/> is parallel to
+    /// <see cref="Replaced"/>, one entry per call.
     /// </summary>
     internal sealed class FakeCursorSink : ICursorSink
     {
         public readonly List<Package> Replaced = new();
-        public readonly List<(AbstractDimensionalContainer Origin, Vector2Int OriginPosition)> Origins = new();
+        public readonly List<PackageOrigin> Origins = new();
 
-        public void ReplacePackage(Package package, AbstractDimensionalContainer origin, Vector2Int originPosition)
+        public void ReplacePackage(Package package, PackageOrigin from)
         {
             Replaced.Add(package);
-            Origins.Add((origin, originPosition));
+            Origins.Add(from);
         }
     }
 

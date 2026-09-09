@@ -46,23 +46,9 @@ namespace ToolSmiths.InventorySystem.Inventories
             /// ledger a Cancel (or a Store close) re-homes every Package through
             /// <see cref="ReturnToOrigin"/>. The basket is a grid, so the key is the landing cell.
             /// </summary>
-            public Dictionary<Vector2Int, Origin> Origins { get; } = new();
+            public Dictionary<Vector2Int, PackageOrigin> Origins { get; } = new();
 
             public Basket(CharacterInventory container) => Container = container;
-        }
-
-        /// <summary>A Package's home before it was staged: the container it was lifted from and
-        /// the exact cell it occupied, re-keyed through <see cref="ReturnToOrigin"/> on cancel.</summary>
-        public readonly struct Origin
-        {
-            public AbstractDimensionalContainer Container { get; }
-            public Vector2Int Cell { get; }
-
-            public Origin(AbstractDimensionalContainer container, Vector2Int cell)
-            {
-                Container = container;
-                Cell = cell;
-            }
         }
 
         /// <summary>
@@ -73,7 +59,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// staged - false when the basket would not take it (full / footprint), in which case
         /// the drag keeps the Package.
         /// </summary>
-        public static bool Stage(Basket basket, ref Package inHand, Origin origin, Vector2Int at)
+        public static bool Stage(Basket basket, ref Package inHand, PackageOrigin origin, Vector2Int at)
         {
             if (basket == null || !inHand.IsValid)
                 return false;
