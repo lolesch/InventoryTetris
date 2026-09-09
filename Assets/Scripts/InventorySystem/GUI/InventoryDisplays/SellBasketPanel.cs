@@ -78,8 +78,6 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         {
             if (!TryResolveDependencies())
                 return;
-
-            basketDisplay.SetupDisplay(basket.Container);
         }
 
         private void OnEnable()
