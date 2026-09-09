@@ -119,11 +119,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 /// leaves the shelf and lands in the bag, and the price is paid, as a unit. No
                 /// room in the bag rolls the whole thing back - the item stays on the shelf and
                 /// nothing is charged.
-                var intent = QuickMoveResolver.Resolve(InventoryProvider.Instance.ActiveSidePanel, Container,
-                    InventoryProvider.Instance.Inventory,
-                    InventoryProvider.Instance.Stash,
-                    InventoryProvider.Instance.Equipment,
-                    Container);
+                var intent = InventoryProvider.Instance.QuickMoveFor(Container);
 
                 if (intent.Kind == QuickMoveIntentKind.Buy)
                     _ = VendorTransaction.Buy(Container, position, package, wallet, price);

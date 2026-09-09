@@ -69,6 +69,18 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         public void ClearSidePanel(SidePanelContext context) => sidePanel.Clear(context);
 
+        /// <summary>
+        /// Where a shift-click on <paramref name="source"/> should send its item, given the
+        /// side panel open right now (#30). The four containers and the context are all
+        /// here, so a caller that holds one slot's container can ask with just that -
+        /// rather than assembling the same six arguments at every slot display, which is
+        /// how <c>VendorSlotDisplay</c> came to pass its own container as both the source
+        /// and the shelf. <see cref="QuickMoveResolver"/> keeps the matrix and stays
+        /// directly tested; this is only the seam callers hold.
+        /// </summary>
+        public QuickMoveIntent QuickMoveFor(AbstractDimensionalContainer source) =>
+            QuickMoveResolver.Resolve(ActiveSidePanel, source, Inventory, Stash, Equipment, Store);
+
         public void Awake()
         {
             /// The container core lives in InventorySystem.Containers and names no

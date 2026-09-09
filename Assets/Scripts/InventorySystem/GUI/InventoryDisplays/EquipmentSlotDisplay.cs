@@ -139,11 +139,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 /// always; with neither panel open - or the Vendor open - nothing moves. The
                 /// move stays (issue #10): the item comes off, or - if the target is full -
                 /// into the hand; the affix lift rides the commit.
-                var intent = QuickMoveResolver.Resolve(InventoryProvider.Instance.ActiveSidePanel, Container,
-                    InventoryProvider.Instance.Inventory,
-                    InventoryProvider.Instance.Stash,
-                    InventoryProvider.Instance.Equipment,
-                    InventoryProvider.Instance.Store);
+                var intent = InventoryProvider.Instance.QuickMoveFor(Container);
 
                 if (intent.Kind != QuickMoveIntentKind.MoveToContainer)
                     return;
