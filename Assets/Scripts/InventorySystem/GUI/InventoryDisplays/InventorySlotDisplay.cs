@@ -132,7 +132,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                         var equipment = InventoryProvider.Instance.Equipment;
                         var cursor = new CursorHolder(DragProvider.Instance);
 
-                        using var transaction = new ItemTransaction(cursor, Container, equipment).ReHomeThrough(Container).SwapInPlace();
+                        using var transaction = new ItemTransaction(cursor, Container, equipment)
+                            .ReHomeThrough(Container)
+                            .SwapInPlace(new PackageOrigin(Container, position));
 
                         _ = Container.RemoveAtPosition(position, package);
                         _ = equipment.TryAddToContainer(ref package);

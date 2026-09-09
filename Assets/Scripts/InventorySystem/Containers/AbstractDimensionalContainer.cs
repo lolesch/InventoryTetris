@@ -133,6 +133,28 @@ namespace ToolSmiths.InventorySystem.Inventories
             return 0 == package.Amount;
         }
 
+        /// <summary>
+        /// Places <paramref name="package"/> at exactly <paramref name="position"/> when that
+        /// cell can take the whole item with nothing displaced - no scan, no swap, unlike
+        /// <see cref="TryAddToContainer"/>. The re-home cascade's "prefer the cell the incoming
+        /// item just vacated" step (issue #34); the caller falls back to the scanning add when
+        /// this returns false. The cell test is <see cref="CanReturnTo"/>, so
+        /// <see cref="CharacterEquipment"/>'s paper-doll footprint rule applies wherever it is
+        /// the re-home destination.
+        /// </summary>
+        /// <returns>Returns false if there is a remaining package.</returns>
+        public virtual bool TryAddAtPosition(Vector2Int position, ref Package package)
+        {
+            if (!package.IsValid || !CanReturnTo(position, package.Item))
+                return false;
+
+            package = AddAtPosition(position, package);
+
+            RaiseContentChanged();
+
+            return 0 == package.Amount;
+        }
+
         // TODO: DragDrop adding to stacks is dimension dependent...
         // => this should simply check if a stack of the same item is at the drop position and add it.
         protected bool TryStack(ref Package package)

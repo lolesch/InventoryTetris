@@ -37,6 +37,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         private bool finished;
         private bool aborted;
         private bool swapInPlace;
+        private PackageOrigin swapAnchor;
 
         /// <param name="cursor">The drag cursor as a one-capacity destination for a
         /// displaced item, or null when a move cannot touch the cursor (auto-sort, a
@@ -106,9 +107,14 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// the hand. A drag leaves this unset, and the item the player dropped onto goes
         /// straight to the hand. Fluent; no effect on a move that displaces nothing.
         /// </summary>
-        public ItemTransaction SwapInPlace()
+        /// <param name="anchor">The cell the incoming item just vacated (issue #34). When it
+        /// names a <see cref="ReHomeThrough"/> container, a displaced item tries that exact
+        /// cell before the first-free scan - so "swap in place" reads literally instead of
+        /// reshuffling the bag from (0,0). Omitted for a swap with no meaningful origin cell.</param>
+        public ItemTransaction SwapInPlace(PackageOrigin anchor = default)
         {
             swapInPlace = true;
+            swapAnchor = anchor;
             return this;
         }
 
@@ -178,12 +184,23 @@ namespace ToolSmiths.InventorySystem.Inventories
             return false;
         }
 
-        /// <summary>Tries each <see cref="ReHomeThrough"/> container in order, at any free space.</summary>
+        /// <summary>
+        /// Tries each <see cref="ReHomeThrough"/> container in order. A
+        /// <see cref="SwapInPlace(PackageOrigin)"/> anchor that names one of them is tried as
+        /// an exact cell first (issue #34); otherwise, and on any container the anchor does
+        /// not name, the item lands in the first free space.
+        /// </summary>
         private bool TryPlaceInChain(ref Package package)
         {
             foreach (var destination in reHomeChain)
+            {
+                if (swapAnchor.Container == destination
+                    && destination.TryAddAtPosition(swapAnchor.Cell, ref package))
+                    return true;
+
                 if (destination.TryAddToContainer(ref package))
                     return true;
+            }
 
             return false;
         }

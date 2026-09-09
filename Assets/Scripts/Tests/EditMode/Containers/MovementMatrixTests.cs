@@ -105,7 +105,9 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         private static bool RightClickEquip(CursorHolder cursor, CharacterInventory source, CharacterEquipment equipment,
             Vector2Int position, Package stored)
         {
-            using var transaction = new ItemTransaction(cursor, source, equipment).ReHomeThrough(source).SwapInPlace();
+            using var transaction = new ItemTransaction(cursor, source, equipment)
+                .ReHomeThrough(source)
+                .SwapInPlace(new PackageOrigin(source, position));
 
             _ = source.RemoveAtPosition(position, stored);
             var package = new Package(source, stored.Item, stored.Amount);
@@ -690,6 +692,60 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         }
 
         [Test]
+        public void RightClickEquip_TheDisplacedItem_LandsInTheExactCellTheIncomingItemVacated_NotTheFirstFreeOne()
+        {
+            // Issue #34: "swap in place" reads literally - right-click a helm in cell X while a
+            // helm is worn and the old helm appears at X, not shuffled to the first free cell.
+            var cursor = new CursorHolder(new FakeCursorSink());
+            var equipment = Equipment(new FakeStatReceiver());
+            var inventory = Inventory(3, 1);
+
+            var worn = new Package(inventory, Helm(4f), 1u);
+            _ = equipment.TryAddToContainer(ref worn);
+            var wornInstance = equipment.StoredPackages.Values.Single().Item;
+
+            _ = inventory.AddAtPosition(new Vector2Int(0, 0), new Package(inventory, Arrows(), 1u));
+            var vacated = new Vector2Int(2, 0); // (1,0) is the first free cell, and must stay free
+            _ = inventory.AddAtPosition(vacated, new Package(inventory, Helm(9f), 1u));
+            var before = Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values);
+
+            var committed = RightClickEquip(cursor, inventory, equipment, vacated, inventory.StoredPackages[vacated]);
+
+            Assert.That(committed, Is.True);
+            Assert.That(equipment.StoredPackages.Values.Single().Item.DefinitionId, Is.EqualTo(HelmId), "the new helm is worn");
+            Assert.That(inventory.StoredPackages[vacated].Item, Is.SameAs(wornInstance), "the displaced helm took the cell just vacated");
+            Assert.That(inventory.StoredPackages.ContainsKey(new Vector2Int(1, 0)), Is.False, "the first free cell was left untouched");
+            AssertConserved(before, Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values));
+        }
+
+        [Test]
+        public void RightClickEquip_WhenTheDisplacedItemDoesNotFitTheVacatedCell_FallsBackToTheFirstFreeCell()
+        {
+            // Issue #34: the preference is a first try, not a demand - a larger displaced
+            // footprint that will not fit the vacated cell still lands, at the first free space.
+            var cursor = new CursorHolder(new FakeCursorSink());
+            var equipment = Equipment(new FakeStatReceiver());
+            var inventory = Inventory(4, 4);
+
+            var worn = new Package(inventory, PlateHelm(4f), 1u); // 2x2 in the bag
+            _ = equipment.TryAddToContainer(ref worn);
+            var wornInstance = equipment.StoredPackages.Values.Single().Item;
+
+            var vacated = new Vector2Int(3, 3); // a 2x2 re-home runs off the grid here
+            _ = inventory.AddAtPosition(vacated, new Package(inventory, Helm(9f), 1u));
+            var before = Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values);
+
+            var committed = RightClickEquip(cursor, inventory, equipment, vacated, inventory.StoredPackages[vacated]);
+
+            Assert.That(committed, Is.True);
+            Assert.That(equipment.StoredPackages.Values.Single().Item.DefinitionId, Is.EqualTo(HelmId), "the new helm is worn");
+            Assert.That(inventory.StoredPackages.Keys.Single(), Is.EqualTo(new Vector2Int(0, 0)),
+                "the 2x2 helm could not re-fit (3,3) and fell back to the first free cell");
+            Assert.That(inventory.StoredPackages.Values.Single().Item, Is.SameAs(wornInstance));
+            AssertConserved(before, Units(equipment.StoredPackages.Values, inventory.StoredPackages.Values));
+        }
+
+        [Test]
         public void RightClickEquip_OneHandWhileTwoHandedWorn_SendsTheDisplacedTwoHanderToHandWhenItCannotReFit()
         {
             var stats = new FakeStatReceiver();
@@ -1068,7 +1124,9 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 
         /// <summary>A <see cref="CharacterInventory"/> that refuses to re-accept items after
         /// <paramref name="acceptLimit"/> calls - to prove <c>Sort</c> rolls the whole re-add
-        /// back rather than dropping what will not fit.</summary>
+        /// back rather than dropping what will not fit, and that a homeless re-home aborts.
+        /// Both add paths are capped: the scan (<see cref="AbstractDimensionalContainer.TryAddToContainer"/>)
+        /// and the exact cell the swap-in-place anchor tries first (<see cref="AbstractDimensionalContainer.TryAddAtPosition"/>).</summary>
         private sealed class CappedInventory : CharacterInventory
         {
             private readonly int acceptLimit;
@@ -1078,6 +1136,9 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 
             public override bool TryAddToContainer(ref Package package) =>
                 reAdds++ < acceptLimit && base.TryAddToContainer(ref package);
+
+            public override bool TryAddAtPosition(Vector2Int position, ref Package package) =>
+                reAdds++ < acceptLimit && base.TryAddAtPosition(position, ref package);
         }
     }
 }
