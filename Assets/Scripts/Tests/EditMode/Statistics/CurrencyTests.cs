@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Data.Enums;
 
 namespace ToolSmiths.InventorySystem.Tests.EditMode.Statistics
 {
@@ -21,6 +22,18 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Statistics
             Assert.That(actual.Copper, Is.EqualTo(copper), "copper");
             Assert.That(actual.Silver, Is.EqualTo(silver), "silver");
             Assert.That(actual.Gold, Is.EqualTo(gold), "gold");
+        }
+
+        // Each rung's fixed Rarity (CONTEXT.md "Denomination"): iron Common, copper Magic,
+        // silver Rare, gold Unique - the one ladder the mint path and the loot filter share.
+        [TestCase(CurrencyType.Iron, ItemRarity.Common)]
+        [TestCase(CurrencyType.Copper, ItemRarity.Magic)]
+        [TestCase(CurrencyType.Silver, ItemRarity.Rare)]
+        [TestCase(CurrencyType.Gold, ItemRarity.Unique)]
+        [TestCase(CurrencyType.NONE, ItemRarity.NoDrop)]
+        public void RarityOf_MapsEachDenominationToItsFixedRung(CurrencyType denomination, ItemRarity expected)
+        {
+            Assert.That(Currency.RarityOf(denomination), Is.EqualTo(expected));
         }
 
         [Test]

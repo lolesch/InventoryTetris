@@ -130,8 +130,9 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         /// <summary>
         /// Turns a rolled instance into a stored package. A currency instance is re-minted as
-        /// a Common coin (loot coins never carry a rarity tint, as before) with a pile size
-        /// from the drop table; anything else is one item.
+        /// a single coin of its denomination's Rarity (<see cref="Currency.RarityOf"/>) — a
+        /// silver Pile tints Rare, a gold Pile Unique — with a pile size from the drop table;
+        /// anything else is one item.
         /// </summary>
         private Package ToPackage(ItemInstance instance)
         {
@@ -167,8 +168,10 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         /// <summary>
         /// A single coin of <paramref name="type"/> as an <see cref="ItemInstance"/> - no
-        /// affixes, Common, item level 0. Was <c>GenerateCurrency</c>; the callers that pay
-        /// out change and sale proceeds mint their coins here.
+        /// affixes, a rarity from the denomination ladder (<c>Currency.RarityOf</c>: iron
+        /// Common, copper Magic, silver Rare, gold Unique), item level 0. Was
+        /// <c>GenerateCurrency</c>; the callers that pay out change and sale proceeds mint
+        /// their coins here.
         /// </summary>
         public ItemInstance MintCurrency(CurrencyType type)
         {
@@ -177,7 +180,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             var definition = DefinitionOfCurrency(type);
             return definition == null
                 ? null
-                : new ItemInstance(definition.Id, ItemRarity.Common, 0, null);
+                : new ItemInstance(definition.Id, Currency.RarityOf(type), 0, null);
         }
 
         // ── debug helpers (the InventoryProvider buttons) ───────────────────

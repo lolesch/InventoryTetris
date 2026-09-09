@@ -1,4 +1,5 @@
 ﻿using System;
+using ToolSmiths.InventorySystem.Data.Enums;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Data
@@ -24,6 +25,22 @@ namespace ToolSmiths.InventorySystem.Data
         public static readonly uint silverToGold = ironToGold / ironToSilver;     // = 20
 
         public readonly uint Total => Iron + Copper * ironToCopper + Silver * ironToSilver + Gold * ironToGold;
+
+        /// <summary>
+        /// The denomination's fixed Rarity on CONTEXT.md's ladder — iron Common, copper
+        /// Magic, silver Rare, gold Unique — so a loot filter reads coins and items on one
+        /// scale and a minted coin carries the tint of its tier. Was
+        /// <c>HeroBehaviour.RarityOf</c>; hoisted here because the mint path
+        /// (<see cref="ICurrencyMinter"/>) and the loot filter both need it.
+        /// </summary>
+        public static ItemRarity RarityOf(CurrencyType denomination) => denomination switch
+        {
+            CurrencyType.Iron => ItemRarity.Common,
+            CurrencyType.Copper => ItemRarity.Magic,
+            CurrencyType.Silver => ItemRarity.Rare,
+            CurrencyType.Gold => ItemRarity.Unique,
+            _ => ItemRarity.NoDrop,
+        };
 
         public Currency( uint total )
         {

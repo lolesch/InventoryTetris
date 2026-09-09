@@ -70,6 +70,19 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 
         // ── Balance ─────────────────────────────────────────────────────────
 
+        // ── MintCurrency rarities (CONTEXT.md "Denomination") ───────────────
+        // A minted coin carries its denomination's fixed Rarity, so a silver Pile tints Rare
+        // and a gold Pile tints Unique instead of everything coming back Common.
+
+        [Test]
+        public void Mint_CopperAndIron_AreCommon_ButSilverAndGold_RiseWithTheLadder()
+        {
+            Assert.That(minter.MintCurrency(CurrencyType.Iron).Rarity, Is.EqualTo(ItemRarity.Common));
+            Assert.That(minter.MintCurrency(CurrencyType.Copper).Rarity, Is.EqualTo(ItemRarity.Magic));
+            Assert.That(minter.MintCurrency(CurrencyType.Silver).Rarity, Is.EqualTo(ItemRarity.Rare));
+            Assert.That(minter.MintCurrency(CurrencyType.Gold).Rarity, Is.EqualTo(ItemRarity.Unique));
+        }
+
         [Test]
         public void Balance_SumsTheCoinsInTheBackingContainer()
         {
