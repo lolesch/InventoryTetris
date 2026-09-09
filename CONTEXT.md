@@ -47,16 +47,32 @@ flagged unique with a fixed affix list, not a separate kind of thing.
 
 **Container**:
 Any grid that holds packages. The four in play are the **Inventory** (the player's
-backpack), the **Stash**, the **Store**, and the **Equipment** paperdoll.
+backpack), the **Stash**, a Town Stop's **Supply**, the **Sell Basket**, and the
+**Equipment** paperdoll.
 
-**Inventory / Stash / Store**:
-Three distinct *roles*, all currently played by the same type. Only Equipment is its own
+**Inventory / Stash / Supply / Sell Basket**:
+Four distinct *roles*, all currently played by the same type. Only Equipment is its own
 type. Say which role you mean — "the Stash" is never a class.
 _Avoid_: using "inventory" to mean any container
 
-**Store**:
-The vendor's shelf. Finite: buying removes the item until a restock.
-_Avoid_: shop, vendor container, merchant
+**Supply**:
+The stock a **Town Stop** offers. Finite: buying removes the item until a **Restock**. The
+Vendor has one; a Healer would have its own, with different stock — so a Supply is never
+"the vendor's", it is always some Town Stop's.
+_Avoid_: store, shop, shelf, vendor container, merchant
+
+**Restock**:
+Refilling a Supply with a fresh roll, discarding whatever was left unsold. The thing that
+makes a Supply finite rather than endless.
+_Avoid_: refresh, reroll, resupply, replenish
+
+**Sell Basket**:
+The grid a sale is staged in before it commits. A Package entering the basket is not sold:
+the sale happens on **Confirm**, as one consolidated payout equal to the previewed total,
+and a **Cancel** hands every staged Package back to its **Package Origin** with the
+**Wallet** untouched. Staging is modal — while the basket holds anything, the Supply is
+blocked (ADR-0012). Only some Town Stops offer one; the Vendor does, a Healer need not.
+_Avoid_: cart, sell slot, trade window; bare "basket"
 
 **Displacement**:
 What happens when a placement pushes stored items out of the way — e.g. equipping a
@@ -68,6 +84,24 @@ whole move rolls back. At most one item ever lands in the hand, and at most one 
 item can veto a move. A right-click unequip and a shift quick-move follow the same
 overflow rule: into the target container, or the hand if it is full — they always execute.
 _Avoid_: swap (a swap is one specific displacement), eviction
+
+**Quick Move**:
+A shift-click or right-click that moves a Package without a drag, to a destination chosen
+by which **Side Panel** is open rather than by where a pointer ends up. It always executes
+— into the target container, or the hand if that is full.
+_Avoid_: auto-move, transfer, quick-transfer; "shift-click" (that is the input, not the move)
+
+**Package Origin**:
+Where a Package was lifted from — the container and the cell, together, as one thing. Held
+for as long as a move is in flight, so the move can be undone.
+_Avoid_: sender, source, from, home
+
+**Return to Origin**:
+Sending a Package back to its Package Origin: the exact cell if it is still free, else
+anywhere in the **Inventory**, else the Package stays on the cursor. It never destroys a
+Package and never touches the **Wallet**. The one primitive a cancelled drag, a closed
+panel and a cancelled sale all go through.
+_Avoid_: undo, revert, rollback (a rollback is a Transaction's, not a Package's)
 
 **Transaction**:
 A move that either completes wholly or leaves every container untouched. The guarantee
@@ -312,22 +346,38 @@ The centre-screen element that always shows. Two visual states — Town and Fiel
 with its own background art and button set. Drives panel open/close and Run transitions.
 _Avoid_: world map, compass, hud map
 
+**Town Stop**:
+One clickable point on the Minimap's Town side — the **Stash**, the **Vendor** and the
+**Healer** today. Exactly one is open at a time, each showing its own **Side Panel**. A
+Town Stop is not a **Location**: Locations are the Field destinations a Run is **Sent** to,
+and the hero never walks to a Town Stop — the player clicks it.
+_Avoid_: location, node, station, shop, destination
+
+**Hero Panel**:
+The right-side panel: the **Equipment** paperdoll on top, the **Inventory** below. The
+player's own things, as opposed to the Town Stop's on the left.
+_Avoid_: character panel, paperdoll panel (Equipment is the paperdoll), bag panel
+
 **Side Panel**:
-A right-side panel that shows one of the town's interactable contexts at a time
-(Stash or Vendor today). Exactly one active at a time; the active one is tracked as
-`SidePanelContext` on the `InventoryProvider`, which the trade flow reads for
-shift-click routing.
-_Avoid_: tab, drawer, sidebar
+A left-side panel showing one **Town Stop**'s context — the Stash or the Vendor today.
+Exactly one active at a time; the active one is tracked as `SidePanelContext` on the
+`InventoryProvider`, which the trade flow reads for **Quick Move** routing. Shares the
+left side with the **Combat Panel**, which replaces the Side Panels for the length of a
+Run.
+_Avoid_: tab, drawer, sidebar; right-side (that is the **Hero Panel**)
 
 **Side Panel Context**:
-The enum (`None`, `Stash`, `Vendor`) that records which town side panel is currently
-open. Owned by the `InventoryProvider`, not by the UI toggles. The trade flow queries
-it to decide where shift-clicked items land.
+The enum (`None`, `Stash`, `Vendor`) that records which **Town Stop**'s Side Panel is
+currently open. Owned by the `InventoryProvider`, not by the UI toggles. The trade flow
+queries it to decide where a **Quick Move** lands. Its members are not homogeneous and
+need not be — the Stash is the player's own storage, the Vendor is someone else's — because
+the only question the enum answers is which Side Panel is open.
 _Avoid_: trade target, active panel, current context
 
 **Combat Panel**:
 The left-side panel, visible only during `InField`. Holds behaviour sliders, enemy
-health bars and encounter stats. Fades in on Send, out on Recall/Death.
+health bars and encounter stats. Fades in on Send, out on Recall/Death. Exclusive with
+the **Side Panels** by Run phase, not by a toggle group.
 _Avoid_: debug panel, sim panel, fight panel
 
 **Ability Hotbar**:
