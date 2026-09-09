@@ -75,6 +75,36 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
                 initialColor = background.color;
         }
 
+        /// <summary>
+        /// Closing the Vendor with a shelf purchase in hand returns it to the shelf,
+        /// charge-free (issue #31) - the same return-to-origin a drop-back or an Escape
+        /// cancel uses. The drag side subscribes rather than the panel side calling in: the
+        /// rule is part of the drag lifecycle, so it lives with the drag, and the panels
+        /// only announce that the context moved (#54). Ordinary pick-ups are untouched -
+        /// <see cref="ReturnStorePurchaseToShelf"/> no-ops unless the hand holds an unpaid
+        /// purchase, so opening the Stash or closing every panel cannot strand or duplicate
+        /// one. Detach-before-attach, so a re-enable cannot subscribe twice (cf. da14ce2).
+        /// </summary>
+        private void OnEnable()
+        {
+            var provider = InventoryProvider.Instance;
+
+            provider.OnSidePanelChanged -= OnSidePanelChanged;
+            provider.OnSidePanelChanged += OnSidePanelChanged;
+        }
+
+        private void OnDisable()
+        {
+            if (InventoryProvider.Instance != null)
+                InventoryProvider.Instance.OnSidePanelChanged -= OnSidePanelChanged;
+        }
+
+        private void OnSidePanelChanged(SidePanelContext context)
+        {
+            if (context != SidePanelContext.Vendor)
+                _ = ReturnStorePurchaseToShelf();
+        }
+
         private void Update()
         {
             if (IsDragging)
@@ -301,12 +331,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
         /// <summary>
         /// Sends a held shelf purchase back to the shelf with no charge (issue #31) - what a
-        /// Store-origin cancel, a drop back onto the shelf, and closing the Store mid-drag all
-        /// want. No-op unless the hand actually holds a store purchase: an ordinary pick-up
-        /// being returned, or a non-drag state, must not be yanked by the Store closing.
+        /// Store-origin cancel, a drop back onto the shelf, and closing the Vendor mid-drag
+        /// all want. No-op unless the hand actually holds a store purchase: an ordinary
+        /// pick-up being returned, or a non-drag state, must not be yanked by a panel change.
         /// </summary>
         /// <returns>Whether a purchase was in hand and the drag ended.</returns>
-        public bool ReturnStorePurchaseToShelf()
+        private bool ReturnStorePurchaseToShelf()
         {
             if (PurchasePrice == null)
                 return false;

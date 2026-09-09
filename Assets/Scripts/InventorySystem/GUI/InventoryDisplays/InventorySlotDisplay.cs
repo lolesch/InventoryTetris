@@ -164,14 +164,13 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 #region QUICK MOVE ITEM
                 if (Input.GetKey(KeyCode.LeftShift))
                 {
-                    /// Quick-move follows the open panel (issue #30): one pure resolver
+                    /// Quick-move follows the open side panel (issue #30): one pure resolver
                     /// decides where shift-click sends the item. With the Stash open it is
                     /// the same backpack ↔ Stash as always; with neither panel open - or the
-                    /// Store open, until the basket exists (#33) - nothing moves. The move
+                    /// Vendor open, until the basket exists (#33) - nothing moves. The move
                     /// itself is unchanged (issue #10): the item leaves its slot and lands in
                     /// the other container, or - if that is full - in hand.
-                    var context = MenuContext.Instance;
-                    var intent = QuickMoveResolver.Resolve(context.CurrentKind, Container,
+                    var intent = QuickMoveResolver.Resolve(InventoryProvider.Instance.ActiveSidePanel, Container,
                         InventoryProvider.Instance.Inventory,
                         InventoryProvider.Instance.Stash,
                         InventoryProvider.Instance.Equipment,

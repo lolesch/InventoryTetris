@@ -119,8 +119,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 /// leaves the shelf and lands in the bag, and the price is paid, as a unit. No
                 /// room in the bag rolls the whole thing back - the item stays on the shelf and
                 /// nothing is charged.
-                var context = MenuContext.Instance;
-                var intent = QuickMoveResolver.Resolve(context.CurrentKind, Container,
+                var intent = QuickMoveResolver.Resolve(InventoryProvider.Instance.ActiveSidePanel, Container,
                     InventoryProvider.Instance.Inventory,
                     InventoryProvider.Instance.Stash,
                     InventoryProvider.Instance.Equipment,

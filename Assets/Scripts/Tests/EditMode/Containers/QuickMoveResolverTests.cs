@@ -5,13 +5,13 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 {
     /// <summary>
-    /// The quick-move matrix (issue #30): shift-click routes an item to whichever
-    /// secondary panel is open. A pure resolver maps every (source container, menu
-    /// context) pair to one intent - do nothing, move to a named container, or buy - so
-    /// the three slot displays that used to hand-roll a move each now ask it. This ticket
-    /// wires only the Stash and "no panel open" rows: the player's containers sent to the
-    /// Store return "do nothing" until the Sell Basket exists (#33); the vendor shelf's
-    /// own shift-click stays a buy in every context.
+    /// The quick-move matrix (issue #30): shift-click routes an item to whichever side
+    /// panel is open. A pure resolver maps every (source container, side panel) pair to
+    /// one intent - do nothing, move to a named container, or buy - so the three slot
+    /// displays that used to hand-roll a move each now ask it. This ticket wires only the
+    /// Stash and "no panel open" rows: the player's containers sent to the Vendor return
+    /// "do nothing" until the Sell Basket exists (#33); the vendor shelf's own shift-click
+    /// stays a buy in every context.
     /// </summary>
     [TestFixture]
     public sealed class QuickMoveResolverTests
@@ -23,7 +23,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         private readonly AbstractDimensionalContainer equipment = new CharacterEquipment(new Vector2Int(14, 1), null);
         private readonly AbstractDimensionalContainer store = new CharacterInventory(new Vector2Int(4, 4));
 
-        private static QuickMoveIntent Resolve(MenuContextKind context, AbstractDimensionalContainer source,
+        private static QuickMoveIntent Resolve(SidePanelContext context, AbstractDimensionalContainer source,
             AbstractDimensionalContainer backpack, AbstractDimensionalContainer stash,
             AbstractDimensionalContainer equipment, AbstractDimensionalContainer store)
             => QuickMoveResolver.Resolve(context, source, backpack, stash, equipment, store);
@@ -33,7 +33,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         [Test]
         public void StashContext_Backpack_SendsTheItemToTheStash()
         {
-            var intent = Resolve(MenuContextKind.Stash, backpack, backpack, stash, equipment, store);
+            var intent = Resolve(SidePanelContext.Stash, backpack, backpack, stash, equipment, store);
 
             Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.MoveToContainer));
             Assert.That(intent.Target, Is.SameAs(stash));
@@ -42,7 +42,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         [Test]
         public void StashContext_Stash_SendsTheItemBackToTheBackpack()
         {
-            var intent = Resolve(MenuContextKind.Stash, stash, backpack, stash, equipment, store);
+            var intent = Resolve(SidePanelContext.Stash, stash, backpack, stash, equipment, store);
 
             Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.MoveToContainer));
             Assert.That(intent.Target, Is.SameAs(backpack));
@@ -51,7 +51,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         [Test]
         public void StashContext_Equipment_SendsTheItemToTheStash()
         {
-            var intent = Resolve(MenuContextKind.Stash, equipment, backpack, stash, equipment, store);
+            var intent = Resolve(SidePanelContext.Stash, equipment, backpack, stash, equipment, store);
 
             Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.MoveToContainer));
             Assert.That(intent.Target, Is.SameAs(stash));
@@ -64,29 +64,29 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         [TestCase(nameof(equipment))]
         public void NoneContext_PlayerContainer_DoesNothing(string sourceName)
         {
-            var intent = Resolve(MenuContextKind.None, SourceOf(sourceName), backpack, stash, equipment, store);
+            var intent = Resolve(SidePanelContext.None, SourceOf(sourceName), backpack, stash, equipment, store);
 
             Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.None));
         }
 
-        // ── Store open: the player's containers wait for the Sell Basket (#33) ──
+        // ── Vendor open: the player's containers wait for the Sell Basket (#33) ──
 
         [TestCase(nameof(backpack))]
         [TestCase(nameof(stash))]
         [TestCase(nameof(equipment))]
-        public void StoreContext_PlayerContainer_DoesNothingForNow(string sourceName)
+        public void VendorContext_PlayerContainer_DoesNothingForNow(string sourceName)
         {
-            var intent = Resolve(MenuContextKind.Store, SourceOf(sourceName), backpack, stash, equipment, store);
+            var intent = Resolve(SidePanelContext.Vendor, SourceOf(sourceName), backpack, stash, equipment, store);
 
             Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.None));
         }
 
         // ── The shelf: its own shift-click stays a buy in every context ──
 
-        [TestCase(MenuContextKind.None)]
-        [TestCase(MenuContextKind.Stash)]
-        [TestCase(MenuContextKind.Store)]
-        public void ShelfSource_StaysABuy(MenuContextKind context)
+        [TestCase(SidePanelContext.None)]
+        [TestCase(SidePanelContext.Stash)]
+        [TestCase(SidePanelContext.Vendor)]
+        public void ShelfSource_StaysABuy(SidePanelContext context)
         {
             var intent = Resolve(context, store, backpack, stash, equipment, store);
 

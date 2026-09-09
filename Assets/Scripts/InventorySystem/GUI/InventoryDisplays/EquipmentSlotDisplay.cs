@@ -134,13 +134,12 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             #region QUICK MOVE ITEM
             if (Input.GetKey(KeyCode.LeftShift))
             {
-                /// Quick-move follows the open panel (issue #30): equipment shift-clicks to
-                /// whichever panel is open. With the Stash open that is the stash, as always;
-                /// with neither panel open - or the Store open - nothing moves. The move
-                /// stays (issue #10): the item comes off, or - if the target is full - into
-                /// the hand; the affix lift rides the commit.
-                var context = MenuContext.Instance;
-                var intent = QuickMoveResolver.Resolve(context.CurrentKind, Container,
+                /// Quick-move follows the open side panel (issue #30): equipment shift-clicks
+                /// to whichever panel is open. With the Stash open that is the stash, as
+                /// always; with neither panel open - or the Vendor open - nothing moves. The
+                /// move stays (issue #10): the item comes off, or - if the target is full -
+                /// into the hand; the affix lift rides the commit.
+                var intent = QuickMoveResolver.Resolve(InventoryProvider.Instance.ActiveSidePanel, Container,
                     InventoryProvider.Instance.Inventory,
                     InventoryProvider.Instance.Stash,
                     InventoryProvider.Instance.Equipment,
