@@ -12,14 +12,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// Recall buttons — the toggles are the actions.
     ///
     /// While <see cref="RunPhase.InField"/>, only the Town toggle is interactable — the
-    /// player must Recall before choosing a new destination. Fades in/out via the parent
-    /// <see cref="MultiplePanelToggle"/> on the Switch Context button.
-    ///
-    /// <see cref="AbstractPanel.BeforeAppear"/> runs on every fade-in and the panel stays
-    /// enabled between them, so <see cref="OnDisable"/> is not a reliable pair — a second
-    /// appear without a teardown would otherwise stack a second <c>PhaseChanged</c> /
-    /// <c>OnToggle</c> subscription and fire <see cref="SimulationProvider.Send"/> twice on one
-    /// click. Every subscription here is therefore made idempotent (detach before attach).
+    /// player must Recall before choosing a new destination. Idempotent subscriptions
+    /// (detach before attach) prevent <see cref="SimulationProvider.Send"/> from firing twice
+    /// on one click if <see cref="AbstractPanel.BeforeAppear"/> runs again before <see cref="OnDisable"/>.
+    /// Every subscription here is therefore made idempotent (detach before attach).
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class MapPanel : AbstractPanel

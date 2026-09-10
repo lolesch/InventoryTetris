@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using TMPro;
+using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Runtime.Provider;
 using UnityEngine;
@@ -155,7 +157,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             return null;
         }
 
-        private void OnBasketContentChanged() => RefreshUi();
+        private void OnBasketContentChanged(Dictionary<Vector2Int, Package> _) => RefreshUi();
 
         /// <summary>
         /// The sum shown under the basket - <see cref="SellBasket.PreviewValue"/>, the same

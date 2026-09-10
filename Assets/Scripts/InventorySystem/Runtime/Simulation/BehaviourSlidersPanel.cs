@@ -18,9 +18,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// 0=Common, 1=Magic, 2=Rare, 3=Unique. Whole number positions give a tactile snap;
     /// fractional values are rounded.
     ///
-    /// Fades in/out via the parent <see cref="MultiplePanelToggle"/> on the Switch Context
-    /// button. Subscribes to slider events in <see cref="AbstractPanel.BeforeAppear"/> so
-    /// they are live as soon as the panel becomes visible.
+    /// Lives on the Combat Panel, which <see cref="MinimapPanel"/> fades in on Send and out on
+    /// Recall / Death. Subscribes to slider events in <see cref="AbstractPanel.BeforeAppear"/>
+    /// so they are live as soon as the panel becomes visible.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class BehaviourSlidersPanel : AbstractPanel
