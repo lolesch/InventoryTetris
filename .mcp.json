@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "unity-mcp": {
+      "command": "C:/Users/lolesch/.unity/relay/relay_win.exe",
+      "args": ["--mcp"],
+      "env": {
+        "UNITY_PROJECT_PATH": "D:\\Projects\\Unity\\InventoryTetris",
+        "UNITY_INSTANCE_ID": "19540"
+      }
+    }
+  }
+}
