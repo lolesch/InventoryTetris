@@ -11,7 +11,10 @@ it in `dev/specs/` instead.
 
 Implementation work is broken out of a spec with `/to-tickets` into GitHub Issues
 (`lolesch/InventoryTetris`), then built one issue at a time with `/implement` (TDD via
-`/tdd`, closed with `/code-review`). Execute inline, never via subagents. **There is no
+`/tdd`, closed with `/code-review`). Execute inline, never via subagents. Before starting
+`/implement #N`, walk that issue's **Blocked by** chain transitively — `ready-for-agent`
+means the spec is written, not that the dependencies are closed. If `#N` isn't the
+frontier, surface that and let the user decide rather than building the blockers inside it. **There is no
 per-phase implementation-plan document** — the issue is the unit of work; if one does
 not fit a single context window, split it into more issues rather than write a plan.
 
@@ -33,6 +36,15 @@ The five canonical label names are used verbatim — `needs-triage`, `needs-info
 ### Domain docs
 
 Single-context: one `CONTEXT.md` at the repo root plus `docs/adr/`, both created lazily. See `docs/agents/domain.md`.
+
+### Codebase notes
+
+`docs/agents/codebase-notes.md` holds durable engineering gotchas that aren't in the code
+or git history — Unity compile/test verification (`dotnet build` lies; drive the
+`unity-mcp` bridge), assembly-definition layout (namespace ≠ asmdef), the shared `Utility`
+submodule, broken `.cs.meta` files, the scene-save modal. Read it before any Unity compile
+verification or asmdef change. It's also the cross-machine channel for that kind of
+knowledge — agent memory is per-device and doesn't sync; this file does.
 
 ## GitHub Pages: do not merge `docs/agents/` into `GitPage`
 

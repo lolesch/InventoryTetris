@@ -7,6 +7,9 @@ How the engineering skills should consume this repo's domain documentation when 
 ## Before exploring, read these
 
 - **`CONTEXT.md`** at the repo root — the domain glossary.
+- **`docs/agents/codebase-notes.md`** — durable engineering gotchas (Unity compile/test
+  verification, assembly-definition layout, the shared submodule, broken `.meta` files).
+  Read before any Unity compile verification or asmdef change.
 - **`docs/adr/`** — read ADRs that touch the area you're about to work in.
 - **`dev/specs/`** — this repo's design specs (`YYYY-MM-DD-<topic>-design.md`),
   repo-specific and the richest source of intent for in-flight work. Read the newest
