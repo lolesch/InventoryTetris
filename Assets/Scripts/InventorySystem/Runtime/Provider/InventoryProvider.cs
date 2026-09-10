@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using TMPro;
 using ToolSmiths.InventorySystem.Data;
@@ -20,6 +21,18 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// <summary>The player's spendable money, backed by <see cref="Inventory"/>'s coin
         /// cells. The wallet, not the container, owns currency logic since issue #14.</summary>
         public Wallet Wallet { get; private set; }
+
+        /// <summary>Which town side panel is open (#54). The rule itself is the engine-free
+        /// <see cref="SidePanelState"/>; the provider only carries it to the scene.</summary>
+        private readonly SidePanelState sidePanel = new();
+
+        public SidePanelContext ActiveSidePanel => sidePanel.Active;
+
+        public event Action<SidePanelContext> OnSidePanelChanged
+        {
+            add => sidePanel.Changed += value;
+            remove => sidePanel.Changed -= value;
+        }
 
         [field: SerializeField] public bool ShowDebugPositions { get; private set; }
 
@@ -51,6 +64,10 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             StoreDisplay.SetupDisplay(Store);
         }
+
+        public void SetSidePanel(SidePanelContext context) => sidePanel.Set(context);
+
+        public void ClearSidePanel(SidePanelContext context) => sidePanel.Clear(context);
 
         public void Awake()
         {

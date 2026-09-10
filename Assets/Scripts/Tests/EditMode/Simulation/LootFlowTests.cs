@@ -65,7 +65,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         };
 
         private static EncounterSimulation NewEncounter(FakeHero hero, EncounterProfile location) =>
-            new(hero, location, new ConstantRollSource(0f), engagementTarget: 5);
+            new(hero, location, new ConstantRollSource(0f), Behaviours.Engaging(5));
 
         private Wallet NewWallet(int width = 6, int height = 6) =>
             new(new CharacterInventory(new Vector2Int(width, height)), new FakeCurrencyMinter(catalog));

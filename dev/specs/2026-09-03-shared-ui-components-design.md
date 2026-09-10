@@ -286,7 +286,7 @@ follow-up, but it is a separate spec (see Out of Scope).
    place, verify in the Editor, delete `Assets/Plugins/Demigiant/`.
 4. Move the interaction family and panels into `Utility.UI`; rename `TooltipRequester` ->
    `InteractiveElement`; add `TooltipHost<T>` + `StringTooltipContent` + prefab and wire
-   `InteractiveElement`'s `tooltip` string through an ambient host. Add `docs/adr/0008-*`
+   `InteractiveElement`'s `tooltip` string through an ambient host. Add `docs/adr/0011-*`
    recording the "generic UI primitives live in the Utility submodule" decision.
 
 ## Testing Decisions
@@ -379,7 +379,7 @@ follow-up, but it is a separate spec (see Out of Scope).
   different remote URLs (`https://` in InventoryTetris, `git@` in AutoBattler). A submodule
   change propagates by a pointer bump in each. The submodule has no test assembly of its
   own and this spec keeps it that way — tests live in the consuming project.
-- **ADR**: slice 4 adds `docs/adr/0008-generic-ui-primitives-live-in-the-utility-submodule.md`
+- **ADR**: slice 4 adds `docs/adr/0011-generic-ui-primitives-live-in-the-utility-submodule.md`
   (or similarly named). It is consistent with ADR-0007's direction of shrinking
   `Assembly-CSharp` behind strict layered assemblies, but it moves code *below*
   `InventorySystem` rather than carving within it, which is worth recording explicitly.

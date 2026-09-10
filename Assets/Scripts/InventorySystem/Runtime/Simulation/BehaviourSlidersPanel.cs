@@ -58,20 +58,32 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             ApplyAll();
 
-            retreatHealthSlider.onValueChanged.AddListener(OnRetreatHealthChanged);
-            recallBagFillSlider.onValueChanged.AddListener(OnRecallBagFillChanged);
-            resourceReserveSlider.onValueChanged.AddListener(OnResourceReserveChanged);
-            lootFilterSlider.onValueChanged.AddListener(OnLootFilterChanged);
-            simSpeedSlider.onValueChanged.AddListener(OnSimSpeedChanged);
+            // BeforeAppear runs on every fade-in and the panel stays enabled between them, so
+            // OnDisable is not a reliable pair — detach before attach so a re-appear cannot
+            // stack a second listener that writes the behaviour once per duplicate on each drag.
+            SetSliderListeners(add: false);
+            SetSliderListeners(add: true);
+        }
+
+        private void SetSliderListeners(bool add)
+        {
+            Wire(retreatHealthSlider, OnRetreatHealthChanged, add);
+            Wire(recallBagFillSlider, OnRecallBagFillChanged, add);
+            Wire(resourceReserveSlider, OnResourceReserveChanged, add);
+            Wire(lootFilterSlider, OnLootFilterChanged, add);
+            Wire(simSpeedSlider, OnSimSpeedChanged, add);
+
+            static void Wire(Slider slider, UnityEngine.Events.UnityAction<float> handler, bool add)
+            {
+                if (slider == null) return;
+                if (add) slider.onValueChanged.AddListener(handler);
+                else slider.onValueChanged.RemoveListener(handler);
+            }
         }
 
         private void OnDisable()
         {
-            retreatHealthSlider.onValueChanged.RemoveListener(OnRetreatHealthChanged);
-            recallBagFillSlider.onValueChanged.RemoveListener(OnRecallBagFillChanged);
-            resourceReserveSlider.onValueChanged.RemoveListener(OnResourceReserveChanged);
-            lootFilterSlider.onValueChanged.RemoveListener(OnLootFilterChanged);
-            simSpeedSlider.onValueChanged.RemoveListener(OnSimSpeedChanged);
+            SetSliderListeners(add: false);
 
             _behaviour = null;
         }

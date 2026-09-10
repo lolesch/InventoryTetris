@@ -1,5 +1,5 @@
 ---
-status: accepted, not yet implemented
+status: accepted
 ---
 
 # Death is corpse-recovery, not haul-forfeit

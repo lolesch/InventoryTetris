@@ -90,15 +90,25 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var profile = Build();
             var rolls = new ConstantRollSource(0f);
 
-            Assert.That(() => new EncounterSimulation(null, profile, rolls, 3), Throws.ArgumentNullException);
-            Assert.That(() => new EncounterSimulation(new FakeHero(), null, rolls, 3), Throws.ArgumentNullException);
-            Assert.That(() => new EncounterSimulation(new FakeHero(), profile, null, 3), Throws.ArgumentNullException);
-            Assert.That(() => new EncounterSimulation(new FakeHero(), profile, rolls, 0), Throws.InstanceOf<System.ArgumentException>());
+            Assert.That(() => new EncounterSimulation(null, profile, rolls, Behaviours.Engaging(3)), Throws.ArgumentNullException);
+            Assert.That(() => new EncounterSimulation(new FakeHero(), null, rolls, Behaviours.Engaging(3)), Throws.ArgumentNullException);
+            Assert.That(() => new EncounterSimulation(new FakeHero(), profile, null, Behaviours.Engaging(3)), Throws.ArgumentNullException);
+            Assert.That(() => new EncounterSimulation(new FakeHero(), profile, rolls, null), Throws.ArgumentNullException);
+        }
+
+        [Test]
+        public void AnEngagementBelowOne_IsClampedRatherThanRejected()
+        {
+            // Engagement is a live slider value now, not a construction-time argument — a zero
+            // arriving mid-fight has to be absorbed, so the constructor cannot reject it either.
+            var sim = new EncounterSimulation(new FakeHero(), Build(), new ConstantRollSource(0f), Behaviours.Engaging(0));
+
+            Assert.That(sim.EngagementTarget, Is.EqualTo(1));
         }
 
         [Test]
         public void EncounterTuning_RejectsANonPositiveTick() =>
-            Assert.That(() => new EncounterSimulation(new FakeHero(), Build(), new ConstantRollSource(0f), 3,
+            Assert.That(() => new EncounterSimulation(new FakeHero(), Build(), new ConstantRollSource(0f), Behaviours.Engaging(3),
                 new EncounterTuning { Tick = 0f }), Throws.InstanceOf<System.ArgumentException>());
     }
 }

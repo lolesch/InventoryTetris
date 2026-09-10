@@ -24,7 +24,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
                 MagicalDamage = 0f,
                 Resource = 0f,          // never casts
             };
-            var sim = new EncounterSimulation(hero, Profiles.Solo(EnemyArchetype.Skirmisher), new ConstantRollSource(0f), engagementTarget: 5, FastCast());
+            var sim = new EncounterSimulation(hero, Profiles.Solo(EnemyArchetype.Skirmisher), new ConstantRollSource(0f), Behaviours.Engaging(5), FastCast());
             var enemy = sim.Enemies[0];
 
             // 2.0 s of combat = 4 whole Strike intervals.
@@ -37,7 +37,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         public void Strike_DoesNotLandBeforeItsFirstWholeInterval()
         {
             var hero = new FakeHero { AttackSpeed = 2f, PhysicalDamage = 1f, MagicalDamage = 0f, Resource = 0f };
-            var sim = new EncounterSimulation(hero, Profiles.Solo(EnemyArchetype.Skirmisher), new ConstantRollSource(0f), engagementTarget: 5, FastCast());
+            var sim = new EncounterSimulation(hero, Profiles.Solo(EnemyArchetype.Skirmisher), new ConstantRollSource(0f), Behaviours.Engaging(5), FastCast());
             var enemy = sim.Enemies[0];
 
             for (var i = 0; i < 4; i++) sim.Advance(0.1f); // 0.4 s < 0.5 s
@@ -58,7 +58,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
                 Resource = 0f,
                 ResourceRegenPerSecond = 20f,
             };
-            var sim = new EncounterSimulation(hero, Profiles.Solo(EnemyArchetype.Brute), new ConstantRollSource(0f), engagementTarget: 5, FastCast());
+            var sim = new EncounterSimulation(hero, Profiles.Solo(EnemyArchetype.Brute), new ConstantRollSource(0f), Behaviours.Engaging(5), FastCast());
             var enemy = sim.Enemies[0];
 
             // 3.1 s → Casts affordable at t = 1, 2, 3.
@@ -84,7 +84,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
                 Resource = 0f,
                 ResourceRegenPerSecond = 5f, // needs 10 s to afford one Cast
             };
-            var sim = new EncounterSimulation(hero, Profiles.Solo(EnemyArchetype.Brute), new ConstantRollSource(0f), engagementTarget: 5, FastCast());
+            var sim = new EncounterSimulation(hero, Profiles.Solo(EnemyArchetype.Brute), new ConstantRollSource(0f), Behaviours.Engaging(5), FastCast());
             var enemy = sim.Enemies[0];
 
             // Hero regen runs before the sim tick (issue #45 moved it to the driver).

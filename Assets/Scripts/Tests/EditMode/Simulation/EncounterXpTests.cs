@@ -33,7 +33,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         public void EachKill_AddsItsBalancedXpToThePot_NotToTheSettledTotal()
         {
             var sim = new EncounterSimulation(PicksThemOff(level: 5), Profiles.Group(EnemyArchetype.Skirmisher, 3),
-                new ConstantRollSource(0f), engagementTarget: 10, LongBeat());
+                new ConstantRollSource(0f), Behaviours.Engaging(10), LongBeat());
 
             sim.Advance(0.1f); // kill 1 of 3
             Assert.That(sim.UnsettledXp, Is.EqualTo(SkirmisherXp(5, 5)).Within(0.01f));
@@ -48,7 +48,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         public void TheHeroLevelGap_BalancesThePot()
         {
             var under = new EncounterSimulation(PicksThemOff(level: 1), Profiles.Group(EnemyArchetype.Skirmisher, 3, sourceLevel: 5),
-                new ConstantRollSource(0f), engagementTarget: 10, LongBeat());
+                new ConstantRollSource(0f), Behaviours.Engaging(10), LongBeat());
 
             under.Advance(0.1f); // one kill, hero 4 levels under the Location
 
@@ -60,7 +60,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         public void ThePot_SettlesOnTheClear_AndResets()
         {
             var sim = new EncounterSimulation(PicksThemOff(level: 5), Profiles.Group(EnemyArchetype.Skirmisher, 3),
-                new ConstantRollSource(0f), engagementTarget: 10, LongBeat());
+                new ConstantRollSource(0f), Behaviours.Engaging(10), LongBeat());
 
             var settledByEvent = -1;
             sim.EncounterCleared += xp => settledByEvent = xp;
@@ -78,7 +78,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         public void SettledXp_SumsAcrossClearedEncounters()
         {
             var sim = new EncounterSimulation(PicksThemOff(level: 5), Profiles.Group(EnemyArchetype.Skirmisher, 2),
-                new ConstantRollSource(0f), engagementTarget: 10, new EncounterTuning { Beat = 0.5f, CastCadence = 0.05f });
+                new ConstantRollSource(0f), Behaviours.Engaging(10), new EncounterTuning { Beat = 0.5f, CastCadence = 0.05f });
 
             for (var i = 0; i < 500 && sim.EncountersCleared < 3; i++) sim.Advance(0.1f);
 
@@ -90,7 +90,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         public void Abandon_MidEncounter_ForfeitsThePot()
         {
             var sim = new EncounterSimulation(PicksThemOff(level: 5), Profiles.Group(EnemyArchetype.Skirmisher, 5),
-                new ConstantRollSource(0f), engagementTarget: 10, LongBeat());
+                new ConstantRollSource(0f), Behaviours.Engaging(10), LongBeat());
 
             sim.Advance(0.1f);
             sim.Advance(0.1f); // 2 of 5 down — pot is live, Encounter not cleared
@@ -110,7 +110,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         {
             var hero = PicksThemOff(level: 5);
             var sim = new EncounterSimulation(hero, Profiles.Group(EnemyArchetype.Skirmisher, 5),
-                new ConstantRollSource(0f), engagementTarget: 10, LongBeat());
+                new ConstantRollSource(0f), Behaviours.Engaging(10), LongBeat());
 
             sim.Advance(0.1f);
             sim.Advance(0.1f); // pot holds 2 kills' worth
@@ -130,7 +130,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         public void APotThatRoundsToNothing_ForfeitsNothing()
         {
             var sim = new EncounterSimulation(PicksThemOff(level: 5), Profiles.Group(EnemyArchetype.Skirmisher, 3),
-                new ConstantRollSource(0f), engagementTarget: 10, LongBeat());
+                new ConstantRollSource(0f), Behaviours.Engaging(10), LongBeat());
 
             var forfeited = sim.Abandon(); // no kills yet
 
