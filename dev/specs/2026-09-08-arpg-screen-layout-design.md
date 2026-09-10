@@ -1,6 +1,26 @@
 ---
-status: proposed
+status: partly superseded
 ---
+
+> **Superseded in three places (2026-09-09 / 2026-09-10).** The rest of this spec still
+> stands; these are the decisions that moved after it was written.
+>
+> 1. **Side panels are on the LEFT, not the right.** The left side holds the Town Stop
+>    contexts (Stash, Vendor) and the Combat Panel; the right side is the Hero Panel
+>    (Equipment over Inventory). Corrected 2026-09-09; see issues #56 and #57 and the
+>    **Side Panel** / **Hero Panel** entries in `CONTEXT.md`.
+> 2. **The Healer and Go Venture ARE toggles in the minimap's `TownGroup`.** This spec says
+>    the Healer is a plain `AbstractButton` that does not join the `RadioGroup` - withdrawn
+>    2026-09-10. Every Town interaction deselects its siblings and cancels what they had in
+>    flight; group membership gives that for free. See issue #58.
+> 3. **The minimap face is its own state, not a projection of `RunPhase`.** `RunPhase`
+>    forces the face but does not define it: Go Venture shows the Field face while still
+>    `InTown` so the player can pick a destination, and To Town backs out of that preview
+>    without a Recall. See issue #56.
+>
+> The side-panel `RadioGroup` this spec asks for was also narrowed: mutual exclusion comes
+> from the minimap's `TownGroup`, and a `SidePanelToggle : PanelToggle` announces
+> `SidePanelContext` on both edges. See issue #57.
 
 # ARPG Screen Layout
 
