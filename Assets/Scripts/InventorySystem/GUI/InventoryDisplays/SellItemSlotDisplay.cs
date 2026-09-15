@@ -9,7 +9,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 {
     [System.Serializable]
     [RequireComponent(typeof(RectTransform), typeof(Image))]
-    internal sealed class SellItenSlotDisplay : AbstractSlotDisplay
+    internal sealed class SellItemSlotDisplay : AbstractSlotDisplay
     {
         /// <summary>
         /// The single-slot instant sale is gone (issue #32) - the Sell Basket is the only way
