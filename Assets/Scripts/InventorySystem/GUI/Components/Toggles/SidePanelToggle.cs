@@ -1,4 +1,5 @@
 ﻿using Submodules.Utility.UI;
+using Submodules.Utility.UI.InteractiveElements;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Runtime.Provider;
 using UnityEngine;
@@ -46,12 +47,6 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         /// <summary>The context this toggle announces. Authored data, not inferred.</summary>
         public SidePanelContext Context => context;
 
-        public override void SetToggle(bool isOn)
-        {
-            base.SetToggle(isOn);
-
-            Announce(isOn);
-        }
 
         /// <summary>
         /// Push the transition to the provider. Play mode only: reading
@@ -60,7 +55,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         /// can reach this method through <c>RadioGroup.Activate</c> while the player is only
         /// editing the scene.
         /// </summary>
-        private void Announce(bool isOn)
+        protected override void ToggleSideEffects()
         {
             if (!Application.isPlaying || context == SidePanelContext.None)
                 return;
@@ -70,7 +65,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
             if (provider == null)
                 return;
 
-            if (isOn)
+            if (IsOn)
                 provider.SetSidePanel(context);
             else
                 provider.ClearSidePanel(context);
@@ -78,7 +73,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
 
         /// <summary>
         /// The hotkey is the same act as a click, guard for guard - including the
-        /// <see cref="RadioGroup.AllowSwitchOff"/> rule, so a hotkey cannot switch off a
+        /// <see cref="RadioGroup.CanDeactivateAll"/> rule, so a hotkey cannot switch off a
         /// toggle a click could not. <c>interactable</c> is the phase gate: the minimap turns
         /// the Town toggles off whenever the Field face is up, which covers both InField and
         /// the Go Venture preview, so no <c>RunPhase</c> dependency is needed here.
@@ -91,7 +86,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
             if (!Input.GetKeyDown(hotkey))
                 return;
 
-            if (RadioGroup && !RadioGroup.AllowSwitchOff && IsOn)
+            if (RadioGroup && !RadioGroup.CanDeactivateAll && IsOn)
                 return;
 
             SetToggle(!IsOn);

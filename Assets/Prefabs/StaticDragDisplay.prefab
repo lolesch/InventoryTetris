@@ -33,7 +33,7 @@ RectTransform:
   - {fileID: 7748516843441596596}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
@@ -64,6 +64,7 @@ MonoBehaviour:
   background: {fileID: 5062772906587210717}
   initialColor: {r: 0, g: 0, b: 0, a: 0}
   amount: {fileID: 4910545370180954890}
+  slotSize: 60
 --- !u!1001 &468711172340972281
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -1,4 +1,5 @@
 using Submodules.Utility.UI;
+using Submodules.Utility.UI.InteractiveElements;
 using ToolSmiths.InventorySystem.Locations;
 using UnityEngine;
 
@@ -11,7 +12,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// Location to Send to (issue #27).
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class LocationToggle : AbstractToggle
+    public sealed class LocationToggle : PanelToggle
     {
         [SerializeField] private LocationConfig location;
 

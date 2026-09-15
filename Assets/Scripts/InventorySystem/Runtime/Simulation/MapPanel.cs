@@ -1,4 +1,5 @@
 using Submodules.Utility.UI;
+using Submodules.Utility.UI.InteractiveElements;
 using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
 
@@ -35,17 +36,17 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             run.PhaseChanged += OnPhaseChanged;
 
             // Subscribe to all location toggles for send-on-click.
-            foreach (var toggle in locationGroup.GetComponentsInChildren<LocationToggle>(true))
-            {
-                toggle.OnToggle -= OnLocationToggled;
-                toggle.OnToggle += OnLocationToggled;
-            }
+            //foreach (var toggle in locationGroup.GetComponentsInChildren<LocationToggle>(true))
+            //{
+            //    toggle.OnToggle -= OnLocationToggled;
+            //    toggle.OnToggle += OnLocationToggled;
+            //}
 
-            if (townToggle != null)
-            {
-                townToggle.OnToggle -= OnTownToggled;
-                townToggle.OnToggle += OnTownToggled;
-            }
+            //if (townToggle != null)
+            //{
+            //    townToggle.OnToggle -= OnTownToggled;
+            //    townToggle.OnToggle += OnTownToggled;
+            //}
 
             // Sync to current phase.
             OnPhaseChanged(run.Phase);
@@ -63,11 +64,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             provider.Run.PhaseChanged -= OnPhaseChanged;
 
-            foreach (var toggle in locationGroup.GetComponentsInChildren<LocationToggle>(true))
-                toggle.OnToggle -= OnLocationToggled;
+            //foreach (var toggle in locationGroup.GetComponentsInChildren<LocationToggle>(true))
+                //toggle.OnToggle -= OnLocationToggled;
 
-            if (townToggle != null)
-                townToggle.OnToggle -= OnTownToggled;
+            //if (townToggle != null)
+            //    townToggle.OnToggle -= OnTownToggled;
         }
 
         private void OnPhaseChanged(RunPhase phase)

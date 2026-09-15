@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using Submodules.Utility.UI;
+using Submodules.Utility.UI.InteractiveElements;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -126,6 +127,12 @@ namespace ToolSmiths.Tests.EditMode.Utility
         }
 
         /// <summary>AbstractToggle with no panel behaviour - just the group contract.</summary>
-        private sealed class TestToggle : AbstractToggle { }
+        private sealed class TestToggle : AbstractToggle
+        {
+            protected override void ToggleSideEffects()
+            {
+                throw new System.NotImplementedException();
+            }
+        }
     }
 }

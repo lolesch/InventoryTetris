@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using Submodules.Utility.UI;
+using Submodules.Utility.UI.InteractiveElements;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
@@ -82,10 +83,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             // Unregister before re-registering to avoid double-registration if OnEnable
             // auto-discovered a different RadioGroup via hierarchy before BeforeAppear ran.
-            UnregisterTownToggles();
-            UnregisterFieldToggles();
-            RegisterTownToggles();
-            RegisterFieldToggles();
 
             SubscribeToToggleClicks();
 
@@ -100,8 +97,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             provider.Run.PhaseChanged -= OnPhaseChanged;
 
             UnsubscribeFromToggleClicks();
-            UnregisterTownToggles();
-            UnregisterFieldToggles();
         }
 
         private void OnPhaseChanged(RunPhase phase) => SyncToPhase(phase);
@@ -187,14 +182,14 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         {
             if (toggle == null) return;
 
-            toggle.OnToggle -= handler;
-            toggle.OnToggle += handler;
+            //toggle.OnToggle -= handler;
+            //toggle.OnToggle += handler;
         }
 
         private static void Unwire(AbstractToggle toggle, Action<bool> handler)
         {
-            if (toggle != null)
-                toggle.OnToggle -= handler;
+            //if (toggle != null)
+            //    toggle.OnToggle -= handler;
         }
 
         /// <summary>Go Venture (InTown only) previews the Field face so the player can pick a
@@ -257,53 +252,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (vendorToggle != null) _townToggles.Add(vendorToggle);
             if (healerToggle != null) _townToggles.Add(healerToggle);
             if (goVentureToggle != null) _townToggles.Add(goVentureToggle);
-        }
-
-        private void RegisterTownToggles()
-        {
-            if (townGroup == null) return;
-
-            foreach (var toggle in _townToggles)
-            {
-                AssignRadioGroup(toggle, townGroup);
-                townGroup.Register(toggle);
-            }
-        }
-
-        private void UnregisterTownToggles()
-        {
-            if (townGroup == null) return;
-
-            foreach (var toggle in _townToggles)
-                townGroup.Unregister(toggle);
-        }
-
-        private void RegisterFieldToggles()
-        {
-            if (fieldGroup == null) return;
-
-            foreach (var toggle in locationToggles)
-                if (toggle != null)
-                {
-                    AssignRadioGroup(toggle, fieldGroup);
-                    fieldGroup.Register(toggle);
-                }
-
-            if (toTownToggle != null)
-            {
-                AssignRadioGroup(toTownToggle, fieldGroup);
-                fieldGroup.Register(toTownToggle);
-            }
-        }
-
-        private void UnregisterFieldToggles()
-        {
-            if (fieldGroup == null) return;
-
-            foreach (var toggle in locationToggles)
-                if (toggle != null) fieldGroup.Unregister(toggle);
-
-            if (toTownToggle != null) fieldGroup.Unregister(toTownToggle);
         }
 
         /// <summary>
