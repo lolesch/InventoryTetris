@@ -6,10 +6,15 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 {
     /// <summary>
     /// The map panel (issue #27): a <see cref="RadioGroup"/> of <see cref="LocationToggle"/>
-    /// items plus a plain "Town" <see cref="AbstractToggle" /> for recall. Clicking a field
-    /// location toggle sends the hero there (<see cref="SimulationProvider.Send"/>); clicking
-    /// the Town toggle recalls (<see cref="SimulationProvider.Recall"/>). No dedicated Send /
-    /// Recall buttons — the toggles are the actions.
+    /// items plus a Town toggle for recall. Selecting a field location sends the hero there
+    /// (<see cref="SimulationProvider.Send"/>). No dedicated Send button — selection is the
+    /// action.
+    ///
+    /// Selection is observed through <see cref="RadioGroup.OnGroupChanged"/> rather than
+    /// per-toggle: the group already owns "which one is active", and
+    /// <see cref="RadioGroup.ActivatedToggle"/> is the single source of truth this panel
+    /// reads. Recall lives on the toggle itself (<see cref="TownRecallToggle"/>) — this panel
+    /// keeps <see cref="townToggle"/> only to drive <c>interactable</c>.
     ///
     /// While <see cref="RunPhase.InField"/>, only the Town toggle is interactable — the
     /// player must Recall before choosing a new destination. Fades in/out via the parent
@@ -18,8 +23,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// <see cref="AbstractPanel.BeforeAppear"/> runs on every fade-in and the panel stays
     /// enabled between them, so <see cref="OnDisable"/> is not a reliable pair — a second
     /// appear without a teardown would otherwise stack a second <c>PhaseChanged</c> /
-    /// <c>OnToggle</c> subscription and fire <see cref="SimulationProvider.Send"/> twice on one
-    /// click. Every subscription here is therefore made idempotent (detach before attach).
+    /// <c>OnGroupChanged</c> subscription and fire <see cref="SimulationProvider.Send"/>
+    /// twice on one click. Every subscription here is therefore made idempotent
+    /// (detach before attach).
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class MapPanel : AbstractPanel
@@ -38,26 +44,14 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             run.PhaseChanged -= OnPhaseChanged;
             run.PhaseChanged += OnPhaseChanged;
 
-            // Subscribe to all location toggles for send-on-click.
-            foreach (var toggle in locationGroup.GetComponentsInChildren<LocationToggle>(true))
+            if (locationGroup != null)
             {
-                toggle.OnToggle -= OnLocationToggled;
-                toggle.OnToggle += OnLocationToggled;
-            }
-
-            if (townToggle != null)
-            {
-                townToggle.OnToggle -= OnTownToggled;
-                townToggle.OnToggle += OnTownToggled;
+                locationGroup.OnGroupChanged -= OnLocationSelectionChanged;
+                locationGroup.OnGroupChanged += OnLocationSelectionChanged;
             }
 
             // Sync to current phase.
             OnPhaseChanged(run.Phase);
-        }
-
-        protected override void OnAppear()
-        {
-            base.OnAppear();
         }
 
         private void OnDisable()
@@ -67,11 +61,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             provider.Run.PhaseChanged -= OnPhaseChanged;
 
-            foreach (var toggle in locationGroup.GetComponentsInChildren<LocationToggle>(true))
-                toggle.OnToggle -= OnLocationToggled;
-
-            if (townToggle != null)
-                townToggle.OnToggle -= OnTownToggled;
+            if (locationGroup != null)
+                locationGroup.OnGroupChanged -= OnLocationSelectionChanged;
         }
 
         private void OnPhaseChanged(RunPhase phase)
@@ -87,15 +78,17 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 townToggle.interactable = !inTown;
         }
 
-        /// <summary>Clicking a field location toggle sends the hero there immediately.</summary>
-        private void OnLocationToggled(bool isOn)
+        /// <summary>
+        /// Selecting a field location sends the hero there immediately. Fires on deselection
+        /// too (<see cref="RadioGroup.ActivatedToggle"/> null) — that is not a destination,
+        /// so it is ignored.
+        /// </summary>
+        private void OnLocationSelectionChanged()
         {
-            if (!isOn) return;
-
             var provider = SimulationProvider.Instance;
             if (provider == null) return;
 
-            // Only send while in Town — in the field the toggle is non-interactable,
+            // Only send while in Town — in the field the toggles are non-interactable,
             // but guard against edge cases (e.g. phase change mid-frame).
             if (provider.Run.Phase != RunPhase.InTown) return;
 
@@ -103,20 +96,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (toggle == null || toggle.Location == null) return;
 
             provider.Send(toggle.Location);
-        }
-
-        /// <summary>Clicking the Town toggle recalls the hero immediately.</summary>
-        private void OnTownToggled(bool isOn)
-        {
-            if (!isOn) return;
-
-            var provider = SimulationProvider.Instance;
-            if (provider == null) return;
-
-            // Only recall while InField — in Town the toggle is non-interactable.
-            if (provider.Run.Phase != RunPhase.InField) return;
-
-            provider.Recall();
         }
     }
 }

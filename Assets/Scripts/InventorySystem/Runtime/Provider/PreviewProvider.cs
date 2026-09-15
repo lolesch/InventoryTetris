@@ -1,4 +1,5 @@
-﻿using ToolSmiths.InventorySystem.Data;
+﻿using Submodules.Utility.Provider;
+using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.GUI.Displays;
 using ToolSmiths.InventorySystem.GUI.InventoryDisplays;
