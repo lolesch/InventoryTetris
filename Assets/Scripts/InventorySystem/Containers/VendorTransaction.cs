@@ -13,7 +13,7 @@ namespace ToolSmiths.InventorySystem.Inventories
     /// rolls back leaving the item on the shelf and nothing charged - the player can never
     /// be charged with no item, or paid with the item still on the shelf.
     ///
-    /// <para><c>VendorSlotDisplay</c> and <c>SellItenSlotDisplay</c> both route through here
+    /// <para><c>VendorSlotDisplay</c> and <c>SellItemSlotDisplay</c> both route through here
     /// rather than each carrying a near-identical remove / add / coin-mint block. The
     /// <c>Store</c> is still a <see cref="CharacterInventory"/>; the <see cref="Wallet"/>
     /// module owns the money (issue #14), and a dedicated vendor container is later work

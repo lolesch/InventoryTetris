@@ -19,11 +19,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// fractional values are rounded.
     ///
     /// Fades in/out via the parent <see cref="MultiplePanelToggle"/> on the Switch Context
-    /// button. Subscribes to slider events in <see cref="AbstractPanel.BeforeAppear"/> so
+    /// button. Subscribes to slider events in <see cref="SimplePanel.BeforeAppear"/> so
     /// they are live as soon as the panel becomes visible.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class BehaviourSlidersPanel : AbstractPanel
+    public sealed class BehaviourSlidersPanel : SimplePanel
     {
         [Header("Hero behaviour sliders")]
         [SerializeField] private Slider retreatHealthSlider;
@@ -59,7 +59,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             ApplyAll();
 
             // BeforeAppear runs on every fade-in and the panel stays enabled between them, so
-            // OnDisable is not a reliable pair — detach before attach so a re-appear cannot
+            // OnPanelDisable is not a reliable pair — detach before attach so a re-appear cannot
             // stack a second listener that writes the behaviour once per duplicate on each drag.
             SetSliderListeners(add: false);
             SetSliderListeners(add: true);
@@ -81,7 +81,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             }
         }
 
-        private void OnDisable()
+        protected override void OnPanelDisable()
         {
             SetSliderListeners(add: false);
 

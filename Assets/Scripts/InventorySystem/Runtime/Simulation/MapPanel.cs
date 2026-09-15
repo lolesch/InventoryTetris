@@ -20,15 +20,15 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// player must Recall before choosing a new destination. Fades in/out via the parent
     /// <see cref="MultiplePanelToggle"/> on the Switch Context button.
     ///
-    /// <see cref="AbstractPanel.BeforeAppear"/> runs on every fade-in and the panel stays
-    /// enabled between them, so <see cref="OnDisable"/> is not a reliable pair — a second
-    /// appear without a teardown would otherwise stack a second <c>PhaseChanged</c> /
-    /// <c>OnGroupChanged</c> subscription and fire <see cref="SimulationProvider.Send"/>
-    /// twice on one click. Every subscription here is therefore made idempotent
-    /// (detach before attach).
+    /// <see cref="SimplePanel.BeforeAppear"/> runs on every fade-in and the panel stays
+    /// enabled between them, so <see cref="SimplePanel.OnPanelDisable"/> is not a reliable
+    /// pair with it — a second appear without a teardown would otherwise stack a second
+    /// <c>PhaseChanged</c> / <c>OnGroupChanged</c> subscription and fire
+    /// <see cref="SimulationProvider.Send"/> twice on one click. Every subscription here is
+    /// therefore made idempotent (detach before attach).
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class MapPanel : AbstractPanel
+    public sealed class MapPanel : SimplePanel
     {
         [SerializeField] private RadioGroup locationGroup;
         [SerializeField] private AbstractToggle townToggle;
@@ -54,7 +54,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             OnPhaseChanged(run.Phase);
         }
 
-        private void OnDisable()
+        protected override void OnPanelDisable()
         {
             var provider = SimulationProvider.Instance;
             if (provider == null) return;

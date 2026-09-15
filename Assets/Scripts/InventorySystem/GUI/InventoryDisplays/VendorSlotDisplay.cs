@@ -150,7 +150,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 return;
 
             /// Dropping an item onto the shelf is a sale, exactly as the dedicated sell slot
-            /// (SellItenSlotDisplay) handles it: the item is already in hand from the drag,
+            /// (SellItemSlotDisplay) handles it: the item is already in hand from the drag,
             /// its value is banked into the wallet on commit (issue #11), and the drag ends.
             VendorTransaction.Sell(package, InventoryProvider.Instance.Wallet);
 

@@ -2,5 +2,5 @@
 
 namespace ToolSmiths.InventorySystem.GUI.Panels
 {
-    public class TestPanel : AbstractPanel { }
+    public class TestPanel : SimplePanel { }
 }

@@ -18,7 +18,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// are out of scope — both are issue #56.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class MinimapPanel : AbstractPanel
+    public sealed class MinimapPanel : SimplePanel
     {
         private static readonly FieldInfo s_radioGroupField =
             typeof(AbstractToggle).GetField("radioGroup", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -52,7 +52,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             var run = provider.Run;
 
             // Unsubscribe first to avoid duplicate handlers across show/hide cycles
-            // (AbstractPanel keeps the GameObject enabled — FadeOut never triggers OnDisable).
+            // (SimplePanel keeps the GameObject enabled — FadeOut never triggers OnPanelDisable).
             run.PhaseChanged -= OnPhaseChanged;
             run.PhaseChanged += OnPhaseChanged;
 
@@ -69,7 +69,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             SyncToPhase(run.Phase);
         }
 
-        private void OnDisable()
+        protected override void OnPanelDisable()
         {
             var provider = SimulationProvider.Instance;
             if (provider == null) return;
