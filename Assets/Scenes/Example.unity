@@ -46818,9 +46818,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 7732425298424832139}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cb1eac5781e2f374db2a4ec7452c8408, type: 3}
+  m_Script: {fileID: 11500000, guid: 42e87220b5424e14b30b7c100784a585, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.Runtime.Simulation.TownRecallToggle
   m_Navigation:
     m_Mode: 3
     m_WrapAround: 0

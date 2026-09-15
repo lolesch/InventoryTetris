@@ -81,10 +81,13 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             CollectTownToggles();
 
-            // Unregister before re-registering to avoid double-registration if OnEnable
-            // auto-discovered a different RadioGroup via hierarchy before BeforeAppear ran.
-
-            SubscribeToToggleClicks();
+            // RadioGroup no longer keeps a membership list — a toggle belongs to the group
+            // named by its own `radioGroup` field. Clearing first keeps a re-show from
+            // leaving a stale ActivatedToggle behind.
+            ClearTownSelection();
+            ClearFieldSelection();
+            AssignTownToggles();
+            AssignFieldToggles();
 
             SyncToPhase(run.Phase);
         }
@@ -96,7 +99,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             provider.Run.PhaseChanged -= OnPhaseChanged;
 
-            UnsubscribeFromToggleClicks();
+            ClearTownSelection();
+            ClearFieldSelection();
         }
 
         private void OnPhaseChanged(RunPhase phase) => SyncToPhase(phase);
@@ -254,10 +258,51 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (goVentureToggle != null) _townToggles.Add(goVentureToggle);
         }
 
+        private void AssignTownToggles()
+        {
+            if (townGroup == null) return;
+
+            foreach (var toggle in _townToggles)
+                AssignRadioGroup(toggle, townGroup);
+        }
+
+        private void ClearTownSelection()
+        {
+            if (townGroup == null) return;
+
+            foreach (var toggle in _townToggles)
+                if (townGroup.ActivatedToggle == toggle)
+                    townGroup.Deactivate(toggle);
+        }
+
+        private void AssignFieldToggles()
+        {
+            if (fieldGroup == null) return;
+
+            foreach (var toggle in locationToggles)
+                if (toggle != null)
+                    AssignRadioGroup(toggle, fieldGroup);
+
+            if (toTownToggle != null)
+                AssignRadioGroup(toTownToggle, fieldGroup);
+        }
+
+        private void ClearFieldSelection()
+        {
+            if (fieldGroup == null) return;
+
+            foreach (var toggle in locationToggles)
+                if (toggle != null && fieldGroup.ActivatedToggle == toggle)
+                    fieldGroup.Deactivate(toggle);
+
+            if (toTownToggle != null && fieldGroup.ActivatedToggle == toTownToggle)
+                fieldGroup.Deactivate(toTownToggle);
+        }
+
         /// <summary>
         /// Sets the backing <c>radioGroup</c> field on <see cref="AbstractToggle"/> so the
-        /// toggle registers with the correct group on its next <c>OnEnable</c>.
-        /// The property is get-only — reflection avoids modifying the Utility submodule.
+        /// toggle reports to the correct group. The property is get-only — reflection
+        /// avoids modifying the Utility submodule.
         /// </summary>
         private static void AssignRadioGroup(AbstractToggle toggle, RadioGroup group)
         {
