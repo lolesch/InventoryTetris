@@ -1,5 +1,4 @@
 using Submodules.Utility.UI;
-using Submodules.Utility.UI.InteractiveElements;
 using ToolSmiths.InventorySystem.Locations;
 using UnityEngine;
 
@@ -23,6 +22,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// <summary>The authored field destination this toggle represents.</summary>
         public LocationConfig Location => location;
 
-        protected override void OnToggle() { }
+        protected override void OnToggle()
+        {
+            base.OnToggle();
+            
+        }
     }
 }

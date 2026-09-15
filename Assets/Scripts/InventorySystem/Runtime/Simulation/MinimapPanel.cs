@@ -1,8 +1,5 @@
-using System;
 using System.Collections.Generic;
-using System.Reflection;
 using Submodules.Utility.UI;
-using Submodules.Utility.UI.InteractiveElements;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
@@ -21,16 +18,25 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// pick a destination; To Town backs out of that preview. A location toggle
     /// <see cref="SimulationProvider.Send"/>s; To Town <see cref="SimulationProvider.Recall"/>s
     /// while InField. Entering the Field fades the <c>combatPanel</c> in and closes any open
-    /// Side Panel; returning to Town (Recall or Death) fades it back out. Toggle-click
-    /// subscriptions are made idempotent (detach before attach) because
-    /// <see cref="BeforeAppear"/> can run again before <see cref="OnDisable"/>.
+    /// Side Panel; returning to Town (Recall or Death) fades it back out.
+    ///
+    /// Clicks are observed through <see cref="RadioGroup.OnGroupChanged"/> on the two groups
+    /// rather than per toggle: the group already owns "which one is active", and
+    /// <c>AbstractToggle.OnToggle</c> is an override point on the type, not an event to
+    /// subscribe to. Subscriptions are made idempotent (detach before attach) because
+    /// <see cref="BeforeAppear"/> can run again before <see cref="OnPanelDisable"/>.
+    ///
+    /// <para><b>Town/field toggles must be actual children of <see cref="townGroup"/> /
+    /// <see cref="fieldGroup"/> in the hierarchy.</b> A toggle finds its group by walking up
+    /// to its nearest <see cref="RadioGroup"/> ancestor; there is no code-side registration
+    /// step. Pointing a toggle's group at one that is not its parent is exactly how a group
+    /// ends up with an <c>ActivatedToggle</c> that is not one of its own children — which is
+    /// what the manually-positioned Town buttons and the field's location toggles both need
+    /// to avoid.</para>
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class MinimapPanel : SimplePanel
     {
-        private static readonly FieldInfo s_radioGroupField =
-            typeof(AbstractToggle).GetField("radioGroup", BindingFlags.NonPublic | BindingFlags.Instance);
-
         [Header("Backgrounds")]
         [SerializeField] private Image backgroundImage;
         [SerializeField] private Sprite townBackground;
@@ -40,27 +46,19 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         [SerializeField] private RadioGroup townGroup;
         [SerializeField] private RadioGroup fieldGroup;
 
-        [Header("Town Toggles (manually positioned)")]
+        [Header("Town Toggles (children of townGroup, manually positioned)")]
         [SerializeField] private AbstractToggle stashToggle;
         [SerializeField] private AbstractToggle vendorToggle;
         [SerializeField] private AbstractToggle healerToggle;
         [SerializeField] private AbstractToggle goVentureToggle;
 
-        [Header("Field Toggles")]
+        [Header("Field Toggles (children of fieldGroup, manually positioned)")]
         [SerializeField] private List<LocationToggle> locationToggles = new();
         [SerializeField] private AbstractToggle toTownToggle;
 
         [Header("Combat Panel")]
         [Tooltip("The left-side Combat Panel — fades in on Send (InField), out on Recall / Death (InTown).")]
-        [SerializeField] private AbstractPanel combatPanel;
-
-        private readonly List<AbstractToggle> _townToggles = new();
-
-        /// <summary>One stored handler per location toggle so the click knows which toggle
-        /// fired — <see cref="AbstractToggle.OnToggle"/> runs before <see cref="RadioGroup"/>
-        /// updates <c>ActivatedToggle</c>, so that field can't be trusted here. Stored (not a
-        /// fresh lambda each call) so <see cref="UnsubscribeFromToggleClicks"/> can detach it.</summary>
-        private readonly Dictionary<LocationToggle, Action<bool>> _locationHandlers = new();
+        [SerializeField] private SimplePanel combatPanel;
 
         /// <summary>Which minimap face is shown. Always the Field face while InField; the
         /// player can also flip to it InTown with Go Venture, then back with To Town.</summary>
@@ -79,15 +77,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             run.PhaseChanged -= OnPhaseChanged;
             run.PhaseChanged += OnPhaseChanged;
 
-            CollectTownToggles();
+            // Clearing first keeps a re-show from leaving a stale ActivatedToggle behind.
+            ClearGroupSelection(townGroup);
+            ClearGroupSelection(fieldGroup);
 
-            // RadioGroup no longer keeps a membership list — a toggle belongs to the group
-            // named by its own `radioGroup` field. Clearing first keeps a re-show from
-            // leaving a stale ActivatedToggle behind.
-            ClearTownSelection();
-            ClearFieldSelection();
-            AssignTownToggles();
-            AssignFieldToggles();
+            SubscribeToGroups();
 
             SyncToPhase(run.Phase);
         }
@@ -99,8 +93,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             provider.Run.PhaseChanged -= OnPhaseChanged;
 
-            ClearTownSelection();
-            ClearFieldSelection();
+            // Detach before clearing — Deactivate fires OnGroupChanged.
+            UnsubscribeFromGroups();
+
+            ClearGroupSelection(townGroup);
+            ClearGroupSelection(fieldGroup);
         }
 
         private void OnPhaseChanged(RunPhase phase) => SyncToPhase(phase);
@@ -152,80 +149,77 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 goVentureToggle.SetToggle(false);
         }
 
-        private void SubscribeToToggleClicks()
-        {
-            Rewire(goVentureToggle, OnGoVentureToggled);
-            Rewire(toTownToggle, OnToTownToggled);
-
-            foreach (var toggle in locationToggles)
-                Rewire(toggle, LocationHandlerFor(toggle));
-        }
-
-        private void UnsubscribeFromToggleClicks()
-        {
-            Unwire(goVentureToggle, OnGoVentureToggled);
-            Unwire(toTownToggle, OnToTownToggled);
-
-            foreach (var pair in _locationHandlers)
-                Unwire(pair.Key, pair.Value);
-        }
-
-        private Action<bool> LocationHandlerFor(LocationToggle toggle)
-        {
-            if (toggle == null) return null;
-
-            if (!_locationHandlers.TryGetValue(toggle, out var handler))
-                _locationHandlers[toggle] = handler = isOn => OnLocationToggled(toggle, isOn);
-
-            return handler;
-        }
-
         /// <summary>Idempotent subscribe — detach before attach so a second
-        /// <see cref="BeforeAppear"/> before <see cref="OnDisable"/> never stacks handlers.</summary>
-        private static void Rewire(AbstractToggle toggle, Action<bool> handler)
+        /// <see cref="BeforeAppear"/> before <see cref="OnPanelDisable"/> never stacks
+        /// handlers. Subscribed after <see cref="ClearGroupSelection"/>, so its
+        /// <c>Deactivate</c> calls cannot fire these.</summary>
+        private void SubscribeToGroups()
         {
-            if (toggle == null) return;
+            if (townGroup != null)
+            {
+                townGroup.OnGroupChanged -= OnTownSelectionChanged;
+                townGroup.OnGroupChanged += OnTownSelectionChanged;
+            }
 
-            //toggle.OnToggle -= handler;
-            //toggle.OnToggle += handler;
+            if (fieldGroup != null)
+            {
+                fieldGroup.OnGroupChanged -= OnFieldSelectionChanged;
+                fieldGroup.OnGroupChanged += OnFieldSelectionChanged;
+            }
         }
 
-        private static void Unwire(AbstractToggle toggle, Action<bool> handler)
+        private void UnsubscribeFromGroups()
         {
-            //if (toggle != null)
-            //    toggle.OnToggle -= handler;
+            if (townGroup != null)
+                townGroup.OnGroupChanged -= OnTownSelectionChanged;
+
+            if (fieldGroup != null)
+                fieldGroup.OnGroupChanged -= OnFieldSelectionChanged;
         }
 
         /// <summary>Go Venture (InTown only) previews the Field face so the player can pick a
-        /// destination, and closes any open Stash / Vendor Side Panel.</summary>
-        private void OnGoVentureToggled(bool isOn)
+        /// destination, and closes any open Stash / Vendor Side Panel. Read from the group
+        /// rather than a per-toggle event: <c>ActivatedToggle</c> is the group's own answer to
+        /// "which one is on", and it is already updated by the time this fires.</summary>
+        private void OnTownSelectionChanged()
         {
-            if (!isOn || !_inTown) return;
+            if (townGroup == null || townGroup.ActivatedToggle != goVentureToggle) return;
+            if (goVentureToggle == null || !_inTown) return;
 
             _showingFieldFace = true;
             ApplyFace();
             CloseSidePanels();
         }
 
-        /// <summary>The clicked location toggle Sends the hero there — only while InTown
-        /// (in the Field the toggles are non-interactable; this also guards a phase change
-        /// mid-frame). The resulting <c>PhaseChanged(InField)</c> re-syncs the rest.</summary>
-        private void OnLocationToggled(LocationToggle sender, bool isOn)
+        /// <summary>
+        /// The selected field toggle acts: a location Sends the hero there, To Town Recalls
+        /// (InField) or backs out of a Go Venture preview (InTown). Deselection leaves
+        /// <c>ActivatedToggle</c> null — not an action, so it is ignored.
+        /// </summary>
+        private void OnFieldSelectionChanged()
         {
-            if (!isOn || sender == null || sender.Location == null) return;
+            var selected = fieldGroup?.ActivatedToggle;
+            if (selected == null) return;
+
+            if (selected == toTownToggle)
+            {
+                OnToTownSelected();
+                return;
+            }
+
+            // Only send while InTown — in the Field the toggles are non-interactable, but
+            // guard against a phase change mid-frame. The resulting PhaseChanged(InField)
+            // re-syncs the rest.
+            if (selected is not LocationToggle location || location.Location == null) return;
 
             var provider = SimulationProvider.Instance;
             if (provider == null || provider.Run.Phase != RunPhase.InTown) return;
 
-            provider.Send(sender.Location);
+            provider.Send(location.Location);
         }
 
-        /// <summary>To Town Recalls the hero when InField; when it is only a Go Venture
-        /// preview InTown, it just flips back to the Town face.</summary>
-        private void OnToTownToggled(bool isOn)
+        private void OnToTownSelected()
         {
-            if (!isOn) return;
-
             var provider = SimulationProvider.Instance;
             if (provider == null) return;
 
@@ -248,67 +242,15 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 inventory.ClearSidePanel(inventory.ActiveSidePanel);
         }
 
-        private void CollectTownToggles()
+        /// <summary>Deactivate every child of <paramref name="group"/> — membership is the
+        /// hierarchy, the same way <see cref="SetGroupInteractable"/> reads it. A no-op per
+        /// toggle unless it is the group's current <see cref="RadioGroup.ActivatedToggle"/>.</summary>
+        private static void ClearGroupSelection(RadioGroup group)
         {
-            _townToggles.Clear();
+            if (group == null) return;
 
-            if (stashToggle != null) _townToggles.Add(stashToggle);
-            if (vendorToggle != null) _townToggles.Add(vendorToggle);
-            if (healerToggle != null) _townToggles.Add(healerToggle);
-            if (goVentureToggle != null) _townToggles.Add(goVentureToggle);
-        }
-
-        private void AssignTownToggles()
-        {
-            if (townGroup == null) return;
-
-            foreach (var toggle in _townToggles)
-                AssignRadioGroup(toggle, townGroup);
-        }
-
-        private void ClearTownSelection()
-        {
-            if (townGroup == null) return;
-
-            foreach (var toggle in _townToggles)
-                if (townGroup.ActivatedToggle == toggle)
-                    townGroup.Deactivate(toggle);
-        }
-
-        private void AssignFieldToggles()
-        {
-            if (fieldGroup == null) return;
-
-            foreach (var toggle in locationToggles)
-                if (toggle != null)
-                    AssignRadioGroup(toggle, fieldGroup);
-
-            if (toTownToggle != null)
-                AssignRadioGroup(toTownToggle, fieldGroup);
-        }
-
-        private void ClearFieldSelection()
-        {
-            if (fieldGroup == null) return;
-
-            foreach (var toggle in locationToggles)
-                if (toggle != null && fieldGroup.ActivatedToggle == toggle)
-                    fieldGroup.Deactivate(toggle);
-
-            if (toTownToggle != null && fieldGroup.ActivatedToggle == toTownToggle)
-                fieldGroup.Deactivate(toTownToggle);
-        }
-
-        /// <summary>
-        /// Sets the backing <c>radioGroup</c> field on <see cref="AbstractToggle"/> so the
-        /// toggle reports to the correct group. The property is get-only — reflection
-        /// avoids modifying the Utility submodule.
-        /// </summary>
-        private static void AssignRadioGroup(AbstractToggle toggle, RadioGroup group)
-        {
-            if (toggle == null || s_radioGroupField == null) return;
-
-            s_radioGroupField.SetValue(toggle, group);
+            foreach (var toggle in group.GetComponentsInChildren<AbstractToggle>(true))
+                group.Deactivate(toggle);
         }
 
         private static void SetGroupInteractable(RadioGroup group, bool interactable)

@@ -1,5 +1,4 @@
 using Submodules.Utility.UI;
-using Submodules.Utility.UI.InteractiveElements;
 using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
 

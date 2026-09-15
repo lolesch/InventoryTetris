@@ -1,5 +1,4 @@
 ﻿using Submodules.Utility.UI;
-using Submodules.Utility.UI.InteractiveElements;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Runtime.Provider;
 using UnityEngine;
@@ -16,12 +15,12 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
     /// <para><b>Both edges, deliberately.</b> The toggle that closes the Vendor panel is
     /// usually not the Vendor toggle - it is whichever sibling the player just activated.
     /// <see cref="RadioGroup.Activate"/> switches every loser off, so the announcement has to
-    /// ride <see cref="SetToggle"/> in both directions rather than a click handler on the
+    /// ride <see cref="OnToggle"/> in both directions rather than a click handler on the
     /// winner. That is what lets Healer and Go Venture (#58) cancel a staged sale without
     /// either of them knowing the Vendor exists.</para>
     ///
     /// <para><b>Order-independent.</b> <see cref="AbstractToggle.SetToggle"/> calls
-    /// <c>RadioGroup.Activate</c> from inside <c>base.SetToggle</c>, so a loser's
+    /// <c>RadioGroup.Activate</c> before it calls <see cref="OnToggle"/>, so a loser's
     /// <see cref="InventoryProvider.ClearSidePanel"/> lands <i>before</i> the winner's
     /// <see cref="InventoryProvider.SetSidePanel"/> here. It would be correct the other way
     /// round too: <see cref="SidePanelState.Clear"/> only clears when the context matches, so
@@ -49,14 +48,19 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
 
 
         /// <summary>
-        /// Push the transition to the provider. Play mode only: reading
-        /// <see cref="AbstractProvider{T}.Instance"/> in the editor <i>creates</i> a provider
-        /// GameObject when none exists (issue #46), and <see cref="AbstractToggle.OnValidate"/>
-        /// can reach this method through <c>RadioGroup.Activate</c> while the player is only
-        /// editing the scene.
+        /// Push the transition to the provider. <c>base.OnToggle()</c> first, so the panel
+        /// still fades exactly as any <see cref="PanelToggle"/> — the announcement is an
+        /// addition to that behaviour, not a replacement for it.
+        ///
+        /// Play mode only: reading <see cref="AbstractProvider{T}.Instance"/> in the editor
+        /// <i>creates</i> a provider GameObject when none exists (issue #46), and
+        /// <see cref="AbstractToggle.OnValidate"/> can reach this method through
+        /// <c>RadioGroup.Activate</c> while the player is only editing the scene.
         /// </summary>
-        protected override void ToggleSideEffects()
+        protected override void OnToggle()
         {
+            base.OnToggle();
+
             if (!Application.isPlaying || context == SidePanelContext.None)
                 return;
 

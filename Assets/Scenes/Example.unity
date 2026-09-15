@@ -9105,8 +9105,8 @@ MonoBehaviour:
     m_DisabledTrigger: Disabled
   m_Interactable: 1
   m_TargetGraphic: {fileID: 427819265}
-  hoverScaleFactor: 1.06
-  selectScaleFactor: 1.12
+  staySelected: 1
+  hoverScale: 1.06
   <IsOn>k__BackingField: 0
   radioGroup: {fileID: 1741980405}
   toggledOffSprite: {fileID: 0}
@@ -9449,10 +9449,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 433628002}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 954740c81276d7d439277fdc1a834360, type: 3}
+  m_Script: {fileID: 11500000, guid: 1814ee7b30ef16444b80fff87e8b0c62, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  fadeOutDelay: 0
   scaleFrom: 1
   moveFrom: {x: -640, y: 0}
 --- !u!114 &433628012
@@ -12093,8 +12092,8 @@ MonoBehaviour:
     m_DisabledTrigger: Disabled
   m_Interactable: 1
   m_TargetGraphic: {fileID: 596437210}
-  hoverScaleFactor: 1.06
-  selectScaleFactor: 1.12
+  staySelected: 1
+  hoverScale: 1.06
   <IsOn>k__BackingField: 0
   radioGroup: {fileID: 0}
   toggledOffSprite: {fileID: 0}
@@ -12478,8 +12477,8 @@ MonoBehaviour:
     m_DisabledTrigger: Disabled
   m_Interactable: 0
   m_TargetGraphic: {fileID: 612742132}
-  hoverScaleFactor: 1.06
-  selectScaleFactor: 1.12
+  staySelected: 1
+  hoverScale: 1.06
   <IsOn>k__BackingField: 0
   radioGroup: {fileID: 1741980405}
   toggledOffSprite: {fileID: 0}
@@ -12543,7 +12542,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -14659,7 +14658,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 931890043a783f24ba448a00c72fe6fa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.Runtime.Simulation.BehaviourSlidersPanel
-  fadeOutDelay: 0
   scaleFrom: 1
   moveFrom: {x: -640, y: 0}
   retreatHealthSlider: {fileID: 338504080}
@@ -15127,9 +15125,9 @@ MonoBehaviour:
     m_DisabledTrigger: Disabled
   m_Interactable: 1
   m_TargetGraphic: {fileID: 717324154}
-  hoverScaleFactor: 1.06
-  selectScaleFactor: 1.12
-  <IsOn>k__BackingField: 0
+  staySelected: 1
+  hoverScale: 1.06
+  <IsOn>k__BackingField: 1
   radioGroup: {fileID: 1419568152}
   toggledOffSprite: {fileID: 0}
   toggledOnSprite: {fileID: 0}
@@ -15226,10 +15224,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 717324149}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 954740c81276d7d439277fdc1a834360, type: 3}
+  m_Script: {fileID: 11500000, guid: 1814ee7b30ef16444b80fff87e8b0c62, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Panels.Panel
-  fadeOutDelay: 0
   scaleFrom: 1
   moveFrom: {x: 0, y: 0}
 --- !u!225 &717324157
@@ -19920,8 +19917,8 @@ MonoBehaviour:
     m_DisabledTrigger: Disabled
   m_Interactable: 1
   m_TargetGraphic: {fileID: 935833219}
-  hoverScaleFactor: 1.06
-  selectScaleFactor: 1.12
+  staySelected: 1
+  hoverScale: 1.06
   <IsOn>k__BackingField: 0
   radioGroup: {fileID: 1106788607}
   toggledOffSprite: {fileID: 0}
@@ -21385,8 +21382,8 @@ MonoBehaviour:
     m_DisabledTrigger: Disabled
   m_Interactable: 1
   m_TargetGraphic: {fileID: 1006962775}
-  hoverScaleFactor: 1.06
-  selectScaleFactor: 1.12
+  staySelected: 1
+  hoverScale: 1.06
   <IsOn>k__BackingField: 1
   radioGroup: {fileID: 1106788607}
   toggledOffSprite: {fileID: 0}
@@ -23235,7 +23232,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   <ActivatedToggle>k__BackingField: {fileID: 1006962774}
   <PreviouslyActivatedToggle>k__BackingField: {fileID: 0}
-  <AllowSwitchOff>k__BackingField: 0
+  <CanDeactivateAll>k__BackingField: 1
 --- !u!114 &1106788608
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -24991,8 +24988,8 @@ MonoBehaviour:
     m_DisabledTrigger: Disabled
   m_Interactable: 1
   m_TargetGraphic: {fileID: 1188001691}
-  hoverScaleFactor: 1.06
-  selectScaleFactor: 1.12
+  staySelected: 1
+  hoverScale: 1.06
   <IsOn>k__BackingField: 0
   radioGroup: {fileID: 1419568152}
   toggledOffSprite: {fileID: 0}
@@ -25102,10 +25099,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 1188001686}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 954740c81276d7d439277fdc1a834360, type: 3}
+  m_Script: {fileID: 11500000, guid: 1814ee7b30ef16444b80fff87e8b0c62, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Panels.Panel
-  fadeOutDelay: 0
   scaleFrom: 1
   moveFrom: {x: 0, y: 0}
 --- !u!1 &1188386279
@@ -28276,8 +28272,8 @@ MonoBehaviour:
     m_DisabledTrigger: Disabled
   m_Interactable: 1
   m_TargetGraphic: {fileID: 1393504390}
-  hoverScaleFactor: 1.06
-  selectScaleFactor: 1.12
+  staySelected: 1
+  hoverScale: 1.06
   <IsOn>k__BackingField: 0
   radioGroup: {fileID: 1741980405}
   toggledOffSprite: {fileID: 0}
@@ -28965,9 +28961,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56427663e125e1643bdf7e7f665c39a6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Utility.UI::Submodules.Utility.UI.RadioGroup
-  <ActivatedToggle>k__BackingField: {fileID: 0}
-  <PreviouslyActivatedToggle>k__BackingField: {fileID: 0}
-  <AllowSwitchOff>k__BackingField: 0
+  <ActivatedToggle>k__BackingField: {fileID: 717324151}
+  <PreviouslyActivatedToggle>k__BackingField: {fileID: 1188001688}
+  <CanDeactivateAll>k__BackingField: 0
 --- !u!1001 &1424764568
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -29123,7 +29119,7 @@ RectTransform:
   m_GameObject: {fileID: 1426694734}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 2, y: 2, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1990545802}
@@ -29144,10 +29140,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 1426694734}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 954740c81276d7d439277fdc1a834360, type: 3}
+  m_Script: {fileID: 11500000, guid: 1814ee7b30ef16444b80fff87e8b0c62, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Panels.Panel
-  fadeOutDelay: 0
   scaleFrom: 2
   moveFrom: {x: 0, y: 0}
 --- !u!114 &1426694737
@@ -29252,9 +29247,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56427663e125e1643bdf7e7f665c39a6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Utility.UI::Submodules.Utility.UI.RadioGroup
-  <ActivatedToggle>k__BackingField: {fileID: 717324151}
+  <ActivatedToggle>k__BackingField: {fileID: 0}
   <PreviouslyActivatedToggle>k__BackingField: {fileID: 0}
-  <AllowSwitchOff>k__BackingField: 1
+  <CanDeactivateAll>k__BackingField: 0
 --- !u!1 &1433815125
 GameObject:
   m_ObjectHideFlags: 0
@@ -31173,10 +31168,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 1525008100}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 954740c81276d7d439277fdc1a834360, type: 3}
+  m_Script: {fileID: 11500000, guid: 1814ee7b30ef16444b80fff87e8b0c62, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Panels.Panel
-  fadeOutDelay: 0
   scaleFrom: 1
   moveFrom: {x: -640, y: 0}
 --- !u!1001 &1526114717
@@ -32156,10 +32150,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 1561434719}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 954740c81276d7d439277fdc1a834360, type: 3}
+  m_Script: {fileID: 11500000, guid: 1814ee7b30ef16444b80fff87e8b0c62, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Panels.TestPanel
-  fadeOutDelay: 0
   scaleFrom: 1
   moveFrom: {x: 640, y: 0}
 --- !u!1 &1563707323
@@ -32730,8 +32723,8 @@ MonoBehaviour:
     m_DisabledTrigger: Disabled
   m_Interactable: 0
   m_TargetGraphic: {fileID: 1604110708}
-  hoverScaleFactor: 1.06
-  selectScaleFactor: 1.12
+  staySelected: 1
+  hoverScale: 1.06
   <IsOn>k__BackingField: 0
   radioGroup: {fileID: 1741980405}
   toggledOffSprite: {fileID: 0}
@@ -32791,7 +32784,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -33565,14 +33558,14 @@ MonoBehaviour:
     m_DisabledTrigger: Disabled
   m_Interactable: 1
   m_TargetGraphic: {fileID: 1628728800}
-  hoverScaleFactor: 1.06
-  selectScaleFactor: 1.12
+  staySelected: 1
+  hoverScale: 1.06
   <IsOn>k__BackingField: 0
   radioGroup: {fileID: 1426694742}
   toggledOffSprite: {fileID: 0}
   toggledOnSprite: {fileID: 0}
   panel: {fileID: 694898000}
-  location: {fileID: 11400000, guid: 547ec5b47c1b458f833aaae5f6dc7aa4, type: 2}
+  location: {fileID: 11400000, guid: 79be389ba1b44186ad2958d8b404c690, type: 2}
 --- !u!114 &1628728798
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -35578,7 +35571,7 @@ RectTransform:
   m_GameObject: {fileID: 1741980397}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0, y: 0, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1393504386}
@@ -35602,10 +35595,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 1741980397}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 954740c81276d7d439277fdc1a834360, type: 3}
+  m_Script: {fileID: 11500000, guid: 1814ee7b30ef16444b80fff87e8b0c62, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Panels.Panel
-  fadeOutDelay: 0
   scaleFrom: 0
   moveFrom: {x: 0, y: 0}
 --- !u!114 &1741980400
@@ -35712,7 +35704,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Utility.UI::Submodules.Utility.UI.RadioGroup
   <ActivatedToggle>k__BackingField: {fileID: 0}
   <PreviouslyActivatedToggle>k__BackingField: {fileID: 0}
-  <AllowSwitchOff>k__BackingField: 1
+  <CanDeactivateAll>k__BackingField: 1
 --- !u!1001 &1744578721
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -38958,10 +38950,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 1881956910}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 954740c81276d7d439277fdc1a834360, type: 3}
+  m_Script: {fileID: 11500000, guid: 1814ee7b30ef16444b80fff87e8b0c62, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Panels.TestPanel
-  fadeOutDelay: 0
   scaleFrom: 1
   moveFrom: {x: 0, y: 0}
 --- !u!114 &1881956914
@@ -40847,8 +40838,8 @@ MonoBehaviour:
     m_DisabledTrigger: Disabled
   m_Interactable: 1
   m_TargetGraphic: {fileID: 1990545806}
-  hoverScaleFactor: 1.06
-  selectScaleFactor: 1.12
+  staySelected: 1
+  hoverScale: 1.06
   <IsOn>k__BackingField: 0
   radioGroup: {fileID: 1426694742}
   toggledOffSprite: {fileID: 0}
@@ -41015,8 +41006,8 @@ MonoBehaviour:
     m_DisabledTrigger: Disabled
   m_Interactable: 0
   m_TargetGraphic: {fileID: 1995239123}
-  hoverScaleFactor: 1.06
-  selectScaleFactor: 1.12
+  staySelected: 1
+  hoverScale: 1.06
   <IsOn>k__BackingField: 0
   radioGroup: {fileID: 1741980405}
   toggledOffSprite: {fileID: 0}
@@ -41076,7 +41067,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -42424,10 +42415,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 2069960131}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 954740c81276d7d439277fdc1a834360, type: 3}
+  m_Script: {fileID: 11500000, guid: 1814ee7b30ef16444b80fff87e8b0c62, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  fadeOutDelay: 0
   scaleFrom: 1
   moveFrom: {x: -640, y: 0}
 --- !u!114 &2069960134
@@ -46850,8 +46840,8 @@ MonoBehaviour:
     m_DisabledTrigger: Disabled
   m_Interactable: 1
   m_TargetGraphic: {fileID: 7732425298677579694}
-  hoverScaleFactor: 1.06
-  selectScaleFactor: 1.12
+  staySelected: 1
+  hoverScale: 1.06
   <IsOn>k__BackingField: 1
   radioGroup: {fileID: 0}
   toggledOffSprite: {fileID: 21300000, guid: 64ed8522d16f54ac19372380109a204d, type: 3}
