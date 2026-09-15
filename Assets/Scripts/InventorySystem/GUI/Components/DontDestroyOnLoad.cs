@@ -2,7 +2,7 @@
 
 namespace ToolSmiths.InventorySystem.GUI.Components
 {
-    public class DonstDestroyOnLoad : MonoBehaviour
+    public class DontDestroyOnLoad : MonoBehaviour
     {
         private void Awake()
         {
