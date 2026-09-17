@@ -14,10 +14,11 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
     ///
     /// <para><b>Both edges, deliberately.</b> The toggle that closes the Vendor panel is
     /// usually not the Vendor toggle - it is whichever sibling the player just activated.
-    /// <see cref="RadioGroup.Activate"/> switches every loser off, so the announcement has to
+    /// <see cref="RadioGroup.Select"/> switches every loser off, so the announcement has to
     /// ride <see cref="OnToggle"/> in both directions rather than a click handler on the
-    /// winner. That is what lets Healer and Go Venture (#58) cancel a staged sale without
-    /// either of them knowing the Vendor exists.</para>
+    /// winner. That is what lets Healer cancel a staged sale without knowing the Vendor
+    /// exists. Go Venture cancels one too, but from outside the group — see
+    /// <c>MinimapController.GoVenture</c> (#58 correction 2026-09-17).</para>
     ///
     /// <para><b>Order-independent.</b> <see cref="AbstractToggle.SetToggle"/> calls
     /// <c>RadioGroup.Activate</c> before it calls <see cref="OnToggle"/>, so a loser's
@@ -28,9 +29,10 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
     /// order - rely on that guard.</para>
     ///
     /// <para><b>No second group.</b> Mutual exclusion already comes from the minimap's
-    /// <c>TownGroup</c>, which Stash, Vendor, Healer and Go Venture all belong to. This class
-    /// adds the announcement only; it must not introduce a <see cref="RadioGroup"/> of its
-    /// own, or "which panel is open" would have two answers.</para>
+    /// <c>TownGroup</c>, which Stash, Vendor and Healer belong to (Go Venture does not — it
+    /// is a plain button, not a panel with state to protect). This class adds the
+    /// announcement only; it must not introduce a <see cref="RadioGroup"/> of its own, or
+    /// "which panel is open" would have two answers.</para>
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class SidePanelToggle : PanelToggle
@@ -77,7 +79,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
 
         /// <summary>
         /// The hotkey is the same act as a click, guard for guard - including the
-        /// <see cref="RadioGroup.CanDeactivateAll"/> rule, so a hotkey cannot switch off a
+        /// <see cref="RadioGroup.IsDeselectable"/> rule, so a hotkey cannot switch off a
         /// toggle a click could not. <c>interactable</c> is the phase gate: the minimap turns
         /// the Town toggles off whenever the Field face is up, which covers both InField and
         /// the Go Venture preview, so no <c>RunPhase</c> dependency is needed here.
@@ -90,7 +92,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
             if (!Input.GetKeyDown(hotkey))
                 return;
 
-            if (RadioGroup && !RadioGroup.CanDeactivateAll && IsOn)
+            if (RadioGroup && !RadioGroup.IsDeselectable && IsOn)
                 return;
 
             SetToggle(!IsOn);

@@ -18,8 +18,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// 0=Common, 1=Magic, 2=Rare, 3=Unique. Whole number positions give a tactile snap;
     /// fractional values are rounded.
     ///
-    /// Lives on the Combat Panel, which <see cref="MinimapPanel"/> fades in on Send and out on
-    /// Recall / Death. Subscribes to slider events in <see cref="SimplePanel.BeforeAppear"/>
+    /// Lives on the Combat Panel, which <see cref="MinimapController"/> fades in on Send and out
+    /// on Recall / Death. Subscribes to slider events in <see cref="SimplePanel.BeforeAppear"/>
     /// so they are live as soon as the panel becomes visible.
     /// </summary>
     [DisallowMultipleComponent]
