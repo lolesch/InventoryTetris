@@ -104,6 +104,10 @@ InitTestScene*.unity*
 # Claude Code local harness / working-copy tool dir - never tracked here
 .claude/
 
+# Per-machine MCP server config (absolute paths, ports, instance IDs) - never portable,
+# has landed in a commit before (panel-toggle-cleanup 8fadbcb). Keep it local only.
+.mcp.json
+
 # Burst compiler output
 /[Aa]ssets/burst*.bc
 
