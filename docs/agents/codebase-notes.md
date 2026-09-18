@@ -93,6 +93,28 @@ that GUID first; scene `m_Script` refs break if it changes. Then
 `AssetDatabase.ImportAsset(path, ForceUpdate | ForceSynchronousImport)` +
 `CompilationPipeline.RequestScriptCompilation()` through the bridge.
 
+## Source is CRLF + UTF-8 — stream editors corrupt it silently
+
+Source under `Assets/Scripts/` is **CRLF-terminated UTF-8**, and the docstrings are dense
+with em dashes (—) and other non-ASCII. There is no `.gitattributes`, so nothing normalises
+this on commit. Two stream editors damage it without failing:
+
+- **`sed -i` rewrites the file with LF endings even when it changes nothing**, so a glob
+  like `sed -i 's/x/y/' dir/*.cs` marks every file in the directory dirty with a
+  whole-file ending flip.
+- **`perl -0pi -e` mojibakes existing UTF-8** (— becomes â) as soon as the replacement
+  string itself contains a wide character — it switches to character semantics on output
+  only.
+
+Neither failure shows up in a test run: the code still compiles and the suite still passes,
+so it reaches review as unrelated churn or as corrupted prose.
+
+**Use an editor tool that preserves encoding and endings** (Claude Code's `Edit`) for
+anything touching these files, even mechanical multi-file renames. If a stream editor is
+genuinely the right tool, restrict the glob to files that will actually match, then check
+`git diff --name-only` against `git status --short` and `git checkout --` anything that
+shows modified with no content diff. This file and the rest of `docs/` are CRLF too.
+
 ## The "Scene(s) Have Been Modified" modal
 
 Unity's Save / Don't Save / Cancel scene dialog is a **blocking native OS modal** — once

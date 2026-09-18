@@ -38,6 +38,26 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
         public Vector2Int PositionOffset { get; private set; }
 
+        /// <summary>
+        /// The price, in base units, the vendor showed for the package now in hand, or null
+        /// when this is an ordinary pick-up. Set once at shelf pick-up for the length of the
+        /// drag and charged only when the item lands in a player container (issue #31). Making
+        /// it part of the drag hand is what lets a drop "pay the price shown at pick-up, even
+        /// across a restock" - the slot displays never re-read the price off the store.
+        /// </summary>
+        public float? PurchasePrice { get; private set; }
+
+        /// <summary>
+        /// Where <see cref="CancelDrag"/> returns the package currently in hand -
+        /// <see cref="Origin"/>'s container and cell at pick-up, or the real container and
+        /// cell a mid-drag swap displaced the current package from
+        /// (<see cref="ReplacePackage"/>) - one <see cref="PackageOrigin"/> either way.
+        /// Deliberately separate from <see cref="Origin"/>,
+        /// which stays "where this drag interaction started" for the re-home-through target
+        /// the slot displays read off it.
+        /// </summary>
+        private PackageOrigin returnOrigin;
+
         private float frameAlpha = 1f;
 
 
@@ -57,10 +77,43 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
                 initialColor = background.color;
         }
 
+        /// <summary>
+        /// Closing the Vendor with a shelf purchase in hand returns it to the shelf,
+        /// charge-free (issue #31) - the same return-to-origin a drop-back or an Escape
+        /// cancel uses. The drag side subscribes rather than the panel side calling in: the
+        /// rule is part of the drag lifecycle, so it lives with the drag, and the panels
+        /// only announce that the context moved (#54). Ordinary pick-ups are untouched -
+        /// <see cref="ReturnStorePurchaseToShelf"/> no-ops unless the hand holds an unpaid
+        /// purchase, so opening the Stash or closing every panel cannot strand or duplicate
+        /// one. Detach-before-attach, so a re-enable cannot subscribe twice (cf. da14ce2).
+        /// </summary>
+        private void OnEnable()
+        {
+            var provider = InventoryProvider.Instance;
+
+            provider.OnSidePanelChanged -= OnSidePanelChanged;
+            provider.OnSidePanelChanged += OnSidePanelChanged;
+        }
+
+        private void OnDisable()
+        {
+            if (InventoryProvider.Instance != null)
+                InventoryProvider.Instance.OnSidePanelChanged -= OnSidePanelChanged;
+        }
+
+        private void OnSidePanelChanged(SidePanelContext context)
+        {
+            if (context != SidePanelContext.Vendor)
+                _ = ReturnStorePurchaseToShelf();
+        }
+
         private void Update()
         {
             if (IsDragging)
             {
+                if (Input.GetKeyDown(KeyCode.Escape))
+                    CancelDrag();
+
                 SetToMousePosition();
 
                 HighlightOverlappingSlots();
@@ -127,14 +180,21 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             itemDisplay.anchoredPosition = (Vector2)Input.mousePosition / itemDisplay.lossyScale;
         }
 
-        public void SetPackage(AbstractSlotDisplay slot, Package package, Vector2Int positionOffset, Vector2 pointerPosition)
+        /// <param name="purchasePrice">The vendor price this package was lifted off the shelf
+        /// at, or null for an ordinary pick-up. Only the Store passes one; the drop reads it
+        /// back to know how much to charge (issue #31).</param>
+        public void SetPackage(AbstractSlotDisplay slot, Package package, Vector2Int positionOffset, Vector2 pointerPosition, float? purchasePrice = null)
         {
             Origin = slot;
             DraggingPackage = package;
             PositionOffset = positionOffset;
+            PurchasePrice = purchasePrice;
+
+            returnOrigin = slot != null ? new PackageOrigin(slot.Container, slot.Position - positionOffset) : default;
 
             if (!DraggingPackage.IsValid)
             {
+                PurchasePrice = null;
                 itemDisplay.gameObject.SetActive(false);
                 return;
             }
@@ -164,8 +224,13 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         /// centred on the cursor: the previous item's positionOffset describes a footprint
         /// this one does not have, and reusing it left small items floating a fixed distance
         /// from the pointer.
+        ///
+        /// <para><paramref name="from"/> is this swapped-in package's real home - not
+        /// wherever the drag itself started - so <see cref="CancelDrag"/> returns it there
+        /// instead of re-homing it against the original pick-up's cell (issue #29's
+        /// mid-drag-swap gap).</para>
         /// </summary>
-        public void ReplacePackage(Package package)
+        public void ReplacePackage(Package package, PackageOrigin from)
         {
             if (!package.IsValid)
             {
@@ -175,6 +240,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
             DraggingPackage = package;
             PositionOffset = Vector2Int.zero;
+            PurchasePrice = null; // a displaced player item came to the hand, not a shelf purchase
+
+            returnOrigin = from;
 
             var dimensions = ItemView.Of(package.Item).Dimensions;
 
@@ -194,6 +262,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         {
             DraggingPackage = default;
             PositionOffset = Vector2Int.zero;
+            PurchasePrice = null;
+
+            returnOrigin = default;
 
             itemDisplay.gameObject.SetActive(false);
         }
@@ -223,10 +294,54 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
         public void SetHoveredSlot(AbstractSlotDisplay slot) => Hovered = slot;
 
-        //public void ReturnToOrigin(Package package)
-        //{
-        //    // tell teh origin to add this package back to its position
-        //}
+        /// <summary>
+        /// Cancels the drag in progress and sends the held Package back where it came from
+        /// (issue #29): the exact origin cell if it is still free, the backpack if not, or -
+        /// with neither available - nowhere, leaving the item on the cursor exactly as it was.
+        /// Wired to Escape rather than right-click: a slot display already reads any click
+        /// during a drag as a drop attempt (<see cref="AbstractSlotDisplay.OnPointerClick"/>),
+        /// so reusing right-click here would race that path instead of replacing it.
+        ///
+        /// <para>The origin tracked for this is <c>returnOrigin</c>,
+        /// not <see cref="Origin"/>/<see cref="PositionOffset"/>: a mid-drag swap that hands a
+        /// different Package to the cursor (<see cref="ReplacePackage"/>) updates those to the
+        /// swapped-out Package's real container and cell, so a cancel right after a swap
+        /// re-equips it - or falls back to the backpack - correctly instead of against the
+        /// first pick-up's now-unrelated cell.</para>
+        /// </summary>
+        /// <returns>Whether the drag ended - the package found a home and the hand was
+        /// cleared. False when it is still on the cursor (nothing had room), so a caller can
+        /// decide whether to leave it there.</returns>
+        public bool CancelDrag()
+        {
+            if (!IsDragging || !DraggingPackage.IsValid)
+                return false;
+
+            var backpack = InventoryProvider.Instance.Inventory;
+
+            var leftOnCursor = ReturnToOrigin.Return(DraggingPackage, returnOrigin.Container, returnOrigin.Cell, backpack);
+
+            if (leftOnCursor.IsValid)
+                return false;
+
+            EndDrag();
+            return true;
+        }
+
+        /// <summary>
+        /// Sends a held shelf purchase back to the shelf with no charge (issue #31) - what a
+        /// Store-origin cancel, a drop back onto the shelf, and closing the Vendor mid-drag
+        /// all want. No-op unless the hand actually holds a store purchase: an ordinary
+        /// pick-up being returned, or a non-drag state, must not be yanked by a panel change.
+        /// </summary>
+        /// <returns>Whether a purchase was in hand and the drag ended.</returns>
+        private bool ReturnStorePurchaseToShelf()
+        {
+            if (PurchasePrice == null)
+                return false;
+
+            return CancelDrag();
+        }
 
         //public void DropHere()
         //{

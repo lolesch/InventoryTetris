@@ -3,7 +3,9 @@ using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Locations;
 using ToolSmiths.InventorySystem.Simulation;
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 
 namespace ToolSmiths.InventorySystem.Tests.EditMode.Locations
 {

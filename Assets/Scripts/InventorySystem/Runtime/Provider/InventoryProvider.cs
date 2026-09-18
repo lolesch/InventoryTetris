@@ -19,6 +19,12 @@ namespace ToolSmiths.InventorySystem.Inventories
         [field: SerializeField] public CharacterInventory Stash { get; private set; }
         [field: SerializeField] public CharacterInventory Store { get; private set; }
 
+        /// <summary>The Sell Basket (issue #32/#33) - the grid the player stages a sale in,
+        /// with the origin ledger a Cancel uses to return each Package. Owned here with the
+        /// other player containers so a shift-click quick-move can both target it (backpack /
+        /// equipment → basket) and recognise it as a source (basket → backpack).</summary>
+        public SellBasket.Basket Basket { get; private set; }
+
         /// <summary>The player's spendable money, backed by <see cref="Inventory"/>'s coin
         /// cells. The wallet, not the container, owns currency logic since issue #14.</summary>
         public Wallet Wallet { get; private set; }
@@ -53,6 +59,12 @@ namespace ToolSmiths.InventorySystem.Inventories
         public InventoryContainerDisplay StoreDisplay;
         [SerializeField] private Vector2Int storeSize = new(10, 16);
 
+        /// <summary>The Sell Basket's grid (issue #66), wired to the same prefab the
+        /// <see cref="SellBasketPanel"/> binds in place of the retired single-slot StoreDisplay.</summary>
+        [Space]
+        public InventoryContainerDisplay BasketDisplay;
+        [SerializeField] private Vector2Int basketSize = new(5, 3);
+
         [SerializeField] private Slider amountSlider;
         [SerializeField] private TextMeshProUGUI amountText;
         private uint Amount => amountSlider != null ? (uint)amountSlider.value : 1;
@@ -64,11 +76,25 @@ namespace ToolSmiths.InventorySystem.Inventories
             StashDisplay.SetupDisplay(Stash);
 
             StoreDisplay.SetupDisplay(Store);
+            if (BasketDisplay != null)
+                BasketDisplay.SetupDisplay(Basket.Container);
         }
 
         public void SetSidePanel(SidePanelContext context) => sidePanel.Set(context);
 
         public void ClearSidePanel(SidePanelContext context) => sidePanel.Clear(context);
+
+        /// <summary>
+        /// Where a shift-click on <paramref name="source"/> should send its item, given the
+        /// side panel open right now (#30). The four containers and the context are all
+        /// here, so a caller that holds one slot's container can ask with just that -
+        /// rather than assembling the same six arguments at every slot display, which is
+        /// how <c>VendorSlotDisplay</c> came to pass its own container as both the source
+        /// and the shelf. <see cref="QuickMoveResolver"/> keeps the matrix and stays
+        /// directly tested; this is only the seam callers hold.
+        /// </summary>
+        public QuickMoveIntent QuickMoveFor(AbstractDimensionalContainer source) =>
+            QuickMoveResolver.Resolve(ActiveSidePanel, source, Inventory, Stash, Equipment, Store, Basket.Container);
 
         public void Awake()
         {
@@ -83,6 +109,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             Inventory = new(inventorySize);
             Stash = new(stashSize);
             Store = new(storeSize);
+            Basket = new SellBasket.Basket(new(basketSize));
 
             Wallet = new Wallet(Inventory, currencyMinter);
 

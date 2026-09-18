@@ -133,6 +133,31 @@ namespace ToolSmiths.InventorySystem.Inventories
             return 0 == package.Amount;
         }
 
+        /// <summary>
+        /// Places <paramref name="package"/> at exactly <paramref name="position"/> when that
+        /// cell can take the whole item with nothing displaced - no scan, no swap, unlike
+        /// <see cref="TryAddToContainer"/>. The re-home cascade's "prefer the cell the incoming
+        /// item just vacated" step (issue #34); the caller falls back to the scanning add when
+        /// this returns false. The cell test is <see cref="CanReturnTo"/>, so
+        /// <see cref="CharacterEquipment"/>'s paper-doll footprint rule applies wherever it is
+        /// the re-home destination.
+        /// </summary>
+        /// <returns>Returns false if there is a remaining package.</returns>
+        public virtual bool TryAddAtPosition(Vector2Int position, ref Package package)
+        {
+            if (!package.IsValid || !CanReturnTo(position, package.Item))
+                return false;
+
+            // A displaced item in the re-home cascade is a single equipment piece, so this
+            // places it whole. A stack bigger than the item's limit would part-fill the cell
+            // and leave the caller to scan-place the rest - fine, just not exercised today.
+            package = AddAtPosition(position, package);
+
+            RaiseContentChanged();
+
+            return 0 == package.Amount;
+        }
+
         // TODO: DragDrop adding to stacks is dimension dependent...
         // => this should simply check if a stack of the same item is at the drop position and add it.
         protected bool TryStack(ref Package package)
@@ -295,6 +320,18 @@ namespace ToolSmiths.InventorySystem.Inventories
         }
 
         public bool TryGetPackageAt(Vector2Int position, out Package package) => StoredPackages.TryGetValue(position, out package);
+
+        /// <summary>
+        /// Whether <paramref name="item"/> can go back into this exact cell with nothing
+        /// displaced - the return-to-origin check (issue #29). Stricter than
+        /// <see cref="CanPlaceAt"/>: a cancelled or interrupted drag puts the item back only
+        /// where it left, never on top of whatever has since taken the cell, so this never
+        /// allows the swap <see cref="CanPlaceAt"/> does. <see cref="CharacterEquipment"/>
+        /// overrides it for the paper-doll layout - the equipment footprint rule, and a
+        /// rejection when the cell is not even a slot for the item's type.
+        /// </summary>
+        public virtual bool CanReturnTo(Vector2Int position, ItemInstance item) =>
+            item != null && IsEmptySpace(position, ItemView.Of(item).Dimensions, out _);
 
         // TODO package should implement IComparable
         public void Sort()

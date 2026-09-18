@@ -37,13 +37,19 @@ The five canonical label names are used verbatim — `needs-triage`, `needs-info
 
 Single-context: one `CONTEXT.md` at the repo root plus `docs/adr/`, both created lazily. See `docs/agents/domain.md`.
 
+### Coding conventions
+
+Read before writing a script, or during `/code-review`/`/simplify`.
+`docs/agents/coding-conventions.md`.
+
 ### Codebase notes
 
 `docs/agents/codebase-notes.md` holds durable engineering gotchas that aren't in the code
 or git history — Unity compile/test verification (`dotnet build` lies; drive the
 `unity-mcp` bridge), assembly-definition layout (namespace ≠ asmdef), the shared `Utility`
-submodule, broken `.cs.meta` files, the scene-save modal. Read it before any Unity compile
-verification or asmdef change. It's also the cross-machine channel for that kind of
+submodule, broken `.cs.meta` files, the scene-save modal, and the CRLF + UTF-8 source that
+`sed -i` / `perl -pi` corrupt silently. Read it before any Unity compile verification,
+asmdef change, or scripted multi-file edit. It's also the cross-machine channel for that kind of
 knowledge — agent memory is per-device and doesn't sync; this file does.
 
 ## GitHub Pages: do not merge `docs/agents/` into `GitPage`
