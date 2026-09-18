@@ -141,9 +141,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// (<see cref="RadioGroup.SelectedToggle"/> null) — that is not a destination, so it
         /// is ignored.
         /// </summary>
-        private void OnFieldSelectionChanged()
+        private void OnFieldSelectionChanged(AbstractToggle toggle)
         {
-            if (fieldGroup?.SelectedToggle is not LocationToggle location || location.Location == null) return;
+            if (toggle is not LocationToggle location || location.Location == null) return;
 
             var provider = SimulationProvider.Instance;
             if (provider == null || provider.Run.Phase != RunPhase.InTown) return;

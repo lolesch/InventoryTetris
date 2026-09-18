@@ -81,8 +81,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             }
         }
 
-        protected override void OnPanelDisable()
+        protected override void OnDisable()
         {
+            base.OnDisable();
+        
             SetSliderListeners(add: false);
 
             _behaviour = null;

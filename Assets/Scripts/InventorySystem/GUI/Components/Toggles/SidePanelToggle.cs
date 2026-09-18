@@ -79,7 +79,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
 
         /// <summary>
         /// The hotkey is the same act as a click, guard for guard - including the
-        /// <see cref="RadioGroup.IsDeselectable"/> rule, so a hotkey cannot switch off a
+        /// <see cref="RadioGroup.IsClearable"/> rule, so a hotkey cannot switch off a
         /// toggle a click could not. <c>interactable</c> is the phase gate: the minimap turns
         /// the Town toggles off whenever the Field face is up, which covers both InField and
         /// the Go Venture preview, so no <c>RunPhase</c> dependency is needed here.
@@ -92,7 +92,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
             if (!Input.GetKeyDown(hotkey))
                 return;
 
-            if (RadioGroup && !RadioGroup.IsDeselectable && IsOn)
+            if (RadioGroup && !RadioGroup.IsClearable && IsOn)
                 return;
 
             SetToggle(!IsOn);
