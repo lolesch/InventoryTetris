@@ -18,12 +18,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// 0=Common, 1=Magic, 2=Rare, 3=Unique. Whole number positions give a tactile snap;
     /// fractional values are rounded.
     ///
-    /// Lives on the Combat Panel, which <see cref="MinimapPanel"/> fades in on Send and out on
-    /// Recall / Death. Subscribes to slider events in <see cref="AbstractPanel.BeforeAppear"/>
+    /// Lives on the Combat Panel, which <see cref="MinimapController"/> fades in on Send and out
+    /// on Recall / Death. Subscribes to slider events in <see cref="SimplePanel.BeforeAppear"/>
     /// so they are live as soon as the panel becomes visible.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class BehaviourSlidersPanel : AbstractPanel
+    public sealed class BehaviourSlidersPanel : SimplePanel
     {
         [Header("Hero behaviour sliders")]
         [SerializeField] private Slider retreatHealthSlider;
@@ -59,7 +59,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             ApplyAll();
 
             // BeforeAppear runs on every fade-in and the panel stays enabled between them, so
-            // OnDisable is not a reliable pair — detach before attach so a re-appear cannot
+            // OnPanelDisable is not a reliable pair — detach before attach so a re-appear cannot
             // stack a second listener that writes the behaviour once per duplicate on each drag.
             SetSliderListeners(add: false);
             SetSliderListeners(add: true);
@@ -81,8 +81,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             }
         }
 
-        private void OnDisable()
+        protected override void OnDisable()
         {
+            base.OnDisable();
+        
             SetSliderListeners(add: false);
 
             _behaviour = null;

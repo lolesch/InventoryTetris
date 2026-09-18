@@ -1,3 +1,5 @@
+using NaughtyAttributes;
+using Submodules.Utility.Provider;
 using TMPro;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Geometry;

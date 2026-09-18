@@ -1,17 +1,8 @@
 /// KNOWN ISSUES:
-// Dropping an item selects unexpected positions => was improved but does not support most overlapping
-
 // comparison shows wrong numbers on the unequipped item
 // comparison cant compare against all equipment of same type (rings, 2h vs both weapon slots)
 
 #region TODO
-// buying items need to remove currency from player
-
-// item drop positioning
-// -> the offset is fine once the drop includes the items dimensions
-// atm. the item is dropped in the surrounding slots dependent on the mouse offset to the center of the hovered slot.
-// this offset needs to be calculated in relation to the center of the drag display
-
 // rework item comparison
 // compare rings and weapons to both slots
 #endregion TODO
@@ -33,9 +24,9 @@
 #endregion COMBAT SIMULATION
 
 #region CRAFTING SYSTEM
-// adjustable affixe amount
+// adjustable affix amount
 // adjustable affixes
-// adjustable affixe values
+// adjustable affix values
 // adjustable item rarity
 // lock affixes
 // ...
@@ -53,7 +44,7 @@
 #endregion CRAFTABLE SKILLS
 
 #region ITEM SOCKETS
-// implement the simplest version of socketing you can come up with
+// implement the simplest version of sockets you can come up with
 // design socketables - this goes into attribute design
 #endregion ITEM SOCKETS
 
@@ -63,6 +54,7 @@
 
 // Add stash tabs
 // -> this might require to make each stashTab its own inventory to interact with
+// -> add special tabs like in PoE
 
 // add a source to statModifiers to remove all modifiers of that source
 #endregion ICEBOX

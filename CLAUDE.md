@@ -37,6 +37,11 @@ The five canonical label names are used verbatim — `needs-triage`, `needs-info
 
 Single-context: one `CONTEXT.md` at the repo root plus `docs/adr/`, both created lazily. See `docs/agents/domain.md`.
 
+### Coding conventions
+
+Read before writing a script, or during `/code-review`/`/simplify`.
+`docs/agents/coding-conventions.md`.
+
 ### Codebase notes
 
 `docs/agents/codebase-notes.md` holds durable engineering gotchas that aren't in the code
