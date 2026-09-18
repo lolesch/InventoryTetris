@@ -15,9 +15,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// InTown, <see cref="inFieldPanel"/> shown InField — but Go Venture previews the InField
     /// panel while still InTown so the player can pick a destination; To Town backs out of
     /// that preview. A location toggle <see cref="SimulationProvider.Send"/>s; To Town
-    /// <see cref="SimulationProvider.Recall"/>s while InField. Entering the Field fades
-    /// <see cref="combatPanel"/> in and closes any open Side Panel; returning to Town (Recall
-    /// or Death) fades it back out.
+    /// <see cref="SimulationProvider.Recall"/>s while InField. Entering the Field shows
+    /// <see cref="combatPanel"/>, which — sharing <see cref="leftPanels"/> with the three Town
+    /// Stop panels (issue #74) — closes any open Side Panel as a side effect of the group, not
+    /// a separate call; returning to Town (Recall or Death) clears the group instead of fading
+    /// the Combat Panel out by name.
     ///
     /// <see cref="GoVentureButton"/> / <see cref="ToTownButton"/> hold a reference to this
     /// controller and call <see cref="GoVenture"/> / <see cref="ToTown"/> on click; this class
@@ -38,6 +40,14 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// gated on the face being shown instead, which covers the Go Venture preview as well
     /// (issue #73).</item>
     /// </list>
+    ///
+    /// <see cref="townGroup"/> still drives the toggles' pressed visuals and (via
+    /// <see cref="SidePanelToggle"/>) the Side Panel Context announcement, but it no longer
+    /// decides panel visibility — <see cref="leftPanels"/> does, for all four left panels
+    /// including the Combat Panel. <see cref="SyncToPhase"/> and <see cref="GoVenture"/> drive
+    /// <see cref="leftPanels"/> directly, which can close a Town Stop's panel without going
+    /// through its toggle; <see cref="ResyncTownGroup"/> deselects that toggle right after, so
+    /// its pressed visual and the announcement stay truthful (issue #74).
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class MinimapController : MonoBehaviour
@@ -53,8 +63,14 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         [Header("Locations (children of fieldGroup, manually positioned)")]
         [SerializeField] private List<LocationToggle> locationToggles = new();
 
-        [Header("Combat Panel")]
-        [Tooltip("The left-side Combat Panel — fades in on Send (InField), out on Recall / Death (InTown).")]
+        [Header("Left Panels")]
+        [Tooltip("The shared exclusivity pool for the Stash, Vendor, Healer and Combat panels " +
+                 "(issue #74) — showing any one hides whichever sibling was up. IsClearable must " +
+                 "match townGroup's, so the group can end up with nothing shown.")]
+        [SerializeField] private PanelGroup leftPanels;
+
+        [Tooltip("The left-side Combat Panel, a leftPanels sibling — shown on Send (InField), " +
+                 "cleared on Recall / Death (InTown).")]
         [SerializeField] private SimplePanel combatPanel;
 
         private bool _inTown = true;
@@ -106,7 +122,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// Re-derive the whole minimap from the Run phase: which face is shown, whether the
         /// Combat Panel is up, and — on entering the Field — that no Side Panel is left open.
         /// Death routes through here too: <see cref="RunState.HandleDeath"/> fires
-        /// <c>PhaseChanged(InTown)</c>, which resets the face and fades the Combat Panel out.
+        /// <c>PhaseChanged(InTown)</c>, which resets the face and clears <see cref="leftPanels"/>.
         /// </summary>
         private void SyncToPhase(RunPhase phase)
         {
@@ -114,23 +130,49 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             ApplyFace(!_inTown);
 
-            if (combatPanel)
-                combatPanel.Toggle(!_inTown);
+            // Showing the Combat Panel (a leftPanels sibling) closes whichever Side Panel was
+            // open as a side effect of the group; clearing the group on the way back to Town
+            // closes the Combat Panel the same way. Either can leave a townGroup toggle stale.
+            // The two branches drive leftPanels independently of combatPanel's own presence, so
+            // a Side Panel still closes on Send even if this scene has no Combat Panel wired.
+            if (!_inTown && combatPanel)
+                combatPanel.Toggle(true);
+            else if (leftPanels)
+                leftPanels.ClearActive();
 
-            // Whichever Side Panel is open (if any) belongs to a townGroup toggle — clearing
-            // the group closes it and announces the clear via SidePanelToggle.OnToggle(false).
-            if (!_inTown && townGroup)
-                townGroup.ClearSelection();
+            ResyncTownGroup();
         }
 
         /// <summary>Go Venture (InTown only — the button is non-interactable otherwise):
         /// preview the Field face and close any open Side Panel.</summary>
         public void GoVenture()
         {
-            if (townGroup)
-                townGroup.ClearSelection();
+            if (leftPanels)
+                leftPanels.ClearActive();
+
+            ResyncTownGroup();
 
             ApplyFace(true);
+        }
+
+        /// <summary>
+        /// <see cref="leftPanels"/> owns panel visibility, so <see cref="SyncToPhase"/> and
+        /// <see cref="GoVenture"/> close a Side Panel by driving it directly — a
+        /// <c>PanelGroup.Show</c>/<c>Hide</c> reaches the panel without ever touching the
+        /// townGroup toggle that opened it. Call this right after either method changes
+        /// <see cref="leftPanels"/>' active panel: if that left a townGroup toggle pressed for a
+        /// panel that is no longer showing, clearing the selection deselects it and re-fires the
+        /// <see cref="SidePanelToggle"/> context-clear announcement — the same pair of effects
+        /// <c>townGroup.ClearSelection()</c> gave for free back when it was the thing closing the
+        /// panel (#72).
+        /// </summary>
+        private void ResyncTownGroup()
+        {
+            if (!townGroup || townGroup.SelectedToggle == null)
+                return;
+
+            if (!leftPanels || leftPanels.ActivePanel == null || leftPanels.ActivePanel == combatPanel)
+                townGroup.ClearSelection();
         }
 
         /// <summary>To Town: Recall while InField (the resulting <c>PhaseChanged</c> re-syncs
