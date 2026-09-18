@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Submodules.Utility.UI;
+using ToolSmiths.InventorySystem.GUI.Components.Toggles;
 using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
 
@@ -23,11 +24,20 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// deliberately does not hold a reference back to them. Interactable gating went with that
     /// reference: Go Venture, To Town, and the Stash/Vendor/Healer <see cref="townGroup"/> all
     /// live on whichever panel is currently faded out, and <c>CanvasGroup.blocksRaycasts</c>
-    /// already makes a faded-out panel's children non-interactive. Locations are the one
-    /// exception — <see cref="inFieldPanel"/> stays shown whether the player is previewing
-    /// (InTown) or has actually travelled (InField), so only each <c>LocationToggle</c>'s own
-    /// <c>interactable</c>, gated on <see cref="_inTown"/>, stops a stray click from
-    /// reassigning <see cref="fieldGroup"/>'s selection while already in the field.
+    /// already makes a faded-out panel's children non-interactive. Two sets are the exception,
+    /// each for a reason of its own:
+    ///
+    /// <list type="bullet">
+    /// <item>Locations keep their clicks while the Field face is up — <see cref="inFieldPanel"/>
+    /// stays shown whether the player is previewing (InTown) or has actually travelled
+    /// (InField), so only each <c>LocationToggle</c>'s own <c>interactable</c>, gated on
+    /// <see cref="_inTown"/>, stops a stray click from reassigning <see cref="fieldGroup"/>'s
+    /// selection while already in the field.</item>
+    /// <item>The Town Stops keep their <i>hotkeys</i>, which read <c>interactable</c> and so
+    /// bypass that <c>CanvasGroup</c> entirely — nothing about the fade reaches them. They are
+    /// gated on the face being shown instead, which covers the Go Venture preview as well
+    /// (issue #73).</item>
+    /// </list>
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class MinimapController : MonoBehaviour
@@ -48,6 +58,25 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         [SerializeField] private SimplePanel combatPanel;
 
         private bool _inTown = true;
+
+        /// <summary>
+        /// Every <see cref="SidePanelToggle"/> under <see cref="townGroup"/>, each with the
+        /// <c>interactable</c> it was authored with. Resolved from the group rather than listed
+        /// by hand so a Town Stop added later is gated by construction instead of by remembering
+        /// to author it here. The authored value is what the gate restores on the way back into
+        /// Town — the scene's Healer is a placeholder authored non-interactable, and it must not
+        /// come back on for merely being InTown.
+        /// </summary>
+        private readonly Dictionary<SidePanelToggle, bool> _townToggles = new();
+
+        private void Awake()
+        {
+            if (!townGroup)
+                return;
+
+            foreach (var toggle in townGroup.GetComponentsInChildren<SidePanelToggle>(true))
+                _townToggles[toggle] = toggle.interactable;
+        }
 
         private void OnEnable()
         {
@@ -121,8 +150,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             ApplyFace(false);
         }
 
-        /// <summary>Show one face, hide the other, and re-gate the locations — the only
-        /// interactable this controller still manages (see class doc).</summary>
+        /// <summary>Show one face, hide the other, and re-gate the two sets the fade does not
+        /// reach on its own — the locations and the Town Stops (see class doc for why each is
+        /// gated differently).</summary>
         private void ApplyFace(bool showField)
         {
             if (inTownPanel)
@@ -134,6 +164,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             foreach (var toggle in locationToggles)
                 if (toggle != null)
                     toggle.interactable = _inTown;
+
+            // Gated on the face, not on _inTown: the Go Venture preview has faded the Town face
+            // out while still InTown, and a Town Stop is as unreachable there as it is after a
+            // Send — a click cannot reach it, so its hotkey must not either (#73).
+            foreach (var entry in _townToggles)
+                entry.Key.interactable = entry.Value && !showField;
         }
 
         /// <summary>
