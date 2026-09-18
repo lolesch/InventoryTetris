@@ -29197,7 +29197,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Utility.UI::Submodules.Utility.UI.RadioGroup
   <SelectedToggle>k__BackingField: {fileID: 0}
   <PreviouslySelectedToggle>k__BackingField: {fileID: 0}
-  <IsClearable>k__BackingField: 0
+  <IsClearable>k__BackingField: 1
   <IsRestorable>k__BackingField: 0
 --- !u!1001 &1436982275
 PrefabInstance:
