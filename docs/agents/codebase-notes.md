@@ -70,6 +70,33 @@ call one method on it — reflection inside a *compiled* file runs fine.
 committing. Delete any `TestRunnerApi` bridge / scratch runner script before committing
 (it has happened twice — a "Do NOT commit" header is not enough).
 
+## Driving Play Mode to verify UI wiring by hand
+
+`Unity_ManageEditor Play` enters Play Mode; then `Unity_RunCommand` a harness method (see
+the scratch-harness pattern above) and read the results it logs.
+
+- **Advance frames yourself.** With `Application.runInBackground=False` and the Editor
+  unfocused, the player loop is frozen: `Time.time` stays 0.000 and tweens never finish,
+  so a panel you just toggled sits mid-fade forever. `EditorApplication.Step()` in a loop
+  (30–60 frames) is what makes fades and `CanvasGroup` state settle.
+- **One `LogError` leaves the Editor paused**, which then hangs every later `Step()` — the
+  bridge waits out its 120 s, comes back `COMPILATION_IN_PROGRESS`, and it reads as a dead
+  Editor. Console **Error Pause** is ON here and the two pre-existing
+  `AbstractProvider.OnValidate` errors fire on every Play, so this is the normal case, not
+  an edge. Set `EditorApplication.isPaused = false` before *each* `Step()`. Diagnose with
+  `Unity_ManageEditor GetState`: it reports `IsPaused` / `IsCompiling` / `IsPlaying`, where
+  the other tools just hang.
+- **`AssetDatabase.ImportAsset` while playing exits Play Mode**, and the static provider
+  `Instance`s are left stale — a harness call right after NREs on `Sim.Run`. After any
+  script edit: re-import, check `GetState`, re-enter Play, then verify.
+- **A "click" is `SetToggle(!IsOn)`**, matching `AbstractToggle.OnClick` — not
+  `SetToggle(true)`. Calling `SetToggle(true)` on a toggle that is already on is a silent
+  no-op, which reads as "the click did nothing" or, worse, looks like a pass. Off-click
+  paths only exist where the group allows them (`IsClearable` / `IsRestorable`).
+- Assert the wiring as a **triple**: the panel's `CanvasGroup.alpha`/`blocksRaycasts`, the
+  provider's announced context, and `RadioGroup.SelectedToggle`. "Toggle off" and "panel
+  hidden" are different facts and disagreeing is exactly the bug class this catches.
+
 ## `CS0103` / `CS0246` that is really a broken `.meta`
 
 Hand-authored `.cs.meta` files in agent commits have shipped **truncated** (cut at
@@ -86,6 +113,15 @@ fresh checkout / Library wipe breaks.
 Detect: `AssetDatabase.AssetPathToGUID(path)` returning `""` confirms Unity ignored the
 asset. Or `od -c file.meta` — a valid script meta is ~470 bytes / 11 lines ending in a
 newline; a broken one is ~239 bytes ending mid-line.
+
+**Don't "fix" the short ones.** 79 script metas in this repo are 59–62 bytes — just
+`fileFormatVersion: 2` + `guid:` and nothing else, no `MonoImporter:` block. That is a
+shape Unity **accepts** (it rewrites the full form on its own next import): every file
+carrying one compiles and the EditMode suite is green over them. A broken meta is the
+*mid-block* cut above, not this. Confirm before touching one: a broken meta's guid
+resolves to `""` from `AssetDatabase.AssetPathToGUID`, a short one resolves normally.
+Both Unity (auto-creating a meta for a script added by a tool mid-compile) and
+hand-authoring have produced the short form here.
 
 Fix: rewrite the meta canonically (`fileFormatVersion: 2` … `assetBundleVariant: ` +
 trailing newline), **preserving the committed GUID** — grep `Assets/Scenes/*.unity` for
@@ -119,8 +155,9 @@ shows modified with no content diff. This file and the rest of `docs/` are CRLF 
 
 Unity's Save / Don't Save / Cancel scene dialog is a **blocking native OS modal** — once
 it is up, no editor code runs until a human clicks, so it cannot be auto-dismissed, only
-*prevented*. `Assets/Scripts/Editor/SceneSavePromptGuard.cs`
-(`ToolSmiths.InventorySystem.EditorScripts`, `[InitializeOnLoad]` + `EditorApplication.update`
+*prevented*. `Assets/Submodules/Utility/Editor/SceneSavePromptGuard.cs` (it moved into the
+submodule — it is not under `Assets/Scripts/`) (`ToolSmiths.InventorySystem.EditorScripts`,
+`[InitializeOnLoad]` + `EditorApplication.update`
 poll) clears the dirty flag for scene dirt that *originated while Unity was in the
 background*, after a ~1 s debounce, via reflected `EditorSceneManager.ClearSceneDirtiness`.
 Dirt made while Unity is **focused** is left alone (no data loss on hand edits). Menu:
