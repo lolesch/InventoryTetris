@@ -41,3 +41,19 @@ already satisfies it. Guards the public API against future/external callers.
 ## Seal classes by default
 
 No inheritors → `sealed`. Drop only when something actually subclasses it.
+
+## Guard `UnityEditor` usings, not just call sites
+
+```csharp
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+```
+
+BAD: guarding the call site but leaving the `using` bare. Player builds don't reference
+`UnityEditor.dll`, so a bare `using UnityEditor;` fails to compile (`CS0246`) regardless of
+whether anything under it runs — the guard only works if the `using` is inside it too.
+
+Skip it only when the whole file already compiles editor-only by construction (asmdef
+`includePlatforms: ["Editor"]`, or an `Editor`/`EditMode` folder name — see
+`codebase-notes.md`'s asmdef section); guarding there is a no-op.
