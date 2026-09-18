@@ -97,6 +97,73 @@ the scratch-harness pattern above) and read the results it logs.
   provider's announced context, and `RadioGroup.SelectedToggle`. "Toggle off" and "panel
   hidden" are different facts and disagreeing is exactly the bug class this catches.
 
+## Enter Play Mode Settings — domain/scene reload disabled
+
+`ProjectSettings/EditorSettings.asset` now has `m_EnterPlayModeOptionsEnabled: 1` /
+`m_EnterPlayModeOptions: 3` (both `DisableDomainReload` and `DisableSceneReload`) —
+applied 2026-09-18, verified live via the bridge
+(`EditorSettings.enterPlayModeOptionsEnabled` / `.enterPlayModeOptions`) on the
+`test/unity-6.6` worktree. Default was off; this is not 6.6-specific and is safe to
+carry onto any branch.
+
+**Read the "stale provider `Instance`" bullet above before relying on this.**
+`AbstractProvider<T>.Instance` (`Assets/Submodules/Utility/Provider/AbstractProvider.cs:24`)
+self-heals via Unity's overridden `== null` (true for a destroyed-but-not-literally-null
+object), not via domain reload — Play Mode exit always destroys play-only objects
+including `DontDestroyOnLoad` ones, reload or not, so a fresh `Instance` lookup on
+re-entry should still work. But the *existing* stale-static gotcha above was observed on
+an *irregular* exit path (`AssetDatabase.ImportAsset` while playing); disabling domain
+reload makes every *ordinary* exit behave a little more like that path (no full managed-state
+wipe in between). Re-validate with a few by-hand Play → Stop → Play cycles before trusting
+provider state across repeated sessions — don't assume this note alone proves it's fine.
+`SimulationProvider` and `TimerBootstrapper` both re-arm via
+`[RuntimeInitializeOnLoadMethod]`, which fires on every Play Mode entry independent of
+domain reload, so those two are already covered.
+
+## `com.unity.ai.assistant` version — pin history and upgrade path
+
+This package backs the `unity-mcp` bridge (`Unity_RunCommand`, `Unity_GetConsoleLogs`,
+etc.) that the rest of this file assumes. Its version has moved twice for reasons that
+aren't visible from the manifest diff alone:
+
+- **Pinned at `2.6.0-pre.1`** (`115d4f4`) when the bridge was first added — the last
+  version before Unity license-tier connection gating existed.
+- **`2.7.0-pre.3` → `2.15.0-pre.2` cap MCP/AI-Gateway connections by Unity license
+  tier** (Personal / Pro / Enterprise). On a **Personal** license (this project's) this
+  range throttles the bridge. Lifted again in `2.16.0-pre.1` ("no longer capped or
+  gated by entitlement limits").
+- **`2.6.0-pre.1`'s own source trips Unity 6.6's `UAC0005` analyzer as a hard error** —
+  why the `test/unity-6.6` spike branch (`62c2f78`) removed the package entirely rather
+  than upgrade it.
+- **`2.13.0-pre.2` has an external, gdb-traced livelock report** on Unity 6000.5.1f1
+  (`AssetDatabase::InitialRefresh` spins forever) —
+  [CoplayDev/unity-mcp#1219](https://github.com/CoplayDev/unity-mcp/issues/1219). Not
+  reproduced by us, but avoid landing exactly on that version.
+
+**Verified 2026-09-18**, on the `test/unity-6.6` worktree with Unity 6000.6.0f1 and the
+Editor live-paired to the bridge: bumping straight to **`2.19.0-pre.2`** (current
+release — skip past the capped range and the `2.13.0-pre.2` report rather than stepping
+through it one minor version at a time) resolves clean, `0 error CS`, no `UAC0005`, and
+the EditMode suite passes **698/698** both headless (`-runTests -batchmode`) and live
+through the bridge itself. Every gotcha in this file's "Verifying a C# change compiles"
+section still holds at `2.19.0-pre.2`:
+
+- The reflection restriction is still enforced, but the error changed for the better —
+  it used to be an uncatchable `UNEXPECTED_ERROR: Object reference not set`
+  (`NullReferenceException`); it's now a named, catchable error: `"Script uses one or
+  more unauthorized namespaces: Namespace System.Reflection is imported at line 1."` The
+  workaround (put reflection in a compiled file under `Assets/Scripts/`) is unchanged.
+- The two-top-level-class `ICallbacks`/`IRunCommand` pattern for running the EditMode
+  suite through the bridge still compiles and runs as documented.
+- The dynamic script wrapping namespace (`Unity.AI.Assistant.Agent.Dynamic.Extension.Editor`)
+  is unchanged.
+
+**Not yet exercised:** a manual Play-mode smoke pass on `2.19.0-pre.2`/6.6 — only
+EditMode tests and ad hoc `RunCommand` scripts have run so far. The `test/unity-6.6`
+worktree itself is a stale spike (its `main` merge-base predates this file, `e9fbf70`)
+— treat its findings as validated guidance to replay on a fresh branch cut from current
+`main`, not as a branch to build the real upgrade on top of.
+
 ## `CS0103` / `CS0246` that is really a broken `.meta`
 
 Hand-authored `.cs.meta` files in agent commits have shipped **truncated** (cut at
