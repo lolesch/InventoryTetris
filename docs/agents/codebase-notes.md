@@ -120,6 +120,24 @@ provider state across repeated sessions — don't assume this note alone proves 
 `[RuntimeInitializeOnLoadMethod]`, which fires on every Play Mode entry independent of
 domain reload, so those two are already covered.
 
+**The "re-validate" caution above found a real bug, 2026-09-19.** `AbstractProvider<T>`'s
+static `_isQuitting` flag (`AbstractProvider.cs:11`) is set `true` by `OnApplicationQuit`
+and never reset. In a build that's harmless — the process exits right after quitting, so
+there's no next session to leak into — but with domain reload disabled the flag survives
+Stop, and the *next* Play entry inherits `_isQuitting == true`, which makes
+`AbstractProvider<T>.Instance` return `null` unconditionally for every provider
+(`SimulationProvider`, `InventoryProvider`, `DragProvider`, `PreviewProvider`,
+`ItemProvider`, `CharacterProvider`, `SceneProvider`) for the rest of the Editor session.
+Symptom: `MinimapController.OnEnable` hit its `provider == null` guard and never called
+`SyncToPhase`, leaving both `inTownPanel`/`inFieldPanel` faded out on the second Play
+entry onward. Since this is purely an Editor artifact of disabled domain reload, the fix
+lives in `Assets/Submodules/Utility/Editor/ProviderQuittingResetGuard.cs`, not in
+`AbstractProvider<T>` itself: it resets every closed `AbstractProvider<T>`'s
+`_isQuitting` via reflection on `EditorApplication.playModeStateChanged`'s
+`ExitingEditMode` (the moment Play is pressed), mirroring what a fresh process would do.
+Verified live via the bridge: `SimulationProvider.Instance` was `null` on a second Play
+entry before the fix, resolves correctly after.
+
 ## `com.unity.ai.assistant` version — pin history and upgrade path
 
 This package backs the `unity-mcp` bridge (`Unity_RunCommand`, `Unity_GetConsoleLogs`,
