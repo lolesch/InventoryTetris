@@ -140,6 +140,14 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             else if (leftPanels)
                 leftPanels.ClearActive();
 
+            // Recall/Death land back InTown with the just-visited LocationToggle still
+            // SelectedToggle — RadioGroup.Select no-ops when the clicked toggle is already
+            // selected (RadioGroup.cs), so without this the same Location could never be
+            // re-picked. Send (InTown -> InField) never reaches this branch, so a fresh
+            // selection is never clobbered on the way in.
+            if (_inTown && fieldGroup)
+                fieldGroup.ClearSelection();
+
             ResyncTownGroup();
         }
 
@@ -227,6 +235,35 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (provider == null || provider.Run.Phase != RunPhase.InTown) return;
 
             provider.Send(location.Location);
+        }
+
+        /// <summary>Drives <see cref="SyncToPhase"/> straight from the Inspector's right-click
+        /// menu, bypassing <see cref="SimulationProvider"/>/<see cref="RunState"/> entirely — for
+        /// isolating whether a broken panel swap is this class's wiring or the Send/Recall path
+        /// that normally raises <see cref="RunState.PhaseChanged"/>.
+        ///
+        /// <b>Leaves <see cref="_inTown"/> desynced from the live <see cref="RunState.Phase"/></b>
+        /// once anything real (<see cref="SimulationProvider.Send"/>/<see cref="SimulationProvider.Recall"/>,
+        /// <see cref="ToTownButton"/>, a <see cref="LocationToggle"/> click) is in play — those all
+        /// read the real phase, not this cached field, so forcing one and then driving the other
+        /// looks broken (locations stop being selectable, To Town stops matching what's on
+        /// screen). Call <see cref="DebugResyncFromLivePhase"/> to pull it back before switching
+        /// back to testing the real flow, rather than restarting Play Mode.</summary>
+        [ContextMenu("Debug: Force InTown")]
+        private void DebugForceInTown() => SyncToPhase(RunPhase.InTown);
+
+        [ContextMenu("Debug: Force InField")]
+        private void DebugForceInField() => SyncToPhase(RunPhase.InField);
+
+        /// <summary>Re-derives the whole minimap from <see cref="SimulationProvider"/>'s actual
+        /// <see cref="RunState.Phase"/> — undoes the desync <see cref="DebugForceInTown"/> /
+        /// <see cref="DebugForceInField"/> leave behind, without needing a Play Mode restart.</summary>
+        [ContextMenu("Debug: Resync From Live Phase")]
+        private void DebugResyncFromLivePhase()
+        {
+            var provider = SimulationProvider.Instance;
+            if (provider != null)
+                SyncToPhase(provider.Run.Phase);
         }
     }
 }

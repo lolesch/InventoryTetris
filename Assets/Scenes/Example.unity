@@ -4466,11 +4466,11 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 219529307}
+  - component: {fileID: 219529308}
   - component: {fileID: 219529312}
   - component: {fileID: 219529311}
   - component: {fileID: 219529310}
   - component: {fileID: 219529309}
-  - component: {fileID: 219529308}
   m_Layer: 5
   m_Name: GoVentureButton
   m_TagString: Untagged
@@ -6664,11 +6664,11 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 318019181}
+  - component: {fileID: 318019182}
   - component: {fileID: 318019186}
   - component: {fileID: 318019185}
   - component: {fileID: 318019184}
   - component: {fileID: 318019183}
-  - component: {fileID: 318019182}
   m_Layer: 5
   m_Name: ToTownButton
   m_TagString: Untagged
@@ -9620,13 +9620,13 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 433628003}
+  - component: {fileID: 433628011}
   - component: {fileID: 433628013}
   - component: {fileID: 433628012}
   - component: {fileID: 433628008}
   - component: {fileID: 433628007}
   - component: {fileID: 433628006}
   - component: {fileID: 433628005}
-  - component: {fileID: 433628011}
   m_Layer: 5
   m_Name: VendorPanel
   m_TagString: Untagged
@@ -10742,8 +10742,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 489346188}
-  - component: {fileID: 489346190}
   - component: {fileID: 489346189}
+  - component: {fileID: 489346190}
   m_Layer: 5
   m_Name: Icon
   m_TagString: Untagged
@@ -14796,13 +14796,13 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 694897992}
+  - component: {fileID: 694898000}
   - component: {fileID: 694897999}
   - component: {fileID: 694897998}
   - component: {fileID: 694897997}
   - component: {fileID: 694897996}
   - component: {fileID: 694897995}
   - component: {fileID: 694897994}
-  - component: {fileID: 694898000}
   m_Layer: 5
   m_Name: CombatPanel
   m_TagString: Untagged
@@ -17921,10 +17921,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 871460281}
+  - component: {fileID: 871460285}
   - component: {fileID: 871460284}
   - component: {fileID: 871460283}
   - component: {fileID: 871460282}
-  - component: {fileID: 871460285}
   m_Layer: 5
   m_Name: SellItem
   m_TagString: Untagged
@@ -29011,12 +29011,12 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1426694735}
+  - component: {fileID: 1426694736}
   - component: {fileID: 1426694741}
   - component: {fileID: 1426694740}
   - component: {fileID: 1426694739}
   - component: {fileID: 1426694738}
   - component: {fileID: 1426694737}
-  - component: {fileID: 1426694736}
   m_Layer: 5
   m_Name: InFields
   m_TagString: Untagged
@@ -29875,8 +29875,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1453177595}
-  - component: {fileID: 1453177597}
   - component: {fileID: 1453177596}
+  - component: {fileID: 1453177597}
   m_Layer: 5
   m_Name: Icon
   m_TagString: Untagged
@@ -30998,12 +30998,12 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1525008101}
+  - component: {fileID: 1525008107}
   - component: {fileID: 1525008103}
   - component: {fileID: 1525008102}
   - component: {fileID: 1525008106}
   - component: {fileID: 1525008105}
   - component: {fileID: 1525008104}
-  - component: {fileID: 1525008107}
   m_Layer: 5
   m_Name: StashPanel
   m_TagString: Untagged
@@ -31953,13 +31953,13 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1561434720}
+  - component: {fileID: 1561434728}
   - component: {fileID: 1561434722}
   - component: {fileID: 1561434721}
   - component: {fileID: 1561434723}
   - component: {fileID: 1561434727}
   - component: {fileID: 1561434726}
   - component: {fileID: 1561434725}
-  - component: {fileID: 1561434728}
   m_Layer: 5
   m_Name: Inventory
   m_TagString: Untagged
@@ -33454,11 +33454,11 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1628728796}
+  - component: {fileID: 1628728797}
   - component: {fileID: 1628728801}
   - component: {fileID: 1628728800}
   - component: {fileID: 1628728799}
   - component: {fileID: 1628728798}
-  - component: {fileID: 1628728797}
   m_Layer: 5
   m_Name: Location2Toggle
   m_TagString: Untagged
@@ -34951,10 +34951,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1711093466}
+  - component: {fileID: 1711093467}
   - component: {fileID: 1711093470}
   - component: {fileID: 1711093469}
   - component: {fileID: 1711093468}
-  - component: {fileID: 1711093467}
   m_Layer: 5
   m_Name: SellItem
   m_TagString: Untagged
@@ -35270,8 +35270,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1721916698}
-  - component: {fileID: 1721916700}
   - component: {fileID: 1721916699}
+  - component: {fileID: 1721916700}
   m_Layer: 5
   m_Name: Icon
   m_TagString: Untagged
@@ -40727,11 +40727,11 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1990545802}
+  - component: {fileID: 1990545803}
   - component: {fileID: 1990545807}
   - component: {fileID: 1990545806}
   - component: {fileID: 1990545805}
   - component: {fileID: 1990545804}
-  - component: {fileID: 1990545803}
   m_Layer: 5
   m_Name: Location1Toggle
   m_TagString: Untagged
@@ -42338,13 +42338,13 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2069960132}
+  - component: {fileID: 2069960133}
   - component: {fileID: 2069960139}
   - component: {fileID: 2069960138}
   - component: {fileID: 2069960137}
   - component: {fileID: 2069960136}
   - component: {fileID: 2069960135}
   - component: {fileID: 2069960134}
-  - component: {fileID: 2069960133}
   m_Layer: 5
   m_Name: HealerPanel
   m_TagString: Untagged
@@ -43778,7 +43778,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Utility.UI::Submodules.Utility.UI.RadioGroup
   <SelectedToggle>k__BackingField: {fileID: 0}
   <PreviouslySelectedToggle>k__BackingField: {fileID: 0}
-  <IsClearable>k__BackingField: 0
+  <IsClearable>k__BackingField: 1
   <IsRestorable>k__BackingField: 0
 --- !u!224 &2125662086 stripped
 RectTransform:
@@ -43844,7 +43844,9 @@ MonoBehaviour:
   inFieldPanel: {fileID: 1426694736}
   townGroup: {fileID: 1435666377}
   fieldGroup: {fileID: 2124397354}
-  locationToggles: []
+  locationToggles:
+  - {fileID: 1990545803}
+  - {fileID: 1628728797}
   leftPanels: {fileID: 347723239}
   combatPanel: {fileID: 694898000}
 --- !u!224 &108098073199083388 stripped
