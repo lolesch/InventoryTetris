@@ -36,7 +36,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// one profile per <see cref="LocationConfig"/> and Send / Settle / Recover all share it.
     ///
     /// The frame-by-frame tick is <see cref="SimulationDriver"/>'s job; the real map UI
-    /// (<see cref="MapPanel"/>, issue #27) replaces the old debug panel. The driver is
+    /// (<see cref="MinimapController"/>, issue #27) replaces the old debug panel. The driver is
     /// attached to this provider's GameObject on <see cref="Awake"/> so a bare scene needs
     /// no wiring.
     /// </summary>
