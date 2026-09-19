@@ -199,6 +199,20 @@ Detect: `AssetDatabase.AssetPathToGUID(path)` returning `""` confirms Unity igno
 asset. Or `od -c file.meta` — a valid script meta is ~470 bytes / 11 lines ending in a
 newline; a broken one is ~239 bytes ending mid-line.
 
+**`grep -L assetBundleVariant` is not that detector — it finds the opposite set.** The
+broken *mid-block* cut happens **at** `  assetBundleVariant:`, so a broken meta still
+**contains** that string and the grep misses it. What the grep does return is the
+harmless short form below. A scan built on it will hand you a long, confident,
+entirely-wrong worklist. To find genuinely broken metas, look for files that contain
+`assetBundleVariant` **and** are short of 11 lines or lack a trailing newline:
+
+```bash
+for f in $(find Assets -name "*.cs.meta" -not -path "*/Library/*"); do
+  grep -q assetBundleVariant "$f" || continue
+  [ "$(wc -l <"$f")" -lt 11 ] || [ -n "$(tail -c1 "$f")" ] && echo "BROKEN $f"
+done
+```
+
 **Don't "fix" the short ones.** 79 script metas in this repo are 59–62 bytes — just
 `fileFormatVersion: 2` + `guid:` and nothing else, no `MonoImporter:` block. That is a
 shape Unity **accepts** (it rewrites the full form on its own next import): every file
@@ -207,6 +221,16 @@ carrying one compiles and the EditMode suite is green over them. A broken meta i
 resolves to `""` from `AssetDatabase.AssetPathToGUID`, a short one resolves normally.
 Both Unity (auto-creating a meta for a script added by a tool mid-compile) and
 hand-authoring have produced the short form here.
+
+Measured 2026-09-19 (#80), because the short form keeps getting re-reported as a bug:
+91 of 282 `.cs.meta` were the short form, and **zero** were the broken mid-block form.
+Copying `Assets Packages ProjectSettings` to a scratch dir with **no `Library/`** and
+running EditMode there — the one check a warm Library cannot fake — gave 762/762 passing,
+`0` `CS0103`/`CS0246`, and `0` "Parser Failure" / "does not have a valid GUID". Then the
+same fresh-import run *after* normalising all 91 gave the identical 762/762. The short
+form costs nothing and normalising it buys nothing: it is 91 files of churn, and the
+`ForceReserializeAssets` pass that does it also silently drops each meta's `timeCreated:`
+line. Leave them alone.
 
 Fix: rewrite the meta canonically (`fileFormatVersion: 2` … `assetBundleVariant: ` +
 trailing newline), **preserving the committed GUID** — grep `Assets/Scenes/*.unity` for
