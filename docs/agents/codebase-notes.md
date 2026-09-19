@@ -184,60 +184,52 @@ worktree itself is a stale spike (its `main` merge-base predates this file, `e9f
 
 ## `CS0103` / `CS0246` that is really a broken `.meta`
 
-Hand-authored `.cs.meta` files in agent commits have shipped **truncated** (cut at
-`  assetBundleVariant:` with no trailing newline) or **missing entirely**. Unity's YAML
-parser rejects the truncated ones (`Parser Failure at line 11: Expect ':' ...`) and logs
-"does not have a valid GUID and its corresponding Asset file will be ignored" — so the
-`.cs` never compiles and every consumer fails with `CS0103: The name 'X' does not
-exist`. It **looks like a missing-assembly / asmdef-reference problem and is not.**
+Script metas here come in three shapes, and only one of them breaks anything. Name them,
+because the two healthy ones keep getting re-reported as bugs:
 
-A **warm Unity Library masks it** — a session that already force-imported good metas
-into its AssetDatabase runs the whole suite green with the broken metas still on disk. A
-fresh checkout / Library wipe breaks.
+| Shape | On disk | Unity's verdict |
+|---|---|---|
+| **full** | 11 lines, ~254 B, ends `assetBundleVariant: ` + newline | fine |
+| **short** | 59–62 B (or ~85 B with `timeCreated:`) — `fileFormatVersion` + `guid` and no `MonoImporter:` block | fine; Unity rewrites the full form on its next import |
+| **cut** | opens the `MonoImporter:` block but stops mid-line, ~239 B, no trailing newline | rejected |
 
-Detect: `AssetDatabase.AssetPathToGUID(path)` returning `""` confirms Unity ignored the
-asset. Or `od -c file.meta` — a valid script meta is ~470 bytes / 11 lines ending in a
-newline; a broken one is ~239 bytes ending mid-line.
+A **cut** meta fails YAML parsing (`Parser Failure at line 11: Expect ':' ...`), Unity logs
+"does not have a valid GUID and its corresponding Asset file will be ignored", the `.cs`
+never compiles, and every consumer fails `CS0103: The name 'X' does not exist`. It **looks
+like a missing-assembly / asmdef-reference problem and is not.** A **warm Library masks
+it** — a session that already imported good metas runs the whole suite green with cut metas
+still on disk. A fresh checkout / Library wipe breaks.
 
-**`grep -L assetBundleVariant` is not that detector — it finds the opposite set.** The
-broken *mid-block* cut happens **at** `  assetBundleVariant:`, so a broken meta still
-**contains** that string and the grep misses it. What the grep does return is the
-harmless short form below. A scan built on it will hand you a long, confident,
-entirely-wrong worklist. To find genuinely broken metas, look for files that contain
-`assetBundleVariant` **and** are short of 11 lines or lack a trailing newline:
+**Confirm the shape before touching a meta.** `AssetDatabase.AssetPathToGUID(path)` is the
+authority: `""` means Unity ignored it (**cut**), any other value means it resolved
+(**full** or **short**). On disk the signature of a **cut** meta is that it starts the
+importer block and never finishes it:
 
 ```bash
-for f in $(find Assets -name "*.cs.meta" -not -path "*/Library/*"); do
-  grep -q assetBundleVariant "$f" || continue
-  [ "$(wc -l <"$f")" -lt 11 ] || [ -n "$(tail -c1 "$f")" ] && echo "BROKEN $f"
+find Assets -name '*.cs.meta' -not -path '*/Library/*' | while read -r f; do
+  grep -q MonoImporter "$f" && [ -n "$(tail -c1 "$f")" ] && echo "CUT $f"
 done
 ```
 
-**Don't "fix" the short ones.** 79 script metas in this repo are 59–62 bytes — just
-`fileFormatVersion: 2` + `guid:` and nothing else, no `MonoImporter:` block. That is a
-shape Unity **accepts** (it rewrites the full form on its own next import): every file
-carrying one compiles and the EditMode suite is green over them. A broken meta is the
-*mid-block* cut above, not this. Confirm before touching one: a broken meta's guid
-resolves to `""` from `AssetDatabase.AssetPathToGUID`, a short one resolves normally.
-Both Unity (auto-creating a meta for a script added by a tool mid-compile) and
-hand-authoring have produced the short form here.
+**`grep -L assetBundleVariant` finds the opposite set.** The cut lands *at* that line, so a
+**cut** meta still contains the string and the grep skips it; what it returns is every
+**short** meta, all of them healthy. A scan built on it hands you a long, confident,
+entirely wrong worklist — that is exactly how #80 got filed.
 
-Measured 2026-09-19 (#80), because the short form keeps getting re-reported as a bug:
-91 of 282 `.cs.meta` were the short form, and **zero** were the broken mid-block form.
+Measured 2026-09-19 (#80): **91 of 282** metas were **short** and **zero** were **cut**.
 Copying `Assets Packages ProjectSettings` to a scratch dir with **no `Library/`** and
 running EditMode there — the one check a warm Library cannot fake — gave 762/762 passing,
-`0` `CS0103`/`CS0246`, and `0` "Parser Failure" / "does not have a valid GUID". Then the
-same fresh-import run *after* normalising all 91 gave the identical 762/762. The short
-form costs nothing and normalising it buys nothing: it is 91 files of churn, and the
-`ForceReserializeAssets` pass that does it also silently drops each meta's `timeCreated:`
-line. Leave them alone.
+no `CS0103`/`CS0246`, no `Parser Failure`. The same fresh-import run after normalising all
+91 gave the identical 762/762, and the `ForceReserializeAssets` pass that does it silently
+drops each meta's `timeCreated:` line. Both Unity (auto-creating a meta for a script a tool
+adds mid-compile) and hand-authoring produce the **short** shape; it costs nothing and
+normalising it buys nothing.
 
-Fix: rewrite the meta canonically (`fileFormatVersion: 2` … `assetBundleVariant: ` +
-trailing newline), **preserving the committed GUID** — grep `Assets/Scenes/*.unity` for
-that GUID first; scene `m_Script` refs break if it changes. Then
-`AssetDatabase.ImportAsset(path, ForceUpdate | ForceSynchronousImport)` +
+To repair a genuinely **cut** meta: rewrite it canonically (`fileFormatVersion: 2` …
+`assetBundleVariant: ` + trailing newline), **preserving the committed GUID** — grep
+`Assets/Scenes/*.unity` for that GUID first; scene `m_Script` refs break if it changes.
+Then `AssetDatabase.ImportAsset(path, ForceUpdate | ForceSynchronousImport)` +
 `CompilationPipeline.RequestScriptCompilation()` through the bridge.
-
 ## Source is CRLF + UTF-8 — stream editors corrupt it silently
 
 Source under `Assets/Scripts/` is **CRLF-terminated UTF-8**, and the docstrings are dense
