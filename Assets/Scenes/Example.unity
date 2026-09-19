@@ -9484,9 +9484,8 @@ MonoBehaviour:
   <RadioGroup>k__BackingField: {fileID: 1435666377}
   toggledOffSprite: {fileID: 0}
   toggledOnSprite: {fileID: 0}
-  panel: {fileID: 433628011}
+  panel: {fileID: 433628014}
   invert: 0
-  context: 2
   hotkey: 118
 --- !u!224 &431299142 stripped
 RectTransform:
@@ -9620,13 +9619,13 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 433628003}
-  - component: {fileID: 433628011}
   - component: {fileID: 433628013}
   - component: {fileID: 433628012}
   - component: {fileID: 433628008}
   - component: {fileID: 433628007}
   - component: {fileID: 433628006}
   - component: {fileID: 433628005}
+  - component: {fileID: 433628014}
   m_Layer: 5
   m_Name: VendorPanel
   m_TagString: Untagged
@@ -9735,21 +9734,6 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
---- !u!114 &433628011
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 433628002}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1814ee7b30ef16444b80fff87e8b0c62, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  <PanelGroup>k__BackingField: {fileID: 347723239}
-  scaleFrom: 1
-  moveFrom: {x: -640, y: 0}
 --- !u!114 &433628012
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9788,6 +9772,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 433628002}
   m_CullTransparentMesh: 1
+--- !u!114 &433628014
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 433628002}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0194eebc42f431c4f828f607404c5322, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Components.Panels.SidePanel
+  <PanelGroup>k__BackingField: {fileID: 347723239}
+  scaleFrom: 1
+  moveFrom: {x: -640, y: 0}
+  context: 2
 --- !u!224 &439793805 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 6869914548936521472, guid: 2287cac91a7c16e479ee377613d24cd7, type: 3}
@@ -12787,7 +12787,6 @@ MonoBehaviour:
   toggledOnSprite: {fileID: 0}
   panel: {fileID: 0}
   invert: 0
-  context: 0
   hotkey: 0
 --- !u!114 &612742130
 MonoBehaviour:
@@ -20034,7 +20033,7 @@ MonoBehaviour:
   <RadioGroup>k__BackingField: {fileID: 1106788607}
   toggledOffSprite: {fileID: 0}
   toggledOnSprite: {fileID: 0}
-  panel: {fileID: 433628011}
+  panel: {fileID: 0}
   invert: 0
 --- !u!114 &935833217
 MonoBehaviour:
@@ -28327,7 +28326,6 @@ MonoBehaviour:
   toggledOnSprite: {fileID: 0}
   panel: {fileID: 1525008107}
   invert: 0
-  context: 1
   hotkey: 115
 --- !u!1001 &1394436625
 PrefabInstance:
@@ -30998,12 +30996,12 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1525008101}
-  - component: {fileID: 1525008107}
   - component: {fileID: 1525008103}
   - component: {fileID: 1525008102}
   - component: {fileID: 1525008106}
   - component: {fileID: 1525008105}
   - component: {fileID: 1525008104}
+  - component: {fileID: 1525008107}
   m_Layer: 5
   m_Name: StashPanel
   m_TagString: Untagged
@@ -31131,12 +31129,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 1525008100}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1814ee7b30ef16444b80fff87e8b0c62, type: 3}
+  m_Script: {fileID: 11500000, guid: 0194eebc42f431c4f828f607404c5322, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Panels.Panel
+  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Components.Panels.SidePanel
   <PanelGroup>k__BackingField: {fileID: 347723239}
   scaleFrom: 1
   moveFrom: {x: -640, y: 0}
+  context: 1
 --- !u!1001 &1526114717
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -41,13 +41,14 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// (issue #73).</item>
     /// </list>
     ///
-    /// <see cref="townGroup"/> still drives the toggles' pressed visuals and (via
-    /// <see cref="SidePanelToggle"/>) the Side Panel Context announcement, but it no longer
-    /// decides panel visibility — <see cref="leftPanels"/> does, for all four left panels
-    /// including the Combat Panel. <see cref="SyncToPhase"/> and <see cref="GoVenture"/> drive
-    /// <see cref="leftPanels"/> directly, which can close a Town Stop's panel without going
-    /// through its toggle; <see cref="ResyncTownGroup"/> deselects that toggle right after, so
-    /// its pressed visual and the announcement stay truthful (issue #74).
+    /// <see cref="townGroup"/> still drives the toggles' pressed visuals, but it no longer
+    /// decides panel visibility, nor the Side Panel Context announcement — <see cref="leftPanels"/>
+    /// owns visibility for all four left panels including the Combat Panel, and each Town Stop's
+    /// own panel announces its context directly from its appear/disappear hooks (issue #75).
+    /// <see cref="SyncToPhase"/> and <see cref="GoVenture"/> drive <see cref="leftPanels"/>
+    /// directly, which can close a Town Stop's panel without going through its toggle;
+    /// <see cref="ResyncTownGroup"/> deselects that toggle right after, so its pressed visual
+    /// stays truthful (issue #74).
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class MinimapController : MonoBehaviour
@@ -169,10 +170,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// <c>PanelGroup.Activate</c>/<c>Deactivate</c> reaches the panel without ever touching the
         /// townGroup toggle that opened it. Call this right after either method changes
         /// <see cref="leftPanels"/>' active panel: if that left a townGroup toggle pressed for a
-        /// panel that is no longer showing, clearing the selection deselects it and re-fires the
-        /// <see cref="SidePanelToggle"/> context-clear announcement — the same pair of effects
-        /// <c>townGroup.ClearActive()</c> gave for free back when it was the thing closing the
-        /// panel (#72).
+        /// panel that is no longer showing, clearing the selection deselects it — the same pressed-
+        /// visual resync <c>townGroup.ClearActive()</c> gave for free back when it was the thing
+        /// closing the panel (#72). The Side Panel Context announcement no longer rides this at
+        /// all (#75): the panel's own <c>BeforeDisappear</c> already cleared it the moment
+        /// <see cref="leftPanels"/> closed the panel, before this method ever runs.
         /// </summary>
         private void ResyncTownGroup()
         {
