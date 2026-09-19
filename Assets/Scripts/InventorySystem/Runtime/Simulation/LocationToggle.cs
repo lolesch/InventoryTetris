@@ -12,7 +12,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     ///
     /// The toggle itself has no side effect: selection *is* the whole behaviour. Observers
     /// watch the owning <see cref="RadioGroup.OnGroupChanged"/> and read
-    /// <see cref="RadioGroup.SelectedToggle"/> rather than listening to each toggle.
+    /// <see cref="RadioGroup.ActiveMember"/> rather than listening to each toggle.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class LocationToggle : PanelToggle

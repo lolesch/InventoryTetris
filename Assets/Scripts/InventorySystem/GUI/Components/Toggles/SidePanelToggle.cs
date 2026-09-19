@@ -14,7 +14,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
     ///
     /// <para><b>Both edges, deliberately.</b> The toggle that closes the Vendor panel is
     /// usually not the Vendor toggle - it is whichever sibling the player just activated.
-    /// <see cref="RadioGroup.Select"/> switches every loser off, so the announcement has to
+    /// <see cref="RadioGroup.Activate"/> switches every loser off, so the announcement has to
     /// ride <see cref="OnToggle"/> in both directions rather than a click handler on the
     /// winner. That is what lets Healer cancel a staged sale without knowing the Vendor
     /// exists. Go Venture cancels one too, but from outside the group — see

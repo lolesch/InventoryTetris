@@ -141,12 +141,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 leftPanels.ClearActive();
 
             // Recall/Death land back InTown with the just-visited LocationToggle still
-            // SelectedToggle — RadioGroup.Select no-ops when the clicked toggle is already
+            // ActiveMember — RadioGroup.Activate no-ops when the clicked toggle is already
             // selected (RadioGroup.cs), so without this the same Location could never be
             // re-picked. Send (InTown -> InField) never reaches this branch, so a fresh
             // selection is never clobbered on the way in.
             if (_inTown && fieldGroup)
-                fieldGroup.ClearSelection();
+                fieldGroup.ClearActive();
 
             ResyncTownGroup();
         }
@@ -166,21 +166,21 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// <summary>
         /// <see cref="leftPanels"/> owns panel visibility, so <see cref="SyncToPhase"/> and
         /// <see cref="GoVenture"/> close a Side Panel by driving it directly — a
-        /// <c>PanelGroup.Show</c>/<c>Hide</c> reaches the panel without ever touching the
+        /// <c>PanelGroup.Activate</c>/<c>Deactivate</c> reaches the panel without ever touching the
         /// townGroup toggle that opened it. Call this right after either method changes
         /// <see cref="leftPanels"/>' active panel: if that left a townGroup toggle pressed for a
         /// panel that is no longer showing, clearing the selection deselects it and re-fires the
         /// <see cref="SidePanelToggle"/> context-clear announcement — the same pair of effects
-        /// <c>townGroup.ClearSelection()</c> gave for free back when it was the thing closing the
+        /// <c>townGroup.ClearActive()</c> gave for free back when it was the thing closing the
         /// panel (#72).
         /// </summary>
         private void ResyncTownGroup()
         {
-            if (!townGroup || townGroup.SelectedToggle == null)
+            if (!townGroup || townGroup.ActiveMember == null)
                 return;
 
-            if (!leftPanels || leftPanels.ActivePanel == null || leftPanels.ActivePanel == combatPanel)
-                townGroup.ClearSelection();
+            if (!leftPanels || leftPanels.ActiveMember == null || leftPanels.ActiveMember == combatPanel)
+                townGroup.ClearActive();
         }
 
         /// <summary>To Town: Recall while InField (the resulting <c>PhaseChanged</c> re-syncs
@@ -224,7 +224,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         /// <summary>
         /// A selected location Sends the hero there. Fires on deselection too
-        /// (<see cref="RadioGroup.SelectedToggle"/> null) — that is not a destination, so it
+        /// (<see cref="RadioGroup.ActiveMember"/> null) — that is not a destination, so it
         /// is ignored.
         /// </summary>
         private void OnFieldSelectionChanged(AbstractToggle toggle)

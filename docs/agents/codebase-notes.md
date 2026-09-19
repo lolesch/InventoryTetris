@@ -94,7 +94,7 @@ the scratch-harness pattern above) and read the results it logs.
   no-op, which reads as "the click did nothing" or, worse, looks like a pass. Off-click
   paths only exist where the group allows them (`IsClearable` / `IsRestorable`).
 - Assert the wiring as a **triple**: the panel's `CanvasGroup.alpha`/`blocksRaycasts`, the
-  provider's announced context, and `RadioGroup.SelectedToggle`. "Toggle off" and "panel
+  provider's announced context, and `RadioGroup.ActiveMember`. "Toggle off" and "panel
   hidden" are different facts and disagreeing is exactly the bug class this catches.
 
 ## Enter Play Mode Settings — domain/scene reload disabled
