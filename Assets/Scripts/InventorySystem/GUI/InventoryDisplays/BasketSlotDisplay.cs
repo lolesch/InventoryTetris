@@ -90,36 +90,32 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         /// <summary>
         /// A pick-up out of the basket is an ordinary drag (see class doc): it lands back on
         /// this same cell if cancelled, so that path leaves the basket's origin ledger alone.
-        /// Shift-click follows the same quick-move matrix as every other source (issue #33) -
-        /// with the Vendor open, a basket Package returns to the backpack - and, unlike a plain
-        /// drag, leaves the basket for good on success, so it also clears the cell's ledger
-        /// entry rather than leaving a stale one <see cref="SellBasket.Cancel"/> would only
-        /// ever skip over.
+        /// Shift-click no longer reaches here - <see cref="AbstractSlotDisplay.TryQuickMove"/>
+        /// handles it, ledger cleanup included, before <c>OnPointerClick</c> ever calls this
+        /// method (issue #67).
         ///
-        /// <para>A plain drag dropped somewhere other than back into the basket has the same
+        /// <para>A plain drag dropped somewhere other than back into the basket has a
         /// stale-entry gap - the ledger cleanup there would need the drag lifecycle itself to
         /// know it started in the basket and did not return, which is a bigger change than
         /// this method; left for a follow-up rather than folded in here.</para>
         /// </summary>
         protected override void MoveItem(PointerEventData eventData, Vector2 pointerPosition)
         {
-            if (!TryBeginMove(out var position, out var package))
+            if (Container == null)
                 return;
 
-            if (Input.GetKey(KeyCode.LeftShift))
-            {
-                var intent = InventoryProvider.Instance.QuickMoveFor(Container);
+            var position = Position;
 
-                if (intent.Kind != QuickMoveIntentKind.MoveToContainer)
-                    return;
-
-                if (QuickMoveToContainer(intent.Target, position, package))
-                    _ = InventoryProvider.Instance.Basket?.Origins.Remove(position);
-
+            if (!Container.TryGetItemAt(ref position, out var package))
                 return;
-            }
 
-            BeginDrag(position, package, pointerPosition);
+            FadeOutPreview();
+
+            _ = Container.RemoveAtPosition(position, package);
+
+            var positionOffset = Position - position;
+
+            DragProvider.Instance.SetPackage(this, package, positionOffset, pointerPosition);
         }
     }
 }
