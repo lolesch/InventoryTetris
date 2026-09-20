@@ -101,8 +101,12 @@ InitTestScene*.unity*
 # JetBrains Rider / IntelliJ
 .idea/
 
-# Claude Code local harness / working-copy tool dir - never tracked here
-.claude/
+# Claude Code local harness / working-copy tool dir. The skills are repo-owned and tracked -
+# CLAUDE.md names /rederive and /drift-review, so an untracked skill is a dangling pointer on
+# the other machine. Everything else here is per-machine state. Needs the /* form: git cannot
+# re-include a path whose parent directory is excluded.
+.claude/*
+!.claude/skills/
 
 # Per-machine MCP server config (absolute paths, ports, instance IDs) - never portable,
 # has landed in a commit before (panel-toggle-cleanup 8fadbcb). Keep it local only.

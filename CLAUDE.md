@@ -15,11 +15,12 @@ Implementation work is broken out of a spec with `/to-tickets` into GitHub Issue
 `/implement #N`, walk that issue's **Blocked by** chain transitively — `ready-for-agent`
 means the spec is written, not that the dependencies are closed. If `#N` isn't the
 frontier, surface that and let the user decide rather than building the blockers inside it. If the epic
-swaps a mechanism rather than just adding one, run `/drift-review` over its ticket slice first — it
-catches a ticket fixing the mechanism a sibling ticket is about to replace (a stranded fix), the way #72
-targeted `RadioGroup.ClearSelection()` right before #74 replaced it with `PanelGroup`. **There is no
-per-phase implementation-plan document** — the issue is the unit of work; if one does
-not fit a single context window, split it into more issues rather than write a plan.
+swaps a mechanism rather than just adding one, settle what replaces it with `/rederive` before the spec,
+and run `/drift-review` twice — over the existing slice once the swap is named, and over the new ticket
+slice before `/implement`. It catches a ticket fixing the mechanism a sibling ticket is about to replace
+(a stranded fix), the way #72 targeted `RadioGroup.ClearSelection()` right before #74 replaced it with
+`PanelGroup`. **There is no per-phase implementation-plan document** — the issue is the unit of
+work; if one does not fit a single context window, split it into more issues rather than write a plan.
 
 `dev/plans/` holds the plans written before this switch (2026-09-01). They are still
 valid to execute as written — the foundational-rework Phase 0 plan
