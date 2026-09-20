@@ -9326,11 +9326,11 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 427819261}
+  - component: {fileID: 427819267}
   - component: {fileID: 427819266}
   - component: {fileID: 427819265}
   - component: {fileID: 427819264}
   - component: {fileID: 427819263}
-  - component: {fileID: 427819267}
   m_Layer: 5
   m_Name: VendorToggle
   m_TagString: Untagged
@@ -9619,13 +9619,13 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 433628003}
+  - component: {fileID: 433628014}
   - component: {fileID: 433628013}
   - component: {fileID: 433628012}
   - component: {fileID: 433628008}
   - component: {fileID: 433628007}
   - component: {fileID: 433628006}
   - component: {fileID: 433628005}
-  - component: {fileID: 433628014}
   m_Layer: 5
   m_Name: VendorPanel
   m_TagString: Untagged
@@ -12706,11 +12706,11 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 612742128}
+  - component: {fileID: 612742129}
   - component: {fileID: 612742133}
   - component: {fileID: 612742132}
   - component: {fileID: 612742131}
   - component: {fileID: 612742130}
-  - component: {fileID: 612742129}
   m_Layer: 5
   m_Name: HealerToggle
   m_TagString: Untagged
@@ -17760,11 +17760,11 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 856665804}
+  - component: {fileID: 856665805}
   - component: {fileID: 856665809}
   - component: {fileID: 856665808}
   - component: {fileID: 856665807}
   - component: {fileID: 856665806}
-  - component: {fileID: 856665805}
   m_Layer: 5
   m_Name: HeroPanelToggle
   m_TagString: Untagged
@@ -17892,7 +17892,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 0}
@@ -28335,11 +28335,11 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1393504386}
+  - component: {fileID: 1393504392}
   - component: {fileID: 1393504391}
   - component: {fileID: 1393504390}
   - component: {fileID: 1393504389}
   - component: {fileID: 1393504388}
-  - component: {fileID: 1393504392}
   m_Layer: 5
   m_Name: StashToggle
   m_TagString: Untagged
@@ -31165,12 +31165,12 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1525008101}
+  - component: {fileID: 1525008107}
   - component: {fileID: 1525008103}
   - component: {fileID: 1525008102}
   - component: {fileID: 1525008106}
   - component: {fileID: 1525008105}
   - component: {fileID: 1525008104}
-  - component: {fileID: 1525008107}
   m_Layer: 5
   m_Name: StashPanel
   m_TagString: Untagged
@@ -32784,11 +32784,11 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1604110704}
+  - component: {fileID: 1604110705}
   - component: {fileID: 1604110709}
   - component: {fileID: 1604110708}
   - component: {fileID: 1604110707}
   - component: {fileID: 1604110706}
-  - component: {fileID: 1604110705}
   m_Layer: 5
   m_Name: Pub
   m_TagString: Untagged
@@ -41065,11 +41065,11 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1995239119}
+  - component: {fileID: 1995239120}
   - component: {fileID: 1995239124}
   - component: {fileID: 1995239123}
   - component: {fileID: 1995239122}
   - component: {fileID: 1995239121}
-  - component: {fileID: 1995239120}
   m_Layer: 5
   m_Name: Smith
   m_TagString: Untagged
