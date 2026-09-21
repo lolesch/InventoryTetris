@@ -34,6 +34,16 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             if (!Container.CanPlaceAt(positionToAdd, ItemView.Of(package.Item).Dimensions))
                 return;
 
+            /// A store purchase rides the placement as a commit-time effect (issue #31): the
+            /// price was read once at pick-up and is charged exactly and only when the item
+            /// actually lands here. No room, or can't afford, and the whole move rolls back -
+            /// item stays in hand, nothing charged, exactly the guarantee the atomic buy gives.
+            /// TryQueuePurchase upholds the check-then-queue order itself, so an unaffordable
+            /// purchase cannot reach the placement and the queued payment can never fail at
+            /// commit and strand an unpaid item in the bag.
+            var purchasePrice = DragProvider.Instance.PurchasePrice;
+            var wallet = InventoryProvider.Instance.Wallet;
+
             /// The whole drop runs inside one transaction (issue #10): the placement mutates
             /// a working copy, and the item the drag landed on goes to the hand - a drag
             /// swap always puts the displaced item in hand. The move commits as a unit or
@@ -45,10 +55,13 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
             using (var transaction = new ItemTransaction(cursor, Container, origin ?? inventory).ReHomeThrough(origin ?? inventory))
             {
+                if (!VendorTransaction.TryQueuePurchase(transaction, wallet, purchasePrice))
+                    return;
+
                 var displaced = Container.AddAtPosition(positionToAdd, package);
 
                 if (displaced.IsValid)
-                    _ = transaction.TryReHomeToHandOrContainer(ref displaced);
+                    _ = transaction.TryReHomeToHandOrContainer(ref displaced, new PackageOrigin(Container, positionToAdd));
 
                 if (transaction.Aborted)
                     return;
@@ -119,7 +132,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                         var equipment = InventoryProvider.Instance.Equipment;
                         var cursor = new CursorHolder(DragProvider.Instance);
 
-                        using var transaction = new ItemTransaction(cursor, Container, equipment).ReHomeThrough(Container).SwapInPlace();
+                        using var transaction = new ItemTransaction(cursor, Container, equipment)
+                            .ReHomeThrough(Container)
+                            .SwapInPlace(new PackageOrigin(Container, position));
 
                         _ = Container.RemoveAtPosition(position, package);
                         _ = equipment.TryAddToContainer(ref package);
@@ -146,26 +161,35 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                         package.ReduceAmount(package.Amount / 2);
                 #endregion SPLIT AMOUNT
 
-                // TODO: trade context system
                 #region QUICK MOVE ITEM
                 if (Input.GetKey(KeyCode.LeftShift))
                 {
-                    var containerToMoveTo = Container; // rework to context based
+                    /// Quick-move follows the open side panel (issue #30): one pure resolver
+                    /// decides where shift-click sends the item. With the Stash open it is
+                    /// the same backpack ↔ Stash as always; with the Vendor open (issue #33)
+                    /// it is a shift-click sale - the item goes into the Sell Basket; with
+                    /// neither panel open nothing moves.
+                    var intent = InventoryProvider.Instance.QuickMoveFor(Container);
 
-                    if (Container == InventoryProvider.Instance.Inventory)
-                        containerToMoveTo = InventoryProvider.Instance.Stash;
-                    else if (Container == InventoryProvider.Instance.Stash)
-                        containerToMoveTo = InventoryProvider.Instance.Inventory;
+                    if (intent.Kind == QuickMoveIntentKind.SellBasket)
+                    {
+                        /// One transaction over the source and the basket: the item leaves
+                        /// this slot and lands in the basket with its origin remembered; a
+                        /// full basket leaves it where it is (#33).
+                        _ = SellBasketQuickMove.SendToBasket(InventoryProvider.Instance.Basket, Container, position);
+                        return;
+                    }
 
-                    /// Player-driven quick-move (issue #10): the item leaves its slot and
-                    /// lands in the other container, or - if that is full - in hand. It never
-                    /// just stays put.
+                    if (intent.Kind != QuickMoveIntentKind.MoveToContainer)
+                        return;
+
+                    var target = intent.Target;
                     var cursor = new CursorHolder(DragProvider.Instance);
 
-                    using var transaction = new ItemTransaction(cursor, Container, containerToMoveTo).ReHomeThrough(containerToMoveTo);
+                    using var transaction = new ItemTransaction(cursor, Container, target).ReHomeThrough(target);
 
                     _ = Container.RemoveAtPosition(position, package);
-                    _ = transaction.TryReHomeToContainerOrHand(ref package);
+                    _ = transaction.TryReHomeToContainerOrHand(ref package, new PackageOrigin(Container, position));
 
                     transaction.Commit();
 

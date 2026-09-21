@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using ToolSmiths.InventorySystem.Data;
+﻿using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Runtime.Character;
 
@@ -67,10 +66,17 @@ namespace ToolSmiths.InventorySystem.Utility.Extensions
 
         public static CharacterStat GetStat(this BaseCharacter character, StatName stat)
         {
-            var statsAndResources = character.CharacterStats.Union(character.CharacterResources).ToArray();
-            for (var i = statsAndResources.Length; i-- > 0;)
-                if (statsAndResources[i].Stat == stat)
-                    return statsAndResources[i];
+            // Resources first, matching the old reverse-iterated Union(stats, resources).
+            var resources = character.CharacterResources;
+            for (var i = resources.Length; i-- > 0;)
+                if (resources[i].Stat == stat)
+                    return resources[i];
+
+            var stats = character.CharacterStats;
+            for (var i = stats.Length; i-- > 0;)
+                if (stats[i].Stat == stat)
+                    return stats[i];
+
             return null;
         }
         public static CharacterResource GetResource(this BaseCharacter character, StatName resource)

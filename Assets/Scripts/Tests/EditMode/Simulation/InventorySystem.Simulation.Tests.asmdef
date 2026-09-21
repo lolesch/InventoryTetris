@@ -1,0 +1,28 @@
+{
+    "name": "InventorySystem.Simulation.Tests",
+    "rootNamespace": "",
+    "references": [
+        "InventorySystem.Simulation",
+        "InventorySystem.Data",
+        "InventorySystem.Items",
+        "InventorySystem.Containers",
+        "InventorySystem.Probability",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

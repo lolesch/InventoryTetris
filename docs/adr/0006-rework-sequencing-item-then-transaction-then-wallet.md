@@ -1,5 +1,5 @@
 ---
-status: accepted, not yet implemented
+status: accepted
 ---
 
 # The rework order is item split, then transaction, then wallet

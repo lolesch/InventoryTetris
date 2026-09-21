@@ -1,3 +1,4 @@
+using Submodules.Utility.Provider;
 using System;
 using System.Collections.Generic;
 using ToolSmiths.InventorySystem.Data;
@@ -58,6 +59,12 @@ namespace ToolSmiths.InventorySystem.Inventories
                 return catalog;
             }
         }
+
+        /// <summary>The authored coin-denomination odds feed the live kill's coin Pile type (issue #44's <c>ICoinDropSource</c> adapter).</summary>
+        public CurrencyTypeDistribution CurrencyTypeDistribution => currencyTypeDistribution;
+
+        /// <summary>The authored per-coin pile-size ranges feed the live kill's coin Pile amount (issue #44's <c>ICoinDropSource</c> adapter).</summary>
+        public CurrencyDropTable CurrencyDropTable => currencyDropTable;
 
         private void EnsureInitialized()
         {
@@ -239,6 +246,12 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// </summary>
         private ItemDefinition PickDefinition(ItemCategory category, Func<ItemDefinition, bool> filter)
         {
+            if (catalog == null)
+            {
+                Debug.LogError($"{nameof(ItemProvider)}: no {nameof(catalog)} assigned - cannot pick a {category} definition", this);
+                return null;
+            }
+
             ItemDefinition chosen = null;
             var seen = 0;
 
