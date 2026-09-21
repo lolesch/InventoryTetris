@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using NaughtyAttributes;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using UnityEngine;

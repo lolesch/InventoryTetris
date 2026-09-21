@@ -1,6 +1,48 @@
 ---
-status: proposed
+status: partly superseded
 ---
+
+> **Superseded in several places (2026-09-09 / 2026-09-10 / 2026-09-17).** The rest of this
+> spec still stands; these are the decisions that moved after it was written.
+>
+> 1. **Side panels are on the LEFT, not the right.** The left side holds the Town Stop
+>    contexts (Stash, Vendor) and the Combat Panel; the right side is the Hero Panel
+>    (Equipment over Inventory). Corrected 2026-09-09; see issues #56 and #57 and the
+>    **Side Panel** / **Hero Panel** entries in `CONTEXT.md`.
+> 2. **The Healer and Go Venture ARE toggles in the minimap's `TownGroup`.** This spec says
+>    the Healer is a plain `AbstractButton` that does not join the `RadioGroup` - withdrawn
+>    2026-09-10. Every Town interaction deselects its siblings and cancels what they had in
+>    flight; group membership gives that for free. See issue #58.
+> 3. **The minimap face is its own state, not a projection of `RunPhase`.** `RunPhase`
+>    forces the face but does not define it: Go Venture shows the Field face while still
+>    `InTown` so the player can pick a destination, and To Town backs out of that preview
+>    without a Recall. See issue #56.
+>
+> The side-panel `RadioGroup` this spec asks for was also narrowed: mutual exclusion comes
+> from the minimap's `TownGroup`, and a `SidePanelToggle : PanelToggle` announces
+> `SidePanelContext` on both edges. See issue #57.
+>
+> 4. **Go Venture is withdrawn from `TownGroup` again (partial re-reversal of #2).** The
+>    2026-09-10 ruling that Go Venture is a toggle in `TownGroup` is walked back — it has no
+>    on/off state of its own, and the one thing membership bought it (closing an open Side
+>    Panel) is already done explicitly via `RadioGroup.ClearSelection()`, not derived from
+>    membership. Go Venture and To Town are face-switch triggers, plain `AbstractButton`s
+>    sitting beside `TownGroup` / `FieldGroup` rather than inside them. **The Healer half of
+>    #2 stands** — it keeps its real cancel-in-flight reason to be a toggle. Corrected
+>    2026-09-17; see issue #58.
+> 5. **The minimap is not one panel with a swapped background — it is a plain
+>    `MinimapController` (not a `SimplePanel`) holding two real `SimplePanel` children,
+>    `InTown` and `InField`, exactly one of which is shown.** `TownGroup` lives inside
+>    `InTown`, `FieldGroup` inside `InField`, each as its own child object — a toggle joins a
+>    group by hierarchy, so Go Venture / To Town are excluded from grouping just by living
+>    outside that child rather than by code guarding against it. `GoVentureButton` /
+>    `ToTownButton` hold a reference to `MinimapController`; `MinimapController` holds no
+>    reference back to them, only to the two panels. Almost all interactable-gating is gone
+>    with it — a faded-out `SimplePanel`'s `CanvasGroup` already blocks raycasts on everything
+>    inside it. The one survivor: `LocationToggle.interactable`, gated on `InTown`, because
+>    `InField` stays the same shown panel whether the player is previewing or has actually
+>    travelled, and `RadioGroup.Select` has no guard of its own against a stray click.
+>    Corrected 2026-09-17; see issue #56.
 
 # ARPG Screen Layout
 
@@ -64,8 +106,7 @@ button set.
   once the hero is InField.
 - Clicking a location toggle = `SimulationProvider.Send(location)`.
 - "To Town" = `SimulationProvider.Recall()` + minimap switches back to Town state.
-  In the `RadioGroup` "To Town" acts as a deselect-then-select or a plain button
-  depending on implementation.
+  Plain button, not a `RadioGroup` member — resolved 2026-09-17, see correction 4 above.
 
 ### Right side — Hero panels (always visible)
 

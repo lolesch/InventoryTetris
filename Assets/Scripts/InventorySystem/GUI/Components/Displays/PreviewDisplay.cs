@@ -24,15 +24,12 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
         [SerializeField] private CurrencyDisplay goldValue;
 
         [SerializeField] private CharacterStatModifierDisplay itemStatPrefab;
-        [SerializeField] private PrefabPool<CharacterStatModifierDisplay> itemStatPool;
+        private PrefabPool<CharacterStatModifierDisplay> itemStatPool;
+        private PrefabPool<CharacterStatModifierDisplay> ItemStatPool => itemStatPool ??= new(itemStatPrefab);
 
         public bool IsPreviewing => gameObject.activeSelf;
 
-        private void Awake()
-        {
-            gameObject.SetActive(false);
-            itemStatPool = new(itemStatPrefab);
-        }
+        private void Awake() => gameObject.SetActive(false);
 
         public void Refresh((Package package, Package compareTo) data) => Refresh(data.package, data.compareTo);
         public void Refresh(Package package, Package compareTo, float priceOverride = -1f)
@@ -78,13 +75,13 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
             if (background)
                 background.color = rarityColor * Color.gray * Color.gray;
 
-            itemStatPool.ReleaseAll();
+            ItemStatPool.ReleaseAll();
 
             foreach (var stat in package.Item.Affixes)
             {
                 //TODO: extend prefabPool to support abstractDisplays that update the Display(newData) before activating the object
 
-                var itemStat = itemStatPool.GetObject(false);
+                var itemStat = ItemStatPool.GetObject(false);
 
                 itemStat.Refresh(new(stat, compareTo));
 
@@ -130,13 +127,13 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
             if (background)
                 background.color = rarityColor * Color.gray * Color.gray;
 
-            itemStatPool.ReleaseAll();
+            ItemStatPool.ReleaseAll();
 
             foreach (var stat in package.Item.Affixes)
             {
                 //TODO: extend prefabPool to support abstractDisplays that update the Display(newData) before activating the object
 
-                var itemStat = itemStatPool.GetObject(false);
+                var itemStat = ItemStatPool.GetObject(false);
 
                 itemStat.Refresh(new(stat));
 

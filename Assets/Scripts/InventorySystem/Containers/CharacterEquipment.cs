@@ -134,8 +134,9 @@ namespace ToolSmiths.InventorySystem.Inventories
             void TrySwap(List<Vector2Int> positions)
             {
                 var dropPosition = position;
-                var collateral = new List<Package>();
+                var collateral = new List<(Vector2Int Position, Package Package)>();
                 var underDrop = default(Package);
+                var underDropPosition = default(Vector2Int);
 
                 foreach (var occupied in positions)
                     if (StoredPackages.TryGetValue(occupied, out var storedPackage))
@@ -144,10 +145,16 @@ namespace ToolSmiths.InventorySystem.Inventories
                             // The swap partner is whatever the drop cell lands *on* - so a
                             // two-hander keyed at (12,0) is the partner for a drop on (13,0)
                             // its footprint spans, not miscounted as collateral (issue #42).
+                            // Each displaced item's own slot is kept alongside it - a cancel
+                            // that lands on the cursor mid-drag must return it there, not to
+                            // wherever the drag itself started (issue #29 follow-up).
                             if (FootprintContains(occupied, SlotFootprintOf(storedPackage.Item), dropPosition))
+                            {
                                 underDrop = storedPackage;
+                                underDropPosition = occupied;
+                            }
                             else
-                                collateral.Add(storedPackage);
+                                collateral.Add((occupied, storedPackage));
                             _ = RemoveAtPosition(occupied, storedPackage);
                         }
 
@@ -165,17 +172,17 @@ namespace ToolSmiths.InventorySystem.Inventories
                         // Right-click: every displaced item swaps back into the origin, and
                         // at most one that will not re-fit overflows to the hand. A second
                         // homeless item aborts and the whole equip rolls back.
-                        foreach (var displaced in collateral)
+                        foreach (var (occupied, displaced) in collateral)
                         {
                             var reHomed = displaced;
-                            if (!ActiveTransaction.TryReHomeToContainerOrHand(ref reHomed))
+                            if (!ActiveTransaction.TryReHomeToContainerOrHand(ref reHomed, new PackageOrigin(this, occupied)))
                                 break;
                         }
 
                         if (underDrop.IsValid && !ActiveTransaction.Aborted)
                         {
                             var reHomed = underDrop;
-                            _ = ActiveTransaction.TryReHomeToContainerOrHand(ref reHomed);
+                            _ = ActiveTransaction.TryReHomeToContainerOrHand(ref reHomed, new PackageOrigin(this, underDropPosition));
                         }
                     }
                     else
@@ -183,7 +190,7 @@ namespace ToolSmiths.InventorySystem.Inventories
                         // Drag: the collateral off-hand must swap into the origin or the
                         // whole move rolls back; the swap partner goes to the hand, exactly
                         // as a plain one-item swap does.
-                        foreach (var displaced in collateral)
+                        foreach (var (_, displaced) in collateral)
                         {
                             var reHomed = displaced;
                             if (!ActiveTransaction.TryReHomeToContainer(ref reHomed))
@@ -193,7 +200,7 @@ namespace ToolSmiths.InventorySystem.Inventories
                         if (underDrop.IsValid && !ActiveTransaction.Aborted)
                         {
                             var reHomed = underDrop;
-                            _ = ActiveTransaction.TryReHomeToHandOrContainer(ref reHomed);
+                            _ = ActiveTransaction.TryReHomeToHandOrContainer(ref reHomed, new PackageOrigin(this, underDropPosition));
                         }
                     }
 
@@ -210,7 +217,7 @@ namespace ToolSmiths.InventorySystem.Inventories
                     if (0 < collateral.Count)
                         Debug.LogWarning($"{GetType().Name}: a 2H double-swap needs an ItemTransaction to re-home both displaced items; {collateral.Count} would be dropped.");
 
-                    package = underDrop.IsValid ? underDrop : collateral.FirstOrDefault();
+                    package = underDrop.IsValid ? underDrop : collateral.Select(c => c.Package).FirstOrDefault();
                 }
             }
         }
@@ -230,6 +237,20 @@ namespace ToolSmiths.InventorySystem.Inventories
             // grid; a populated list means a real overlap the swap can take.
             return otherItems.Count is > 0 and <= 2;
         }
+
+        /// <summary>
+        /// Return-to-origin (issue #29) against the paper-doll layout: <paramref name="position"/>
+        /// must be a slot <paramref name="item"/>'s type is allowed in at all, and that slot
+        /// must be genuinely empty - measured with the equipment footprint rule
+        /// (<see cref="SlotFootprintOf"/>), never the item's inventory-bag
+        /// <see cref="ItemView.Dimensions"/>. Unlike <see cref="CanPlaceAt"/> this never
+        /// allows the swap; a cancelled drag that cannot re-key here falls through to the
+        /// backpack instead of displacing whatever is now worn.
+        /// </summary>
+        public override bool CanReturnTo(Vector2Int position, ItemInstance item) =>
+            IsEquipment(item)
+            && GetTypeSpecificPositions(EquipmentTypeOf(item)).Contains(position)
+            && IsEmptySpace(position, SlotFootprintOf(item), out _);
 
         /// <summary>
         /// Whether <see cref="AddAtPosition"/> would place <paramref name="item"/> at

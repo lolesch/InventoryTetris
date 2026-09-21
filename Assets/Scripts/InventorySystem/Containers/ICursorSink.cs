@@ -10,6 +10,9 @@ namespace ToolSmiths.InventorySystem.Inventories
     /// </summary>
     public interface ICursorSink
     {
-        void ReplacePackage(Package package);
+        /// <param name="package">The item now on the cursor.</param>
+        /// <param name="from">Where <paramref name="package"/> was displaced from - the
+        /// swap partner's real home, not necessarily where the drag itself started.</param>
+        void ReplacePackage(Package package, PackageOrigin from);
     }
 }
