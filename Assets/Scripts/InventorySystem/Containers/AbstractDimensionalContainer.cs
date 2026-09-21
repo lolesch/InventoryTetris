@@ -186,15 +186,50 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             var dimensions = ItemView.Of(package.Item).Dimensions;
 
-            for (var x = 0; x < Dimensions.x && 0 < package.Amount; x++)
-                for (var y = 0; y < Dimensions.y && 0 < package.Amount; y++)
-                    if (IsEmptySpace(new(x, y), dimensions, out _))
-                        package = AddAtPosition(new(x, y), package);
+            // Resumes the scan from the last cell placed into rather than re-walking the
+            // already-filled prefix from the origin on every iteration - O(cells) for a
+            // package that spreads across many stacks, not O(cells squared).
+            var cursor = Vector2Int.zero;
+
+            while (0 < package.Amount && TryFindEmptyCellFrom(cursor, dimensions, out var cell))
+            {
+                package = AddAtPosition(cell, package);
+                cursor = cell;
+            }
 
             if (0 < package.Amount)
                 Debug.LogWarning($"{GetType().Name} is full!");
 
             return 0 == package.Amount;
+        }
+
+        /// <summary>
+        /// The first cell <paramref name="dimensions"/> fits without displacing anything, in
+        /// row-major scan order - the lookup <see cref="TryAddAtEmpty"/> runs internally,
+        /// exposed so a caller that needs the cell before committing to placing there (e.g. to
+        /// key an origin ledger by it) is not left duplicating the scan.
+        /// </summary>
+        public bool TryFindEmptyCell(Vector2Int dimensions, out Vector2Int cell) =>
+            TryFindEmptyCellFrom(Vector2Int.zero, dimensions, out cell);
+
+        /// <summary>
+        /// Same scan as <see cref="TryFindEmptyCell"/>, starting at <paramref name="from"/>
+        /// instead of the origin - <see cref="TryAddAtEmpty"/>'s placement loop passes the
+        /// last cell it placed into so a multi-cell fill resumes the sweep instead of
+        /// restarting it.
+        /// </summary>
+        private bool TryFindEmptyCellFrom(Vector2Int from, Vector2Int dimensions, out Vector2Int cell)
+        {
+            for (var x = from.x; x < Dimensions.x; x++)
+                for (var y = x == from.x ? from.y : 0; y < Dimensions.y; y++)
+                    if (IsEmptySpace(new(x, y), dimensions, out _))
+                    {
+                        cell = new Vector2Int(x, y);
+                        return true;
+                    }
+
+            cell = default;
+            return false;
         }
 
         public abstract Package AddAtPosition(Vector2Int position, Package package);

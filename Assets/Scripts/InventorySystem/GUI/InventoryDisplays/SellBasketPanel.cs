@@ -78,28 +78,37 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         private void Awake()
         {
+            // Reading InventoryProvider.Instance outside Play mode can create one (issue #46) -
+            // Awake also runs at edit time (a domain reload, entering/exiting prefab isolation).
+            if (!Application.isPlaying)
+                return;
+
             if (!TryResolveDependencies())
                 return;
         }
 
         private void OnEnable()
         {
+            if (!Application.isPlaying)
+                return;
+
             var provider = InventoryProvider.Instance;
 
             provider.OnSidePanelChanged -= OnSidePanelChanged;
             provider.OnSidePanelChanged += OnSidePanelChanged;
 
             if (basket.Container != null)
+            {
                 basket.Container.OnContentChanged -= OnBasketContentChanged;
-            if (basket.Container != null)
                 basket.Container.OnContentChanged += OnBasketContentChanged;
+            }
 
             RefreshUi();
         }
 
         private void OnDisable()
         {
-            if (InventoryProvider.Instance != null)
+            if (Application.isPlaying && InventoryProvider.Instance != null)
                 InventoryProvider.Instance.OnSidePanelChanged -= OnSidePanelChanged;
 
             if (basket?.Container != null)
