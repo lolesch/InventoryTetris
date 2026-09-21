@@ -41,6 +41,33 @@ namespace ToolSmiths.InventorySystem.Inventories
             remove => sidePanel.Changed -= value;
         }
 
+        /// <summary>Which panels are up and where a Quick Move lands (#83), beside
+        /// <see cref="sidePanel"/> until every path is migrated (#84) and the old one retires
+        /// (#85). The rule itself is the engine-free <see cref="InventoryContextState"/>; the
+        /// provider only carries it to the scene.</summary>
+        private readonly InventoryContextState inventoryContext = new();
+
+        public InventoryContext ActiveContext => inventoryContext.Active;
+
+        public event Action<InventoryContext> OnContextChanged
+        {
+            add => inventoryContext.Changed += value;
+            remove => inventoryContext.Changed -= value;
+        }
+
+        /// <summary>Requests <paramref name="context"/> (issue #84) - the entry-point side of
+        /// <see cref="InventoryContextState.Set"/>.</summary>
+        public void SetContext(InventoryContext context) => inventoryContext.Set(context);
+
+        /// <summary>Closes whatever context is active - always <see cref="InventoryContext.None"/>,
+        /// never a per-context clear (see <see cref="InventoryContextState.Close"/>).</summary>
+        public void CloseContext() => inventoryContext.Close();
+
+        /// <summary>Drops the active context to <see cref="InventoryContext.None"/> if the Run
+        /// phase just made it unreachable (see <see cref="InventoryContextState.SyncToPhase"/>) -
+        /// the Send/Recall/Death/Go-Venture side of phase reachability (#84).</summary>
+        public void SyncContextToPhase(bool inField) => inventoryContext.SyncToPhase(inField);
+
         [field: SerializeField] public bool ShowDebugPositions { get; private set; }
 
         [Space]

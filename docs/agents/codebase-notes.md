@@ -96,6 +96,17 @@ the scratch-harness pattern above) and read the results it logs.
 - Assert the wiring as a **triple**: the panel's `CanvasGroup.alpha`/`blocksRaycasts`, the
   provider's announced context, and `RadioGroup.ActiveMember`. "Toggle off" and "panel
   hidden" are different facts and disagreeing is exactly the bug class this catches.
+- **Setting `EditorApplication.isPlaying = false` from inside `Unity_RunCommand` can leave the
+  bridge stuck** — the call itself times out client-side, and every subsequent `RunCommand`
+  (even a trivial one-line log) then times out too, for ten-plus minutes, while
+  `Unity_GetConsoleLogs` keeps working the whole time. Waiting it out, recompiling, and
+  focusing/clicking the Editor window (tried via `SetForegroundWindow` and a synthetic click
+  on the title bar) did **not** unstick it. A human clicking **Stop** in the Editor's own
+  Play toolbar did, immediately. Confirmed recurring across sessions 2026-09-20. Prefer asking
+  the user to stop Play Mode by hand over requesting `isPlaying = false` from a script when a
+  Play-Mode verification pass is done; if a script-driven stop is already in flight and the
+  bridge goes unresponsive, stop retrying and ask the user to press Stop rather than waiting
+  it out.
 
 ## Enter Play Mode Settings — domain/scene reload disabled
 

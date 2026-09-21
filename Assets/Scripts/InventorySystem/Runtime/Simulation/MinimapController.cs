@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Submodules.Utility.UI;
 using ToolSmiths.InventorySystem.GUI.Components.Toggles;
+using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
 
@@ -124,12 +125,19 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// Combat Panel is up, and — on entering the Field — that no Side Panel is left open.
         /// Death routes through here too: <see cref="RunState.HandleDeath"/> fires
         /// <c>PhaseChanged(InTown)</c>, which resets the face and clears <see cref="leftPanels"/>.
+        ///
+        /// <see cref="InventoryProvider.SyncContextToPhase"/> is the Inventory Context's own
+        /// phase-reachability rule (issue #84), run alongside <see cref="leftPanels"/> rather
+        /// than through it: Send, Recall and Death all reach this one method, so this is the
+        /// single place all three "set the context, not just the group."
         /// </summary>
         private void SyncToPhase(RunPhase phase)
         {
             _inTown = phase == RunPhase.InTown;
 
             ApplyFace(!_inTown);
+
+            InventoryProvider.Instance?.SyncContextToPhase(!_inTown);
 
             // Showing the Combat Panel (a leftPanels sibling) closes whichever Side Panel was
             // open as a side effect of the group; clearing the group on the way back to Town
@@ -153,13 +161,19 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         }
 
         /// <summary>Go Venture (InTown only — the button is non-interactable otherwise):
-        /// preview the Field face and close any open Side Panel.</summary>
+        /// preview the Field face and close any open Side Panel. The preview makes every Town
+        /// Stop context unreachable exactly as a real Send would (issue #84) — no
+        /// <see cref="RunState.PhaseChanged"/> fires here, so <see cref="SyncToPhase"/> never
+        /// runs and the context needs its own call, treating the preview as "in field" for
+        /// reachability only.</summary>
         public void GoVenture()
         {
             if (leftPanels)
                 leftPanels.ClearActive();
 
             ResyncTownGroup();
+
+            InventoryProvider.Instance?.SyncContextToPhase(true);
 
             ApplyFace(true);
         }
@@ -250,7 +264,16 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// read the real phase, not this cached field, so forcing one and then driving the other
         /// looks broken (locations stop being selectable, To Town stops matching what's on
         /// screen). Call <see cref="DebugResyncFromLivePhase"/> to pull it back before switching
-        /// back to testing the real flow, rather than restarting Play Mode.</summary>
+        /// back to testing the real flow, rather than restarting Play Mode.
+        ///
+        /// <b>Not isolated from <see cref="InventoryProvider"/> (issue #84).</b>
+        /// <see cref="SyncToPhase"/> calls <see cref="InventoryProvider.SyncContextToPhase"/>
+        /// unconditionally, so forcing InField here really does drop an active Town Stop context
+        /// to <see cref="InventoryContext.None"/> - and <see cref="DebugResyncFromLivePhase"/>
+        /// does not undo that, since it only re-derives <see cref="_inTown"/> and the face, not
+        /// the Inventory Context. Bypassing <see cref="SimulationProvider"/>/<see cref="RunState"/>
+        /// was always the point of this menu; <see cref="InventoryProvider"/> was never part of
+        /// that isolation and #84 does not attempt to add it.</summary>
         [ContextMenu("Debug: Force InTown")]
         private void DebugForceInTown() => SyncToPhase(RunPhase.InTown);
 

@@ -9788,6 +9788,7 @@ MonoBehaviour:
   scaleFrom: 1
   moveFrom: {x: -640, y: 0}
   context: 2
+  inventoryContext: 3
 --- !u!224 &439793805 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 6869914548936521472, guid: 2287cac91a7c16e479ee377613d24cd7, type: 3}
@@ -31305,6 +31306,7 @@ MonoBehaviour:
   scaleFrom: 1
   moveFrom: {x: -640, y: 0}
   context: 1
+  inventoryContext: 2
 --- !u!1001 &1526114717
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -32121,13 +32123,13 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1561434720}
-  - component: {fileID: 1561434728}
   - component: {fileID: 1561434722}
   - component: {fileID: 1561434721}
   - component: {fileID: 1561434723}
   - component: {fileID: 1561434727}
   - component: {fileID: 1561434726}
   - component: {fileID: 1561434725}
+  - component: {fileID: 1561434728}
   m_Layer: 5
   m_Name: Inventory
   m_TagString: Untagged
@@ -32283,12 +32285,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 1561434719}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1814ee7b30ef16444b80fff87e8b0c62, type: 3}
+  m_Script: {fileID: 11500000, guid: 0194eebc42f431c4f828f607404c5322, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Panels.TestPanel
+  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Components.Panels.SidePanel
   <PanelGroup>k__BackingField: {fileID: 0}
   scaleFrom: 1
   moveFrom: {x: 640, y: 0}
+  context: 0
+  inventoryContext: 1
 --- !u!1 &1563707323
 GameObject:
   m_ObjectHideFlags: 0
