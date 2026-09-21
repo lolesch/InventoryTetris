@@ -1,6 +1,7 @@
 ---
-status: candidate 1 shipped independently (see Status update, 2026-09-21); candidate 2
-  still open and is what /to-tickets should slice
+status: closed without a ticket, 2026-09-21 — candidate 1 shipped independently (its
+  own follow-on regression found and fixed the same day); candidate 2 deferred to #35,
+  which already owns LocalPlayer.PickUpItem. See Status update.
 ---
 
 # The provider seam: stop the Play-mode shutdown resurrection, then hand `LocalPlayer` its containers directly
@@ -29,8 +30,23 @@ Candidate 2 is untouched: `LocalPlayer.PickUpItem` (still in
 `InventoryProvider.Instance.{Equipment,Inventory,Stash}` exactly as described below. The
 rest of this document — Solution item 1, its Implementation Decisions subsection, and
 the shutdown-guard bullet under Testing Decisions — is kept as the historical record of
-what was proposed and is superseded by the note above; **candidate 2 is the only part
-still live and ready for `/to-tickets`.**
+what was proposed and is superseded by the note above.
+
+**Second update, same day: candidate 2 is not ticketed either — closing this spec
+without a `/to-tickets` pass.** `LocalPlayer.PickUpItem` turns out to already be the
+live center of issue #35 ("route item acquisition through one entry point that honours
+auto-equip"), unmerged on `feature/acquisition-entrypoint`. That branch's own open
+review comment asks for the same underlying thing candidate 2 was chasing —
+"`player` required and tests exercise the `PickUpItem` path... give the tests a real
+`LocalPlayer` (or an interface it satisfies)" — via `VendorTransaction.Buy` taking a
+`LocalPlayer`/interface directly rather than the container-injection direction sketched
+below. Publishing a standalone ticket against the same method while that branch is
+unmerged and has its own unresolved coverage-gap criterion would either duplicate or
+collide with it. Whoever closes #35's remaining acceptance criteria is already going to
+be inside `PickUpItem`'s dependencies for the same reason this spec cites; candidate 2
+either falls out of that work or becomes a well-informed follow-up once
+`feature/acquisition-entrypoint`'s shape is settled. Re-open this spec then, if it's
+still a distinct piece of work.
 
 ## Problem Statement
 
