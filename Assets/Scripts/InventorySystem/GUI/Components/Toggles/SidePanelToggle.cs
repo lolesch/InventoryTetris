@@ -8,23 +8,24 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
 {
     /// <summary>
     /// A Town Stop's panel toggle, and the Hero Panel's own toggle (#82's reuse): a hotkey, a
-    /// panel to ask and nothing else. <see cref="PanelToggle"/> stays the base for the
-    /// <c>panel</c> reference itself - the serialized field every scene's wiring lives on, which
-    /// is also what <see cref="SyncToContext"/> reads the panel's context from - and not for the
-    /// fade, which is overridden away.
+    /// typed panel reference and nothing else. It derives <see cref="AbstractToggle"/> rather than
+    /// the <see cref="PanelToggle"/> that would fade the panel: the panel derives its own
+    /// visibility now, so inheriting the fade only to override it away would leave that base
+    /// class's <c>invert</c> on the component meaning nothing, and one more way to author a toggle
+    /// that disagrees with its own panel.
     ///
     /// <para><b>Input, not content (issue #85).</b> This toggle answers exactly one question -
     /// "is this button pressed" - which its <see cref="RadioGroup"/> keeps exclusive for the Town
     /// Stops. It does not decide whether the panel is up: the panel subscribes to the Inventory
-    /// Context and derives its own visibility (<see cref="SidePanel"/>), and this class overrides
-    /// <see cref="OnToggle"/> to drop the fade its <see cref="PanelToggle"/> base would otherwise
-    /// run from there. The minimap's Town Stops being non-interactable during a Run is the same
-    /// split from the other side - the input-side expression of a fact the context is the
-    /// authority for.</para>
+    /// Context and derives its own visibility (<see cref="SidePanel"/>), which is why
+    /// <see cref="OnToggle"/> is empty - the hook a <see cref="PanelToggle"/> would have faded the
+    /// panel from is simply not this class's job. The minimap's Town Stops being non-interactable
+    /// during a Run is the same split from the other side - the input-side expression of a fact
+    /// the context is the authority for.</para>
     ///
     /// <para><b>The pressed visual resyncs from the context, not from the group it no longer
     /// shares an authority with.</b> <see cref="SyncToContext"/> sets this toggle's own state from
-    /// the same derivation the panel uses, so the pressed visual stays truthful after a
+    /// the panel's own <see cref="SidePanel.IsUpIn"/>, so the pressed visual stays truthful after a
     /// phase-driven close and after a click alike - including the Hero Panel's toggle, which
     /// belongs to no group and would otherwise look up while its panel is up.</para>
     ///
@@ -41,17 +42,16 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
     /// toggle makes, with no intermediate close. The request goes through the panel
     /// (<see cref="SidePanel.RequestContext"/>), not straight to the provider - the toggle still
     /// carries no context of its own, only which panel to ask.</para>
-    ///
-    /// <para><b>Assumes <c>invert</c> is off.</b> <see cref="PanelToggle"/>'s <c>invert</c> field
-    /// is private to that base class, so this class cannot read it to correct for it:
-    /// <see cref="RequestAndToggle"/> requests <paramref name="turningOn"/> as given, matching the
-    /// panel's own show/hide direction only when this toggle is not inverted. A Town Stop or Hero
-    /// Panel toggle must not set <c>invert</c> while its panel carries an
-    /// <see cref="InventoryContext"/> role.</para>
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class SidePanelToggle : PanelToggle
+    public sealed class SidePanelToggle : AbstractToggle
     {
+        [Tooltip("The SidePanel this toggle drives: requested on click/hotkey, and the panel " +
+                 "whose own visibility answer this toggle's pressed visual resyncs from. The " +
+                 "type is the field's contract - a toggle wired to anything else cannot be " +
+                 "authored.")]
+        [SerializeField] private SidePanel panel;
+
         [Tooltip("Optional hotkey. Inert whenever the toggle is non-interactable - which the " +
                  "minimap already arranges for the Field face and for InField.")]
         [SerializeField] private KeyCode hotkey = KeyCode.None;
@@ -59,8 +59,8 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         protected override void OnClick() => RequestAndToggle(!IsOn);
 
         /// <summary>
-        /// Emptied deliberately. <see cref="PanelToggle"/> fades its panel from exactly here, and
-        /// the panel now derives its own visibility from the Inventory Context (issue #85) - so
+        /// Empty deliberately. A <see cref="PanelToggle"/> fades its panel from exactly here, and
+        /// the panel derives its own visibility from the Inventory Context instead (issue #85) -
         /// fading it from the toggle as well would be a second layer deciding one fact, the bug
         /// class this rework removes. What <see cref="AbstractToggle.ToggleState"/> does around
         /// this call - the radio group's state and this toggle's own pressed visual - is untouched.
@@ -119,10 +119,9 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
 
         /// <summary>
         /// Brings this toggle's pressed state back in line with the Inventory Context: on exactly
-        /// when the active context derives the panel this toggle drives, off otherwise. The
-        /// derivation is the panel's own (<see cref="InventoryContextState.PanelsFor"/> against
-        /// <see cref="InventoryContextState.PanelFor"/> of its authored context), so the visual
-        /// and the visibility cannot disagree by construction.
+        /// when the panel this toggle drives is up in it, off otherwise - the panel's own
+        /// <see cref="SidePanel.IsUpIn"/>, asked rather than recomputed, so the visual and the
+        /// visibility cannot disagree by construction.
         ///
         /// <para>Applied through <see cref="AbstractToggle.SetToggle"/>, which keeps the
         /// <see cref="RadioGroup"/>'s own <c>ActiveMember</c> in step for a grouped Town Stop and
@@ -133,14 +132,10 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         /// </summary>
         private void SyncToContext(InventoryContext context)
         {
-            if (panel is not SidePanel sidePanel)
+            if (panel == null)
                 return;
 
-            var mine = InventoryContextState.PanelFor(sidePanel.InventoryContext);
-            if (mine == InventoryPanels.None)
-                return;
-
-            var shouldBeOn = (InventoryContextState.PanelsFor(context) & mine) != InventoryPanels.None;
+            var shouldBeOn = panel.IsUpIn(context);
             if (IsOn != shouldBeOn)
                 SetToggle(shouldBeOn);
         }
@@ -162,8 +157,8 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
             if (WouldToggleNoOp(turningOn))
                 return;
 
-            if (panel is SidePanel sidePanel)
-                sidePanel.RequestContext(turningOn);
+            if (panel != null)
+                panel.RequestContext(turningOn);
 
             SetToggle(turningOn);
         }
@@ -182,19 +177,19 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         /// <summary>
         /// The authored-data check <see cref="SidePanel"/>'s own <c>OnValidate</c> cannot make
         /// from its side: <see cref="RequestAndToggle"/> and <see cref="SyncToContext"/> both
-        /// silently skip a panel that is not a <see cref="SidePanel"/> - the panel still fades
-        /// with the context, so nothing looks wrong in Play mode, and this toggle just never
-        /// requests or tracks anything.
+        /// no-op on a toggle that drives no panel - it still presses and unpresses, so nothing
+        /// looks wrong in Play mode, and it just never requests or tracks an Inventory Context.
+        /// That the panel is a <see cref="SidePanel"/> at all is the field's own type now, so
+        /// only its absence is left for authored data to get wrong.
         /// </summary>
         protected override void OnValidate()
         {
             base.OnValidate();
 
-            if (panel != null && panel is not SidePanel)
-                Debug.LogWarning($"{name}: SidePanelToggle's panel is a {panel.GetType().Name}, " +
-                                 "not a SidePanel - it will never request the Inventory Context " +
-                                 "and its pressed visual will not track one (issues #84, #85).",
-                                 gameObject);
+            if (panel == null)
+                Debug.LogWarning($"{name}: SidePanelToggle drives no panel - it will never " +
+                                 "request the Inventory Context and its pressed visual cannot " +
+                                 "track one (issues #84, #85).", gameObject);
         }
 #endif // UNITY_EDITOR
     }

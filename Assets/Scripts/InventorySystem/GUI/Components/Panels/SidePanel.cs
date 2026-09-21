@@ -42,13 +42,19 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
         [SerializeField] private InventoryContext inventoryContext = InventoryContext.None;
 
         /// <summary>
-        /// The context this panel was authored with - <see cref="InventoryContext.Hero"/> for the
-        /// Hero Panel. Read by
-        /// <see cref="ToolSmiths.InventorySystem.GUI.Components.Toggles.SidePanelToggle"/> so its
-        /// pressed visual resyncs from the same fact this panel derives its visibility from,
-        /// rather than from the radio group it no longer shares an authority with.
+        /// Whether this panel is up in <paramref name="context"/>: <see cref="InventoryContextState.PanelsFor"/>
+        /// against the one panel this component owns, <see cref="InventoryContextState.PanelFor"/>
+        /// of its authored <see cref="inventoryContext"/>. The one statement of the derivation,
+        /// which <see cref="ToolSmiths.InventorySystem.GUI.Components.Toggles.SidePanelToggle"/>
+        /// asks rather than recomputing - it needs the same answer for its own pressed visual and
+        /// has no business knowing how the answer is reached.
+        ///
+        /// <para>Also false for a panel authored with no context, which owns no panel bit and can
+        /// therefore never be derived by anything.</para>
         /// </summary>
-        public InventoryContext InventoryContext => inventoryContext;
+        public bool IsUpIn(InventoryContext context) =>
+            (InventoryContextState.PanelsFor(context) & InventoryContextState.PanelFor(inventoryContext))
+            != InventoryPanels.None;
 
         /// <summary>
         /// The visibility the last context application settled on. Tracked so a context that
@@ -94,19 +100,16 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
         private void OnContextChanged(InventoryContext context) => ApplyContext(context);
 
         /// <summary>
-        /// Shows or hides this panel for one context by asking whether that context derives the
-        /// panel this component owns - <see cref="InventoryContextState.PanelsFor"/> intersected
-        /// with <see cref="InventoryContextState.PanelFor"/> of its own authored
-        /// <see cref="inventoryContext"/>. A panel authored with no context owns no panel bit and
-        /// is left exactly as the scene has it.
+        /// Shows or hides this panel for one context, from <see cref="IsUpIn"/>. A panel authored
+        /// with no context at all is left exactly as the scene has it: it has no role to derive
+        /// and <see cref="OnValidate"/> is what complains about that, not this.
         /// </summary>
         private void ApplyContext(InventoryContext context)
         {
-            var mine = InventoryContextState.PanelFor(inventoryContext);
-            if (mine == InventoryPanels.None)
+            if (InventoryContextState.PanelFor(inventoryContext) == InventoryPanels.None)
                 return;
 
-            var shouldShow = (InventoryContextState.PanelsFor(context) & mine) != InventoryPanels.None;
+            var shouldShow = IsUpIn(context);
             if (shown == shouldShow)
                 return;
 
