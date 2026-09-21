@@ -70,6 +70,44 @@ call one method on it — reflection inside a *compiled* file runs fine.
 committing. Delete any `TestRunnerApi` bridge / scratch runner script before committing
 (it has happened twice — a "Do NOT commit" header is not enough).
 
+## Scene authoring and verification on a worktree
+
+The `unity-mcp` bridge only serves the Editor's own project path, which reads as "a change
+needing both scene authoring and a compile/test gate has to happen in the primary checkout".
+It doesn't — **batch mode works on a worktree while the Editor holds the primary project
+open**: different project path, different `Library/`, no lock conflict, and a second Editor
+instance beside this project's Personal license is fine (verified 2026-09-21).
+
+1. `git worktree add <path> -b <branch> <base>`, then
+   `git submodule update --init Assets/Submodules/Utility`. A fresh worktree's submodule
+   folder is **empty**, and nothing compiles without it.
+2. Author the scene from a `public static void Run()` in a script under `Assets/Editor/`
+   (that folder lands in `Assembly-CSharp-Editor`, which sees `Assembly-CSharp`), driven with
+   `-executeMethod <Class>.Run`. `EditorSceneManager.OpenScene` the scene, edit components and
+   `SerializedObject` fields, then `MarkSceneDirty` + `SaveScene`.
+   To change a component's *class*, destroy it and `AddComponent` the replacement: the
+   serialized values are lost, so read them from a `SerializedObject` first and re-apply them.
+   Destroying a component also nulls every reference to it (the `PanelGroup` case, #85), so
+   dangling `fileID` slots are less of a hazard than they look — but confirm, because a missing
+   reference is silent.
+3. Verify inside the same run: dump the wiring the change depends on before
+   `EditorApplication.Exit(0)`. A multi-line `Debug.Log` report lands intact in `-logFile`.
+4. `-runTests -testPlatform EditMode` for the suite. Neither step needs the scene open.
+
+**The first run on a new worktree pays a full asset import** (several minutes, mostly
+textures) and builds its own `Library/`; later runs are a compile plus the tests, ~90 s.
+**`-executeMethod` aborts before running when the project has any `error CS`**, so the first
+run doubles as a compile gate — grep the log for `error CS` and for `Aborting batchmode`.
+**Delete the `-executeMethod` script and its `.meta` before committing**, same rule as the
+bridge scratch runners above.
+
+**The Editor beats you to it.** Opening a worktree in the Editor (a human does this to smoke
+a change) takes the project lock and every later `-runTests` there aborts in under a second
+with only `Exiting without the bug reporter` and no import in the log — which reads like a
+broken Unity, not like a lock. `tasklist //FI "IMAGENAME eq Unity.exe"` plus the process
+command lines show which project each instance holds. Fall back to the shadow copy above
+rather than deleting `Temp/UnityLockfile`.
+
 ## Driving Play Mode to verify UI wiring by hand
 
 `Unity_ManageEditor Play` enters Play Mode; then `Unity_RunCommand` a harness method (see
