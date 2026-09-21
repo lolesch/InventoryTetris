@@ -148,6 +148,21 @@ the scratch-harness pattern above) and read the results it logs.
 
 ## Enter Play Mode Settings — domain/scene reload disabled
 
+**Consequence for subscriptions, and it cost a session on 2026-09-21.** With both reloads
+disabled, a **scene object survives a Play session**: exiting Play calls `OnDisable` on it,
+but re-entering Play does **not** call `Awake` again — only `OnEnable`. So a component that
+subscribes to an event in `Awake` and unsubscribes in `OnDisable` is **permanently
+unsubscribed from the second Play entry onward**, silently, for the rest of the Editor
+session. Subscribe in `OnEnable` (and `OnDisable` to release), or the unsubscribe outlives
+the subscribe.
+
+The symptom is nasty because it is half-working: a sibling that subscribes in `OnEnable`
+keeps reacting, so the *system* looks alive while this one component quietly stops. In #85 it
+read as "the panels moved but the toggle stayed pressed" — which looks like a logic bug in the
+toggle/context handshake, not like a lifecycle bug. Guard `OnEnable` with `override` when the
+base chain owns it (`Selectable` does); declaring a same-named method instead hides the
+base's rather than running beside it.
+
 `ProjectSettings/EditorSettings.asset` now has `m_EnterPlayModeOptionsEnabled: 1` /
 `m_EnterPlayModeOptions: 3` (both `DisableDomainReload` and `DisableSceneReload`) —
 applied 2026-09-18, verified live via the bridge
