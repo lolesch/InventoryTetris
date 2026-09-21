@@ -86,14 +86,44 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         }
 
         /// <summary>
-        /// Subscribed in <see cref="Awake"/> rather than <c>OnEnable</c>: the
-        /// <see cref="UnityEngine.UI.Selectable"/> this derives from already owns
-        /// <c>OnEnable</c>, and a same-named method here would hide it rather than run beside it.
+        /// Subscribed here rather than in <see cref="Awake"/>: this project disables both domain
+        /// and scene reload (see <c>EditorSettings.enterPlayModeOptions</c>), so a scene object
+        /// survives a Play session and <b>an <c>Awake</c> subscription never comes back</b> after
+        /// <see cref="OnDisable"/> has torn it down on the way out of the first Play entry — the
+        /// toggle then presses and unpresses while the context it should have requested is never
+        /// touched. <c>OnEnable</c> is the edge that re-runs per entry, and
+        /// <see cref="Resubscribe"/> is idempotent so nothing stacks.
+        ///
+        /// <para>Overridden rather than declared: this class derives
+        /// <see cref="UnityEngine.UI.Selectable"/>, which owns <c>OnEnable</c>, and a same-named
+        /// method that did not chain to it would silently break the button's own state setup.</para>
         /// </summary>
-        protected override void Awake()
+        protected override void OnEnable()
         {
-            base.Awake();
+            base.OnEnable();
 
+            Resubscribe();
+        }
+
+        protected override void OnDisable()
+        {
+            base.OnDisable();
+
+            if (Application.isPlaying && InventoryProvider.Instance != null)
+                InventoryProvider.Instance.OnContextChanged -= OnContextChanged;
+        }
+
+        /// <summary>
+        /// Attaches to the context and brings the pressed state in line with it, in one place so
+        /// the two cannot be reached by different routes. Detach-before-attach, so a re-enable
+        /// cannot stack a second subscription (cf. da14ce2).
+        ///
+        /// <para>The <see cref="InventoryProvider"/> guard is the one failure this class has to
+        /// tolerate quietly: there is no context to track and no provider to ask, and the toggles
+        /// stay unsubscribed and inert until the next enable.</para>
+        /// </summary>
+        private void Resubscribe()
+        {
             if (!Application.isPlaying)
                 return;
 
@@ -105,14 +135,6 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
             provider.OnContextChanged += OnContextChanged;
 
             SyncToContext(provider.ActiveContext);
-        }
-
-        protected override void OnDisable()
-        {
-            base.OnDisable();
-
-            if (Application.isPlaying && InventoryProvider.Instance != null)
-                InventoryProvider.Instance.OnContextChanged -= OnContextChanged;
         }
 
         private void OnContextChanged(InventoryContext context) => SyncToContext(context);
@@ -142,23 +164,23 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
 
         /// <summary>
         /// Requests the Inventory Context this toggle's panel represents, then applies the
-        /// toggle state exactly as <see cref="AbstractToggle.SetToggle"/> always has.
+        /// toggle state exactly as <see cref="AbstractToggle.SetToggle"/> always has - but only
+        /// when the request was actually made (<see cref="SidePanel.RequestContext"/>'s result).
+        /// A toggle that moved while its request silently did not would press for a context
+        /// nothing set, which is how a stuck button and a lying minimap start.
         ///
-        /// <para><see cref="WouldToggleNoOp"/> guards the request the same way
-        /// <see cref="AbstractToggle.SetToggle"/> guards itself: <c>OnClick</c> has no other veto
-        /// before reaching here, so without this check a click on a toggle
-        /// <see cref="AbstractToggle.SetToggle"/> is about to refuse to turn off would still close
-        /// the Inventory Context while the panel stays visibly open - the request and the toggle
-        /// state would disagree, and <see cref="SyncToContext"/> could not heal the gap, because
-        /// the refusal it would hit lives in <c>SetToggle</c> too.</para>
+        /// <para><see cref="WouldToggleNoOp"/> guards the other direction, and for the same
+        /// reason: <c>OnClick</c> has no other veto before reaching here, so without it a click on
+        /// a toggle <see cref="AbstractToggle.SetToggle"/> is about to refuse to turn off would
+        /// still close the Inventory Context while the panel stays visibly open.</para>
         /// </summary>
         private void RequestAndToggle(bool turningOn)
         {
             if (WouldToggleNoOp(turningOn))
                 return;
 
-            if (panel != null)
-                panel.RequestContext(turningOn);
+            if (panel == null || !panel.RequestContext(turningOn))
+                return;
 
             SetToggle(turningOn);
         }

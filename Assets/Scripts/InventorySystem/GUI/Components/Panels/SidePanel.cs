@@ -123,19 +123,28 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
         /// A no-op while <see cref="inventoryContext"/> is <see cref="InventoryContext.None"/>:
         /// a panel with no role must not touch the context at all, not even to close it.
         /// </summary>
-        public void RequestContext(bool open)
+        /// <returns>
+        /// <c>true</c> when the request actually reached the provider. The caller gates its own
+        /// toggle state on this, so a request that could not be made - no provider, no authored
+        /// context, not playing - leaves the button where it was instead of flipping it into a
+        /// state the context knows nothing about. That divergence is the whole bug class here:
+        /// a pressed toggle and an open panel are one fact and must not be able to disagree.
+        /// </returns>
+        public bool RequestContext(bool open)
         {
             if (!Application.isPlaying || inventoryContext == InventoryContext.None)
-                return;
+                return false;
 
             var provider = InventoryProvider.Instance;
             if (provider == null)
-                return;
+                return false;
 
             if (open)
                 provider.SetContext(inventoryContext);
             else
                 provider.CloseContext();
+
+            return true;
         }
 
 #if UNITY_EDITOR
