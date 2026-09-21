@@ -44,7 +44,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             var destination = basket.Container;
             var dimensions = ItemView.Of(stored.Item).Dimensions;
 
-            if (!TryFindFreeCell(destination, dimensions, out var at))
+            if (!destination.TryFindEmptyCell(dimensions, out var at))
                 return false;
 
             using var transaction = new ItemTransaction(source, destination);
@@ -60,24 +60,6 @@ namespace ToolSmiths.InventorySystem.Inventories
             transaction.Commit();
             basket.Origins[at] = new PackageOrigin(source, sourceCell);
             return true;
-        }
-
-        /// <summary>The first cell the item's footprint fits without displacing anything -
-        /// the same scan the container's own <c>TryAddAtEmpty</c> does, but reported so the
-        /// origin ledger can be keyed by the landing cell.</summary>
-        private static bool TryFindFreeCell(AbstractDimensionalContainer container, Vector2Int dimensions,
-            out Vector2Int at)
-        {
-            for (var x = 0; x < container.Dimensions.x; x++)
-                for (var y = 0; y < container.Dimensions.y; y++)
-                    if (container.IsEmptySpace(new(x, y), dimensions, out _))
-                    {
-                        at = new Vector2Int(x, y);
-                        return true;
-                    }
-
-            at = default;
-            return false;
         }
     }
 }

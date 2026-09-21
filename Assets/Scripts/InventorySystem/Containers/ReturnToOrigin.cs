@@ -43,19 +43,19 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             using var transaction = new ItemTransaction(origin, backpack);
 
-            if (origin != null && origin.CanReturnTo(originPosition, package.Item))
+            if (origin != null)
             {
-                var remainder = origin.AddAtPosition(originPosition, package);
+                var toOrigin = package;
 
-                // CanReturnTo already guaranteed a free, in-bounds, correctly-shaped cell, so
-                // this always places the whole Package; the check is belt-and-braces - a
-                // partial placement here rolls back rather than risk double-counting the rest
-                // into the backpack below.
-                if (remainder.IsValid)
-                    return package;
-
-                transaction.Commit();
-                return default;
+                // TryAddAtPosition's own CanReturnTo check already guarantees a free, in-bounds,
+                // correctly-shaped cell, so this always places the whole Package - a partial
+                // placement rolls back rather than risk double-counting the rest into the
+                // backpack below.
+                if (origin.TryAddAtPosition(originPosition, ref toOrigin))
+                {
+                    transaction.Commit();
+                    return default;
+                }
             }
 
             var toBackpack = package;

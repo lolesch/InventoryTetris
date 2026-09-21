@@ -149,6 +149,27 @@ lives in `Assets/Submodules/Utility/Editor/ProviderQuittingResetGuard.cs`, not i
 Verified live via the bridge: `SimulationProvider.Instance` was `null` on a second Play
 entry before the fix, resolves correctly after.
 
+**That fix regressed silently, 2026-09-21.** `_isQuitting` no longer lives on
+`AbstractProvider<T>` — commit `3010155` (submodule) split the class into
+`AbstractSceneSingleton<T>` (scan/create/disable-duplicates, now the field's actual
+declaring type, `Provider/AbstractSceneSingleton.cs`) and a thinner `AbstractProvider<T>`
+(adds the `DontDestroyOnLoad` promise on top). `ProviderQuittingResetGuard` was never
+updated: it still walked the hierarchy for a closed `AbstractProvider<T>` and called
+`GetField("_isQuitting", ...)` on *that* type — but a private field declared on a base
+type is never visible through `GetField` on a derived type (`FlattenHierarchy` only
+surfaces inherited public/protected static members, never private ones), so the call
+silently returned `null` and the reset stopped firing for every `AbstractProvider<T>`
+consumer. It also never reached `DragProvider`/`PreviewProvider` at all, which the same
+split moved onto `AbstractSceneSingleton<T>` directly (no longer `DontDestroyOnLoad` —
+they're nested under the root canvas). Fixed by retargeting the walk at the closed
+`AbstractSceneSingleton<T>` instead — the common base for both the `AbstractProvider<T>`
+subtree and any direct `AbstractSceneSingleton<T>` consumer, and the type that actually
+declares the field. **Lesson for next time:** a reflection-based guard that hardcodes a
+type name silently stops working when that name's hierarchy changes — grep for the
+guarded field name after any refactor that moves fields between base classes, since nothing
+here would compile-fail. No automated test covers this guard (see the Tests section) —
+compiled clean via the bridge, not re-verified live in Play Mode this round.
+
 ## `com.unity.ai.assistant` version — pin history and upgrade path
 
 This package backs the `unity-mcp` bridge (`Unity_RunCommand`, `Unity_GetConsoleLogs`,

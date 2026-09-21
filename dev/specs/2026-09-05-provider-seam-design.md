@@ -1,9 +1,52 @@
 ---
-status: draft — spec for candidates 1 and 2 of the 2026-09-05 AbstractProvider
-  architecture review; not yet sliced with /to-tickets
+status: closed without a ticket, 2026-09-21 — candidate 1 shipped independently (its
+  own follow-on regression found and fixed the same day); candidate 2 deferred to #35,
+  which already owns LocalPlayer.PickUpItem. See Status update.
 ---
 
 # The provider seam: stop the Play-mode shutdown resurrection, then hand `LocalPlayer` its containers directly
+
+## Status update — 2026-09-21
+
+Candidate 1 shipped on its own, unrelated to this spec, as part of a larger move of
+`AbstractProvider<T>` into the shared `Utility` submodule (`fde73df`,
+`4347a13`) so InventoryTetris and AutoBattler consume the same singleton base. That move
+split the class into `AbstractSceneSingleton<T>` (scan/create/disable-duplicates — the
+generic scene-singleton contract) and `AbstractProvider<T>` (adds the
+`DontDestroyOnLoad` promise, now enforced at edit time via `OnValidate` erroring on a
+non-root object). The shutdown guard landed as part of that split
+(`Utility` submodule commit `3010155`): a `_isQuitting` flag set in
+`OnApplicationQuit()`, checked first in `Instance`'s getter, which returns the existing
+(possibly already-destroyed) reference without attempting `CreateNewInstance()` — the
+same fix this spec's Implementation Decisions describes below, shipped with a cleaner
+seam (a base-class split) than the bolted-on internal hook this spec proposed. No
+automated test covers it (`Utility/Tests/EditMode/ProviderTests.cs` doesn't touch
+`OnApplicationQuit`/`_isQuitting`) — that gap is still real and is folded into
+[Out of Scope](#out-of-scope) rather than re-litigated here.
+
+Candidate 2 is untouched: `LocalPlayer.PickUpItem` (still in
+`Assets/Scripts/InventorySystem/Runtime/Character/LocalPlayer.cs`, still
+`Assembly-CSharp`, not moved by the submodule refactor) reaches
+`InventoryProvider.Instance.{Equipment,Inventory,Stash}` exactly as described below. The
+rest of this document — Solution item 1, its Implementation Decisions subsection, and
+the shutdown-guard bullet under Testing Decisions — is kept as the historical record of
+what was proposed and is superseded by the note above.
+
+**Second update, same day: candidate 2 is not ticketed either — closing this spec
+without a `/to-tickets` pass.** `LocalPlayer.PickUpItem` turns out to already be the
+live center of issue #35 ("route item acquisition through one entry point that honours
+auto-equip"), unmerged on `feature/acquisition-entrypoint`. That branch's own open
+review comment asks for the same underlying thing candidate 2 was chasing —
+"`player` required and tests exercise the `PickUpItem` path... give the tests a real
+`LocalPlayer` (or an interface it satisfies)" — via `VendorTransaction.Buy` taking a
+`LocalPlayer`/interface directly rather than the container-injection direction sketched
+below. Publishing a standalone ticket against the same method while that branch is
+unmerged and has its own unresolved coverage-gap criterion would either duplicate or
+collide with it. Whoever closes #35's remaining acceptance criteria is already going to
+be inside `PickUpItem`'s dependencies for the same reason this spec cites; candidate 2
+either falls out of that work or becomes a well-informed follow-up once
+`feature/acquisition-entrypoint`'s shape is settled. Re-open this spec then, if it's
+still a distinct piece of work.
 
 ## Problem Statement
 
@@ -32,11 +75,9 @@ cannot be unit-tested as a result.
 
 Two independent changes, from the 2026-09-05 architecture review's candidates 1 and 2:
 
-1. **Guard `AbstractProvider<T>.Instance` against Play-mode teardown.** Latch a static
-   flag off `Application.quitting` (which Unity fires both on a real quit and on
-   stopping Play mode in the Editor) and have `Instance` skip
-   `CreateNewInstance()`/`DontDestroyOnLoad` once it is set, logging once instead of
-   spawning a replacement.
+1. ~~**Guard `AbstractProvider<T>.Instance` against Play-mode teardown.**~~ **Shipped
+   independently — see [Status update](#status-update--2026-09-21).** Kept below as the
+   historical record of what was proposed.
 
 2. **Hand `LocalPlayer` its containers instead of letting it reach for them.**
    `InventoryProvider.Awake()` already constructs `Equipment`, `Inventory`, `Stash` and
@@ -50,6 +91,9 @@ This is deliberately the narrow slice, not the full sweep. It does not retire
 [Further Notes](#further-notes).
 
 ## User Stories
+
+Stories 1–5 and 12 describe candidate 1 and are already satisfied (see Status update).
+The rest describe candidate 2, which is still open.
 
 1. As a player, I never want a stray `GameObject` to appear, or an error to log, in the
    moment I stop a Play session.
@@ -87,7 +131,7 @@ This is deliberately the narrow slice, not the full sweep. It does not retire
 
 ## Implementation Decisions
 
-### Guard `AbstractProvider<T>` against Play-mode teardown
+### Guard `AbstractProvider<T>` against Play-mode teardown — shipped, historical record only
 
 - A static `isQuitting` flag on `AbstractProvider<T>`, set by subscribing to
   `Application.quitting` once per closed generic type (guarded against a double
@@ -130,17 +174,15 @@ A good test here pins observable behaviour through the interface, never internal
 state — the same discipline `MutableFloatTests`/`ContainerTestFixtures` already follow
 in this codebase.
 
-- **Shutdown guard.** A new EditMode test under an `Editor/`-folder seam (compiling into
-  `Assembly-CSharp-Editor`, reusing issue #4's proven "reach `Assembly-CSharp` types
-  with zero extraction" finding — no new asmdef needed while `AbstractProvider<T>`
-  stays where it is). The test creates a real `GameObject` with a throwaway provider
-  subclass, reads `Instance` once to force creation, sets the internal quitting hook,
-  destroys the backing `GameObject` to reproduce Unity's fake-null, then asserts a
-  second `Instance` read does **not** create a new `GameObject` (object count in the
-  scene is unchanged) and logs instead. The `Application.quitting` subscription itself
-  and the "stop Play mode, confirm nothing leaks" check stay a manual Editor
-  verification — `AbstractProvider<T>` is scene-bound lifecycle code, the same category
-  ADR-0007 already exempts `AbstractPanel`/`AbstractButton` from unit coverage for.
+- **Shutdown guard — moot, shipped elsewhere.** The seam sketch below (an `Editor/`-folder
+  test reusing issue #4's `Assembly-CSharp-Editor` finding) was written before the fix
+  moved into the `Utility` submodule. It no longer applies as written — `AbstractProvider<T>`
+  isn't in `Assembly-CSharp` any more — and the shipped fix still has no automated test
+  (`ProviderTests.cs` doesn't cover `OnApplicationQuit`). If that gap gets closed, it
+  belongs in the `Utility` submodule's own EditMode suite, not here. Original sketch,
+  kept for the record: a real `GameObject` with a throwaway provider subclass, force
+  `Instance` once, set the quitting flag, destroy the backing `GameObject`, assert a
+  second `Instance` read creates nothing new.
 - **`LocalPlayer.PickUpItem`.** A new EditMode test, same seam as above (`LocalPlayer`
   is also `Assembly-CSharp`), constructs real `CharacterInventory`/`CharacterEquipment`
   instances (no scene needed for them — they are plain C# types), calls the new setter
@@ -169,7 +211,13 @@ in this codebase.
   same shape of change as this slice but is a separate step — see Further Notes.
 - **Candidate 3 from the architecture review** — splitting `AbstractProvider<T>`'s six
   fused responsibilities (scan/create/name/`DontDestroyOnLoad`/disable-duplicates/warn)
-  behind an internal seam. Speculative, not requested for this spec.
+  behind an internal seam. Speculative, not requested for this spec — and largely
+  overtaken by the same submodule move noted in the Status update, which split the
+  class into `AbstractSceneSingleton<T>` + `AbstractProvider<T>` for unrelated reasons
+  (sharing the base with AutoBattler). Re-reading that split against candidate 3's
+  framing, if anyone wants to close the loop, is optional.
+- **A test for the shutdown guard.** It shipped without one (see Status update); adding
+  it is a small, separate follow-up in the `Utility` submodule, not this spec.
 - **Any gameplay behaviour change.** Both changes are structural; pickup placement
   rules and shutdown-time behaviour while actually playing are unchanged.
 
@@ -195,12 +243,16 @@ lookups everywhere at once. Either way, `Instance`'s main remaining job today �
 sidestepping Unity's otherwise-nondeterministic `Awake` ordering between sibling
 top-level `MonoBehaviour`s — needs a replacement before the locator itself can go.
 
-### Candidate 1 does not wait on candidate 2
+### Candidate 1 shipped independently — the prediction that mattered
 
-The shutdown guard is useful regardless of how far the injection sweep ever goes: five
-providers and well over a hundred call sites will keep depending on `Instance`'s
-lazy-create behaviour long after this slice lands, and every one of them is exposed to
-the resurrection bug today. Ship it independently.
+This spec argued candidate 1 shouldn't wait on candidate 2, since five providers and
+well over a hundred call sites would keep depending on `Instance`'s lazy-create
+behaviour regardless of how far the injection sweep went. That's exactly what happened,
+just not through this spec — it landed as a side effect of moving `AbstractProvider<T>`
+into the `Utility` submodule for a different reason (sharing the base with AutoBattler).
+The lesson generalises: a fix scoped to "one class, no behaviour change while playing"
+doesn't need this spec's blessing to ship: it shipped opportunistically while touching
+the class for something else.
 
 ### Why `LocalPlayer` first
 

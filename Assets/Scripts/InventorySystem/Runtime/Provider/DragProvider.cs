@@ -11,9 +11,17 @@ using UnityEngine.UI;
 
 namespace ToolSmiths.InventorySystem.Runtime.Provider
 {
+    /// <summary>
+    /// An <see cref="AbstractSceneSingleton{T}"/>, not a full <see cref="AbstractProvider{T}"/>:
+    /// the drag display must stay nested under the HUD Canvas to render at all
+    /// (<see cref="RequireComponent"/> RectTransform), but a provider's persistence promise
+    /// reparents a found instance to scene root to qualify for <c>DontDestroyOnLoad</c> -
+    /// which would silently pull this out from under the Canvas. This project has exactly one
+    /// scene, so there is nothing to survive a load for anyway.
+    /// </summary>
     [System.Serializable]
     [RequireComponent(typeof(RectTransform))]
-    internal sealed class DragProvider : AbstractProvider<DragProvider>, ICursorSink
+    internal sealed class DragProvider : AbstractSceneSingleton<DragProvider>, ICursorSink
     {
         public bool IsDragging => itemDisplay.gameObject.activeSelf;
 
@@ -56,7 +64,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         /// which stays "where this drag interaction started" for the re-home-through target
         /// the slot displays read off it.
         /// </summary>
-        private PackageOrigin returnOrigin;
+        public PackageOrigin ReturnOrigin { get; private set; }
 
         private float frameAlpha = 1f;
 
@@ -89,6 +97,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         /// </summary>
         private void OnEnable()
         {
+            // Reading a provider's Instance outside Play mode can create one (issue #46) -
+            // this component lives in the scene and enables at edit time too (opening the
+            // scene, a domain reload), where InventoryProvider may not exist yet.
+            if (!Application.isPlaying)
+                return;
+
             var provider = InventoryProvider.Instance;
 
             provider.OnSidePanelChanged -= OnSidePanelChanged;
@@ -97,7 +111,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
         private void OnDisable()
         {
-            if (InventoryProvider.Instance != null)
+            if (Application.isPlaying && InventoryProvider.Instance != null)
                 InventoryProvider.Instance.OnSidePanelChanged -= OnSidePanelChanged;
         }
 
@@ -190,7 +204,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             PositionOffset = positionOffset;
             PurchasePrice = purchasePrice;
 
-            returnOrigin = slot != null ? new PackageOrigin(slot.Container, slot.Position - positionOffset) : default;
+            ReturnOrigin = slot != null ? new PackageOrigin(slot.Container, slot.Position - positionOffset) : default;
 
             if (!DraggingPackage.IsValid)
             {
@@ -242,7 +256,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             PositionOffset = Vector2Int.zero;
             PurchasePrice = null; // a displaced player item came to the hand, not a shelf purchase
 
-            returnOrigin = from;
+            ReturnOrigin = from;
 
             var dimensions = ItemView.Of(package.Item).Dimensions;
 
@@ -264,7 +278,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             PositionOffset = Vector2Int.zero;
             PurchasePrice = null;
 
-            returnOrigin = default;
+            ReturnOrigin = default;
 
             itemDisplay.gameObject.SetActive(false);
         }
@@ -302,7 +316,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         /// during a drag as a drop attempt (<see cref="AbstractSlotDisplay.OnPointerClick"/>),
         /// so reusing right-click here would race that path instead of replacing it.
         ///
-        /// <para>The origin tracked for this is <c>returnOrigin</c>,
+        /// <para>The origin tracked for this is <see cref="ReturnOrigin"/>,
         /// not <see cref="Origin"/>/<see cref="PositionOffset"/>: a mid-drag swap that hands a
         /// different Package to the cursor (<see cref="ReplacePackage"/>) updates those to the
         /// swapped-out Package's real container and cell, so a cancel right after a swap
@@ -319,7 +333,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
             var backpack = InventoryProvider.Instance.Inventory;
 
-            var leftOnCursor = ReturnToOrigin.Return(DraggingPackage, returnOrigin.Container, returnOrigin.Cell, backpack);
+            var leftOnCursor = ReturnToOrigin.Return(DraggingPackage, ReturnOrigin.Container, ReturnOrigin.Cell, backpack);
 
             if (leftOnCursor.IsValid)
                 return false;

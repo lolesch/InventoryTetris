@@ -27,13 +27,15 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         private const string ArrowId = "test.arrow";
         private const string HelmId = "test.helm";
         private const string RingId = "test.ring";
+        private const string PlankId = "test.plank";
 
         [SetUp]
         public void SetCatalog() => ItemView.Catalog = new TestCatalog()
             .With(new TestDefinition { Id = SwordId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Sword, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
             .With(new TestDefinition { Id = ArrowId, Category = ItemCategory.Consumable, ConsumableType = ConsumableType.Arrow, Footprint = ItemSize.OneByOne, BaseStackLimit = 10u })
             .With(new TestDefinition { Id = HelmId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Helm, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
-            .With(new TestDefinition { Id = RingId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Ring, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u });
+            .With(new TestDefinition { Id = RingId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Ring, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
+            .With(new TestDefinition { Id = PlankId, Category = ItemCategory.Consumable, ConsumableType = ConsumableType.Arrow, Footprint = ItemSize.TwoByOne, BaseStackLimit = 1u });
 
         [TearDown]
         public void ClearCatalog() => ItemView.Catalog = null;
@@ -47,6 +49,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         });
 
         private static ItemInstance Arrows() => new(ArrowId, ItemRarity.Common, 1, null);
+        private static ItemInstance Plank() => new(PlankId, ItemRarity.Common, 1, null);
 
         private static ItemInstance Helm(float armor) => new(HelmId, ItemRarity.Rare, 5, new[] { Affix(StatName.Armor, armor) });
         private static ItemInstance Ring(float value) => new(RingId, ItemRarity.Magic, 3, new[] { Affix(StatName.Health, value) });
@@ -85,6 +88,89 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 
             Assert.That(inventory.StoredPackages, Has.Count.EqualTo(1));
             Assert.That(inventory.StoredPackages.Values.Single().Amount, Is.EqualTo(7u));
+        }
+
+        [Test]
+        public void TryFindEmptyCell_OnAnEmptyContainer_ReturnsTheTopLeftCell()
+        {
+            var inventory = new CharacterInventory(new Vector2Int(3, 3));
+
+            var found = inventory.TryFindEmptyCell(new Vector2Int(1, 1), out var cell);
+
+            Assert.That(found, Is.True);
+            Assert.That(cell, Is.EqualTo(new Vector2Int(0, 0)));
+        }
+
+        [Test]
+        public void TryFindEmptyCell_WithTheFirstColumnFull_ReturnsTheNextColumnsTopCell()
+        {
+            var inventory = new CharacterInventory(new Vector2Int(2, 2));
+
+            _ = inventory.AddAtPosition(new Vector2Int(0, 0), new Package(inventory, Arrows(), 1u));
+            _ = inventory.AddAtPosition(new Vector2Int(0, 1), new Package(inventory, Arrows(), 1u));
+
+            var found = inventory.TryFindEmptyCell(new Vector2Int(1, 1), out var cell);
+
+            Assert.That(found, Is.True);
+            Assert.That(cell, Is.EqualTo(new Vector2Int(1, 0)));
+        }
+
+        [Test]
+        public void TryFindEmptyCell_WhenTheContainerIsFull_ReturnsFalse()
+        {
+            var inventory = new CharacterInventory(new Vector2Int(1, 1));
+
+            _ = inventory.AddAtPosition(new Vector2Int(0, 0), new Package(inventory, Helm(1f), 1u));
+
+            var found = inventory.TryFindEmptyCell(new Vector2Int(1, 1), out _);
+
+            Assert.That(found, Is.False);
+        }
+
+        [Test]
+        public void TryAddAtEmpty_AfterABiggerItemSkippedAnEarlyGapItCouldNotFit_ALaterSmallerAddStillFindsThatGap()
+        {
+            // TryAddAtEmpty's placement loop resumes its scan from the last cell it placed
+            // into (not from the origin) to stay O(cells) for a package that spans several
+            // stacks - the classic risk with that "resume where I left off" shape is a
+            // next-fit allocator bug: a big item's stopping point leaking into a later,
+            // smaller item's search and hiding an early gap the big item couldn't use but the
+            // small one could. The resume cursor is a local reset every call, not persisted
+            // state, so this pins that it can't happen: cell 1 is a gap only a 1x1 fits,
+            // the 2x1 plank has to skip it and land at cell 2-3, and a 1x1 added afterwards -
+            // in its own, separate call - still finds cell 1, not cell 4 onward.
+            var inventory = new CharacterInventory(new Vector2Int(5, 1));
+
+            _ = inventory.AddAtPosition(new Vector2Int(1, 0), new Package(inventory, Helm(1f), 1u)); // occupies cell 1, isolating cell 0 as a 1-wide gap
+
+            var plankPackage = new Package(inventory, Plank(), 1u);
+            var plankAccepted = inventory.TryAddToContainer(ref plankPackage);
+
+            Assert.That(plankAccepted, Is.True);
+            Assert.That(inventory.StoredPackages.ContainsKey(new Vector2Int(2, 0)), Is.True, "the 2x1 plank had to skip the 1-wide gap at cell 0 and land at cells 2-3");
+
+            var ringPackage = new Package(inventory, Ring(1f), 1u);
+            var ringAccepted = inventory.TryAddToContainer(ref ringPackage);
+
+            Assert.That(ringAccepted, Is.True);
+            Assert.That(inventory.StoredPackages.ContainsKey(new Vector2Int(0, 0)), Is.True,
+                "a later, independent add must still find the early gap the plank couldn't use - not resume past it");
+        }
+
+        [Test]
+        public void CharacterInventory_AddingMoreThanOneStacksWorthOfAmount_SpreadsAcrossMultipleCells()
+        {
+            // Arrows stack to 10; 25 forces TryAddAtEmpty's placement loop to walk three
+            // separate free cells in one call - regression coverage for its rewrite from an
+            // advancing nested for-loop to a TryFindEmptyCell-driven while-loop.
+            var inventory = new CharacterInventory(new Vector2Int(4, 4));
+            var package = new Package(inventory, Arrows(), 25u);
+
+            var accepted = inventory.TryAddToContainer(ref package);
+
+            Assert.That(accepted, Is.True);
+            Assert.That(package.Amount, Is.EqualTo(0u));
+            Assert.That(inventory.StoredPackages.Values.Select(p => p.Amount), Is.EquivalentTo(new uint[] { 10u, 10u, 5u }));
         }
 
         [Test]

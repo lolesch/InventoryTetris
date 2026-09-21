@@ -11,9 +11,16 @@ using UnityEngine.UI;
 
 namespace ToolSmiths.InventorySystem.Runtime.Provider
 {
+    /// <summary>
+    /// An <see cref="AbstractSceneSingleton{T}"/>, not a full <see cref="AbstractProvider{T}"/>:
+    /// it reads <c>transform.root</c> for the Canvas its own hover/compare displays render
+    /// under, so it must stay nested under the HUD Canvas exactly like <see cref="DragProvider"/>
+    /// - see that class's doc comment for why a provider that cannot function outside its
+    /// authored parent does not promise cross-scene persistence.
+    /// </summary>
     [System.Serializable]
     [RequireComponent(typeof(RectTransform))]
-    internal sealed class PreviewProvider : AbstractProvider<PreviewProvider>
+    internal sealed class PreviewProvider : AbstractSceneSingleton<PreviewProvider>
     {
         [SerializeField] private PreviewDisplay hoveredItem;
         private RectTransform hoveredItemTransform;
