@@ -5,10 +5,18 @@ using ToolSmiths.InventorySystem.Inventories;
 namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 {
     /// <summary>
-    /// The Inventory Context rule (issue #83), standing beside <see cref="SidePanelState"/>
-    /// rather than replacing it - nothing is wired to this yet. Exercises the real
-    /// <see cref="InventoryContextState"/>: the default state, the single-change-per-Set
-    /// contract, the derived panel set, closing-is-always-None, and phase reachability.
+    /// The Inventory Context rule (issue #83) - the only thing the scene's panel visibility and
+    /// toggle pressed-state are derived from since #85. Exercises the real
+    /// <see cref="InventoryContextState"/> rather than a copy of it: the default state, the
+    /// single-change-per-Set contract, the derived panel set, closing-is-always-None, and phase
+    /// reachability.
+    ///
+    /// <para>The two static derivations the scene calls are covered here too, because they are
+    /// the statement of the rule rather than a helper: <see cref="InventoryContextState.PanelFor"/>
+    /// is the one panel a context names for itself, and <see cref="InventoryContextState.PanelsFor"/>
+    /// adds the Hero Panel to every non-<c>None</c> context. A panel asks the second about the
+    /// active context and the first about itself; if the two disagreed, a panel would show or
+    /// hide for the wrong context, and only a test here would notice.</para>
     /// </summary>
     [TestFixture]
     public sealed class InventoryContextStateTests
@@ -138,6 +146,69 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             state.Set(context);
 
             Assert.That(state.Panels, Is.EqualTo(expected));
+        }
+
+        [TestCase(InventoryContext.None, InventoryPanels.None)]
+        [TestCase(InventoryContext.Hero, InventoryPanels.Hero)]
+        [TestCase(InventoryContext.Stash, InventoryPanels.Stash)]
+        [TestCase(InventoryContext.Vendor, InventoryPanels.Vendor)]
+        [TestCase(InventoryContext.Healer, InventoryPanels.Healer)]
+        public void PanelFor_NamesTheOnePanelAContextOwns(InventoryContext context, InventoryPanels expected)
+        {
+            Assert.That(InventoryContextState.PanelFor(context), Is.EqualTo(expected));
+        }
+
+        /// <summary>
+        /// The exact computation every panel's subscription and every toggle's pressed-visual
+        /// resync makes (issue #85): a panel is up when the active context derives the one panel
+        /// it owns. The Hero Panel is up in every non-<c>None</c> context, a Town Stop's panel
+        /// only in its own, and none of them when nothing is open - which is the rule, spelled
+        /// out once, for all four panels at once.
+        /// </summary>
+        [TestCase(InventoryContext.None, InventoryPanels.Hero, false)]
+        [TestCase(InventoryContext.None, InventoryPanels.Stash, false)]
+        [TestCase(InventoryContext.None, InventoryPanels.Vendor, false)]
+        [TestCase(InventoryContext.None, InventoryPanels.Healer, false)]
+        [TestCase(InventoryContext.Hero, InventoryPanels.Hero, true)]
+        [TestCase(InventoryContext.Hero, InventoryPanels.Stash, false)]
+        [TestCase(InventoryContext.Hero, InventoryPanels.Vendor, false)]
+        [TestCase(InventoryContext.Hero, InventoryPanels.Healer, false)]
+        [TestCase(InventoryContext.Stash, InventoryPanels.Hero, true)]
+        [TestCase(InventoryContext.Stash, InventoryPanels.Stash, true)]
+        [TestCase(InventoryContext.Stash, InventoryPanels.Vendor, false)]
+        [TestCase(InventoryContext.Stash, InventoryPanels.Healer, false)]
+        [TestCase(InventoryContext.Vendor, InventoryPanels.Hero, true)]
+        [TestCase(InventoryContext.Vendor, InventoryPanels.Stash, false)]
+        [TestCase(InventoryContext.Vendor, InventoryPanels.Vendor, true)]
+        [TestCase(InventoryContext.Vendor, InventoryPanels.Healer, false)]
+        [TestCase(InventoryContext.Healer, InventoryPanels.Hero, true)]
+        [TestCase(InventoryContext.Healer, InventoryPanels.Stash, false)]
+        [TestCase(InventoryContext.Healer, InventoryPanels.Vendor, false)]
+        [TestCase(InventoryContext.Healer, InventoryPanels.Healer, true)]
+        public void PanelIsUp_ExactlyWhenTheActiveContextDerivesIt(InventoryContext active, InventoryPanels panel, bool expected)
+        {
+            state.Set(active);
+
+            var isUp = (state.Panels & panel) != InventoryPanels.None;
+
+            Assert.That(isUp, Is.EqualTo(expected));
+        }
+
+        /// <summary>
+        /// One Town Stop never derives another's panel, whichever one it is - the property that
+        /// used to need a runtime exclusivity group to enforce (issue #85).
+        /// </summary>
+        [TestCase(InventoryContext.Stash, InventoryPanels.Vendor)]
+        [TestCase(InventoryContext.Stash, InventoryPanels.Healer)]
+        [TestCase(InventoryContext.Vendor, InventoryPanels.Stash)]
+        [TestCase(InventoryContext.Vendor, InventoryPanels.Healer)]
+        [TestCase(InventoryContext.Healer, InventoryPanels.Stash)]
+        [TestCase(InventoryContext.Healer, InventoryPanels.Vendor)]
+        public void TownStopContext_NeverDerivesAnotherTownStopsPanel(InventoryContext active, InventoryPanels sibling)
+        {
+            state.Set(active);
+
+            Assert.That(state.Panels & sibling, Is.EqualTo(InventoryPanels.None));
         }
 
         // ── The context and the panel set are different, differently-shaped types ──

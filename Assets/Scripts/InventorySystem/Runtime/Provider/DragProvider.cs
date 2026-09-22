@@ -90,7 +90,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         /// charge-free (issue #31) - the same return-to-origin a drop-back or an Escape
         /// cancel uses. The drag side subscribes rather than the panel side calling in: the
         /// rule is part of the drag lifecycle, so it lives with the drag, and the panels
-        /// only announce that the context moved (#54). Ordinary pick-ups are untouched -
+        /// only report that the context moved (#54, #85). Ordinary pick-ups are untouched -
         /// <see cref="ReturnStorePurchaseToShelf"/> no-ops unless the hand holds an unpaid
         /// purchase, so opening the Stash or closing every panel cannot strand or duplicate
         /// one. Detach-before-attach, so a re-enable cannot subscribe twice (cf. da14ce2).
@@ -105,19 +105,26 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
             var provider = InventoryProvider.Instance;
 
-            provider.OnSidePanelChanged -= OnSidePanelChanged;
-            provider.OnSidePanelChanged += OnSidePanelChanged;
+            provider.OnContextChanged -= OnContextChanged;
+            provider.OnContextChanged += OnContextChanged;
         }
 
         private void OnDisable()
         {
             if (Application.isPlaying && InventoryProvider.Instance != null)
-                InventoryProvider.Instance.OnSidePanelChanged -= OnSidePanelChanged;
+                InventoryProvider.Instance.OnContextChanged -= OnContextChanged;
         }
 
-        private void OnSidePanelChanged(SidePanelContext context)
+        /// <summary>
+        /// Any context other than the Vendor means the Vendor is no longer the one open, and a
+        /// purchase in flight has nowhere to belong. Reading it that way rather than as "the
+        /// Vendor closed" is what makes Send, Recall, Death, Go Venture and closing the Hero
+        /// Panel each count, and it is why a Stash-to-Vendor handover is safe: that publishes one
+        /// change, to the Vendor, so an in-flight purchase stays on the cursor.
+        /// </summary>
+        private void OnContextChanged(InventoryContext context)
         {
-            if (context != SidePanelContext.Vendor)
+            if (context != InventoryContext.Vendor)
                 _ = ReturnStorePurchaseToShelf();
         }
 
