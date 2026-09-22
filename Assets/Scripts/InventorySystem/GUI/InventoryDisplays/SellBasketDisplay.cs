@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using TMPro;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Inventories;
@@ -6,12 +7,14 @@ using ToolSmiths.InventorySystem.Runtime.Provider;
 using UnityEngine;
 using UnityEngine.UI;
 
+[assembly: InternalsVisibleTo("Assembly-CSharp-Editor")]
+
 namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 {
     /// <summary>
-    /// The GUI shell of the Sell Basket (issue #66 - the scene half of #32, split out because
-    /// <c>feature/trade-flow</c> makes no scene edits). Sits below the Supply grid in the Vendor
-    /// Side Panel and owns the staged-sale flow:
+    /// The GUI shell of the Sell Basket (issue #66 - the scene half of #32). Placed in the
+    /// Vendor Side Panel below the Supply grid (<c>SellBasketDisplay.prefab</c>, wired to
+    /// <see cref="InventoryProvider.BasketDisplay"/>) and owns the staged-sale flow:
     ///
     /// <list type="number">
     /// <item><b>Stage by drop</b> - a Package dragged onto the basket grid lands in a cell and
@@ -30,10 +33,6 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
     /// backpack-origin Cancel always fits.</item>
     /// </list>
     ///
-    /// <para>This file is intentionally C#-only: the Unity source tree on <c>feature/trade-flow</c>
-    /// carries no scene edits (issues #56 / #57 own that region), so every  wiring contract the
-    /// prefab needs is spelled out on the serialized fields.</para>
-    ///
     /// <para>Drag-hold is a <see cref="Package"/> under <see cref="DragProvider.DraggingPackage"/>;
     /// it is staged straight from the cursor because the drag origin slot already removed it on
     /// pick-up. The new overlays the dragged Package's footprint in the basket (one
@@ -42,35 +41,37 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(20)]
-    internal sealed class SellBasketPanel : MonoBehaviour
+    internal sealed class SellBasketDisplay : MonoBehaviour
     {
-        /// <summary>The inventory grid the player stages a sale into. Unwired until the prefab
-        /// exists: <see cref="InventoryProvider.BasketDisplay"/> holds the same grid we bind,
-        /// and <see cref="InventoryProvider.Basket"/> holds the basket logic.</summary>
-        [SerializeField, Tooltip("The basket grid - one BasketSlotDisplay per cell. Wire to the prefab's InventoryContainerDisplay; absent in the C#-only draft.")]
+        /// <summary>The inventory grid the player stages a sale into - the same grid
+        /// <see cref="InventoryProvider.BasketDisplay"/> holds, and <see cref="InventoryProvider.Basket"/>
+        /// holds the basket logic behind it.</summary>
+        [SerializeField, Tooltip("The basket grid - one BasketSlotDisplay per cell. Wired to the prefab's InventoryContainerDisplay.")]
         private InventoryContainerDisplay basketDisplay;
 
-        /// <summary>The caption for the staged total. Wired when the prefab exists.</summary>
-        [SerializeField, Tooltip("The running total the vendor would pay. Wire to the panel's TMP label; absent in the C#-only draft.")]
+        /// <summary>The caption for the staged total.</summary>
+        [SerializeField, Tooltip("The running total the vendor would pay. Wired to the panel's TMP label.")]
         private TextMeshProUGUI totalLabel;
 
         /// <summary>Bank the staged sale (one consolidated payout) and clear the basket.</summary>
-        [SerializeField, Tooltip("Wire to the panel's Confirm Button; absent in the C#-only draft.")]
+        [SerializeField, Tooltip("Wired to the panel's Confirm Button.")]
         private Button confirmButton;
 
         /// <summary>Return every staged Package to its origin, wallet untouched.</summary>
-        [SerializeField, Tooltip("Wire to the panel's Cancel Button; absent in the C#-only draft.")]
+        [SerializeField, Tooltip("Wired to the panel's Cancel Button.")]
         private Button cancelButton;
 
         /// <summary>
-        /// The Supply region's <see cref="CanvasGroup"/> (the blocker). While the basket holds
-        /// anything the group is disabled and dimmed - the modal sell block (ADR-0012). Its
-        /// <see cref="CanvasGroup"/> is deliberately NOT referenced by the prefab: this draft
-        /// exists before the Supply/panel scene, so the blocker is found by name at runtime and
-        /// the <c>OnValidate</c> warning AND the null-guard are exactly the "wiring took" check
-        /// the issue's blocker criterion describes.
+        /// The Supply region's <see cref="CanvasGroup"/> (the blocker) - the Shop grid's own
+        /// <see cref="CanvasGroup"/> in the Vendor Side Panel. While the basket holds anything
+        /// the group is disabled and dimmed - the modal sell block (ADR-0012). Wired directly
+        /// on the scene instance rather than baked into the shared prefab, since the Supply
+        /// region is scene-specific; <see cref="FindSupplyBlocker"/> is the fallback for a
+        /// misconfigured instance, and <see cref="OnValidate"/> plus the first-stage error in
+        /// <see cref="SetSupplyBlocked"/> are the "wiring took" check the issue's blocker
+        /// criterion describes.
         /// </summary>
-        [SerializeField, Tooltip("The Supply region's CanvasGroup to block while the basket is non-empty. Wired once the prefab exists; found by name in the C#-only draft.")]
+        [SerializeField, Tooltip("The Supply region's CanvasGroup to block while the basket is non-empty. Wired on the scene instance.")]
         private CanvasGroup supplyBlocker;
 
         private SellBasket.Basket basket;
@@ -116,10 +117,11 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         }
 
         /// <summary>
-        /// Wire the reserved fields. The prefab resolves <b>basketDisplay</b> from
-        /// <see cref="InventoryProvider.BasketDisplay"/> and <b>supplyBlocker</b> by searching
-        /// the Vendor Side Panel for "Supply" - both with zero serialized references in the
-        /// C#-only draft. Confirm/Cancel are serialized exclusively.
+        /// Wire the reserved fields. <b>basketDisplay</b> and <b>supplyBlocker</b> are wired
+        /// directly on the scene instance; the <see cref="InventoryProvider.BasketDisplay"/>
+        /// lookup and the by-name <see cref="FindSupplyBlocker"/> search are fallbacks for a
+        /// misconfigured instance, not the primary path. Confirm/Cancel are serialized
+        /// exclusively.
         /// </summary>
         private bool TryResolveDependencies()
         {
@@ -151,20 +153,37 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         /// <summary>
         /// The Supply region inside the Vendor Side Panel - the blocked territory while the
-        /// basket holds anything. This is the modal-sell contract: it must NOT be this panel or
-        /// the Supply grid, so a named search is the honest fallback while the panel scene does
-        /// not yet exist.
+        /// basket holds anything. <see cref="supplyBlocker"/> is wired directly on the scene
+        /// instance; this by-name search only covers a misconfigured instance where that
+        /// reference was left empty.
         /// </summary>
         private CanvasGroup FindSupplyBlocker()
         {
             var panel = transform.root;
 
             foreach (var group in panel.GetComponentsInChildren<CanvasGroup>(true))
-                if (group.name.ToLowerInvariant().Contains("supply"))
+                if (group.name.ToLowerInvariant().Contains("supply") || group.name.ToLowerInvariant().Contains("shop"))
                     return group;
 
             return null;
         }
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// The Editor half of the "wiring took" check the issue's blocker criterion describes
+        /// - a missing <see cref="supplyBlocker"/> would otherwise sit silent until someone
+        /// notices the Supply grid staying interactable during a staged sale. Skipped for the
+        /// shared <c>SellBasketDisplay.prefab</c> asset itself, where <see cref="supplyBlocker"/>
+        /// is null by design (the Supply CanvasGroup is scene-specific, wired per instance) - a
+        /// green run has to mean the scene instance is wired, not just that nobody has opened
+        /// the prefab lately.
+        /// </summary>
+        private void OnValidate()
+        {
+            if (supplyBlocker == null && !UnityEditor.PrefabUtility.IsPartOfPrefabAsset(this))
+                Debug.LogWarning("[SellBasketDisplay] supplyBlocker is not wired - the Supply region will not be blocked while a sale is staged.", this);
+        }
+#endif
 
         private void OnBasketContentChanged(Dictionary<Vector2Int, Package> _) => RefreshUi();
 
@@ -195,7 +214,12 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         private void SetSupplyBlocked(bool blocked)
         {
             if (supplyBlocker == null)
+            {
+                if (blocked)
+                    Debug.LogError("[SellBasketDisplay] A sale was staged with no supplyBlocker wired - the Supply region will not be blocked.", this);
+
                 return;
+            }
 
             supplyBlocker.blocksRaycasts = !blocked;
             supplyBlocker.interactable = !blocked;
@@ -239,7 +263,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 if (DragProvider.Instance != null && DragProvider.Instance.IsDragging)
                     DragProvider.Instance.ReplacePackage(leftover, default); // keep it on the cursor
                 else
-                    Debug.LogWarning($"[SellBasket] A staged Package had nowhere to go on Cancel and was left undropped; wallet untouched.", this);
+                    Debug.LogWarning($"[SellBasketDisplay] A staged Package had nowhere to go on Cancel and was left undropped; wallet untouched.", this);
             }
         }
 

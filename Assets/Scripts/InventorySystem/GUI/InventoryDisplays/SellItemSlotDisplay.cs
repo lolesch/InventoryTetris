@@ -12,10 +12,12 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
     internal sealed class SellItemSlotDisplay : AbstractSlotDisplay
     {
         /// <summary>
-        /// The single-slot instant sale is gone (issue #32) - the Sell Basket is the only way
-        /// to sell, so this legacy slot display no longer banks a dropped Package. It is kept
-        /// as an inert placeholder until the basket grid panel (the human Editor pass) replaces
-        /// it; a Package dropped here is returned to its sender rather than sold.
+        /// The single-slot instant sale is gone (issue #32) - the Sell Basket
+        /// (<see cref="SellBasketDisplay"/>, placed alongside this in the Vendor Side Panel by
+        /// issue #66) is the only way to sell now, so this legacy slot display no longer banks
+        /// a dropped Package. It is kept as an inert placeholder until the "SellItem" scene
+        /// object is deleted outright (issue #56); a Package dropped here is returned to its
+        /// sender rather than sold.
         /// </summary>
         protected override void DropItem(Package package)
         {
