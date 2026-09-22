@@ -132,6 +132,8 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 case QuickMoveIntentKind.MoveToContainer:
                     var target = intent.Target;
                     var cursor = new CursorHolder(DragProvider.Instance);
+                    var basket = InventoryProvider.Instance.Basket;
+                    var leavingBasket = basket != null && Container == basket.Container;
 
                     using (var transaction = new ItemTransaction(cursor, Container, target).ReHomeThrough(target))
                     {
@@ -139,6 +141,12 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                         _ = transaction.TryReHomeToContainerOrHand(ref package, new PackageOrigin(Container, position));
 
                         transaction.Commit();
+
+                        /// A Package leaving the basket for good clears its ledger entry
+                        /// (<see cref="SellBasket.Basket.Origins"/>) rather than leaving a
+                        /// stale one <see cref="SellBasket.Cancel"/> would only skip over.
+                        if (leavingBasket && !transaction.Aborted)
+                            _ = basket.Origins.Remove(position);
                     }
                     return true;
 
