@@ -73,8 +73,9 @@ namespace ToolSmiths.InventorySystem.Inventories
         public InventoryContainerDisplay StoreDisplay;
         [SerializeField] private Vector2Int storeSize = new(10, 16);
 
-        /// <summary>The Sell Basket's grid (issue #66), wired to the same prefab the
-        /// <see cref="SellBasketPanel"/> binds in place of the retired single-slot StoreDisplay.</summary>
+        /// <summary>The Sell Basket's grid (issue #66) - a new grid alongside the Supply
+        /// shelf (<see cref="StoreDisplay"/>), wired the same way <see cref="StashDisplay"/>
+        /// and <see cref="InventoryDisplay"/> are, and bound by <see cref="SellBasketDisplay"/>.</summary>
         [Space]
         public InventoryContainerDisplay BasketDisplay;
         [SerializeField] private Vector2Int basketSize = new(5, 3);
