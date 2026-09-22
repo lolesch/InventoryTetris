@@ -94,8 +94,8 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
             var provider = InventoryProvider.Instance;
 
-            provider.OnSidePanelChanged -= OnSidePanelChanged;
-            provider.OnSidePanelChanged += OnSidePanelChanged;
+            provider.OnContextChanged -= OnContextChanged;
+            provider.OnContextChanged += OnContextChanged;
 
             if (basket.Container != null)
             {
@@ -109,7 +109,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         private void OnDisable()
         {
             if (Application.isPlaying && InventoryProvider.Instance != null)
-                InventoryProvider.Instance.OnSidePanelChanged -= OnSidePanelChanged;
+                InventoryProvider.Instance.OnContextChanged -= OnContextChanged;
 
             if (basket?.Container != null)
                 basket.Container.OnContentChanged -= OnBasketContentChanged;
@@ -218,8 +218,8 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         /// <summary>
         /// Cancel the staged sale: return every Package through the return-to-origin primitive
         /// (<see cref="SellBasket.Cancel"/>), wallet untouched. Called by Cancel, and by the
-        /// Vendor panel closing while the basket holds anything
-        /// (<see cref="OnSidePanelChanged"/>) - a staged sale is never silently stranded.
+        /// Vendor context going away while the basket holds anything
+        /// (<see cref="OnContextChanged"/>) - a staged sale is never silently stranded.
         ///
         /// <para>A Package that fits neither its origin nor the backpack is handed back on the
         /// cursor when a drag is live (the same fallback a cancelled drag uses); with no drag it
@@ -244,14 +244,20 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         }
 
         /// <summary>
-        /// The Vendor side panel closed and the basket still holds staged Packages - that is a
-        /// Cancel, exactly as the issue's "closing the Store with a non-empty basket" criterion
-        /// says. Subscribed in <see cref="OnEnable"/> (detach-before-attach, cf. da14ce2) so a
-        /// re-open cannot stack a second subscription.
+        /// The Inventory Context left the Vendor and the basket still holds staged Packages - that
+        /// is a Cancel, exactly as the issue's "closing the Store with a non-empty basket"
+        /// criterion says. Subscribed in <see cref="OnEnable"/> (detach-before-attach, cf. da14ce2)
+        /// so a re-open cannot stack a second subscription.
+        ///
+        /// <para>The guard is on "is not the Vendor" rather than on the panel's own visibility, so
+        /// every route that leaves the Vendor counts - closing the panel, closing the Hero Panel
+        /// with it, Send, Recall, Death and Go Venture all land here as some other context. A
+        /// handover between two Town Stops publishes one change, to the new Town Stop, so a sale
+        /// staged under one stop survives switching to another.</para>
         /// </summary>
-        private void OnSidePanelChanged(SidePanelContext context)
+        private void OnContextChanged(InventoryContext context)
         {
-            if (context == SidePanelContext.Vendor)
+            if (context == InventoryContext.Vendor)
                 return; // opened - keep whatever is staged
 
             if (basket != null && basket.Container != null && basket.Container.StoredPackages.Count > 0)

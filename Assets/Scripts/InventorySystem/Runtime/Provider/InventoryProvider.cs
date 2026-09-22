@@ -29,22 +29,9 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// cells. The wallet, not the container, owns currency logic since issue #14.</summary>
         public Wallet Wallet { get; private set; }
 
-        /// <summary>Which town side panel is open (#54). The rule itself is the engine-free
-        /// <see cref="SidePanelState"/>; the provider only carries it to the scene.</summary>
-        private readonly SidePanelState sidePanel = new();
-
-        public SidePanelContext ActiveSidePanel => sidePanel.Active;
-
-        public event Action<SidePanelContext> OnSidePanelChanged
-        {
-            add => sidePanel.Changed += value;
-            remove => sidePanel.Changed -= value;
-        }
-
-        /// <summary>Which panels are up and where a Quick Move lands (#83), beside
-        /// <see cref="sidePanel"/> until every path is migrated (#84) and the old one retires
-        /// (#85). The rule itself is the engine-free <see cref="InventoryContextState"/>; the
-        /// provider only carries it to the scene.</summary>
+        /// <summary>The Inventory Context: which panels are up and where a Quick Move lands.
+        /// The rule itself is the engine-free <see cref="InventoryContextState"/>; the provider
+        /// only carries it to the scene, and every panel and toggle subscribes to it here.</summary>
         private readonly InventoryContextState inventoryContext = new();
 
         public InventoryContext ActiveContext => inventoryContext.Active;
@@ -107,13 +94,9 @@ namespace ToolSmiths.InventorySystem.Inventories
                 BasketDisplay.SetupDisplay(Basket.Container);
         }
 
-        public void SetSidePanel(SidePanelContext context) => sidePanel.Set(context);
-
-        public void ClearSidePanel(SidePanelContext context) => sidePanel.Clear(context);
-
         /// <summary>
         /// Where a shift-click on <paramref name="source"/> should send its item, given the
-        /// side panel open right now (#30). The four containers and the context are all
+        /// Inventory Context active right now (#30). The four containers and the context are all
         /// here, so a caller that holds one slot's container can ask with just that -
         /// rather than assembling the same six arguments at every slot display, which is
         /// how <c>VendorSlotDisplay</c> came to pass its own container as both the source
@@ -121,7 +104,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// directly tested; this is only the seam callers hold.
         /// </summary>
         public QuickMoveIntent QuickMoveFor(AbstractDimensionalContainer source) =>
-            QuickMoveResolver.Resolve(ActiveSidePanel, source, Inventory, Stash, Equipment, Store, Basket.Container);
+            QuickMoveResolver.Resolve(ActiveContext, source, Inventory, Stash, Equipment, Store, Basket.Container);
 
         public void Awake()
         {
