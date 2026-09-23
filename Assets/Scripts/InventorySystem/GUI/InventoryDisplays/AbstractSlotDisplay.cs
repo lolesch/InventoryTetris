@@ -213,6 +213,71 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             return !transaction.Aborted;
         }
 
+        /// <summary>
+        /// The guard-clause prologue every <see cref="MoveItem"/> override starts with: no
+        /// container, or nothing at <see cref="Position"/>, and there is nothing to move; found
+        /// one, and the hover preview fades before anything changes underneath it. Where a
+        /// concrete slot actually diverges starts after this returns true.
+        /// </summary>
+        protected bool TryBeginMove(out Vector2Int position, out Package package)
+        {
+            position = Position;
+            package = default;
+
+            if (Container == null)
+                return false;
+
+            if (!Container.TryGetItemAt(ref position, out package))
+                return false;
+
+            FadeOutPreview();
+
+            return true;
+        }
+
+        /// <summary>
+        /// The "DRAG ITEM" tail every concrete slot falls through to once its own special-cases
+        /// (use, equip, buy, stage...) don't apply: pick <paramref name="package"/> up off
+        /// <paramref name="position"/> and hand it to the cursor. <paramref name="position"/> is
+        /// passed rather than re-read from <see cref="Position"/> because a multi-cell item's
+        /// origin is not necessarily the cell under the pointer - the offset between them is
+        /// what keeps the drag visual anchored to where it was grabbed instead of snapping to
+        /// the origin cell. <paramref name="purchasePrice"/> is the Vendor shelf's buy-on-drop
+        /// price (issue #31); every other source leaves it unset.
+        /// </summary>
+        protected void BeginDrag(Vector2Int position, Package package, Vector2 pointerPosition, float? purchasePrice = null)
+        {
+            _ = Container.RemoveAtPosition(position, package);
+
+            var positionOffset = Position - position;
+
+            DragProvider.Instance.SetPackage(this, package, positionOffset, pointerPosition, purchasePrice);
+        }
+
+        /// <summary>
+        /// Shift-click quick-move shared by every source the Sell Basket can receive from
+        /// (issue #30/#33): resolve the intent for <see cref="Container"/>, stage a sale if
+        /// the Vendor is open, otherwise move to whatever container the resolver names: with
+        /// neither panel open, the resolver names nothing and this is a no-op.
+        /// <see cref="BasketSlotDisplay"/> does not use this - there is no sell-the-basket-to-
+        /// itself case, and a successful move there also has to clear the origin ledger entry.
+        /// </summary>
+        protected void QuickMove(Vector2Int position, Package package)
+        {
+            var intent = InventoryProvider.Instance.QuickMoveFor(Container);
+
+            if (intent.Kind == QuickMoveIntentKind.SellBasket)
+            {
+                _ = SellBasketQuickMove.SendToBasket(InventoryProvider.Instance.Basket, Container, position);
+                return;
+            }
+
+            if (intent.Kind != QuickMoveIntentKind.MoveToContainer)
+                return;
+
+            _ = QuickMoveToContainer(intent.Target, position, package);
+        }
+
         protected void FadeInPreview() => RefreshHoverPreview(clearStale: false);
 
         /// <summary>

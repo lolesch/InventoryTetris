@@ -4,6 +4,7 @@ using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Runtime.Provider;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 {
@@ -21,6 +22,34 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
     /// </summary>
     internal sealed class BasketSlotDisplay : AbstractSlotDisplay
     {
+        private GridLayoutGroup gridLayout;
+
+        /// <summary>
+        /// The basket is a dimensional grid like the inventory and vendor shelf, not a single
+        /// paper-doll cell (see <see cref="InventorySlotDisplay.SetDisplaySize"/>) - a staged
+        /// Package spans as many cells as its item's footprint, so it needs the same
+        /// grid-derived sizing or it renders as a single icon-sized square.
+        /// </summary>
+        protected override void SetDisplaySize(RectTransform display, Package package)
+        {
+            base.SetDisplaySize(display, package);
+
+            if (!gridLayout)
+                gridLayout = GetComponentInParent<GridLayoutGroup>();
+            if (gridLayout)
+            {
+                var itemDimensions = ItemView.Of(package.Item).Dimensions;
+                var additionalSpacing = gridLayout.spacing * new Vector2(itemDimensions.x - 1, itemDimensions.y - 1);
+
+                display.sizeDelta = gridLayout.cellSize * itemDimensions + additionalSpacing;
+            }
+
+            display.anchoredPosition = new Vector2(display.sizeDelta.x * .5f, display.sizeDelta.y * -.5f);
+            display.pivot = new Vector2(.5f, .5f);
+            display.anchorMin = new Vector2(0, 1);
+            display.anchorMax = new Vector2(0, 1);
+        }
+
         /// <summary>
         /// A drag that ends here stages into the basket: land it at this cell, remember its
         /// origin in the basket's ledger. Directly parallels <see cref="SellBasket.Stage"/>, the
@@ -74,15 +103,8 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         /// </summary>
         protected override void MoveItem(PointerEventData eventData, Vector2 pointerPosition)
         {
-            if (Container == null)
+            if (!TryBeginMove(out var position, out var package))
                 return;
-
-            var position = Position;
-
-            if (!Container.TryGetItemAt(ref position, out var package))
-                return;
-
-            FadeOutPreview();
 
             if (Input.GetKey(KeyCode.LeftShift))
             {
@@ -97,11 +119,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 return;
             }
 
-            _ = Container.RemoveAtPosition(position, package);
-
-            var positionOffset = Position - position;
-
-            DragProvider.Instance.SetPackage(this, package, positionOffset, pointerPosition);
+            BeginDrag(position, package, pointerPosition);
         }
     }
 }

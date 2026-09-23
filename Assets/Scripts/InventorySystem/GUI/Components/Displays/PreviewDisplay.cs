@@ -11,8 +11,7 @@ using UnityEngine.UI;
 namespace ToolSmiths.InventorySystem.GUI.Displays
 {
     // TODO: inherit AbstractDisplay
-    [RequireComponent(typeof(RectTransform))]
-    public class PreviewDisplay : MonoBehaviour, IView<(Package package, Package compareTo)>
+    public class PreviewDisplay : SimplePanel, IView<(Package package, Package compareTo)>
     {
         [SerializeField] private Image icon;
         [SerializeField] private Image frame;
@@ -27,16 +26,26 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
         private PrefabPool<CharacterStatModifierDisplay> itemStatPool;
         private PrefabPool<CharacterStatModifierDisplay> ItemStatPool => itemStatPool ??= new(itemStatPrefab);
 
-        public bool IsPreviewing => gameObject.activeSelf;
+        /// True from the moment a hover starts fading in to the moment the next one starts
+        /// fading out - matches the old activeSelf-based reading so PreviewProvider's per-frame
+        /// cursor-follow keeps running through the fade instead of waiting for it to finish.
+        private bool isPreviewing;
+        public bool IsPreviewing => isPreviewing;
 
-        private void Awake() => gameObject.SetActive(false);
+        protected override void BeforeAppear() => isPreviewing = true;
+
+        protected override void BeforeDisappear()
+        {
+            isPreviewing = false;
+            base.BeforeDisappear();
+        }
 
         public void Refresh((Package package, Package compareTo) data) => Refresh(data.package, data.compareTo);
         public void Refresh(Package package, Package compareTo, float priceOverride = -1f)
         {
             if (!package.IsValid)
             {
-                gameObject.SetActive(false);
+                FadeOut();
                 return;
             }
 
@@ -88,14 +97,14 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                 itemStat.gameObject.SetActive(true);
             }
 
-            gameObject.SetActive(true);
+            FadeIn();
         }
 
         public void Refresh(Package package)
         {
             if (!package.IsValid)
             {
-                gameObject.SetActive(false);
+                FadeOut();
                 return;
             }
 
@@ -140,7 +149,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                 itemStat.gameObject.SetActive(true);
             }
 
-            gameObject.SetActive(true);
+            FadeIn();
         }
     }
 }

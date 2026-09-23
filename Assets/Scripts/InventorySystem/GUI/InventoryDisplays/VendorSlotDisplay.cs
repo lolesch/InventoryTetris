@@ -93,18 +93,11 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         protected override void MoveItem(PointerEventData eventData, Vector2 pointerPosition)
         {
-            if (Container == null)
-                return;
-
-            var position = Position;
-
-            if (!Container.TryGetItemAt(ref position, out var package))
+            if (!TryBeginMove(out var position, out var package))
                 return;
 
             var wallet = InventoryProvider.Instance.Wallet;
             var price = VendorTransaction.BuyPrice(package.Item);
-
-            FadeOutPreview();
 
             // Right-click and shift-click both move the item straight to the inventory.
             #region BUY: IMMEDIATE MOVE
@@ -132,13 +125,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             // read once and held on the cursor for the length of the drag (issue #31). It is
             // paid only when the package lands in a player container; dropping it back on the
             // shelf, cancelling (Esc) or closing the Store returns it with no charge.
-            #region BUY: DRAG
-            _ = Container.RemoveAtPosition(position, package);
-
-            var positionOffset = Position - position;
-
-            DragProvider.Instance.SetPackage(this, package, positionOffset, pointerPosition, price);
-            #endregion BUY: DRAG
+            BeginDrag(position, package, pointerPosition, price);
         }
 
         /// <summary>

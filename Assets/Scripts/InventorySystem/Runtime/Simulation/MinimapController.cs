@@ -27,20 +27,16 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// deliberately does not hold a reference back to them. Interactable gating went with that
     /// reference: Go Venture, To Town, and the Stash/Vendor/Healer <see cref="townGroup"/> all
     /// live on whichever panel is currently faded out, and <c>CanvasGroup.blocksRaycasts</c>
-    /// already makes a faded-out panel's children non-interactive. Two sets are the exception,
-    /// each for a reason of its own:
+    /// already makes a faded-out panel's children non-interactive. The Town Stops are the one
+    /// exception — they keep their <i>hotkeys</i>, which read <c>interactable</c> and so bypass
+    /// that <c>CanvasGroup</c> entirely. They are gated on the face being shown instead, which
+    /// covers the Go Venture preview as well (issue #73).
     ///
-    /// <list type="bullet">
-    /// <item>Locations keep their clicks while the Field face is up — <see cref="inFieldPanel"/>
-    /// stays shown whether the player is previewing (InTown) or has actually travelled
-    /// (InField), so only each <c>LocationToggle</c>'s own <c>interactable</c>, gated on
-    /// <see cref="_inTown"/>, stops a stray click from reassigning <see cref="fieldGroup"/>'s
-    /// selection while already in the field.</item>
-    /// <item>The Town Stops keep their <i>hotkeys</i>, which read <c>interactable</c> and so
-    /// bypass that <c>CanvasGroup</c> entirely — nothing about the fade reaches them. They are
-    /// gated on the face being shown instead, which covers the Go Venture preview as well
-    /// (issue #73).</item>
-    /// </list>
+    /// <see cref="LocationToggle"/>s stay <c>interactable</c> at all times — including while
+    /// already InField — so picking a different Location mid-Run switches the destination
+    /// instead of doing nothing: <see cref="OnFieldSelectionChanged"/> Recalls the current Run
+    /// and re-Sends in one handler when that happens, rather than requiring a trip back through
+    /// Town.
     ///
     /// <para><b>This class is no longer a visibility authority (issue #85).</b> It used to hold
     /// a <c>PanelGroup</c> over the left panels and close a Side Panel by driving it; that group

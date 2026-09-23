@@ -99,106 +99,69 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         protected override void MoveItem(PointerEventData eventData, Vector2 pointerPosition)
         {
-            if (Container == null)
+            if (!TryBeginMove(out var position, out var package))
                 return;
 
-            var position = Position;
-
-            if (Container.TryGetItemAt(ref position, out var package))
+            #region USE ITEM
+            if (eventData.button == PointerEventData.InputButton.Right)
             {
-                FadeOutPreview();
+                var category = ItemView.Of(package.Item).Definition.Category;
 
-                #region USE ITEM
-                if (eventData.button == PointerEventData.InputButton.Right)
+                if (category == ItemCategory.Consumable)
                 {
-                    var category = ItemView.Of(package.Item).Definition.Category;
+                    Debug.Log($"Consuming {ItemView.Of(package.Item).DisplayName}");
 
-                    if (category == ItemCategory.Consumable)
-                    {
-                        Debug.Log($"Consuming {ItemView.Of(package.Item).DisplayName}");
-
-                        _ = Container.RemoveAtPosition(position, new Package(Container, package.Item, 1)); // only consume one amount
-
-                        return;
-                    }
-
-                    if (category == ItemCategory.Equipment)
-                    {
-                        /// Route the equip through a transaction (issue #10) as a right-click
-                        /// "swap in place": remove here, equip there, and swap whatever the
-                        /// equip displaces back into this same container. A player-driven move
-                        /// always executes - one displaced item that will not re-fit overflows
-                        /// to the hand, and only a second homeless item rolls the move back.
-                        var equipment = InventoryProvider.Instance.Equipment;
-                        var cursor = new CursorHolder(DragProvider.Instance);
-
-                        using var transaction = new ItemTransaction(cursor, Container, equipment)
-                            .ReHomeThrough(Container)
-                            .SwapInPlace(new PackageOrigin(Container, position));
-
-                        _ = Container.RemoveAtPosition(position, package);
-                        _ = equipment.TryAddToContainer(ref package);
-
-                        if (transaction.Aborted)
-                            return;
-
-                        transaction.Commit();
-
-                        /// The displaced equipped item re-homes into this container, often
-                        /// into the very cell just vacated - i.e. back under the cursor. The
-                        /// leading FadeOutPreview dismissed the tooltip on the click; bring it
-                        /// back for whatever now sits here (issue #13).
-                        SyncPreviewAfterMove();
-                        return;
-                    }
-                }
-                #endregion USE ITEM
-
-                // TODO: split in other amount => might want to split on dropping items
-                #region SPLIT AMOUNT
-                if (Input.GetKey(KeyCode.LeftControl))
-                    if (2 <= package.Amount)
-                        package.ReduceAmount(package.Amount / 2);
-                #endregion SPLIT AMOUNT
-
-                #region QUICK MOVE ITEM
-                if (Input.GetKey(KeyCode.LeftShift))
-                {
-                    /// Quick-move follows the open side panel (issue #30): one pure resolver
-                    /// decides where shift-click sends the item. With the Stash open it is
-                    /// the same backpack ↔ Stash as always; with the Vendor open (issue #33)
-                    /// it is a shift-click sale - the item goes into the Sell Basket; with
-                    /// neither panel open nothing moves.
-                    var intent = InventoryProvider.Instance.QuickMoveFor(Container);
-
-                    if (intent.Kind == QuickMoveIntentKind.SellBasket)
-                    {
-                        /// One transaction over the source and the basket: the item leaves
-                        /// this slot and lands in the basket with its origin remembered; a
-                        /// full basket leaves it where it is (#33).
-                        _ = SellBasketQuickMove.SendToBasket(InventoryProvider.Instance.Basket, Container, position);
-                        return;
-                    }
-
-                    if (intent.Kind != QuickMoveIntentKind.MoveToContainer)
-                        return;
-
-                    _ = QuickMoveToContainer(intent.Target, position, package);
+                    _ = Container.RemoveAtPosition(position, new Package(Container, package.Item, 1)); // only consume one amount
 
                     return;
                 }
-                #endregion QUICK MOVE ITEM
 
-                #region DRAG ITEM
-                _ = Container.RemoveAtPosition(position, package);
+                if (category == ItemCategory.Equipment)
+                {
+                    /// Route the equip through a transaction (issue #10) as a right-click
+                    /// "swap in place": remove here, equip there, and swap whatever the
+                    /// equip displaces back into this same container. A player-driven move
+                    /// always executes - one displaced item that will not re-fit overflows
+                    /// to the hand, and only a second homeless item rolls the move back.
+                    var equipment = InventoryProvider.Instance.Equipment;
+                    var cursor = new CursorHolder(DragProvider.Instance);
 
-                var positionOffset = Position - position;
+                    using var transaction = new ItemTransaction(cursor, Container, equipment)
+                        .ReHomeThrough(Container)
+                        .SwapInPlace(new PackageOrigin(Container, position));
 
-                DragProvider.Instance.SetPackage(this, package, positionOffset, pointerPosition);
-                #endregion DRAG ITEM
+                    _ = Container.RemoveAtPosition(position, package);
+                    _ = equipment.TryAddToContainer(ref package);
+
+                    if (transaction.Aborted)
+                        return;
+
+                    transaction.Commit();
+
+                    /// The displaced equipped item re-homes into this container, often
+                    /// into the very cell just vacated - i.e. back under the cursor. The
+                    /// leading FadeOutPreview dismissed the tooltip on the click; bring it
+                    /// back for whatever now sits here (issue #13).
+                    SyncPreviewAfterMove();
+                    return;
+                }
+            }
+            #endregion USE ITEM
+
+            // TODO: split in other amount => might want to split on dropping items
+            #region SPLIT AMOUNT
+            if (Input.GetKey(KeyCode.LeftControl))
+                if (2 <= package.Amount)
+                    package.ReduceAmount(package.Amount / 2);
+            #endregion SPLIT AMOUNT
+
+            if (Input.GetKey(KeyCode.LeftShift))
+            {
+                QuickMove(position, package);
+                return;
             }
 
-            FadeOutPreview();
+            BeginDrag(position, package, pointerPosition);
         }
     }
 }

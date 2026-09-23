@@ -96,15 +96,8 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         protected override void MoveItem(PointerEventData eventData, Vector2 pointerPosition)
         {
-            if (Container == null)
+            if (!TryBeginMove(out var position, out var package))
                 return;
-
-            var position = Position;
-
-            if (!Container.TryGetItemAt(ref position, out var package))
-                return;
-
-            FadeOutPreview();
 
             if (ItemView.Of(package.Item).Definition.Category != ItemCategory.Equipment)
                 Debug.LogWarning("Something went wrong!");
@@ -129,43 +122,13 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             }
             #endregion UNEQUIP ITEM
 
-            #region QUICK MOVE ITEM
             if (Input.GetKey(KeyCode.LeftShift))
             {
-                /// Quick-move follows the open side panel (issue #30): equipment shift-clicks
-                /// to whichever panel is open. With the Stash open that is the stash, as
-                /// always; with the Vendor open (issue #33) it is a shift-click sale - the
-                /// worn item unequips straight into the Sell Basket; with neither panel open
-                /// nothing moves. The move stays (issue #10): the affix lift rides the
-                /// commit.
-                var intent = InventoryProvider.Instance.QuickMoveFor(Container);
-
-                if (intent.Kind == QuickMoveIntentKind.SellBasket)
-                {
-                    /// One transaction over the paper-doll and the basket: the worn item
-                    /// unequips (its affixes lifted on commit) and lands in the basket with
-                    /// its origin remembered; a full basket leaves it where it is (#33).
-                    _ = SellBasketQuickMove.SendToBasket(InventoryProvider.Instance.Basket, Container, position);
-                    return;
-                }
-
-                if (intent.Kind != QuickMoveIntentKind.MoveToContainer)
-                    return;
-
-                _ = QuickMoveToContainer(intent.Target, position, package);
-
+                QuickMove(position, package);
                 return;
             }
-            #endregion QUICK MOVE ITEM
 
-            #region DRAG ITEM
-            _ = Container.RemoveAtPosition(position, package);
-
-            // can equipment displays ever have an offset? See above => SetPackage is using Vector2Int.zero
-            var positionOffset = Position - position;
-
-            DragProvider.Instance.SetPackage(this, package, positionOffset, pointerPosition);
-            #endregion DRAG ITEM
+            BeginDrag(position, package, pointerPosition);
         }
     }
 }
