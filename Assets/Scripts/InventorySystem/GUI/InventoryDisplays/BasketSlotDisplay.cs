@@ -91,17 +91,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 if (intent.Kind != QuickMoveIntentKind.MoveToContainer)
                     return;
 
-                var target = intent.Target;
-                var cursor = new CursorHolder(DragProvider.Instance);
-
-                using var transaction = new ItemTransaction(cursor, Container, target).ReHomeThrough(target);
-
-                _ = Container.RemoveAtPosition(position, package);
-                _ = transaction.TryReHomeToContainerOrHand(ref package, new PackageOrigin(Container, position));
-
-                transaction.Commit();
-
-                if (!transaction.Aborted)
+                if (QuickMoveToContainer(intent.Target, position, package))
                     _ = InventoryProvider.Instance.Basket?.Origins.Remove(position);
 
                 return;

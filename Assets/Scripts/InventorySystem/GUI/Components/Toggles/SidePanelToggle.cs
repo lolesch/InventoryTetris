@@ -109,8 +109,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         {
             base.OnDisable();
 
-            if (Application.isPlaying && InventoryProvider.Instance != null)
-                InventoryProvider.Instance.OnContextChanged -= OnContextChanged;
+            InventoryProvider.UnsubscribeContextChanged(OnContextChanged);
         }
 
         /// <summary>
@@ -124,17 +123,8 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         /// </summary>
         private void Resubscribe()
         {
-            if (!Application.isPlaying)
-                return;
-
-            var provider = InventoryProvider.Instance;
-            if (provider == null)
-                return;
-
-            provider.OnContextChanged -= OnContextChanged;
-            provider.OnContextChanged += OnContextChanged;
-
-            SyncToContext(provider.ActiveContext);
+            if (InventoryProvider.TrySubscribeContextChanged(OnContextChanged, out var activeContext))
+                SyncToContext(activeContext);
         }
 
         private void OnContextChanged(InventoryContext context) => SyncToContext(context);

@@ -13,8 +13,8 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 {
     /// <summary>
     /// The GUI shell of the Sell Basket (issue #66 - the scene half of #32). Placed in the
-    /// Vendor Side Panel below the Supply grid (<c>SellBasketDisplay.prefab</c>, wired to
-    /// <see cref="InventoryProvider.BasketDisplay"/>) and owns the staged-sale flow:
+    /// Vendor Side Panel below the Supply grid (<c>SellBasketDisplay.prefab</c>) and owns the
+    /// staged-sale flow:
     ///
     /// <list type="number">
     /// <item><b>Stage by drop</b> - a Package dragged onto the basket grid lands in a cell and
@@ -43,8 +43,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
     [DefaultExecutionOrder(20)]
     internal sealed class SellBasketDisplay : MonoBehaviour
     {
-        /// <summary>The inventory grid the player stages a sale into - the same grid
-        /// <see cref="InventoryProvider.BasketDisplay"/> holds, and <see cref="InventoryProvider.Basket"/>
+        /// <summary>The inventory grid the player stages a sale into - binds itself to
+        /// <see cref="InventoryProvider.Basket"/>'s container via <see cref="ContainerRole.Basket"/>
+        /// (<see cref="AbstractContainerDisplay.OnEnable"/>), and <see cref="InventoryProvider.Basket"/>
         /// holds the basket logic behind it.</summary>
         [SerializeField, Tooltip("The basket grid - one BasketSlotDisplay per cell. Wired to the prefab's InventoryContainerDisplay.")]
         private InventoryContainerDisplay basketDisplay;
@@ -90,13 +91,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         private void OnEnable()
         {
-            if (!Application.isPlaying)
-                return;
-
-            var provider = InventoryProvider.Instance;
-
-            provider.OnContextChanged -= OnContextChanged;
-            provider.OnContextChanged += OnContextChanged;
+            _ = InventoryProvider.TrySubscribeContextChanged(OnContextChanged, out _);
 
             if (basket.Container != null)
             {
@@ -109,8 +104,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         private void OnDisable()
         {
-            if (Application.isPlaying && InventoryProvider.Instance != null)
-                InventoryProvider.Instance.OnContextChanged -= OnContextChanged;
+            InventoryProvider.UnsubscribeContextChanged(OnContextChanged);
 
             if (basket?.Container != null)
                 basket.Container.OnContentChanged -= OnBasketContentChanged;
@@ -118,10 +112,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         /// <summary>
         /// Wire the reserved fields. <b>basketDisplay</b> and <b>supplyBlocker</b> are wired
-        /// directly on the scene instance; the <see cref="InventoryProvider.BasketDisplay"/>
-        /// lookup and the by-name <see cref="FindSupplyBlocker"/> search are fallbacks for a
-        /// misconfigured instance, not the primary path. Confirm/Cancel are serialized
-        /// exclusively.
+        /// directly on the scene instance; the by-name <see cref="FindSupplyBlocker"/> search
+        /// and the child-search fallback below are fallbacks for a misconfigured instance, not
+        /// the primary path. Confirm/Cancel are serialized exclusively.
         /// </summary>
         private bool TryResolveDependencies()
         {
@@ -132,7 +125,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 return false;
 
             if (basketDisplay == null)
-                basketDisplay = InventoryProvider.Instance.BasketDisplay;
+                basketDisplay = GetComponentInChildren<InventoryContainerDisplay>();
 
             if (basketDisplay == null)
                 return false; // no grid - nothing to draw

@@ -76,25 +76,15 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
         /// </summary>
         private void OnEnable()
         {
-            if (!Application.isPlaying)
-                return;
-
-            var provider = InventoryProvider.Instance;
-            if (provider == null)
-                return;
-
-            provider.OnContextChanged -= OnContextChanged;
-            provider.OnContextChanged += OnContextChanged;
-
-            ApplyContext(provider.ActiveContext);
+            if (InventoryProvider.TrySubscribeContextChanged(OnContextChanged, out var activeContext))
+                ApplyContext(activeContext);
         }
 
         protected override void OnDisable()
         {
             base.OnDisable();
 
-            if (Application.isPlaying && InventoryProvider.Instance != null)
-                InventoryProvider.Instance.OnContextChanged -= OnContextChanged;
+            InventoryProvider.UnsubscribeContextChanged(OnContextChanged);
         }
 
         private void OnContextChanged(InventoryContext context) => ApplyContext(context);

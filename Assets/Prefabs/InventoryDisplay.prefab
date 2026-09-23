@@ -54,6 +54,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   containerSlotDisplays: []
+  role: 2
   slotDisplayPrefab: {fileID: 3613886384109497563, guid: 2287cac91a7c16e479ee377613d24cd7, type: 3}
 --- !u!222 &759432216187712598
 CanvasRenderer:

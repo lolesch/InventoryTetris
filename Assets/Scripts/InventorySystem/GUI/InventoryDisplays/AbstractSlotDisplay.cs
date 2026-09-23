@@ -191,6 +191,28 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         protected abstract void MoveItem(PointerEventData eventData, Vector2 pointerPosition);
 
+        /// <summary>
+        /// A quick-move's <see cref="QuickMoveIntentKind.MoveToContainer"/> arm (issue #30):
+        /// removes <paramref name="package"/> from this slot's <see cref="Container"/> at
+        /// <paramref name="position"/> and re-homes it into <paramref name="target"/>, rolling
+        /// back to the hand if it doesn't fit. Shared by every slot display's shift-click
+        /// handling - the same three lines were hand-copied per display before this.
+        /// </summary>
+        /// <returns>Whether the move committed, i.e. was not aborted.</returns>
+        protected bool QuickMoveToContainer(AbstractDimensionalContainer target, Vector2Int position, Package package)
+        {
+            var cursor = new CursorHolder(DragProvider.Instance);
+
+            using var transaction = new ItemTransaction(cursor, Container, target).ReHomeThrough(target);
+
+            _ = Container.RemoveAtPosition(position, package);
+            _ = transaction.TryReHomeToContainerOrHand(ref package, new PackageOrigin(Container, position));
+
+            transaction.Commit();
+
+            return !transaction.Aborted;
+        }
+
         protected void FadeInPreview() => RefreshHoverPreview(clearStale: false);
 
         /// <summary>

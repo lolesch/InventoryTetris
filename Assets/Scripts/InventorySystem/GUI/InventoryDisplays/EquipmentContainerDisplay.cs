@@ -7,6 +7,9 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 {
     [System.Serializable]
+    // Must enable after InventoryProvider's Awake builds its containers (order 0) - see
+    // AbstractContainerDisplay.OnEnable, which resolves this display's container from it.
+    [DefaultExecutionOrder(20)]
     internal sealed class EquipmentContainerDisplay : AbstractContainerDisplay
     {
         protected override void SetupSlotDisplays()

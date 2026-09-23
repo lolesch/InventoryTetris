@@ -55,45 +55,95 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// the Send/Recall/Death/Go-Venture side of phase reachability (#84).</summary>
         public void SyncContextToPhase(bool inField) => inventoryContext.SyncToPhase(inField);
 
+        /// <summary>
+        /// Detach-before-attach <see cref="OnContextChanged"/> subscribe, shared by every
+        /// panel/toggle/provider that tracks the Inventory Context (issue #85) - four
+        /// independent copies of this same guard-and-resubscribe idiom collapse into one.
+        /// No-ops outside Play mode, or before a provider exists, so a caller mid-domain-reload
+        /// or edit-time enable is left unsubscribed rather than creating one (issue #46).
+        /// </summary>
+        /// <returns>Whether the subscription was actually made; <paramref name="activeContext"/>
+        /// is only meaningful when it was.</returns>
+        public static bool TrySubscribeContextChanged(Action<InventoryContext> handler, out InventoryContext activeContext)
+        {
+            activeContext = default;
+
+            if (!Application.isPlaying)
+                return false;
+
+            var provider = Instance;
+            if (provider == null)
+                return false;
+
+            provider.OnContextChanged -= handler;
+            provider.OnContextChanged += handler;
+
+            activeContext = provider.ActiveContext;
+            return true;
+        }
+
+        /// <summary>The matching detach for <see cref="TrySubscribeContextChanged"/>, tolerant of
+        /// a provider that no longer exists (scene teardown) or a handler never subscribed.</summary>
+        public static void UnsubscribeContextChanged(Action<InventoryContext> handler)
+        {
+            if (Application.isPlaying && Instance != null)
+                Instance.OnContextChanged -= handler;
+        }
+
         [field: SerializeField] public bool ShowDebugPositions { get; private set; }
 
         [Space]
-        public EquipmentContainerDisplay EquipmentDisplay;
         [SerializeField] private Vector2Int equipmentSize = new(14, 1);
-
-        [Space]
-        public InventoryContainerDisplay InventoryDisplay;
         [SerializeField] private Vector2Int inventorySize = new(10, 6);
-
-        [Space]
-        public InventoryContainerDisplay StashDisplay;
         [SerializeField] private Vector2Int stashSize = new(10, 16);
-
-        [Space]
-        public InventoryContainerDisplay StoreDisplay;
         [SerializeField] private Vector2Int storeSize = new(10, 16);
 
-        /// <summary>The Sell Basket's grid (issue #66) - a new grid alongside the Supply
-        /// shelf (<see cref="StoreDisplay"/>), wired the same way <see cref="StashDisplay"/>
-        /// and <see cref="InventoryDisplay"/> are, and bound by <see cref="SellBasketDisplay"/>.</summary>
-        [Space]
-        public InventoryContainerDisplay BasketDisplay;
+        /// <summary>The Sell Basket's grid size (issue #66) - the basket alongside the Supply
+        /// shelf (<see cref="Store"/>), sized the same way <see cref="Stash"/> and
+        /// <see cref="Inventory"/> are, and bound by <see cref="SellBasketDisplay"/>.</summary>
         [SerializeField] private Vector2Int basketSize = new(5, 3);
 
         [SerializeField] private Slider amountSlider;
         [SerializeField] private TextMeshProUGUI amountText;
         private uint Amount => amountSlider != null ? (uint)amountSlider.value : 1;
 
-        private void SetInventories()
+        /// <summary>
+        /// The container-display registration seam (see <see cref="ContainerRole"/>): a display
+        /// resolves its own container by role instead of this provider holding a hard scene
+        /// reference to every display it owns - the direction that broke once the Vendor's slot
+        /// grids started spawning at runtime instead of being hand-placed. Subscribed from
+        /// <see cref="AbstractContainerDisplay.OnEnable"/>; mirrors
+        /// <see cref="TrySubscribeContextChanged"/>'s guard-and-resolve shape, so a display
+        /// enabling mid-domain-reload or at edit time is left unbound rather than creating a
+        /// provider (issue #46).
+        /// </summary>
+        /// <returns>Whether <paramref name="display"/> was actually bound.</returns>
+        public static bool TryRegisterDisplay(AbstractContainerDisplay display, ContainerRole role)
         {
-            EquipmentDisplay.SetupDisplay(Equipment);
-            InventoryDisplay.SetupDisplay(Inventory);
-            StashDisplay.SetupDisplay(Stash);
+            if (!Application.isPlaying)
+                return false;
 
-            StoreDisplay.SetupDisplay(Store);
-            if (BasketDisplay != null)
-                BasketDisplay.SetupDisplay(Basket.Container);
+            var provider = Instance;
+            if (provider == null)
+                return false;
+
+            var container = provider.ContainerFor(role);
+            if (container == null)
+                return false;
+
+            display.SetupDisplay(container);
+            return true;
         }
+
+        private AbstractDimensionalContainer ContainerFor(ContainerRole role) => role switch
+        {
+            ContainerRole.Equipment => Equipment,
+            ContainerRole.Inventory => Inventory,
+            ContainerRole.Stash => Stash,
+            ContainerRole.Store => Store,
+            ContainerRole.Basket => Basket?.Container,
+            _ => null,
+        };
 
         /// <summary>
         /// Where a shift-click on <paramref name="source"/> should send its item, given the
@@ -125,8 +175,6 @@ namespace ToolSmiths.InventorySystem.Inventories
             Wallet = new Wallet(Inventory, currencyMinter);
 
             RestockStore();
-
-            SetInventories();
         }
 
         private void AddEquipment(EquipmentType equipmentType)
