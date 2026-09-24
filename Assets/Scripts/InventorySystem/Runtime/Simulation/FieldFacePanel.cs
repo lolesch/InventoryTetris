@@ -1,4 +1,5 @@
 using Submodules.Utility.UI;
+using ToolSmiths.InventorySystem.Inventories;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Runtime.Simulation
@@ -22,6 +23,13 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         [Tooltip("The Combat Panel - faded in lockstep with this face, including during the Go " +
                  "Venture preview.")]
         [SerializeField] private SimplePanel combatPanel;
+
+        /// <summary>Registers with <see cref="InventoryProvider.RegisterFieldFacePanel"/> so
+        /// <see cref="InventoryProvider.IsFieldReachable"/> tracks this face without the provider
+        /// holding a hard reference to it - a provider re-created mid-run would otherwise lose
+        /// it silently. A panel "should always stay enabled" (<see cref="SimplePanel"/>'s own
+        /// doc), so this fires effectively once per Play session.</summary>
+        private void OnEnable() => InventoryProvider.RegisterFieldFacePanel(this);
 
         protected override void BeforeAppear()
         {

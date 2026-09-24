@@ -56,10 +56,29 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// the Send/Recall/Death/Go-Venture side of phase reachability (#84).</summary>
         public void SyncContextToPhase(bool inField) => inventoryContext.SyncToPhase(inField);
 
-        [Tooltip("The InFields face - unreachable while it is up (InField, and the Go Venture " +
-                 "preview alike, since both show it). Wired once here rather than on every " +
-                 "Town Stop toggle.")]
-        [SerializeField] private FieldFacePanel fieldFacePanel;
+        /// <summary>The InFields face - unreachable while it is up (InField, and the Go Venture
+        /// preview alike, since both show it). Not authored: registered by
+        /// <see cref="RegisterFieldFacePanel"/>, the same seam as <see cref="TryRegisterDisplay"/>
+        /// and for the same reason - a provider can be created fresh mid-run (see
+        /// <see cref="AbstractProvider{T}"/>/<c>AbstractSceneSingleton&lt;T&gt;</c>), and a fresh
+        /// instance has no Inspector-authored fields, so a hard scene reference here would
+        /// silently go null and leave every Town Stop reading as always-reachable.</summary>
+        private FieldFacePanel fieldFacePanel;
+
+        /// <summary>The InFields face's own registration, mirroring <see cref="TryRegisterDisplay"/>:
+        /// <see cref="FieldFacePanel"/> registers itself (from its own <c>OnEnable</c>) rather
+        /// than this provider holding a hard reference to it.</summary>
+        public static void RegisterFieldFacePanel(FieldFacePanel panel)
+        {
+            if (!Application.isPlaying)
+                return;
+
+            var provider = Instance;
+            if (provider == null)
+                return;
+
+            provider.fieldFacePanel = panel;
+        }
 
         /// <summary>Whether a Town Stop can be reached right now - false whenever
         /// <see cref="fieldFacePanel"/> is up, which <see cref="RunPhasePanel"/>'s shared
