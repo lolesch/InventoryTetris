@@ -4814,7 +4814,7 @@ GameObject:
   - component: {fileID: 322785546}
   - component: {fileID: 322785545}
   m_Layer: 0
-  m_Name: INVENTORY PROVIDER
+  m_Name: INVENTORY_PROVIDER
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -16224,7 +16224,7 @@ GameObject:
   - component: {fileID: 1129816803}
   - component: {fileID: 1129816802}
   m_Layer: 0
-  m_Name: GameObject
+  m_Name: SIMULATION_PROVIDER
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -28256,7 +28256,7 @@ GameObject:
   - component: {fileID: 2074813804}
   - component: {fileID: 2074813803}
   m_Layer: 0
-  m_Name: ITEM PROVIDER
+  m_Name: ITEM_PROVIDER
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -30842,7 +30842,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7636041802875372632, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
       propertyPath: m_Name
-      value: StaticPreviewDisplay
+      value: PREVIEW_PROVIDER
       objectReference: {fileID: 0}
     - target: {fileID: 7636041802875372633, guid: a25d78a8647a71449ac49f6315d6d9b8, type: 3}
       propertyPath: m_LocalPosition.x
@@ -31099,7 +31099,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 4737588000363776922, guid: 86b87c1693d2599468c0892b193d234e, type: 3}
       propertyPath: m_Name
-      value: StaticDragDisplay
+      value: DRAG_PROVIDER
       objectReference: {fileID: 0}
     - target: {fileID: 4737588000363776923, guid: 86b87c1693d2599468c0892b193d234e, type: 3}
       propertyPath: m_LocalPosition.x
