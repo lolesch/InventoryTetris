@@ -18,9 +18,9 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
     /// Stops. It does not decide whether the panel is up: the panel subscribes to the Inventory
     /// Context and derives its own visibility (<see cref="SidePanel"/>), which is why
     /// <see cref="OnToggle"/> is empty - the hook a <see cref="PanelToggle"/> would have faded the
-    /// panel from is simply not this class's job. The minimap's Town Stops being non-interactable
-    /// during a Run is the same split from the other side - the input-side expression of a fact
-    /// the context is the authority for.</para>
+    /// panel from is simply not this class's job. The Town Stops going non-interactable during a
+    /// Run (<see cref="InventoryProvider.IsFieldReachable"/>) is the same split from the other
+    /// side - the input-side expression of a fact the context is the authority for.</para>
     ///
     /// <para><b>The pressed visual resyncs from the context, not from the group it no longer
     /// shares an authority with.</b> <see cref="SyncToContext"/> sets this toggle's own state from
@@ -28,10 +28,10 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
     /// phase-driven close and after a click alike - including the Hero Panel's toggle, which
     /// belongs to no group and would otherwise look up while its panel is up.</para>
     ///
-    /// <para><b>No second group.</b> Mutual exclusion comes from the minimap's <c>TownGroup</c>,
-    /// which Stash, Vendor and Healer belong to (Go Venture does not - it is a plain button, not
-    /// a panel with state to protect). This class must not introduce a <see cref="RadioGroup"/>
-    /// of its own, or "which panel is open" would have two answers.</para>
+    /// <para><b>No second group.</b> Mutual exclusion comes from the shared <c>TownGroup</c>
+    /// <see cref="RadioGroup"/>, which Stash, Vendor and Healer belong to (Go Venture does not -
+    /// it is a plain button, not a panel with state to protect). This class must not introduce a
+    /// <see cref="RadioGroup"/> of its own, or "which panel is open" would have two answers.</para>
     ///
     /// <para><b>The request (issues #84, #85).</b> <see cref="RequestAndToggle"/> is the toggle's
     /// own click/hotkey edge: it runs before <see cref="AbstractToggle.SetToggle"/>, so it fires
@@ -51,9 +51,26 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
                  "authored.")]
         [SerializeField] private SidePanel panel;
 
-        [Tooltip("Optional hotkey. Inert whenever the toggle is non-interactable - which the " +
-                 "minimap already arranges for the Field face and for InField.")]
+        [Tooltip("Optional hotkey. Inert whenever the toggle is non-interactable - which " +
+                 "InventoryProvider.IsFieldReachable arranges for the Field face and for InField.")]
         [SerializeField] private KeyCode hotkey = KeyCode.None;
+
+        [Tooltip("Whether this toggle is gated by InventoryProvider.IsFieldReachable at all - " +
+                 "off for a toggle, such as the Hero Panel's, that stays reachable regardless " +
+                 "of face.")]
+        [SerializeField] private bool gatedByFieldReachability = true;
+
+        /// <summary>The Inspector-authored baseline this toggle's <c>interactable</c> gates
+        /// against, captured once so a Town Stop shipped disabled (<c>interactable == false</c>
+        /// from the start) stays disabled rather than coming back on for merely being InTown.</summary>
+        private bool authoredInteractable;
+
+        protected override void Awake()
+        {
+            base.Awake();
+
+            authoredInteractable = interactable;
+        }
 
         protected override void OnClick() => RequestAndToggle(!IsOn);
 
@@ -67,14 +84,17 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         protected override void OnToggle() { }
 
         /// <summary>
-        /// The hotkey is the same act as a click, guard for guard - including the
-        /// <see cref="RadioGroup.IsClearable"/> rule, so a hotkey cannot switch off a
-        /// toggle a click could not. <c>interactable</c> is the phase gate: the minimap turns
-        /// the Town toggles off whenever the Field face is up, which covers both InField and
-        /// the Go Venture preview, so no <c>RunPhase</c> dependency is needed here.
+        /// <c>interactable</c> is the phase gate: unreachable whenever
+        /// <see cref="InventoryProvider.IsFieldReachable"/> says so (InField and the Go Venture
+        /// preview alike, since both show the same face) - so no <c>RunPhase</c> dependency is
+        /// needed here. Asked every frame rather than pushed by a controller (issue #85), the
+        /// same way <see cref="SyncToContext"/> asks the panel instead of being told.
         /// </summary>
         private void Update()
         {
+            if (gatedByFieldReachability && InventoryProvider.Instance != null)
+                interactable = authoredInteractable && InventoryProvider.Instance.IsFieldReachable;
+
             if (hotkey == KeyCode.None || !interactable)
                 return;
 
@@ -139,7 +159,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         /// toggle state exactly as <see cref="AbstractToggle.SetToggle"/> always has - but only
         /// when the request was actually made (<see cref="SidePanel.RequestContext"/>'s result).
         /// A toggle that moved while its request silently did not would press for a context
-        /// nothing set, which is how a stuck button and a lying minimap start.
+        /// nothing set, which is how a stuck button and a pressed-but-empty panel start.
         ///
         /// <para><see cref="WouldToggleNoOp"/> guards the other direction, and for the same
         /// reason: <c>OnClick</c> has no other veto before reaching here, so without it a click on

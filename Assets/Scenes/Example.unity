@@ -6678,6 +6678,7 @@ MonoBehaviour:
   toggledOnSprite: {fileID: 0}
   panel: {fileID: 433628014}
   hotkey: 118
+  gatedByFieldReachability: 1
 --- !u!224 &433371383 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 7705405327472974782, guid: 91471b344b37389498b75d12a2cee4c0, type: 3}
@@ -9133,6 +9134,7 @@ MonoBehaviour:
   toggledOnSprite: {fileID: 0}
   panel: {fileID: 2069960140}
   hotkey: 0
+  gatedByFieldReachability: 1
 --- !u!114 &612742130
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12394,6 +12396,7 @@ MonoBehaviour:
   toggledOnSprite: {fileID: 0}
   panel: {fileID: 1561434728}
   hotkey: 105
+  gatedByFieldReachability: 1
 --- !u!114 &856665806
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -19400,6 +19403,7 @@ MonoBehaviour:
   toggledOnSprite: {fileID: 0}
   panel: {fileID: 1525008107}
   hotkey: 115
+  gatedByFieldReachability: 1
 --- !u!1001 &1399237501
 PrefabInstance:
   m_ObjectHideFlags: 0

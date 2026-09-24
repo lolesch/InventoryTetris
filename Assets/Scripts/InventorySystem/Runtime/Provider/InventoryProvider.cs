@@ -6,6 +6,7 @@ using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.GUI.InventoryDisplays;
 using ToolSmiths.InventorySystem.Runtime.Provider;
+using ToolSmiths.InventorySystem.Runtime.Simulation;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -54,6 +55,18 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// phase just made it unreachable (see <see cref="InventoryContextState.SyncToPhase"/>) -
         /// the Send/Recall/Death/Go-Venture side of phase reachability (#84).</summary>
         public void SyncContextToPhase(bool inField) => inventoryContext.SyncToPhase(inField);
+
+        [Tooltip("The InFields face - unreachable while it is up (InField, and the Go Venture " +
+                 "preview alike, since both show it). Wired once here rather than on every " +
+                 "Town Stop toggle.")]
+        [SerializeField] private FieldFacePanel fieldFacePanel;
+
+        /// <summary>Whether a Town Stop can be reached right now - false whenever
+        /// <see cref="fieldFacePanel"/> is up, which <see cref="RunPhasePanel"/>'s shared
+        /// <see cref="Submodules.Utility.UI.PanelGroup"/> keeps correct through every InTown/
+        /// InField edge, deliberate (the buttons) or not (Death). <see cref="SidePanelToggle"/>
+        /// asks this instead of each holding its own reference to the panel.</summary>
+        public bool IsFieldReachable => fieldFacePanel == null || !fieldFacePanel.IsVisible;
 
         /// <summary>
         /// Detach-before-attach <see cref="OnContextChanged"/> subscribe, shared by every
