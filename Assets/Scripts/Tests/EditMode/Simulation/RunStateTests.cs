@@ -129,6 +129,17 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
+        public void Send_WhileHeroIsDown_Throws()
+        {
+            var run = NewRun(FrailHero());
+            run.Send(Skirmishers(4));
+            DriveHeroDown(run);
+
+            Assert.That(() => run.Send(Skirmishers(4)), Throws.InvalidOperationException,
+                "the hero is down — the Run ends in HandleDeath before a new one can be Sent");
+        }
+
+        [Test]
         public void Recall_WhileInTown_Throws()
         {
             var run = NewRun(OneShotHero());
