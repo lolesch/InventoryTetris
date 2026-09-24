@@ -1,7 +1,6 @@
 using Submodules.Utility.UI;
 using ToolSmiths.InventorySystem.GUI.Components.Panels;
 using ToolSmiths.InventorySystem.Inventories;
-using ToolSmiths.InventorySystem.Runtime.Provider;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
@@ -91,8 +90,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         /// survives a Play session and <b>an <c>Awake</c> subscription never comes back</b> after
         /// <see cref="OnDisable"/> has torn it down on the way out of the first Play entry — the
         /// toggle then presses and unpresses while the context it should have requested is never
-        /// touched. <c>OnEnable</c> is the edge that re-runs per entry, and
-        /// <see cref="Resubscribe"/> is idempotent so nothing stacks.
+        /// touched.
         ///
         /// <para>Overridden rather than declared: this class derives
         /// <see cref="UnityEngine.UI.Selectable"/>, which owns <c>OnEnable</c>, and a same-named
@@ -102,32 +100,16 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         {
             base.OnEnable();
 
-            Resubscribe();
+            if (InventoryProvider.TrySubscribeContextChanged(SyncToContext, out var activeContext))
+                SyncToContext(activeContext);
         }
 
         protected override void OnDisable()
         {
             base.OnDisable();
 
-            InventoryProvider.UnsubscribeContextChanged(OnContextChanged);
+            InventoryProvider.UnsubscribeContextChanged(SyncToContext);
         }
-
-        /// <summary>
-        /// Attaches to the context and brings the pressed state in line with it, in one place so
-        /// the two cannot be reached by different routes. Detach-before-attach, so a re-enable
-        /// cannot stack a second subscription (cf. da14ce2).
-        ///
-        /// <para>The <see cref="InventoryProvider"/> guard is the one failure this class has to
-        /// tolerate quietly: there is no context to track and no provider to ask, and the toggles
-        /// stay unsubscribed and inert until the next enable.</para>
-        /// </summary>
-        private void Resubscribe()
-        {
-            if (InventoryProvider.TrySubscribeContextChanged(OnContextChanged, out var activeContext))
-                SyncToContext(activeContext);
-        }
-
-        private void OnContextChanged(InventoryContext context) => SyncToContext(context);
 
         /// <summary>
         /// Brings this toggle's pressed state back in line with the Inventory Context: on exactly

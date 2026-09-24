@@ -26,20 +26,6 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
         private PrefabPool<CharacterStatModifierDisplay> itemStatPool;
         private PrefabPool<CharacterStatModifierDisplay> ItemStatPool => itemStatPool ??= new(itemStatPrefab);
 
-        /// True from the moment a hover starts fading in to the moment the next one starts
-        /// fading out - matches the old activeSelf-based reading so PreviewProvider's per-frame
-        /// cursor-follow keeps running through the fade instead of waiting for it to finish.
-        private bool isPreviewing;
-        public bool IsPreviewing => isPreviewing;
-
-        protected override void BeforeAppear() => isPreviewing = true;
-
-        protected override void BeforeDisappear()
-        {
-            isPreviewing = false;
-            base.BeforeDisappear();
-        }
-
         public void Refresh((Package package, Package compareTo) data) => Refresh(data.package, data.compareTo);
         public void Refresh(Package package, Package compareTo, float priceOverride = -1f)
         {
@@ -150,6 +136,19 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
             }
 
             FadeIn();
+        }
+
+        /// <summary>Content (text, pooled stat rows) is set just before <see cref="FadeIn"/>,
+        /// but the layout group/content size fitter driven by that content only recomputes on
+        /// Unity's next deferred layout pass. Since this panel stays enabled and only toggles
+        /// its CanvasGroup alpha, that pass would otherwise land a frame late — sized for the
+        /// *previous* hover instead of this one. Force it here, before the CanvasGroup starts
+        /// fading in.</summary>
+        protected override void BeforeAppear()
+        {
+            base.BeforeAppear();
+
+            (transform as RectTransform).RefreshContentFitter();
         }
     }
 }

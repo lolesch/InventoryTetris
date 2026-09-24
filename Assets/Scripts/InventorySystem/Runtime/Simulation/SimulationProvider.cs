@@ -36,7 +36,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// one profile per <see cref="LocationConfig"/> and Send / Settle / Recover all share it.
     ///
     /// The frame-by-frame tick is <see cref="SimulationDriver"/>'s job; the real map UI
-    /// (<see cref="MinimapController"/>, issue #27) replaces the old debug panel. The driver is
+    /// (<see cref="RunPhasePanel"/>, issue #27) replaces the old debug panel. The driver is
     /// attached to this provider's GameObject on <see cref="Awake"/> so a bare scene needs
     /// no wiring.
     /// </summary>
@@ -178,7 +178,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// <summary>
         /// Lay the per-kill loot flow over the live Encounter — real bag, real Wallet, the
         /// ItemProvider's catalog / coin tables. A no-op when the scene has no configured
-        /// ItemProvider: the fight still runs, just with nothing to earn or lose.
+        /// ItemProvider, or no InventoryProvider with its Wallet wired yet (mirrors
+        /// <see cref="BagGauge"/>'s guard — a provider that hasn't finished resolving is the
+        /// same "nothing to earn or lose" case as a missing catalog, not a crash).
         /// </summary>
         private void WireLoot(EncounterSimulation encounter, LocalPlayer player)
         {
@@ -187,12 +189,16 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 || itemProvider.CurrencyTypeDistribution == null)
                 return;
 
+            var inventoryProvider = InventoryProvider.Instance;
+            if (inventoryProvider == null || inventoryProvider.Wallet == null)
+                return;
+
             _itemGenerator ??= new ItemGenerator(itemProvider.Catalog, new UnityRollSource());
             var coins = new CurrencyDropTableCoinSource(
                 itemProvider.CurrencyTypeDistribution, itemProvider.CurrencyDropTable);
 
             _lootFlow = new LootFlow(encounter, Behaviour, _itemGenerator, coins,
-                InventoryProvider.Instance.Inventory, InventoryProvider.Instance.Wallet);
+                inventoryProvider.Inventory, inventoryProvider.Wallet);
 
             // The Run accumulates the base-unit coin take so Death's fee reads it (issue #44).
             _lootFlow.CoinsBanked += Run.BankCurrency;

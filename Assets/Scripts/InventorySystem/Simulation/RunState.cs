@@ -108,6 +108,9 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// </summary>
         public void Send(EncounterProfile location)
         {
+            if (_heroDown)
+                throw new InvalidOperationException("The hero is down — the Run ends in HandleDeath before a new one can be Sent.");
+
             if (location == null) throw new ArgumentNullException(nameof(location));
             if (Phase != RunPhase.InTown)
                 throw new InvalidOperationException("A Run is already in the Field — Recall or HandleDeath before Sending again.");

@@ -44,7 +44,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
         private void Update()
         {
-            if (hoveredItem.IsPreviewing)
+            if (hoveredItem.IsVisible)
                 MoveDisplay();
 
             void MoveDisplay()

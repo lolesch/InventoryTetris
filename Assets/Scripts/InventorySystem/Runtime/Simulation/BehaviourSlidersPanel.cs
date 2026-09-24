@@ -18,9 +18,14 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// 0=Common, 1=Magic, 2=Rare, 3=Unique. Whole number positions give a tactile snap;
     /// fractional values are rounded.
     ///
-    /// Lives on the Combat Panel, which <see cref="MinimapController"/> fades in on Send and out
-    /// on Recall / Death. Subscribes to slider events in <see cref="SimplePanel.BeforeAppear"/>
-    /// so they are live as soon as the panel becomes visible.
+    /// Lives on the Combat Panel, a child of the InFields face. Its own visibility is not
+    /// <see cref="RunPhase"/>-driven — <see cref="RunPhase.InField"/> only exists once a Location
+    /// is actually Sent to, but the Combat Panel must already be up during the Go Venture preview
+    /// (still <see cref="RunPhase.InTown"/>, no Run yet). <see cref="FieldFacePanel"/> cascades
+    /// this panel's <see cref="FadeIn"/>/<see cref="FadeOut"/> straight from its own appear/
+    /// disappear instead, so both follow the same UI-layer event the preview relies on. Subscribes
+    /// to slider events in <see cref="SimplePanel.BeforeAppear"/> so they are live as soon as the
+    /// panel becomes visible.
     ///
     /// <see cref="combatStatsText"/> and <see cref="lastRunText"/> carry over the live-encounter
     /// and last-run readouts <c>SimulationDebugPanel</c> used to be the only place to see —
@@ -52,6 +57,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         protected override void BeforeAppear()
         {
+            base.BeforeAppear();
+            
             var provider = SimulationProvider.Instance;
             if (provider == null) return;
 

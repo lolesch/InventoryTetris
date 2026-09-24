@@ -58,9 +58,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                         containerSlotDisplays[current].SetupSlot(this, Container, new(x, y));
                     }
 
-                List<InventorySlotDisplay> DestroyInvalidSlotDisplays()
+                List<AbstractSlotDisplay> DestroyInvalidSlotDisplays()
                 {
-                    var slotDisplays = GetComponentsInChildren<InventorySlotDisplay>().ToList();
+                    var slotDisplays = GetComponentsInChildren<AbstractSlotDisplay>().ToList();
 
                     for (var i = slotDisplays.Count - 1; Container?.Capacity <= i; i--)
                     {
