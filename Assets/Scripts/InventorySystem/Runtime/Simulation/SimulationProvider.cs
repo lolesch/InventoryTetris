@@ -89,7 +89,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         /// <summary>
         /// The live Run's loot flow (issue #24) — <c>null</c> in Town or when the ItemProvider
-        /// is not configured. Exposed for the debug panel so a full bag visibly strands loot.
+        /// is not configured. Exposed so the Combat Panel's stats readout can show a full bag
+        /// visibly stranding loot.
         /// </summary>
         public LootFlow LootFlow => _lootFlow;
 
@@ -106,11 +107,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             if (!TryGetComponent<SimulationDriver>(out _))
                 _ = gameObject.AddComponent<SimulationDriver>();
-
-#if UNITY_EDITOR
-            if (!TryGetComponent<SimulationDebugPanel>(out _))
-                _ = gameObject.AddComponent<SimulationDebugPanel>();
-#endif
         }
 
         private void OnValidate() => ApplyBehaviourDefaults();
