@@ -55,9 +55,10 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
                  "InventoryProvider.IsFieldReachable arranges for the Field face and for InField.")]
         [SerializeField] private KeyCode hotkey = KeyCode.None;
 
-        [Tooltip("Whether this toggle is gated by InventoryProvider.IsFieldReachable at all - " +
-                 "off for a toggle, such as the Hero Panel's, that stays reachable regardless " +
-                 "of face.")]
+        [Tooltip("Whether this toggle is gated by InventoryProvider.IsFieldReachable at all. " +
+                 "Only ever consulted for a toggle in a RadioGroup; an ungrouped toggle, such " +
+                 "as the Hero Panel's, is never field-gated - the Hero is reachable in both " +
+                 "faces, so its hotkey must survive the field.")]
         [SerializeField] private bool gatedByFieldReachability = true;
 
         /// <summary>The Inspector-authored baseline this toggle's <c>interactable</c> gates
@@ -89,10 +90,15 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         /// preview alike, since both show the same face) - so no <c>RunPhase</c> dependency is
         /// needed here. Asked every frame rather than pushed by a controller (issue #85), the
         /// same way <see cref="SyncToContext"/> asks the panel instead of being told.
+        ///
+        /// <para>Only a toggle in a <see cref="RadioGroup"/> is gated - a Town Stop. The Hero
+        /// Panel's toggle belongs to no group and is reachable in both faces, so gating it would
+        /// take its hotkey away in the field for nothing; keying the gate on the group makes that
+        /// exemption structural instead of a per-instance checkbox the scene can get wrong.</para>
         /// </summary>
         private void Update()
         {
-            if (gatedByFieldReachability && InventoryProvider.Instance != null)
+            if (gatedByFieldReachability && RadioGroup && InventoryProvider.Instance != null)
                 interactable = authoredInteractable && InventoryProvider.Instance.IsFieldReachable;
 
             if (hotkey == KeyCode.None || !interactable)
