@@ -83,7 +83,10 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// </summary>
         public bool RecallRequested => _recallRequested;
 
-        /// <summary>The result of the most recently finished Run, or <c>null</c> if none has finished yet.</summary>
+        /// <summary>
+        /// The result of the most recently finished Run, or <c>null</c> if none has finished yet
+        /// or a new Run has since been <see cref="Send"/>.
+        /// </summary>
         public RunResult? LastResult { get; private set; }
 
         /// <summary>
@@ -123,6 +126,7 @@ namespace ToolSmiths.InventorySystem.Simulation
             _encounter.HeroDowned += _onHeroDowned;
             _encounter.RecallRequested += _onRecallRequested;
             ResetRunTotals();
+            LastResult = null;
 
             Phase = RunPhase.InField;
             PhaseChanged?.Invoke(Phase);

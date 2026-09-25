@@ -27,10 +27,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// to slider events in <see cref="SimplePanel.BeforeAppear"/> so they are live as soon as the
     /// panel becomes visible.
     ///
-    /// <see cref="combatStatsText"/> and <see cref="lastRunText"/> carry over the live-encounter
-    /// and last-run readouts <c>SimulationDebugPanel</c> used to be the only place to see —
-    /// refreshed every <see cref="Update"/> rather than on a slider event, since HP/XP/sim time
-    /// tick continuously while the sliders only change on drag.
+    /// The live-encounter and last-run readouts that used to live here moved to
+    /// <see cref="EncounterStatsPanel"/> (issue #61), as its own sibling section between this
+    /// panel and the enemy HP bar pool.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class BehaviourSlidersPanel : SimplePanel
@@ -41,10 +40,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         [SerializeField] private Slider resourceReserveSlider;
         [SerializeField] private Slider lootFilterSlider;
         [SerializeField] private Slider simSpeedSlider;
-
-        [Header("Combat stats (moved from SimulationDebugPanel)")]
-        [SerializeField] private TextMeshProUGUI combatStatsText;
-        [SerializeField] private TextMeshProUGUI lastRunText;
 
         private HeroBehaviour _behaviour;
 
@@ -104,61 +99,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             SetSliderListeners(add: false);
 
             _behaviour = null;
-        }
-
-        private void Update()
-        {
-            var provider = SimulationProvider.Instance;
-            if (provider == null) return;
-
-            RefreshCombatStats(provider);
-            RefreshLastRun(provider.Run);
-        }
-
-        private void RefreshCombatStats(SimulationProvider provider)
-        {
-            if (combatStatsText == null) return;
-
-            var encounter = provider.Run.Encounter;
-            if (encounter == null)
-            {
-                combatStatsText.text = string.Empty;
-                return;
-            }
-
-            var hero = encounter.Hero;
-            var groundDrops = provider.LootFlow?.GroundDrops.Count ?? 0;
-
-            combatStatsText.text =
-                $"Encounter {encounter.CurrentEncounter}   cleared {encounter.EncountersCleared}\n" +
-                $"Enemies  alive {encounter.AliveEnemyCount}   defeated {encounter.EnemiesDefeated}\n" +
-                $"Hero HP {hero.HealthFraction * 100f:0}%   Resource {hero.ResourceFraction * 100f:0}%\n" +
-                $"XP pot {encounter.UnsettledXp:0}   settled {encounter.SettledXp}\n" +
-                $"Sim time {encounter.Duration:0.0}s\n" +
-                $"Ground drops {groundDrops}   coins banked {provider.Run.CurrencyBanked:n0}";
-        }
-
-        private void RefreshLastRun(RunState run)
-        {
-            if (lastRunText == null) return;
-
-            if (!run.LastResult.HasValue)
-            {
-                lastRunText.text = string.Empty;
-                return;
-            }
-
-            var result = run.LastResult.Value;
-            var text =
-                $"Last Run: {result.Outcome}\n" +
-                $"kills {result.EnemiesDefeated}   cleared {result.EncountersCleared}\n" +
-                $"XP settled {result.XpSettled}   forfeited {result.XpForfeited}";
-
-            text += result.Outcome == RunOutcome.Died
-                ? $"\nfee {result.CurrencyFee:n0}   XP lost {result.XpLost}"
-                : $"\nbanked {result.CurrencyBanked:n0}";
-
-            lastRunText.text = text;
         }
 
         /// <summary>
