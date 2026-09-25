@@ -1,8 +1,8 @@
 # Enemy HP Bar Binding
 
 Date: 2026-09-25
-Status: Scoping spec — not a plan. Slice into a GitHub issue with `/to-tickets`, build with
-`/implement`.
+Status: Sliced — #93 (the type move; prefactor, grabbable now) and #94 (the binding, blocked by
+#93 and #60). Build with `/implement`.
 Base: `main` at `4e966ee`.
 Depends on: `issue-60/enemy-hp-bar-pool` (PR #92) — supplies `EnemyHealthBarPool`,
 `EnemyHealthBarDisplay` and the Combat Panel scene wiring this spec binds.
@@ -30,9 +30,10 @@ position. `Enemy.cs` sits in `InventorySystem.Simulation.asmdef`, which referenc
 `InventorySystem.Data`, `InventorySystem.Items` and `InventorySystem.Containers`.
 `CharacterStat.cs` and `CharacterResource.cs` sit under `Runtime/Character/` with no asmdef,
 so they compile into `Assembly-CSharp` — and an asmdef cannot reference `Assembly-CSharp`.
-The two types are also misfiled relative to themselves: both already declare the namespace
-`ToolSmiths.InventorySystem.Data`. They are filed away from where they say they live, and the
-namespace is the correct one.
+The two types are also misfiled relative to themselves, and to each other: `CharacterStat`
+declares the namespace `ToolSmiths.InventorySystem.Data`, while its own subclass
+`CharacterResource` declares `ToolSmiths.InventorySystem.Runtime.Character`. One base/derived
+pair, two answers to where it lives — and the assembly name agrees with only one of them.
 
 ## Solution
 
@@ -62,6 +63,16 @@ allows engine references, so both files compile there unchanged, and
 
 The asmdef graph does not change. Nothing is dissolved, merged or re-scoped: the sim module
 keeps its boundary and simply reaches the type the way it reaches `MutableFloat` today.
+
+`CharacterResource`'s namespace is aligned to `CharacterStat`'s in the same move, so the pair
+has one name for one place. That is churn inside a change which is otherwise behaviour-neutral,
+and it is taken deliberately: leaving it would put a type named `...Runtime.Character` into the
+`Data` assembly — the namespace-versus-assembly mismatch `docs/agents/codebase-notes.md` warns
+about, now made worse by splitting a base from its subclass. The blast radius is the consumers
+in `Assembly-CSharp` (`BaseCharacter`, `LocalPlayer`, `ResourceRegen`, `HeroCombatant`,
+`ResourceDisplay`, `BaseCharacterExtensions`), all compiler-caught. It is serialization-safe
+because nothing in the project uses `[SerializeReference]`: the only coupling to YAML is the
+`BaseCharacter` field name, which does not change.
 
 ### 3. `EncounterSimulation` gains `EnemySpawned`
 
