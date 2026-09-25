@@ -84,6 +84,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
                     experience.AddModifier(statMod);
                     experience.DepleteCurrent();
+
+                    CharacterProvider.Instance.HealPlayer();
                 }
             }
         }
