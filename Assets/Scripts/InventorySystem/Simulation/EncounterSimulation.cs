@@ -162,6 +162,12 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// </summary>
         public event Action RecallRequested;
 
+        /// <summary>Raised each tick the hero lands a physical Strike — the Ability hotbar's flash (issue #62).</summary>
+        public event Action HeroStriked;
+
+        /// <summary>Raised each tick the hero commits a magical Cast — the Ability hotbar's flash (issue #62).</summary>
+        public event Action HeroCast;
+
         /// <summary>
         /// Bank <paramref name="deltaSeconds"/> of real time and run every whole tick now due
         /// (0..N). Returns the number of ticks run. A no-op once the sim has
@@ -339,6 +345,7 @@ namespace ToolSmiths.InventorySystem.Simulation
             if (target == null) return;
 
             target.ReceivePhysical(_hero.PhysicalDamage);
+            HeroStriked?.Invoke();
             if (target.IsDown) Defeat(target);
         }
 
@@ -357,6 +364,7 @@ namespace ToolSmiths.InventorySystem.Simulation
             if (!casting || _hero.Resource < _hero.CastCost || _enemies.Count == 0) return;
 
             _hero.SpendResource(_hero.CastCost);
+            HeroCast?.Invoke();
 
             var targets = HighestHealth(_tuning.CastTargets);
             for (var i = 0; i < targets.Count; i++)
