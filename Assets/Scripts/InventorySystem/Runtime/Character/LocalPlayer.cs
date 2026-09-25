@@ -12,7 +12,7 @@ using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Runtime.Character
 {
-    public class LocalPlayer : BaseCharacter, IStatReceiver
+    public class LocalPlayer : BaseCharacter, IStatReceiver, IItemReceiver
     {
         //TODO: make the displayLogic its own component and design its layout individually and not via a pool
         [SerializeField] private CharacterStatDisplay characterStatPrefab;
@@ -169,6 +169,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
             return false;
         }
+
+        /// <see cref="IItemReceiver"/> takes item+amount apart rather than a <c>Package</c>,
+        /// since <c>Package</c> is Containers-resident and IItemReceiver lives in Items -
+        /// see the interface doc. This just rewraps into the Package the real logic needs.
+        bool IItemReceiver.PickUpItem(ItemInstance item, uint amount) => PickUpItem(new Package(null, item, amount));
 
         public float CompareStatModifiers(CharacterStatModifier playerStatModifier, StatModifier other) => CompareStatModifiers(playerStatModifier.Stat, playerStatModifier.Modifier, other);
         public float CompareStatModifiers(StatName stat, StatModifier current, StatModifier other)

@@ -110,26 +110,45 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         /// <summary>
         /// Buys the package at <paramref name="position"/> out of <paramref name="store"/>
-        /// into <paramref name="wallet"/> for <paramref name="price"/> base units. On commit
-        /// the item is placed and the price paid exactly; if the wallet cannot afford it or
-        /// has no room the whole move rolls back - the item stays on the shelf, nothing is
-        /// charged.
+        /// for <paramref name="price"/> base units, routing the item through the player's
+        /// acquisition entry point (<see cref="IItemReceiver.PickUpItem"/>) so auto-equip,
+        /// bag overflow, and stash fallback all apply. On commit the item is placed and the
+        /// price paid exactly; if the wallet cannot afford it or has no room anywhere the
+        /// whole move rolls back - the item stays on the shelf, nothing is charged.
         /// </summary>
+        /// <param name="player">Decides placement via <see cref="IItemReceiver.PickUpItem"/>.
+        /// When null the item falls back to a direct bag add (test seam).</param>
+        /// <param name="equipment">The player's equipment container, enrolled in the
+        /// transaction so an auto-equip inside <paramref name="player"/>'s pick-up rolls
+        /// back with everything else. Caller-supplied - Containers has no provider access.</param>
+        /// <param name="stash">The player's stash container, enrolled for the same reason
+        /// as <paramref name="equipment"/> - a pick-up's stash fallback.</param>
         /// <returns>Whether the purchase went through.</returns>
         public static bool Buy(AbstractDimensionalContainer store, Vector2Int position, Package onShelf,
-            Wallet wallet, float price)
+            Wallet wallet, float price, IItemReceiver player = null,
+            AbstractDimensionalContainer equipment = null, AbstractDimensionalContainer stash = null)
         {
             if (store == null || wallet == null || !onShelf.IsValid || !CanAffordBuy(wallet, price))
                 return false;
 
             var bag = wallet.Container;
 
-            using var transaction = new ItemTransaction(store, bag);
+            using var transaction = new ItemTransaction(store, bag, equipment, stash);
 
             _ = store.RemoveAtPosition(position, onShelf);
 
-            var incoming = new Package(bag, onShelf.Item, onShelf.Amount);
-            if (!bag.TryAddToContainer(ref incoming))
+            bool acquired;
+            if (player != null)
+            {
+                acquired = player.PickUpItem(onShelf.Item, onShelf.Amount);
+            }
+            else
+            {
+                var incoming = new Package(bag, onShelf.Item, onShelf.Amount);
+                acquired = bag.TryAddToContainer(ref incoming);
+            }
+
+            if (!acquired)
                 return false; // dispose rolls the removal back - item back on the shelf, no charge
 
             QueuePurchasePayment(transaction, wallet, price);
