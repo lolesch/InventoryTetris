@@ -119,7 +119,8 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 /// thing back - the item stays on the shelf and nothing is charged.
                 /// VendorTransaction.Buy itself gates on affordability.
                 _ = VendorTransaction.Buy(Container, position, package, wallet, price,
-                    CharacterProvider.Instance.Player);
+                    CharacterProvider.Instance.Player,
+                    InventoryProvider.Instance.Equipment, InventoryProvider.Instance.Stash);
 
                 return;
             }
