@@ -219,6 +219,19 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             Assert.That(run.LastResult, Is.EqualTo(result));
         }
 
+        [Test]
+        public void Send_ClearsThePreviousRunsLastResult()
+        {
+            var run = NewRun(OneShotHero());
+            run.Send(Skirmishers(3));
+            run.Recall();
+            Assert.That(run.LastResult, Is.Not.Null, "sanity check — the first Run did finish");
+
+            run.Send(Skirmishers(3));
+
+            Assert.That(run.LastResult, Is.Null, "a summary from two Runs ago has no business surviving into this one");
+        }
+
         // ─── accumulation ────────────────────────────────────────────────────
 
         [Test]
