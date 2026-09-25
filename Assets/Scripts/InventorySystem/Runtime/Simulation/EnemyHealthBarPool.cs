@@ -17,19 +17,22 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         private PrefabPool<EnemyHealthBarDisplay> _pool;
 
-        private void Awake() =>
-            _pool = new PrefabPool<EnemyHealthBarDisplay>(prefab, container != null ? container : transform);
+        // Lazily built rather than in Awake — a caller on another GameObject could reach
+        // SpawnBar/RemoveBar before this component's own Awake runs, since Unity does not
+        // guarantee Awake order across GameObjects.
+        private PrefabPool<EnemyHealthBarDisplay> Pool =>
+            _pool ??= new PrefabPool<EnemyHealthBarDisplay>(prefab, container != null ? container : transform);
 
         /// <summary>Activates a pooled bar, refreshes it, and moves it to the top of the list.</summary>
         public EnemyHealthBarDisplay SpawnBar(string label, float hpFraction, float current, float max)
         {
-            var bar = _pool.GetObject();
+            var bar = Pool.GetObject();
             bar.Refresh(label, hpFraction, current, max);
             bar.transform.SetAsFirstSibling();
             return bar;
         }
 
         /// <summary>Releases a spawned bar back to the pool.</summary>
-        public void RemoveBar(EnemyHealthBarDisplay bar) => _pool.ReleaseObject(bar);
+        public void RemoveBar(EnemyHealthBarDisplay bar) => Pool.ReleaseObject(bar);
     }
 }
