@@ -9058,6 +9058,7 @@ GameObject:
   - component: {fileID: 612742132}
   - component: {fileID: 612742131}
   - component: {fileID: 612742130}
+  - component: {fileID: 612742135}
   m_Layer: 5
   m_Name: HealerToggle
   m_TagString: Untagged
@@ -9133,8 +9134,23 @@ MonoBehaviour:
   toggledOffSprite: {fileID: 0}
   toggledOnSprite: {fileID: 0}
   panel: {fileID: 2069960140}
-  hotkey: 0
+  hotkey: 104
   gatedByFieldReachability: 1
+--- !u!114 &612742135
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 612742127}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60f1fea038014686b0e29e0ba3e783b2, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  icon: {fileID: 501995149}
+  punchScale: 1.15
+  punchDuration: 0.12
 --- !u!114 &612742130
 MonoBehaviour:
   m_ObjectHideFlags: 0

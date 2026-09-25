@@ -21,6 +21,12 @@ namespace ToolSmiths.InventorySystem.Inventories
         public void KillPlayer() => Player.GetResource(StatName.Health).DepleteCurrent();
         public void KillDummy() => Dummy.GetResource(StatName.Health).DepleteCurrent();
 
+        public void HealPlayer()
+        {
+            Player.GetResource(StatName.Health).RefillCurrent();
+            Player.GetResource(StatName.Resource).RefillCurrent();
+        }
+
         public void ToggleSpendingResource() => Player.SpendResource = !Player.SpendResource;
     }
 }
