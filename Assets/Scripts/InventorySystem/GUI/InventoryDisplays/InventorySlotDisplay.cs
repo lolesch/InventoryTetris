@@ -1,4 +1,4 @@
-﻿using System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Inventories;
@@ -99,69 +99,78 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         protected override void MoveItem(PointerEventData eventData, Vector2 pointerPosition)
         {
-            if (!TryBeginMove(out var position, out var package))
+            if (Container == null)
                 return;
 
-            #region USE ITEM
-            if (eventData.button == PointerEventData.InputButton.Right)
+            var position = Position;
+
+            if (Container.TryGetItemAt(ref position, out var package))
             {
-                var category = ItemView.Of(package.Item).Definition.Category;
+                FadeOutPreview();
 
-                if (category == ItemCategory.Consumable)
+                #region USE ITEM
+                if (eventData.button == PointerEventData.InputButton.Right)
                 {
-                    Debug.Log($"Consuming {ItemView.Of(package.Item).DisplayName}");
+                    var category = ItemView.Of(package.Item).Definition.Category;
 
-                    _ = Container.RemoveAtPosition(position, new Package(Container, package.Item, 1)); // only consume one amount
+                    if (category == ItemCategory.Consumable)
+                    {
+                        Debug.Log($"Consuming {ItemView.Of(package.Item).DisplayName}");
 
-                    return;
-                }
+                        _ = Container.RemoveAtPosition(position, new Package(Container, package.Item, 1)); // only consume one amount
 
-                if (category == ItemCategory.Equipment)
-                {
-                    /// Route the equip through a transaction (issue #10) as a right-click
-                    /// "swap in place": remove here, equip there, and swap whatever the
-                    /// equip displaces back into this same container. A player-driven move
-                    /// always executes - one displaced item that will not re-fit overflows
-                    /// to the hand, and only a second homeless item rolls the move back.
-                    var equipment = InventoryProvider.Instance.Equipment;
-                    var cursor = new CursorHolder(DragProvider.Instance);
-
-                    using var transaction = new ItemTransaction(cursor, Container, equipment)
-                        .ReHomeThrough(Container)
-                        .SwapInPlace(new PackageOrigin(Container, position));
-
-                    _ = Container.RemoveAtPosition(position, package);
-                    _ = equipment.TryAddToContainer(ref package);
-
-                    if (transaction.Aborted)
                         return;
+                    }
 
-                    transaction.Commit();
+                    if (category == ItemCategory.Equipment)
+                    {
+                        /// Route the equip through a transaction (issue #10) as a right-click
+                        /// "swap in place": remove here, equip there, and swap whatever the
+                        /// equip displaces back into this same container. A player-driven move
+                        /// always executes - one displaced item that will not re-fit overflows
+                        /// to the hand, and only a second homeless item rolls the move back.
+                        var equipment = InventoryProvider.Instance.Equipment;
+                        var cursor = new CursorHolder(DragProvider.Instance);
 
-                    /// The displaced equipped item re-homes into this container, often
-                    /// into the very cell just vacated - i.e. back under the cursor. The
-                    /// leading FadeOutPreview dismissed the tooltip on the click; bring it
-                    /// back for whatever now sits here (issue #13).
-                    SyncPreviewAfterMove();
-                    return;
+                        using var transaction = new ItemTransaction(cursor, Container, equipment)
+                            .ReHomeThrough(Container)
+                            .SwapInPlace(new PackageOrigin(Container, position));
+
+                        _ = Container.RemoveAtPosition(position, package);
+                        _ = equipment.TryAddToContainer(ref package);
+
+                        if (transaction.Aborted)
+                            return;
+
+                        transaction.Commit();
+
+                        /// The displaced equipped item re-homes into this container, often
+                        /// into the very cell just vacated - i.e. back under the cursor. The
+                        /// leading FadeOutPreview dismissed the tooltip on the click; bring it
+                        /// back for whatever now sits here (issue #13).
+                        SyncPreviewAfterMove();
+                        return;
+                    }
                 }
+                #endregion USE ITEM
+
+                // TODO: split in other amount => might want to split on dropping items
+                #region SPLIT AMOUNT
+                if (Input.GetKey(KeyCode.LeftControl))
+                    if (2 <= package.Amount)
+                        package.ReduceAmount(package.Amount / 2);
+                #endregion SPLIT AMOUNT
+
+                #region DRAG ITEM
+                _ = Container.RemoveAtPosition(position, package);
+
+                var positionOffset = Position - position;
+
+                DragProvider.Instance.SetPackage(this, package, positionOffset, pointerPosition);
+                #endregion DRAG ITEM
             }
-            #endregion USE ITEM
 
-            // TODO: split in other amount => might want to split on dropping items
-            #region SPLIT AMOUNT
-            if (Input.GetKey(KeyCode.LeftControl))
-                if (2 <= package.Amount)
-                    package.ReduceAmount(package.Amount / 2);
-            #endregion SPLIT AMOUNT
-
-            if (Input.GetKey(KeyCode.LeftShift))
-            {
-                QuickMove(position, package);
-                return;
-            }
-
-            BeginDrag(position, package, pointerPosition);
+            FadeOutPreview();
         }
     }
 }
