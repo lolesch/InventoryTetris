@@ -240,8 +240,8 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         ///
         /// <para>A Package that fits neither its origin nor the backpack is handed back on the
         /// cursor when a drag is live (the same fallback a cancelled drag uses); with no drag it
-        /// is surfaced rather than lost - it never vanishes silently, because the seam's
-        /// "never destroyed" contract is the caller's to honour.</para>
+        /// is kept staged in the basket instead - it never vanishes silently, because the seam's
+        /// "never destroyed" contract is this caller's to honour, not just <see cref="SellBasket"/>'s.</para>
         /// </summary>
         public void Cancel()
         {
@@ -251,13 +251,25 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             var backpack = InventoryProvider.Instance.Inventory;
             var leftover = SellBasket.Cancel(basket, backpack);
 
-            if (leftover.IsValid)
+            if (!leftover.IsValid)
+                return;
+
+            if (DragProvider.Instance != null && DragProvider.Instance.IsDragging)
             {
-                if (DragProvider.Instance != null && DragProvider.Instance.IsDragging)
-                    DragProvider.Instance.ReplacePackage(leftover, default); // keep it on the cursor
-                else
-                    Debug.LogWarning($"[SellBasketDisplay] A staged Package had nowhere to go on Cancel and was left undropped; wallet untouched.", this);
+                DragProvider.Instance.ReplacePackage(leftover, default); // keep it on the cursor
+                return;
             }
+
+            /// No drag is in flight to hand this to - the Vendor closing via a context change
+            /// (Send, Recall, Death, Go Venture) drives this same Cancel with nothing on the
+            /// cursor. SellBasket.Cancel already removed it from the basket once it could not
+            /// return to its origin or the backpack; without this, the Package would simply
+            /// vanish, breaking SellBasket's own "never destroyed" contract. Keep it staged so
+            /// it stays visible and recoverable instead.
+            var restaged = leftover;
+
+            if (!basket.Container.TryAddToContainer(ref restaged))
+                Debug.LogError($"[SellBasketDisplay] A staged Package could not be returned on Cancel, and the basket had no room to keep it either - it was lost.", this);
         }
 
         /// <summary>
