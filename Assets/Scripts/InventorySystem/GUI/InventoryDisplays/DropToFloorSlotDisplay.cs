@@ -1,7 +1,6 @@
 ﻿using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Runtime.Provider;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
@@ -20,8 +19,6 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
             DragProvider.Instance.Origin.Container?.InvokeRefresh();
         }
-
-        protected override void MoveItem(PointerEventData eventData, Vector2 pointerPosition) { }
 
         private void Update() => CanvasGroup.interactable = DragProvider.Instance.IsDragging;
     }
