@@ -109,6 +109,14 @@ PrefabInstance:
       propertyPath: m_Color.r
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 4678391763340856118, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
+      propertyPath: m_Interactable
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4678391763340856118, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
+      propertyPath: m_BlocksRaycasts
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4802227727609418227, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
       propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
       value: 1801810542
@@ -147,10 +155,9 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8987666636374259942, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
-    m_RemovedComponents:
-    - {fileID: 4678391763340856118, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
+    m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []

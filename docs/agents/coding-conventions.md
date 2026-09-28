@@ -42,6 +42,13 @@ already satisfies it. Guards the public API against future/external callers.
 
 No inheritors → `sealed`. Drop only when something actually subclasses it.
 
+## Public API needs an interface
+
+Every public API surface — a MonoBehaviour or class other systems call into —
+gets an interface (`IThing`) that callers depend on instead of the concrete type.
+Keeps call sites testable/mockable and stops external code from coupling to
+implementation details (serialized fields, Unity lifecycle methods) that aren't
+part of the actual contract.
 ## Guard `UnityEditor` usings, not just call sites
 
 ```csharp
