@@ -122,7 +122,9 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// Right-click on the shelf is a no-op (<c>VendorSlotDisplay.MoveItem</c>).
         /// </summary>
         /// <param name="player">Decides placement via <see cref="IItemReceiver.PickUpItem"/>.
-        /// When null the item falls back to a direct bag add (test seam).</param>
+        /// When null the item falls back to a direct bag add (<see cref="BagOnlyReceiver"/>,
+        /// a test seam - exercising the shelf/payment logic without a full
+        /// <see cref="IItemReceiver"/> never needs auto-equip in play).</param>
         /// <param name="equipment">The player's equipment container, enrolled in the
         /// transaction so an auto-equip inside <paramref name="player"/>'s pick-up rolls
         /// back with everything else. Caller-supplied - Containers has no provider access.</param>
@@ -137,26 +139,29 @@ namespace ToolSmiths.InventorySystem.Inventories
                 return false;
 
             var bag = wallet.Container;
+            var receiver = player ?? new BagOnlyReceiver(bag);
 
-            if (player != null)
-                return PickUpTransaction.Run(store, position, player, bag, equipment, stash,
-                    transaction => QueuePurchasePayment(transaction, wallet, price));
+            return PickUpTransaction.Run(store, position, receiver, bag, equipment, stash,
+                transaction => QueuePurchasePayment(transaction, wallet, price));
+        }
 
-            // No player: a direct bag add (test seam - exercising the shelf/payment logic
-            // without a full IItemReceiver never needs auto-equip in play).
-            using var fallback = new ItemTransaction(store, bag);
+        /// <summary>
+        /// The test-seam stand-in for a real <see cref="IItemReceiver"/> (<see cref="Buy"/>'s
+        /// null-<c>player</c> path): a plain bag add, so shelf/payment logic can be exercised
+        /// through the same <see cref="PickUpTransaction.Run"/> everyone else uses rather than
+        /// a second, hand-rolled enroll/remove/add/commit sequence.
+        /// </summary>
+        private sealed class BagOnlyReceiver : IItemReceiver
+        {
+            private readonly AbstractDimensionalContainer bag;
 
-            _ = store.RemoveAtPosition(position, onShelf);
+            public BagOnlyReceiver(AbstractDimensionalContainer bag) => this.bag = bag;
 
-            var incoming = new Package(bag, onShelf.Item, onShelf.Amount);
-
-            if (!bag.TryAddToContainer(ref incoming))
-                return false; // dispose rolls the removal back - item back on the shelf, no charge
-
-            QueuePurchasePayment(fallback, wallet, price);
-
-            fallback.Commit();
-            return true;
+            public bool PickUpItem(ItemInstance item, uint amount)
+            {
+                var package = new Package(bag, item, amount);
+                return bag.TryAddToContainer(ref package);
+            }
         }
     }
 }

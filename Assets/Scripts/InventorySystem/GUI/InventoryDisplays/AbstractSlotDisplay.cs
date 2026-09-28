@@ -169,7 +169,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                     /// like the Stash Acquire case above. This call used to omit player,
                     /// equipment and stash and so silently skipped auto-equip. Closed by #86.
                     var wallet = InventoryProvider.Instance.Wallet;
-                    var price = VendorTransaction.BuyPrice(package.Item);
+                    var price = VendorTransaction.BuyPrice(package.Item) * package.Amount;
 
                     _ = VendorTransaction.Buy(Container, position, package, wallet, price,
                         CharacterProvider.Instance.Player,

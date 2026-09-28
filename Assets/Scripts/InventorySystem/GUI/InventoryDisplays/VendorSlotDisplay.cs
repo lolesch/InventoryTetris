@@ -68,7 +68,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
             var wallet = InventoryProvider.Instance.Wallet;
 
-            return wallet == null || wallet.CanAfford(new Currency(VendorTransaction.BuyPrice(displayedPackage.Item)));
+            return wallet == null || wallet.CanAfford(new Currency(VendorTransaction.BuyPrice(displayedPackage.Item) * displayedPackage.Amount));
         }
 
         protected override void SetDisplaySize(RectTransform display, Package package)
@@ -93,14 +93,15 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         protected override void MoveItem(PointerEventData eventData, Vector2 pointerPosition)
         {
+            if (!TryBeginMove(out var position, out var package))
+                return;
+
             // No deliberate right-click action on the shelf: buying is a left-click drag +
             // drop, exactly like every other container. Immediate buy-on-right-click used to
             // shortcut to that same outcome, but a shortcut to an already-reachable outcome
             // isn't deliberate different behavior, so right-click is a no-op here instead.
+            // TryBeginMove runs first so the hover preview still fades on a right-click no-op.
             if (eventData.button == PointerEventData.InputButton.Right)
-                return;
-
-            if (!TryBeginMove(out var position, out var package))
                 return;
 
             var unitPrice = VendorTransaction.BuyPrice(package.Item);
