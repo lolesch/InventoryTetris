@@ -5,9 +5,10 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 {
     /// <summary>
-    /// The quick-move matrix (issue #30): shift-click routes an item to wherever the open
-    /// context says. A pure resolver maps every (source container, Inventory Context) pair to
-    /// one intent - do nothing, move to a named container, send to the Sell Basket, or
+    /// The quick-move table (issue #86, replacing #30's hand-rolled matrix): shift-click
+    /// routes an item to wherever the open context says. A pure resolver maps every (source
+    /// container, Inventory Context) pair to one intent - do nothing, move to a named
+    /// container, acquire into the hub (honouring auto-equip), send to the Sell Basket, or
     /// buy - so the three slot displays that used to hand-roll a move each now ask it.
     /// This fixture wires the Stash rows, the "no context" rows, and the Vendor rows
     /// (issue #33): with the Vendor open, backpack and equipment shift-clicks go to the
@@ -50,12 +51,14 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         }
 
         [Test]
-        public void StashContext_Stash_SendsTheItemBackToTheBackpack()
+        public void StashContext_Stash_AcquiresTheItemIntoTheBackpack()
         {
+            // #86: retrieval from the Stash routes through the acquisition entry point
+            // (auto-equip), not a plain move - so this carries no Target.
             var intent = Resolve(InventoryContext.Stash, stash, backpack, stash, equipment, store, basket);
 
-            Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.MoveToContainer));
-            Assert.That(intent.Target, Is.SameAs(backpack));
+            Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.Acquire));
+            Assert.That(intent.Target, Is.Null);
         }
 
         [Test]

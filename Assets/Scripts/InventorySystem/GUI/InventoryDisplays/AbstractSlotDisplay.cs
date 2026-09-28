@@ -129,6 +129,16 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                     _ = SellBasketQuickMove.SendToBasket(InventoryProvider.Instance.Basket, Container, position);
                     return true;
 
+                case QuickMoveIntentKind.Acquire:
+                    /// The Stash retrieval row (issue #86): routed through
+                    /// PickUpTransaction.Run - the player's acquisition entry point - instead
+                    /// of a plain move, so a Package with an empty gear slot and auto-equip on
+                    /// lands there instead of the Inventory.
+                    _ = PickUpTransaction.Run(Container, position, CharacterProvider.Instance.Player,
+                        InventoryProvider.Instance.Inventory, InventoryProvider.Instance.Equipment,
+                        InventoryProvider.Instance.Stash);
+                    return true;
+
                 case QuickMoveIntentKind.MoveToContainer:
                     var target = intent.Target;
                     var cursor = new CursorHolder(DragProvider.Instance);
@@ -151,12 +161,19 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                     return true;
 
                 case QuickMoveIntentKind.Buy:
-                    /// The shelf's own shift-click is always a buy (issue #30) - the same
-                    /// atomic move VendorTransaction.Buy runs for a right-click purchase.
+                    /// The shelf's own shift-click is always a buy (issue #30). Unlike a
+                    /// drag-drop buy (InventorySlotDisplay/EquipmentSlotDisplay's DropItem,
+                    /// issue #31) - which lands in whatever slot the player dropped on and so
+                    /// never needs to decide equip-vs-bag - shift-click names no destination,
+                    /// so it has to route through the full acquisition entry point exactly
+                    /// like the Stash Acquire case above. This call used to omit player,
+                    /// equipment and stash and so silently skipped auto-equip. Closed by #86.
                     var wallet = InventoryProvider.Instance.Wallet;
                     var price = VendorTransaction.BuyPrice(package.Item);
 
-                    _ = VendorTransaction.Buy(Container, position, package, wallet, price);
+                    _ = VendorTransaction.Buy(Container, position, package, wallet, price,
+                        CharacterProvider.Instance.Player,
+                        InventoryProvider.Instance.Equipment, InventoryProvider.Instance.Stash);
                     return true;
 
                 default:

@@ -110,11 +110,16 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         /// <summary>
         /// Buys the package at <paramref name="position"/> out of <paramref name="store"/>
-        /// for <paramref name="price"/> base units, routing the item through the player's
-        /// acquisition entry point (<see cref="IItemReceiver.PickUpItem"/>) so auto-equip,
-        /// bag overflow, and stash fallback all apply. On commit the item is placed and the
-        /// price paid exactly; if the wallet cannot afford it or has no room anywhere the
-        /// whole move rolls back - the item stays on the shelf, nothing is charged.
+        /// for <paramref name="price"/> base units, routing the item through
+        /// <see cref="PickUpTransaction.Run"/> - the player's acquisition entry point - so
+        /// auto-equip, bag overflow, and stash fallback all apply. The payment is queued as
+        /// that same transaction's commit-time effect, so a pick-up that finds no room
+        /// anywhere rolls the whole move back: the item stays on the shelf, nothing is
+        /// charged. This is the shift-click buy's only path (issue #30); a drag-drop buy
+        /// (<c>InventorySlotDisplay</c>/<c>EquipmentSlotDisplay</c>'s <c>DropItem</c>, issue
+        /// #31) lands in the player-chosen slot directly and never calls here - it has a
+        /// destination already, so there is nothing for <paramref name="player"/> to decide.
+        /// Right-click on the shelf is a no-op (<c>VendorSlotDisplay.MoveItem</c>).
         /// </summary>
         /// <param name="player">Decides placement via <see cref="IItemReceiver.PickUpItem"/>.
         /// When null the item falls back to a direct bag add (test seam).</param>
@@ -133,27 +138,24 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             var bag = wallet.Container;
 
-            using var transaction = new ItemTransaction(store, bag, equipment, stash);
+            if (player != null)
+                return PickUpTransaction.Run(store, position, player, bag, equipment, stash,
+                    transaction => QueuePurchasePayment(transaction, wallet, price));
+
+            // No player: a direct bag add (test seam - exercising the shelf/payment logic
+            // without a full IItemReceiver never needs auto-equip in play).
+            using var fallback = new ItemTransaction(store, bag);
 
             _ = store.RemoveAtPosition(position, onShelf);
 
-            bool acquired;
-            if (player != null)
-            {
-                acquired = player.PickUpItem(onShelf.Item, onShelf.Amount);
-            }
-            else
-            {
-                var incoming = new Package(bag, onShelf.Item, onShelf.Amount);
-                acquired = bag.TryAddToContainer(ref incoming);
-            }
+            var incoming = new Package(bag, onShelf.Item, onShelf.Amount);
 
-            if (!acquired)
+            if (!bag.TryAddToContainer(ref incoming))
                 return false; // dispose rolls the removal back - item back on the shelf, no charge
 
-            QueuePurchasePayment(transaction, wallet, price);
+            QueuePurchasePayment(fallback, wallet, price);
 
-            transaction.Commit();
+            fallback.Commit();
             return true;
         }
     }
