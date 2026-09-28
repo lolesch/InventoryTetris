@@ -30,12 +30,18 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         [SerializeField] public bool autoEquip = true;
 
-        public override bool TryAddToContainer(ref Package package)
+        public override bool TryAddToContainer(ref Package package) => TryAddToContainer(ref package, 0);
+
+        /// <param name="preferredSlotIndex">Which of <see cref="GetTypeSpecificPositions"/>'s
+        /// slots to target first, for equipment types with more than one (rings, dual-wielded
+        /// 1H weapons) - a right-click modifier's way of choosing the second slot instead of
+        /// always landing on the first. Out-of-range values clamp to the last slot.</param>
+        public bool TryAddToContainer(ref Package package, int preferredSlotIndex)
         {
             if (!package.IsValid || !IsEquipment(package.Item))
                 return false;
 
-            _ = TryAddAtEmpty(ref package);
+            _ = TryAddAtEmpty(ref package, preferredSlotIndex);
 
             /// Force swap with current equipment
             if (0 < package.Amount)
@@ -43,6 +49,8 @@ namespace ToolSmiths.InventorySystem.Inventories
                 var equipmentType = EquipmentTypeOf(package.Item);
 
                 var equipmentPositions = GetTypeSpecificPositions(equipmentType);
+                var slotIndex = Math.Clamp(preferredSlotIndex, 0, equipmentPositions.Length - 1);
+
                 // TryGetValue, not the raw indexer (issue #12): a type-specific position is
                 // not always a live key - a 2H is keyed only at the weapon slot, so reading
                 // StoredPackages[(13,0)] for the off-hand threw KeyNotFoundException.
@@ -50,7 +58,7 @@ namespace ToolSmiths.InventorySystem.Inventories
                     StoredPackages.TryGetValue(x, out var stored)
                     && stored.Item != null
                     && EquipmentTypeOf(stored.Item) != equipmentType);
-                var position = preferedPosition.Any() ? preferedPosition.First() : equipmentPositions[0];
+                var position = preferedPosition.Any() ? preferedPosition.First() : equipmentPositions[slotIndex];
 
                 package = AddAtPosition(position, package);
             }
@@ -62,7 +70,9 @@ namespace ToolSmiths.InventorySystem.Inventories
             return 0 == package.Amount;
         }
 
-        protected override bool TryAddAtEmpty(ref Package package)
+        protected override bool TryAddAtEmpty(ref Package package) => TryAddAtEmpty(ref package, 0);
+
+        private bool TryAddAtEmpty(ref Package package, int preferredSlotIndex)
         {
             if (!package.IsValid || !IsEquipment(package.Item))
                 return false;
@@ -71,8 +81,12 @@ namespace ToolSmiths.InventorySystem.Inventories
             var dimensions = SlotFootprint(equipmentType);
 
             var typePositions = GetTypeSpecificPositions(equipmentType);
+            var slotIndex = Math.Clamp(preferredSlotIndex, 0, typePositions.Length - 1);
+            // Try the preferred slot first so a modifier-driven equip onto an empty slot
+            // respects the same preference a force-swap would - not just the fallback order.
+            var orderedPositions = typePositions.Skip(slotIndex).Concat(typePositions.Take(slotIndex));
 
-            foreach (var position in typePositions)
+            foreach (var position in orderedPositions)
                 if (IsEmptySpace(position, dimensions, out _))
                     package = AddAtPosition(position, package);
 
@@ -82,7 +96,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             return 0 == package.Amount;
         }
 
-        public bool AutoEquip(ref Package package) => TryAddAtEmpty(ref package);
+        public bool AutoEquip(ref Package package) => TryAddAtEmpty(ref package, 0);
 
         public override Package AddAtPosition(Vector2Int position, Package package)
         {

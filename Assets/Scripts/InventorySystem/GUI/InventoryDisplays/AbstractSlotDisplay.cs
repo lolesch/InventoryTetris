@@ -344,16 +344,25 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         /// passed rather than re-read from <see cref="Position"/> because a multi-cell item's
         /// origin is not necessarily the cell under the pointer - the offset between them is
         /// what keeps the drag visual anchored to where it was grabbed instead of snapping to
-        /// the origin cell. <paramref name="purchasePrice"/> is the Vendor shelf's buy-on-drop
-        /// price (issue #31); every other source leaves it unset.
+        /// the origin cell. <paramref name="unitPrice"/> is the Vendor shelf's per-unit
+        /// buy-on-drop price (issue #31); every other source leaves it unset.
+        ///
+        /// <para>Ctrl held takes half the stack, leaving the rest behind - the one pickup
+        /// modifier every source honors uniformly, because it lives here rather than being
+        /// hand-copied per display. It runs before <paramref name="unitPrice"/> is scaled, so
+        /// a half-stack picked up on the shelf is charged for half, not the whole stack.</para>
         /// </summary>
-        protected void BeginDrag(Vector2Int position, Package package, Vector2 pointerPosition, float? purchasePrice = null)
+        protected void BeginDrag(Vector2Int position, Package package, Vector2 pointerPosition, float? unitPrice = null)
         {
+            if (Input.GetKey(KeyCode.LeftControl) && 2 <= package.Amount)
+                _ = package.ReduceAmount(package.Amount / 2);
+
             _ = Container.RemoveAtPosition(position, package);
 
             var positionOffset = Position - position;
+            var totalPrice = unitPrice.HasValue ? unitPrice.Value * package.Amount : (float?)null;
 
-            DragProvider.Instance.SetPackage(this, package, positionOffset, pointerPosition, purchasePrice);
+            DragProvider.Instance.SetPackage(this, package, positionOffset, pointerPosition, totalPrice);
         }
 
         /// <summary>
