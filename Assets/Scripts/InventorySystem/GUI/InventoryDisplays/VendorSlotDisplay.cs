@@ -1,7 +1,6 @@
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
-using ToolSmiths.InventorySystem.Runtime.Character;
 using ToolSmiths.InventorySystem.Runtime.Provider;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -69,7 +68,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
             var wallet = InventoryProvider.Instance.Wallet;
 
-            return wallet == null || wallet.CanAfford(new Currency(VendorTransaction.BuyPrice(displayedPackage.Item)));
+            return wallet == null || wallet.CanAfford(new Currency(VendorTransaction.BuyPrice(displayedPackage.Item) * displayedPackage.Amount));
         }
 
         protected override void SetDisplaySize(RectTransform display, Package package)
@@ -94,49 +93,25 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         protected override void MoveItem(PointerEventData eventData, Vector2 pointerPosition)
         {
-            if (Container == null)
+            if (!TryBeginMove(out var position, out var package))
                 return;
 
-            var position = Position;
-
-            if (!Container.TryGetItemAt(ref position, out var package))
-                return;
-
-            var wallet = InventoryProvider.Instance.Wallet;
-            var price = VendorTransaction.BuyPrice(package.Item);
-
-            FadeOutPreview();
-
-            // Right-click buys immediately, the same atomic move a shift-click quick-move
-            // runs (#67's shared dispatch resolves the shelf to a Buy intent on its own -
-            // right-click doesn't need the resolver, since buying is this container's only
-            // possible answer whatever panel is open).
-            #region BUY: IMMEDIATE MOVE
+            // No deliberate right-click action on the shelf: buying is a left-click drag +
+            // drop, exactly like every other container. Immediate buy-on-right-click used to
+            // shortcut to that same outcome, but a shortcut to an already-reachable outcome
+            // isn't deliberate different behavior, so right-click is a no-op here instead.
+            // TryBeginMove runs first so the hover preview still fades on a right-click no-op.
             if (eventData.button == PointerEventData.InputButton.Right)
-            {
-                /// One transaction (issue #11): the item leaves the shelf and lands in the
-                /// bag, and the price is paid, as a unit. No room in the bag rolls the whole
-                /// thing back - the item stays on the shelf and nothing is charged.
-                /// VendorTransaction.Buy itself gates on affordability.
-                _ = VendorTransaction.Buy(Container, position, package, wallet, price,
-                    CharacterProvider.Instance.Player,
-                    InventoryProvider.Instance.Equipment, InventoryProvider.Instance.Stash);
-
                 return;
-            }
-            #endregion BUY: IMMEDIATE MOVE
+
+            var unitPrice = VendorTransaction.BuyPrice(package.Item);
 
             // Drag: a pick-up, not a completed move - nothing is charged, and the price is
-            // read once and held on the cursor for the length of the drag (issue #31). It is
-            // paid only when the package lands in a player container; dropping it back on the
-            // shelf, cancelling (Esc) or closing the Store returns it with no charge.
-            #region BUY: DRAG
-            _ = Container.RemoveAtPosition(position, package);
-
-            var positionOffset = Position - position;
-
-            DragProvider.Instance.SetPackage(this, package, positionOffset, pointerPosition, price);
-            #endregion BUY: DRAG
+            // read once and held on the cursor for the length of the drag (issue #31),
+            // scaled to the amount actually picked up (BeginDrag). It is paid only when the
+            // package lands in a player container; dropping it back on the shelf, cancelling
+            // (Esc) or closing the Store returns it with no charge.
+            BeginDrag(position, package, pointerPosition, unitPrice);
         }
 
         /// <summary>

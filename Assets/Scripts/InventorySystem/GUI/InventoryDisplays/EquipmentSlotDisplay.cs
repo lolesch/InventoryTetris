@@ -96,15 +96,8 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         protected override void MoveItem(PointerEventData eventData, Vector2 pointerPosition)
         {
-            if (Container == null)
+            if (!TryBeginMove(out var position, out var package))
                 return;
-
-            var position = Position;
-
-            if (!Container.TryGetItemAt(ref position, out var package))
-                return;
-
-            FadeOutPreview();
 
             if (ItemView.Of(package.Item).Definition.Category != ItemCategory.Equipment)
                 Debug.LogWarning("Something went wrong!");
@@ -129,14 +122,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             }
             #endregion UNEQUIP ITEM
 
-            #region DRAG ITEM
-            _ = Container.RemoveAtPosition(position, package);
-
-            // can equipment displays ever have an offset? See above => SetPackage is using Vector2Int.zero
-            var positionOffset = Position - position;
-
-            DragProvider.Instance.SetPackage(this, package, positionOffset, pointerPosition);
-            #endregion DRAG ITEM
+            BeginDrag(position, package, pointerPosition);
         }
     }
 }

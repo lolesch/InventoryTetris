@@ -129,6 +129,16 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                     _ = SellBasketQuickMove.SendToBasket(InventoryProvider.Instance.Basket, Container, position);
                     return true;
 
+                case QuickMoveIntentKind.Acquire:
+                    /// The Stash retrieval row (issue #86): routed through
+                    /// PickUpTransaction.Run - the player's acquisition entry point - instead
+                    /// of a plain move, so a Package with an empty gear slot and auto-equip on
+                    /// lands there instead of the Inventory.
+                    _ = PickUpTransaction.Run(Container, position, CharacterProvider.Instance.Player,
+                        InventoryProvider.Instance.Inventory, InventoryProvider.Instance.Equipment,
+                        InventoryProvider.Instance.Stash);
+                    return true;
+
                 case QuickMoveIntentKind.MoveToContainer:
                     var target = intent.Target;
                     var cursor = new CursorHolder(DragProvider.Instance);
@@ -151,12 +161,19 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                     return true;
 
                 case QuickMoveIntentKind.Buy:
-                    /// The shelf's own shift-click is always a buy (issue #30) - the same
-                    /// atomic move VendorTransaction.Buy runs for a right-click purchase.
+                    /// The shelf's own shift-click is always a buy (issue #30). Unlike a
+                    /// drag-drop buy (InventorySlotDisplay/EquipmentSlotDisplay's DropItem,
+                    /// issue #31) - which lands in whatever slot the player dropped on and so
+                    /// never needs to decide equip-vs-bag - shift-click names no destination,
+                    /// so it has to route through the full acquisition entry point exactly
+                    /// like the Stash Acquire case above. This call used to omit player,
+                    /// equipment and stash and so silently skipped auto-equip. Closed by #86.
                     var wallet = InventoryProvider.Instance.Wallet;
-                    var price = VendorTransaction.BuyPrice(package.Item);
+                    var price = VendorTransaction.BuyPrice(package.Item) * package.Amount;
 
-                    _ = VendorTransaction.Buy(Container, position, package, wallet, price);
+                    _ = VendorTransaction.Buy(Container, position, package, wallet, price,
+                        CharacterProvider.Instance.Player,
+                        InventoryProvider.Instance.Equipment, InventoryProvider.Instance.Stash);
                     return true;
 
                 default:
@@ -327,16 +344,25 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         /// passed rather than re-read from <see cref="Position"/> because a multi-cell item's
         /// origin is not necessarily the cell under the pointer - the offset between them is
         /// what keeps the drag visual anchored to where it was grabbed instead of snapping to
-        /// the origin cell. <paramref name="purchasePrice"/> is the Vendor shelf's buy-on-drop
-        /// price (issue #31); every other source leaves it unset.
+        /// the origin cell. <paramref name="unitPrice"/> is the Vendor shelf's per-unit
+        /// buy-on-drop price (issue #31); every other source leaves it unset.
+        ///
+        /// <para>Ctrl held takes half the stack, leaving the rest behind - the one pickup
+        /// modifier every source honors uniformly, because it lives here rather than being
+        /// hand-copied per display. It runs before <paramref name="unitPrice"/> is scaled, so
+        /// a half-stack picked up on the shelf is charged for half, not the whole stack.</para>
         /// </summary>
-        protected void BeginDrag(Vector2Int position, Package package, Vector2 pointerPosition, float? purchasePrice = null)
+        protected void BeginDrag(Vector2Int position, Package package, Vector2 pointerPosition, float? unitPrice = null)
         {
+            if (Input.GetKey(KeyCode.LeftControl) && 2 <= package.Amount)
+                _ = package.ReduceAmount(package.Amount / 2);
+
             _ = Container.RemoveAtPosition(position, package);
 
             var positionOffset = Position - position;
+            var totalPrice = unitPrice.HasValue ? unitPrice.Value * package.Amount : (float?)null;
 
-            DragProvider.Instance.SetPackage(this, package, positionOffset, pointerPosition, purchasePrice);
+            DragProvider.Instance.SetPackage(this, package, positionOffset, pointerPosition, totalPrice);
         }
 
         /// <summary>

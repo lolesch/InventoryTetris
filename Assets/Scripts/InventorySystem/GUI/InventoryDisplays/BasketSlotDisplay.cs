@@ -101,21 +101,16 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         /// </summary>
         protected override void MoveItem(PointerEventData eventData, Vector2 pointerPosition)
         {
-            if (Container == null)
+            if (!TryBeginMove(out var position, out var package))
                 return;
 
-            var position = Position;
-
-            if (!Container.TryGetItemAt(ref position, out var package))
+            // No deliberate right-click action in the basket: only a left-click drag picks a
+            // staged Package back up, exactly as the other no-extra-functionality surfaces.
+            // TryBeginMove runs first so the hover preview still fades on a right-click no-op.
+            if (eventData.button == PointerEventData.InputButton.Right)
                 return;
 
-            FadeOutPreview();
-
-            _ = Container.RemoveAtPosition(position, package);
-
-            var positionOffset = Position - position;
-
-            DragProvider.Instance.SetPackage(this, package, positionOffset, pointerPosition);
+            BeginDrag(position, package, pointerPosition);
         }
     }
 }

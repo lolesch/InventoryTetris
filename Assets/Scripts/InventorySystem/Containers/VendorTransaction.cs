@@ -110,14 +110,21 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         /// <summary>
         /// Buys the package at <paramref name="position"/> out of <paramref name="store"/>
-        /// for <paramref name="price"/> base units, routing the item through the player's
-        /// acquisition entry point (<see cref="IItemReceiver.PickUpItem"/>) so auto-equip,
-        /// bag overflow, and stash fallback all apply. On commit the item is placed and the
-        /// price paid exactly; if the wallet cannot afford it or has no room anywhere the
-        /// whole move rolls back - the item stays on the shelf, nothing is charged.
+        /// for <paramref name="price"/> base units, routing the item through
+        /// <see cref="PickUpTransaction.Run"/> - the player's acquisition entry point - so
+        /// auto-equip, bag overflow, and stash fallback all apply. The payment is queued as
+        /// that same transaction's commit-time effect, so a pick-up that finds no room
+        /// anywhere rolls the whole move back: the item stays on the shelf, nothing is
+        /// charged. This is the shift-click buy's only path (issue #30); a drag-drop buy
+        /// (<c>InventorySlotDisplay</c>/<c>EquipmentSlotDisplay</c>'s <c>DropItem</c>, issue
+        /// #31) lands in the player-chosen slot directly and never calls here - it has a
+        /// destination already, so there is nothing for <paramref name="player"/> to decide.
+        /// Right-click on the shelf is a no-op (<c>VendorSlotDisplay.MoveItem</c>).
         /// </summary>
         /// <param name="player">Decides placement via <see cref="IItemReceiver.PickUpItem"/>.
-        /// When null the item falls back to a direct bag add (test seam).</param>
+        /// When null the item falls back to a direct bag add (<see cref="BagOnlyReceiver"/>,
+        /// a test seam - exercising the shelf/payment logic without a full
+        /// <see cref="IItemReceiver"/> never needs auto-equip in play).</param>
         /// <param name="equipment">The player's equipment container, enrolled in the
         /// transaction so an auto-equip inside <paramref name="player"/>'s pick-up rolls
         /// back with everything else. Caller-supplied - Containers has no provider access.</param>
@@ -132,29 +139,29 @@ namespace ToolSmiths.InventorySystem.Inventories
                 return false;
 
             var bag = wallet.Container;
+            var receiver = player ?? new BagOnlyReceiver(bag);
 
-            using var transaction = new ItemTransaction(store, bag, equipment, stash);
+            return PickUpTransaction.Run(store, position, receiver, bag, equipment, stash,
+                transaction => QueuePurchasePayment(transaction, wallet, price));
+        }
 
-            _ = store.RemoveAtPosition(position, onShelf);
+        /// <summary>
+        /// The test-seam stand-in for a real <see cref="IItemReceiver"/> (<see cref="Buy"/>'s
+        /// null-<c>player</c> path): a plain bag add, so shelf/payment logic can be exercised
+        /// through the same <see cref="PickUpTransaction.Run"/> everyone else uses rather than
+        /// a second, hand-rolled enroll/remove/add/commit sequence.
+        /// </summary>
+        private sealed class BagOnlyReceiver : IItemReceiver
+        {
+            private readonly AbstractDimensionalContainer bag;
 
-            bool acquired;
-            if (player != null)
+            public BagOnlyReceiver(AbstractDimensionalContainer bag) => this.bag = bag;
+
+            public bool PickUpItem(ItemInstance item, uint amount)
             {
-                acquired = player.PickUpItem(onShelf.Item, onShelf.Amount);
+                var package = new Package(bag, item, amount);
+                return bag.TryAddToContainer(ref package);
             }
-            else
-            {
-                var incoming = new Package(bag, onShelf.Item, onShelf.Amount);
-                acquired = bag.TryAddToContainer(ref incoming);
-            }
-
-            if (!acquired)
-                return false; // dispose rolls the removal back - item back on the shelf, no charge
-
-            QueuePurchasePayment(transaction, wallet, price);
-
-            transaction.Commit();
-            return true;
         }
     }
 }
