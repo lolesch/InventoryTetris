@@ -73,10 +73,12 @@ table lists it as a child. The six closed tickets are necessary but not sufficie
 **Spec** (dev/specs/2026-09-20-inventory-context-design.md + #82–#86) — 2 findings:
 
 - **`QuickMoveResolver.cs:70` — the Equipment row resolves through the wrong branch.**
-  **Resolved - stale at `main`.** `Route` now tests `source == hub || source == equipment`
-  before the sources tuple, so the Equipment rule is live in every context with an arm, and
+  **Not reproducible - the finding did not match the reviewed commit.** `242e4d2` itself
+  already has `Route` testing `source == hub || source == equipment` before the sources
+  tuple, so the Equipment rule is live in every context with an arm, and
   `StashContext_Equipment_SendsTheItemToTheStash` / `VendorContext_Equipment_SendsTheItemToTheSellBasket`
-  cover it. The description below is of the reviewed commit `242e4d2`.
+  cover it. The description below (an `equipment` test after the hub early-return in a
+  per-arm branch) does not describe that code; kept as written, not acted on.
   Spec: "Equipment goes to the sink in any non-`Hero` context" — its own stated rule, distinct
   from the sink arm. In the `Stash` arm the `source == equipment` test sits *after* the
   `source == hub` early-return, so Equipment resolves to `MoveTo(stash)` supplied by the
