@@ -1,6 +1,7 @@
 ﻿using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Runtime.Character;
+using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Utility.Extensions
 {
@@ -59,7 +60,16 @@ namespace ToolSmiths.InventorySystem.Utility.Extensions
             // Mitigation (resistances, armor)
             // Recovery
 
-            var mitigatedDamage = incomingDamage * (1f - damageTypeResist * 0.01f);
+            // TODO: this linear "percent mitigated" formula has no diminishing returns, so a
+            // resist stat past 100 flips mitigation negative and a "hit" heals instead of damages
+            // (CharacterResource.RemoveFromCurrent has no floor on a negative amount). Gear
+            // rolls already stack Health/Regen well past base within a couple of items (issue
+            // seen 2026-09-27: 3 pieces took Health from 640 to 1037), so Armor/MagicResist will
+            // eventually hit the same wall. Clamping below is a stopgap, not the fix — needs a
+            // real formula (e.g. armor / (armor + K)) that approaches but never reaches 100%
+            // mitigation, however high the stat climbs.
+            var clampedResist = Mathf.Clamp(damageTypeResist, 0f, 100f);
+            var mitigatedDamage = incomingDamage * (1f - clampedResist * 0.01f);
 
             return mitigatedDamage;
         }

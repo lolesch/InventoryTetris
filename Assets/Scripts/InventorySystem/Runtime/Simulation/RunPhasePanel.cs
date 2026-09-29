@@ -59,6 +59,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 provider.Run.PhaseChanged -= SyncToPhase;
         }
 
-        private void SyncToPhase(RunPhase phase) => Toggle(phase == activeDuring);
+        private void SyncToPhase(RunPhase phase) => ToggleState(phase == activeDuring);
     }
 }

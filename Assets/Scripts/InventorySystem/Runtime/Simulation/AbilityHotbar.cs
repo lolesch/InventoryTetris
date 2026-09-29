@@ -17,7 +17,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// built on every <see cref="RunState.Send"/>, so the Strike/Cast subscription is
     /// re-established each time the Run steps into the Field rather than held once at enable.
     /// </summary>
-    public sealed class AbilityHotbar : SimplePanel
+    public sealed class AbilityHotbar : MonoBehaviour
     {
         [SerializeField] private ScaleTween strikeIcon;
         [SerializeField] private ScaleTween castIcon;
@@ -44,10 +44,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             SyncToPhase(provider.Run.Phase);
         }
 
-        protected override void OnDisable()
+        private void OnDisable()
         {
-            base.OnDisable();
-
             if (Application.isPlaying)
             {
                 var provider = SimulationProvider.Instance;
@@ -60,13 +58,16 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         private void SyncToPhase(RunPhase phase)
         {
-            Toggle(phase == RunPhase.InField);
-
             UnsubscribeEncounter();
 
             if (phase != RunPhase.InField)
                 return;
 
+            SubscribeEncounter();
+        }
+
+        private void SubscribeEncounter()
+        {
             encounter = SimulationProvider.Instance.Run.Encounter;
             if (encounter == null)
                 return;

@@ -14,7 +14,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
     /// that disagrees with its own panel.
     ///
     /// <para><b>Input, not content (issue #85).</b> This toggle answers exactly one question -
-    /// "is this button pressed" - which its <see cref="RadioGroup"/> keeps exclusive for the Town
+    /// "is this button pressed" - which its <see cref="ToggleGroup"/> keeps exclusive for the Town
     /// Stops. It does not decide whether the panel is up: the panel subscribes to the Inventory
     /// Context and derives its own visibility (<see cref="SidePanel"/>), which is why
     /// <see cref="OnToggle"/> is empty - the hook a <see cref="PanelToggle"/> would have faded the
@@ -29,9 +29,9 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
     /// belongs to no group and would otherwise look up while its panel is up.</para>
     ///
     /// <para><b>No second group.</b> Mutual exclusion comes from the shared <c>TownGroup</c>
-    /// <see cref="RadioGroup"/>, which Stash, Vendor and Healer belong to (Go Venture does not -
+    /// <see cref="ToggleGroup"/>, which Stash, Vendor and Healer belong to (Go Venture does not -
     /// it is a plain button, not a panel with state to protect). This class must not introduce a
-    /// <see cref="RadioGroup"/> of its own, or "which panel is open" would have two answers.</para>
+    /// <see cref="ToggleGroup"/> of its own, or "which panel is open" would have two answers.</para>
     ///
     /// <para><b>The request (issues #84, #85).</b> <see cref="RequestAndToggle"/> is the toggle's
     /// own click/hotkey edge: it runs before <see cref="AbstractToggle.SetToggle"/>, so it fires
@@ -91,7 +91,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         /// needed here. Asked every frame rather than pushed by a controller (issue #85), the
         /// same way <see cref="SyncToContext"/> asks the panel instead of being told.
         ///
-        /// <para>Only a toggle in a <see cref="RadioGroup"/> is gated - a Town Stop. The Hero
+        /// <para>Only a toggle in a <see cref="ToggleGroup"/> is gated - a Town Stop. The Hero
         /// Panel's toggle belongs to no group and is reachable in both faces, so gating it would
         /// take its hotkey away in the field for nothing; keying the gate on the group makes that
         /// exemption structural instead of a per-instance checkbox the scene can get wrong.</para>
@@ -144,7 +144,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         /// visibility cannot disagree by construction.
         ///
         /// <para>Applied through <see cref="AbstractToggle.SetToggle"/>, which keeps the
-        /// <see cref="RadioGroup"/>'s own <c>ActiveMember</c> in step for a grouped Town Stop and
+        /// <see cref="ToggleGroup"/>'s own <c>ActiveMember</c> in step for a grouped Town Stop and
         /// falls through to the plain state change for the ungrouped Hero Panel toggle. The
         /// <see cref="AbstractToggle.IsOn"/> guard is what stops this from looping: a
         /// <c>SetToggle</c> on a sibling lands back here through that sibling's own event, finds
@@ -186,7 +186,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         /// <summary>
         /// Mirrors <see cref="AbstractToggle.SetToggle"/>'s own no-op condition exactly (that
         /// method is not virtual, so it cannot be asked directly) - turning off the sole active,
-        /// non-clearable, non-restorable member of a <see cref="RadioGroup"/> is refused there,
+        /// non-clearable, non-restorable member of a <see cref="ToggleGroup"/> is refused there,
         /// silently as far as this class is concerned.
         /// </summary>
         private bool WouldToggleNoOp(bool turningOn) =>
