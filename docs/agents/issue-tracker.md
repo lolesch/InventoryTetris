@@ -33,16 +33,11 @@ Create a GitHub issue.
 
 Run `gh issue view <number> --comments`.
 
-## Frontiers — scan of open issues vs. current implementation (2026-09-29)
+## Frontiers — issues vs. implementation
 
-Snapshot taken on branch `docs/player-session-flow` (`2c9a883`), re-scanned on
-`docs/issue-frontiers` after #87 shipped. Ten open issues; the frontier — an issue whose
-blockers are all closed and whose criteria are not already met by the code — starts at
-**#93 → #94**.
+Eight open issues; the frontier — an issue whose blockers are all closed and whose criteria are not already met by the code — starts at **#93 → #94**.
 
-**Keep this table current:** re-scan the open set after every `/implement`, push/merge, or
-PR-to-`main`. An issue can lose its frontier status two ways — its blockers close, or its
-acceptance criteria are already shipped under another number.
+**Keep this table current:** update the open set after every `/implement`, and PR-to-`main`.
 
 ### Readiness of the open set
 
@@ -50,14 +45,12 @@ acceptance criteria are already shipped under another number.
 |---|---|---|---|
 | **93** | Hero resource types compile where the simulation can reach them | none | **Frontier now.** `CharacterStat`/`CharacterResource` still live under `Runtime/` (no asmdef there) → `Assembly-CSharp`. Spec is on `origin/spec/enemy-hp-bar-binding` §2; branch is not ancestor of `main` — carry the spec (and the §1/§3–§6 doc for #94) onto the implementing branch. |
 | **94** | Enemy HP bars track the live fight | #93 (open), #60 (closed) | **Do after #93.** Pool/display/prefab exist but `SpawnBar`/`RemoveBar` are uncalled — the binding does not exist. No `EnemySpawned` event in `EncounterSimulation`; `Enemy` keeps a parallel `_health` float. |
-| **87** | Inventory Context: glossary and ADR | #85, #86 (both closed) | **Shipped in #100.** `CONTEXT.md` carries **Inventory Context** (retiring *Side Panel Context*) and the Side Panel / Hero Panel / Quick Move entries match the shipped mechanism; ADR-0013 records the announce-to-request inversion. Retitled; renumber to 0014 when #68 merges. |
-| **68** | The shared Stash has no home in the domain model | — | **Done, on `issue/68-stash-session-domain-gap`.** `ddbefb5` + its own ADR-0013 implement the deferral ruling; the branch also merges `feature/sidepanel-hotkey-rework`. `docs/issue-frontiers` takes **0013** for the announce-to-request inversion (#87), so that branch's renumbers to **0014** on merge — both files move. |
+| **68** | The shared Stash has no home in the domain model | — | **Done, on `issue/68-stash-session-domain-gap`.** `ddbefb5` + its own ADR-0013 implement the deferral ruling; the branch also merges `feature/sidepanel-hotkey-rework`. `main` already holds **0013** for the announce-to-request inversion, so that branch's ADR renumbers to **0014** on merge — both files move. |
 | **58** | Healer button + H hotkey | #56 (closed) | **Done in mechanics.** `HealerAction` refills on genuine entry into `Healer`; hotkey `H` (`104`) authored on `HealerToggle`; TownGroup (`ToggleGroup`) membership holds (#57's ruling). Remaining / unverified: visual-feedback acceptance criterion, and `HealerPanel`'s container roster (no `ContainerRole` — a blank grid). Close after a by-hand pass. |
 | **63** | Ground items display | LootFlow epic (satisfied: merged `main`) | **Open slice.** `LootFlow.GroundDrops` + `PlaceOnGround` exist, but no `GroundItemSlotDisplay` panel/prefab and no ground quick-move row. **Refresh the ticket first**: its "when no panel is open, shift-quick-move to the floor" criterion must be restated as a row in #86's context table (no ground row exists; `Hero`/`Healer` still resolve to `None`). |
 | **69** | Centralized, rebindable input service | — | **Needs `/to-spec`.** Touch `dev/specs/` first: `2026-09-26-session-ux-research.md` §3 + `2026-09-28-save-serialization-prior-art.md` record the nesting decisions (persisted-keybind override vs. Input System package; does not cover discoverability). Also absorbs note: `InventoryContext` moved to `Containers/`, but the ticket's stale source list for the inline reads still cites old paths. |
 | **46** | Harden `AbstractProvider<T>` | — | **Mechanism done at `Utility@3010155`** — the submodule split + `OnValidate` + edit-mode guard. The **process** part (architecture pass over `Runtime/Provider/` → `/to-spec` → `/to-tickets` → `/implement`) is still open; the "author-time failure for children/pre-root" direction bullet is only partially covered. Close only once the pass happens and reconciles with the landed commit. |
 | **70** | Legacy `TODO.cs` backlog | — | **Parking lot.** Pull the item-comparison bug out as its own ticket when polish comes up. |
-| **81** | Epic: Inventory Context | #82–#86 closed; **#87 still open** | **Not closable yet — #87 is the gate.** Reviewed 2026-09-29 at `242e4d2`: the six tickets' acceptance criteria are met and no post-swap residue of substance remains, but the epic's own ticket table lists #87 (glossary + ADR) as a child, and its docs work landed in #100 (ADR 0013, glossary) but #87 itself is still open. Close #81 once #87 closes. A first review pass raised two further findings (a resurrected left-panel `PanelGroup`, a stranded `IsClearable`) — **both retracted on re-check**; the group at `Example.unity:5545` is a single-member group on `BehaviourSlidersPanel`, not the left panels, and is the intended InFields→Combat fade path. Full findings in the #81 review comment. |
 
 ### Frontier (recommended order)
 
@@ -65,17 +58,12 @@ acceptance criteria are already shipped under another number.
    `origin/spec/enemy-hp-bar-binding` §2.
 2. **#94** — binds the #60 pool to live enemies; depends on #93.
 3. **#68** — merge `issue/68-stash-session-domain-gap` (its ADR renumbers to 0014, since
-   #87 took 0013 on `docs/issue-frontiers`) and close.
+   `main` already holds 0013) and close.
 4. **#58** — by-hand visual-feedback pass, then close.
 5. **#63** — refresh ticket/table first, then build the ground-items display.
-6. **#81** — not yet. Its six build tickets are closed and the drift/code review is clean
-   apart from one dead-dispatch cleanup, but **#87** (glossary + ADR) is still open and is a
-   child in the epic's own ticket table. Land #87, then close.
 
 ### Notes from the scan
 
 - **Specs under `origin/spec/enemy-hp-bar-binding`** (`dev/specs/2026-09-25-enemy-hp-bar-binding-design.md`) are **not** merged to `main`; the implementing branch for #93/#94 must carry the spec file.
 - Pending branches: `issue/68-stash-session-domain-gap` carries finished #68 work; `origin/NewArtwork` is a non-PR art/asset branch (see `codebase-notes.md`).
-- The open PR is **#99** (`docs/player-session-flow → main`): the session-flow research docs plus the quick-move/buy fixes — the current branch's work, not yet merged.
 - Keep `docs/agents/` and `docs/adr/` out of any `main` → `GitPage` merge (see `CLAUDE.md`). `docs/_config.yml`'s `exclude: [agents, adr]` is unchanged by #87 — the new ADR lands inside the already-excluded `adr/` directory.
-
