@@ -214,6 +214,39 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             Assert.That(stash.StoredPackages, Is.Not.Empty, "the item stayed put");
         }
 
+        // ── stash fallback: handing the item back to its own source is not an acquisition ──
+
+        /// <summary>A player whose bag is full and whose debug fallback drops into the Stash.</summary>
+        private sealed class StashFallbackPlayer : IItemReceiver
+        {
+            private readonly CharacterInventory stash;
+
+            public StashFallbackPlayer(CharacterInventory stash) => this.stash = stash;
+
+            public bool PickUpItem(ItemInstance item, uint amount)
+            {
+                var package = new Package(null, item, amount);
+                return stash.TryAddToContainer(ref package);
+            }
+        }
+
+        [Test]
+        public void StashFallbackBackIntoTheSource_RollsBackToTheOriginCell()
+        {
+            var stash = Stash();
+            var inventory = Inventory();
+            var equipment = Equipment();
+            var origin = new Vector2Int(2, 2);
+            _ = stash.AddAtPosition(origin, new Package(stash, Potion(), 1u));
+
+            var moved = PickUpTransaction.Run(stash, origin, new StashFallbackPlayer(stash),
+                inventory, equipment, stash);
+
+            Assert.That(moved, Is.False);
+            Assert.That(stash.StoredPackages.ContainsKey(origin), Is.True, "the item is back on its origin cell");
+            Assert.That(stash.StoredPackages, Has.Count.EqualTo(1));
+        }
+
         // ── onAcquired: runs only after a successful pick-up, before commit ──
 
         [Test]

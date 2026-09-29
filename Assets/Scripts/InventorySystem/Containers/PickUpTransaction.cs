@@ -49,13 +49,32 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             _ = source.RemoveAtPosition(sourceCell, stored);
 
+            var heldBefore = AmountIn(source, stored.Item);
+
             if (!player.PickUpItem(stored.Item, stored.Amount))
                 return false; // dispose rolls back - the item stays at sourceCell
+
+            // The player's debug stash-fallback can hand the item straight back to the very
+            // container it was just removed from when nowhere else has room. That is not an
+            // acquisition - roll back so the item stays exactly where it was.
+            if (ReferenceEquals(source, stash) && heldBefore < AmountIn(source, stored.Item))
+                return false;
 
             onAcquired?.Invoke(transaction);
 
             transaction.Commit();
             return true;
+        }
+
+        private static uint AmountIn(AbstractDimensionalContainer container, ItemInstance item)
+        {
+            uint total = 0;
+
+            foreach (var package in container.StoredPackages.Values)
+                if (ReferenceEquals(package.Item, item))
+                    total += package.Amount;
+
+            return total;
         }
     }
 }
