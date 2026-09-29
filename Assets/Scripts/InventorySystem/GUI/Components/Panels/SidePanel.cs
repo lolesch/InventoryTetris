@@ -104,7 +104,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
                 return;
 
             shown = shouldShow;
-            Toggle(shouldShow);
+            ToggleState(shouldShow);
         }
 
         /// <summary>
