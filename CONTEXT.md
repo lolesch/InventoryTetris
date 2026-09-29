@@ -92,7 +92,10 @@ names a hub (the **Inventory**), one sink, and a set of sources, and every row f
 same three rules: the hub goes to the sink, the **Equipment** goes to the sink in any
 context but `Hero`, and a listed source comes back to the hub. A context with no rows
 moves nothing — the **Supply** is never a sink, and its own shift-click stays a **Buy** in
-every context. It always executes — into the target container, or the hand if that is full.
+every context. A move between containers always executes — into the target container, or the
+hand if that is full. A retrieval from the **Stash** and a **Buy** go through the player's
+acquisition entry point instead, so auto-equip applies, and when nothing has room they roll
+back with nothing moved.
 _Avoid_: auto-move, transfer, quick-transfer; "shift-click" (that is the input, not the move)
 
 **Package Origin**:
