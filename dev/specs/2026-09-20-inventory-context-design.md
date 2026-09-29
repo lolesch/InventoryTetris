@@ -156,6 +156,8 @@ runtime, and the second authority disappears with it.
   `Stash` names the Stash as both sink and source. `Vendor` names the Sell Basket as sink,
   with the Supply and the Sell Basket as sources. The rule is three lines: the hub goes to
   the sink; Equipment goes to the sink in any non-`Hero` context; a source goes to the hub.
+  A container in none of those roles resolves to nothing - e.g. the Stash under `Vendor`,
+  which is neither hub, Equipment nor a listed source - and the routing fixture pins that.
 - **The Supply is source-only.** It can be emptied but is never a sink — the same role
   Equipment plays outside the `Hero` context. Its own shift-click stays a buy in every
   context, which is a Supply-local act rather than a table row.

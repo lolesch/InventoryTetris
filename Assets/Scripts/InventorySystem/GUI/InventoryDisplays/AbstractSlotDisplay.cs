@@ -294,28 +294,6 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         protected virtual void MoveItem(PointerEventData eventData, Vector2 pointerPosition) { }
 
         /// <summary>
-        /// A quick-move's <see cref="QuickMoveIntentKind.MoveToContainer"/> arm (issue #30):
-        /// removes <paramref name="package"/> from this slot's <see cref="Container"/> at
-        /// <paramref name="position"/> and re-homes it into <paramref name="target"/>, rolling
-        /// back to the hand if it doesn't fit. Shared by every slot display's shift-click
-        /// handling - the same three lines were hand-copied per display before this.
-        /// </summary>
-        /// <returns>Whether the move committed, i.e. was not aborted.</returns>
-        protected bool QuickMoveToContainer(AbstractDimensionalContainer target, Vector2Int position, Package package)
-        {
-            var cursor = new CursorHolder(DragProvider.Instance);
-
-            using var transaction = new ItemTransaction(cursor, Container, target).ReHomeThrough(target);
-
-            _ = Container.RemoveAtPosition(position, package);
-            _ = transaction.TryReHomeToContainerOrHand(ref package, new PackageOrigin(Container, position));
-
-            transaction.Commit();
-
-            return !transaction.Aborted;
-        }
-
-        /// <summary>
         /// The guard-clause prologue every <see cref="MoveItem"/> override starts with: no
         /// container, or nothing at <see cref="Position"/>, and there is nothing to move; found
         /// one, and the hover preview fades before anything changes underneath it. Where a
@@ -363,30 +341,6 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             var totalPrice = unitPrice.HasValue ? unitPrice.Value * package.Amount : (float?)null;
 
             DragProvider.Instance.SetPackage(this, package, positionOffset, pointerPosition, totalPrice);
-        }
-
-        /// <summary>
-        /// Shift-click quick-move shared by every source the Sell Basket can receive from
-        /// (issue #30/#33): resolve the intent for <see cref="Container"/>, stage a sale if
-        /// the Vendor is open, otherwise move to whatever container the resolver names: with
-        /// neither panel open, the resolver names nothing and this is a no-op.
-        /// <see cref="BasketSlotDisplay"/> does not use this - there is no sell-the-basket-to-
-        /// itself case, and a successful move there also has to clear the origin ledger entry.
-        /// </summary>
-        protected void QuickMove(Vector2Int position, Package package)
-        {
-            var intent = InventoryProvider.Instance.QuickMoveFor(Container);
-
-            if (intent.Kind == QuickMoveIntentKind.SellBasket)
-            {
-                _ = SellBasketQuickMove.SendToBasket(InventoryProvider.Instance.Basket, Container, position);
-                return;
-            }
-
-            if (intent.Kind != QuickMoveIntentKind.MoveToContainer)
-                return;
-
-            _ = QuickMoveToContainer(intent.Target, position, package);
         }
 
         protected void FadeInPreview() => RefreshHoverPreview(clearStale: false);
