@@ -140,8 +140,8 @@ button set.
 - **Stash** panel + **Vendor** panel, sharing the same position (one visible at a time).
 - Opened by clicking their minimap button or pressing their hotkey (`S`/`V`).
 - `RadioGroup` with `AllowSwitchOff = true` — only one active at a time.
-- The active side panel is exposed as `SidePanelContext { None, Stash, Vendor }` on
-  `InventoryProvider`, so the trade flow can read it without coupling to the UI.
+- The active side panel is exposed as `SidePanelContext { None, Stash, Vendor }` (retired -
+  now the **Inventory Context**, ADR-0013) on `InventoryProvider`, so the trade flow can read it without coupling to the UI.
 - Closing: click the active minimap button again, press the hotkey again, or press
   `Esc`.
 
@@ -228,7 +228,7 @@ systems read providers. The toggle doesn't know about inventories.
    recall, "Go Venture" transition, minimap-driven panel orchestration. Replaces
    `Switch Context` and all its bindings.
 2. **Side panel management** — Stash/vendor as toggleable side panels with
-   `RadioGroup`, `SidePanelContext` on `InventoryProvider`, hotkeys S/V, trade flow
+   `RadioGroup`, `SidePanelContext` (since the **Inventory Context**, ADR-0013) on `InventoryProvider`, hotkeys S/V, trade flow
    context derivation.
 3. **Combat panel** — Left-side panel with behaviour sliders (from existing code) and
    combat debug info (encounter stats). Enemy HP bar data binding deferred to a
@@ -240,7 +240,8 @@ systems read providers. The toggle doesn't know about inventories.
 
 ## Testing Decisions
 
-- EditMode tests for: `SidePanelContext` enum + notification logic on `InventoryProvider`,
+- EditMode tests for: `SidePanelContext` enum + notification logic on `InventoryProvider`
+  (since `InventoryContextState`, ADR-0013),
   minimap state transitions (mock `RunState`), hotkey routing.
 - No scene tests for panel fade/layout — those are `AbstractPanel` subclass behaviour,
   already covered by the Utility submodule's patterns.
