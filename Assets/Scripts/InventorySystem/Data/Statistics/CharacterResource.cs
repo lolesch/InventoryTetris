@@ -1,10 +1,9 @@
 ﻿using System;
 using NaughtyAttributes;
-using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using UnityEngine;
 
-namespace ToolSmiths.InventorySystem.Runtime.Character
+namespace ToolSmiths.InventorySystem.Data
 {
     [Serializable]
     public class CharacterResource : CharacterStat

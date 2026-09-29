@@ -1,4 +1,5 @@
 using System;
+using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Runtime.Character;
 using ToolSmiths.InventorySystem.Simulation;
