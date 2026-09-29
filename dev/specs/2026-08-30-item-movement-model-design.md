@@ -2,9 +2,11 @@
 
 Date: 2026-08-30
 Status: Superseded, never implemented. Only the spec itself (`fb805b5`) is on `main`.
-`dev/specs/2026-08-31-foundational-rework-design.md` re-orders this work: the
-`ItemTransaction` seam now lands *after* the item-model split, folded in there as
-Phase 2. Everything else here still stands - read it through that spec, not alone.
+The foundational-rework spec re-ordered this work: the `ItemTransaction` seam landed
+*after* the item-model split, folded in as its Phase 2. That spec shipped with issues
+#2–#15 all closed and was pruned 2026-09-29; what is still live from it is collected in
+`2026-09-29-deferred-design-work.md`. Everything else here still stands - read it
+there, not alone.
 Base: `feature/mutablefloat-port` @ `3e9a7d4` (pushed). Cut a new branch from there —
 suggested `feature/item-movement-model`. Do **not** rebase onto `main`.
 

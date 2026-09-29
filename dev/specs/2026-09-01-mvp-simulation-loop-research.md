@@ -61,8 +61,9 @@ says so.
 
 ### What the rework spec already commits to (build on this, do not contradict)
 
-`dev/specs/2026-08-31-foundational-rework-design.md`, **Out of Scope → "Tier 2 — the
-combat simulation cluster (the stated direction)"** (lines 417–430) already sketches:
+The foundational-rework spec's **Out of Scope → "Tier 2 — the combat simulation cluster
+(the stated direction)"** already sketches (that spec was pruned 2026-09-29 as shipped;
+all three items below have since been built by the MVP simulation loop, issues #16–#27):
 
 - an **`Encounter` module** — `StartEncounter(config) → EncounterResult` hiding "a
   fixed-timestep combat tick (replaces the `async void` regen and
@@ -77,7 +78,8 @@ combat simulation cluster (the stated direction)"** (lines 417–430) already sk
   Rides on Seam 2. Replaces `DummyTarget.OnDeath`'s auto-vacuum."
 
 `RollContext` is already specified: `{ int SourceLevel; float MagicFind; LootTable
-Table; }` (foundational-rework §"The generator", line ~244).
+Table; }` (foundational-rework §"The generator") — and has since landed as
+`Items/RollContext.cs`.
 
 **Where the spec is silent:** the number and nature of locations; whether the sim
 runs live or resolves on arrival; what the behaviour sliders are; what Recall vs Death

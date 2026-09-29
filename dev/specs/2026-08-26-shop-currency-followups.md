@@ -1,8 +1,9 @@
 # Shop / currency — deferred work
 
 Date: 2026-08-26
-Status: Backlog — not scheduled. Split out of
-`2026-08-26-shop-currency-buy-loop-design.md` so these ideas are not lost.
+Status: Backlog — not scheduled. Split out of the shop/currency buy-loop spec so these
+ideas are not lost. That spec shipped 2026-08-29 and was pruned 2026-09-29; this file is
+the surviving half of the pair.
 
 ## 1. Proper vendor container
 

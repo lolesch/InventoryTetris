@@ -5,27 +5,11 @@ Unity inventory/loot prototype. Source lives under `Assets/`; there is no `src/`
 ## Specs and tickets
 
 Design specs go in `dev/specs/YYYY-MM-DD-<topic>-design.md`, committed with a `docs:`
-prefix and a body paragraph summarising the decision. If `/to-spec` — or any skill —
+prefix and a body paragraph summarizing the decision. If `/to-spec` — or any skill —
 defaults to writing the spec somewhere else (an issue body, a `docs/` subfolder), put
 it in `dev/specs/` instead.
 
-Implementation work is broken out of a spec with `/to-tickets` into GitHub Issues
-(`lolesch/InventoryTetris`), then built one issue at a time with `/implement` (TDD via
-`/tdd`, closed with `/code-review`). Execute inline, never via subagents. Before starting
-`/implement #N`, walk that issue's **Blocked by** chain transitively — `ready-for-agent`
-means the spec is written, not that the dependencies are closed. If `#N` isn't the
-frontier, surface that and let the user decide rather than building the blockers inside it. If the epic
-swaps a mechanism rather than just adding one, settle what replaces it with `/rederive` before the spec,
-and run `/drift-review` twice — over the existing slice once the swap is named, and over the new ticket
-slice before `/implement`. It catches a ticket fixing the mechanism a sibling ticket is about to replace
-(a stranded fix), the way #72 targeted `RadioGroup.ClearSelection()` right before #74 replaced it with
-`PanelGroup`. **There is no per-phase implementation-plan document** — the issue is the unit of
-work; if one does not fit a single context window, split it into more issues rather than write a plan.
-
-`dev/plans/` holds the plans written before this switch (2026-09-01). They are still
-valid to execute as written — the foundational-rework Phase 0 plan
-(`2026-08-31-foundational-rework-phase-0.md`) is referenced by issues #3–#4. Don't add
-new files there.
+Implementation work is broken out of a spec with `/to-tickets` into GitHub Issues, then built one issue at a time with `/implement`, closed with `/code-review`. Execute inline, never use subagents. Before starting `/implement #N`, walk that issue's **Blocked by** chain transitively — `ready-for-agent` means the spec is written, not that the dependencies are closed. If `#N` isn't the frontier, surface that and stop. If the epic swaps a mechanism rather than just adding one, settle what replaces it with `/rederive` before the spec, and run `/drift-review` twice — over the existing slice once the swap is named, and over the new ticket slice before `/implement`. It catches a ticket fixing the mechanism a sibling ticket is about to replace (a stranded fix). **There is no per-phase implementation-plan document** — the issue is the unit of work; if one does not fit a single context window, split it into more issues rather than write a plan. Closing an issue-epic should surface implementation gaps against its spec, or delete it if the spec is fully covered. 
 
 ## Agent skills
 
@@ -35,7 +19,7 @@ Issues live in this repo's GitHub Issues (`lolesch/InventoryTetris`), driven by 
 
 ### Triage labels
 
-The five canonical label names are used verbatim — `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+See `docs/agents/triage-labels.md`.
 
 ### Domain docs
 

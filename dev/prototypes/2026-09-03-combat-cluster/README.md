@@ -1,9 +1,9 @@
 # Combat-cluster /prototype (issue #18)
 
 **Throwaway.** Lives only on this branch (`prototype/combat-cluster`), off `main`. The
-validated decisions fold into **ADR-0010** (*Prototype outcome*) and
-`dev/specs/2026-09-02-mvp-simulation-loop-design.md` on branch `docs/mvp-simulation-loop`.
-This branch keeps the prototype itself as a primary source.
+validated decisions folded into **ADR-0010** (*Prototype outcome*), which carries them to
+`main`; the MVP simulation-loop spec they were written for was pruned on 2026-09-29 as
+shipped. This branch keeps the prototype itself as a primary source.
 
 Interactive version (runnable + tweakable in a browser): the file
 `combat-cluster-prototype.html` is also published as an Artifact —
