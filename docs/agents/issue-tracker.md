@@ -37,7 +37,7 @@ Run `gh issue view <number> --comments`.
 
 Eight open issues; the frontier — an issue whose blockers are all closed and whose criteria are not already met by the code — starts at **#93 → #94**.
 
-**Keep this table current:** update the open set after every `/implement`, and PR-to-`main`.
+**Keep this table current:** update after every `/implement`, and PR-to-`main` by removing closed issues and re-scan the open set.
 
 ### Readiness of the open set
 
