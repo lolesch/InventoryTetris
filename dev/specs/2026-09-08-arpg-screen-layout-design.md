@@ -43,6 +43,20 @@ status: partly superseded
 >    `InField` stays the same shown panel whether the player is previewing or has actually
 >    travelled, and `RadioGroup.Select` has no guard of its own against a stray click.
 >    Corrected 2026-09-17; see issue #56.
+>
+> 6. **The side panels moved to the LEFT, and the right side is the Hero Panel** — item 1
+>    above, restated because this spec's own body contradicts it. `SidePanelContext` is
+>    **retired** and replaced by the **Inventory Context** (ADR-0013): entry points request
+>    a context and every panel derives its visibility from it, instead of each Side Panel
+>    announcing its own from its appear and disappear hooks. The `RadioGroup` over the *side
+>    panels* is gone — "at most one Town Stop panel is up" is a property of the single-valued
+>    type now. (`PanelGroup` is untouched and still used for the InTown/InFields faces, which
+>    are a phase pair rather than a context.)
+>    Everything below describing `SidePanelContext { None, Stash, Vendor }` on
+>    `InventoryProvider`, the toggles announcing on both edges, and the *Trade context*
+>    section's panel-to-provider push is **historical**: superseded by
+>    `2026-09-20-inventory-context-design.md` and issues #82–#87. Corrected 2026-09-29; see
+>    issue #87.
 
 # ARPG Screen Layout
 
@@ -117,6 +131,12 @@ button set.
 
 ### Right side — Town panels (toggleable)
 
+> **Superseded — this whole subsection describes the LEFT side, and pre-dates the
+> Inventory Context.** Town panels are on the left; the right side is the Hero Panel. The
+> context is now requested by the toggle and derived by the panel, not announced by the
+> panel (`SidePanelContext` is retired, ADR-0013). Kept for the radio-group and hotkey
+> history only. See correction 6 above.
+
 - **Stash** panel + **Vendor** panel, sharing the same position (one visible at a time).
 - Opened by clicking their minimap button or pressing their hotkey (`S`/`V`).
 - `RadioGroup` with `AllowSwitchOff = true` — only one active at a time.
@@ -174,6 +194,12 @@ button set.
 | `Esc` | Close topmost side panel | Close topmost overlay |
 
 ## Trade context
+
+> **Superseded (2026-09-29, issue #87).** The panel→provider push described below is what
+> ADR-0013 reverses: the context is now the input and the panels derive from it, and
+> `SidePanelContext` is retired in favour of the **Inventory Context**. The routing rows
+> are still right; only the direction that produces them changed. See
+> `2026-09-20-inventory-context-design.md` and `CONTEXT.md`'s **Quick Move** entry.
 
 The active side panel (`SidePanelContext`) is tracked on `InventoryProvider`, not on
 the UI toggles. When a stash or vendor toggle activates, it notifies the provider.

@@ -3,8 +3,8 @@
 Date: 2026-08-30
 Status: Phases 0-2 shipped; Phase 3 still deferred.
 Phase 0/1 landed in `727c742`..`8daa96b` (ladder, decoupled stack limits, manual
-consolidation, Consolidate button). Phase 2 was designed separately and shipped as
-`dev/specs/2026-08-31-currency-drop-piles-design.md`. The income-split measurement
+consolidation, Consolidate button). Phase 2 was designed separately and shipped in the
+currency-drop-piles spec (pruned 2026-09-29 as shipped). The income-split measurement
 this spec asked for before Phase 2 shipped was NOT done - see
 `dev/specs/2026-08-31-item-value-open-questions.md` for why.
 
@@ -142,6 +142,7 @@ values and should be measured before Phase 2 ships.*
 - *(optional)* `AbstractProbabilityDistribution.Probabilities` allocates and
   re-sorts on every access, and `GetRandomEnumerator` reads it inside a nested
   loop. Correct, but O(n²) allocations per roll.
+- Make sure that `Sort()` and `Consolidate()` follow the same value/rarity.
 
 ### Phase 1 — ladder, limits, consolidation (delivers *Visible*)
 

@@ -87,8 +87,12 @@ _Avoid_: swap (a swap is one specific displacement), eviction
 
 **Quick Move**:
 A shift-click or right-click that moves a Package without a drag, to a destination chosen
-by which **Side Panel** is open rather than by where a pointer ends up. It always executes
-— into the target container, or the hand if that is full.
+by the active **Inventory Context** rather than by where a pointer ends up. Each context
+names a hub (the **Inventory**), one sink, and a set of sources, and every row follows the
+same three rules: the hub goes to the sink, the **Equipment** goes to the sink in any
+context but `Hero`, and a listed source comes back to the hub. A context with no rows
+moves nothing — the **Supply** is never a sink, and its own shift-click stays a **Buy** in
+every context. It always executes — into the target container, or the hand if that is full.
 _Avoid_: auto-move, transfer, quick-transfer; "shift-click" (that is the input, not the move)
 
 **Package Origin**:
@@ -355,24 +359,32 @@ _Avoid_: location, node, station, shop, destination
 
 **Hero Panel**:
 The right-side panel: the **Equipment** paperdoll on top, the **Inventory** below. The
-player's own things, as opposed to the Town Stop's on the left.
+player's own things, as opposed to the Town Stop's on the left. It is a member of *every*
+**Inventory Context** — that is the only place its ubiquity is stated, and no panel ever
+references it. It opens and closes on its own toggle, and is never opened or closed by
+another panel naming it.
 _Avoid_: character panel, paperdoll panel (Equipment is the paperdoll), bag panel
 
 **Side Panel**:
-A left-side panel showing one **Town Stop**'s context — the Stash or the Vendor today.
-Exactly one active at a time; the active one is tracked as `SidePanelContext` on the
-`InventoryProvider`, which the trade flow reads for **Quick Move** routing. Shares the
+A left-side panel showing one **Town Stop**'s context — the Stash or the Vendor today. It
+knows only the one **Inventory Context** it was authored with, subscribes to that context,
+and derives its own visibility from it; it announces nothing and fades nothing. Shares the
 left side with the **Combat Panel**, which replaces the Side Panels for the length of a
 Run.
 _Avoid_: tab, drawer, sidebar; right-side (that is the **Hero Panel**)
 
-**Side Panel Context**:
-The enum (`None`, `Stash`, `Vendor`) that records which **Town Stop**'s Side Panel is
-currently open. Owned by the `InventoryProvider`, not by the UI toggles. The trade flow
-queries it to decide where a **Quick Move** lands. Its members are not homogeneous and
-need not be — the Stash is the player's own storage, the Vendor is someone else's — because
-the only question the enum answers is which Side Panel is open.
-_Avoid_: trade target, active panel, current context
+**Inventory Context**:
+The single-valued enum (`None`, `Hero`, `Stash`, `Vendor`, `Healer`) that answers two
+questions at once: which panels are up, and where a **Quick Move** lands. Entry points
+*request* a context; every panel *derives* its visibility from it. A context names the
+**Hero Panel** plus at most one Town Stop's panel, so the panel set is derived rather than
+announced, and a panel that belongs to every context can never be the thing that names one
+(ADR-0013). It is owned by the `InventoryProvider` and read by the trade flow for **Quick
+Move** routing. Its members are not homogeneous and need not be — the Stash is the player's
+own storage, the Vendor is someone else's — because the only question the enum answers is
+which context is active. Run phase is not a member: only `None` and `Hero` are reachable
+in the field, so a Run *constrains* contexts rather than being one.
+_Avoid_: Side Panel Context (retired), trade target, active panel, current context
 
 **Combat Panel**:
 The left-side panel, visible only during `InField`. Holds behaviour sliders, enemy
@@ -390,3 +402,21 @@ A pooled list of slot displays for items lying on the ground. Each entry shows t
 item name and icon, supports hover preview and click-to-pick-up. One slot per item,
 not spatial.
 _Avoid_: loot beam, drop list, world items
+
+
+## UI Components
+
+The Submodule provides basic components to reuse or derive from.
+
+**Interactive Element**:
+It reacts to pointer handler to provide visual feedback. Base class for buttons and toggles.
+
+**Panels**:
+A panel is a parent component that groups content. It provides appearance options such as fading in and out, scaling and movement. A panel should always stay enabled, only its alpha is set to 0.
+
+**ExclusiveGroups**:
+A collection of mutually exclusive Toggles or Panels of which at most one is active at a time. 
+"Activate" deactivates whichever sibling held the slot. 
+
+**Views**:
+A view is the visual representation of a data object. *IView* provides a *Refresh()* call to update the view on data change.
