@@ -112,7 +112,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// Buys the package at <paramref name="position"/> out of <paramref name="store"/>
         /// for <paramref name="price"/> base units, routing the item through
         /// <see cref="PickUpTransaction.Run"/> - the player's acquisition entry point - so
-        /// auto-equip, bag overflow, and stash fallback all apply. The payment is queued as
+        /// auto-equip, else the bag, applies. The payment is queued as
         /// that same transaction's commit-time effect, so a pick-up that finds no room
         /// anywhere rolls the whole move back: the item stays on the shelf, nothing is
         /// charged. This is the shift-click buy's only path (issue #30); a drag-drop buy
@@ -128,12 +128,10 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// <param name="equipment">The player's equipment container, enrolled in the
         /// transaction so an auto-equip inside <paramref name="player"/>'s pick-up rolls
         /// back with everything else. Caller-supplied - Containers has no provider access.</param>
-        /// <param name="stash">The player's stash container, enrolled for the same reason
-        /// as <paramref name="equipment"/> - a pick-up's stash fallback.</param>
         /// <returns>Whether the purchase went through.</returns>
         public static bool Buy(AbstractDimensionalContainer store, Vector2Int position, Package onShelf,
             Wallet wallet, float price, IItemReceiver player = null,
-            AbstractDimensionalContainer equipment = null, AbstractDimensionalContainer stash = null)
+            AbstractDimensionalContainer equipment = null)
         {
             if (store == null || wallet == null || !onShelf.IsValid || !CanAffordBuy(wallet, price))
                 return false;
@@ -141,7 +139,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             var bag = wallet.Container;
             var receiver = player ?? new BagOnlyReceiver(bag);
 
-            return PickUpTransaction.Run(store, position, receiver, bag, equipment, stash,
+            return PickUpTransaction.Run(store, position, receiver, bag, equipment,
                 transaction => QueuePurchasePayment(transaction, wallet, price));
         }
 

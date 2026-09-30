@@ -181,8 +181,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             Assert.That(WalletValue(wallet), Is.EqualTo(100u));
         }
 
-        /// Mirrors <see cref="PickUpTransactionTests.FakePlayer"/>: <c>LocalPlayer.PickUpItem</c>'s
-        /// priority (equip, else bag) without the MonoBehaviour or the provider singleton, so a
+        /// Like <see cref="PickUpTransactionTests.FakePlayer"/>: the player's placement
+        /// (<see cref="ItemAcquisition"/>) without the MonoBehaviour or the provider singleton, so a
         /// shift-click buy's real path - through <see cref="IItemReceiver"/>, not the
         /// null-player bag-add seam every other Buy test above exercises - is covered too.
         private sealed class FakePlayer : IItemReceiver
@@ -199,12 +199,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             public bool PickUpItem(ItemInstance item, uint amount)
             {
                 var package = new Package(null, item, amount);
-
-                if (ItemView.Of(item).Definition.Category == ItemCategory.Equipment
-                    && equipment.autoEquip && equipment.AutoEquip(ref package))
-                    return true;
-
-                return inventory.TryAddToContainer(ref package);
+                return ItemAcquisition.TryPlace(ref package, equipment, inventory);
             }
         }
 

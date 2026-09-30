@@ -35,7 +35,7 @@ Run `gh issue view <number> --comments`.
 
 ## Frontiers — issues vs. implementation
 
-Eight open issues; the frontier — an issue whose blockers are all closed and whose criteria are not already met by the code — starts at **#93 → #94**.
+Nine open issues (**#103** is built and awaiting merge — see its row); the frontier — an issue whose blockers are all closed and whose criteria are not already met by the code — starts at **#93 → #94**.
 
 **Keep this table current:** update after every `/implement`, and PR-to-`main` by removing closed issues and re-scan the open set.
 
@@ -43,6 +43,7 @@ Eight open issues; the frontier — an issue whose blockers are all closed and w
 
 | # | Title | Blockers | State vs. this branch |
 |---|---|---|---|
+| **103** | Simulation loot and Corpse recovery bypass the auto-equip entry point | — | **Done, on `issue/103-sim-loot-auto-equip`** (off `main`, unpushed). `LootFlow` takes an `IItemReceiver`; `ContainerSettlementBag.TryStore` goes through the player; the placement rule is `ItemAcquisition.TryPlace`, and the receiver path has no debug Stash fallback (`PickUpItemOrStash` keeps it for the debug spawners). Open question left for the owner: auto-equipped loot never enters the bag, so it is not buried in a Corpse and does not feed the bag-full recall gauge (ADR-0009). Close after merge. |
 | **93** | Hero resource types compile where the simulation can reach them | none | **Frontier now.** `CharacterStat`/`CharacterResource` still live under `Runtime/` (no asmdef there) → `Assembly-CSharp`. Spec is on `origin/spec/enemy-hp-bar-binding` §2; branch is not ancestor of `main` — carry the spec (and the §1/§3–§6 doc for #94) onto the implementing branch. |
 | **94** | Enemy HP bars track the live fight | #93 (open), #60 (closed) | **Do after #93.** Pool/display/prefab exist but `SpawnBar`/`RemoveBar` are uncalled — the binding does not exist. No `EnemySpawned` event in `EncounterSimulation`; `Enemy` keeps a parallel `_health` float. |
 | **68** | The shared Stash has no home in the domain model | — | **Done, on `issue/68-stash-session-domain-gap`.** `ddbefb5` + its own ADR-0013 implement the deferral ruling; the branch also merges `feature/sidepanel-hotkey-rework`. `main` already holds **0013** for the announce-to-request inversion, so that branch's ADR renumbers to **0014** on merge — both files move. |

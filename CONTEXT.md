@@ -95,8 +95,7 @@ moves nothing — the **Supply** is never a sink, and its own shift-click stays 
 every context. A move between containers always executes — into the target container, or the
 hand if that is full. A retrieval from the **Stash** and a **Buy** go through the player's
 acquisition entry point instead, so auto-equip applies, and when nothing has room they roll
-back with nothing moved. So does every pick-up a Run makes — a kill's **Drop** and a
-**Corpse** recovery — where "nothing has room" leaves the item on the ground.
+back with nothing moved.
 _Avoid_: auto-move, transfer, quick-transfer; "shift-click" (that is the input, not the move)
 
 **Package Origin**:
@@ -161,13 +160,16 @@ _Avoid_: frag, takedown, defeat; "kill" as the XP unit
 Loot lying on the ground at a Location — shed by a defeated enemy, or laid out from a
 Corpse when the hero returns for it — not yet picked up. Drops accumulate as enemies
 fall, never as one bundle at the end; a Drop still on the ground when the Run ends is
-gone, on Recall or Death alike.
+gone, on Recall or Death alike. A Drop the hero's loot filter admits is picked up through
+the player's acquisition entry point (see **Quick Move**) — auto-equip into an empty slot,
+else the **Inventory**; with no room it stays on the ground.
 _Avoid_: pile (that is coins), ground loot, spill, cache
 
 **Corpse**:
 The hero's bag, set aside at the Location where they were downed. Death empties the bag
 into the Corpse; recovering it means re-entering that Location and picking the items
-back up. There is only ever one — a second Death destroys any Corpse still unclaimed —
+back up — through the same acquisition entry point as a **Drop**, so gear auto-equips into
+an empty slot. There is only ever one — a second Death destroys any Corpse still unclaimed —
 and it persists between Sessions until recovered.
 _Avoid_: grave, body, loot bag; remains (reserved for a possible future enemy corpse)
 

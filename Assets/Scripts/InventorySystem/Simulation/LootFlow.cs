@@ -91,6 +91,12 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// </summary>
         public event Action<long> CoinsBanked;
 
+        /// <summary>
+        /// Raised when the player's pick-up threw for a Drop; the Drop is on the ground. The
+        /// engine-side driver logs it - this class stays free of engine calls.
+        /// </summary>
+        public event Action<ItemInstance, Exception> PlacementFailed;
+
         private void OnEnemyDefeated(Enemy enemy)
         {
             RollItems(enemy);
@@ -126,10 +132,31 @@ namespace ToolSmiths.InventorySystem.Simulation
             for (var i = 0; i < drops.Count; i++)
             {
                 var item = drops[i];
-                if (_behaviour.AdmitsItem(item.Rarity) && _player.PickUpItem(item, 1u))
+                if (_behaviour.AdmitsItem(item.Rarity) && TryPlace(item))
                     continue; // equipped, or landed in the bag
 
                 _groundDrops.Add(item);
+            }
+        }
+
+        /// <summary>
+        /// Offers <paramref name="item"/> to the player. An equip applies stats and refreshes the
+        /// character sheet, all of it engine-side code running inside the same tick as the kill,
+        /// so a throw there gets the roll's treatment above: the kill still resolves and the item
+        /// stays on the ground, with the failure surfaced through <see cref="PlacementFailed"/>
+        /// rather than swallowed. (A throw after a partial equip can leave the item both equipped
+        /// and on the ground - the Run-end clear drops the copy; losing it would be worse.)
+        /// </summary>
+        private bool TryPlace(ItemInstance item)
+        {
+            try
+            {
+                return _player.PickUpItem(item, 1u);
+            }
+            catch (Exception exception)
+            {
+                PlacementFailed?.Invoke(item, exception);
+                return false;
             }
         }
 

@@ -41,9 +41,17 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         /// <summary>
         /// Through the player's acquisition entry point, so a recovered piece of gear
-        /// auto-equips into an empty slot exactly as a fresh Drop does - not a raw bag add.
+        /// auto-equips into an empty slot exactly as a fresh Drop does - not a raw bag add. With
+        /// no live player it refuses, so <see cref="RunSettlement.Recover"/> grounds or re-buries
+        /// the item rather than losing it (Unity's lifetime-aware <c>==</c>: a destroyed
+        /// <c>LocalPlayer</c> is not literally null).
         /// </summary>
-        public bool TryStore(ItemInstance item) =>
-            ((IItemReceiver)CharacterProvider.Instance.Player).PickUpItem(item, 1u);
+        public bool TryStore(ItemInstance item)
+        {
+            var provider = CharacterProvider.Instance;
+            var player = provider != null ? provider.Player : null;
+
+            return player != null && player.PickUpItem(item, 1u);
+        }
     }
 }

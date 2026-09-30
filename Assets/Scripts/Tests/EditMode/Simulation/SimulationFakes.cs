@@ -141,12 +141,18 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
         public Func<ItemInstance, bool> Equips { get; set; }
 
+        /// <summary>When set, every pick-up throws it - an equip whose engine-side effects blew up.</summary>
+        public Exception Throws { get; set; }
+
         public List<ItemInstance> Offered { get; } = new();
         public List<ItemInstance> Equipped { get; } = new();
 
         public bool PickUpItem(ItemInstance item, uint amount)
         {
             Offered.Add(item);
+
+            if (Throws != null)
+                throw Throws;
 
             if (Equips != null && Equips(item))
             {

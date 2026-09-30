@@ -233,6 +233,32 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
+        public void AReceiverThatThrows_DoesNotCrashTheEncounter_GroundsTheDrop_AndSurfacesTheFailure()
+        {
+            var location = Profiles.Solo(EnemyArchetype.Skirmisher,
+                table: FakeLootTable.Fixed(ItemCategory.Equipment, ItemRarity.Common));
+            var sim = NewEncounter(OneShotHero(), location);
+            var items = new ItemGenerator(catalog, new ConstantRollSource(0f));
+            var boom = new System.InvalidOperationException("equip blew up");
+            var player = new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10))) { Throws = boom };
+            var wallet = NewWallet();
+
+            var lootFlow = new LootFlow(sim, Admitting(ItemRarity.Common), items,
+                new FakeCoinDropSource((CurrencyType.Iron, 7u)), player, wallet);
+
+            System.Exception reported = null;
+            lootFlow.PlacementFailed += (_, exception) => reported = exception;
+
+            Assert.That(() => sim.Advance(0.1f), Throws.Nothing,
+                "an equip's engine-side effects must not abort the tick that killed the enemy");
+
+            Assert.That(sim.EnemiesDefeated, Is.EqualTo(1), "the kill itself still resolves");
+            Assert.That(lootFlow.GroundDrops, Has.Count.EqualTo(1), "the Drop is not lost");
+            Assert.That(reported, Is.SameAs(boom), "the failure is reported, not swallowed");
+            Assert.That(wallet.Balance.Iron, Is.EqualTo(7u), "the kill's coin Pile still banks");
+        }
+
+        [Test]
         public void AnItem_TheReceiverRefuses_StaysOnTheGround_WithNoOverflowElsewhere()
         {
             var location = Profiles.Solo(EnemyArchetype.Skirmisher,

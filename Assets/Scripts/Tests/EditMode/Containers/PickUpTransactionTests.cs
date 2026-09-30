@@ -10,9 +10,9 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
     /// <summary>
     /// The one commit-or-rollback move through <see cref="IItemReceiver.PickUpItem"/>, shared
     /// by the shift-click-out-of-the-Stash retrieval (issue #86) and <see
-    /// cref="VendorTransaction.Buy"/>'s player-path. <see cref="FakePlayer"/> mirrors
-    /// <c>LocalPlayer.PickUpItem</c>'s own priority (equip, else bag) without the MonoBehaviour
-    /// or the provider singleton, so this stays a pure container-seam test - prior art:
+    /// cref="VendorTransaction.Buy"/>'s player-path. <see cref="FakePlayer"/> runs
+    /// <see cref="ItemAcquisition"/> - the rule <c>LocalPlayer</c> itself delegates to - without
+    /// the MonoBehaviour or the provider singleton, so this stays a pure container-seam test - prior art:
     /// <see cref="SellBasketQuickMoveTests"/>.
     /// </summary>
     [TestFixture]
@@ -50,7 +50,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         private static CharacterInventory Inventory(int width = 4, int height = 4) => new(new Vector2Int(width, height));
         private static CharacterEquipment Equipment() => new(new Vector2Int(14, 1), null);
 
-        /// <summary>Mirrors <c>LocalPlayer.PickUpItem</c>'s priority without the MonoBehaviour.</summary>
+        /// <summary>The player's placement (<see cref="ItemAcquisition"/>) without the MonoBehaviour.</summary>
         private sealed class FakePlayer : IItemReceiver
         {
             private readonly CharacterEquipment equipment;
@@ -65,12 +65,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             public bool PickUpItem(ItemInstance item, uint amount)
             {
                 var package = new Package(null, item, amount);
-
-                if (ItemView.Of(item).Definition.Category == ItemCategory.Equipment
-                    && equipment.autoEquip && equipment.AutoEquip(ref package))
-                    return true;
-
-                return inventory.TryAddToContainer(ref package);
+                return ItemAcquisition.TryPlace(ref package, equipment, inventory);
             }
         }
 
@@ -212,39 +207,6 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 
             Assert.That(moved, Is.False);
             Assert.That(stash.StoredPackages, Is.Not.Empty, "the item stayed put");
-        }
-
-        // ── stash fallback: handing the item back to its own source is not an acquisition ──
-
-        /// <summary>A player whose bag is full and whose debug fallback drops into the Stash.</summary>
-        private sealed class StashFallbackPlayer : IItemReceiver
-        {
-            private readonly CharacterInventory stash;
-
-            public StashFallbackPlayer(CharacterInventory stash) => this.stash = stash;
-
-            public bool PickUpItem(ItemInstance item, uint amount)
-            {
-                var package = new Package(null, item, amount);
-                return stash.TryAddToContainer(ref package);
-            }
-        }
-
-        [Test]
-        public void StashFallbackBackIntoTheSource_RollsBackToTheOriginCell()
-        {
-            var stash = Stash();
-            var inventory = Inventory();
-            var equipment = Equipment();
-            var origin = new Vector2Int(2, 2);
-            _ = stash.AddAtPosition(origin, new Package(stash, Potion(), 1u));
-
-            var moved = PickUpTransaction.Run(stash, origin, new StashFallbackPlayer(stash),
-                inventory, equipment, stash);
-
-            Assert.That(moved, Is.False);
-            Assert.That(stash.StoredPackages.ContainsKey(origin), Is.True, "the item is back on its origin cell");
-            Assert.That(stash.StoredPackages, Has.Count.EqualTo(1));
         }
 
         // ── onAcquired: runs only after a successful pick-up, before commit ──
