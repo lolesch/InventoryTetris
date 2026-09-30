@@ -7,7 +7,8 @@ using UnityEngine.UI;
 
 namespace ToolSmiths.InventorySystem.GUI.Displays
 {
-    public class CoinDisplay : MonoBehaviour, IView<(CurrencyType type, uint amount)>
+    
+    public class CoinDisplay : MonoBehaviour, IDisplay<(CurrencyType type, uint amount)>
     {
         [SerializeField] private Image coinIcon;
         [SerializeField] private TextMeshProUGUI amountText;
@@ -26,7 +27,5 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
             if (amountText)
                 amountText.text = $"{newData.amount}";
         }
-
-        public void Display(CurrencyType type, uint amount) => Refresh((type, amount));
     }
 }

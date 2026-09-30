@@ -11,7 +11,7 @@ using static ToolSmiths.InventorySystem.GUI.Displays.CharacterStatDisplay;
 
 namespace ToolSmiths.InventorySystem.GUI.Displays
 {
-    public class CharacterStatDisplay : MonoBehaviour, IView<CharacterStatData>
+    public class CharacterStatDisplay : MonoBehaviour, IDisplay<CharacterStatData>
     {
         public struct CharacterStatData
         {
