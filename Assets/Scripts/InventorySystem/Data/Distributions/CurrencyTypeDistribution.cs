@@ -5,5 +5,5 @@ namespace ToolSmiths.InventorySystem.Data.Distributions
 {
     [System.Serializable]
     [CreateAssetMenu(fileName = "Currency Type Distribution", menuName = "Inventory System/Probability Distributions/Currency Type")]
-    public class CurrencyTypeDistribution : AbstractProbabilityDistribution<CurrencyType> { }
+    public sealed class CurrencyTypeDistribution : AbstractProbabilityDistribution<CurrencyType> { }
 }

@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.GUI.Displays
 {
-    public class CurrencyDisplay : MonoBehaviour, IDisplay<Currency>
+    public sealed class CurrencyDisplay : MonoBehaviour, IDisplay<Currency>
     {
         [SerializeField] private CoinDisplay[] coinDisplays = new CoinDisplay[4];
 

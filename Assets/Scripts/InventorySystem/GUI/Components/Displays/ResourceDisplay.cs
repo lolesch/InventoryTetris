@@ -9,20 +9,20 @@ using UnityEngine.UI;
 
 namespace ToolSmiths.InventorySystem.GUI.Displays
 {
-    public class ResourceDisplay : MonoBehaviour
+    public sealed class ResourceDisplay : MonoBehaviour
     {
-        [SerializeField] protected Image resourceImage;
+        [SerializeField] private Image resourceImage;
         // [SerializeField] protected Image impactImage; // TODO: look it up in RuadhWarbands
 
-        [SerializeField] protected TextMeshProUGUI percentageText;
-        [SerializeField] protected TextMeshProUGUI currentText;
-        [SerializeField] protected TextMeshProUGUI recoveryText;
+        [SerializeField] private TextMeshProUGUI percentageText;
+        [SerializeField] private TextMeshProUGUI currentText;
+        [SerializeField] private TextMeshProUGUI recoveryText;
 
-        [SerializeField] protected BaseCharacter character;
-        [SerializeField] protected StatName resourceName = StatName.Health;
-        [SerializeField] protected StatName recoveryName = StatName.HealthRegeneration;
+        [SerializeField] private BaseCharacter character;
+        [SerializeField] private StatName resourceName = StatName.Health;
+        [SerializeField] private StatName recoveryName = StatName.HealthRegeneration;
 
-        [SerializeField] protected AnimationCurve globeVolume;
+        [SerializeField] private AnimationCurve globeVolume;
 
         private CharacterResource _resource;
         private CharacterStat _recovery;
@@ -56,7 +56,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
             _bound = false;
         }
 
-        protected void OnEnable()
+        private void OnEnable()
         {
             if (!_bound && character)
             {
@@ -67,7 +67,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
             Acquire();
         }
 
-        protected void OnDisable()
+        private void OnDisable()
         {
             Release();
 
@@ -106,7 +106,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                 _recovery.TotalHasChanged -= UpdateRechargeDisplay;
         }
 
-        protected virtual void UpdateDisplay(float previous, float current, float total)
+        private void UpdateDisplay(float previous, float current, float total)
         {
             if (resourceImage)
                 if (0 < globeVolume.length)
@@ -121,7 +121,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                 currentText.text = $"{current:0} / {total:0}";
         }
 
-        protected virtual void UpdateRechargeDisplay(float total)
+        private void UpdateRechargeDisplay(float total)
         {
             if (recoveryText)
                 recoveryText.text = $"{total:0} / sec";

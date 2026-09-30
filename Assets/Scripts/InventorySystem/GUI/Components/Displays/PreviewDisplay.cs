@@ -11,7 +11,7 @@ using UnityEngine.UI;
 namespace ToolSmiths.InventorySystem.GUI.Displays
 {
     // TODO: inherit AbstractDisplay
-    public class PreviewDisplay : SimplePanel, IDisplay<(Package package, Package compareTo)>
+    public sealed class PreviewDisplay : SimplePanel, IDisplay<(Package package, Package compareTo)>
     {
         [SerializeField] private Image icon;
         [SerializeField] private Image frame;
