@@ -12,8 +12,9 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// to <see cref="EncounterSimulation.EnemyDefeated"/>: rolls the kill's item Drops against
     /// a <see cref="RollContext"/> built from the Encounter's own Location and hero (its loot
     /// table, source level and live magic find), tests each against
-    /// <see cref="HeroBehaviour.AdmitsItem"/>, and offers a pass to the bag — one that does not
-    /// fit, or that fails the filter, stays on the ground as a <see cref="GroundDrops"/> entry.
+    /// <see cref="HeroBehaviour.AdmitsItem"/>, and offers a pass to the player's acquisition
+    /// entry point (<see cref="IItemReceiver"/> — auto-equip, else the bag) — one that finds no
+    /// room, or that fails the filter, stays on the ground as a <see cref="GroundDrops"/> entry.
     /// Separately rolls one coin Pile per kill and banks it to the wallet iff
     /// <see cref="HeroBehaviour.AdmitsCoin"/> passes.
     ///
@@ -30,7 +31,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         private readonly HeroBehaviour _behaviour;
         private readonly ItemGenerator _items;
         private readonly ICoinDropSource _coins;
-        private readonly AbstractDimensionalContainer _bag;
+        private readonly IItemReceiver _player;
         private readonly Wallet _wallet;
         private readonly List<ItemInstance> _groundDrops = new();
 
@@ -39,14 +40,14 @@ namespace ToolSmiths.InventorySystem.Simulation
             HeroBehaviour behaviour,
             ItemGenerator items,
             ICoinDropSource coins,
-            AbstractDimensionalContainer bag,
+            IItemReceiver player,
             Wallet wallet)
         {
             _encounter = encounter ?? throw new ArgumentNullException(nameof(encounter));
             _behaviour = behaviour ?? throw new ArgumentNullException(nameof(behaviour));
             _items = items ?? throw new ArgumentNullException(nameof(items));
             _coins = coins ?? throw new ArgumentNullException(nameof(coins));
-            _bag = bag ?? throw new ArgumentNullException(nameof(bag));
+            _player = player ?? throw new ArgumentNullException(nameof(player));
             _wallet = wallet ?? throw new ArgumentNullException(nameof(wallet));
 
             _encounter.EnemyDefeated += OnEnemyDefeated;
@@ -54,7 +55,7 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         /// <summary>
         /// Item Drops still lying on the ground — failed the loot filter, or passed it but did
-        /// not fit the bag. Cleared by <see cref="ClearGround"/>, never by anything else; a
+        /// found no room. Cleared by <see cref="ClearGround"/>, never by anything else; a
         /// picked-up Drop is simply not added here in the first place.
         /// </summary>
         public IReadOnlyList<ItemInstance> GroundDrops => _groundDrops;
@@ -125,12 +126,8 @@ namespace ToolSmiths.InventorySystem.Simulation
             for (var i = 0; i < drops.Count; i++)
             {
                 var item = drops[i];
-                if (_behaviour.AdmitsItem(item.Rarity))
-                {
-                    var package = new Package(_bag, item, 1u);
-                    if (_bag.TryAddToContainer(ref package))
-                        continue; // landed in the bag
-                }
+                if (_behaviour.AdmitsItem(item.Rarity) && _player.PickUpItem(item, 1u))
+                    continue; // equipped, or landed in the bag
 
                 _groundDrops.Add(item);
             }

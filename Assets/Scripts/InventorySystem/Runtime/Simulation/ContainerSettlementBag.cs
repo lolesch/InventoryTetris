@@ -9,7 +9,8 @@ using ToolSmiths.InventorySystem.Simulation;
 namespace ToolSmiths.InventorySystem.Runtime.Simulation
 {
     /// <summary>
-    /// Binds <see cref="ISettlementBag"/> to the live player bag (<c>InventoryProvider.Instance.Inventory</c>).
+    /// Binds <see cref="ISettlementBag"/> to the live player bag (<c>InventoryProvider.Instance.Inventory</c>)
+    /// for the Corpse burial, and to the player's acquisition entry point for recovery.
     /// Stateless: it resolves the provider on each call, so the one long-lived
     /// <see cref="RunSettlement"/> always acts on the current bag.
     /// </summary>
@@ -38,11 +39,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             return contents;
         }
 
-        public bool TryStore(ItemInstance item)
-        {
-            var bag = InventoryProvider.Instance.Inventory;
-            var package = new Package(bag, item, 1u);
-            return bag.TryAddToContainer(ref package);
-        }
+        /// <summary>
+        /// Through the player's acquisition entry point, so a recovered piece of gear
+        /// auto-equips into an empty slot exactly as a fresh Drop does - not a raw bag add.
+        /// </summary>
+        public bool TryStore(ItemInstance item) =>
+            ((IItemReceiver)CharacterProvider.Instance.Player).PickUpItem(item, 1u);
     }
 }

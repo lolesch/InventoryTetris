@@ -95,7 +95,8 @@ moves nothing — the **Supply** is never a sink, and its own shift-click stays 
 every context. A move between containers always executes — into the target container, or the
 hand if that is full. A retrieval from the **Stash** and a **Buy** go through the player's
 acquisition entry point instead, so auto-equip applies, and when nothing has room they roll
-back with nothing moved.
+back with nothing moved. So does every pick-up a Run makes — a kill's **Drop** and a
+**Corpse** recovery — where "nothing has room" leaves the item on the ground.
 _Avoid_: auto-move, transfer, quick-transfer; "shift-click" (that is the input, not the move)
 
 **Package Origin**:
