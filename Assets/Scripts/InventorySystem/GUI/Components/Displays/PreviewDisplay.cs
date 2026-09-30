@@ -31,7 +31,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
         {
             if (!package.IsValid)
             {
-                FadeOut();
+                Collapse();
                 return;
             }
 
@@ -83,14 +83,14 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                 itemStat.gameObject.SetActive(true);
             }
 
-            FadeIn();
+            Expand();
         }
 
         public void Refresh(Package package)
         {
             if (!package.IsValid)
             {
-                FadeOut();
+                Collapse();
                 return;
             }
 
@@ -135,10 +135,10 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                 itemStat.gameObject.SetActive(true);
             }
 
-            FadeIn();
+            Expand();
         }
 
-        /// <summary>Content (text, pooled stat rows) is set just before <see cref="FadeIn"/>,
+        /// <summary>Content (text, pooled stat rows) is set just before <see cref="SimplePanel.Expand"/>,
         /// but the layout group/content size fitter driven by that content only recomputes on
         /// Unity's next deferred layout pass. Since this panel stays enabled and only toggles
         /// its CanvasGroup alpha, that pass would otherwise land a frame late — sized for the
