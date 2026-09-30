@@ -35,7 +35,7 @@ Run `gh issue view <number> --comments`.
 
 ## Frontiers — issues vs. implementation
 
-Seven open issues; the frontier — an issue whose blockers are all closed and whose criteria are not already met by the code — starts at **#94**.
+Six open issues; the frontier — an issue whose blockers are all closed and whose criteria are not already met by the code — starts at **#68**.
 
 **Keep this table current:** update after every `/implement`, and PR-to-`main` by removing closed issues and re-scan the open set.
 
@@ -43,7 +43,6 @@ Seven open issues; the frontier — an issue whose blockers are all closed and w
 
 | # | Title | Blockers | State vs. this branch |
 |---|---|---|---|
-| **94** | Enemy HP bars track the live fight | #93 (closed), #60 (closed) | **Implemented on `issue/94-enemy-hp-bar-binding`** — `Enemy.HealthResource`, `EnemySpawned`, pool binding in `Update()` (seeds from `Enemies` on bind: the first Encounter spawns in the sim constructor). EditMode suite 858/858. **Open:** the by-hand Play pass (bars appear, fill, clear on Recall and on hero death) — the pool is in `Assembly-CSharp`, untested. Close after it. |
 | **68** | The shared Stash has no home in the domain model | — | **Done, on `issue/68-stash-session-domain-gap`.** `ddbefb5` + its own ADR-0013 implement the deferral ruling; the branch also merges `feature/sidepanel-hotkey-rework`. `main` already holds **0013** for the announce-to-request inversion, so that branch's ADR renumbers to **0014** on merge — both files move. |
 | **58** | Healer button + H hotkey | #56 (closed) | **Done in mechanics.** `HealerAction` refills on genuine entry into `Healer`; hotkey `H` (`104`) authored on `HealerToggle`; TownGroup (`ToggleGroup`) membership holds (#57's ruling). Remaining / unverified: visual-feedback acceptance criterion, and `HealerPanel`'s container roster (no `ContainerRole` — a blank grid). Close after a by-hand pass. |
 | **63** | Ground items display | LootFlow epic (satisfied: merged `main`) | **Open slice.** `LootFlow.GroundDrops` + `PlaceOnGround` exist, but no `GroundItemSlotDisplay` panel/prefab and no ground quick-move row. **Refresh the ticket first**: its "when no panel is open, shift-quick-move to the floor" criterion must be restated as a row in #86's context table (no ground row exists; `Hero`/`Healer` still resolve to `None`). |
@@ -53,14 +52,14 @@ Seven open issues; the frontier — an issue whose blockers are all closed and w
 
 ### Frontier (recommended order)
 
-1. **#94** — built; by-hand Play pass, then close.
-2. **#68** — merge `issue/68-stash-session-domain-gap` (its ADR renumbers to 0014, since
+1. **#68** — merge `issue/68-stash-session-domain-gap` (its ADR renumbers to 0014, since
    `main` already holds 0013) and close.
-3. **#58** — by-hand visual-feedback pass, then close.
-4. **#63** — refresh ticket/table first, then build the ground-items display.
+2. **#58** — by-hand visual-feedback pass, then close.
+3. **#63** — refresh ticket/table first, then build the ground-items display.
 
 ### Notes from the scan
 
 - The #94 spec (`dev/specs/2026-09-25-enemy-hp-bar-binding-design.md`) is on `main`; `origin/spec/enemy-hp-bar-binding` no longer needs carrying.
-- Pending branches: `issue/68-stash-session-domain-gap` carries finished #68 work; `origin/NewArtwork` is a non-PR art/asset branch (see `codebase-notes.md`).
+- #94 is closed but **not yet on `main`**: it lives on `issue/94-enemy-hp-bar-binding` (unpushed, never PR'd). Merge it to `main` next. Its one known spec gap is story 5 — the bar list is clipped at 240 px, not scrolled (no `ScrollRect`); that was already missing from #60 and has no ticket.
+- Pending branches: `issue/94-enemy-hp-bar-binding` and `issue/68-stash-session-domain-gap` carry finished work; `origin/NewArtwork` is a non-PR art/asset branch (see `codebase-notes.md`).
 - Keep `docs/agents/` and `docs/adr/` out of any `main` → `GitPage` merge (see `CLAUDE.md`). `docs/_config.yml`'s `exclude: [agents, adr]` is unchanged by #87 — the new ADR lands inside the already-excluded `adr/` directory.
