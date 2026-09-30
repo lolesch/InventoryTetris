@@ -140,6 +140,15 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <summary>XP lost because the fight ended (hero down or <see cref="Abandon"/>) before a clear.</summary>
         public int ForfeitedXp { get; private set; }
 
+        /// <summary>
+        /// Raised as each body arrives, once it is in <see cref="Enemies"/> and fully built — the
+        /// symmetric pair to <see cref="EnemyDefeated"/> (issue #94). Raised from the one spawn
+        /// path, so a later Encounter's initial batch needs no special case. The <i>first</i>
+        /// Encounter's initial batch is spawned inside the constructor, before anyone can
+        /// subscribe: a listener attaching later seeds itself from <see cref="Enemies"/>.
+        /// </summary>
+        public event Action<Enemy> EnemySpawned;
+
         /// <summary>Raised as each body falls — the per-kill seam issue #24 rolls loot and coins on.</summary>
         public event Action<Enemy> EnemyDefeated;
 
@@ -329,6 +338,8 @@ namespace ToolSmiths.InventorySystem.Simulation
 
             if (archetype == EnemyArchetype.Brute) _spawnedBrute++;
             else _spawnedSkirmisher++;
+
+            EnemySpawned?.Invoke(enemy);
         }
 
         // ─── the hero's two attacks ──────────────────────────────────────────
