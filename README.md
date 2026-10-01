@@ -1,7 +1,6 @@
 # InventoryTetris
-This is a Diablo II-like inventory system.
+is a Diablo II-like inventory system and loot generator. 
 
-It started with the goal of adding it as package to other projects 
-but evolves more and more into an ARPG itself...
+A portfolio piece, demonstrating both programming and game design capabilities with focus on UX/UI.
 
-play it [here](https://lolesch.github.io/InventoryTetris//media/InventoryTetris_20231015/index.html)
+Play it [here](https://lolesch.github.io/InventoryTetris//media/InventoryTetris_20231015/index.html)
