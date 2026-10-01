@@ -60,6 +60,6 @@ Six open issues; the frontier — an issue whose blockers are all closed and who
 ### Notes from the scan
 
 - The #94 spec (`dev/specs/2026-09-25-enemy-hp-bar-binding-design.md`) is on `main`; `origin/spec/enemy-hp-bar-binding` no longer needs carrying.
-- #94 is closed but **not yet on `main`**: it lives on `issue/94-enemy-hp-bar-binding` (unpushed, never PR'd). Merge it to `main` next. Its one known spec gap is story 5 — the bar list is clipped at 240 px, not scrolled (no `ScrollRect`); that was already missing from #60 and has no ticket.
+- #94 is closed but **not yet on `main`**: it lives on `issue/94-enemy-hp-bar-binding` (PR #105). Merge it to `main` next. Story 5 (the bar list scrolls once taller than its 240 px viewport) is now met by a vertical `ScrollRect` on `EnemyHpBarPoolViewport` in `Example.unity`.
 - Pending branches: `issue/94-enemy-hp-bar-binding` and `issue/68-stash-session-domain-gap` carry finished work; `origin/NewArtwork` is a non-PR art/asset branch (see `codebase-notes.md`).
 - Keep `docs/agents/` and `docs/adr/` out of any `main` → `GitPage` merge (see `CLAUDE.md`). `docs/_config.yml`'s `exclude: [agents, adr]` is unchanged by #87 — the new ADR lands inside the already-excluded `adr/` directory.
