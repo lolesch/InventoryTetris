@@ -96,8 +96,14 @@ Vendor leaves, not once its fade finishes.
 **A context with no rows moves nothing.** The `Hero` and `Healer` contexts have no sink
 rows yet, so a Quick Move there does nothing. Both are stated outcomes, not omissions: the
 Hero Panel's sink would be Equipment, which duplicates right-click and has no ticket, and
-the Healer has no containers yet. If either lands, it is a row in the routing table, not a
-change to the mechanism.
+the Healer gained the Vendor's Sell Basket rows in #121, so it no longer resolves to
+nothing. If the Hero Panel's row lands, it is a row in the routing table, not a change to
+the mechanism.
+
+**The Healer refill lives in `CharacterProvider`, not on a scene object.** The provider
+subscribes to the context and refills on a genuine entry into `Healer` — the same
+"key on the new value" rule the Sell Basket uses. An earlier `HealerAction` component placed
+in the scene did the same job and only added something to misplace.
 
 The rule itself lives in an engine-free `InventoryContextState` below the provider, for the
 reason #54 gave: the provider compiles into `Assembly-CSharp`, which no test assembly can

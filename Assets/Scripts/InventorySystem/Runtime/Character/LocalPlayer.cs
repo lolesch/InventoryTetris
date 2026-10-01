@@ -146,17 +146,16 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             UpdateStatDisplays();
         }
 
-        public bool PickUpItem(Package package)
+        /// <summary>
+        /// The debug spawners' (and the legacy <c>DummyTarget</c>'s) entry: the same placement
+        /// as <see cref="PickUpItem(ItemInstance, uint)"/>, plus - in a debug build - an
+        /// overflow to the Stash so a spawn burst is not lost to a full bag. Anything that
+        /// must treat "no room" as a fact (loot, Buy, Stash retrieval, Corpse recovery) goes
+        /// through <see cref="IItemReceiver"/> instead.
+        /// </summary>
+        public bool PickUpItemOrStash(Package package)
         {
-            if (package.Item != null && ItemView.Of(package.Item).Definition.Category == ItemCategory.Equipment)
-            {
-                var equipment = InventoryProvider.Instance.Equipment;
-
-                if (equipment.autoEquip && equipment.AutoEquip(ref package))
-                    return true;
-            }
-
-            if (InventoryProvider.Instance.Inventory.TryAddToContainer(ref package))
+            if (TryAcquire(ref package))
                 return true;
 
             /// Debug try add remaining package amount to player stash
@@ -172,8 +171,17 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
         /// <see cref="IItemReceiver"/> takes item+amount apart rather than a <c>Package</c>,
         /// since <c>Package</c> is Containers-resident and IItemReceiver lives in Items -
-        /// see the interface doc. This just rewraps into the Package the real logic needs.
-        bool IItemReceiver.PickUpItem(ItemInstance item, uint amount) => PickUpItem(new Package(null, item, amount));
+        /// see the interface doc. This just rewraps into the Package the real logic needs, and
+        /// stops at <see cref="ItemAcquisition.TryPlace"/>: no room means <c>false</c>, never
+        /// the debug Stash.
+        public bool PickUpItem(ItemInstance item, uint amount)
+        {
+            var package = new Package(null, item, amount);
+            return TryAcquire(ref package);
+        }
+
+        private static bool TryAcquire(ref Package package) =>
+            ItemAcquisition.TryPlace(ref package, InventoryProvider.Instance.Equipment, InventoryProvider.Instance.Inventory);
 
         public float CompareStatModifiers(CharacterStatModifier playerStatModifier, StatModifier other) => CompareStatModifiers(playerStatModifier.Stat, playerStatModifier.Modifier, other);
         public float CompareStatModifiers(StatName stat, StatModifier current, StatModifier other)

@@ -53,6 +53,9 @@ backpack), the **Stash**, a Town Stop's **Supply**, the **Sell Basket**, and the
 **Inventory / Stash / Supply / Sell Basket**:
 Four distinct *roles*, all currently played by the same type. Only Equipment is its own
 type. Say which role you mean — "the Stash" is never a class.
+The Stash is **Session-owned** for the MVP (one hero, so nothing shares it). The design
+intent that loot be stored *and exchanged among heroes* needs a persistence tier above
+Session that does not exist yet — revisit post-MVP (ADR-0014).
 _Avoid_: using "inventory" to mean any container
 
 **Supply**:
@@ -71,7 +74,9 @@ The grid a sale is staged in before it commits. A Package entering the basket is
 the sale happens on **Confirm**, as one consolidated payout equal to the previewed total,
 and a **Cancel** hands every staged Package back to its **Package Origin** with the
 **Wallet** untouched. Staging is modal — while the basket holds anything, the Supply is
-blocked (ADR-0012). Only some Town Stops offer one; the Vendor does, a Healer need not.
+blocked (ADR-0012). Only some Town Stops offer one; the Vendor and the Healer do. There is
+one basket, shown by the panel of whichever of them is open; leaving that Town Stop - for
+another one included - cancels what is staged.
 _Avoid_: cart, sell slot, trade window; bare "basket"
 
 **Displacement**:
@@ -160,13 +165,16 @@ _Avoid_: frag, takedown, defeat; "kill" as the XP unit
 Loot lying on the ground at a Location — shed by a defeated enemy, or laid out from a
 Corpse when the hero returns for it — not yet picked up. Drops accumulate as enemies
 fall, never as one bundle at the end; a Drop still on the ground when the Run ends is
-gone, on Recall or Death alike.
+gone, on Recall or Death alike. A Drop the hero's loot filter admits is picked up through
+the player's acquisition entry point (see **Quick Move**) — auto-equip into an empty slot,
+else the **Inventory**; with no room it stays on the ground.
 _Avoid_: pile (that is coins), ground loot, spill, cache
 
 **Corpse**:
 The hero's bag, set aside at the Location where they were downed. Death empties the bag
 into the Corpse; recovering it means re-entering that Location and picking the items
-back up. There is only ever one — a second Death destroys any Corpse still unclaimed —
+back up — through the same acquisition entry point as a **Drop**, so gear auto-equips into
+an empty slot. There is only ever one — a second Death destroys any Corpse still unclaimed —
 and it persists between Sessions until recovered.
 _Avoid_: grave, body, loot bag; remains (reserved for a possible future enemy corpse)
 
@@ -209,7 +217,10 @@ _Avoid_: user, you; "hero" for the one making the calls
 The span of play between app start and quit. It contains many Runs and is the unit that
 persists — the hero, the four containers, the wallet and XP save per Session and resume
 `InTown` on the next launch. A Run never spans Sessions: quitting mid-Run banks what the
-hero already picked up and discards the rest.
+hero already picked up and discards the rest. The Session is the *top* persistence tier
+for the MVP: a Stash or Wallet shared across heroes would need a tier above it, which is
+deferred (ADR-0014) — do not let persistence code assume the Session is the outermost
+owner.
 _Avoid_: playthrough, save file (the save is the Session's shadow, not the thing itself)
 
 **Run**:
@@ -286,8 +297,10 @@ Equipped gear is never touched; not a game-over.
 _Avoid_: defeat, loss, game over, fail, wipe
 
 **Healer**:
-A Town action that instantly refills the hero's Health and Resource. A one-shot
-button today; will gain its own side panel later.
+A **Town Stop** that instantly refills the hero's Health and Resource each time it is
+entered (the refill is the player's resource globes filling; audio feedback is deferred).
+Its **Side Panel** shows its own **Supply** of consumables, bought like the Vendor's, and
+has a **Sell Basket** of its own.
 _Avoid_: shrine, fountain, well
 
 ## Combat

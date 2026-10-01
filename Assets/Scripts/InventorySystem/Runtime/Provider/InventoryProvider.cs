@@ -20,6 +20,11 @@ namespace ToolSmiths.InventorySystem.Inventories
         [field: SerializeField] public CharacterInventory Stash { get; private set; }
         [field: SerializeField] public CharacterInventory Store { get; private set; }
 
+        /// <summary>The Healer's Supply (issue #121): the second Supply after the Vendor's
+        /// <see cref="Store"/>, stocked with consumables and bought from the same way. Sized like
+        /// the Store (<see cref="storeSize"/>) - one size for every Supply shelf.</summary>
+        [field: SerializeField] public CharacterInventory HealerSupply { get; private set; }
+
         /// <summary>The Sell Basket (issue #32/#33) - the grid the player stages a sale in,
         /// with the origin ledger a Cancel uses to return each Package. Owned here with the
         /// other player containers so a shift-click quick-move can both target it (backpack /
@@ -173,6 +178,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             ContainerRole.Inventory => Inventory,
             ContainerRole.Stash => Stash,
             ContainerRole.Store => Store,
+            ContainerRole.HealerSupply => HealerSupply,
             ContainerRole.Basket => Basket?.Container,
             _ => null,
         };
@@ -187,7 +193,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// directly tested; this is only the seam callers hold.
         /// </summary>
         public QuickMoveIntent QuickMoveFor(AbstractDimensionalContainer source) =>
-            QuickMoveResolver.Resolve(ActiveContext, source, Inventory, Stash, Equipment, Store, Basket.Container);
+            QuickMoveResolver.Resolve(ActiveContext, source, Inventory, Stash, Equipment, Store, HealerSupply, Basket.Container);
 
         public void Awake()
         {
@@ -202,11 +208,13 @@ namespace ToolSmiths.InventorySystem.Inventories
             Inventory = new(inventorySize);
             Stash = new(stashSize);
             Store = new(storeSize);
+            HealerSupply = new(storeSize);
             Basket = new SellBasket.Basket(new(basketSize));
 
             Wallet = new Wallet(Inventory, currencyMinter);
 
             RestockStore();
+            RestockHealerSupply();
         }
 
         private void AddEquipment(EquipmentType equipmentType)
@@ -214,7 +222,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             for (var i = 0; i < Amount; i++)
             {
                 var randomEquipment = ItemProvider.Instance.RollEquipment(equipmentType);
-                _ = CharacterProvider.Instance.Player.PickUpItem(new Package(null, randomEquipment, 1u));
+                _ = CharacterProvider.Instance.Player.PickUpItemOrStash(new Package(null, randomEquipment, 1u));
             }
         }
 
@@ -223,7 +231,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             for (var i = 0; i < Amount; i++)
             {
                 var randomConsumable = ItemProvider.Instance.RollConsumable(consumableType);
-                _ = CharacterProvider.Instance.Player.PickUpItem(new Package(null, randomConsumable, 1u));
+                _ = CharacterProvider.Instance.Player.PickUpItemOrStash(new Package(null, randomConsumable, 1u));
             }
         }
 
@@ -232,13 +240,13 @@ namespace ToolSmiths.InventorySystem.Inventories
             var loot = ItemProvider.Instance.RollLoot(Amount);
 
             for (var i = 0; i < loot.Count; i++)
-                _ = CharacterProvider.Instance.Player.PickUpItem(loot[i]);
+                _ = CharacterProvider.Instance.Player.PickUpItemOrStash(loot[i]);
         }
 
         public void AddRandomCurrency()
         {
             for (var i = 0; i < Amount; i++)
-                _ = CharacterProvider.Instance.Player.PickUpItem(ItemProvider.Instance.RollCurrency());
+                _ = CharacterProvider.Instance.Player.PickUpItemOrStash(ItemProvider.Instance.RollCurrency());
         }
 
         public void RemoveAllItems(AbstractDimensionalContainer container)
@@ -291,6 +299,23 @@ namespace ToolSmiths.InventorySystem.Inventories
                 _ = Store?.TryAddToContainer(ref package);
             }
             Store.Sort();
+        }
+
+        /// <summary>The Healer Supply's Restock (issue #121): the same refill as
+        /// <see cref="RestockStore"/>, from rolled consumables instead of equipment.</summary>
+        public void RestockHealerSupply()
+        {
+            RemoveAllItems(HealerSupply);
+
+            for (var i = 0; i < 20; i++)
+            {
+                var item = ItemProvider.Instance.RollConsumable();
+
+                var package = new Package(null, item, 1u);
+
+                _ = HealerSupply?.TryAddToContainer(ref package);
+            }
+            HealerSupply.Sort();
         }
 
         public void StashInventory()

@@ -135,8 +135,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                     /// of a plain move, so a Package with an empty gear slot and auto-equip on
                     /// lands there instead of the Inventory.
                     _ = PickUpTransaction.Run(Container, position, CharacterProvider.Instance.Player,
-                        InventoryProvider.Instance.Inventory, InventoryProvider.Instance.Equipment,
-                        InventoryProvider.Instance.Stash);
+                        InventoryProvider.Instance.Inventory, InventoryProvider.Instance.Equipment);
                     return true;
 
                 case QuickMoveIntentKind.MoveToContainer:
@@ -166,14 +165,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                     /// issue #31) - which lands in whatever slot the player dropped on and so
                     /// never needs to decide equip-vs-bag - shift-click names no destination,
                     /// so it has to route through the full acquisition entry point exactly
-                    /// like the Stash Acquire case above. This call used to omit player,
-                    /// equipment and stash and so silently skipped auto-equip. Closed by #86.
-                    var wallet = InventoryProvider.Instance.Wallet;
-                    var price = VendorTransaction.BuyPrice(package.Item) * package.Amount;
-
-                    _ = VendorTransaction.Buy(Container, position, package, wallet, price,
-                        CharacterProvider.Instance.Player,
-                        InventoryProvider.Instance.Equipment, InventoryProvider.Instance.Stash);
+                    /// like the Stash Acquire case above. This call used to omit player and
+                    /// equipment and so silently skipped auto-equip. Closed by #86.
+                    BuyAt(position, package);
                     return true;
 
                 default:
@@ -182,6 +176,22 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                     /// answer.
                     return true;
             }
+        }
+
+        /// <summary>
+        /// Buys the whole <paramref name="package"/> at <paramref name="position"/> of this
+        /// Supply shelf: the one statement of an immediate buy, shared by shift-click
+        /// (<see cref="TryQuickMove"/>) and a Supply slot's right-click, its "use" (issue #121).
+        /// Goes through the full acquisition entry point rather than naming a destination, so
+        /// the item auto-equips or lands in the bag exactly as the Stash retrieval does.
+        /// </summary>
+        protected void BuyAt(Vector2Int position, Package package)
+        {
+            var wallet = InventoryProvider.Instance.Wallet;
+            var price = VendorTransaction.BuyPrice(package.Item) * package.Amount;
+
+            _ = VendorTransaction.Buy(Container, position, package, wallet, price,
+                CharacterProvider.Instance.Player, InventoryProvider.Instance.Equipment);
         }
 
         public void OnPointerExit(PointerEventData eventData)

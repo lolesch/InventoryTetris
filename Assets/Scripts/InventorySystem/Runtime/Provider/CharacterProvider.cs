@@ -21,6 +21,35 @@ namespace ToolSmiths.InventorySystem.Inventories
         public void KillPlayer() => Player.GetResource(StatName.Health).DepleteCurrent();
         public void KillDummy() => Dummy.GetResource(StatName.Health).DepleteCurrent();
 
+        /// <summary>
+        /// The Healer's on-transition side effect (issue #58): a full Health and Resource refill
+        /// on every genuine entry into <see cref="InventoryContext.Healer"/>. Subscribed here, not
+        /// from a scene component: the provider already owns <see cref="HealPlayer"/>, and the
+        /// context is the only input the refill needs, so wiring it through a MonoBehaviour on a
+        /// toggle or panel only added a scene object that could be misplaced or forgotten.
+        ///
+        /// <para>Reacts to the context event rather than the toggle's click:
+        /// <see cref="InventoryContextState.Changed"/> only fires on an actual change, so a
+        /// re-click the <c>ToggleGroup</c> turns into "switch off" never reaches here - the refill
+        /// fires once per entry, never on the way out.</para>
+        ///
+        /// <para>The feedback is the resource globes filling; audio feedback is deferred.</para>
+        ///
+        /// <para>Subscribed in <c>OnEnable</c> rather than <c>Awake</c>: this project disables
+        /// domain and scene reload, so an <c>Awake</c> subscription never comes back after
+        /// <c>OnDisable</c> tears it down on the way out of the first Play entry.</para>
+        /// </summary>
+        private void OnEnable() =>
+            _ = InventoryProvider.TrySubscribeContextChanged(OnContextChanged, out _);
+
+        private void OnDisable() => InventoryProvider.UnsubscribeContextChanged(OnContextChanged);
+
+        private void OnContextChanged(InventoryContext context)
+        {
+            if (context == InventoryContext.Healer)
+                HealPlayer();
+        }
+
         public void HealPlayer()
         {
             Player.GetResource(StatName.Health).RefillCurrent();

@@ -96,13 +96,14 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             if (!TryBeginMove(out var position, out var package))
                 return;
 
-            // No deliberate right-click action on the shelf: buying is a left-click drag +
-            // drop, exactly like every other container. Immediate buy-on-right-click used to
-            // shortcut to that same outcome, but a shortcut to an already-reachable outcome
-            // isn't deliberate different behavior, so right-click is a no-op here instead.
-            // TryBeginMove runs first so the hover preview still fades on a right-click no-op.
+            // Right-click is a Supply's "use": it buys the item (issue #121), the same
+            // immediate buy as shift-click. Drag-and-drop below stays the other way to buy.
+            // This class serves every Supply shelf - the Vendor's and the Healer's.
             if (eventData.button == PointerEventData.InputButton.Right)
+            {
+                BuyAt(position, package);
                 return;
+            }
 
             var unitPrice = VendorTransaction.BuyPrice(package.Item);
 

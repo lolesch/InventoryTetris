@@ -1,12 +1,8 @@
 # Codebase Notes
 
-Durable, hard-won facts about how *this* repo behaves that you can't get from the code,
-git history, or CLAUDE.md. Read before doing Unity compile/test verification, before
-touching assembly definitions, and when a build error doesn't match your diff.
+Durable, hard-won facts about how *this* repo behaves that you can't get from the code, git history, or CLAUDE.md. Read before doing Unity compile/test verification, before touching assembly definitions, and when a build error doesn't match your diff.
 
-This file is the shared channel for that knowledge across machines — an agent's private
-memory does not travel between devices, this does. Keep it current; prune what stops
-being true.
+This file is the shared channel for that knowledge across machines — an agent's private memory does not travel between devices, this does. Keep it current; prune what stops being true.
 
 ---
 

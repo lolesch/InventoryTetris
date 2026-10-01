@@ -172,9 +172,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         }
 
         /// <summary>
-        /// Lay the per-kill loot flow over the live Encounter — real bag, real Wallet, the
-        /// ItemProvider's catalog / coin tables. A no-op when the scene has no configured
-        /// ItemProvider, or no InventoryProvider with its Wallet wired yet (mirrors
+        /// Lay the per-kill loot flow over the live Encounter — the player as the item receiver
+        /// (so auto-equip applies), real Wallet, the ItemProvider's catalog / coin tables. A
+        /// no-op when the scene has no configured ItemProvider, or no InventoryProvider with its
+        /// Wallet wired yet (mirrors
         /// <see cref="BagGauge"/>'s guard — a provider that hasn't finished resolving is the
         /// same "nothing to earn or lose" case as a missing catalog, not a crash).
         /// </summary>
@@ -194,10 +195,13 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 itemProvider.CurrencyTypeDistribution, itemProvider.CurrencyDropTable);
 
             _lootFlow = new LootFlow(encounter, Behaviour, _itemGenerator, coins,
-                inventoryProvider.Inventory, inventoryProvider.Wallet);
+                player, inventoryProvider.Wallet);
 
             // The Run accumulates the base-unit coin take so Death's fee reads it (issue #44).
             _lootFlow.CoinsBanked += Run.BankCurrency;
+
+            // A pick-up that throws mid-tick grounds its Drop; the log is where it surfaces.
+            _lootFlow.PlacementFailed += (_, exception) => Debug.LogException(exception, this);
         }
 
         private static void ApplyEncounterXp(LocalPlayer player, int settledXp)
