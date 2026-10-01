@@ -41,6 +41,11 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
                  "the same value. Must not be None.")]
         [SerializeField] private InventoryContext inventoryContext = InventoryContext.None;
 
+        /// <summary>The one Inventory Context this panel was authored with - what a display
+        /// living inside the panel (<c>SellBasketDisplay</c>) asks to learn which Town Stop it
+        /// belongs to, rather than hard-coding one.</summary>
+        public InventoryContext Context => inventoryContext;
+
         /// <summary>
         /// Whether this panel is up in <paramref name="context"/>: <see cref="InventoryContextState.PanelsFor"/>
         /// against the one panel this component owns, <see cref="InventoryContextState.PanelFor"/>

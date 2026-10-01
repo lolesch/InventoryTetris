@@ -18,9 +18,10 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
     /// <para>The context replaced <c>SidePanelContext</c> in #85, so the rows are keyed on the
     /// Inventory Context now. Its two new members resolve to nothing on purpose: the Hero
     /// Panel's sink would be Equipment, but that row duplicates right-click and has no ticket,
-    /// and the Healer has a Supply shelf but no Sell Basket, so it has no sink at all. Both are asserted here
-    /// rather than left implicit, because "a Quick Move with the Healer open does nothing" is a
-    /// stated outcome of #85, not an oversight.</para>
+    /// and the Hero context has no Town Stop, so it has no sink at all. It is asserted here
+    /// rather than left implicit, because "a Quick Move with only the Hero Panel open does
+    /// nothing" is a stated outcome of #85, not an oversight. The Healer gained the Vendor's
+    /// Sell Basket rows in #121.</para>
     /// </summary>
     [TestFixture]
     public sealed class QuickMoveResolverTests
@@ -85,18 +86,35 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.None));
         }
 
-        // ── Hero and Healer contexts: no rows, deliberately (issue #85) ──
+        // ── Healer open: the same Sell Basket rows as the Vendor's (issue #121) ──
 
         [TestCase(nameof(backpack))]
-        [TestCase(nameof(stash))]
         [TestCase(nameof(equipment))]
-        [TestCase(nameof(basket))]
-        public void HealerContext_PlayerContainer_DoesNothing(string sourceName)
+        public void HealerContext_BackpackAndEquipment_SendTheItemToTheSellBasket(string sourceName)
         {
             var intent = Resolve(InventoryContext.Healer, SourceOf(sourceName), backpack, stash, equipment, store, basket);
 
+            Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.SellBasket));
+        }
+
+        [Test]
+        public void HealerContext_Basket_ReturnsTheItemToTheBackpack()
+        {
+            var intent = Resolve(InventoryContext.Healer, basket, backpack, stash, equipment, store, basket);
+
+            Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.MoveToContainer));
+            Assert.That(intent.Target, Is.SameAs(backpack));
+        }
+
+        [Test]
+        public void HealerContext_Stash_DoesNothing()
+        {
+            var intent = Resolve(InventoryContext.Healer, stash, backpack, stash, equipment, store, basket);
+
             Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.None));
         }
+
+        // ── Hero context: no rows, deliberately (issue #85) ──
 
         [TestCase(nameof(backpack))]
         [TestCase(nameof(stash))]

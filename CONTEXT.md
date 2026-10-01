@@ -74,7 +74,9 @@ The grid a sale is staged in before it commits. A Package entering the basket is
 the sale happens on **Confirm**, as one consolidated payout equal to the previewed total,
 and a **Cancel** hands every staged Package back to its **Package Origin** with the
 **Wallet** untouched. Staging is modal — while the basket holds anything, the Supply is
-blocked (ADR-0012). Only some Town Stops offer one; the Vendor does, a Healer need not.
+blocked (ADR-0012). Only some Town Stops offer one; the Vendor and the Healer do. There is
+one basket, shown by the panel of whichever of them is open; leaving that Town Stop - for
+another one included - cancels what is staged.
 _Avoid_: cart, sell slot, trade window; bare "basket"
 
 **Displacement**:
@@ -297,8 +299,8 @@ _Avoid_: defeat, loss, game over, fail, wipe
 **Healer**:
 A **Town Stop** that instantly refills the hero's Health and Resource each time it is
 entered (the refill is the player's resource globes filling; audio feedback is deferred).
-Its **Side Panel** shows its own **Supply** of consumables, bought like the Vendor's but with
-no **Sell Basket**.
+Its **Side Panel** shows its own **Supply** of consumables, bought like the Vendor's, and
+has a **Sell Basket** of its own.
 _Avoid_: shrine, fountain, well
 
 ## Combat
