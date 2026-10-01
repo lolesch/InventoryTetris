@@ -90,7 +90,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (retreatHealthSlider != null) retreatHealthSlider.SetValueWithoutNotify(_behaviour.RetreatHealthFraction);
             if (recallBagFillSlider != null) recallBagFillSlider.SetValueWithoutNotify(_behaviour.RecallBagFillFraction);
             if (resourceReserveSlider != null) resourceReserveSlider.SetValueWithoutNotify(_behaviour.CastThreshold);
-            if (lootFilterSlider != null) lootFilterSlider.SetSelectedWithoutNotify(_behaviour.LootFilterMinimum);
+            if (lootFilterSlider != null) lootFilterSlider.SetStepIndexWithoutNotify(HeroBehaviour.RarityIndex(_behaviour.LootFilterMinimum));
             if (simSpeedSlider != null) simSpeedSlider.SetSimSpeedWithoutNotify(_behaviour.SimSpeed);
         }
 
