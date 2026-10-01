@@ -194,6 +194,9 @@ namespace ToolSmiths.InventorySystem.Inventories
         public ItemInstance RollEquipment(EquipmentType type) =>
             RollFrom(PickDefinition(ItemCategory.Equipment, d => EquipmentTypeMatches(type, d.EquipmentType)));
 
+        /// <summary>Rolls a random consumable of any type - the Healer Supply's stock (issue #121).</summary>
+        public ItemInstance RollConsumable() => RollFrom(PickDefinition(ItemCategory.Consumable, _ => true));
+
         /// <summary>Rolls a random consumable of <paramref name="type"/>. Was <c>GenerateRandomOfConsumableType</c>.</summary>
         public ItemInstance RollConsumable(ConsumableType type) =>
             RollFrom(PickDefinition(ItemCategory.Consumable, d => d.ConsumableType == type));

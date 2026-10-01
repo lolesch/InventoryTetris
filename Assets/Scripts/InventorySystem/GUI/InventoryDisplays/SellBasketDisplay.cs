@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using TMPro;
 using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.GUI.Components.Panels;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Runtime.Provider;
 using UnityEngine;
@@ -78,6 +79,17 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         private SellBasket.Basket basket;
         private Wallet wallet;
 
+        /// <summary>The Side Panel this display lives in. There is one Sell Basket and one
+        /// display per Town Stop that sells (the Vendor's and the Healer's, issue #121), so which
+        /// Town Stop a display belongs to - and so what blocks, and when it cancels - is read off
+        /// the panel it sits in rather than assumed to be the Vendor.</summary>
+        private SidePanel ownerPanel;
+
+        /// <summary>The Inventory Context this display's panel is authored with; falls back to
+        /// the Vendor for a display placed outside any Side Panel (the original single-basket
+        /// layout).</summary>
+        private InventoryContext OwnContext => ownerPanel != null ? ownerPanel.Context : InventoryContext.Vendor;
+
         private void Awake()
         {
             // Reading InventoryProvider.Instance outside Play mode can create one (issue #46) -
@@ -120,6 +132,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         {
             basket = InventoryProvider.Instance.Basket;
             wallet = InventoryProvider.Instance.Wallet;
+            ownerPanel = GetComponentInParent<SidePanel>(true);
 
             if (basket == null || wallet == null)
                 return false;
@@ -145,17 +158,19 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         }
 
         /// <summary>
-        /// The Supply region inside the Vendor Side Panel - the blocked territory while the
-        /// basket holds anything. <see cref="supplyBlocker"/> is wired directly on the scene
+        /// The Supply region inside this display's own Side Panel - the blocked territory while
+        /// the basket holds anything. <see cref="supplyBlocker"/> is wired directly on the scene
         /// instance; this by-name search only covers a misconfigured instance where that
-        /// reference was left empty.
+        /// reference was left empty. Scoped to the owning panel, not the whole Canvas: with a
+        /// second selling Town Stop (the Healer, issue #121) a Canvas-wide search found the
+        /// Vendor's Supply first and so blocked the wrong shelf.
         /// </summary>
         private CanvasGroup FindSupplyBlocker()
         {
-            var panel = transform.root;
+            var panel = ownerPanel != null ? ownerPanel.transform : transform.root;
 
             foreach (var group in panel.GetComponentsInChildren<CanvasGroup>(true))
-                if (group.name.ToLowerInvariant().Contains("supply") || group.name.ToLowerInvariant().Contains("shop"))
+                if (group.transform != panel && (group.name.ToLowerInvariant().Contains("supply") || group.name.ToLowerInvariant().Contains("shop")))
                     return group;
 
             return null;
@@ -173,8 +188,18 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         /// </summary>
         private void OnValidate()
         {
-            if (supplyBlocker == null && !UnityEditor.PrefabUtility.IsPartOfPrefabAsset(this))
+            if (UnityEditor.PrefabUtility.IsPartOfPrefabAsset(this))
+                return;
+
+            if (supplyBlocker == null)
                 Debug.LogWarning("[SellBasketDisplay] supplyBlocker is not wired - the Supply region will not be blocked while a sale is staged.", this);
+            else
+            {
+                var panel = GetComponentInParent<SidePanel>(true);
+
+                if (panel != null && !supplyBlocker.transform.IsChildOf(panel.transform))
+                    Debug.LogWarning("[SellBasketDisplay] supplyBlocker lives in a different Side Panel - this display would block another Town Stop's Supply and leave its own open.", this);
+            }
         }
 #endif
 
@@ -273,20 +298,22 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         }
 
         /// <summary>
-        /// The Inventory Context left the Vendor and the basket still holds staged Packages - that
-        /// is a Cancel, exactly as the issue's "closing the Store with a non-empty basket"
-        /// criterion says. Subscribed in <see cref="OnEnable"/> (detach-before-attach, cf. da14ce2)
-        /// so a re-open cannot stack a second subscription.
+        /// The Inventory Context left this display's own Town Stop and the basket still holds
+        /// staged Packages - that is a Cancel, exactly as the issue's "closing the Store with a
+        /// non-empty basket" criterion says. Subscribed in <see cref="OnEnable"/>
+        /// (detach-before-attach, cf. da14ce2) so a re-open cannot stack a second subscription.
         ///
-        /// <para>The guard is on "is not the Vendor" rather than on the panel's own visibility, so
-        /// every route that leaves the Vendor counts - closing the panel, closing the Hero Panel
-        /// with it, Send, Recall, Death and Go Venture all land here as some other context. A
-        /// handover between two Town Stops publishes one change, to the new Town Stop, so a sale
-        /// staged under one stop survives switching to another.</para>
+        /// <para>The guard is on "is not my Town Stop" rather than on the panel's own visibility,
+        /// so every route that leaves it counts - closing the panel, closing the Hero Panel with
+        /// it, Send, Recall, Death and Go Venture all land here as some other context. A handover
+        /// to another Town Stop - the Vendor to the Healer included, though both have a basket -
+        /// is a Cancel too: activating one Town Stop cancels whatever the others had in flight
+        /// (#58's ruling). There is one basket and one display per selling stop, so the display
+        /// of the stop being left is the one that cancels.</para>
         /// </summary>
         private void OnContextChanged(InventoryContext context)
         {
-            if (context == InventoryContext.Vendor)
+            if (context == OwnContext)
                 return; // opened - keep whatever is staged
 
             if (basket != null && basket.Container != null && basket.Container.StoredPackages.Count > 0)

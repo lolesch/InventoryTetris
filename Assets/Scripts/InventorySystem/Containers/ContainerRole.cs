@@ -20,5 +20,9 @@ namespace ToolSmiths.InventorySystem.Inventories
         Stash,
         Store,
         Basket,
+        /// <summary>The Healer's Supply shelf (issue #121): consumables, bought like the Store's.
+        /// Appended last: the members are serialized by value in scenes and prefabs, so
+        /// inserting before <see cref="Basket"/> would silently rebind every Basket display.</summary>
+        HealerSupply,
     }
 }
