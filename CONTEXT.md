@@ -295,8 +295,10 @@ Equipped gear is never touched; not a game-over.
 _Avoid_: defeat, loss, game over, fail, wipe
 
 **Healer**:
-A Town action that instantly refills the hero's Health and Resource. A one-shot
-button today; will gain its own side panel later.
+A **Town Stop** that instantly refills the hero's Health and Resource each time it is
+entered (the refill is the player's resource globes filling; audio feedback is deferred).
+Its **Side Panel** shows its own **Supply** of consumables, bought like the Vendor's but with
+no **Sell Basket**.
 _Avoid_: shrine, fountain, well
 
 ## Combat

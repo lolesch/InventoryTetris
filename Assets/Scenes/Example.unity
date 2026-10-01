@@ -6484,7 +6484,6 @@ GameObject:
   - component: {fileID: 612742132}
   - component: {fileID: 612742131}
   - component: {fileID: 612742130}
-  - component: {fileID: 612742135}
   m_Layer: 5
   m_Name: HealerToggle
   m_TagString: Untagged
@@ -6643,18 +6642,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 612742127}
   m_CullTransparentMesh: 1
---- !u!114 &612742135
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 612742127}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 60f1fea038014686b0e29e0ba3e783b2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1001 &619434487
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -15,16 +15,16 @@ namespace ToolSmiths.InventorySystem.Inventories
     /// backpack. Retrieving from the Stash is <see cref="QuickMoveIntentKind.Acquire"/>, not a
     /// plain move - a Package that lands back in the Inventory this way must have a chance to
     /// auto-equip (issue #35's entry point), which a plain <c>MoveToContainer</c> never
-    /// offered. Every other row is unchanged from #30/#33's matrix. The Store is checked
-    /// first, outside the table entirely: a shelf shift-click is always
-    /// <see cref="QuickMoveIntentKind.Buy"/>, in every context - a Store-local act, not a row
-    /// (the Vendor row's "Supply" source in #86's design table names this same exemption, not
-    /// a second entry).</para>
+    /// offered. Every other row is unchanged from #30/#33's matrix. Each Supply shelf (the
+    /// Store and the Healer's, issue #121) is checked first, outside the table entirely: a
+    /// shelf shift-click is always <see cref="QuickMoveIntentKind.Buy"/>, in every context - a
+    /// Supply-local act, not a row (the Vendor row's "Supply" source in #86's design table
+    /// names this same exemption, not a second entry).</para>
     ///
     /// <para><see cref="InventoryContext.Hero"/> and <see cref="InventoryContext.Healer"/>
     /// resolve to nothing: the Hero Panel's sink would be Equipment, but that row would
     /// duplicate right-click and has no ticket (#86's stated out-of-scope), and the Healer has
-    /// no containers yet, so it has no sink at all. Both are stated outcomes, not omissions -
+    /// a Supply shelf but no Sell Basket, so it has no sink at all. Both are stated outcomes, not omissions -
     /// neither reaches <see cref="Route"/>.</para>
     /// </summary>
     public static class QuickMoveResolver
@@ -34,9 +34,9 @@ namespace ToolSmiths.InventorySystem.Inventories
         public static QuickMoveIntent Resolve(InventoryContext context, AbstractDimensionalContainer source,
             AbstractDimensionalContainer backpack, AbstractDimensionalContainer stash,
             AbstractDimensionalContainer equipment, AbstractDimensionalContainer store,
-            AbstractDimensionalContainer basket)
+            AbstractDimensionalContainer healerSupply, AbstractDimensionalContainer basket)
         {
-            if (source == store)
+            if (source == store || source == healerSupply)
                 return QuickMoveIntent.Buy;
 
             var hub = backpack;
