@@ -214,7 +214,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             for (var i = 0; i < Amount; i++)
             {
                 var randomEquipment = ItemProvider.Instance.RollEquipment(equipmentType);
-                _ = CharacterProvider.Instance.Player.PickUpItem(new Package(null, randomEquipment, 1u));
+                _ = CharacterProvider.Instance.Player.PickUpItemOrStash(new Package(null, randomEquipment, 1u));
             }
         }
 
@@ -223,7 +223,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             for (var i = 0; i < Amount; i++)
             {
                 var randomConsumable = ItemProvider.Instance.RollConsumable(consumableType);
-                _ = CharacterProvider.Instance.Player.PickUpItem(new Package(null, randomConsumable, 1u));
+                _ = CharacterProvider.Instance.Player.PickUpItemOrStash(new Package(null, randomConsumable, 1u));
             }
         }
 
@@ -232,13 +232,13 @@ namespace ToolSmiths.InventorySystem.Inventories
             var loot = ItemProvider.Instance.RollLoot(Amount);
 
             for (var i = 0; i < loot.Count; i++)
-                _ = CharacterProvider.Instance.Player.PickUpItem(loot[i]);
+                _ = CharacterProvider.Instance.Player.PickUpItemOrStash(loot[i]);
         }
 
         public void AddRandomCurrency()
         {
             for (var i = 0; i < Amount; i++)
-                _ = CharacterProvider.Instance.Player.PickUpItem(ItemProvider.Instance.RollCurrency());
+                _ = CharacterProvider.Instance.Player.PickUpItemOrStash(ItemProvider.Instance.RollCurrency());
         }
 
         public void RemoveAllItems(AbstractDimensionalContainer container)

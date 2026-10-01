@@ -124,6 +124,47 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         public float FillFraction { get; set; }
     }
 
+    // ─── loot acquisition (#103) ──────────────────────────────────────────────
+
+    /// <summary>
+    /// An <see cref="IItemReceiver"/> with the player's shape - equip first, else the bag, no
+    /// overflow behind it - without the MonoBehaviour. <see cref="Equips"/> stands in for
+    /// "auto-equip is on and the slot is empty" (an item it accepts is held in
+    /// <see cref="Equipped"/> and never reaches the bag); with no predicate nothing equips.
+    /// <see cref="Offered"/> records every item the caller handed over, placed or not.
+    /// </summary>
+    internal sealed class BagItemReceiver : IItemReceiver
+    {
+        private readonly AbstractDimensionalContainer _bag;
+
+        public BagItemReceiver(AbstractDimensionalContainer bag) => _bag = bag;
+
+        public Func<ItemInstance, bool> Equips { get; set; }
+
+        /// <summary>When set, every pick-up throws it - an equip whose engine-side effects blew up.</summary>
+        public Exception Throws { get; set; }
+
+        public List<ItemInstance> Offered { get; } = new();
+        public List<ItemInstance> Equipped { get; } = new();
+
+        public bool PickUpItem(ItemInstance item, uint amount)
+        {
+            Offered.Add(item);
+
+            if (Throws != null)
+                throw Throws;
+
+            if (Equips != null && Equips(item))
+            {
+                Equipped.Add(item);
+                return true;
+            }
+
+            var package = new Package(_bag, item, amount);
+            return _bag.TryAddToContainer(ref package);
+        }
+    }
+
     // ─── run settlement (finding #2) ──────────────────────────────────────────
 
     /// <summary>

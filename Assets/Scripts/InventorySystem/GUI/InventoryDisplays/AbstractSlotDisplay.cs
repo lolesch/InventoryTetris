@@ -135,8 +135,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                     /// of a plain move, so a Package with an empty gear slot and auto-equip on
                     /// lands there instead of the Inventory.
                     _ = PickUpTransaction.Run(Container, position, CharacterProvider.Instance.Player,
-                        InventoryProvider.Instance.Inventory, InventoryProvider.Instance.Equipment,
-                        InventoryProvider.Instance.Stash);
+                        InventoryProvider.Instance.Inventory, InventoryProvider.Instance.Equipment);
                     return true;
 
                 case QuickMoveIntentKind.MoveToContainer:
@@ -166,14 +165,13 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                     /// issue #31) - which lands in whatever slot the player dropped on and so
                     /// never needs to decide equip-vs-bag - shift-click names no destination,
                     /// so it has to route through the full acquisition entry point exactly
-                    /// like the Stash Acquire case above. This call used to omit player,
-                    /// equipment and stash and so silently skipped auto-equip. Closed by #86.
+                    /// like the Stash Acquire case above. This call used to omit player and
+                    /// equipment and so silently skipped auto-equip. Closed by #86.
                     var wallet = InventoryProvider.Instance.Wallet;
                     var price = VendorTransaction.BuyPrice(package.Item) * package.Amount;
 
                     _ = VendorTransaction.Buy(Container, position, package, wallet, price,
-                        CharacterProvider.Instance.Player,
-                        InventoryProvider.Instance.Equipment, InventoryProvider.Instance.Stash);
+                        CharacterProvider.Instance.Player, InventoryProvider.Instance.Equipment);
                     return true;
 
                 default:

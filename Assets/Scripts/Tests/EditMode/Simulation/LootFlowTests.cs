@@ -86,7 +86,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var items = new ItemGenerator(catalog, new ConstantRollSource(0f));
             var bag = new CharacterInventory(new Vector2Int(10, 10));
             var lootFlow = new LootFlow(sim, Admitting(ItemRarity.Common), items,
-                new FakeCoinDropSource(), bag, NewWallet());
+                new FakeCoinDropSource(), new BagItemReceiver(bag), NewWallet());
 
             sim.Advance(0.1f); // one tick — the lone Skirmisher dies
 
@@ -121,7 +121,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             // category (one-hot, any value), PickDefinition (one candidate, any value), rarity.
             var items = new ItemGenerator(catalog, new QueuedRollSource(0f, 0f, rarityRoll));
             var bag = new CharacterInventory(new Vector2Int(10, 10));
-            _ = new LootFlow(sim, Admitting(ItemRarity.Common), items, new FakeCoinDropSource(), bag, NewWallet());
+            _ = new LootFlow(sim, Admitting(ItemRarity.Common), items, new FakeCoinDropSource(), new BagItemReceiver(bag), NewWallet());
 
             sim.Advance(0.1f);
 
@@ -141,7 +141,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var bag = new CharacterInventory(new Vector2Int(10, 10));
 
             var lootFlow = new LootFlow(sim, Admitting(ItemRarity.Common), items,
-                new FakeCoinDropSource(), bag, NewWallet());
+                new FakeCoinDropSource(), new BagItemReceiver(bag), NewWallet());
 
             sim.Advance(0.1f);
 
@@ -159,7 +159,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var bag = new CharacterInventory(new Vector2Int(10, 10));
 
             var lootFlow = new LootFlow(sim, Admitting(ItemRarity.Unique), items,
-                new FakeCoinDropSource(), bag, NewWallet());
+                new FakeCoinDropSource(), new BagItemReceiver(bag), NewWallet());
 
             sim.Advance(0.1f);
 
@@ -180,7 +180,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             Assert.That(bag.TryAddToContainer(ref filler), Is.True, "test setup: the one cell must already be full");
 
             var lootFlow = new LootFlow(sim, Admitting(ItemRarity.Common), items,
-                new FakeCoinDropSource(), bag, NewWallet());
+                new FakeCoinDropSource(), new BagItemReceiver(bag), NewWallet());
 
             sim.Advance(0.1f);
 
@@ -202,12 +202,99 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var bag = new CharacterInventory(new Vector2Int(2, 1));
 
             var lootFlow = new LootFlow(sim, Admitting(ItemRarity.Common), items,
-                new FakeCoinDropSource(), bag, NewWallet());
+                new FakeCoinDropSource(), new BagItemReceiver(bag), NewWallet());
 
             sim.Advance(0.1f);
 
             Assert.That(bag.StoredPackages, Has.Count.EqualTo(2), "the bag only had room for 2");
             Assert.That(lootFlow.GroundDrops, Has.Count.EqualTo(2), "the other 2 passed the filter but had nowhere to go");
+        }
+
+        // ─── AC (#103): placement is the player's entry point, so auto-equip applies ──
+
+        [Test]
+        public void AnItem_TheReceiverEquips_IsNeitherInTheBagNorOnTheGround()
+        {
+            var location = Profiles.Solo(EnemyArchetype.Skirmisher,
+                table: FakeLootTable.Fixed(ItemCategory.Equipment, ItemRarity.Common));
+            var sim = NewEncounter(OneShotHero(), location);
+            var items = new ItemGenerator(catalog, new ConstantRollSource(0f));
+            var bag = new CharacterInventory(new Vector2Int(10, 10));
+            var player = new BagItemReceiver(bag) { Equips = _ => true }; // auto-equip on, slot empty
+
+            var lootFlow = new LootFlow(sim, Admitting(ItemRarity.Common), items,
+                new FakeCoinDropSource(), player, NewWallet());
+
+            sim.Advance(0.1f);
+
+            Assert.That(player.Equipped, Has.Count.EqualTo(1), "the Drop went to the equipment, not a raw bag add");
+            Assert.That(bag.StoredPackages, Is.Empty);
+            Assert.That(lootFlow.GroundDrops, Is.Empty, "equipped is a successful placement");
+        }
+
+        [Test]
+        public void AReceiverThatThrows_DoesNotCrashTheEncounter_GroundsTheDrop_AndSurfacesTheFailure()
+        {
+            var location = Profiles.Solo(EnemyArchetype.Skirmisher,
+                table: FakeLootTable.Fixed(ItemCategory.Equipment, ItemRarity.Common));
+            var sim = NewEncounter(OneShotHero(), location);
+            var items = new ItemGenerator(catalog, new ConstantRollSource(0f));
+            var boom = new System.InvalidOperationException("equip blew up");
+            var player = new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10))) { Throws = boom };
+            var wallet = NewWallet();
+
+            var lootFlow = new LootFlow(sim, Admitting(ItemRarity.Common), items,
+                new FakeCoinDropSource((CurrencyType.Iron, 7u)), player, wallet);
+
+            System.Exception reported = null;
+            lootFlow.PlacementFailed += (_, exception) => reported = exception;
+
+            Assert.That(() => sim.Advance(0.1f), Throws.Nothing,
+                "an equip's engine-side effects must not abort the tick that killed the enemy");
+
+            Assert.That(sim.EnemiesDefeated, Is.EqualTo(1), "the kill itself still resolves");
+            Assert.That(lootFlow.GroundDrops, Has.Count.EqualTo(1), "the Drop is not lost");
+            Assert.That(reported, Is.SameAs(boom), "the failure is reported, not swallowed");
+            Assert.That(wallet.Balance.Iron, Is.EqualTo(7u), "the kill's coin Pile still banks");
+        }
+
+        [Test]
+        public void AnItem_TheReceiverRefuses_StaysOnTheGround_WithNoOverflowElsewhere()
+        {
+            var location = Profiles.Solo(EnemyArchetype.Skirmisher,
+                table: FakeLootTable.Fixed(ItemCategory.Equipment, ItemRarity.Common));
+            var sim = NewEncounter(OneShotHero(), location);
+            var items = new ItemGenerator(catalog, new ConstantRollSource(0f));
+            var bag = new CharacterInventory(new Vector2Int(1, 1));
+            var filler = new Package(bag, new ItemInstance(EquipmentId, ItemRarity.Common, 1, null), 1u);
+            Assert.That(bag.TryAddToContainer(ref filler), Is.True, "test setup: the one cell must already be full");
+            var player = new BagItemReceiver(bag);
+
+            var lootFlow = new LootFlow(sim, Admitting(ItemRarity.Common), items,
+                new FakeCoinDropSource(), player, NewWallet());
+
+            sim.Advance(0.1f);
+
+            Assert.That(player.Offered, Has.Count.EqualTo(1), "the Drop was offered to the receiver");
+            Assert.That(lootFlow.GroundDrops, Has.Count.EqualTo(1), "a refusal is the ground's cue");
+        }
+
+        [Test]
+        public void AnItem_ThatFailsTheFilter_IsNeverOfferedToTheReceiver()
+        {
+            var location = Profiles.Solo(EnemyArchetype.Skirmisher,
+                table: FakeLootTable.Fixed(ItemCategory.Equipment, ItemRarity.Common));
+            var sim = NewEncounter(OneShotHero(), location);
+            var items = new ItemGenerator(catalog, new ConstantRollSource(0f));
+            var player = new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10))) { Equips = _ => true };
+
+            var lootFlow = new LootFlow(sim, Admitting(ItemRarity.Unique), items,
+                new FakeCoinDropSource(), player, NewWallet());
+
+            sim.Advance(0.1f);
+
+            Assert.That(player.Offered, Is.Empty, "the filter gates the pick-up - it must not auto-equip what the hero waved off");
+            Assert.That(lootFlow.GroundDrops, Has.Count.EqualTo(1));
         }
 
         [Test]
@@ -225,7 +312,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var items = new ItemGenerator(catalog, new ConstantRollSource(0f));
 
             var lootFlow = new LootFlow(sim, Admitting(ItemRarity.Common), items,
-                new FakeCoinDropSource(), new CharacterInventory(new Vector2Int(10, 10)), NewWallet());
+                new FakeCoinDropSource(), new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10))), NewWallet());
 
             Assert.That(() => sim.Advance(0.1f), Throws.Nothing,
                 "a misconfigured loot table must not crash the Encounter — combat cannot depend on itemization content being well-formed");
@@ -244,7 +331,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var wallet = NewWallet();
             var coins = new FakeCoinDropSource((CurrencyType.Iron, 7u)); // iron is Common
 
-            _ = new LootFlow(sim, Admitting(ItemRarity.Common), items, coins, new CharacterInventory(new Vector2Int(10, 10)), wallet);
+            _ = new LootFlow(sim, Admitting(ItemRarity.Common), items, coins, new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10))), wallet);
 
             sim.Advance(0.1f);
 
@@ -259,7 +346,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var wallet = NewWallet();
             var coins = new FakeCoinDropSource((CurrencyType.Iron, 7u)); // iron is Common
 
-            _ = new LootFlow(sim, Admitting(ItemRarity.Unique), items, coins, new CharacterInventory(new Vector2Int(10, 10)), wallet);
+            _ = new LootFlow(sim, Admitting(ItemRarity.Unique), items, coins, new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10))), wallet);
 
             sim.Advance(0.1f);
 
@@ -274,7 +361,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var wallet = NewWallet();
             var coins = new FakeCoinDropSource(); // dry — hands back (NONE, 0)
 
-            _ = new LootFlow(sim, Admitting(ItemRarity.Common), items, coins, new CharacterInventory(new Vector2Int(10, 10)), wallet);
+            _ = new LootFlow(sim, Admitting(ItemRarity.Common), items, coins, new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10))), wallet);
 
             Assert.That(() => sim.Advance(0.1f), Throws.Nothing);
             Assert.That(wallet.Balance.Total, Is.Zero);
@@ -291,7 +378,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var items = new ItemGenerator(catalog, new ConstantRollSource(0f));
 
             var lootFlow = new LootFlow(sim, Admitting(ItemRarity.Unique), items,
-                new FakeCoinDropSource(), new CharacterInventory(new Vector2Int(10, 10)), NewWallet());
+                new FakeCoinDropSource(), new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10))), NewWallet());
 
             sim.Advance(0.1f);
             Assert.That(lootFlow.GroundDrops, Has.Count.EqualTo(1));
@@ -311,7 +398,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         {
             var sim = NewEncounter(OneShotHero(), Profiles.Solo(EnemyArchetype.Skirmisher));
             var lootFlow = new LootFlow(sim, Admitting(ItemRarity.Common), new ItemGenerator(catalog, new SeededRollSource(1)),
-                new FakeCoinDropSource(), new CharacterInventory(new Vector2Int(10, 10)), NewWallet());
+                new FakeCoinDropSource(), new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10))), NewWallet());
 
             var recovered = new ItemInstance("fake.sword", ItemRarity.Common, 1, null);
             lootFlow.PlaceOnGround(recovered);
@@ -329,7 +416,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var wallet = NewWallet();
             var coins = new FakeCoinDropSource((CurrencyType.Iron, 7u)); // 7 base units
             var lootFlow = new LootFlow(sim, Admitting(ItemRarity.Common), new ItemGenerator(catalog, new SeededRollSource(1)),
-                coins, new CharacterInventory(new Vector2Int(10, 10)), wallet);
+                coins, new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10))), wallet);
 
             long banked = -1;
             lootFlow.CoinsBanked += amount => banked = amount;
@@ -346,7 +433,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var wallet = NewWallet();
             var coins = new FakeCoinDropSource((CurrencyType.Copper, 3u)); // 3 × 5 iron = 15
             var lootFlow = new LootFlow(sim, Admitting(ItemRarity.Common), new ItemGenerator(catalog, new SeededRollSource(1)),
-                coins, new CharacterInventory(new Vector2Int(10, 10)), wallet);
+                coins, new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10))), wallet);
 
             long banked = -1;
             lootFlow.CoinsBanked += amount => banked = amount;
@@ -363,7 +450,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var wallet = NewWallet();
             var coins = new FakeCoinDropSource((CurrencyType.Iron, 7u)); // iron is Common, filter is Unique
             var lootFlow = new LootFlow(sim, Admitting(ItemRarity.Unique), new ItemGenerator(catalog, new SeededRollSource(1)),
-                coins, new CharacterInventory(new Vector2Int(10, 10)), wallet);
+                coins, new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10))), wallet);
 
             var raised = false;
             lootFlow.CoinsBanked += _ => raised = true;
@@ -382,15 +469,15 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var behaviour = Admitting(ItemRarity.Common);
             var items = new ItemGenerator(catalog, new ConstantRollSource(0f));
             var coins = new FakeCoinDropSource();
-            var bag = new CharacterInventory(new Vector2Int(4, 4));
+            var player = new BagItemReceiver(new CharacterInventory(new Vector2Int(4, 4)));
             var wallet = NewWallet();
 
-            Assert.That(() => new LootFlow(null, behaviour, items, coins, bag, wallet), Throws.ArgumentNullException);
-            Assert.That(() => new LootFlow(sim, null, items, coins, bag, wallet), Throws.ArgumentNullException);
-            Assert.That(() => new LootFlow(sim, behaviour, null, coins, bag, wallet), Throws.ArgumentNullException);
-            Assert.That(() => new LootFlow(sim, behaviour, items, null, bag, wallet), Throws.ArgumentNullException);
+            Assert.That(() => new LootFlow(null, behaviour, items, coins, player, wallet), Throws.ArgumentNullException);
+            Assert.That(() => new LootFlow(sim, null, items, coins, player, wallet), Throws.ArgumentNullException);
+            Assert.That(() => new LootFlow(sim, behaviour, null, coins, player, wallet), Throws.ArgumentNullException);
+            Assert.That(() => new LootFlow(sim, behaviour, items, null, player, wallet), Throws.ArgumentNullException);
             Assert.That(() => new LootFlow(sim, behaviour, items, coins, null, wallet), Throws.ArgumentNullException);
-            Assert.That(() => new LootFlow(sim, behaviour, items, coins, bag, null), Throws.ArgumentNullException);
+            Assert.That(() => new LootFlow(sim, behaviour, items, coins, player, null), Throws.ArgumentNullException);
         }
     }
 }

@@ -30,51 +30,28 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// <param name="inventory">Enrolled so a plain bag add rolls back with everything else.</param>
         /// <param name="equipment">Enrolled so an auto-equip inside the pick-up rolls back
         /// with everything else.</param>
-        /// <param name="stash">Enrolled so the pick-up's debug stash-fallback (if it fires)
-        /// rolls back with everything else. Null-safely omitted when the source already is
-        /// the Stash - enrolling the same container twice is a no-op, but callers that never
-        /// touch the Stash (a shelf buy) have nothing to pass.</param>
         /// <param name="onAcquired">Runs only after a successful pick-up, before commit - the
         /// seam a vendor buy queues its payment through.</param>
         /// <returns>Whether the Package was placed.</returns>
         public static bool Run(AbstractDimensionalContainer source, Vector2Int sourceCell,
             IItemReceiver player, AbstractDimensionalContainer inventory, AbstractDimensionalContainer equipment,
-            AbstractDimensionalContainer stash = null, Action<ItemTransaction> onAcquired = null)
+            Action<ItemTransaction> onAcquired = null)
         {
             if (source == null || player == null
                 || !source.TryGetPackageAt(sourceCell, out var stored) || !stored.IsValid)
                 return false;
 
-            using var transaction = new ItemTransaction(source, inventory, equipment, stash);
+            using var transaction = new ItemTransaction(source, inventory, equipment);
 
             _ = source.RemoveAtPosition(sourceCell, stored);
 
-            var heldBefore = AmountIn(source, stored.Item);
-
             if (!player.PickUpItem(stored.Item, stored.Amount))
                 return false; // dispose rolls back - the item stays at sourceCell
-
-            // The player's debug stash-fallback can hand the item straight back to the very
-            // container it was just removed from when nowhere else has room. That is not an
-            // acquisition - roll back so the item stays exactly where it was.
-            if (ReferenceEquals(source, stash) && heldBefore < AmountIn(source, stored.Item))
-                return false;
 
             onAcquired?.Invoke(transaction);
 
             transaction.Commit();
             return true;
-        }
-
-        private static uint AmountIn(AbstractDimensionalContainer container, ItemInstance item)
-        {
-            uint total = 0;
-
-            foreach (var package in container.StoredPackages.Values)
-                if (ReferenceEquals(package.Item, item))
-                    total += package.Amount;
-
-            return total;
         }
     }
 }
