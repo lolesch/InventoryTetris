@@ -35,7 +35,7 @@ Run `gh issue view <number> --comments`.
 
 ## Frontiers — issues vs. implementation
 
-Six open issues; the frontier — an issue whose blockers are all closed and whose criteria are not already met by the code — starts at **#68**.
+Five open issues; the frontier — an issue whose blockers are all closed and whose criteria are not already met by the code — starts at **#58**.
 
 **Keep this table current:** update after every `/implement`, and PR-to-`main` by removing closed issues and re-scan the open set.
 
@@ -43,7 +43,6 @@ Six open issues; the frontier — an issue whose blockers are all closed and who
 
 | # | Title | Blockers | State vs. this branch |
 |---|---|---|---|
-| **68** | The shared Stash has no home in the domain model | — | **Done, on `issue/68-stash-session-domain-gap`.** `ddbefb5` + its own ADR-0013 implement the deferral ruling; the branch also merges `feature/sidepanel-hotkey-rework`. `main` already holds **0013** for the announce-to-request inversion, so that branch's ADR renumbers to **0014** on merge — both files move. |
 | **58** | Healer button + H hotkey | #56 (closed) | **Done in mechanics.** `HealerAction` refills on genuine entry into `Healer`; hotkey `H` (`104`) authored on `HealerToggle`; TownGroup (`ToggleGroup`) membership holds (#57's ruling). Remaining / unverified: visual-feedback acceptance criterion, and `HealerPanel`'s container roster (no `ContainerRole` — a blank grid). Close after a by-hand pass. |
 | **63** | Ground items display | LootFlow epic (satisfied: merged `main`) | **Open slice.** `LootFlow.GroundDrops` + `PlaceOnGround` exist, but no `GroundItemSlotDisplay` panel/prefab and no ground quick-move row. **Refresh the ticket first**: its "when no panel is open, shift-quick-move to the floor" criterion must be restated as a row in #86's context table (no ground row exists; `Hero`/`Healer` still resolve to `None`). |
 | **69** | Centralized, rebindable input service | — | **Needs `/to-spec`.** Touch `dev/specs/` first: `2026-09-26-session-ux-research.md` §3 + `2026-09-28-save-serialization-prior-art.md` record the nesting decisions (persisted-keybind override vs. Input System package; does not cover discoverability). Also absorbs note: `InventoryContext` moved to `Containers/`, but the ticket's stale source list for the inline reads still cites old paths. |
@@ -52,15 +51,14 @@ Six open issues; the frontier — an issue whose blockers are all closed and who
 
 ### Frontier (recommended order)
 
-1. **#68** — merge `issue/68-stash-session-domain-gap` (its ADR renumbers to 0014, since
-   `main` already holds 0013) and close.
-2. **#58** — by-hand visual-feedback pass, then close.
-3. **#63** — refresh ticket/table first, then build the ground-items display.
+1. **#58** — by-hand visual-feedback pass, then close.
+2. **#63** — refresh ticket/table first, then build the ground-items display.
 
 ### Notes from the scan
 
 - The #94 spec (`dev/specs/2026-09-25-enemy-hp-bar-binding-design.md`) is on `main`; `origin/spec/enemy-hp-bar-binding` no longer needs carrying.
 - #94 is closed and merged to `main` (PR #105, `cb9a669`), including story 5: the bar list scrolls via a vertical `ScrollRect` on `EnemyHpBarPoolViewport` in `Example.unity`. Open follow-up from its review: `SidePanelToggle` now assigns `interactable` outright from the field-reachability gate, so a toggle authored disabled is re-enabled (commit `03d1179`, intended — check no scene toggle relied on the old baseline). The branch also carries UI housekeeping (`IDisplay`, `PanelButton`, `TestDisplay`, sealed classes, Amount Slider prefab); its EditMode suite was not re-run before merge.
 - #103 is closed by its PR (`issue/103-sim-loot-auto-equip`): sim loot and Corpse recovery now go through `IItemReceiver.PickUpItem`, so `Equipment.autoEquip` applies. Open question left for the owner: auto-equipped loot never enters the bag, so it is not buried in a Corpse and does not feed the bag-full recall gauge (ADR-0009).
-- Pending branches: `issue/68-stash-session-domain-gap` carries finished work; `origin/NewArtwork` is a non-PR art/asset branch (see `codebase-notes.md`).
+- Pending branches: `origin/NewArtwork` is a non-PR art/asset branch (see `codebase-notes.md`).
+- #68 is closed (`724bb82`, ADR-0014): one hero for the MVP, Stash is Session-owned; the shared-Stash tier is deferred.
 - Keep `docs/agents/` and `docs/adr/` out of any `main` → `GitPage` merge (see `CLAUDE.md`). `docs/_config.yml`'s `exclude: [agents, adr]` is unchanged by #87 — the new ADR lands inside the already-excluded `adr/` directory.
