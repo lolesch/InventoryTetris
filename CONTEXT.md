@@ -53,6 +53,9 @@ backpack), the **Stash**, a Town Stop's **Supply**, the **Sell Basket**, and the
 **Inventory / Stash / Supply / Sell Basket**:
 Four distinct *roles*, all currently played by the same type. Only Equipment is its own
 type. Say which role you mean — "the Stash" is never a class.
+The Stash is **Session-owned** for the MVP (one hero, so nothing shares it). The design
+intent that loot be stored *and exchanged among heroes* needs a persistence tier above
+Session that does not exist yet — revisit post-MVP (ADR-0014).
 _Avoid_: using "inventory" to mean any container
 
 **Supply**:
@@ -212,7 +215,10 @@ _Avoid_: user, you; "hero" for the one making the calls
 The span of play between app start and quit. It contains many Runs and is the unit that
 persists — the hero, the four containers, the wallet and XP save per Session and resume
 `InTown` on the next launch. A Run never spans Sessions: quitting mid-Run banks what the
-hero already picked up and discards the rest.
+hero already picked up and discards the rest. The Session is the *top* persistence tier
+for the MVP: a Stash or Wallet shared across heroes would need a tier above it, which is
+deferred (ADR-0014) — do not let persistence code assume the Session is the outermost
+owner.
 _Avoid_: playthrough, save file (the save is the Session's shadow, not the thing itself)
 
 **Run**:
