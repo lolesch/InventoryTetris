@@ -60,6 +60,6 @@ Six open issues; the frontier — an issue whose blockers are all closed and who
 ### Notes from the scan
 
 - The #94 spec (`dev/specs/2026-09-25-enemy-hp-bar-binding-design.md`) is on `main`; `origin/spec/enemy-hp-bar-binding` no longer needs carrying.
-- #94 is closed but **not yet on `main`**: it lives on `issue/94-enemy-hp-bar-binding` (PR #105). Merge it to `main` next. Story 5 (the bar list scrolls once taller than its 240 px viewport) is now met by a vertical `ScrollRect` on `EnemyHpBarPoolViewport` in `Example.unity`.
-- Pending branches: `issue/94-enemy-hp-bar-binding` and `issue/68-stash-session-domain-gap` carry finished work; `origin/NewArtwork` is a non-PR art/asset branch (see `codebase-notes.md`).
+- #94 is closed and merged to `main` (PR #105, `cb9a669`), including story 5: the bar list scrolls via a vertical `ScrollRect` on `EnemyHpBarPoolViewport` in `Example.unity`. Open follow-up from its review: `SidePanelToggle` now assigns `interactable` outright from the field-reachability gate, so a toggle authored disabled is re-enabled (commit `03d1179`, intended — check no scene toggle relied on the old baseline). The branch also carries UI housekeeping (`IDisplay`, `PanelButton`, `TestDisplay`, sealed classes, Amount Slider prefab); its EditMode suite was not re-run before merge.
+- Pending branches: `issue/68-stash-session-domain-gap` carries finished work; `origin/NewArtwork` is a non-PR art/asset branch (see `codebase-notes.md`).
 - Keep `docs/agents/` and `docs/adr/` out of any `main` → `GitPage` merge (see `CLAUDE.md`). `docs/_config.yml`'s `exclude: [agents, adr]` is unchanged by #87 — the new ADR lands inside the already-excluded `adr/` directory.
