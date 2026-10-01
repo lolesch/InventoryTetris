@@ -5,5 +5,5 @@ namespace ToolSmiths.InventorySystem.Data.Distributions
 {
     [System.Serializable]
     [CreateAssetMenu(fileName = "Weapon Category Distribution", menuName = "Inventory System/Probability Distributions/Weapon Category")]
-    public class WeaponCategoryDistribution : AbstractProbabilityDistribution<WeaponCategory> { }
+    public sealed class WeaponCategoryDistribution : AbstractProbabilityDistribution<WeaponCategory> { }
 }

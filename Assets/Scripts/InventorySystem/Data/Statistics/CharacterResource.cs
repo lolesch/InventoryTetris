@@ -6,7 +6,7 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.Data
 {
     [Serializable]
-    public class CharacterResource : CharacterStat
+    public sealed class CharacterResource : CharacterStat
     {
         [field: SerializeField, ReadOnly] public float CurrentValue { get; private set; }
 

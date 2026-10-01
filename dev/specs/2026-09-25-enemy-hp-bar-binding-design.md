@@ -83,6 +83,12 @@ the symmetric pair to the existing `EnemyDefeated`, which is raised *after* the 
 
 `EnemyDefeated` already carries everything removal needs and does not change.
 
+**Implementation note (#94):** "needs no special case" holds for every Encounter after the first.
+`EncounterSimulation`'s constructor calls `BeginEncounter()`, so the *first* Encounter's initial
+batch spawns before any listener can attach and `EnemySpawned` fires into nothing. The pool
+therefore seeds itself from `Encounter.Enemies` when it binds (§4), oldest first so the newest
+ends on top; events cover everything after that.
+
 ### 4. The pool binds by reference; values are pushed
 
 `EnemyHealthBarPool` gains a small `Update()` whose only job is binding: resolve

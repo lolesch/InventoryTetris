@@ -9,7 +9,7 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.Inventories
 {
     [System.Serializable]
-    public class CharacterEquipment : AbstractDimensionalContainer
+    public sealed class CharacterEquipment : AbstractDimensionalContainer
     {
         private readonly IStatReceiver statReceiver;
 

@@ -22,7 +22,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// <see cref="RunPhase"/>-driven — <see cref="RunPhase.InField"/> only exists once a Location
     /// is actually Sent to, but the Combat Panel must already be up during the Go Venture preview
     /// (still <see cref="RunPhase.InTown"/>, no Run yet). <see cref="FieldFacePanel"/> cascades
-    /// this panel's <see cref="FadeIn"/>/<see cref="FadeOut"/> straight from its own appear/
+    /// this panel's <see cref="SimplePanel.Expand"/>/<see cref="SimplePanel.Collapse"/> straight from its own appear/
     /// disappear instead, so both follow the same UI-layer event the preview relies on. Subscribes
     /// to slider events in <see cref="SimplePanel.BeforeAppear"/> so they are live as soon as the
     /// panel becomes visible.

@@ -61,18 +61,6 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
                  "faces, so its hotkey must survive the field.")]
         [SerializeField] private bool gatedByFieldReachability = true;
 
-        /// <summary>The Inspector-authored baseline this toggle's <c>interactable</c> gates
-        /// against, captured once so a Town Stop shipped disabled (<c>interactable == false</c>
-        /// from the start) stays disabled rather than coming back on for merely being InTown.</summary>
-        private bool authoredInteractable;
-
-        protected override void Awake()
-        {
-            base.Awake();
-
-            authoredInteractable = interactable;
-        }
-
         protected override void OnClick() => RequestAndToggle(!IsOn);
 
         /// <summary>
@@ -99,7 +87,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         private void Update()
         {
             if (gatedByFieldReachability && RadioGroup && InventoryProvider.Instance != null)
-                interactable = authoredInteractable && InventoryProvider.Instance.IsFieldReachable;
+                interactable = InventoryProvider.Instance.IsFieldReachable;
 
             if (hotkey == KeyCode.None || !interactable)
                 return;

@@ -2,7 +2,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-public class ShowNameOnHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+public sealed class ShowNameOnHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
     [SerializeField] private TextMeshProUGUI label;
 
