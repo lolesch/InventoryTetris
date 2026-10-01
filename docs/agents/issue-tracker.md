@@ -35,7 +35,7 @@ Run `gh issue view <number> --comments`.
 
 ## Frontiers — issues vs. implementation
 
-Six open issues; the frontier — an issue whose blockers are all closed and whose criteria are not already met by the code — starts at **#58**.
+Seven open issues; the frontier — an issue whose blockers are all closed and whose criteria are not already met by the code — starts at **#58**.
 
 **Keep this table current:** update after every `/implement`, and PR-to-`main` by removing closed issues and re-scan the open set.
 
@@ -44,7 +44,8 @@ Six open issues; the frontier — an issue whose blockers are all closed and who
 | # | Title | Blockers | State vs. this branch |
 |---|---|---|---|
 | **58** | Healer button + H hotkey | #56 (closed) | **Done.** `CharacterProvider` subscribes to the Inventory Context and refills on genuine entry into `Healer` (the scene-wired `HealerAction` is deleted); hotkey `H` (`104`) authored on `HealerToggle`; TownGroup (`ToggleGroup`) membership holds (#57's ruling). Visual-feedback criterion **cut** (the resource globes filling is the feedback; audio later). Close after a by-hand pass. |
-| **121** | Healer Supply: consumables shelf in the Healer's Side Panel | #58 | **Code landed with #58's work** (`ContainerRole.HealerSupply`, `InventoryProvider.HealerSupply`/`RestockHealerSupply`, `ItemProvider.RollConsumable()`, resolver Buy for any Supply). Remaining: author the shelf display in `HealerPanel` (`Example.unity`) and a by-hand buy pass. |
+| **121** | Healer Supply: consumables shelf in the Healer's Side Panel | #58 | **Built and authored** (`ContainerRole.HealerSupply`, `InventoryProvider.HealerSupply`/`RestockHealerSupply`, `ItemProvider.RollConsumable()`, resolver Buy for any Supply, right-click buys, the Healer shares the Vendor's Sell Basket rows, `HealerPanel` shelf + basket in `Example.unity`). Remaining: a by-hand pass in Play mode, then close. Known gap, tracked in #122: zero-affix items (books) are worthless, so they are free here and an all-books basket cannot confirm. |
+| **122** | Items with no affixes are worthless | — | **Needs triage.** `ItemView.SellValue` sums affix values, so a consumable with none prices at 0. Data/value-model fix, not a basket change. |
 | **63** | Ground items display | LootFlow epic (satisfied: merged `main`) | **Open slice.** `LootFlow.GroundDrops` + `PlaceOnGround` exist, but no `GroundItemSlotDisplay` panel/prefab and no ground quick-move row. **Refresh the ticket first**: its "when no panel is open, shift-quick-move to the floor" criterion must be restated as a row in #86's context table (no ground row exists; `Hero`/`Healer` still resolve to `None`). |
 | **69** | Centralized, rebindable input service | — | **Needs `/to-spec`.** Touch `dev/specs/` first: `2026-09-26-session-ux-research.md` §3 + `2026-09-28-save-serialization-prior-art.md` record the nesting decisions (persisted-keybind override vs. Input System package; does not cover discoverability). Also absorbs note: `InventoryContext` moved to `Containers/`, but the ticket's stale source list for the inline reads still cites old paths. |
 | **46** | Harden `AbstractProvider<T>` | — | **Mechanism done at `Utility@3010155`** — the submodule split + `OnValidate` + edit-mode guard. The **process** part (architecture pass over `Runtime/Provider/` → `/to-spec` → `/to-tickets` → `/implement`) is still open; the "author-time failure for children/pre-root" direction bullet is only partially covered. Close only once the pass happens and reconciles with the landed commit. |
