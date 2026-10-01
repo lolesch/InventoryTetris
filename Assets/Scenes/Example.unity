@@ -3265,6 +3265,8 @@ MonoBehaviour:
     <StoredPackages>k__BackingField: []
   <Store>k__BackingField:
     <StoredPackages>k__BackingField: []
+  <HealerSupply>k__BackingField:
+    <StoredPackages>k__BackingField: []
   <ShowDebugPositions>k__BackingField: 0
   equipmentSize: {x: 14, y: 1}
   inventorySize: {x: 10, y: 6}
@@ -3718,7 +3720,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2041717577405286291, guid: 91471b344b37389498b75d12a2cee4c0, type: 3}
       propertyPath: role
-      value: 4
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 2041717577405286291, guid: 91471b344b37389498b75d12a2cee4c0, type: 3}
       propertyPath: slotDisplayPrefab
@@ -3770,7 +3772,10 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 759432216187712586, guid: 91471b344b37389498b75d12a2cee4c0, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1261355783}
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 759432216187712589, guid: 91471b344b37389498b75d12a2cee4c0, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 533220170}
   m_SourcePrefab: {fileID: 100100000, guid: 91471b344b37389498b75d12a2cee4c0, type: 3}
 --- !u!224 &340640714 stripped
 RectTransform:
@@ -5944,6 +5949,23 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
+--- !u!1 &533220164 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 759432216187712589, guid: 91471b344b37389498b75d12a2cee4c0, type: 3}
+  m_PrefabInstance: {fileID: 340640713}
+  m_PrefabAsset: {fileID: 0}
+--- !u!225 &533220170
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 533220164}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &534204899
 GameObject:
   m_ObjectHideFlags: 0
@@ -6480,7 +6502,6 @@ GameObject:
   m_Component:
   - component: {fileID: 612742128}
   - component: {fileID: 612742129}
-  - component: {fileID: 612742135}
   - component: {fileID: 612742133}
   - component: {fileID: 612742132}
   - component: {fileID: 612742131}
@@ -6643,18 +6664,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 612742127}
   m_CullTransparentMesh: 1
---- !u!114 &612742135
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 612742127}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 60f1fea038014686b0e29e0ba3e783b2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1001 &619434487
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -11026,7 +11035,7 @@ MonoBehaviour:
   totalLabel: {fileID: 908203977}
   confirmButton: {fileID: 1059139229}
   cancelButton: {fileID: 2104240593}
-  supplyBlocker: {fileID: 1960429532}
+  supplyBlocker: {fileID: 533220170}
 --- !u!1 &1068377203
 GameObject:
   m_ObjectHideFlags: 0
@@ -13055,7 +13064,7 @@ PrefabInstance:
       objectReference: {fileID: 322785545}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: RestockStore
+      value: RestockHealerSupply
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
