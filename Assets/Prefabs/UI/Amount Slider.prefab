@@ -446,7 +446,6 @@ GameObject:
   - component: {fileID: 8089604161027485866}
   - component: {fileID: 2033503025984383168}
   - component: {fileID: 4147803181703239551}
-  - component: {fileID: 6119894454315984097}
   m_Layer: 5
   m_Name: Amount Slider
   m_TagString: Untagged
@@ -562,19 +561,6 @@ MonoBehaviour:
   m_LayoutPriority: 1
   m_MaxWidth: -1
   m_MaxHeight: -1
---- !u!114 &6119894454315984097
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6435161952913115412}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9140a4f17f42a004dbab7d23f715fc3e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  label: {fileID: 1739488568257303692}
 --- !u!1 &8223387058866840695
 GameObject:
   m_ObjectHideFlags: 0
