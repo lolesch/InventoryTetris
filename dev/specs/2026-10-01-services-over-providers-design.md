@@ -142,22 +142,22 @@ The derived mechanism was replayed against every case the old one handled. The c
 
 ### Amended ticket slice (after two drift reviews)
 
-This is the input for `/to-tickets`, with the seven drift findings applied. The chain `6 → 11 → 7 → 8, 9, 10 → 13` is deliberate.
+This is the input for `/to-tickets`, with the seven drift findings applied. The chain `6 → 11 → 10 → 7 → 8, 9 → 12 → 13` is deliberate: hero callers migrate before the swap so no wrapper has to be re-pointed, and the DebugPanel is written once against the relocated entry point.
 
 | # | Ticket | Blocked by |
 |---|---|---|
 | 1 | Name the per-hero unit and record the service model (glossary entry plus ADR) | #68 |
-| 2 | Boot: `GameConfig`, locator, runner, test seam | 1 |
+| 2 | Boot: `GameConfig`, locator, runner, test seam; scene-authored values carry over | 1 |
 | 3 | The item service replaces `ItemProvider` | 2 |
-| 4 | `Hero` as a plain class (expand); includes the stat-receiver add/remove | 2 |
+| 4 | `Hero` as a plain class (expand); includes the stat-receiver add/remove; default `HeroData` reproduces the scene-authored stats | 2 |
 | 5 | The hero stat panel binds to `Hero` | 4 |
 | 6 | The Hero State holder, built in explicit order; old providers become facades | 3, 4 |
-| 11 | Simulation service on the Hero State, runner-hosted tick; **names** the 7 GUI sim callers (including #94's HP bar pool) | 3, 6 |
-| 7 | Replace on load, `SessionChanged`; seams defined on the Hero State API, facades forward | 6, 11 |
+| 11 | Simulation service on the Hero State, runner-hosted tick; **names** the 7 GUI sim callers (including #94's HP bar pool) and hero regeneration in both phases | 3, 6 |
+| 7 | Replace on load, `SessionChanged`; seams defined on the Hero State API, facades forward | 6, 11, 10 |
 | 8 | Migrate inventory callers: GUI | 7 |
-| 9 | Migrate inventory callers: runtime and simulation; **owns relocating** the acquisition entry point | 7, #103 |
-| 10 | Migrate hero callers, delete `DummyTarget`, Healer via the state | 5, 7 |
-| 12 | `DebugPanel`, including the Amount Slider and its prefab wiring | 6 |
+| 9 | Migrate inventory callers: runtime and settlement; **owns relocating** the acquisition entry point (the sim wiring is 11's) | 7, #103 |
+| 10 | Migrate hero callers, delete `DummyTarget`, Healer via the state | 5, 6 |
+| 12 | `DebugPanel`, including the Amount Slider and its prefab wiring | 6, 9 |
 | 13 | Contract: delete the old providers; greps clean; closes #46 and credits the reparent guard | 8, 9, 10, 11, 12 |
 
 Amend alongside: #103 (Corpse half by constructor), #63 (criteria reworded, blocked on 9).
