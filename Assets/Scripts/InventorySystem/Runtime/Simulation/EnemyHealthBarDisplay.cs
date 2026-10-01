@@ -1,35 +1,43 @@
 using TMPro;
 using ToolSmiths.InventorySystem.Data.Enums;
+using ToolSmiths.InventorySystem.GUI.Displays;
 using ToolSmiths.InventorySystem.Items;
+using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace ToolSmiths.InventorySystem.Runtime.Simulation
 {
     /// <summary>
-    /// One pooled row in the combat panel's enemy HP bar list (issue #60). UI shell only —
-    /// binding to per-enemy <see cref="Simulation.Enemy"/> instances from the
-    /// <c>EncounterSimulation</c> is a separate ticket; <see cref="EnemyHealthBarPool"/> is the
-    /// only intended caller of <see cref="Refresh"/>/<see cref="SetRarityColor"/>.
+    /// One pooled row in the combat panel's enemy HP bar list (issue #60), bound to one
+    /// <see cref="Enemy"/> at a time (issue #94). It adds only what the enemy has and the hero's
+    /// resource globes do not — the archetype name — and hands the rest to the same
+    /// <see cref="ResourceDisplay"/> the hero's HUD uses, bound to <see cref="Enemy.HealthResource"/>.
+    /// <see cref="EnemyHealthBarPool"/> is the only intended caller of
+    /// <see cref="Bind"/>/<see cref="Unbind"/>/<see cref="SetRarityColor"/>.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class EnemyHealthBarDisplay : MonoBehaviour
     {
         [SerializeField] private TextMeshProUGUI nameLabel;
-        [SerializeField] private Image fillBar;
-        [SerializeField] private TextMeshProUGUI numericOverlay;
+        [SerializeField, Tooltip("The Health display. The nested HealthBar carries a second, Shield one that enemies never bind.")]
+        private ResourceDisplay healthDisplay;
         [SerializeField] private Image rarityBorder;
 
-        public void Refresh(string label, float hpFraction, float current, float max)
+        /// <summary>Show <paramref name="enemy"/> under its archetype name and follow its health.</summary>
+        public void Bind(Enemy enemy)
         {
             if (nameLabel != null)
-                nameLabel.text = label;
+                nameLabel.text = enemy.Archetype.ToString();
 
-            if (fillBar != null)
-                fillBar.fillAmount = Mathf.Clamp01(hpFraction);
+            healthDisplay.Bind(enemy.HealthResource);
+        }
 
-            if (numericOverlay != null)
-                numericOverlay.text = $"{current:0}/{max:0}";
+        /// <summary>Stop following the bound enemy. Safe when nothing is bound.</summary>
+        public void Unbind()
+        {
+            if (healthDisplay != null)
+                healthDisplay.Unbind();
         }
 
         public void SetRarityColor(ItemRarity rarity)

@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Runtime.Character
 {
-    public class DummyTarget : BaseCharacter
+    public sealed class DummyTarget : BaseCharacter
     {
         [SerializeField] private uint experience = 20; // TODO: derive from monsterLevel and combat rating?
 

@@ -11,7 +11,7 @@ namespace ToolSmiths.InventorySystem.Data.Distributions
     /// is frozen and there are exactly four coins.
     /// </summary>
     [CreateAssetMenu(fileName = "Currency Drop Table", menuName = "Inventory System/Currency Drop Table")]
-    public class CurrencyDropTable : ScriptableObject
+    public sealed class CurrencyDropTable : ScriptableObject
     {
         [SerializeField] private Vector2Int iron = new(10, 30);
         [SerializeField] private Vector2Int copper = new(4, 12);

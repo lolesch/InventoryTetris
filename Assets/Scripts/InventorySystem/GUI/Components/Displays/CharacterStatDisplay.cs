@@ -11,7 +11,7 @@ using static ToolSmiths.InventorySystem.GUI.Displays.CharacterStatDisplay;
 
 namespace ToolSmiths.InventorySystem.GUI.Displays
 {
-    public class CharacterStatDisplay : MonoBehaviour, IView<CharacterStatData>
+    public sealed class CharacterStatDisplay : MonoBehaviour, IDisplay<CharacterStatData>
     {
         public struct CharacterStatData
         {
@@ -48,9 +48,9 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
             }
         }
 
-        [SerializeField] protected Image icon;
+        [SerializeField] private Image icon;
 
-        [SerializeField] protected TextMeshProUGUI text;
+        [SerializeField] private TextMeshProUGUI text;
 
         public void Refresh(CharacterStatData newData)
         {

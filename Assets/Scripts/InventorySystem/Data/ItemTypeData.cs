@@ -9,10 +9,10 @@ namespace ToolSmiths.InventorySystem.Data
 {
     [Serializable]
     [CreateAssetMenu(fileName = "Item Type Data", menuName = "Inventory System/ItemType Data")]
-    public class ItemTypeData : ScriptableObject
+    public sealed class ItemTypeData : ScriptableObject
     {
         [Serializable]
-        public class StatRange : ISerializationCallbackReceiver
+        public sealed class StatRange : ISerializationCallbackReceiver
         {
             [SerializeField, HideInInspector] public string name;
             [SerializeField] public StatName StatName;
@@ -85,7 +85,7 @@ namespace ToolSmiths.InventorySystem.Data
         }
 
         [Serializable]
-        public class EquipmentTypeSpecificStatRange : ISerializationCallbackReceiver
+        public sealed class EquipmentTypeSpecificStatRange : ISerializationCallbackReceiver
         {
             [SerializeField, HideInInspector] public string name;
             [SerializeField, HideInInspector] public EquipmentType EquipmentType;
@@ -98,7 +98,7 @@ namespace ToolSmiths.InventorySystem.Data
         }
 
         [Serializable]
-        public class ConsumableTypeSpecificStatRange : ISerializationCallbackReceiver
+        public sealed class ConsumableTypeSpecificStatRange : ISerializationCallbackReceiver
         {
             [SerializeField, HideInInspector] public string name;
             [SerializeField, HideInInspector] public ConsumableType ConsumableType;
@@ -109,7 +109,7 @@ namespace ToolSmiths.InventorySystem.Data
         }
 
         [Serializable]
-        public class StatIcon : ISerializationCallbackReceiver
+        public sealed class StatIcon : ISerializationCallbackReceiver
         {
             [HideInInspector] public string name;
             public StatName StatName = StatName.Health;

@@ -16,7 +16,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// action (<c>ToFieldsButton</c> fades InFields in, a Location Send commits) with no
     /// involuntary edge to catch. Leaving is not: Death ends the Run without any button click, so
     /// InTown needs its own route back in. Authored here for <see cref="RunPhase.InTown"/>, its
-    /// <see cref="SimplePanel.FadeIn"/> goes through the InTown/InFields <see cref="PanelGroup"/>
+    /// <see cref="SimplePanel.Expand"/> goes through the InTown/InFields <see cref="PanelGroup"/>
     /// on Death exactly as a real To Town click would, which is what fades InFields (and, via its
     /// own cascade, the Combat Panel) back out without either of them needing to hear about
     /// <see cref="RunPhase"/> themselves.</para>

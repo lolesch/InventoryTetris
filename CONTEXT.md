@@ -424,5 +424,5 @@ A panel is a parent component that groups content. It provides appearance option
 A collection of mutually exclusive Toggles or Panels of which at most one is active at a time. 
 "Activate" deactivates whichever sibling held the slot. 
 
-**Views**:
-A view is the visual representation of a data object. *IView* provides a *Refresh()* call to update the view on data change.
+**Displays and Views**:
+A display is the visual representation of a data object. *IDisplay* provides a *Refresh()* call to update the display on data change. This differs from views, that show static data.

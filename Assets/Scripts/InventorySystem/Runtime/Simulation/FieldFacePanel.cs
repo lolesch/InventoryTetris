@@ -36,7 +36,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             base.BeforeAppear();
 
             if (combatPanel)
-                combatPanel.FadeIn();
+                combatPanel.Expand();
         }
 
         protected override void BeforeDisappear()
@@ -44,7 +44,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             base.BeforeDisappear();
 
             if (combatPanel)
-                combatPanel.FadeOut();
+                combatPanel.Collapse();
         }
     }
 }

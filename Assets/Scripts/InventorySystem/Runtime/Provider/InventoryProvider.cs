@@ -85,7 +85,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// <see cref="Submodules.Utility.UI.PanelGroup"/> keeps correct through every InTown/
         /// InField edge, deliberate (the buttons) or not (Death). <see cref="SidePanelToggle"/>
         /// asks this instead of each holding its own reference to the panel.</summary>
-        public bool IsFieldReachable => fieldFacePanel == null || !fieldFacePanel.IsVisible;
+        public bool IsFieldReachable => fieldFacePanel == null || fieldFacePanel.IsCollapsed;
 
         /// <summary>
         /// Detach-before-attach <see cref="OnContextChanged"/> subscribe, shared by every

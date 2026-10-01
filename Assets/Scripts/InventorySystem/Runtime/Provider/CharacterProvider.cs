@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Inventories
 {
-    public class CharacterProvider : AbstractProvider<CharacterProvider>
+    public sealed class CharacterProvider : AbstractProvider<CharacterProvider>
     {
         [field: SerializeField] public LocalPlayer Player { get; private set; }
         [field: SerializeField] public DummyTarget Dummy { get; private set; }

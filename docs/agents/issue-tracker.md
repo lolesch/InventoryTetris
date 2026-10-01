@@ -35,7 +35,7 @@ Run `gh issue view <number> --comments`.
 
 ## Frontiers — issues vs. implementation
 
-Nine open issues (**#103** is built and awaiting merge — see its row); the frontier — an issue whose blockers are all closed and whose criteria are not already met by the code — starts at **#93 → #94**.
+Six open issues; the frontier — an issue whose blockers are all closed and whose criteria are not already met by the code — starts at **#68**.
 
 **Keep this table current:** update after every `/implement`, and PR-to-`main` by removing closed issues and re-scan the open set.
 
@@ -43,9 +43,6 @@ Nine open issues (**#103** is built and awaiting merge — see its row); the fro
 
 | # | Title | Blockers | State vs. this branch |
 |---|---|---|---|
-| **103** | Simulation loot and Corpse recovery bypass the auto-equip entry point | — | **Done, on `issue/103-sim-loot-auto-equip`** (off `main`, unpushed). `LootFlow` takes an `IItemReceiver`; `ContainerSettlementBag.TryStore` goes through the player; the placement rule is `ItemAcquisition.TryPlace`, and the receiver path has no debug Stash fallback (`PickUpItemOrStash` keeps it for the debug spawners). Open question left for the owner: auto-equipped loot never enters the bag, so it is not buried in a Corpse and does not feed the bag-full recall gauge (ADR-0009). Close after merge. |
-| **93** | Hero resource types compile where the simulation can reach them | none | **Frontier now.** `CharacterStat`/`CharacterResource` still live under `Runtime/` (no asmdef there) → `Assembly-CSharp`. Spec is on `origin/spec/enemy-hp-bar-binding` §2; branch is not ancestor of `main` — carry the spec (and the §1/§3–§6 doc for #94) onto the implementing branch. |
-| **94** | Enemy HP bars track the live fight | #93 (open), #60 (closed) | **Do after #93.** Pool/display/prefab exist but `SpawnBar`/`RemoveBar` are uncalled — the binding does not exist. No `EnemySpawned` event in `EncounterSimulation`; `Enemy` keeps a parallel `_health` float. |
 | **68** | The shared Stash has no home in the domain model | — | **Done, on `issue/68-stash-session-domain-gap`.** `ddbefb5` + its own ADR-0013 implement the deferral ruling; the branch also merges `feature/sidepanel-hotkey-rework`. `main` already holds **0013** for the announce-to-request inversion, so that branch's ADR renumbers to **0014** on merge — both files move. |
 | **58** | Healer button + H hotkey | #56 (closed) | **Done in mechanics.** `HealerAction` refills on genuine entry into `Healer`; hotkey `H` (`104`) authored on `HealerToggle`; TownGroup (`ToggleGroup`) membership holds (#57's ruling). Remaining / unverified: visual-feedback acceptance criterion, and `HealerPanel`'s container roster (no `ContainerRole` — a blank grid). Close after a by-hand pass. |
 | **63** | Ground items display | LootFlow epic (satisfied: merged `main`) | **Open slice.** `LootFlow.GroundDrops` + `PlaceOnGround` exist, but no `GroundItemSlotDisplay` panel/prefab and no ground quick-move row. **Refresh the ticket first**: its "when no panel is open, shift-quick-move to the floor" criterion must be restated as a row in #86's context table (no ground row exists; `Hero`/`Healer` still resolve to `None`). |
@@ -55,16 +52,15 @@ Nine open issues (**#103** is built and awaiting merge — see its row); the fro
 
 ### Frontier (recommended order)
 
-1. **#93** — pure asmdef+namespace move (+ `.meta`), no game-code change. Spec on
-   `origin/spec/enemy-hp-bar-binding` §2.
-2. **#94** — binds the #60 pool to live enemies; depends on #93.
-3. **#68** — merge `issue/68-stash-session-domain-gap` (its ADR renumbers to 0014, since
+1. **#68** — merge `issue/68-stash-session-domain-gap` (its ADR renumbers to 0014, since
    `main` already holds 0013) and close.
-4. **#58** — by-hand visual-feedback pass, then close.
-5. **#63** — refresh ticket/table first, then build the ground-items display.
+2. **#58** — by-hand visual-feedback pass, then close.
+3. **#63** — refresh ticket/table first, then build the ground-items display.
 
 ### Notes from the scan
 
-- **Specs under `origin/spec/enemy-hp-bar-binding`** (`dev/specs/2026-09-25-enemy-hp-bar-binding-design.md`) are **not** merged to `main`; the implementing branch for #93/#94 must carry the spec file.
-- Pending branches: `issue/68-stash-session-domain-gap` carries finished #68 work; `origin/NewArtwork` is a non-PR art/asset branch (see `codebase-notes.md`).
+- The #94 spec (`dev/specs/2026-09-25-enemy-hp-bar-binding-design.md`) is on `main`; `origin/spec/enemy-hp-bar-binding` no longer needs carrying.
+- #94 is closed and merged to `main` (PR #105, `cb9a669`), including story 5: the bar list scrolls via a vertical `ScrollRect` on `EnemyHpBarPoolViewport` in `Example.unity`. Open follow-up from its review: `SidePanelToggle` now assigns `interactable` outright from the field-reachability gate, so a toggle authored disabled is re-enabled (commit `03d1179`, intended — check no scene toggle relied on the old baseline). The branch also carries UI housekeeping (`IDisplay`, `PanelButton`, `TestDisplay`, sealed classes, Amount Slider prefab); its EditMode suite was not re-run before merge.
+- #103 is closed by its PR (`issue/103-sim-loot-auto-equip`): sim loot and Corpse recovery now go through `IItemReceiver.PickUpItem`, so `Equipment.autoEquip` applies. Open question left for the owner: auto-equipped loot never enters the bag, so it is not buried in a Corpse and does not feed the bag-full recall gauge (ADR-0009).
+- Pending branches: `issue/68-stash-session-domain-gap` carries finished work; `origin/NewArtwork` is a non-PR art/asset branch (see `codebase-notes.md`).
 - Keep `docs/agents/` and `docs/adr/` out of any `main` → `GitPage` merge (see `CLAUDE.md`). `docs/_config.yml`'s `exclude: [agents, adr]` is unchanged by #87 — the new ADR lands inside the already-excluded `adr/` directory.
