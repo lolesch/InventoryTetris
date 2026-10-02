@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Data.Enums;
 
 namespace ToolSmiths.InventorySystem.Tests.EditMode.Statistics
 {
@@ -31,6 +32,39 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Statistics
             Assert.That(Currency.silverToGold, Is.EqualTo(20u), "silver -> gold");
             Assert.That(Currency.ironToSilver, Is.EqualTo(60u), "iron -> silver");
             Assert.That(Currency.ironToGold, Is.EqualTo(1200u), "gold keeps its 1200");
+        }
+
+        [Test]
+        public void Denominations_AreListedLargestValueFirst()
+        {
+            Assert.That(Currency.Denominations.ToArray(), Is.EqualTo(new[]
+            {
+                CurrencyType.Gold, CurrencyType.Silver, CurrencyType.Copper, CurrencyType.Iron,
+            }));
+        }
+
+        [Test]
+        public void ValueOf_MatchesTheIronLadder_AndIsZeroForNone()
+        {
+            Assert.That(Currency.ValueOf(CurrencyType.Iron), Is.EqualTo(1u));
+            Assert.That(Currency.ValueOf(CurrencyType.Copper), Is.EqualTo(5u));
+            Assert.That(Currency.ValueOf(CurrencyType.Silver), Is.EqualTo(60u));
+            Assert.That(Currency.ValueOf(CurrencyType.Gold), Is.EqualTo(1200u));
+            Assert.That(Currency.ValueOf(CurrencyType.NONE), Is.EqualTo(0u));
+        }
+
+        [Test]
+        public void CountOf_WithAndOf_AgreeWithTheFieldsForEveryDenomination()
+        {
+            foreach (var type in Currency.Denominations.ToArray())
+            {
+                var pile = Currency.Of(type, 7u);
+
+                Assert.That(pile.CountOf(type), Is.EqualTo(7u), $"{type} count");
+                Assert.That(pile.Total, Is.EqualTo(7u * Currency.ValueOf(type)), $"{type} total");
+            }
+
+            Assert.That(Currency.Of(CurrencyType.NONE, 7u).Total, Is.EqualTo(0u), "NONE is empty");
         }
 
         [Test]

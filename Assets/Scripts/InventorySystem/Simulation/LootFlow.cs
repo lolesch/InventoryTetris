@@ -169,19 +169,9 @@ namespace ToolSmiths.InventorySystem.Simulation
             if (!_behaviour.AdmitsCoin(type))
                 return;
 
-            _wallet.Deposit(CurrencyOf(type, amount));
-            CoinsBanked?.Invoke(BaseUnitsOf(type, amount));
+            _wallet.Deposit(Currency.Of(type, amount));
+            CoinsBanked?.Invoke(checked((long)amount * Currency.ValueOf(type))); // the Pile's value in iron base units (CONTEXT.md "Base Unit")
         }
-
-        /// <summary>The Pile's value in iron base units (CONTEXT.md "Base Unit"), for the Run's take.</summary>
-        private static long BaseUnitsOf(CurrencyType type, uint amount) => type switch
-        {
-            CurrencyType.Iron => amount,
-            CurrencyType.Copper => checked((long)amount * Currency.ironToCopper),
-            CurrencyType.Silver => checked((long)amount * Currency.ironToSilver),
-            CurrencyType.Gold => checked((long)amount * Currency.ironToGold),
-            _ => 0L,
-        };
 
         /// <summary>The archetype's base roll count plus the hero's <c>IncreasedItemQuantity</c> bonus.</summary>
         private static int DropCountFor(Enemy enemy, IHeroCombatant hero)
@@ -190,14 +180,5 @@ namespace ToolSmiths.InventorySystem.Simulation
             var bonus = (int)(hero.IncreasedItemQuantity / 100f); // mirrors ItemProvider.AddBonusDrops
             return Math.Max(0, baseCount + bonus);
         }
-
-        private static Currency CurrencyOf(CurrencyType type, uint amount) => type switch
-        {
-            CurrencyType.Iron => new Currency(amount, 0u, 0u, 0u),
-            CurrencyType.Copper => new Currency(0u, amount, 0u, 0u),
-            CurrencyType.Silver => new Currency(0u, 0u, amount, 0u),
-            CurrencyType.Gold => new Currency(0u, 0u, 0u, amount),
-            _ => default,
-        };
     }
 }

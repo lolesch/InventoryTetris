@@ -1,6 +1,5 @@
 ﻿using TMPro;
 using ToolSmiths.InventorySystem.Data;
-using ToolSmiths.InventorySystem.Data.Enums;
 using Submodules.Utility.Extensions;
 using Submodules.Utility.UI;
 using UnityEngine;
@@ -21,10 +20,11 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
             foreach (var coin in coinDisplays)
             { coin.gameObject.SetActive(true); }
 
-            coinDisplays[0].Refresh((CurrencyType.Gold, newData.Gold));
-            coinDisplays[1].Refresh((CurrencyType.Silver, newData.Silver));
-            coinDisplays[2].Refresh((CurrencyType.Copper, newData.Copper));
-            coinDisplays[3].Refresh((CurrencyType.Iron, newData.Iron));
+            for (var i = 0; i < Currency.Denominations.Length; i++) // a short coinDisplays array throws, not hides a row
+            {
+                var type = Currency.Denominations[i]; // largest value first
+                coinDisplays[i].Refresh((type, newData.CountOf(type)));
+            }
         }
     }
 }

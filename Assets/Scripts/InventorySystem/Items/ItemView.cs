@@ -111,7 +111,7 @@ namespace ToolSmiths.InventorySystem.Items
         /// is still deferred - this is the switch it replaces, moved not redesigned.
         /// </summary>
         public float SellValue => definition.Category == ItemCategory.Currency
-            ? CurrencyValueOf(definition.CurrencyType)
+            ? Currency.ValueOf(definition.CurrencyType)
             : AffixValueOf(instance);
 
         /// <summary>The cell count for a footprint. Was <c>AbstractItem.GetDimensions</c>.</summary>
@@ -150,18 +150,6 @@ namespace ToolSmiths.InventorySystem.Items
             ItemCategory.Consumable => $"{instance.Rarity} {definition.ConsumableType}",
             ItemCategory.Currency => definition.CurrencyType.ToString(),
             _ => definition.Id,
-        };
-
-        /// <summary>A coin's worth in base units. Was <c>CurrencyItem.CalculateValue</c>.</summary>
-        private static float CurrencyValueOf(CurrencyType currency) => currency switch
-        {
-            CurrencyType.Iron => 1f,
-            CurrencyType.Copper => Currency.ironToCopper,
-            CurrencyType.Silver => Currency.ironToSilver,
-            CurrencyType.Gold => Currency.ironToGold,
-
-            CurrencyType.NONE => 0f,
-            _ => 0f,
         };
 
         /// <summary>
