@@ -35,7 +35,7 @@ Run `gh issue view <number> --comments`.
 
 ## Frontiers — issues vs. implementation
 
-Five open issues; the frontier — an issue whose blockers are all closed and whose criteria are not already met by the code — starts at **#63**.
+Nineteen open issues (scanned 2026-10-01, `main` @ `1545d90`); the frontier — an issue whose blockers are all closed and whose criteria are not already met by the code — starts at **#107**. #107 is the only unblocked ticket of the Services epic, so the whole epic is a single wire until #108.
 
 **Keep this table current:** update after every `/implement`, and PR-to-`main` by removing closed issues and re-scan the open set.
 
@@ -43,22 +43,35 @@ Five open issues; the frontier — an issue whose blockers are all closed and wh
 
 | # | Title | Blockers | State vs. this branch |
 |---|---|---|---|
-| **122** | Items with no affixes are worthless | — | **Needs triage.** `ItemView.SellValue` sums affix values, so a consumable with none prices at 0. Data/value-model fix, not a basket change. |
-| **63** | Ground items display | LootFlow epic (satisfied: merged `main`) | **Open slice.** `LootFlow.GroundDrops` + `PlaceOnGround` exist, but no `GroundItemSlotDisplay` panel/prefab and no ground quick-move row. **Refresh the ticket first**: its "when no panel is open, shift-quick-move to the floor" criterion must be restated as a row in #86's context table (no ground row exists; `Hero`/`Healer` still resolve to `None`). |
-| **69** | Centralized, rebindable input service | — | **Needs `/to-spec`.** Touch `dev/specs/` first: `2026-09-26-session-ux-research.md` §3 + `2026-09-28-save-serialization-prior-art.md` record the nesting decisions (persisted-keybind override vs. Input System package; does not cover discoverability). Also absorbs note: `InventoryContext` moved to `Containers/`, but the ticket's stale source list for the inline reads still cites old paths. |
-| **46** | Harden `AbstractProvider<T>` | — | **Mechanism done at `Utility@3010155`** — the submodule split + `OnValidate` + edit-mode guard. The **process** part (architecture pass over `Runtime/Provider/` → `/to-spec` → `/to-tickets` → `/implement`) is still open; the "author-time failure for children/pre-root" direction bullet is only partially covered. Close only once the pass happens and reconciles with the landed commit. |
+| **107** | Services 1: name the per-hero unit, record the service model | #68 (closed) | **Frontier.** Docs-only: `CONTEXT.md` has no Hero State entry and the Session entry still claims the hero/containers/wallet; no ADR for the service model yet (latest is 0014). Honours #68 via ADR-0014. **Spec is not on `main`** — see notes. |
+| 108 | Services 2: boot, `GameConfig`, locator, runner | #107 | Blocked. |
+| 109 | Services 3: item service replaces `ItemProvider` | #108 | Blocked. Parallel with #110. |
+| 110 | Services 4: `Hero` as a plain class | #108 | Blocked. Parallel with #109. |
+| 111 | Services 5: hero stat panel binds to `Hero` | #110 | Blocked. |
+| 112 | Services 6: the Hero State holder | #109, #110 | Blocked. |
+| 113 | Services 7: simulation service on the Hero State | #109, #112 | Blocked. |
+| 117 | Services 11: migrate hero callers, delete `DummyTarget` | #111, #112 | Blocked. (Ahead of #114: #114 waits on it.) |
+| 114 | Services 8: replace on load, `SessionChanged`, rebinding | #112, #113, #117 | Blocked. |
+| 115 | Services 9: migrate inventory callers, GUI | #114 | Blocked. |
+| 116 | Services 10: migrate inventory callers, runtime + simulation | #114 (#103 closed) | Blocked. |
+| 118 | Services 12: `DebugPanel` replaces UnityEvent buttons | #112, #116 | Blocked. |
+| 119 | Services 13: contract, delete the old providers | #115, #116, #117, #113, #118 | Blocked. Closes #46. |
+| **106** | Epic: Services over providers | #68 (closed) | Epic. Closes when #119 does. |
+| **63** | Ground items display | #116 (new), LootFlow epic (merged) | **Now blocked, no longer the frontier.** The ticket was amended to name the acquisition entry point on the inventory service. Still owes the refresh: its "shift-quick-move to the floor" criterion must become a ground row in #86's context table. |
+| **122** | Items with no affixes are worthless | — | **Needs triage** (`needs-triage`). `ItemView.SellValue` sums affix values, so a consumable with none prices at 0: unsellable alone, free on a Supply shelf. Value-model fix, not a basket change. Independent of the epic. |
+| **69** | Centralized, rebindable input service | — | **Needs `/to-spec`.** `2026-09-26-session-ux-research.md` §3 + `2026-09-28-save-serialization-prior-art.md` record the nesting decisions. Its stale source list cites pre-`Containers/` paths. |
+| **46** | Harden `AbstractProvider<T>` | — | Mechanism done at `Utility@3010155`. **Closes in #119** (per the epic); no separate pass needed. |
 | **70** | Legacy `TODO.cs` backlog | — | **Parking lot.** Pull the item-comparison bug out as its own ticket when polish comes up. |
 
 ### Frontier (recommended order)
 
-1. **#63** — refresh ticket/table first, then build the ground-items display.
+1. **#107** — the only open ticket with all blockers closed on the epic wire. Carry the spec onto the implementing branch first.
+2. **#108** — unlocks the rest.
+3. **#109 / #110** — parallel; then #111, **#112**, **#113**, **#117**, **#114**, then #115 / #116 / #118, then **#119**.
+4. Off the wire, any time: **#122** (triage), **#69** (`/to-spec`). **#63** returns to the frontier once #116 closes.
 
 ### Notes from the scan
 
-- The #94 spec (`dev/specs/2026-09-25-enemy-hp-bar-binding-design.md`) is on `main`; `origin/spec/enemy-hp-bar-binding` no longer needs carrying.
-- #94 is closed and merged to `main` (PR #105, `cb9a669`), including story 5: the bar list scrolls via a vertical `ScrollRect` on `EnemyHpBarPoolViewport` in `Example.unity`. Open follow-up from its review: `SidePanelToggle` now assigns `interactable` outright from the field-reachability gate, so a toggle authored disabled is re-enabled (commit `03d1179`, intended — check no scene toggle relied on the old baseline). The branch also carries UI housekeeping (`IDisplay`, `PanelButton`, `TestDisplay`, sealed classes, Amount Slider prefab); its EditMode suite was not re-run before merge.
-- #103 is closed by its PR (`issue/103-sim-loot-auto-equip`): sim loot and Corpse recovery now go through `IItemReceiver.PickUpItem`, so `Equipment.autoEquip` applies. Open question left for the owner: auto-equipped loot never enters the bag, so it is not buried in a Corpse and does not feed the bag-full recall gauge (ADR-0009).
-- Pending branches: `origin/NewArtwork` is a non-PR art/asset branch (see `codebase-notes.md`).
-- #58 (Healer refill) and #121 (Healer Supply + basket) are closed (`7be3667`..`08f310f`); the Healer is a `SidePanel` like Stash and Vendor. Open follow-up: #122 (zero-affix items are worthless).
-- #68 is closed (`724bb82`, ADR-0014): one hero for the MVP, Stash is Session-owned; the shared-Stash tier is deferred.
+- **The Services spec is not on `main`.** #106 cites `dev/specs/2026-10-01-services-over-providers-design.md` "on branch `refactor/providers-off-monobehaviour`", but that branch exists neither locally nor on `origin` — it is probably unpushed on the other machine. Push it (or recover the spec) before `/implement #107`.
+- #58, #121, #68, #94, #103 are closed and merged; #122 is the only follow-up they left.
 - Keep `docs/agents/` and `docs/adr/` out of any `main` → `GitPage` merge (see `CLAUDE.md`). `docs/_config.yml`'s `exclude: [agents, adr]` is unchanged by #87 — the new ADR lands inside the already-excluded `adr/` directory.
