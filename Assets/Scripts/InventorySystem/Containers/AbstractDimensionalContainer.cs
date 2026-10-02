@@ -377,8 +377,8 @@ namespace ToolSmiths.InventorySystem.Inventories
                 .ThenBy(x => x.view.Definition.Category == ItemCategory.Currency)             // by itemType (equipment before consumables before currency)
                 .ThenBy(x => x.view.Definition.Category == ItemCategory.Consumable)
                 .ThenBy(x => x.view.Definition.Category == ItemCategory.Equipment)
-                .ThenByDescending(x => x.package.Item.Rarity)                                 // by rarity
-                .ThenByDescending(x => x.view.SellValue)                                      // by goldValue
+                .ThenByDescending(x => x.package.Item.Rarity)                                 // by rarity (a coin's rarity is its denomination rung, so coins land in value order too)
+                .ThenByDescending(x => x.view.SellValue)                                      // by value in base units
                 .ThenBy(x => x.view.DisplayName)                                              // by name
                 .Select(x => x.package)
                 .ToList();

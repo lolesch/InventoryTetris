@@ -86,6 +86,11 @@ namespace ToolSmiths.InventorySystem.Items
             if (rarity == default)
                 throw new ArgumentException("NoDrop is the fail bucket, not a rarity to roll at", nameof(rarity));
 
+            // A coin's rarity is its denomination's rung, not a roll, and it carries no affixes -
+            // every coin comes off the same ladder whichever path minted it (CONTEXT.md "Denomination").
+            if (definition.Category == ItemCategory.Currency)
+                return ItemInstance.Coin(definition.Id, definition.CurrencyType);
+
             var implicitStats = definition.ImplicitStats;
             var uniqueAffixes = definition.IsUnique ? definition.UniqueAffixes : null;
             var affixes = new List<CharacterStatModifier>(

@@ -371,7 +371,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         {
             foreach (var definition in catalog.OfCategory(ItemCategory.Currency))
                 if (definition.CurrencyType == type)
-                    return new ItemInstance(definition.Id, Currency.RarityOf(type), 0, null);
+                    return ItemInstance.Coin(definition.Id, type);
 
             return null;
         }

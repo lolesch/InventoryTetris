@@ -337,6 +337,23 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Items
             Assert.That(instance.Affixes, Has.Count.EqualTo(3));
         }
 
+        [TestCase(CurrencyType.Iron, ItemRarity.Common)]
+        [TestCase(CurrencyType.Copper, ItemRarity.Magic)]
+        [TestCase(CurrencyType.Silver, ItemRarity.Rare)]
+        [TestCase(CurrencyType.Gold, ItemRarity.Unique)]
+        public void Roll_ACoin_TakesItsDenominationsRarity_NotTheRolledOne(CurrencyType denomination, ItemRarity expected)
+        {
+            var coin = new FakeItemDefinition { Id = "coin", Category = ItemCategory.Currency, CurrencyType = denomination, BaseStackLimit = 100u };
+            var generator = Generator(coin, new SeededRollSource(2));
+
+            // The context's rarity odds say Unique; a coin ignores them.
+            var instance = generator.Roll(coin, new RollContext(FakeLootTable.Fixed(ItemCategory.Currency, ItemRarity.Unique)));
+
+            Assert.That(instance.Rarity, Is.EqualTo(expected));
+            Assert.That(instance.Affixes, Is.Empty);
+            Assert.That(instance.ItemLevel, Is.EqualTo(0));
+        }
+
         [Test]
         public void Roll_GivenNoDropRarity_Throws()
         {

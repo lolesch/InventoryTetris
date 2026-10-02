@@ -94,14 +94,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         public bool AdmitsItem(ItemRarity rarity) => rarity >= LootFilterMinimum;
 
         /// <summary>The loot filter for coins: admits <paramref name="denomination"/> by its fixed Rarity on CONTEXT.md's ladder.</summary>
-        public bool AdmitsCoin(CurrencyType denomination) => RarityOf(denomination) >= LootFilterMinimum;
-
-        // CONTEXT.md's Denomination entry: "the ladder is iron -5-> copper -12-> silver -20->
-        // gold. Each rung carries a fixed Rarity — iron Common, copper Magic, silver Rare, gold
-        // Unique — so a loot filter reads coins and items on one scale." The mapping itself
-        // lives on <see cref="Data.Currency.RarityOf"/> so the mint path and the filter read
-        // the same ladder.
-        private static ItemRarity RarityOf(CurrencyType denomination) => Currency.RarityOf(denomination);
+        public bool AdmitsCoin(CurrencyType denomination) => Currency.RarityOf(denomination) >= LootFilterMinimum;
 
         // ─── slider mapping helpers (issue #27) ─────────────────────────────
 

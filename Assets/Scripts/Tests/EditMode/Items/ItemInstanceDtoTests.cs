@@ -80,6 +80,29 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Items
         }
 
         [Test]
+        public void FromDto_WithACatalog_RestampsALegacyCoinOntoTheLadder()
+        {
+            var catalog = new InMemoryItemCatalog(
+                new FakeItemDefinition { Id = "currency.copper", Category = ItemCategory.Currency, CurrencyType = CurrencyType.Copper, BaseStackLimit = 60u });
+            var legacy = new ItemInstance("currency.copper", ItemRarity.Common, 0, null);
+
+            var restored = ItemInstance.FromDto(legacy.ToDto(), catalog);
+
+            Assert.That(restored.Rarity, Is.EqualTo(ItemRarity.Magic));
+        }
+
+        [Test]
+        public void FromDto_WithACatalog_LeavesNonCoinsAsSaved()
+        {
+            var catalog = new InMemoryItemCatalog(new FakeItemDefinition { Id = "chest.rare", Category = ItemCategory.Equipment });
+            var original = Rolled(ItemRarity.Rare, 2, 7);
+
+            var restored = ItemInstance.FromDto(original.ToDto(), catalog);
+
+            Assert.That(restored, Is.EqualTo(original));
+        }
+
+        [Test]
         public void FromDto_Null_Throws()
         {
             Assert.That(() => ItemInstance.FromDto(null), Throws.InstanceOf<ArgumentNullException>());

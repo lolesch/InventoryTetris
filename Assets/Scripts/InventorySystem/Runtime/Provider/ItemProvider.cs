@@ -130,9 +130,9 @@ namespace ToolSmiths.InventorySystem.Inventories
         }
 
         /// <summary>
-        /// Turns a rolled instance into a stored package. A currency instance is re-minted as
-        /// a single coin of its denomination's Rarity (<see cref="Currency.RarityOf"/>) — a
-        /// silver Pile tints Rare, a gold Pile Unique — with a pile size from the drop table;
+        /// Turns a rolled instance into a stored package. A currency instance - already a
+        /// single coin on its denomination's Rarity (<see cref="Currency.RarityOf"/>), because
+        /// <see cref="ItemGenerator"/> stamps it - gets a pile size from the drop table;
         /// anything else is one item.
         /// </summary>
         private Package ToPackage(ItemInstance instance)
@@ -145,7 +145,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             var pile = currencyDropTable != null ? currencyDropTable.RollAmount(definition.CurrencyType) : 1u;
             return pile == 0u
                 ? default
-                : new Package(null, MintCurrency(definition.CurrencyType), pile);
+                : new Package(null, instance, pile);
         }
 
         // ── currency ────────────────────────────────────────────────────────
@@ -181,7 +181,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             var definition = DefinitionOfCurrency(type);
             return definition == null
                 ? null
-                : new ItemInstance(definition.Id, Currency.RarityOf(type), 0, null);
+                : ItemInstance.Coin(definition.Id, type);
         }
 
         // ── debug helpers (the InventoryProvider buttons) ───────────────────

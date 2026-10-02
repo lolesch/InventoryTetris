@@ -66,7 +66,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         private static ItemInstance Helm() => new(HelmId, ItemRarity.Rare, 5, new[] { Affix(StatName.Armor, 4f) });
 
         /// A 1x1 coin worth 5 base units each.
-        private static ItemInstance Copper() => new(CopperId, ItemRarity.Common, 0, null);
+        private static ItemInstance Copper() => ItemInstance.Coin(CopperId, CurrencyType.Copper);
 
         private static CharacterInventory Inventory(int width = 4, int height = 4) => new(new Vector2Int(width, height));
         private static CharacterEquipment Equipment(IStatReceiver stats = null) => new(new Vector2Int(14, 1), stats);

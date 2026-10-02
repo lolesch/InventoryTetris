@@ -71,6 +71,14 @@ namespace ToolSmiths.InventorySystem.Items
             Affixes = Array.AsReadOnly(copy);
         }
 
+        /// <summary>
+        /// A single coin of <paramref name="denomination"/>: no affixes, item level 0, and the
+        /// denomination's fixed Rarity (<see cref="Currency.RarityOf"/>). The one place a coin
+        /// instance is built, so the ladder cannot be bypassed.
+        /// </summary>
+        public static ItemInstance Coin(string definitionId, CurrencyType denomination) =>
+            new(definitionId, Currency.RarityOf(denomination), 0, null);
+
         /// <summary>Flattens the instance to a Unity-free POCO for saving. See <see cref="ItemInstanceDto"/>.</summary>
         public ItemInstanceDto ToDto() => new()
         {
@@ -116,6 +124,25 @@ namespace ToolSmiths.InventorySystem.Items
                 }
 
             return new ItemInstance(dto.definitionId, rarity, dto.itemLevel, affixes);
+        }
+
+        /// <summary>
+        /// <see cref="FromDto(ItemInstanceDto)"/>, then re-stamps a coin onto the current
+        /// denomination ladder: a coin saved before the ladder existed (Common copper) loads as
+        /// the Magic copper the mint path now produces, so it stacks into one uniform pile.
+        /// Anything that is not a coin comes back as saved.
+        /// </summary>
+        public static ItemInstance FromDto(ItemInstanceDto dto, IItemCatalog catalog)
+        {
+            var instance = FromDto(dto);
+
+            if (catalog is null)
+                throw new ArgumentNullException(nameof(catalog));
+
+            var definition = catalog.Definition(instance.DefinitionId);
+            return definition.Category == ItemCategory.Currency
+                ? Coin(definition.Id, definition.CurrencyType)
+                : instance;
         }
 
         public bool Equals(ItemInstance other)
