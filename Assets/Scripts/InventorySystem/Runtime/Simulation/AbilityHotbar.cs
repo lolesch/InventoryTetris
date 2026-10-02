@@ -40,6 +40,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             provider.Run.PhaseChanged -= SyncToPhase;
             provider.Run.PhaseChanged += SyncToPhase;
+            provider.Run.Relocated -= OnRelocated;
+            provider.Run.Relocated += OnRelocated;
 
             SyncToPhase(provider.Run.Phase);
         }
@@ -50,11 +52,17 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             {
                 var provider = SimulationProvider.Instance;
                 if (provider != null)
+                {
                     provider.Run.PhaseChanged -= SyncToPhase;
+                    provider.Run.Relocated -= OnRelocated;
+                }
             }
 
             UnsubscribeEncounter();
         }
+
+        // A Relocate swaps the Encounter without a phase change — follow it to the new one.
+        private void OnRelocated() => SyncToPhase(RunPhase.InField);
 
         private void SyncToPhase(RunPhase phase)
         {

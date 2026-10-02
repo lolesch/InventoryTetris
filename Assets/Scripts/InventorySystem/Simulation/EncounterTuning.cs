@@ -17,6 +17,14 @@ namespace ToolSmiths.InventorySystem.Simulation
         public float Beat { get; set; } = 1.0f;
 
         /// <summary>
+        /// Whether the first Encounter waits one spawn delay — the Location's own
+        /// <c>SpawnInterval ± SpawnJitter</c> — before its opening bodies arrive, instead of
+        /// having them at open. Off by default so a test sees the Roster the moment the sim is
+        /// built; the <c>SimulationProvider</c> turns it on for a real Send or Relocate.
+        /// </summary>
+        public bool DelayFirstSpawn { get; set; }
+
+        /// <summary>
         /// Minimum seconds between two Casts — the burst ceiling. Well below the steady-state
         /// cadence (<c>CastCost / regen</c>) so there is headroom for a threshold burst.
         /// </summary>

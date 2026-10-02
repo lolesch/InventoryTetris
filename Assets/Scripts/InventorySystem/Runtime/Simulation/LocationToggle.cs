@@ -54,10 +54,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             if (provider.Run.HeroIsDown) return;
 
+            // Switching mid-Run moves the live Run — no Recall, so the Run never passes through
+            // Town (which would also clear this very toggle through SyncToPhase).
             if (provider.Run.Phase == RunPhase.InField)
-                provider.Recall();
-            
-            provider.Send(Location);
+                provider.Relocate(Location);
+            else
+                provider.Send(Location);
         }
     }
 }

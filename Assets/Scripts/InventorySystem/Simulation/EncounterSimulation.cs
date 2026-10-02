@@ -16,12 +16,15 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// (the packed archetype in <b>Packs</b>, the other singly) up to the soft
     /// <see cref="EngagementTarget"/>, and every combatant regenerates once.
     ///
-    /// An Encounter clears when its Roster is spent and the last body falls: XP settles then,
-    /// summed over the Roster; a short beat; the next Encounter. The sim runs Encounters
-    /// endlessly — only the hero going down, one of the <see cref="HeroBehaviour"/>'s own
-    /// auto-Recall triggers, or an external <see cref="Abandon"/> on Recall / Death (issue #21)
-    /// end it. Loot and coins are a per-kill concern layered on <see cref="EnemyDefeated"/> by
-    /// issue #24.
+    /// With <see cref="EncounterTuning.DelayFirstSpawn"/> a fresh sim opens
+    /// <see cref="SimulationPhase.Arriving"/> — one spawn delay (the Location's
+    /// <c>SpawnInterval ± SpawnJitter</c>) passes before its first bodies spawn. An Encounter clears when its Roster is spent and the last
+    /// body falls; a short beat; the next Encounter. XP is delivered per kill, the moment the body
+    /// falls (<see cref="XpGained"/>) — there is no pot, so nothing carries over a clear and
+    /// nothing is forfeited on an exit. The sim runs Encounters endlessly — only the hero going
+    /// down, one of the <see cref="HeroBehaviour"/>'s own auto-Recall triggers, or an external
+    /// <see cref="Abandon"/> on Recall / Death / Relocate (issue #21) end it. Loot and coins are a
+    /// per-kill concern layered on <see cref="EnemyDefeated"/> by issue #24.
     ///
     /// The <see cref="HeroBehaviour"/> is the player's whole input to a Run (issue #23) and is
     /// read live, never snapshotted, at four points: the spawn schedule refills toward
@@ -30,8 +33,9 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// fill — are checked once a tick, raising <see cref="RecallRequested"/>. Moving the sliders
     /// mid-fight therefore changes the fight, which is the point of them.
     ///
-    /// Engine-free and deterministic: every roll (Roster size, spawn type, Pack size, jitter,
-    /// spawn desync) is drawn from the injected <see cref="IRollSource"/>, in that order.
+    /// Engine-free and deterministic: every roll (arrival jitter, Roster size, spawn type, Pack
+    /// size, jitter, spawn desync) is drawn from the injected <see cref="IRollSource"/>, in that
+    /// order. The arrival-jitter roll is only drawn with <see cref="EncounterTuning.DelayFirstSpawn"/>.
     /// It never references <c>BaseCharacter</c>.
     /// </summary>
     public sealed class EncounterSimulation
@@ -56,9 +60,8 @@ namespace ToolSmiths.InventorySystem.Simulation
         private float _strikeTimer;
         private float _castTimer;
         private float _beatEndsAt;
+        private float _arrivalEndsAt;
         private float _endedAt;
-
-        private float _pot;
 
         /// <param name="behaviour">
         /// The player's live steering (issue #23) — Engagement, the Cast threshold and both
@@ -90,8 +93,18 @@ namespace ToolSmiths.InventorySystem.Simulation
             _clock = new CombatClock(_tuning.Tick, _tuning.MaxTicksPerAdvance);
             _clock.OnTick += Step;
 
-            BeginEncounter();
+            if (_tuning.DelayFirstSpawn)
+            {
+                _arrivalEndsAt = NextSpawnDelay();
+                Phase = SimulationPhase.Arriving;
+            }
+            else
+                BeginEncounter();
         }
+
+        /// <summary>One spawn delay — the Location's interval, jittered. The arrival wait and the spawn schedule share it.</summary>
+        private float NextSpawnDelay() =>
+            _profile.SpawnInterval + ((float)_rolls.Next() * 2f - 1f) * _profile.SpawnJitter;
 
         /// <summary>
         /// The soft count of enemies the fight refills toward — <see cref="HeroBehaviour.Engagement"/>
@@ -110,6 +123,9 @@ namespace ToolSmiths.InventorySystem.Simulation
         public IHeroCombatant Hero => _hero;
 
         public SimulationPhase Phase { get; private set; } = SimulationPhase.Fighting;
+
+        /// <summary>Whether the first enemies are still on their way — the sim is <see cref="SimulationPhase.Arriving"/>.</summary>
+        public bool IsArriving => Phase == SimulationPhase.Arriving;
 
         /// <summary>The live enemies, in spawn order. Read-only — the sim owns their lifetime.</summary>
         public IReadOnlyList<Enemy> Enemies => _enemies;
@@ -131,14 +147,8 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// </summary>
         public float Duration => Phase == SimulationPhase.Ended ? _endedAt : _clock.ElapsedTime;
 
-        /// <summary>The in-progress Encounter's XP pot — settled on the clear, forfeited on an exit.</summary>
-        public float UnsettledXp => _pot;
-
-        /// <summary>Sum of every cleared Encounter's XP settlement.</summary>
+        /// <summary>Sum of the XP every kill has delivered so far — already handed over via <see cref="XpGained"/>.</summary>
         public int SettledXp { get; private set; }
-
-        /// <summary>XP lost because the fight ended (hero down or <see cref="Abandon"/>) before a clear.</summary>
-        public int ForfeitedXp { get; private set; }
 
         /// <summary>
         /// Raised as each body arrives, once it is in <see cref="Enemies"/> and fully built — the
@@ -152,8 +162,15 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <summary>Raised as each body falls — the per-kill seam issue #24 rolls loot and coins on.</summary>
         public event Action<Enemy> EnemyDefeated;
 
-        /// <summary>Raised on an Encounter clear, carrying the XP just settled.</summary>
-        public event Action<int> EncounterCleared;
+        /// <summary>
+        /// Raised as each body falls, carrying the whole-number XP that kill is worth — the hero's
+        /// level-balanced share, rounded per kill. Not raised for a kill worth nothing. Raised
+        /// before <see cref="EnemyDefeated"/>.
+        /// </summary>
+        public event Action<int> XpGained;
+
+        /// <summary>Raised on an Encounter clear — the Roster is spent and the last body is down.</summary>
+        public event Action EncounterCleared;
 
         /// <summary>Raised the tick the hero's health reaches 0.</summary>
         public event Action HeroDowned;
@@ -162,7 +179,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// Raised the tick one of <see cref="HeroBehaviour"/>'s auto-Recall triggers fires —
         /// health at or below <c>RetreatHealthFraction</c>, or the bag filled to
         /// <c>RecallBagFillFraction</c> (issue #23). The fight is already stopped and its
-        /// in-progress pot forfeited by the time this raises, exactly as a manual Recall would
+        /// stopped by the time this raises, exactly as a manual Recall would
         /// leave it; the engine-side driver turns the signal into <see cref="RunState.Recall"/>
         /// so the Run ends down the one path, with everything kept.
         ///
@@ -189,23 +206,13 @@ namespace ToolSmiths.InventorySystem.Simulation
         }
 
         /// <summary>
-        /// End the fight without a clear — the Run was Recalled or the hero Died (issue #21).
-        /// Forfeits the in-progress Encounter's pot and returns the amount lost.
+        /// End the fight — the Run was Recalled, Relocated or the hero Died (issue #21). XP is
+        /// delivered per kill, so there is nothing in flight to settle or lose. Idempotent.
         /// </summary>
-        public int Abandon()
+        public void Abandon()
         {
-            if (Phase == SimulationPhase.Ended) return 0;
-            var forfeited = ForfeitPot();
+            if (Phase == SimulationPhase.Ended) return;
             End();
-            return forfeited;
-        }
-
-        private int ForfeitPot()
-        {
-            var forfeited = (int)Math.Round(_pot, MidpointRounding.AwayFromZero);
-            ForfeitedXp += forfeited;
-            _pot = 0f;
-            return forfeited;
         }
 
         private void End()
@@ -219,6 +226,13 @@ namespace ToolSmiths.InventorySystem.Simulation
             if (Phase == SimulationPhase.Ended) return;
 
             var dt = _tuning.Tick;
+
+            if (Phase == SimulationPhase.Arriving)
+            {
+                if (_clock.ElapsedTime >= _arrivalEndsAt)
+                    BeginEncounter();
+                return;
+            }
 
             if (Phase == SimulationPhase.Beat)
             {
@@ -238,7 +252,6 @@ namespace ToolSmiths.InventorySystem.Simulation
 
             if (_hero.IsDown)
             {
-                ForfeitPot();
                 End();
                 HeroDowned?.Invoke();
                 return;
@@ -249,7 +262,6 @@ namespace ToolSmiths.InventorySystem.Simulation
             // the trigger racing it.
             if (WantsToRecall())
             {
-                ForfeitPot();
                 End();
                 RecallRequested?.Invoke();
                 return;
@@ -280,7 +292,6 @@ namespace ToolSmiths.InventorySystem.Simulation
             _enemies.Clear();
             _spawnedBrute = 0;
             _spawnedSkirmisher = 0;
-            _pot = 0f;
             _spawnTimer = _profile.SpawnInterval;
             // The hero's Strike / Cast timers carry across the beat — each fight is not a fresh
             // cadence, it is the same hero swinging without pause (matches the /prototype).
@@ -323,7 +334,7 @@ namespace ToolSmiths.InventorySystem.Simulation
             for (var i = 0; i < batch; i++)
                 Spawn(type);
 
-            _spawnTimer = _profile.SpawnInterval + ((float)_rolls.Next() * 2f - 1f) * _profile.SpawnJitter;
+            _spawnTimer = NextSpawnDelay();
         }
 
         private void Spawn(EnemyArchetype archetype)
@@ -407,7 +418,12 @@ namespace ToolSmiths.InventorySystem.Simulation
             EnemiesDefeated++;
 
             var balanced = enemy.Xp * (1f + (_profile.SourceLevel - _hero.Level) / 100f);
-            _pot += Math.Max(0f, balanced);
+            var xp = (int)Math.Round(Math.Max(0f, balanced), MidpointRounding.AwayFromZero);
+            if (xp > 0)
+            {
+                SettledXp += xp;
+                XpGained?.Invoke(xp);
+            }
 
             EnemyDefeated?.Invoke(enemy);
         }
@@ -416,14 +432,10 @@ namespace ToolSmiths.InventorySystem.Simulation
         {
             EncountersCleared++;
 
-            var settled = (int)Math.Round(_pot, MidpointRounding.AwayFromZero);
-            SettledXp += settled;
-            _pot = 0f;
-
             Phase = SimulationPhase.Beat;
             _beatEndsAt = _clock.ElapsedTime + _tuning.Beat;
 
-            EncounterCleared?.Invoke(settled);
+            EncounterCleared?.Invoke();
         }
 
         // ─── deterministic targeting ─────────────────────────────────────────

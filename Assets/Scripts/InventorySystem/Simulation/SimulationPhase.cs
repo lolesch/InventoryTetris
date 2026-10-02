@@ -3,6 +3,9 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// <summary>Where the <see cref="EncounterSimulation"/> is in its loop.</summary>
     public enum SimulationPhase
     {
+        /// <summary>The hero has reached the Location but the first enemies have not arrived yet — a rolled quiet wait.</summary>
+        Arriving,
+
         /// <summary>An Encounter is live — enemies spawning, cadences exchanging.</summary>
         Fighting,
 

@@ -42,10 +42,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             var groundDrops = provider.LootFlow?.GroundDrops.Count ?? 0;
 
             combatStatsText.text =
-                $"Encounter {encounter.CurrentEncounter}   cleared {encounter.EncountersCleared}\n" +
+                (encounter.IsArriving
+                    ? $"Arriving…   cleared {encounter.EncountersCleared}\n"
+                    : $"Encounter {encounter.CurrentEncounter}   cleared {encounter.EncountersCleared}\n") +
                 $"Enemies  alive {encounter.AliveEnemyCount}   defeated {encounter.EnemiesDefeated}\n" +
                 $"Hero HP {hero.HealthFraction * 100f:0}%   Resource {hero.ResourceFraction * 100f:0}%\n" +
-                $"XP pot {encounter.UnsettledXp:0}   settled {encounter.SettledXp}\n" +
+                $"XP gained {encounter.SettledXp}\n" +
                 $"Sim time {encounter.Duration:0.0}s\n" +
                 $"Ground drops {groundDrops}   coins banked {provider.Run.CurrencyBanked:n0}";
         }
@@ -64,7 +66,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             var text =
                 $"Last Run: {result.Outcome}\n" +
                 $"kills {result.EnemiesDefeated}   cleared {result.EncountersCleared}\n" +
-                $"XP settled {result.XpSettled}   forfeited {result.XpForfeited}";
+                $"XP gained {result.XpSettled}";
 
             text += result.Outcome == RunOutcome.Died
                 ? $"\nfee {result.CurrencyFee:n0}   XP lost {result.XpLost}"

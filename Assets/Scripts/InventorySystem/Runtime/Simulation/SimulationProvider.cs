@@ -144,16 +144,22 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             var hero = new HeroCombatant(player, Mathf.Max(0f, castCost));
 
+            // A Relocate builds its replacement while the old Encounter's loot flow is still
+            // wired — let go of it (and its ground Drops) before the new flow takes its place.
+            ReleaseLoot();
+
             // The behaviour goes in by reference, not as a snapshot of its values: the sliders
             // (issue #27) write it live, and Engagement, the Cast threshold and both retreat
-            // triggers are all read off it inside the tick (issue #23).
-            var encounter = new EncounterSimulation(hero, profile, _rolls, Behaviour, bag: BagGauge());
+            // triggers are all read off it inside the tick (issue #23). The hero arrives to a
+            // quiet Location — the first bodies wait one spawn delay.
+            var encounter = new EncounterSimulation(hero, profile, _rolls, Behaviour,
+                new EncounterTuning { DelayFirstSpawn = true }, BagGauge());
 
-            // XP settles on each Encounter clear, independent of whether a loot system is
-            // configured (issue #44). GainExperience's monsterLevel is set to the hero's own
-            // current level so its balancing term is neutral — the sim already settled the
+            // XP is delivered per kill, independent of whether a loot system is configured
+            // (issue #44). GainExperience's monsterLevel is set to the hero's own current level
+            // so its balancing term is neutral — the sim already delivers the
             // source-level-balanced XP.
-            encounter.EncounterCleared += settledXp => ApplyEncounterXp(player, settledXp);
+            encounter.XpGained += xp => ApplyEncounterXp(player, xp);
 
             WireLoot(encounter, player);
             return encounter;
@@ -204,10 +210,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _lootFlow.PlacementFailed += (_, exception) => Debug.LogException(exception, this);
         }
 
-        private static void ApplyEncounterXp(LocalPlayer player, int settledXp)
+        private static void ApplyEncounterXp(LocalPlayer player, int xp)
         {
-            if (settledXp > 0)
-                player.GainExperience(settledXp, player.CharacterLevel);
+            if (xp > 0)
+                player.GainExperience(xp, player.CharacterLevel);
         }
 
         /// <summary>
@@ -223,6 +229,25 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             SelectedLocation = location;
             var profile = ProfileFor(location);
             Run.Send(profile);
+
+            RecoverCorpseAt(profile);
+        }
+
+        /// <summary>
+        /// Move the live Run to <paramref name="location"/> without a Recall — the hero stays
+        /// <see cref="RunPhase.InField"/> and the Run's totals carry on. Ground Drops of the
+        /// Location left behind are gone, as at the end of a Run; the hero then meets the new
+        /// Location's first bodies after a spawn delay. Like <see cref="Send"/>, lays the standing
+        /// Corpse back out when the new Location is exactly where it fell. Throws unless a Run is
+        /// live with its hero up.
+        /// </summary>
+        public void Relocate(LocationConfig location)
+        {
+            if (location == null) throw new ArgumentNullException(nameof(location));
+
+            SelectedLocation = location;
+            var profile = ProfileFor(location);
+            Run.Relocate(profile);
 
             RecoverCorpseAt(profile);
         }
@@ -277,7 +302,13 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private void OnRunEnded()
         {
             // CONTEXT.md "Drop": a Drop still on the ground when the Run ends is gone, on
-            // Recall or Death alike (issue #44). Unsubscribe first, then clear.
+            // Recall or Death alike (issue #44).
+            ReleaseLoot();
+        }
+
+        /// <summary>Retire the live loot flow: unsubscribe first, then clear its ground Drops.</summary>
+        private void ReleaseLoot()
+        {
             _lootFlow?.Dispose();
             _lootFlow?.ClearGround();
             _lootFlow = null;

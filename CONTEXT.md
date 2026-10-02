@@ -151,15 +151,15 @@ The player's spendable money, wherever the coins physically sit. Currently not a
 
 **Loot**:
 The items and coins a kill sheds. It drops live during a Run, **per kill**, not as a
-bundle handed over on Recall. XP is *not* Loot — it settles per Encounter clear (see
-**Encounter**), on its own rhythm.
-_Avoid_: haul, spoils, bounty, take, rewards; XP (a separate reward, separately timed)
+bundle handed over on Recall. XP is *not* Loot — it is delivered per kill too, but
+straight to the hero rather than as a Drop.
+_Avoid_: haul, spoils, bounty, take, rewards; XP (a separate reward, delivered straight to the hero)
 
 **Kill**:
-One enemy falling. It is the settle unit for **Loot** — each kill sheds its Drops and
-coin Piles on the spot — and nothing else: XP settles per Encounter clear, not per kill.
-"Per kill" and "on the clear" are the two reward rhythms; name which one you mean.
-_Avoid_: frag, takedown, defeat; "kill" as the XP unit
+One enemy falling. It is the settle unit for every reward — each kill sheds its Drops and
+coin Piles on the spot, and delivers its XP to the hero the same tick. Nothing waits for
+the Encounter's clear.
+_Avoid_: frag, takedown, defeat
 
 **Drop**:
 Loot lying on the ground at a Location — shed by a defeated enemy, or laid out from a
@@ -252,9 +252,10 @@ _Avoid_: level, zone, area, stage, node, dungeon, map
 One build-and-release of pressure at a Location — the pacing unit a Run is made of. It
 fields a fixed **Roster**; enemies arrive over it per the **Spawn Profile** — one
 archetype in **Packs**, the other singly — pressure mounts, and it clears when the Roster
-is spent and the last enemy is down. **XP settles here, on the clear**, summed over the
-Roster; a Run driven off mid-Encounter forfeits that Encounter's XP. Loot Drops and
-coin Piles fell per kill as it ran. A one-second beat, then the next builds. A Location
+is spent and the last enemy is down. XP, Loot Drops and coin Piles all arrive per kill as
+it ran — the clear pays nothing out, and a Run driven off mid-Encounter forfeits nothing.
+A one-second beat, then the next builds. The first Encounter of a Run opens after one
+spawn delay (the Location's `SpawnInterval ± SpawnJitter`), not at the moment of Send. A Location
 runs Encounters endlessly at a fixed difficulty; only Recall or Death ends the Run
 (issue-#18 `/prototype` pass 2, ADR-0010).
 _Avoid_: battle, fight, combat, room; wave (a Pack is one arrival *within* an Encounter)
@@ -281,6 +282,14 @@ _Avoid_: deploy, dispatch, embark, launch
 The player action that ends a Run with everything earned so far kept. Transitions
 `InField → InTown`.
 _Avoid_: retreat, extract, return, flee, escape
+
+**Relocate**:
+The player action that moves a live Run to another Location without ending it — the Run
+stays `InField`, the current Encounter stops and a fresh one opens at the new Location,
+and everything the Run has earned so far carries on into its one result. Not a Recall:
+nothing is settled and the hero never passes through Town. Ground Drops at the Location
+left behind are gone, as at the end of a Run.
+_Avoid_: switch, travel, hop; "Recall and re-Send" (that is what Relocate replaced)
 
 **Auto-Recall**:
 A Recall the hero performs on its own, because a behaviour slider the player set before

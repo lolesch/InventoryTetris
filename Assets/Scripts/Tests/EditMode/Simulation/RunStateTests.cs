@@ -235,7 +235,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         // ─── accumulation ────────────────────────────────────────────────────
 
         [Test]
-        public void ClearingEncounters_AccumulatesSettledXp_IntoTheRunTotal()
+        public void KillingAcrossEncounters_AccumulatesXp_IntoTheRunTotal()
         {
             var run = NewRun(OneShotHero(), tuning: ShortBeat());
             run.Send(Skirmishers(2));
@@ -325,20 +325,20 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
-        public void Recall_MidEncounter_ForfeitsTheUnsettledPot()
+        public void Recall_MidEncounter_KeepsTheXpOfTheKillsSoFar()
         {
             var run = NewRun(OneShotHero(), tuning: LongBeat());
             run.Send(Skirmishers(5));
 
             run.Advance(0.1f);
-            run.Advance(0.1f); // 2 of 5 down — pot is live, Encounter not cleared
-            var expectedForfeit = (int)Math.Round(run.Encounter.UnsettledXp, MidpointRounding.AwayFromZero);
-            Assert.That(expectedForfeit, Is.GreaterThan(0));
+            run.Advance(0.1f); // 2 of 5 down, Encounter not cleared
+            var earned = run.Encounter.SettledXp;
+            Assert.That(earned, Is.GreaterThan(0));
 
             var result = run.Recall();
 
-            Assert.That(result.XpForfeited, Is.EqualTo(expectedForfeit));
-            Assert.That(result.XpSettled, Is.EqualTo(0), "nothing cleared this Run");
+            Assert.That(result.XpSettled, Is.EqualTo(earned), "XP is per kill — nothing waits on a clear");
+            Assert.That(result.EncountersCleared, Is.EqualTo(0));
         }
 
         // ─── the Died outcome ────────────────────────────────────────────────
@@ -410,12 +410,12 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             run.Send(Skirmishers(5));
 
             run.Advance(0.1f);
-            run.Advance(0.1f); // 2 kills — partial pot, no clear
+            run.Advance(0.1f); // 2 kills, no clear
             run.BankCurrency(400); // bank while the hero is still up
             var defeated = run.Encounter.EnemiesDefeated;
-            var expectedForfeit = (int)Math.Round(run.Encounter.UnsettledXp, MidpointRounding.AwayFromZero);
+            var earned = run.Encounter.SettledXp;
 
-            hero.PhysicalDamage = 0f; // stop killing so the down-tick adds nothing more to the pot
+            hero.PhysicalDamage = 0f; // stop killing so the down-tick adds nothing more
             hero.Health = 0f;
             DriveHeroDown(run); // the sim notices the hero is down on its next tick
 
@@ -423,8 +423,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
             Assert.That(result.EnemiesDefeated, Is.EqualTo(defeated));
             Assert.That(result.EncountersCleared, Is.EqualTo(0));
-            Assert.That(result.XpSettled, Is.EqualTo(0));
-            Assert.That(result.XpForfeited, Is.EqualTo(expectedForfeit));
+            Assert.That(result.XpSettled, Is.EqualTo(earned), "a Death does not claw back XP the kills already delivered");
             Assert.That(result.CurrencyBanked, Is.EqualTo(400));
             Assert.That(result.XpLost, Is.EqualTo(50));
             Assert.That(result.CurrencyFee, Is.EqualTo(200));
