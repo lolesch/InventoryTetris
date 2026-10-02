@@ -96,4 +96,20 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             return null;
         }
     }
+
+    /// <summary>An <see cref="ICurrencyMinter"/> that forwards to another and records the order it was asked in.</summary>
+    internal sealed class RecordingMinter : ICurrencyMinter
+    {
+        private readonly ICurrencyMinter inner;
+
+        public RecordingMinter(ICurrencyMinter inner) => this.inner = inner;
+
+        public List<CurrencyType> Minted { get; } = new();
+
+        public ItemInstance MintCurrency(CurrencyType type)
+        {
+            Minted.Add(type);
+            return inner.MintCurrency(type);
+        }
+    }
 }

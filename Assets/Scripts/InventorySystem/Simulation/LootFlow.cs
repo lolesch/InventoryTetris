@@ -12,8 +12,9 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// to <see cref="EncounterSimulation.EnemyDefeated"/>: rolls the kill's item Drops against
     /// a <see cref="RollContext"/> built from the Encounter's own Location and hero (its loot
     /// table, source level and live magic find), tests each against
-    /// <see cref="HeroBehaviour.AdmitsItem"/>, and offers a pass to the bag — one that does not
-    /// fit, or that fails the filter, stays on the ground as a <see cref="GroundDrops"/> entry.
+    /// <see cref="HeroBehaviour.AdmitsItem"/>, and offers a pass to the player's acquisition
+    /// entry point (<see cref="IItemReceiver"/> — auto-equip, else the bag) — one that finds no
+    /// room, or that fails the filter, stays on the ground as a <see cref="GroundDrops"/> entry.
     /// Separately rolls one coin Pile per kill and banks it to the wallet iff
     /// <see cref="HeroBehaviour.AdmitsCoin"/> passes.
     ///
@@ -30,7 +31,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         private readonly HeroBehaviour _behaviour;
         private readonly ItemGenerator _items;
         private readonly ICoinDropSource _coins;
-        private readonly AbstractDimensionalContainer _bag;
+        private readonly IItemReceiver _player;
         private readonly Wallet _wallet;
         private readonly List<ItemInstance> _groundDrops = new();
 
@@ -39,14 +40,14 @@ namespace ToolSmiths.InventorySystem.Simulation
             HeroBehaviour behaviour,
             ItemGenerator items,
             ICoinDropSource coins,
-            AbstractDimensionalContainer bag,
+            IItemReceiver player,
             Wallet wallet)
         {
             _encounter = encounter ?? throw new ArgumentNullException(nameof(encounter));
             _behaviour = behaviour ?? throw new ArgumentNullException(nameof(behaviour));
             _items = items ?? throw new ArgumentNullException(nameof(items));
             _coins = coins ?? throw new ArgumentNullException(nameof(coins));
-            _bag = bag ?? throw new ArgumentNullException(nameof(bag));
+            _player = player ?? throw new ArgumentNullException(nameof(player));
             _wallet = wallet ?? throw new ArgumentNullException(nameof(wallet));
 
             _encounter.EnemyDefeated += OnEnemyDefeated;
@@ -54,7 +55,7 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         /// <summary>
         /// Item Drops still lying on the ground — failed the loot filter, or passed it but did
-        /// not fit the bag. Cleared by <see cref="ClearGround"/>, never by anything else; a
+        /// found no room. Cleared by <see cref="ClearGround"/>, never by anything else; a
         /// picked-up Drop is simply not added here in the first place.
         /// </summary>
         public IReadOnlyList<ItemInstance> GroundDrops => _groundDrops;
@@ -89,6 +90,12 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <see cref="RunState.BankCurrency"/> per kill.
         /// </summary>
         public event Action<long> CoinsBanked;
+
+        /// <summary>
+        /// Raised when the player's pick-up threw for a Drop; the Drop is on the ground. The
+        /// engine-side driver logs it - this class stays free of engine calls.
+        /// </summary>
+        public event Action<ItemInstance, Exception> PlacementFailed;
 
         private void OnEnemyDefeated(Enemy enemy)
         {
@@ -125,14 +132,31 @@ namespace ToolSmiths.InventorySystem.Simulation
             for (var i = 0; i < drops.Count; i++)
             {
                 var item = drops[i];
-                if (_behaviour.AdmitsItem(item.Rarity))
-                {
-                    var package = new Package(_bag, item, 1u);
-                    if (_bag.TryAddToContainer(ref package))
-                        continue; // landed in the bag
-                }
+                if (_behaviour.AdmitsItem(item.Rarity) && TryPlace(item))
+                    continue; // equipped, or landed in the bag
 
                 _groundDrops.Add(item);
+            }
+        }
+
+        /// <summary>
+        /// Offers <paramref name="item"/> to the player. An equip applies stats and refreshes the
+        /// character sheet, all of it engine-side code running inside the same tick as the kill,
+        /// so a throw there gets the roll's treatment above: the kill still resolves and the item
+        /// stays on the ground, with the failure surfaced through <see cref="PlacementFailed"/>
+        /// rather than swallowed. (A throw after a partial equip can leave the item both equipped
+        /// and on the ground - the Run-end clear drops the copy; losing it would be worse.)
+        /// </summary>
+        private bool TryPlace(ItemInstance item)
+        {
+            try
+            {
+                return _player.PickUpItem(item, 1u);
+            }
+            catch (Exception exception)
+            {
+                PlacementFailed?.Invoke(item, exception);
+                return false;
             }
         }
 
@@ -145,19 +169,9 @@ namespace ToolSmiths.InventorySystem.Simulation
             if (!_behaviour.AdmitsCoin(type))
                 return;
 
-            _wallet.Deposit(CurrencyOf(type, amount));
-            CoinsBanked?.Invoke(BaseUnitsOf(type, amount));
+            _wallet.Deposit(Currency.Of(type, amount));
+            CoinsBanked?.Invoke(checked((long)amount * Currency.ValueOf(type))); // the Pile's value in iron base units (CONTEXT.md "Base Unit")
         }
-
-        /// <summary>The Pile's value in iron base units (CONTEXT.md "Base Unit"), for the Run's take.</summary>
-        private static long BaseUnitsOf(CurrencyType type, uint amount) => type switch
-        {
-            CurrencyType.Iron => amount,
-            CurrencyType.Copper => checked((long)amount * Currency.ironToCopper),
-            CurrencyType.Silver => checked((long)amount * Currency.ironToSilver),
-            CurrencyType.Gold => checked((long)amount * Currency.ironToGold),
-            _ => 0L,
-        };
 
         /// <summary>The archetype's base roll count plus the hero's <c>IncreasedItemQuantity</c> bonus.</summary>
         private static int DropCountFor(Enemy enemy, IHeroCombatant hero)
@@ -166,14 +180,5 @@ namespace ToolSmiths.InventorySystem.Simulation
             var bonus = (int)(hero.IncreasedItemQuantity / 100f); // mirrors ItemProvider.AddBonusDrops
             return Math.Max(0, baseCount + bonus);
         }
-
-        private static Currency CurrencyOf(CurrencyType type, uint amount) => type switch
-        {
-            CurrencyType.Iron => new Currency(amount, 0u, 0u, 0u),
-            CurrencyType.Copper => new Currency(0u, amount, 0u, 0u),
-            CurrencyType.Silver => new Currency(0u, 0u, amount, 0u),
-            CurrencyType.Gold => new Currency(0u, 0u, 0u, amount),
-            _ => default,
-        };
     }
 }

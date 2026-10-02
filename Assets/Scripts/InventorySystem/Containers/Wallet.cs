@@ -78,10 +78,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             BeginMutation();
             try
             {
-                RemoveCurrency(CurrencyType.Iron, toRemove.Iron);
-                RemoveCurrency(CurrencyType.Copper, toRemove.Copper);
-                RemoveCurrency(CurrencyType.Silver, toRemove.Silver);
-                RemoveCurrency(CurrencyType.Gold, toRemove.Gold);
+                RemoveCoins(toRemove);
 
                 if (0u < change.Total)
                     Deposit(change);
@@ -106,10 +103,8 @@ namespace ToolSmiths.InventorySystem.Inventories
             BeginMutation();
             try
             {
-                AddCoins(CurrencyType.Gold, amount.Gold);
-                AddCoins(CurrencyType.Silver, amount.Silver);
-                AddCoins(CurrencyType.Iron, amount.Iron);
-                AddCoins(CurrencyType.Copper, amount.Copper);
+                foreach (var type in Currency.Denominations)
+                    AddCoins(type, amount.CountOf(type));
 
                 if (coins.AutoConsolidate)
                     Consolidate();
@@ -163,10 +158,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             try
             {
-                RemoveCurrency(CurrencyType.Iron, current.Iron);
-                RemoveCurrency(CurrencyType.Copper, current.Copper);
-                RemoveCurrency(CurrencyType.Silver, current.Silver);
-                RemoveCurrency(CurrencyType.Gold, current.Gold);
+                RemoveCoins(current);
 
                 Deposit(consolidated);
             }
@@ -215,6 +207,13 @@ namespace ToolSmiths.InventorySystem.Inventories
                 RaiseBalanceIfChanged();
         }
 
+        /// <summary>Removes every denomination's count in <paramref name="coinsToRemove"/>.</summary>
+        private void RemoveCoins(Currency coinsToRemove)
+        {
+            foreach (var type in Currency.Denominations)
+                RemoveCurrency(type, coinsToRemove.CountOf(type));
+        }
+
         /// <summary>
         /// Removes <paramref name="amount"/> base coins of <paramref name="type"/> from the
         /// backing container, matching on <see cref="CurrencyType"/> rather than reference
@@ -249,10 +248,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// <summary>Sums the backing container's currency packages into a <see cref="Currency"/>.</summary>
         private Currency CalculateCash()
         {
-            uint iron = 0;
-            uint copper = 0;
-            uint silver = 0;
-            uint gold = 0;
+            var cash = default(Currency);
 
             foreach (var package in coins.StoredPackages)
             {
@@ -260,16 +256,11 @@ namespace ToolSmiths.InventorySystem.Inventories
                 if (definition.Category != ItemCategory.Currency)
                     continue;
 
-                switch (definition.CurrencyType)
-                {
-                    case CurrencyType.Iron: iron += package.Value.Amount; break;
-                    case CurrencyType.Copper: copper += package.Value.Amount; break;
-                    case CurrencyType.Silver: silver += package.Value.Amount; break;
-                    case CurrencyType.Gold: gold += package.Value.Amount; break;
-                }
+                var type = definition.CurrencyType;
+                cash = cash.With(type, cash.CountOf(type) + package.Value.Amount);
             }
 
-            return new Currency(iron, copper, silver, gold);
+            return cash;
         }
     }
 }

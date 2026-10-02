@@ -1,12 +1,14 @@
 namespace ToolSmiths.InventorySystem.Inventories
 {
     /// <summary>
-    /// What a quick-move (shift-click) should do for a (source, context) pair. Only
-    /// <see cref="None"/> and <see cref="MoveToContainer"/> are produced by this ticket
-    /// (#30); <see cref="Buy"/> is produced for the vendor shelf, whose own shift-click is
-    /// always a buy. <see cref="SellBasket"/> is the seam #33 fills in once the basket
-    /// exists - it is a distinct intent so the resolver's matrix can grow without the slot
-    /// displays branching on containers.
+    /// What a quick-move (shift-click) should do for a (source, context) pair.
+    /// <see cref="MoveToContainer"/> is a plain container-to-container move; <see cref="Buy"/>
+    /// is produced for the vendor shelf, whose own shift-click is always a buy;
+    /// <see cref="SellBasket"/> is the seam #33 fills in for the Sell Basket - a distinct
+    /// intent so the resolver's table can grow without the slot displays branching on
+    /// containers. <see cref="Acquire"/> is #86's source-to-hub row that must honour
+    /// auto-equip - it routes through the player's acquisition entry point
+    /// (<see cref="ToolSmiths.InventorySystem.Items.IItemReceiver"/>) instead of a plain move.
     /// </summary>
     public enum QuickMoveIntentKind
     {
@@ -14,6 +16,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         MoveToContainer = 1,
         SellBasket = 2,
         Buy = 3,
+        Acquire = 4,
     }
 
     /// <summary>
@@ -40,5 +43,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         public static QuickMoveIntent SellBasket => new(QuickMoveIntentKind.SellBasket, null);
 
         public static QuickMoveIntent Buy => new(QuickMoveIntentKind.Buy, null);
+
+        public static QuickMoveIntent Acquire => new(QuickMoveIntentKind.Acquire, null);
     }
 }

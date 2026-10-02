@@ -9,10 +9,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6710603046912445380}
+  - component: {fileID: 3768307858155279272}
   - component: {fileID: 6710603046912445400}
   - component: {fileID: 6710603046912445383}
   - component: {fileID: 5819635024459461470}
-  - component: {fileID: 3768307858155279272}
   m_Layer: 5
   m_Name: EquipmentDisplay
   m_TagString: Untagged
@@ -55,6 +55,34 @@ RectTransform:
   m_AnchoredPosition: {x: 320, y: 0}
   m_SizeDelta: {x: 620, y: 0}
   m_Pivot: {x: 0.5, y: 0}
+--- !u!114 &3768307858155279272
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6710603046912445379}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 82011911a7c368642b07a68d0af9aeb6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  containerSlotDisplays:
+  - {fileID: 1846510776148489665}
+  - {fileID: 1491822352700067943}
+  - {fileID: 5778351029058397381}
+  - {fileID: 5075801100374613688}
+  - {fileID: 2212692298056250135}
+  - {fileID: 5053661245213968550}
+  - {fileID: 1745544602893281312}
+  - {fileID: 3297863000667377283}
+  - {fileID: 7981587275952955965}
+  - {fileID: 7434815991628059276}
+  - {fileID: 3176996502402902547}
+  - {fileID: 5175087420206225723}
+  - {fileID: 5279859599752812368}
+  - {fileID: 2703176691296629520}
+  role: 1
 --- !u!222 &6710603046912445400
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -113,33 +141,8 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
---- !u!114 &3768307858155279272
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6710603046912445379}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 82011911a7c368642b07a68d0af9aeb6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  containerSlotDisplays:
-  - {fileID: 1846510776148489665}
-  - {fileID: 1491822352700067943}
-  - {fileID: 5778351029058397381}
-  - {fileID: 5075801100374613688}
-  - {fileID: 2212692298056250135}
-  - {fileID: 5053661245213968550}
-  - {fileID: 1745544602893281312}
-  - {fileID: 3297863000667377283}
-  - {fileID: 7981587275952955965}
-  - {fileID: 7434815991628059276}
-  - {fileID: 3176996502402902547}
-  - {fileID: 5175087420206225723}
-  - {fileID: 5279859599752812368}
-  - {fileID: 2703176691296629520}
+  m_MaxWidth: -1
+  m_MaxHeight: -1
 --- !u!1001 &184096429093273469
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2420,7 +2423,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5622017465394788805, guid: 56dbdb7ba46dc034c906b0a7b9997b45, type: 3}
       propertyPath: m_Value
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7324983749684716705, guid: 56dbdb7ba46dc034c906b0a7b9997b45, type: 3}
       propertyPath: m_AnchorMax.y
@@ -2483,6 +2486,8 @@ MonoBehaviour:
   m_FlexibleWidth: 1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
+  m_MaxWidth: -1
+  m_MaxHeight: -1
 --- !u!224 &6625933068359046463 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 2808864171146761161, guid: 56dbdb7ba46dc034c906b0a7b9997b45, type: 3}

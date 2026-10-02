@@ -211,7 +211,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
-        public void ARetreat_ForfeitsTheInProgressPot_JustAsAnAbandonWould()
+        public void ARetreat_KeepsTheXpTheKillAlreadyDelivered_JustAsAnAbandonWould()
         {
             var hero = WoundedHero(0.25f);
             hero.PhysicalDamage = 1_000_000f;
@@ -226,8 +226,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             Run(sim, 1); // Strike fells one of the two, then the retreat trigger fires
 
             Assert.That(sim.EnemiesDefeated, Is.EqualTo(1), "the kill landed before the retreat check");
-            Assert.That(sim.ForfeitedXp, Is.GreaterThan(0));
-            Assert.That(sim.UnsettledXp, Is.EqualTo(0f));
+            Assert.That(sim.SettledXp, Is.GreaterThan(0), "the kill's XP arrived the tick it fell, so the retreat cannot take it back");
         }
 
         [Test]

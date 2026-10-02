@@ -1,7 +1,6 @@
 using Submodules.Utility.UI;
 using ToolSmiths.InventorySystem.GUI.Components.Panels;
 using ToolSmiths.InventorySystem.Inventories;
-using ToolSmiths.InventorySystem.Runtime.Provider;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
@@ -15,13 +14,13 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
     /// that disagrees with its own panel.
     ///
     /// <para><b>Input, not content (issue #85).</b> This toggle answers exactly one question -
-    /// "is this button pressed" - which its <see cref="RadioGroup"/> keeps exclusive for the Town
+    /// "is this button pressed" - which its <see cref="ToggleGroup"/> keeps exclusive for the Town
     /// Stops. It does not decide whether the panel is up: the panel subscribes to the Inventory
     /// Context and derives its own visibility (<see cref="SidePanel"/>), which is why
     /// <see cref="OnToggle"/> is empty - the hook a <see cref="PanelToggle"/> would have faded the
-    /// panel from is simply not this class's job. The minimap's Town Stops being non-interactable
-    /// during a Run is the same split from the other side - the input-side expression of a fact
-    /// the context is the authority for.</para>
+    /// panel from is simply not this class's job. The Town Stops going non-interactable during a
+    /// Run (<see cref="InventoryProvider.IsFieldReachable"/>) is the same split from the other
+    /// side - the input-side expression of a fact the context is the authority for.</para>
     ///
     /// <para><b>The pressed visual resyncs from the context, not from the group it no longer
     /// shares an authority with.</b> <see cref="SyncToContext"/> sets this toggle's own state from
@@ -29,15 +28,17 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
     /// phase-driven close and after a click alike - including the Hero Panel's toggle, which
     /// belongs to no group and would otherwise look up while its panel is up.</para>
     ///
-    /// <para><b>No second group.</b> Mutual exclusion comes from the minimap's <c>TownGroup</c>,
-    /// which Stash, Vendor and Healer belong to (Go Venture does not - it is a plain button, not
-    /// a panel with state to protect). This class must not introduce a <see cref="RadioGroup"/>
-    /// of its own, or "which panel is open" would have two answers.</para>
+    /// <para><b>No second group.</b> Mutual exclusion comes from the shared <c>TownGroup</c>
+    /// <see cref="ToggleGroup"/>, which Stash, Vendor and Healer belong to (Go Venture does not -
+    /// it is a plain button, not a panel with state to protect). This class must not introduce a
+    /// <see cref="ToggleGroup"/> of its own, or "which panel is open" would have two answers.</para>
     ///
-    /// <para><b>The request (issues #84, #85).</b> <see cref="RequestAndToggle"/> is the toggle's
-    /// own click/hotkey edge: it runs before <see cref="AbstractToggle.SetToggle"/>, so it fires
-    /// only for the toggle actually clicked or hotkeyed - never for a sibling the group silently
-    /// deactivates on its way out via <c>ToggleState</c>/<c>OnToggle</c> - which is what keeps a
+    /// <para><b>The request (issues #84, #85).</b> Turning on requests the panel's context from
+    /// <see cref="OnToggle"/>, but only while the panel is not already up in the active context,
+    /// so a <see cref="SyncToContext"/> or the Hero Panel (up in every non-None context) never
+    /// re-requests and overwrites the context that triggered it. Turning off is requested only by
+    /// <see cref="UserToggle"/> - a click or hotkey that really switched the toggle off - never for
+    /// a sibling the group silently deactivates on its way out, which is what keeps a
     /// Stash-to-Vendor handover to the one <see cref="SidePanel.RequestContext"/> call the incoming
     /// toggle makes, with no intermediate close. The request goes through the panel
     /// (<see cref="SidePanel.RequestContext"/>), not straight to the provider - the toggle still
@@ -52,37 +53,60 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
                  "authored.")]
         [SerializeField] private SidePanel panel;
 
-        [Tooltip("Optional hotkey. Inert whenever the toggle is non-interactable - which the " +
-                 "minimap already arranges for the Field face and for InField.")]
+        [Tooltip("Optional hotkey. Inert whenever the toggle is non-interactable - which " +
+                 "InventoryProvider.IsFieldReachable arranges for the Field face and for InField.")]
         [SerializeField] private KeyCode hotkey = KeyCode.None;
 
-        protected override void OnClick() => RequestAndToggle(!IsOn);
+        [Tooltip("Whether this toggle is gated by InventoryProvider.IsFieldReachable at all. " +
+                 "Only ever consulted for a toggle in a RadioGroup; an ungrouped toggle, such " +
+                 "as the Hero Panel's, is never field-gated - the Hero is reachable in both " +
+                 "faces, so its hotkey must survive the field.")]
+        [SerializeField] private bool gatedByFieldReachability = true;
+
+        protected override void OnClick() => UserToggle();
 
         /// <summary>
-        /// Empty deliberately. A <see cref="PanelToggle"/> fades its panel from exactly here, and
-        /// the panel derives its own visibility from the Inventory Context instead (issue #85) -
-        /// fading it from the toggle as well would be a second layer deciding one fact, the bug
-        /// class this rework removes. What <see cref="AbstractToggle.ToggleState"/> does around
-        /// this call - the radio group's state and this toggle's own pressed visual - is untouched.
+        /// Requests the panel's context on the way on, and never fades the panel: a
+        /// <see cref="PanelToggle"/> fades its panel from exactly here, but this panel derives its
+        /// own visibility from the Inventory Context instead (issue #85) - fading it from the
+        /// toggle as well would be a second layer deciding one fact, the bug class this rework
+        /// removes.
+        ///
+        /// <para>Also runs from <see cref="AbstractToggle.Start"/>, from <see cref="SyncToContext"/>
+        /// and for a sibling the group switches off, none of which may touch the context - hence
+        /// on-edge only, and only while the panel is not already up in it. That guard is what
+        /// breaks the sync -> request -> sync cycle.</para>
         /// </summary>
-        protected override void OnToggle() { }
+        protected override void OnToggle()
+        {
+            if (IsOn && panel != null && InventoryProvider.Instance is { } provider && !panel.IsUpIn(provider.ActiveContext))
+                panel.RequestContext(true);
+        }
 
         /// <summary>
-        /// The hotkey is the same act as a click, guard for guard - including the
-        /// <see cref="RadioGroup.IsClearable"/> rule, so a hotkey cannot switch off a
-        /// toggle a click could not. <c>interactable</c> is the phase gate: the minimap turns
-        /// the Town toggles off whenever the Field face is up, which covers both InField and
-        /// the Go Venture preview, so no <c>RunPhase</c> dependency is needed here.
+        /// <c>interactable</c> is the phase gate: unreachable whenever
+        /// <see cref="InventoryProvider.IsFieldReachable"/> says so (InField and the Go Venture
+        /// preview alike, since both show the same face) - so no <c>RunPhase</c> dependency is
+        /// needed here. Asked every frame rather than pushed by a controller (issue #85), the
+        /// same way <see cref="SyncToContext"/> asks the panel instead of being told.
+        ///
+        /// <para>Only a toggle in a <see cref="ToggleGroup"/> is gated - a Town Stop. The Hero
+        /// Panel's toggle belongs to no group and is reachable in both faces, so gating it would
+        /// take its hotkey away in the field for nothing; keying the gate on the group makes that
+        /// exemption structural instead of a per-instance checkbox the scene can get wrong.</para>
         /// </summary>
         private void Update()
         {
+            if (gatedByFieldReachability && RadioGroup && InventoryProvider.Instance != null)
+                interactable = InventoryProvider.Instance.IsFieldReachable;
+
             if (hotkey == KeyCode.None || !interactable)
                 return;
 
             if (!Input.GetKeyDown(hotkey))
                 return;
 
-            RequestAndToggle(!IsOn);
+            UserToggle();
         }
 
         /// <summary>
@@ -91,8 +115,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         /// survives a Play session and <b>an <c>Awake</c> subscription never comes back</b> after
         /// <see cref="OnDisable"/> has torn it down on the way out of the first Play entry — the
         /// toggle then presses and unpresses while the context it should have requested is never
-        /// touched. <c>OnEnable</c> is the edge that re-runs per entry, and
-        /// <see cref="Resubscribe"/> is idempotent so nothing stacks.
+        /// touched.
         ///
         /// <para>Overridden rather than declared: this class derives
         /// <see cref="UnityEngine.UI.Selectable"/>, which owns <c>OnEnable</c>, and a same-named
@@ -102,42 +125,16 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         {
             base.OnEnable();
 
-            Resubscribe();
+            if (InventoryProvider.TrySubscribeContextChanged(SyncToContext, out var activeContext))
+                SyncToContext(activeContext);
         }
 
         protected override void OnDisable()
         {
             base.OnDisable();
 
-            if (Application.isPlaying && InventoryProvider.Instance != null)
-                InventoryProvider.Instance.OnContextChanged -= OnContextChanged;
+            InventoryProvider.UnsubscribeContextChanged(SyncToContext);
         }
-
-        /// <summary>
-        /// Attaches to the context and brings the pressed state in line with it, in one place so
-        /// the two cannot be reached by different routes. Detach-before-attach, so a re-enable
-        /// cannot stack a second subscription (cf. da14ce2).
-        ///
-        /// <para>The <see cref="InventoryProvider"/> guard is the one failure this class has to
-        /// tolerate quietly: there is no context to track and no provider to ask, and the toggles
-        /// stay unsubscribed and inert until the next enable.</para>
-        /// </summary>
-        private void Resubscribe()
-        {
-            if (!Application.isPlaying)
-                return;
-
-            var provider = InventoryProvider.Instance;
-            if (provider == null)
-                return;
-
-            provider.OnContextChanged -= OnContextChanged;
-            provider.OnContextChanged += OnContextChanged;
-
-            SyncToContext(provider.ActiveContext);
-        }
-
-        private void OnContextChanged(InventoryContext context) => SyncToContext(context);
 
         /// <summary>
         /// Brings this toggle's pressed state back in line with the Inventory Context: on exactly
@@ -145,11 +142,12 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         /// <see cref="SidePanel.IsUpIn"/>, asked rather than recomputed, so the visual and the
         /// visibility cannot disagree by construction.
         ///
-        /// <para>Applied through <see cref="AbstractToggle.SetToggle"/>, which keeps the
-        /// <see cref="RadioGroup"/>'s own <c>ActiveMember</c> in step for a grouped Town Stop and
+        /// <para>Applied through <see cref="AbstractToggle.SyncToggle"/> - the group side, so the
+        /// toggle follows the context off even where the user may not click it off - which keeps the
+        /// <see cref="ToggleGroup"/>'s own <c>ActiveMember</c> in step for a grouped Town Stop and
         /// falls through to the plain state change for the ungrouped Hero Panel toggle. The
         /// <see cref="AbstractToggle.IsOn"/> guard is what stops this from looping: a
-        /// <c>SetToggle</c> on a sibling lands back here through that sibling's own event, finds
+        /// <c>SyncToggle</c> on a sibling lands back here through that sibling's own event, finds
         /// nothing left to change, and stops.</para>
         /// </summary>
         private void SyncToContext(InventoryContext context)
@@ -159,46 +157,31 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
 
             var shouldBeOn = panel.IsUpIn(context);
             if (IsOn != shouldBeOn)
-                SetToggle(shouldBeOn);
+                SyncToggle(shouldBeOn);
         }
 
         /// <summary>
-        /// Requests the Inventory Context this toggle's panel represents, then applies the
-        /// toggle state exactly as <see cref="AbstractToggle.SetToggle"/> always has - but only
-        /// when the request was actually made (<see cref="SidePanel.RequestContext"/>'s result).
-        /// A toggle that moved while its request silently did not would press for a context
-        /// nothing set, which is how a stuck button and a lying minimap start.
-        ///
-        /// <para><see cref="WouldToggleNoOp"/> guards the other direction, and for the same
-        /// reason: <c>OnClick</c> has no other veto before reaching here, so without it a click on
-        /// a toggle <see cref="AbstractToggle.SetToggle"/> is about to refuse to turn off would
-        /// still close the Inventory Context while the panel stays visibly open.</para>
+        /// The click/hotkey edge. Does nothing when there is no panel or provider to request from -
+        /// a toggle that pressed without a context behind it is how a stuck button and a
+        /// pressed-but-empty panel start. Turning on is requested by <see cref="OnToggle"/>;
+        /// turning off is requested here, and only once the toggle really switched off, so a
+        /// group that refuses the un-toggle never closes the context behind a still-open panel.
         /// </summary>
-        private void RequestAndToggle(bool turningOn)
+        private void UserToggle()
         {
-            if (WouldToggleNoOp(turningOn))
+            if (panel == null || InventoryProvider.Instance == null)
                 return;
 
-            if (panel == null || !panel.RequestContext(turningOn))
-                return;
-
-            SetToggle(turningOn);
+            var wasOn = IsOn;
+            SetToggle(!wasOn);
+            if (wasOn && !IsOn)
+                panel.RequestContext(false);
         }
-
-        /// <summary>
-        /// Mirrors <see cref="AbstractToggle.SetToggle"/>'s own no-op condition exactly (that
-        /// method is not virtual, so it cannot be asked directly) - turning off the sole active,
-        /// non-clearable, non-restorable member of a <see cref="RadioGroup"/> is refused there,
-        /// silently as far as this class is concerned.
-        /// </summary>
-        private bool WouldToggleNoOp(bool turningOn) =>
-            !turningOn && IsOn && RadioGroup && RadioGroup.ActiveMember == this
-            && !RadioGroup.IsClearable && !RadioGroup.IsRestorable;
 
 #if UNITY_EDITOR
         /// <summary>
         /// The authored-data check <see cref="SidePanel"/>'s own <c>OnValidate</c> cannot make
-        /// from its side: <see cref="RequestAndToggle"/> and <see cref="SyncToContext"/> both
+        /// from its side: <see cref="UserToggle"/> and <see cref="SyncToContext"/> both
         /// no-op on a toggle that drives no panel - it still presses and unpresses, so nothing
         /// looks wrong in Play mode, and it just never requests or tracks an Inventory Context.
         /// That the panel is a <see cref="SidePanel"/> at all is the field's own type now, so

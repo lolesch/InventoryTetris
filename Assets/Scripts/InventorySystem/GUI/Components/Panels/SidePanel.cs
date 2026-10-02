@@ -1,6 +1,5 @@
 using Submodules.Utility.UI;
 using ToolSmiths.InventorySystem.Inventories;
-using ToolSmiths.InventorySystem.Runtime.Provider;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.GUI.Components.Panels
@@ -41,6 +40,11 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
                  "the same value. Must not be None.")]
         [SerializeField] private InventoryContext inventoryContext = InventoryContext.None;
 
+        /// <summary>The one Inventory Context this panel was authored with - what a display
+        /// living inside the panel (<c>SellBasketDisplay</c>) asks to learn which Town Stop it
+        /// belongs to, rather than hard-coding one.</summary>
+        public InventoryContext Context => inventoryContext;
+
         /// <summary>
         /// Whether this panel is up in <paramref name="context"/>: <see cref="InventoryContextState.PanelsFor"/>
         /// against the one panel this component owns, <see cref="InventoryContextState.PanelFor"/>
@@ -76,25 +80,15 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
         /// </summary>
         private void OnEnable()
         {
-            if (!Application.isPlaying)
-                return;
-
-            var provider = InventoryProvider.Instance;
-            if (provider == null)
-                return;
-
-            provider.OnContextChanged -= OnContextChanged;
-            provider.OnContextChanged += OnContextChanged;
-
-            ApplyContext(provider.ActiveContext);
+            if (InventoryProvider.TrySubscribeContextChanged(OnContextChanged, out var activeContext))
+                ApplyContext(activeContext);
         }
 
         protected override void OnDisable()
         {
             base.OnDisable();
 
-            if (Application.isPlaying && InventoryProvider.Instance != null)
-                InventoryProvider.Instance.OnContextChanged -= OnContextChanged;
+            InventoryProvider.UnsubscribeContextChanged(OnContextChanged);
         }
 
         private void OnContextChanged(InventoryContext context) => ApplyContext(context);
@@ -114,7 +108,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
                 return;
 
             shown = shouldShow;
-            Toggle(shouldShow);
+            ToggleState(shouldShow);
         }
 
         /// <summary>

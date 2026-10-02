@@ -17,7 +17,6 @@ namespace ToolSmiths.InventorySystem.Simulation
         private RunResult(
             RunOutcome outcome,
             int xpSettled,
-            int xpForfeited,
             long currencyBanked,
             int xpLost,
             long currencyFee,
@@ -27,7 +26,6 @@ namespace ToolSmiths.InventorySystem.Simulation
         {
             Outcome = outcome;
             XpSettled = xpSettled;
-            XpForfeited = xpForfeited;
             CurrencyBanked = currencyBanked;
             XpLost = xpLost;
             CurrencyFee = currencyFee;
@@ -39,15 +37,8 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <summary>Which way the Run ended.</summary>
         public RunOutcome Outcome { get; }
 
-        /// <summary>XP settled on Encounter clears this Run, summed. Already applied to the hero, live.</summary>
+        /// <summary>XP delivered per kill this Run, summed. Already applied to the hero, live — nothing is held back to forfeit on an exit.</summary>
         public int XpSettled { get; }
-
-        /// <summary>
-        /// The pot of the Encounter still in progress at exit — lost, because XP only settles
-        /// on a clear (ADR-0010 second amendment). Display-only: the visible cost of bailing
-        /// mid-Encounter. Zero when the Run exited exactly on a clear or before the first kill.
-        /// </summary>
-        public int XpForfeited { get; }
 
         /// <summary>Currency banked to the Wallet this Run (base units), summed over every kill.</summary>
         public long CurrencyBanked { get; }
@@ -78,12 +69,12 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         /// <summary>Freeze a <see cref="RunOutcome.Recalled"/> result — the full accumulation, no penalty.</summary>
         internal static RunResult Recalled(EncounterTotals totals, long currencyBanked) =>
-            new(RunOutcome.Recalled, totals.XpSettled, totals.XpForfeited, currencyBanked, 0, 0L,
+            new(RunOutcome.Recalled, totals.XpSettled, currencyBanked, 0, 0L,
                 totals.EnemiesDefeated, totals.EncountersCleared, totals.Duration);
 
         /// <summary>Freeze a <see cref="RunOutcome.Died"/> result — the accumulation plus the penalty.</summary>
         internal static RunResult Died(EncounterTotals totals, long currencyBanked, int xpLost, long currencyFee) =>
-            new(RunOutcome.Died, totals.XpSettled, totals.XpForfeited, currencyBanked, xpLost, currencyFee,
+            new(RunOutcome.Died, totals.XpSettled, currencyBanked, xpLost, currencyFee,
                 totals.EnemiesDefeated, totals.EncountersCleared, totals.Duration);
     }
 
@@ -92,23 +83,28 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// reads off the live <see cref="EncounterSimulation"/> when a Run ends, before the Death
     /// penalty (computed separately, against <see cref="RunState.CurrencyBanked"/> and the hero's
     /// XP progress) is added. One value instead of five positional parameters, so the two
-    /// <see cref="RunResult"/> factories can't have them transposed at the call site.
+    /// <see cref="RunResult"/> factories can't have them transposed at the call site. Totals
+    /// from the Encounters a Run left behind on a Relocate are added in with <see cref="Plus"/>.
     /// </summary>
     internal readonly struct EncounterTotals
     {
-        public EncounterTotals(int xpSettled, int xpForfeited, int enemiesDefeated, int encountersCleared, float duration)
+        public EncounterTotals(int xpSettled, int enemiesDefeated, int encountersCleared, float duration)
         {
             XpSettled = xpSettled;
-            XpForfeited = xpForfeited;
             EnemiesDefeated = enemiesDefeated;
             EncountersCleared = encountersCleared;
             Duration = duration;
         }
 
         public int XpSettled { get; }
-        public int XpForfeited { get; }
         public int EnemiesDefeated { get; }
         public int EncountersCleared { get; }
         public float Duration { get; }
+
+        public EncounterTotals Plus(EncounterTotals other) => new(
+            XpSettled + other.XpSettled,
+            EnemiesDefeated + other.EnemiesDefeated,
+            EncountersCleared + other.EncountersCleared,
+            Duration + other.Duration);
     }
 }

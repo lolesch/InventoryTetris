@@ -6,6 +6,7 @@ using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.GUI.InventoryDisplays;
 using ToolSmiths.InventorySystem.Runtime.Provider;
+using ToolSmiths.InventorySystem.Runtime.Simulation;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -18,6 +19,11 @@ namespace ToolSmiths.InventorySystem.Inventories
         [field: SerializeField] public CharacterInventory Inventory { get; private set; }
         [field: SerializeField] public CharacterInventory Stash { get; private set; }
         [field: SerializeField] public CharacterInventory Store { get; private set; }
+
+        /// <summary>The Healer's Supply (issue #121): the second Supply after the Vendor's
+        /// <see cref="Store"/>, stocked with consumables and bought from the same way. Sized like
+        /// the Store (<see cref="storeSize"/>) - one size for every Supply shelf.</summary>
+        [field: SerializeField] public CharacterInventory HealerSupply { get; private set; }
 
         /// <summary>The Sell Basket (issue #32/#33) - the grid the player stages a sale in,
         /// with the origin ledger a Cancel uses to return each Package. Owned here with the
@@ -55,44 +61,127 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// the Send/Recall/Death/Go-Venture side of phase reachability (#84).</summary>
         public void SyncContextToPhase(bool inField) => inventoryContext.SyncToPhase(inField);
 
+        /// <summary>The InFields face - unreachable while it is up (InField, and the Go Venture
+        /// preview alike, since both show it). Not authored: registered by
+        /// <see cref="RegisterFieldFacePanel"/>, the same seam as <see cref="TryRegisterDisplay"/>
+        /// and for the same reason - a provider can be created fresh mid-run (see
+        /// <see cref="AbstractProvider{T}"/>/<c>AbstractSceneSingleton&lt;T&gt;</c>), and a fresh
+        /// instance has no Inspector-authored fields, so a hard scene reference here would
+        /// silently go null and leave every Town Stop reading as always-reachable.</summary>
+        private FieldFacePanel fieldFacePanel;
+
+        /// <summary>The InFields face's own registration, mirroring <see cref="TryRegisterDisplay"/>:
+        /// <see cref="FieldFacePanel"/> registers itself (from its own <c>OnEnable</c>) rather
+        /// than this provider holding a hard reference to it.</summary>
+        public static void RegisterFieldFacePanel(FieldFacePanel panel)
+        {
+            if (!Application.isPlaying)
+                return;
+
+            var provider = Instance;
+            if (provider == null)
+                return;
+
+            provider.fieldFacePanel = panel;
+        }
+
+        /// <summary>Whether a Town Stop can be reached right now - false whenever
+        /// <see cref="fieldFacePanel"/> is up, which <see cref="RunPhasePanel"/>'s shared
+        /// <see cref="Submodules.Utility.UI.PanelGroup"/> keeps correct through every InTown/
+        /// InField edge, deliberate (the buttons) or not (Death). <see cref="SidePanelToggle"/>
+        /// asks this instead of each holding its own reference to the panel.</summary>
+        public bool IsFieldReachable => fieldFacePanel == null || fieldFacePanel.IsCollapsed;
+
+        /// <summary>
+        /// Detach-before-attach <see cref="OnContextChanged"/> subscribe, shared by every
+        /// panel/toggle/provider that tracks the Inventory Context (issue #85) - four
+        /// independent copies of this same guard-and-resubscribe idiom collapse into one.
+        /// No-ops outside Play mode, or before a provider exists, so a caller mid-domain-reload
+        /// or edit-time enable is left unsubscribed rather than creating one (issue #46).
+        /// </summary>
+        /// <returns>Whether the subscription was actually made; <paramref name="activeContext"/>
+        /// is only meaningful when it was.</returns>
+        public static bool TrySubscribeContextChanged(Action<InventoryContext> handler, out InventoryContext activeContext)
+        {
+            activeContext = default;
+
+            if (!Application.isPlaying)
+                return false;
+
+            var provider = Instance;
+            if (provider == null)
+                return false;
+
+            provider.OnContextChanged -= handler;
+            provider.OnContextChanged += handler;
+
+            activeContext = provider.ActiveContext;
+            return true;
+        }
+
+        /// <summary>The matching detach for <see cref="TrySubscribeContextChanged"/>, tolerant of
+        /// a provider that no longer exists (scene teardown) or a handler never subscribed.</summary>
+        public static void UnsubscribeContextChanged(Action<InventoryContext> handler)
+        {
+            if (Application.isPlaying && Instance != null)
+                Instance.OnContextChanged -= handler;
+        }
+
         [field: SerializeField] public bool ShowDebugPositions { get; private set; }
 
         [Space]
-        public EquipmentContainerDisplay EquipmentDisplay;
         [SerializeField] private Vector2Int equipmentSize = new(14, 1);
-
-        [Space]
-        public InventoryContainerDisplay InventoryDisplay;
         [SerializeField] private Vector2Int inventorySize = new(10, 6);
-
-        [Space]
-        public InventoryContainerDisplay StashDisplay;
         [SerializeField] private Vector2Int stashSize = new(10, 16);
-
-        [Space]
-        public InventoryContainerDisplay StoreDisplay;
         [SerializeField] private Vector2Int storeSize = new(10, 16);
 
-        /// <summary>The Sell Basket's grid (issue #66), wired to the same prefab the
-        /// <see cref="SellBasketPanel"/> binds in place of the retired single-slot StoreDisplay.</summary>
-        [Space]
-        public InventoryContainerDisplay BasketDisplay;
+        /// <summary>The Sell Basket's grid size (issue #66) - the basket alongside the Supply
+        /// shelf (<see cref="Store"/>), sized the same way <see cref="Stash"/> and
+        /// <see cref="Inventory"/> are, and bound by <see cref="SellBasketDisplay"/>.</summary>
         [SerializeField] private Vector2Int basketSize = new(5, 3);
 
         [SerializeField] private Slider amountSlider;
         [SerializeField] private TextMeshProUGUI amountText;
         private uint Amount => amountSlider != null ? (uint)amountSlider.value : 1;
 
-        private void SetInventories()
+        /// <summary>
+        /// The container-display registration seam (see <see cref="ContainerRole"/>): a display
+        /// resolves its own container by role instead of this provider holding a hard scene
+        /// reference to every display it owns - the direction that broke once the Vendor's slot
+        /// grids started spawning at runtime instead of being hand-placed. Subscribed from
+        /// <see cref="AbstractContainerDisplay.OnEnable"/>; mirrors
+        /// <see cref="TrySubscribeContextChanged"/>'s guard-and-resolve shape, so a display
+        /// enabling mid-domain-reload or at edit time is left unbound rather than creating a
+        /// provider (issue #46).
+        /// </summary>
+        /// <returns>Whether <paramref name="display"/> was actually bound.</returns>
+        public static bool TryRegisterDisplay(AbstractContainerDisplay display, ContainerRole role)
         {
-            EquipmentDisplay.SetupDisplay(Equipment);
-            InventoryDisplay.SetupDisplay(Inventory);
-            StashDisplay.SetupDisplay(Stash);
+            if (!Application.isPlaying)
+                return false;
 
-            StoreDisplay.SetupDisplay(Store);
-            if (BasketDisplay != null)
-                BasketDisplay.SetupDisplay(Basket.Container);
+            var provider = Instance;
+            if (provider == null)
+                return false;
+
+            var container = provider.ContainerFor(role);
+            if (container == null)
+                return false;
+
+            display.SetupDisplay(container);
+            return true;
         }
+
+        private AbstractDimensionalContainer ContainerFor(ContainerRole role) => role switch
+        {
+            ContainerRole.Equipment => Equipment,
+            ContainerRole.Inventory => Inventory,
+            ContainerRole.Stash => Stash,
+            ContainerRole.Store => Store,
+            ContainerRole.HealerSupply => HealerSupply,
+            ContainerRole.Basket => Basket?.Container,
+            _ => null,
+        };
 
         /// <summary>
         /// Where a shift-click on <paramref name="source"/> should send its item, given the
@@ -104,7 +193,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// directly tested; this is only the seam callers hold.
         /// </summary>
         public QuickMoveIntent QuickMoveFor(AbstractDimensionalContainer source) =>
-            QuickMoveResolver.Resolve(ActiveContext, source, Inventory, Stash, Equipment, Store, Basket.Container);
+            QuickMoveResolver.Resolve(ActiveContext, source, Inventory, Stash, Equipment, Store, HealerSupply, Basket.Container);
 
         public void Awake()
         {
@@ -119,13 +208,13 @@ namespace ToolSmiths.InventorySystem.Inventories
             Inventory = new(inventorySize);
             Stash = new(stashSize);
             Store = new(storeSize);
+            HealerSupply = new(storeSize);
             Basket = new SellBasket.Basket(new(basketSize));
 
             Wallet = new Wallet(Inventory, currencyMinter);
 
             RestockStore();
-
-            SetInventories();
+            RestockHealerSupply();
         }
 
         private void AddEquipment(EquipmentType equipmentType)
@@ -133,7 +222,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             for (var i = 0; i < Amount; i++)
             {
                 var randomEquipment = ItemProvider.Instance.RollEquipment(equipmentType);
-                _ = CharacterProvider.Instance.Player.PickUpItem(new Package(null, randomEquipment, 1u));
+                _ = CharacterProvider.Instance.Player.PickUpItemOrStash(new Package(null, randomEquipment, 1u));
             }
         }
 
@@ -142,7 +231,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             for (var i = 0; i < Amount; i++)
             {
                 var randomConsumable = ItemProvider.Instance.RollConsumable(consumableType);
-                _ = CharacterProvider.Instance.Player.PickUpItem(new Package(null, randomConsumable, 1u));
+                _ = CharacterProvider.Instance.Player.PickUpItemOrStash(new Package(null, randomConsumable, 1u));
             }
         }
 
@@ -151,13 +240,13 @@ namespace ToolSmiths.InventorySystem.Inventories
             var loot = ItemProvider.Instance.RollLoot(Amount);
 
             for (var i = 0; i < loot.Count; i++)
-                _ = CharacterProvider.Instance.Player.PickUpItem(loot[i]);
+                _ = CharacterProvider.Instance.Player.PickUpItemOrStash(loot[i]);
         }
 
         public void AddRandomCurrency()
         {
             for (var i = 0; i < Amount; i++)
-                _ = CharacterProvider.Instance.Player.PickUpItem(ItemProvider.Instance.RollCurrency());
+                _ = CharacterProvider.Instance.Player.PickUpItemOrStash(ItemProvider.Instance.RollCurrency());
         }
 
         public void RemoveAllItems(AbstractDimensionalContainer container)
@@ -210,6 +299,23 @@ namespace ToolSmiths.InventorySystem.Inventories
                 _ = Store?.TryAddToContainer(ref package);
             }
             Store.Sort();
+        }
+
+        /// <summary>The Healer Supply's Restock (issue #121): the same refill as
+        /// <see cref="RestockStore"/>, from rolled consumables instead of equipment.</summary>
+        public void RestockHealerSupply()
+        {
+            RemoveAllItems(HealerSupply);
+
+            for (var i = 0; i < 20; i++)
+            {
+                var item = ItemProvider.Instance.RollConsumable();
+
+                var package = new Package(null, item, 1u);
+
+                _ = HealerSupply?.TryAddToContainer(ref package);
+            }
+            HealerSupply.Sort();
         }
 
         public void StashInventory()

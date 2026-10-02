@@ -1,4 +1,5 @@
 ﻿using TMPro;
+using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Runtime.Character;
 using Submodules.Utility.Extensions;
@@ -8,55 +9,104 @@ using UnityEngine.UI;
 
 namespace ToolSmiths.InventorySystem.GUI.Displays
 {
-    public class ResourceDisplay : MonoBehaviour
+    public sealed class ResourceDisplay : MonoBehaviour
     {
-        [SerializeField] protected Image resourceImage;
+        [SerializeField] private Image resourceImage;
         // [SerializeField] protected Image impactImage; // TODO: look it up in RuadhWarbands
 
-        [SerializeField] protected TextMeshProUGUI percentageText;
-        [SerializeField] protected TextMeshProUGUI currentText;
-        [SerializeField] protected TextMeshProUGUI recoveryText;
+        [SerializeField] private TextMeshProUGUI percentageText;
+        [SerializeField] private TextMeshProUGUI currentText;
+        [SerializeField] private TextMeshProUGUI recoveryText;
 
-        [SerializeField] protected BaseCharacter character;
-        [SerializeField] protected StatName resourceName = StatName.Health;
-        [SerializeField] protected StatName recoveryName = StatName.HealthRegeneration;
+        [SerializeField] private BaseCharacter character;
+        [SerializeField] private StatName resourceName = StatName.Health;
+        [SerializeField] private StatName recoveryName = StatName.HealthRegeneration;
 
-        [SerializeField] protected AnimationCurve globeVolume;
+        [SerializeField] private AnimationCurve globeVolume;
 
-        protected void OnEnable()
+        private CharacterResource _resource;
+        private CharacterStat _recovery;
+        private bool _bound;
+
+        /// <summary>
+        /// Drive this display from a resource handed in, instead of from <c>character</c> — an
+        /// enemy's health, which no <see cref="BaseCharacter"/> owns. <paramref name="recovery"/>
+        /// is optional: without it the recovery text is left alone. Stays bound across a
+        /// disable/enable (a pooled bar) until <see cref="Unbind"/>.
+        /// </summary>
+        public void Bind(CharacterResource resource, CharacterStat recovery = null)
         {
-            if (character)
+            Release();
+
+            _resource = resource;
+            _recovery = recovery;
+            _bound = true;
+
+            if (isActiveAndEnabled)
+                Acquire();
+        }
+
+        /// <summary>Stop following the bound resource. Safe when nothing is bound.</summary>
+        public void Unbind()
+        {
+            Release();
+
+            _resource = null;
+            _recovery = null;
+            _bound = false;
+        }
+
+        private void OnEnable()
+        {
+            if (!_bound && character)
             {
-                var resource = character.GetResource(resourceName);
+                _resource = character.GetResource(resourceName);
+                _recovery = character.GetStat(recoveryName);
+            }
 
-                resource.CurrentHasChanged -= UpdateDisplay;
-                resource.CurrentHasChanged += UpdateDisplay;
+            Acquire();
+        }
 
-                var stat = character.GetStat(recoveryName);
+        private void OnDisable()
+        {
+            Release();
 
-                stat.TotalHasChanged -= UpdateRechargeDisplay;
-                stat.TotalHasChanged += UpdateRechargeDisplay;
-
-                UpdateDisplay(0, resource.CurrentValue, resource.TotalValue);
-                UpdateRechargeDisplay(stat.TotalValue);
+            if (!_bound)
+            {
+                _resource = null;
+                _recovery = null;
             }
         }
 
-        protected void OnDisable()
+        private void Acquire()
         {
-            if (character)
+            if (_resource != null)
             {
-                var resource = character.GetResource(resourceName);
+                _resource.CurrentHasChanged -= UpdateDisplay;
+                _resource.CurrentHasChanged += UpdateDisplay;
 
-                resource.CurrentHasChanged -= UpdateDisplay;
+                UpdateDisplay(0, _resource.CurrentValue, _resource.TotalValue);
+            }
 
-                var stat = character.GetStat(recoveryName);
+            if (_recovery != null)
+            {
+                _recovery.TotalHasChanged -= UpdateRechargeDisplay;
+                _recovery.TotalHasChanged += UpdateRechargeDisplay;
 
-                stat.TotalHasChanged -= UpdateRechargeDisplay;
+                UpdateRechargeDisplay(_recovery.TotalValue);
             }
         }
 
-        protected virtual void UpdateDisplay(float previous, float current, float total)
+        private void Release()
+        {
+            if (_resource != null)
+                _resource.CurrentHasChanged -= UpdateDisplay;
+
+            if (_recovery != null)
+                _recovery.TotalHasChanged -= UpdateRechargeDisplay;
+        }
+
+        private void UpdateDisplay(float previous, float current, float total)
         {
             if (resourceImage)
                 if (0 < globeVolume.length)
@@ -71,7 +121,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                 currentText.text = $"{current:0} / {total:0}";
         }
 
-        protected virtual void UpdateRechargeDisplay(float total)
+        private void UpdateRechargeDisplay(float total)
         {
             if (recoveryText)
                 recoveryText.text = $"{total:0} / sec";

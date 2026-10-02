@@ -6,7 +6,7 @@ namespace ToolSmiths.InventorySystem.Data.Distributions
 {
     [System.Serializable]
     [CreateAssetMenu(fileName = "Item Rarity Distribution", menuName = "Inventory System/Probability Distributions/Item Rarity")]
-    public class ItemRarityDistribution : AbstractProbabilityDistribution<ItemRarity>
+    public sealed class ItemRarityDistribution : AbstractProbabilityDistribution<ItemRarity>
     {
         [SerializeField, Range(1, 8)] private int exampleTotalPlayerCount = 1;
         [SerializeField, Range(0, 7)] private int exampleAlliedPlayerCount = 7;

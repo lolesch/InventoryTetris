@@ -68,7 +68,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
             var wallet = InventoryProvider.Instance.Wallet;
 
-            return wallet == null || wallet.CanAfford(new Currency(VendorTransaction.BuyPrice(displayedPackage.Item)));
+            return wallet == null || wallet.CanAfford(new Currency(VendorTransaction.BuyPrice(displayedPackage.Item) * displayedPackage.Amount));
         }
 
         protected override void SetDisplaySize(RectTransform display, Package package)
@@ -93,52 +93,26 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         protected override void MoveItem(PointerEventData eventData, Vector2 pointerPosition)
         {
-            if (Container == null)
+            if (!TryBeginMove(out var position, out var package))
                 return;
 
-            var position = Position;
-
-            if (!Container.TryGetItemAt(ref position, out var package))
-                return;
-
-            var wallet = InventoryProvider.Instance.Wallet;
-            var price = VendorTransaction.BuyPrice(package.Item);
-
-            FadeOutPreview();
-
-            // Right-click and shift-click both move the item straight to the inventory.
-            #region BUY: IMMEDIATE MOVE
-            if (eventData.button == PointerEventData.InputButton.Right || Input.GetKey(KeyCode.LeftShift))
+            // Right-click is a Supply's "use": it buys the item (issue #121), the same
+            // immediate buy as shift-click. Drag-and-drop below stays the other way to buy.
+            // This class serves every Supply shelf - the Vendor's and the Healer's.
+            if (eventData.button == PointerEventData.InputButton.Right)
             {
-                if (!VendorTransaction.CanAffordBuy(wallet, price))
-                    return;
-
-                /// One resolver for every quick-move (issue #30): the shelf's own shift-click
-                /// is always a buy, whatever panel is open - right-click buys the same way, so
-                /// both route through the same intent. One transaction (issue #11): the item
-                /// leaves the shelf and lands in the bag, and the price is paid, as a unit. No
-                /// room in the bag rolls the whole thing back - the item stays on the shelf and
-                /// nothing is charged.
-                var intent = InventoryProvider.Instance.QuickMoveFor(Container);
-
-                if (intent.Kind == QuickMoveIntentKind.Buy)
-                    _ = VendorTransaction.Buy(Container, position, package, wallet, price);
-
+                BuyAt(position, package);
                 return;
             }
-            #endregion BUY: IMMEDIATE MOVE
+
+            var unitPrice = VendorTransaction.BuyPrice(package.Item);
 
             // Drag: a pick-up, not a completed move - nothing is charged, and the price is
-            // read once and held on the cursor for the length of the drag (issue #31). It is
-            // paid only when the package lands in a player container; dropping it back on the
-            // shelf, cancelling (Esc) or closing the Store returns it with no charge.
-            #region BUY: DRAG
-            _ = Container.RemoveAtPosition(position, package);
-
-            var positionOffset = Position - position;
-
-            DragProvider.Instance.SetPackage(this, package, positionOffset, pointerPosition, price);
-            #endregion BUY: DRAG
+            // read once and held on the cursor for the length of the drag (issue #31),
+            // scaled to the amount actually picked up (BeginDrag). It is paid only when the
+            // package lands in a player container; dropping it back on the shelf, cancelling
+            // (Esc) or closing the Store returns it with no charge.
+            BeginDrag(position, package, pointerPosition, unitPrice);
         }
 
         /// <summary>

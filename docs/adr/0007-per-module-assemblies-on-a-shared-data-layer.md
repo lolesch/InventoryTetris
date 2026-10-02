@@ -75,8 +75,9 @@ Collapsing them into one `InventorySystem.Tests.EditMode`, as AutoBattler has, i
 later call — once the module set stops moving.
 
 Until a module is extracted, its behaviour cannot be tested without a scene. That is the
-standing justification for issue #4's spike and for every "reachable from a test" line
-in `dev/specs/2026-08-31-foundational-rework-design.md`.
+standing justification for issue #4's spike, and for every "reachable from a test" line the
+foundational rework was scoped against (its spec was pruned 2026-09-29 as shipped; the
+deferred entries it still held live in `dev/specs/2026-09-29-deferred-design-work.md`).
 
 ## Amendment — issue #8: the authored adapters live in `InventorySystem.Items`
 

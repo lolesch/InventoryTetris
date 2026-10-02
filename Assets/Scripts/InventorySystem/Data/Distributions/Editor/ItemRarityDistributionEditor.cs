@@ -9,7 +9,7 @@ namespace ToolSmiths.InventorySystem.Data.Distributions.EditorScripts
     /// crossover points so a retune is a deliberate, visible change (design § Further Notes).
     /// </summary>
     [CustomEditor(typeof(ItemRarityDistribution))]
-    public class ItemRarityDistributionEditor : ProbabilityDistributionEditor
+    public sealed class ItemRarityDistributionEditor : ProbabilityDistributionEditor
     {
         private float _magicFind;
 

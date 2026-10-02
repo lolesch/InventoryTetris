@@ -8,6 +8,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
     [RequireComponent(typeof(GridLayoutGroup))]
 
     [System.Serializable]
+    // Must enable after InventoryProvider's Awake builds its containers (order 0) - see
+    // AbstractContainerDisplay.OnEnable, which resolves this display's container from it.
+    [DefaultExecutionOrder(20)]
     internal sealed class InventoryContainerDisplay : AbstractContainerDisplay
     {
         [SerializeField] private AbstractSlotDisplay slotDisplayPrefab;
@@ -55,9 +58,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                         containerSlotDisplays[current].SetupSlot(this, Container, new(x, y));
                     }
 
-                List<InventorySlotDisplay> DestroyInvalidSlotDisplays()
+                List<AbstractSlotDisplay> DestroyInvalidSlotDisplays()
                 {
-                    var slotDisplays = GetComponentsInChildren<InventorySlotDisplay>().ToList();
+                    var slotDisplays = GetComponentsInChildren<AbstractSlotDisplay>().ToList();
 
                     for (var i = slotDisplays.Count - 1; Container?.Capacity <= i; i--)
                     {

@@ -22,10 +22,10 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         private static EncounterProfile Ashfen() => Profiles.Solo(EnemyArchetype.Brute);
 
         private static RunResult Death(long currencyFee = 0L, int xpLost = 0) =>
-            RunResult.Died(new EncounterTotals(0, 0, 0, 0, 0f), currencyBanked: 0L, xpLost: xpLost, currencyFee: currencyFee);
+            RunResult.Died(new EncounterTotals(0, 0, 0, 0f), currencyBanked: 0L, xpLost: xpLost, currencyFee: currencyFee);
 
         private static RunResult Recall() =>
-            RunResult.Recalled(new EncounterTotals(0, 0, 0, 0, 0f), currencyBanked: 0L);
+            RunResult.Recalled(new EncounterTotals(0, 0, 0, 0f), currencyBanked: 0L);
 
         // ─── Settle: only on a Death ─────────────────────────────────────────
 

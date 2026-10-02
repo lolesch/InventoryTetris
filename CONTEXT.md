@@ -53,6 +53,9 @@ backpack), the **Stash**, a Town Stop's **Supply**, the **Sell Basket**, and the
 **Inventory / Stash / Supply / Sell Basket**:
 Four distinct *roles*, all currently played by the same type. Only Equipment is its own
 type. Say which role you mean — "the Stash" is never a class.
+The Stash is **Session-owned** for the MVP (one hero, so nothing shares it). The design
+intent that loot be stored *and exchanged among heroes* needs a persistence tier above
+Session that does not exist yet — revisit post-MVP (ADR-0014).
 _Avoid_: using "inventory" to mean any container
 
 **Supply**:
@@ -71,7 +74,9 @@ The grid a sale is staged in before it commits. A Package entering the basket is
 the sale happens on **Confirm**, as one consolidated payout equal to the previewed total,
 and a **Cancel** hands every staged Package back to its **Package Origin** with the
 **Wallet** untouched. Staging is modal — while the basket holds anything, the Supply is
-blocked (ADR-0012). Only some Town Stops offer one; the Vendor does, a Healer need not.
+blocked (ADR-0012). Only some Town Stops offer one; the Vendor and the Healer do. There is
+one basket, shown by the panel of whichever of them is open; leaving that Town Stop - for
+another one included - cancels what is staged.
 _Avoid_: cart, sell slot, trade window; bare "basket"
 
 **Displacement**:
@@ -87,8 +92,15 @@ _Avoid_: swap (a swap is one specific displacement), eviction
 
 **Quick Move**:
 A shift-click or right-click that moves a Package without a drag, to a destination chosen
-by which **Side Panel** is open rather than by where a pointer ends up. It always executes
-— into the target container, or the hand if that is full.
+by the active **Inventory Context** rather than by where a pointer ends up. Each context
+names a hub (the **Inventory**), one sink, and a set of sources, and every row follows the
+same three rules: the hub goes to the sink, the **Equipment** goes to the sink in any
+context but `Hero`, and a listed source comes back to the hub. A context with no rows
+moves nothing — the **Supply** is never a sink, and its own shift-click stays a **Buy** in
+every context. A move between containers always executes — into the target container, or the
+hand if that is full. A retrieval from the **Stash** and a **Buy** go through the player's
+acquisition entry point instead, so auto-equip applies, and when nothing has room they roll
+back with nothing moved.
 _Avoid_: auto-move, transfer, quick-transfer; "shift-click" (that is the input, not the move)
 
 **Package Origin**:
@@ -139,27 +151,30 @@ The player's spendable money, wherever the coins physically sit. Currently not a
 
 **Loot**:
 The items and coins a kill sheds. It drops live during a Run, **per kill**, not as a
-bundle handed over on Recall. XP is *not* Loot — it settles per Encounter clear (see
-**Encounter**), on its own rhythm.
-_Avoid_: haul, spoils, bounty, take, rewards; XP (a separate reward, separately timed)
+bundle handed over on Recall. XP is *not* Loot — it is delivered per kill too, but
+straight to the hero rather than as a Drop.
+_Avoid_: haul, spoils, bounty, take, rewards; XP (a separate reward, delivered straight to the hero)
 
 **Kill**:
-One enemy falling. It is the settle unit for **Loot** — each kill sheds its Drops and
-coin Piles on the spot — and nothing else: XP settles per Encounter clear, not per kill.
-"Per kill" and "on the clear" are the two reward rhythms; name which one you mean.
-_Avoid_: frag, takedown, defeat; "kill" as the XP unit
+One enemy falling. It is the settle unit for every reward — each kill sheds its Drops and
+coin Piles on the spot, and delivers its XP to the hero the same tick. Nothing waits for
+the Encounter's clear.
+_Avoid_: frag, takedown, defeat
 
 **Drop**:
 Loot lying on the ground at a Location — shed by a defeated enemy, or laid out from a
 Corpse when the hero returns for it — not yet picked up. Drops accumulate as enemies
 fall, never as one bundle at the end; a Drop still on the ground when the Run ends is
-gone, on Recall or Death alike.
+gone, on Recall or Death alike. A Drop the hero's loot filter admits is picked up through
+the player's acquisition entry point (see **Quick Move**) — auto-equip into an empty slot,
+else the **Inventory**; with no room it stays on the ground.
 _Avoid_: pile (that is coins), ground loot, spill, cache
 
 **Corpse**:
 The hero's bag, set aside at the Location where they were downed. Death empties the bag
 into the Corpse; recovering it means re-entering that Location and picking the items
-back up. There is only ever one — a second Death destroys any Corpse still unclaimed —
+back up — through the same acquisition entry point as a **Drop**, so gear auto-equips into
+an empty slot. There is only ever one — a second Death destroys any Corpse still unclaimed —
 and it persists between Sessions until recovered.
 _Avoid_: grave, body, loot bag; remains (reserved for a possible future enemy corpse)
 
@@ -202,7 +217,10 @@ _Avoid_: user, you; "hero" for the one making the calls
 The span of play between app start and quit. It contains many Runs and is the unit that
 persists — the hero, the four containers, the wallet and XP save per Session and resume
 `InTown` on the next launch. A Run never spans Sessions: quitting mid-Run banks what the
-hero already picked up and discards the rest.
+hero already picked up and discards the rest. The Session is the *top* persistence tier
+for the MVP: a Stash or Wallet shared across heroes would need a tier above it, which is
+deferred (ADR-0014) — do not let persistence code assume the Session is the outermost
+owner.
 _Avoid_: playthrough, save file (the save is the Session's shadow, not the thing itself)
 
 **Run**:
@@ -234,9 +252,10 @@ _Avoid_: level, zone, area, stage, node, dungeon, map
 One build-and-release of pressure at a Location — the pacing unit a Run is made of. It
 fields a fixed **Roster**; enemies arrive over it per the **Spawn Profile** — one
 archetype in **Packs**, the other singly — pressure mounts, and it clears when the Roster
-is spent and the last enemy is down. **XP settles here, on the clear**, summed over the
-Roster; a Run driven off mid-Encounter forfeits that Encounter's XP. Loot Drops and
-coin Piles fell per kill as it ran. A one-second beat, then the next builds. A Location
+is spent and the last enemy is down. XP, Loot Drops and coin Piles all arrive per kill as
+it ran — the clear pays nothing out, and a Run driven off mid-Encounter forfeits nothing.
+A one-second beat, then the next builds. The first Encounter of a Run opens after one
+spawn delay (the Location's `SpawnInterval ± SpawnJitter`), not at the moment of Send. A Location
 runs Encounters endlessly at a fixed difficulty; only Recall or Death ends the Run
 (issue-#18 `/prototype` pass 2, ADR-0010).
 _Avoid_: battle, fight, combat, room; wave (a Pack is one arrival *within* an Encounter)
@@ -264,6 +283,14 @@ The player action that ends a Run with everything earned so far kept. Transition
 `InField → InTown`.
 _Avoid_: retreat, extract, return, flee, escape
 
+**Relocate**:
+The player action that moves a live Run to another Location without ending it — the Run
+stays `InField`, the current Encounter stops and a fresh one opens at the new Location,
+and everything the Run has earned so far carries on into its one result. Not a Recall:
+nothing is settled and the hero never passes through Town. Ground Drops at the Location
+left behind are gone, as at the end of a Run.
+_Avoid_: switch, travel, hop; "Recall and re-Send" (that is what Relocate replaced)
+
 **Auto-Recall**:
 A Recall the hero performs on its own, because a behaviour slider the player set before
 or during the Run said to — health dropping to the retreat fraction, or the bag filling
@@ -279,8 +306,10 @@ Equipped gear is never touched; not a game-over.
 _Avoid_: defeat, loss, game over, fail, wipe
 
 **Healer**:
-A Town action that instantly refills the hero's Health and Resource. A one-shot
-button today; will gain its own side panel later.
+A **Town Stop** that instantly refills the hero's Health and Resource each time it is
+entered (the refill is the player's resource globes filling; audio feedback is deferred).
+Its **Side Panel** shows its own **Supply** of consumables, bought like the Vendor's, and
+has a **Sell Basket** of its own.
 _Avoid_: shrine, fountain, well
 
 ## Combat
@@ -355,24 +384,32 @@ _Avoid_: location, node, station, shop, destination
 
 **Hero Panel**:
 The right-side panel: the **Equipment** paperdoll on top, the **Inventory** below. The
-player's own things, as opposed to the Town Stop's on the left.
+player's own things, as opposed to the Town Stop's on the left. It is a member of *every*
+**Inventory Context** — that is the only place its ubiquity is stated, and no panel ever
+references it. It opens and closes on its own toggle, and is never opened or closed by
+another panel naming it.
 _Avoid_: character panel, paperdoll panel (Equipment is the paperdoll), bag panel
 
 **Side Panel**:
-A left-side panel showing one **Town Stop**'s context — the Stash or the Vendor today.
-Exactly one active at a time; the active one is tracked as `SidePanelContext` on the
-`InventoryProvider`, which the trade flow reads for **Quick Move** routing. Shares the
+A left-side panel showing one **Town Stop**'s context — the Stash or the Vendor today. It
+knows only the one **Inventory Context** it was authored with, subscribes to that context,
+and derives its own visibility from it; it announces nothing and fades nothing. Shares the
 left side with the **Combat Panel**, which replaces the Side Panels for the length of a
 Run.
 _Avoid_: tab, drawer, sidebar; right-side (that is the **Hero Panel**)
 
-**Side Panel Context**:
-The enum (`None`, `Stash`, `Vendor`) that records which **Town Stop**'s Side Panel is
-currently open. Owned by the `InventoryProvider`, not by the UI toggles. The trade flow
-queries it to decide where a **Quick Move** lands. Its members are not homogeneous and
-need not be — the Stash is the player's own storage, the Vendor is someone else's — because
-the only question the enum answers is which Side Panel is open.
-_Avoid_: trade target, active panel, current context
+**Inventory Context**:
+The single-valued enum (`None`, `Hero`, `Stash`, `Vendor`, `Healer`) that answers two
+questions at once: which panels are up, and where a **Quick Move** lands. Entry points
+*request* a context; every panel *derives* its visibility from it. A context names the
+**Hero Panel** plus at most one Town Stop's panel, so the panel set is derived rather than
+announced, and a panel that belongs to every context can never be the thing that names one
+(ADR-0013). It is owned by the `InventoryProvider` and read by the trade flow for **Quick
+Move** routing. Its members are not homogeneous and need not be — the Stash is the player's
+own storage, the Vendor is someone else's — because the only question the enum answers is
+which context is active. Run phase is not a member: only `None` and `Hero` are reachable
+in the field, so a Run *constrains* contexts rather than being one.
+_Avoid_: Side Panel Context (retired), trade target, active panel, current context
 
 **Combat Panel**:
 The left-side panel, visible only during `InField`. Holds behaviour sliders, enemy
@@ -390,3 +427,21 @@ A pooled list of slot displays for items lying on the ground. Each entry shows t
 item name and icon, supports hover preview and click-to-pick-up. One slot per item,
 not spatial.
 _Avoid_: loot beam, drop list, world items
+
+
+## UI Components
+
+The Submodule provides basic components to reuse or derive from.
+
+**Interactive Element**:
+It reacts to pointer handler to provide visual feedback. Base class for buttons and toggles.
+
+**Panels**:
+A panel is a parent component that groups content. It provides appearance options such as fading in and out, scaling and movement. A panel should always stay enabled, only its alpha is set to 0.
+
+**ExclusiveGroups**:
+A collection of mutually exclusive Toggles or Panels of which at most one is active at a time. 
+"Activate" deactivates whichever sibling held the slot. 
+
+**Displays and Views**:
+A display is the visual representation of a data object. *IDisplay* provides a *Refresh()* call to update the display on data change. This differs from views, that show static data.

@@ -30,7 +30,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
                 new ConstantRollSource(0f), Behaviours.Engaging(5), ShortBeat());
 
             var clears = 0;
-            sim.EncounterCleared += _ => clears++;
+            sim.EncounterCleared += () => clears++;
 
             sim.Advance(0.1f); // one tick: Strike kills the lone enemy → clear
 

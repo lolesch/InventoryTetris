@@ -5,9 +5,10 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 {
     /// <summary>
-    /// The quick-move matrix (issue #30): shift-click routes an item to wherever the open
-    /// context says. A pure resolver maps every (source container, Inventory Context) pair to
-    /// one intent - do nothing, move to a named container, send to the Sell Basket, or
+    /// The quick-move table (issue #86, replacing #30's hand-rolled matrix): shift-click
+    /// routes an item to wherever the open context says. A pure resolver maps every (source
+    /// container, Inventory Context) pair to one intent - do nothing, move to a named
+    /// container, acquire into the hub (honouring auto-equip), send to the Sell Basket, or
     /// buy - so the three slot displays that used to hand-roll a move each now ask it.
     /// This fixture wires the Stash rows, the "no context" rows, and the Vendor rows
     /// (issue #33): with the Vendor open, backpack and equipment shift-clicks go to the
@@ -17,9 +18,10 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
     /// <para>The context replaced <c>SidePanelContext</c> in #85, so the rows are keyed on the
     /// Inventory Context now. Its two new members resolve to nothing on purpose: the Hero
     /// Panel's sink would be Equipment, but that row duplicates right-click and has no ticket,
-    /// and the Healer has no containers yet, so it has no sink at all. Both are asserted here
-    /// rather than left implicit, because "a Quick Move with the Healer open does nothing" is a
-    /// stated outcome of #85, not an oversight.</para>
+    /// and the Hero context has no Town Stop, so it has no sink at all. It is asserted here
+    /// rather than left implicit, because "a Quick Move with only the Hero Panel open does
+    /// nothing" is a stated outcome of #85, not an oversight. The Healer gained the Vendor's
+    /// Sell Basket rows in #121.</para>
     /// </summary>
     [TestFixture]
     public sealed class QuickMoveResolverTests
@@ -32,11 +34,13 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         private readonly AbstractDimensionalContainer store = new CharacterInventory(new Vector2Int(4, 4));
         private readonly AbstractDimensionalContainer basket = new CharacterInventory(new Vector2Int(4, 4));
 
-        private static QuickMoveIntent Resolve(InventoryContext context, AbstractDimensionalContainer source,
+        private readonly AbstractDimensionalContainer healerSupply = new CharacterInventory(new Vector2Int(4, 4));
+
+        private QuickMoveIntent Resolve(InventoryContext context, AbstractDimensionalContainer source,
             AbstractDimensionalContainer backpack, AbstractDimensionalContainer stash,
             AbstractDimensionalContainer equipment, AbstractDimensionalContainer store,
             AbstractDimensionalContainer basket)
-            => QuickMoveResolver.Resolve(context, source, backpack, stash, equipment, store, basket);
+            => QuickMoveResolver.Resolve(context, source, backpack, stash, equipment, store, healerSupply, basket);
 
         // ── Stash open: backpack ↔ Stash, equipment → Stash (byte-for-byte as today) ──
 
@@ -50,12 +54,14 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         }
 
         [Test]
-        public void StashContext_Stash_SendsTheItemBackToTheBackpack()
+        public void StashContext_Stash_AcquiresTheItemIntoTheBackpack()
         {
+            // #86: retrieval from the Stash routes through the acquisition entry point
+            // (auto-equip), not a plain move - so this carries no Target.
             var intent = Resolve(InventoryContext.Stash, stash, backpack, stash, equipment, store, basket);
 
-            Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.MoveToContainer));
-            Assert.That(intent.Target, Is.SameAs(backpack));
+            Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.Acquire));
+            Assert.That(intent.Target, Is.Null);
         }
 
         [Test]
@@ -80,18 +86,35 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.None));
         }
 
-        // ── Hero and Healer contexts: no rows, deliberately (issue #85) ──
+        // ── Healer open: the same Sell Basket rows as the Vendor's (issue #121) ──
 
         [TestCase(nameof(backpack))]
-        [TestCase(nameof(stash))]
         [TestCase(nameof(equipment))]
-        [TestCase(nameof(basket))]
-        public void HealerContext_PlayerContainer_DoesNothing(string sourceName)
+        public void HealerContext_BackpackAndEquipment_SendTheItemToTheSellBasket(string sourceName)
         {
             var intent = Resolve(InventoryContext.Healer, SourceOf(sourceName), backpack, stash, equipment, store, basket);
 
+            Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.SellBasket));
+        }
+
+        [Test]
+        public void HealerContext_Basket_ReturnsTheItemToTheBackpack()
+        {
+            var intent = Resolve(InventoryContext.Healer, basket, backpack, stash, equipment, store, basket);
+
+            Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.MoveToContainer));
+            Assert.That(intent.Target, Is.SameAs(backpack));
+        }
+
+        [Test]
+        public void HealerContext_Stash_DoesNothing()
+        {
+            var intent = Resolve(InventoryContext.Healer, stash, backpack, stash, equipment, store, basket);
+
             Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.None));
         }
+
+        // ── Hero context: no rows, deliberately (issue #85) ──
 
         [TestCase(nameof(backpack))]
         [TestCase(nameof(stash))]
@@ -149,6 +172,20 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         public void ShelfSource_StaysABuy(InventoryContext context)
         {
             var intent = Resolve(context, store, backpack, stash, equipment, store, basket);
+
+            Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.Buy));
+        }
+
+        // ── The Healer's shelf (issue #121): any Supply is a buy, not just the Vendor's ──
+
+        [TestCase(InventoryContext.None)]
+        [TestCase(InventoryContext.Hero)]
+        [TestCase(InventoryContext.Stash)]
+        [TestCase(InventoryContext.Vendor)]
+        [TestCase(InventoryContext.Healer)]
+        public void HealerShelfSource_IsABuy_InEveryContext(InventoryContext context)
+        {
+            var intent = Resolve(context, healerSupply, backpack, stash, equipment, store, basket);
 
             Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.Buy));
         }

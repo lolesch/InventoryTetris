@@ -24,7 +24,7 @@ namespace ToolSmiths.InventorySystem.Inventories
     /// and the slot displays - still in <c>Assembly-CSharp</c> until the #15 extraction - can
     /// resolve a stored <see cref="ItemInstance"/> to its template.
     /// </summary>
-    public class ItemProvider : AbstractProvider<ItemProvider>, ICurrencyMinter
+    public sealed class ItemProvider : AbstractProvider<ItemProvider>, ICurrencyMinter
     {
         [Tooltip("Stat-icon lookup for the character and item-stat displays. Not on the roll path.")]
         public ItemTypeData ItemTypeData;
@@ -196,6 +196,9 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// </summary>
         public ItemInstance RollEquipment(EquipmentType type) =>
             RollFrom(PickDefinition(ItemCategory.Equipment, d => EquipmentTypeMatches(type, d.EquipmentType)));
+
+        /// <summary>Rolls a random consumable of any type - the Healer Supply's stock (issue #121).</summary>
+        public ItemInstance RollConsumable() => RollFrom(PickDefinition(ItemCategory.Consumable, _ => true));
 
         /// <summary>Rolls a random consumable of <paramref name="type"/>. Was <c>GenerateRandomOfConsumableType</c>.</summary>
         public ItemInstance RollConsumable(ConsumableType type) =>

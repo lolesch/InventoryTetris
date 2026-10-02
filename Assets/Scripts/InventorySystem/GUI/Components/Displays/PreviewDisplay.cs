@@ -11,8 +11,7 @@ using UnityEngine.UI;
 namespace ToolSmiths.InventorySystem.GUI.Displays
 {
     // TODO: inherit AbstractDisplay
-    [RequireComponent(typeof(RectTransform))]
-    public class PreviewDisplay : MonoBehaviour, IView<(Package package, Package compareTo)>
+    public sealed class PreviewDisplay : SimplePanel, IDisplay<(Package package, Package compareTo)>
     {
         [SerializeField] private Image icon;
         [SerializeField] private Image frame;
@@ -27,16 +26,12 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
         private PrefabPool<CharacterStatModifierDisplay> itemStatPool;
         private PrefabPool<CharacterStatModifierDisplay> ItemStatPool => itemStatPool ??= new(itemStatPrefab);
 
-        public bool IsPreviewing => gameObject.activeSelf;
-
-        private void Awake() => gameObject.SetActive(false);
-
         public void Refresh((Package package, Package compareTo) data) => Refresh(data.package, data.compareTo);
         public void Refresh(Package package, Package compareTo, float priceOverride = -1f)
         {
             if (!package.IsValid)
             {
-                gameObject.SetActive(false);
+                Collapse();
                 return;
             }
 
@@ -88,14 +83,14 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                 itemStat.gameObject.SetActive(true);
             }
 
-            gameObject.SetActive(true);
+            Expand();
         }
 
         public void Refresh(Package package)
         {
             if (!package.IsValid)
             {
-                gameObject.SetActive(false);
+                Collapse();
                 return;
             }
 
@@ -140,7 +135,20 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                 itemStat.gameObject.SetActive(true);
             }
 
-            gameObject.SetActive(true);
+            Expand();
+        }
+
+        /// <summary>Content (text, pooled stat rows) is set just before <see cref="SimplePanel.Expand"/>,
+        /// but the layout group/content size fitter driven by that content only recomputes on
+        /// Unity's next deferred layout pass. Since this panel stays enabled and only toggles
+        /// its CanvasGroup alpha, that pass would otherwise land a frame late — sized for the
+        /// *previous* hover instead of this one. Force it here, before the CanvasGroup starts
+        /// fading in.</summary>
+        protected override void BeforeAppear()
+        {
+            base.BeforeAppear();
+
+            (transform as RectTransform).RefreshContentFitter();
         }
     }
 }

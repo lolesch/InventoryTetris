@@ -181,6 +181,71 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             Assert.That(WalletValue(wallet), Is.EqualTo(100u));
         }
 
+        /// Like <see cref="PickUpTransactionTests.FakePlayer"/>: the player's placement
+        /// (<see cref="ItemAcquisition"/>) without the MonoBehaviour or the provider singleton, so a
+        /// shift-click buy's real path - through <see cref="IItemReceiver"/>, not the
+        /// null-player bag-add seam every other Buy test above exercises - is covered too.
+        private sealed class FakePlayer : IItemReceiver
+        {
+            private readonly CharacterEquipment equipment;
+            private readonly CharacterInventory inventory;
+
+            public FakePlayer(CharacterEquipment equipment, CharacterInventory inventory)
+            {
+                this.equipment = equipment;
+                this.inventory = inventory;
+            }
+
+            public bool PickUpItem(ItemInstance item, uint amount)
+            {
+                var package = new Package(null, item, amount);
+                return ItemAcquisition.TryPlace(ref package, equipment, inventory);
+            }
+        }
+
+        [Test]
+        public void Buy_ThroughAPlayer_RoutesViaPickUpItem_AndAutoEquips()
+        {
+            var wallet = NewWallet();
+            SeedCash(wallet, CurrencyType.Gold, 1u); // 1200
+            var store = new CharacterInventory(new Vector2Int(4, 4));
+            _ = store.AddAtPosition(new Vector2Int(0, 0), new Package(store, Sword(), 1u));
+            var instance = store.StoredPackages[new Vector2Int(0, 0)].Item;
+
+            var equipment = new CharacterEquipment(new Vector2Int(14, 1), null);
+            var inventory = new CharacterInventory(new Vector2Int(4, 4));
+            var player = new FakePlayer(equipment, inventory);
+
+            var bought = VendorTransaction.Buy(store, new Vector2Int(0, 0),
+                store.StoredPackages[new Vector2Int(0, 0)], wallet, SwordBuyPrice, player);
+
+            Assert.That(bought, Is.True);
+            Assert.That(store.StoredPackages, Is.Empty, "the shelf no longer holds it");
+            Assert.That(Holds(equipment, instance), Is.True, "auto-equip placed it, not a plain bag add");
+            Assert.That(WalletValue(wallet), Is.EqualTo(1200u - (uint)SwordBuyPrice), "the price was paid exactly");
+        }
+
+        [Test]
+        public void Buy_ThroughAPlayer_WithNoRoomAnywhere_RollsBack_AndChargesNothing()
+        {
+            var inventory = new CharacterInventory(new Vector2Int(1, 1));
+            var wallet = new Wallet(inventory, minter);
+            SeedCash(wallet, CurrencyType.Gold, 1u); // fills the inventory's only cell
+            var store = new CharacterInventory(new Vector2Int(4, 4));
+            _ = store.AddAtPosition(new Vector2Int(0, 0), new Package(store, Sword(), 1u));
+            var instance = store.StoredPackages[new Vector2Int(0, 0)].Item;
+
+            var equipment = new CharacterEquipment(new Vector2Int(14, 1), null) { autoEquip = false };
+            var player = new FakePlayer(equipment, inventory);
+
+            var bought = VendorTransaction.Buy(store, new Vector2Int(0, 0),
+                store.StoredPackages[new Vector2Int(0, 0)], wallet, SwordBuyPrice, player);
+
+            Assert.That(bought, Is.False);
+            Assert.That(Holds(store, instance), Is.True, "the item stayed on the shelf");
+            Assert.That(WalletValue(wallet), Is.EqualTo(1200u), "no charge on a rolled-back buy");
+        }
+
         [Test]
         public void Buy_LeavesTheStoreAndWalletEnrollableAgain()
         {

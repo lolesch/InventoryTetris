@@ -1,3 +1,4 @@
+using ToolSmiths.InventorySystem.Data;
 namespace ToolSmiths.InventorySystem.Runtime.Character
 {
     /// <summary>

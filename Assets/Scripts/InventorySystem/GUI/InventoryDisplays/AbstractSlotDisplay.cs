@@ -86,8 +86,112 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         {
             if (DragProvider.Instance.IsDragging)
                 DropItem(DragProvider.Instance.DraggingPackage);
+            else if (eventData.button != PointerEventData.InputButton.Right && Input.GetKey(KeyCode.LeftShift) && TryQuickMove())
+                return;
             else
                 MoveItem(eventData, pressPosition);
+        }
+
+        /// <summary>
+        /// The shift-click quick-move dispatch (issue #67), hoisted here so every slot
+        /// display gets it for free instead of hand-rolling the same preamble -
+        /// <see cref="QuickMoveResolver"/> read, <see cref="QuickMoveIntentKind"/> switched
+        /// on, move executed - four times with growing odds one copy is wrong or missing
+        /// (<see cref="BasketSlotDisplay"/> shipped without it entirely). <see cref="MoveItem"/>
+        /// is left with only the right-click and drag-pickup branches, which genuinely
+        /// differ per container.
+        /// </summary>
+        /// <returns>
+        /// Whether the click was a quick-move the resolver had an answer for. False leaves
+        /// the click to fall through to <see cref="MoveItem"/> - there was no item under the
+        /// cursor, so a normal click still gets its chance.
+        /// </returns>
+        private bool TryQuickMove()
+        {
+            if (Container == null)
+                return false;
+
+            var position = Position;
+
+            if (!Container.TryGetItemAt(ref position, out var package))
+                return false;
+
+            FadeOutPreview();
+
+            var intent = InventoryProvider.Instance.QuickMoveFor(Container);
+
+            switch (intent.Kind)
+            {
+                case QuickMoveIntentKind.SellBasket:
+                    /// One transaction over the source and the basket: the item leaves this
+                    /// slot and lands in the basket with its origin remembered; a full
+                    /// basket leaves it where it is (#33).
+                    _ = SellBasketQuickMove.SendToBasket(InventoryProvider.Instance.Basket, Container, position);
+                    return true;
+
+                case QuickMoveIntentKind.Acquire:
+                    /// The Stash retrieval row (issue #86): routed through
+                    /// PickUpTransaction.Run - the player's acquisition entry point - instead
+                    /// of a plain move, so a Package with an empty gear slot and auto-equip on
+                    /// lands there instead of the Inventory.
+                    _ = PickUpTransaction.Run(Container, position, CharacterProvider.Instance.Player,
+                        InventoryProvider.Instance.Inventory, InventoryProvider.Instance.Equipment);
+                    return true;
+
+                case QuickMoveIntentKind.MoveToContainer:
+                    var target = intent.Target;
+                    var cursor = new CursorHolder(DragProvider.Instance);
+                    var basket = InventoryProvider.Instance.Basket;
+                    var leavingBasket = basket != null && Container == basket.Container;
+
+                    using (var transaction = new ItemTransaction(cursor, Container, target).ReHomeThrough(target))
+                    {
+                        _ = Container.RemoveAtPosition(position, package);
+                        _ = transaction.TryReHomeToContainerOrHand(ref package, new PackageOrigin(Container, position));
+
+                        transaction.Commit();
+
+                        /// A Package leaving the basket for good clears its ledger entry
+                        /// (<see cref="SellBasket.Basket.Origins"/>) rather than leaving a
+                        /// stale one <see cref="SellBasket.Cancel"/> would only skip over.
+                        if (leavingBasket && !transaction.Aborted)
+                            _ = basket.Origins.Remove(position);
+                    }
+                    return true;
+
+                case QuickMoveIntentKind.Buy:
+                    /// The shelf's own shift-click is always a buy (issue #30). Unlike a
+                    /// drag-drop buy (InventorySlotDisplay/EquipmentSlotDisplay's DropItem,
+                    /// issue #31) - which lands in whatever slot the player dropped on and so
+                    /// never needs to decide equip-vs-bag - shift-click names no destination,
+                    /// so it has to route through the full acquisition entry point exactly
+                    /// like the Stash Acquire case above. This call used to omit player and
+                    /// equipment and so silently skipped auto-equip. Closed by #86.
+                    BuyAt(position, package);
+                    return true;
+
+                default:
+                    /// Nothing to do here - the click is still absorbed rather than falling
+                    /// through to a drag pickup, matching the resolver's "no panel open"
+                    /// answer.
+                    return true;
+            }
+        }
+
+        /// <summary>
+        /// Buys the whole <paramref name="package"/> at <paramref name="position"/> of this
+        /// Supply shelf: the one statement of an immediate buy, shared by shift-click
+        /// (<see cref="TryQuickMove"/>) and a Supply slot's right-click, its "use" (issue #121).
+        /// Goes through the full acquisition entry point rather than naming a destination, so
+        /// the item auto-equips or lands in the bag exactly as the Stash retrieval does.
+        /// </summary>
+        protected void BuyAt(Vector2Int position, Package package)
+        {
+            var wallet = InventoryProvider.Instance.Wallet;
+            var price = VendorTransaction.BuyPrice(package.Item) * package.Amount;
+
+            _ = VendorTransaction.Buy(Container, position, package, wallet, price,
+                CharacterProvider.Instance.Player, InventoryProvider.Instance.Equipment);
         }
 
         public void OnPointerExit(PointerEventData eventData)
@@ -189,7 +293,65 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         public void OnDrop(PointerEventData eventData) => DropItem(DragProvider.Instance.DraggingPackage);
 
-        protected abstract void MoveItem(PointerEventData eventData, Vector2 pointerPosition);
+        /// <summary>
+        /// Right-click and drag-pickup, the two behaviors that genuinely differ per
+        /// container (consume / equip / unequip / buy). Shift-click no longer reaches this -
+        /// <see cref="TryQuickMove"/> handles it before <see cref="OnPointerClick"/> ever
+        /// calls here. Virtual with an empty default: a container with nothing of its own to
+        /// do on right-click or drag-pickup (<see cref="BasketSlotDisplay"/>) needs no
+        /// override at all.
+        /// </summary>
+        protected virtual void MoveItem(PointerEventData eventData, Vector2 pointerPosition) { }
+
+        /// <summary>
+        /// The guard-clause prologue every <see cref="MoveItem"/> override starts with: no
+        /// container, or nothing at <see cref="Position"/>, and there is nothing to move; found
+        /// one, and the hover preview fades before anything changes underneath it. Where a
+        /// concrete slot actually diverges starts after this returns true.
+        /// </summary>
+        protected bool TryBeginMove(out Vector2Int position, out Package package)
+        {
+            position = Position;
+            package = default;
+
+            if (Container == null)
+                return false;
+
+            if (!Container.TryGetItemAt(ref position, out package))
+                return false;
+
+            FadeOutPreview();
+
+            return true;
+        }
+
+        /// <summary>
+        /// The "DRAG ITEM" tail every concrete slot falls through to once its own special-cases
+        /// (use, equip, buy, stage...) don't apply: pick <paramref name="package"/> up off
+        /// <paramref name="position"/> and hand it to the cursor. <paramref name="position"/> is
+        /// passed rather than re-read from <see cref="Position"/> because a multi-cell item's
+        /// origin is not necessarily the cell under the pointer - the offset between them is
+        /// what keeps the drag visual anchored to where it was grabbed instead of snapping to
+        /// the origin cell. <paramref name="unitPrice"/> is the Vendor shelf's per-unit
+        /// buy-on-drop price (issue #31); every other source leaves it unset.
+        ///
+        /// <para>Ctrl held takes half the stack, leaving the rest behind - the one pickup
+        /// modifier every source honors uniformly, because it lives here rather than being
+        /// hand-copied per display. It runs before <paramref name="unitPrice"/> is scaled, so
+        /// a half-stack picked up on the shelf is charged for half, not the whole stack.</para>
+        /// </summary>
+        protected void BeginDrag(Vector2Int position, Package package, Vector2 pointerPosition, float? unitPrice = null)
+        {
+            if (Input.GetKey(KeyCode.LeftControl) && 2 <= package.Amount)
+                _ = package.ReduceAmount(package.Amount / 2);
+
+            _ = Container.RemoveAtPosition(position, package);
+
+            var positionOffset = Position - position;
+            var totalPrice = unitPrice.HasValue ? unitPrice.Value * package.Amount : (float?)null;
+
+            DragProvider.Instance.SetPackage(this, package, positionOffset, pointerPosition, totalPrice);
+        }
 
         protected void FadeInPreview() => RefreshHoverPreview(clearStale: false);
 

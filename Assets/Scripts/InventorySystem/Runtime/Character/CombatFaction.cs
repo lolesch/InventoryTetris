@@ -3,7 +3,7 @@
 namespace ToolSmiths.InventorySystem.Runtime.Character
 {
     [CreateAssetMenu(menuName = "InventorySystem/Combat/Faction")]
-    public class CombatFaction : ScriptableObject
+    public sealed class CombatFaction : ScriptableObject
     {
         public CombatFaction[] EnemyFactions;
         public CombatFaction[] AllyFactions;

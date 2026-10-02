@@ -4,6 +4,7 @@ using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Runtime.Provider;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 {
@@ -21,6 +22,34 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
     /// </summary>
     internal sealed class BasketSlotDisplay : AbstractSlotDisplay
     {
+        private GridLayoutGroup gridLayout;
+
+        /// <summary>
+        /// The basket is a dimensional grid like the inventory and vendor shelf, not a single
+        /// paper-doll cell (see <see cref="InventorySlotDisplay.SetDisplaySize"/>) - a staged
+        /// Package spans as many cells as its item's footprint, so it needs the same
+        /// grid-derived sizing or it renders as a single icon-sized square.
+        /// </summary>
+        protected override void SetDisplaySize(RectTransform display, Package package)
+        {
+            base.SetDisplaySize(display, package);
+
+            if (!gridLayout)
+                gridLayout = GetComponentInParent<GridLayoutGroup>();
+            if (gridLayout)
+            {
+                var itemDimensions = ItemView.Of(package.Item).Dimensions;
+                var additionalSpacing = gridLayout.spacing * new Vector2(itemDimensions.x - 1, itemDimensions.y - 1);
+
+                display.sizeDelta = gridLayout.cellSize * itemDimensions + additionalSpacing;
+            }
+
+            display.anchoredPosition = new Vector2(display.sizeDelta.x * .5f, display.sizeDelta.y * -.5f);
+            display.pivot = new Vector2(.5f, .5f);
+            display.anchorMin = new Vector2(0, 1);
+            display.anchorMax = new Vector2(0, 1);
+        }
+
         /// <summary>
         /// A drag that ends here stages into the basket: land it at this cell, remember its
         /// origin in the basket's ledger. Directly parallels <see cref="SellBasket.Stage"/>, the
@@ -61,57 +90,27 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         /// <summary>
         /// A pick-up out of the basket is an ordinary drag (see class doc): it lands back on
         /// this same cell if cancelled, so that path leaves the basket's origin ledger alone.
-        /// Shift-click follows the same quick-move matrix as every other source (issue #33) -
-        /// with the Vendor open, a basket Package returns to the backpack - and, unlike a plain
-        /// drag, leaves the basket for good on success, so it also clears the cell's ledger
-        /// entry rather than leaving a stale one <see cref="SellBasket.Cancel"/> would only
-        /// ever skip over.
+        /// Shift-click no longer reaches here - <see cref="AbstractSlotDisplay.TryQuickMove"/>
+        /// handles it, ledger cleanup included, before <c>OnPointerClick</c> ever calls this
+        /// method (issue #67).
         ///
-        /// <para>A plain drag dropped somewhere other than back into the basket has the same
+        /// <para>A plain drag dropped somewhere other than back into the basket has a
         /// stale-entry gap - the ledger cleanup there would need the drag lifecycle itself to
         /// know it started in the basket and did not return, which is a bigger change than
         /// this method; left for a follow-up rather than folded in here.</para>
         /// </summary>
         protected override void MoveItem(PointerEventData eventData, Vector2 pointerPosition)
         {
-            if (Container == null)
+            if (!TryBeginMove(out var position, out var package))
                 return;
 
-            var position = Position;
-
-            if (!Container.TryGetItemAt(ref position, out var package))
+            // No deliberate right-click action in the basket: only a left-click drag picks a
+            // staged Package back up, exactly as the other no-extra-functionality surfaces.
+            // TryBeginMove runs first so the hover preview still fades on a right-click no-op.
+            if (eventData.button == PointerEventData.InputButton.Right)
                 return;
 
-            FadeOutPreview();
-
-            if (Input.GetKey(KeyCode.LeftShift))
-            {
-                var intent = InventoryProvider.Instance.QuickMoveFor(Container);
-
-                if (intent.Kind != QuickMoveIntentKind.MoveToContainer)
-                    return;
-
-                var target = intent.Target;
-                var cursor = new CursorHolder(DragProvider.Instance);
-
-                using var transaction = new ItemTransaction(cursor, Container, target).ReHomeThrough(target);
-
-                _ = Container.RemoveAtPosition(position, package);
-                _ = transaction.TryReHomeToContainerOrHand(ref package, new PackageOrigin(Container, position));
-
-                transaction.Commit();
-
-                if (!transaction.Aborted)
-                    _ = InventoryProvider.Instance.Basket?.Origins.Remove(position);
-
-                return;
-            }
-
-            _ = Container.RemoveAtPosition(position, package);
-
-            var positionOffset = Position - position;
-
-            DragProvider.Instance.SetPackage(this, package, positionOffset, pointerPosition);
+            BeginDrag(position, package, pointerPosition);
         }
     }
 }

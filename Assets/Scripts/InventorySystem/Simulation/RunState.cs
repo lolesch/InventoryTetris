@@ -30,6 +30,7 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         private EncounterSimulation _encounter;
         private EncounterProfile _location;
+        private EncounterTotals _carried; // totals of the Encounters a Relocate left behind
         private long _currencyBanked;
         private bool _heroDown;
         private bool _recallRequested;
@@ -83,7 +84,10 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// </summary>
         public bool RecallRequested => _recallRequested;
 
-        /// <summary>The result of the most recently finished Run, or <c>null</c> if none has finished yet.</summary>
+        /// <summary>
+        /// The result of the most recently finished Run, or <c>null</c> if none has finished yet
+        /// or a new Run has since been <see cref="Send"/>.
+        /// </summary>
         public RunResult? LastResult { get; private set; }
 
         /// <summary>
@@ -100,6 +104,14 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// </summary>
         public event Action<RunPhase> PhaseChanged;
 
+        /// <summary>
+        /// Raised when <see cref="Relocate"/> swaps the live Encounter for one at another
+        /// Location. The Run never leaves <see cref="RunPhase.InField"/>, so
+        /// <see cref="PhaseChanged"/> and <see cref="RunEnded"/> stay quiet; anything holding the
+        /// old <see cref="Encounter"/> re-reads it here.
+        /// </summary>
+        public event Action Relocated;
+
         // ─── transitions ────────────────────────────────────────────────────
 
         /// <summary>
@@ -108,6 +120,9 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// </summary>
         public void Send(EncounterProfile location)
         {
+            if (_heroDown)
+                throw new InvalidOperationException("The hero is down — the Run ends in HandleDeath before a new one can be Sent.");
+
             if (location == null) throw new ArgumentNullException(nameof(location));
             if (Phase != RunPhase.InTown)
                 throw new InvalidOperationException("A Run is already in the Field — Recall or HandleDeath before Sending again.");
@@ -120,9 +135,43 @@ namespace ToolSmiths.InventorySystem.Simulation
             _encounter.HeroDowned += _onHeroDowned;
             _encounter.RecallRequested += _onRecallRequested;
             ResetRunTotals();
+            LastResult = null;
 
             Phase = RunPhase.InField;
             PhaseChanged?.Invoke(Phase);
+        }
+
+        /// <summary>
+        /// Move the live Run to <paramref name="location"/> without ending it — stays
+        /// <see cref="RunPhase.InField"/>, stops the current Encounter and starts a fresh one there.
+        /// This is not a Recall: the Run's totals (<see cref="CurrencyBanked"/>, kills, XP, clears,
+        /// duration) carry on into the one <see cref="RunResult"/> the Run eventually freezes, and
+        /// no <see cref="RunEnded"/> or <see cref="PhaseChanged"/> is raised (<see cref="Relocated"/>
+        /// is). Refused in Town (nothing to move) and once the hero is down (that Run ends in
+        /// <see cref="HandleDeath"/>). The new Encounter is built first, so a factory that throws
+        /// leaves the current one running.
+        /// </summary>
+        public void Relocate(EncounterProfile location)
+        {
+            RequireInField();
+            if (_heroDown)
+                throw new InvalidOperationException("The hero is down — the Run ends in HandleDeath, not a Relocate.");
+            if (location == null) throw new ArgumentNullException(nameof(location));
+
+            var encounter = _startEncounter(location)
+                ?? throw new InvalidOperationException("The encounter factory returned null.");
+
+            _carried = FreezeEncounter();
+            _encounter.HeroDowned -= _onHeroDowned;
+            _encounter.RecallRequested -= _onRecallRequested;
+
+            _location = location;
+            _encounter = encounter;
+            _encounter.HeroDowned += _onHeroDowned;
+            _encounter.RecallRequested += _onRecallRequested;
+            _recallRequested = false;
+
+            Relocated?.Invoke();
         }
 
         /// <summary>
@@ -213,17 +262,18 @@ namespace ToolSmiths.InventorySystem.Simulation
                 throw new InvalidOperationException("No Run is in the Field.");
         }
 
-        /// <summary>Stop the fight (idempotent) and read its running totals out.</summary>
+        /// <summary>Stop the fight (idempotent) and read the Run's running totals out — the live Encounter's plus any carried over a Relocate.</summary>
         private EncounterTotals FreezeEncounter()
         {
             _encounter.Abandon(); // no-op if the hero going down already ended it
-            return new EncounterTotals(
-                _encounter.SettledXp, _encounter.ForfeitedXp, _encounter.EnemiesDefeated,
-                _encounter.EncountersCleared, _encounter.Duration);
+            return _carried.Plus(new EncounterTotals(
+                _encounter.SettledXp, _encounter.EnemiesDefeated,
+                _encounter.EncountersCleared, _encounter.Duration));
         }
 
         private void ResetRunTotals()
         {
+            _carried = default;
             _currencyBanked = 0L;
             _heroDown = false;
             _recallRequested = false;

@@ -95,25 +95,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         /// purchase, so opening the Stash or closing every panel cannot strand or duplicate
         /// one. Detach-before-attach, so a re-enable cannot subscribe twice (cf. da14ce2).
         /// </summary>
-        private void OnEnable()
-        {
-            // Reading a provider's Instance outside Play mode can create one (issue #46) -
-            // this component lives in the scene and enables at edit time too (opening the
-            // scene, a domain reload), where InventoryProvider may not exist yet.
-            if (!Application.isPlaying)
-                return;
+        private void OnEnable() => _ = InventoryProvider.TrySubscribeContextChanged(OnContextChanged, out _);
 
-            var provider = InventoryProvider.Instance;
-
-            provider.OnContextChanged -= OnContextChanged;
-            provider.OnContextChanged += OnContextChanged;
-        }
-
-        private void OnDisable()
-        {
-            if (Application.isPlaying && InventoryProvider.Instance != null)
-                InventoryProvider.Instance.OnContextChanged -= OnContextChanged;
-        }
+        private void OnDisable() => InventoryProvider.UnsubscribeContextChanged(OnContextChanged);
 
         /// <summary>
         /// Any context other than the Vendor means the Vendor is no longer the one open, and a

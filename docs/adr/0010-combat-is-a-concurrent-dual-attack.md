@@ -264,3 +264,19 @@ magical, and gear opens it on a sharp cliff (physical crosses "dies at Encounter
   16, `castTargets` 3, `castCadence` 0.35 s, `tick` 0.1 s, `beat` 1 s. Build defence is a
   shared budget (Health 442 / Armor 27; hybrid spends its leftover damage on 476 / 30);
   damage shape is the differentiator. Full tables in the prototype's `FINDINGS.md`.
+
+## Third amendment — XP per kill, and a quiet arrival (2026-10-02)
+
+Supersedes the second amendment's *XP settles per Encounter clear*. XP is delivered **per kill**,
+the tick the body falls — `EncounterSimulation.XpGained`, level-balanced and rounded to whole
+XP per kill. There is no per-Encounter pot: nothing carries over a clear, and a Recall, Death or
+Relocate forfeits nothing (`RunResult.XpForfeited` and `UnsettledXp` are gone). The Encounter
+boundary keeps its other jobs — the Roster, the beat, the pacing unit — it just no longer pays out.
+
+- **Quiet arrival.** A Run's first Encounter does not have its bodies at open: the hero waits one
+  spawn delay — the Location's own `SpawnInterval ± SpawnJitter`, no new authored field — and the
+  opening batch arrives then (`SimulationPhase.Arriving`). Applies to a Send and a Relocate, not to
+  the Encounters after a beat. Switched on through `EncounterTuning.DelayFirstSpawn`, which the
+  `SimulationProvider` sets; it defaults off so the sim's unit tests still start with bodies.
+- **Relocate.** `RunState.Relocate` swaps the live Encounter for one at another Location without
+  a Recall — see CONTEXT.md *Relocate*. Run totals carry across it.

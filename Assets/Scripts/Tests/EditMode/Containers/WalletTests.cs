@@ -217,6 +217,22 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             Assert.That(wallet.Balance.Total, Is.EqualTo(1200u));
         }
 
+        // ── Deposit ─────────────────────────────────────────────────────────
+
+        [Test]
+        public void Deposit_MintsTheLargestDenominationFirst()
+        {
+            var recorder = new RecordingMinter(minter);
+            var wallet = new Wallet(new CharacterInventory(new Vector2Int(6, 6)), recorder);
+
+            wallet.Deposit(new Currency(iron: 1u, copper: 1u, silver: 1u, gold: 1u));
+
+            Assert.That(recorder.Minted, Is.EqualTo(new[]
+            {
+                CurrencyType.Gold, CurrencyType.Silver, CurrencyType.Copper, CurrencyType.Iron,
+            }));
+        }
+
         // ── Consolidate ─────────────────────────────────────────────────────
 
         [Test]
@@ -255,6 +271,23 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 
             Assert.That(wallet.Balance.Copper, Is.EqualTo(2u));
             Assert.That(wallet.Balance.Iron, Is.EqualTo(4u));
+        }
+
+        [Test]
+        public void Consolidate_PlacesTheLargerDenominationInTheGridsFirstCell()
+        {
+            var probe = NewWallet();
+            Seed(probe, CurrencyType.Gold, 1u);
+            var firstCell = probe.Container.StoredPackages.Keys.Single(); // where an empty grid puts its first coin
+
+            var wallet = NewWallet();
+            Seed(wallet, CurrencyType.Iron, 14u); // -> 2 copper + 4 iron
+
+            wallet.Consolidate();
+
+            var copperCell = wallet.Container.StoredPackages
+                .Single(entry => ItemView.Of(entry.Value.Item).Definition.CurrencyType == CurrencyType.Copper).Key;
+            Assert.That(copperCell, Is.EqualTo(firstCell), "copper sits ahead of the loose iron");
         }
 
         [Test]

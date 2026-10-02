@@ -24,6 +24,64 @@ namespace ToolSmiths.InventorySystem.Data
         public static readonly uint copperToSilver = ironToSilver / ironToCopper; // = 12
         public static readonly uint silverToGold = ironToGold / ironToSilver;     // = 20
 
+        /// The one table of denominations, largest first, each with its worth in iron.
+        /// Anything that walks the ladder (depositing, paying, the coin row) iterates
+        /// <see cref="Denominations"/> rather than naming coins in its own order, so a
+        /// ladder change lands here and nowhere else. Declared after the ratios above:
+        /// static fields initialise in textual order.
+        private static readonly (CurrencyType type, uint ironValue)[] ladder =
+        {
+            (CurrencyType.Gold, ironToGold),
+            (CurrencyType.Silver, ironToSilver),
+            (CurrencyType.Copper, ironToCopper),
+            (CurrencyType.Iron, 1u),
+        };
+
+        private static readonly CurrencyType[] denominations = Array.ConvertAll(ladder, entry => entry.type);
+
+        /// <summary>The coin denominations, largest value first. A read-only view, so no
+        /// caller can reorder the ladder out from under the others.</summary>
+        public static ReadOnlySpan<CurrencyType> Denominations => denominations;
+
+        /// <summary>A coin's worth in iron base units; zero for <see cref="CurrencyType.NONE"/>.</summary>
+        public static uint ValueOf(CurrencyType type)
+        {
+            foreach (var (denomination, ironValue) in ladder)
+                if (denomination == type)
+                    return ironValue;
+
+            return 0u;
+        }
+
+        /// <summary><paramref name="amount"/> coins of one denomination; empty for <see cref="CurrencyType.NONE"/>.</summary>
+        public static Currency Of(CurrencyType type, uint amount) => default(Currency).With(type, amount);
+
+        /// <summary>How many coins of <paramref name="type"/> this holds.</summary>
+        public readonly uint CountOf(CurrencyType type) => type switch
+        {
+            CurrencyType.Iron => Iron,
+            CurrencyType.Copper => Copper,
+            CurrencyType.Silver => Silver,
+            CurrencyType.Gold => Gold,
+            _ => 0u,
+        };
+
+        /// <summary>A copy with the <paramref name="type"/> count replaced; unchanged for <see cref="CurrencyType.NONE"/>.</summary>
+        public readonly Currency With(CurrencyType type, uint count)
+        {
+            var copy = this;
+
+            switch (type)
+            {
+                case CurrencyType.Iron: copy.Iron = count; break;
+                case CurrencyType.Copper: copy.Copper = count; break;
+                case CurrencyType.Silver: copy.Silver = count; break;
+                case CurrencyType.Gold: copy.Gold = count; break;
+            }
+
+            return copy;
+        }
+
         public readonly uint Total => Iron + Copper * ironToCopper + Silver * ironToSilver + Gold * ironToGold;
 
         /// <summary>
@@ -85,12 +143,15 @@ namespace ToolSmiths.InventorySystem.Data
 
             uint paid = 0u;
 
-            var iron = Take(Iron, 1u);
-            var copper = Take(Copper, ironToCopper);
-            var silver = Take(Silver, ironToSilver);
-            var gold = Take(Gold, ironToGold);
+            var spent = default(Currency);
 
-            toRemove = new Currency(iron, copper, silver, gold);
+            for (var i = ladder.Length - 1; 0 <= i; i--) // smallest first
+            {
+                var (type, ironValue) = ladder[i];
+                spent = spent.With(type, Take(CountOf(type), ironValue));
+            }
+
+            toRemove = spent;
             change = new Currency(paid - owed); // paid >= owed is guaranteed once Total >= owed
             return true;
 
