@@ -4,7 +4,8 @@ Date: 2026-10-02
 Status: Scoping spec — not a plan. Slice into a GitHub epic with `/to-tickets`, build with
 `/implement`.
 Base: `main` at `1e6e7d7`.
-Derived with `/rederive`; the route to it audited with `/drift-review`.
+Derived with `/rederive`; the route to it audited twice with `/drift-review`, and the gaps
+those passes found folded into the Implementation Decisions below.
 Supersedes: ADR-0012 (*Staging a sale blocks the Supply*) and the **Sell Basket** entry in
 `CONTEXT.md`.
 
@@ -178,7 +179,23 @@ cannot be picked up from any shelf at all.
 - **Deleted outright:** the basket display and its slot display, the Confirm and Cancel
   buttons, the total label, the Supply blocker and its wiring, the origin ledger, the
   staged-sale preview, the Town Stop change cancel, the basket → hub row, and the basket's
-  provider property and size field.
+  provider property and size field. That includes the Healer half of #121 (its basket rows,
+  per-panel blocker and cancel on handover) and the Cancel fix `0cc9481`, which harden a
+  mechanism this swap removes; #121's Supply half stays.
+- **Scene and prefab residue goes with it.** The basket display's prefab, its instances in the
+  scenes, the serialized Supply-blocker references, and any persistent event on the deleted
+  buttons are removed, not rewired — a Cancel button once also called a Restock. No scene or
+  prefab may be left holding a missing-script reference.
+- **The container role enum is serialized by value.** The Sold role is appended after the
+  Healer Supply's, and the basket's value stays reserved when the basket role is retired,
+  because deleting it would shift every later member and silently rebind displays in scenes and
+  prefabs. The value may be deleted only in a change that re-serializes every display.
+- **Ownership.** The Sold container belongs to the Hero State, like the basket and the Supplies
+  it sits beside, and is excluded from any save: it is stock the Town Stops hold, not the
+  hero's belongings.
+- **Restock has a service home.** Each Supply's Restock becomes an operation on the Hero State's
+  inventory service, with the old provider forwarding to it until the contract ticket, so the
+  Sold clear travels with it and the debug buttons rewire to the service.
 - **Documentation.** A new ADR supersedes ADR-0012: the Supply no longer blocks because nothing
   is staged, so Cancel has nothing to fit. `CONTEXT.md` replaces **Sell Basket** with the Sold
   tab, and **Return to Origin** stops listing a cancelled sale. ADR-0013's consequence about a
@@ -237,6 +254,8 @@ cannot be picked up from any shelf at all.
   times it, so an undone sale loses half the sell value. That is intended for the first draft.
 - **Services epic (#106).** #115 and #116 migrate callers of the inventory provider, and the
   basket's provider property and basket display are among them. Migrating a surface this swap
-  deletes is a stranded fix; `/drift-review` audits the order.
+  deletes is a stranded fix, so #112 and #115 are blocked on the contract ticket. #107 and #108
+  name the Sold container where they used to name the Sell Basket, and the Services spec's Hero
+  State contents list still says "Sell Basket" and is to be read as the Sold container.
 - **Before Unity compile verification, asmdef changes or scripted multi-file edits,** read
   `docs/agents/codebase-notes.md`.
