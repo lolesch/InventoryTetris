@@ -8,6 +8,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 285345250917741040, guid: 9b50b556f3c1b69458675bf37718bd3f, type: 3}
+      propertyPath: m_text
+      value: 43 %
+      objectReference: {fileID: 0}
+    - target: {fileID: 664587160199713235, guid: 9b50b556f3c1b69458675bf37718bd3f, type: 3}
+      propertyPath: m_PixelsPerUnitMultiplier
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 925420370668920526, guid: 9b50b556f3c1b69458675bf37718bd3f, type: 3}
+      propertyPath: m_Padding.z
+      value: 94.240005
+      objectReference: {fileID: 0}
     - target: {fileID: 3687108127991518832, guid: 9b50b556f3c1b69458675bf37718bd3f, type: 3}
       propertyPath: m_AnchorMax.x
       value: 0
@@ -205,7 +217,7 @@ MonoBehaviour:
   hoverScale: 1.06
   tooltip: 
   tooltipLabel: {fileID: 5674463627185612849}
-  <Value>k__BackingField: 0
+  <Value>k__BackingField: 0.434
   slideArea: {fileID: 2719154554822573045}
   fillMask: {fileID: 1647627357151131012}
   handle: {fileID: 2963775340657720634}
