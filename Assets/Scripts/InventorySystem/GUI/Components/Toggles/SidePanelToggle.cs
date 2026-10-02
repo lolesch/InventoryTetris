@@ -33,10 +33,12 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
     /// it is a plain button, not a panel with state to protect). This class must not introduce a
     /// <see cref="ToggleGroup"/> of its own, or "which panel is open" would have two answers.</para>
     ///
-    /// <para><b>The request (issues #84, #85).</b> <see cref="RequestAndToggle"/> is the toggle's
-    /// own click/hotkey edge: it runs before <see cref="AbstractToggle.SetToggle"/>, so it fires
-    /// only for the toggle actually clicked or hotkeyed - never for a sibling the group silently
-    /// deactivates on its way out via <c>ToggleState</c>/<c>OnToggle</c> - which is what keeps a
+    /// <para><b>The request (issues #84, #85).</b> Turning on requests the panel's context from
+    /// <see cref="OnToggle"/>, but only while the panel is not already up in the active context,
+    /// so a <see cref="SyncToContext"/> or the Hero Panel (up in every non-None context) never
+    /// re-requests and overwrites the context that triggered it. Turning off is requested only by
+    /// <see cref="UserToggle"/> - a click or hotkey that really switched the toggle off - never for
+    /// a sibling the group silently deactivates on its way out, which is what keeps a
     /// Stash-to-Vendor handover to the one <see cref="SidePanel.RequestContext"/> call the incoming
     /// toggle makes, with no intermediate close. The request goes through the panel
     /// (<see cref="SidePanel.RequestContext"/>), not straight to the provider - the toggle still
@@ -61,16 +63,25 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
                  "faces, so its hotkey must survive the field.")]
         [SerializeField] private bool gatedByFieldReachability = true;
 
-        protected override void OnClick() => RequestAndToggle(!IsOn);
+        protected override void OnClick() => UserToggle();
 
         /// <summary>
-        /// Empty deliberately. A <see cref="PanelToggle"/> fades its panel from exactly here, and
-        /// the panel derives its own visibility from the Inventory Context instead (issue #85) -
-        /// fading it from the toggle as well would be a second layer deciding one fact, the bug
-        /// class this rework removes. What <see cref="AbstractToggle.ToggleState"/> does around
-        /// this call - the radio group's state and this toggle's own pressed visual - is untouched.
+        /// Requests the panel's context on the way on, and never fades the panel: a
+        /// <see cref="PanelToggle"/> fades its panel from exactly here, but this panel derives its
+        /// own visibility from the Inventory Context instead (issue #85) - fading it from the
+        /// toggle as well would be a second layer deciding one fact, the bug class this rework
+        /// removes.
+        ///
+        /// <para>Also runs from <see cref="AbstractToggle.Start"/>, from <see cref="SyncToContext"/>
+        /// and for a sibling the group switches off, none of which may touch the context - hence
+        /// on-edge only, and only while the panel is not already up in it. That guard is what
+        /// breaks the sync -> request -> sync cycle.</para>
         /// </summary>
-        protected override void OnToggle() { }
+        protected override void OnToggle()
+        {
+            if (IsOn && panel != null && InventoryProvider.Instance is { } provider && !panel.IsUpIn(provider.ActiveContext))
+                panel.RequestContext(true);
+        }
 
         /// <summary>
         /// <c>interactable</c> is the phase gate: unreachable whenever
@@ -95,7 +106,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
             if (!Input.GetKeyDown(hotkey))
                 return;
 
-            RequestAndToggle(!IsOn);
+            UserToggle();
         }
 
         /// <summary>
@@ -131,11 +142,12 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         /// <see cref="SidePanel.IsUpIn"/>, asked rather than recomputed, so the visual and the
         /// visibility cannot disagree by construction.
         ///
-        /// <para>Applied through <see cref="AbstractToggle.SetToggle"/>, which keeps the
+        /// <para>Applied through <see cref="AbstractToggle.SyncToggle"/> - the group side, so the
+        /// toggle follows the context off even where the user may not click it off - which keeps the
         /// <see cref="ToggleGroup"/>'s own <c>ActiveMember</c> in step for a grouped Town Stop and
         /// falls through to the plain state change for the ungrouped Hero Panel toggle. The
         /// <see cref="AbstractToggle.IsOn"/> guard is what stops this from looping: a
-        /// <c>SetToggle</c> on a sibling lands back here through that sibling's own event, finds
+        /// <c>SyncToggle</c> on a sibling lands back here through that sibling's own event, finds
         /// nothing left to change, and stops.</para>
         /// </summary>
         private void SyncToContext(InventoryContext context)
@@ -145,46 +157,31 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
 
             var shouldBeOn = panel.IsUpIn(context);
             if (IsOn != shouldBeOn)
-                SetToggle(shouldBeOn);
+                SyncToggle(shouldBeOn);
         }
 
         /// <summary>
-        /// Requests the Inventory Context this toggle's panel represents, then applies the
-        /// toggle state exactly as <see cref="AbstractToggle.SetToggle"/> always has - but only
-        /// when the request was actually made (<see cref="SidePanel.RequestContext"/>'s result).
-        /// A toggle that moved while its request silently did not would press for a context
-        /// nothing set, which is how a stuck button and a pressed-but-empty panel start.
-        ///
-        /// <para><see cref="WouldToggleNoOp"/> guards the other direction, and for the same
-        /// reason: <c>OnClick</c> has no other veto before reaching here, so without it a click on
-        /// a toggle <see cref="AbstractToggle.SetToggle"/> is about to refuse to turn off would
-        /// still close the Inventory Context while the panel stays visibly open.</para>
+        /// The click/hotkey edge. Does nothing when there is no panel or provider to request from -
+        /// a toggle that pressed without a context behind it is how a stuck button and a
+        /// pressed-but-empty panel start. Turning on is requested by <see cref="OnToggle"/>;
+        /// turning off is requested here, and only once the toggle really switched off, so a
+        /// group that refuses the un-toggle never closes the context behind a still-open panel.
         /// </summary>
-        private void RequestAndToggle(bool turningOn)
+        private void UserToggle()
         {
-            if (WouldToggleNoOp(turningOn))
+            if (panel == null || InventoryProvider.Instance == null)
                 return;
 
-            if (panel == null || !panel.RequestContext(turningOn))
-                return;
-
-            SetToggle(turningOn);
+            var wasOn = IsOn;
+            SetToggle(!wasOn);
+            if (wasOn && !IsOn)
+                panel.RequestContext(false);
         }
-
-        /// <summary>
-        /// Mirrors <see cref="AbstractToggle.SetToggle"/>'s own no-op condition exactly (that
-        /// method is not virtual, so it cannot be asked directly) - turning off the sole active,
-        /// non-clearable, non-restorable member of a <see cref="ToggleGroup"/> is refused there,
-        /// silently as far as this class is concerned.
-        /// </summary>
-        private bool WouldToggleNoOp(bool turningOn) =>
-            !turningOn && IsOn && RadioGroup && RadioGroup.ActiveMember == this
-            && !RadioGroup.IsClearable && !RadioGroup.IsRestorable;
 
 #if UNITY_EDITOR
         /// <summary>
         /// The authored-data check <see cref="SidePanel"/>'s own <c>OnValidate</c> cannot make
-        /// from its side: <see cref="RequestAndToggle"/> and <see cref="SyncToContext"/> both
+        /// from its side: <see cref="UserToggle"/> and <see cref="SyncToContext"/> both
         /// no-op on a toggle that drives no panel - it still presses and unpresses, so nothing
         /// looks wrong in Play mode, and it just never requests or tracks an Inventory Context.
         /// That the panel is a <see cref="SidePanel"/> at all is the field's own type now, so

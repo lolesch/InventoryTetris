@@ -1,6 +1,5 @@
 using Submodules.Utility.UI;
 using ToolSmiths.InventorySystem.Inventories;
-using ToolSmiths.InventorySystem.Runtime.Provider;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.GUI.Components.Panels

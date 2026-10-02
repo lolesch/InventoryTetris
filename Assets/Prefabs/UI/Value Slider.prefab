@@ -8,6 +8,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 3687108127991518832, guid: 9b50b556f3c1b69458675bf37718bd3f, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3687108127991518832, guid: 9b50b556f3c1b69458675bf37718bd3f, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4590905384708952255, guid: 9b50b556f3c1b69458675bf37718bd3f, type: 3}
       propertyPath: m_SizeDelta.x
       value: 0
