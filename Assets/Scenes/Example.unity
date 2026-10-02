@@ -949,7 +949,7 @@ PrefabInstance:
       objectReference: {fileID: 1612948804}
     - target: {fileID: 1647627357151131012, guid: d2efbe32240082a4d8344755fb27f51e, type: 3}
       propertyPath: m_Padding.z
-      value: 155.00006
+      value: 155
       objectReference: {fileID: 0}
     - target: {fileID: 2323841930182580407, guid: d2efbe32240082a4d8344755fb27f51e, type: 3}
       propertyPath: m_AdditionalShaderChannelsFlag
@@ -2505,7 +2505,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 50 %
+  m_text: 0 %
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 1559453194}
@@ -2829,7 +2829,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 50 %
+  m_text: 0 %
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 1559453194}
@@ -19990,7 +19990,7 @@ PrefabInstance:
       objectReference: {fileID: 241185091}
     - target: {fileID: 1647627357151131012, guid: d2efbe32240082a4d8344755fb27f51e, type: 3}
       propertyPath: m_Padding.z
-      value: 85.00008
+      value: 155.00002
       objectReference: {fileID: 0}
     - target: {fileID: 2323841930182580407, guid: d2efbe32240082a4d8344755fb27f51e, type: 3}
       propertyPath: m_AdditionalShaderChannelsFlag
@@ -20096,10 +20096,6 @@ PrefabInstance:
       propertyPath: valueLabel
       value: 
       objectReference: {fileID: 241185091}
-    - target: {fileID: 6079870180504756456, guid: d2efbe32240082a4d8344755fb27f51e, type: 3}
-      propertyPath: <Value>k__BackingField
-      value: 0.5
-      objectReference: {fileID: 0}
     - target: {fileID: 8535125990367861586, guid: d2efbe32240082a4d8344755fb27f51e, type: 3}
       propertyPath: m_Name
       value: Value Slider
@@ -20290,7 +20286,7 @@ PrefabInstance:
       objectReference: {fileID: 1980204754}
     - target: {fileID: 1647627357151131012, guid: d2efbe32240082a4d8344755fb27f51e, type: 3}
       propertyPath: m_Padding.z
-      value: 85.00008
+      value: 155.00002
       objectReference: {fileID: 0}
     - target: {fileID: 2323841930182580407, guid: d2efbe32240082a4d8344755fb27f51e, type: 3}
       propertyPath: m_AdditionalShaderChannelsFlag
@@ -20396,10 +20392,6 @@ PrefabInstance:
       propertyPath: valueLabel
       value: 
       objectReference: {fileID: 236794253}
-    - target: {fileID: 6079870180504756456, guid: d2efbe32240082a4d8344755fb27f51e, type: 3}
-      propertyPath: <Value>k__BackingField
-      value: 0.5
-      objectReference: {fileID: 0}
     - target: {fileID: 8535125990367861586, guid: d2efbe32240082a4d8344755fb27f51e, type: 3}
       propertyPath: m_Name
       value: Value Slider
