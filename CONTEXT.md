@@ -53,9 +53,9 @@ backpack), the **Stash**, a Town Stop's **Supply**, the **Sell Basket**, and the
 **Inventory / Stash / Supply / Sell Basket**:
 Four distinct *roles*, all currently played by the same type. Only Equipment is its own
 type. Say which role you mean — "the Stash" is never a class.
-The Stash is **Session-owned** for the MVP (one hero, so nothing shares it). The design
-intent that loot be stored *and exchanged among heroes* needs a persistence tier above
-Session that does not exist yet — revisit post-MVP (ADR-0014).
+The Stash belongs to the **Hero** for the MVP (one hero, so nothing shares it) and
+saves with it. The design intent that loot be stored *and exchanged among heroes* needs a
+persistence tier above the Session that does not exist yet — revisit post-MVP (ADR-0014).
 _Avoid_: using "inventory" to mean any container
 
 **Supply**:
@@ -175,7 +175,8 @@ The hero's bag, set aside at the Location where they were downed. Death empties 
 into the Corpse; recovering it means re-entering that Location and picking the items
 back up — through the same acquisition entry point as a **Drop**, so gear auto-equips into
 an empty slot. There is only ever one — a second Death destroys any Corpse still unclaimed —
-and it persists between Sessions until recovered.
+and it belongs to the **Hero**: it saves with it and persists between Sessions until
+recovered.
 _Avoid_: grave, body, loot bag; remains (reserved for a possible future enemy corpse)
 
 **Distribution**:
@@ -199,11 +200,21 @@ _Avoid_: no-drop chance, miss, empty
 ## The hero
 
 **Hero**:
-The single persistent character a Session owns — the one that fights. During a Run the
-player never controls it directly; they set its behaviour sliders and its gear and it
-fights autonomously. One hero per Session for the MVP; picking from among several saved
-heroes is deferred.
+The single persistent character — the one that fights — and everything that is its own:
+its stats, level and XP, its **Equipment**, **Inventory** and **Stash**, its **Wallet**,
+its **Behaviour Profile**, the **Location** it is set to be Sent to, and its **Corpse** if
+it has one. That is the whole of what saves, and nothing the hero does not own does.
+During a Run the player never controls it directly; they set its Behaviour Profile and
+its gear and it fights autonomously. One hero per Session for the MVP; picking from among
+several saved heroes (which replaces the Hero and the **World**, see **Session**) is
+deferred.
 _Avoid_: character, unit, avatar, champion; "player" for the thing in the Field
+
+**Behaviour Profile**:
+The six sliders the player sets on the **Hero** — how it fights and when it Auto-Recalls.
+Held by the Hero and saved with it, so a hero keeps its tuning between Sessions. Live
+during a Run: the player adjusts it, the hero never decides it.
+_Avoid_: settings, preset, loadout; "config" (that is the authored `GameConfig`)
 
 **Player**:
 The person at the keyboard. They choose the Location, tune the six sliders, judge when to
@@ -214,14 +225,32 @@ _Avoid_: user, you; "hero" for the one making the calls
 ## Runs
 
 **Session**:
-The span of play between app start and quit. It contains many Runs and is the unit that
-persists — the hero, the four containers, the wallet and XP save per Session and resume
-`InTown` on the next launch. A Run never spans Sessions: quitting mid-Run banks what the
-hero already picked up and discards the rest. The Session is the *top* persistence tier
-for the MVP: a Stash or Wallet shared across heroes would need a tier above it, which is
-deferred (ADR-0014) — do not let persistence code assume the Session is the outermost
-owner.
-_Avoid_: playthrough, save file (the save is the Session's shadow, not the thing itself)
+The span of play between app start and quit. It contains many Runs and holds one
+**Hero** and its **World** at a time. The Hero is what persists: it saves and resumes
+`InTown` on the next launch; the World is never saved. A Run never spans Sessions:
+quitting mid-Run banks what the hero already picked up and discards the rest. The
+Session outlives both — loading a hero swaps the Hero and the World together and the
+Session carries on — and is the *top* persistence tier for the MVP: a Stash or Wallet
+shared across heroes would need a tier above it, which is deferred (ADR-0014) — do not
+let persistence code assume the Session is the outermost owner. The Session owns no
+container, Wallet or XP itself; say "the Hero" for those.
+_Avoid_: playthrough, save file (the save is the Session's shadow, not the thing itself);
+"session" for the replaceable per-hero unit (that is the **Hero** and its **World**)
+
+**World**:
+What a **Session** holds around the **Hero** while that hero is loaded, and never saves:
+each Town Stop's **Supply**, the Sold container, the **Run** with its ground **Drops**,
+and the **Inventory Context**. A Supply is rolled fresh by a **Restock**, the Sold
+container is stock the Town Stops hold, a Run never spans Sessions, and a context is only
+what the player has open — so none of it belongs to the hero, and a new Session starts it
+fresh. It is replaced together with the Hero when a hero is loaded, as a swap and never a
+clearing field by field, so nothing of the previous hero's trading or trip can leak into
+the next. It does not hold authored data (the item catalog, distributions, container
+sizes and tuning defaults are an immutable `GameConfig`, the same for every hero), the
+scene-scoped UI singletons (the drag cursor, the preview, the scene loader), or the
+**Corpse**, which is the Hero's.
+_Avoid_: Hero State (retired: it lumped the hero's own things in with these); world map,
+overworld (see **Field**); Session (the span of play, which outlives it)
 
 **Run**:
 One trip from Town to a Location and back — the unit the loop turns on. It ends in a
@@ -404,8 +433,9 @@ questions at once: which panels are up, and where a **Quick Move** lands. Entry 
 *request* a context; every panel *derives* its visibility from it. A context names the
 **Hero Panel** plus at most one Town Stop's panel, so the panel set is derived rather than
 announced, and a panel that belongs to every context can never be the thing that names one
-(ADR-0013). It is owned by the `InventoryProvider` and read by the trade flow for **Quick
-Move** routing. Its members are not homogeneous and need not be — the Stash is the player's
+(ADR-0013). It is held by the **World** (reached through the `InventoryProvider` until
+the services epic retires it, ADR-0015) and read by the trade flow for **Quick Move**
+routing. Its members are not homogeneous and need not be — the Stash is the player's
 own storage, the Vendor is someone else's — because the only question the enum answers is
 which context is active. Run phase is not a member: only `None` and `Hero` are reachable
 in the field, so a Run *constrains* contexts rather than being one.
