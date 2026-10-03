@@ -175,7 +175,8 @@ The hero's bag, set aside at the Location where they were downed. Death empties 
 into the Corpse; recovering it means re-entering that Location and picking the items
 back up — through the same acquisition entry point as a **Drop**, so gear auto-equips into
 an empty slot. There is only ever one — a second Death destroys any Corpse still unclaimed —
-and it persists between Sessions until recovered.
+and it belongs to the **Hero**: it saves with it and persists between Sessions until
+recovered.
 _Avoid_: grave, body, loot bag; remains (reserved for a possible future enemy corpse)
 
 **Distribution**:
