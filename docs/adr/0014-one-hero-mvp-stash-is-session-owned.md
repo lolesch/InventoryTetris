@@ -33,3 +33,11 @@ roadmap, because they are product calls rather than modelling ones:
   this.
 - Revisit when picking among several saved heroes (see *Hero*) is scheduled — the two
   features are the same decision.
+
+## Amended by ADR-0015
+
+"Session-owned" above reads as *held by the Session through the Hero State*: the Session
+no longer owns the hero, containers, Wallet or XP directly. They live in the **Hero
+State**, which the Session holds and a hero load replaces as a unit. The decision is
+unchanged: the Stash is per-hero for the MVP and saves with the Hero State, and lifting it
+to a tier above the Session later changes its owner, not the format.

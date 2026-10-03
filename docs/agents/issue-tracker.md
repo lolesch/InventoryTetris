@@ -43,8 +43,8 @@ Twenty-seven open issues (scanned 2026-10-02, `main` @ `86ed536`); the frontier 
 
 | # | Title | Blockers | State vs. this branch |
 |---|---|---|---|
-| **107** | Services 1: name the per-hero unit, record the service model | #68 (closed) | **Frontier.** Docs-only: `CONTEXT.md` has no Hero State entry and the Session entry still claims the hero/containers/wallet; no ADR for the service model yet (latest is 0014). Honours #68 via ADR-0014. **Spec is not on `main`** — see notes. |
-| 108 | Services 2: boot, `GameConfig`, locator, runner | #107 | Blocked. |
+| **107** | Services 1: name the per-hero unit, record the service model | #68 (closed) | **Built on `docs/107-hero-state-and-service-model`; closes on merge.** `CONTEXT.md` gains **Hero State** and splits **Session**; ADR-0015 records the service model and the final names; the spec is carried onto the branch. Honours #68 via ADR-0014 (amended). The event is `HeroStateChanged`, not `SessionChanged` — #114 still says the latter. |
+| 108 | Services 2: boot, `GameConfig`, locator, runner | #107 | **Frontier once #107 merges.** |
 | 109 | Services 3: item service replaces `ItemProvider` | #108 | Blocked. Parallel with #110. |
 | 110 | Services 4: `Hero` as a plain class | #108 | Blocked. Parallel with #109. |
 | 111 | Services 5: hero stat panel binds to `Hero` | #110 | Blocked. |
@@ -73,7 +73,7 @@ Twenty-seven open issues (scanned 2026-10-02, `main` @ `86ed536`); the frontier 
 
 ### Frontier (recommended order)
 
-1. **#107** — the only open ticket with all blockers closed on the epic wire. Carry the spec onto the implementing branch first.
+1. **#107** — built on its branch; merge it to close.
 2. **#108** — unlocks the rest.
 3. **#109 / #110** — parallel; then #111, **#112**, **#113**, **#117**, **#114**, then #115 / #116 / #118, then **#119**.
 4. **The Sold tab wire runs beside it:** **#125** and **#126** now, then #127 → #128 → #129 → #130 → #131. Starting it beside #107–#110 keeps #112 from waiting on it.
@@ -81,7 +81,7 @@ Twenty-seven open issues (scanned 2026-10-02, `main` @ `86ed536`); the frontier 
 
 ### Notes from the scan
 
-- **The Services spec is not on `main`.** #106 cites `dev/specs/2026-10-01-services-over-providers-design.md` "on branch `refactor/providers-off-monobehaviour`". That name does not exist, but `origin/provider-off-monobehaviour` carries the spec (found 2026-10-02 after a `git fetch`); #106's branch name is wrong, not the spec missing. Carry it onto the implementing branch before `/implement #107`.
+- **The Services spec is carried onto the #107 branch** (`dev/specs/2026-10-01-services-over-providers-design.md`, copied from `origin/provider-off-monobehaviour`; #106's branch name `refactor/providers-off-monobehaviour` is wrong). It lands on `main` when #107 merges.
 - **The Sold tab spec is on `main`** (`86ed536`, pushed 2026-10-02). It contradicts the Services spec in one place: the Hero State's contents there list a "Sell Basket", which #124 replaces with the Sold container; #112 and #115 were reworded and blocked on #131 for that reason.
 - #58, #121, #68, #94, #103 are closed and merged; #122 is the only follow-up they left.
 - Keep `docs/agents/` and `docs/adr/` out of any `main` → `GitPage` merge (see `CLAUDE.md`). `docs/_config.yml`'s `exclude: [agents, adr]` is unchanged by #87 — the new ADR lands inside the already-excluded `adr/` directory.

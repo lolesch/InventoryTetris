@@ -53,9 +53,9 @@ backpack), the **Stash**, a Town Stop's **Supply**, the **Sell Basket**, and the
 **Inventory / Stash / Supply / Sell Basket**:
 Four distinct *roles*, all currently played by the same type. Only Equipment is its own
 type. Say which role you mean — "the Stash" is never a class.
-The Stash is **Session-owned** for the MVP (one hero, so nothing shares it). The design
-intent that loot be stored *and exchanged among heroes* needs a persistence tier above
-Session that does not exist yet — revisit post-MVP (ADR-0014).
+The Stash lives in the **Hero State** for the MVP (one hero, so nothing shares it) and
+saves with it. The design intent that loot be stored *and exchanged among heroes* needs a
+persistence tier above the Session that does not exist yet — revisit post-MVP (ADR-0014).
 _Avoid_: using "inventory" to mean any container
 
 **Supply**:
@@ -199,10 +199,10 @@ _Avoid_: no-drop chance, miss, empty
 ## The hero
 
 **Hero**:
-The single persistent character a Session owns — the one that fights. During a Run the
-player never controls it directly; they set its behaviour sliders and its gear and it
-fights autonomously. One hero per Session for the MVP; picking from among several saved
-heroes is deferred.
+The single persistent character the **Hero State** is built around — the one that
+fights. During a Run the player never controls it directly; they set its behaviour
+sliders and its gear and it fights autonomously. One hero per Session for the MVP;
+picking from among several saved heroes (which replaces the Hero State) is deferred.
 _Avoid_: character, unit, avatar, champion; "player" for the thing in the Field
 
 **Player**:
@@ -214,14 +214,35 @@ _Avoid_: user, you; "hero" for the one making the calls
 ## Runs
 
 **Session**:
-The span of play between app start and quit. It contains many Runs and is the unit that
-persists — the hero, the four containers, the wallet and XP save per Session and resume
-`InTown` on the next launch. A Run never spans Sessions: quitting mid-Run banks what the
-hero already picked up and discards the rest. The Session is the *top* persistence tier
-for the MVP: a Stash or Wallet shared across heroes would need a tier above it, which is
-deferred (ADR-0014) — do not let persistence code assume the Session is the outermost
-owner.
-_Avoid_: playthrough, save file (the save is the Session's shadow, not the thing itself)
+The span of play between app start and quit. It contains many Runs and holds one
+**Hero State** at a time — the per-hero state, which is what persists: the Hero State's
+saved parts resume `InTown` on the next launch. A Run never spans Sessions: quitting
+mid-Run banks what the hero already picked up and discards the rest. The Session
+outlives any Hero State — loading a hero swaps the Hero State and the Session carries on
+— and is the *top* persistence tier for the MVP: a Stash or Wallet shared across heroes
+would need a tier above it, which is deferred (ADR-0014) — do not let persistence code
+assume the Session is the outermost owner. The Session owns no hero, container, Wallet or
+XP itself; say "the Hero State" for any of those.
+_Avoid_: playthrough, save file (the save is the Session's shadow, not the thing itself);
+"session" for the per-hero state (that is the **Hero State**)
+
+**Hero State**:
+The per-hero state a **Session** holds, replaced as one unit when a hero is loaded — a
+pointer swap, never hydrated in place or cleared field by field, so nothing of the
+previous hero can leak into the next. It holds the **Hero** (its stats, level and XP),
+the **Equipment**, **Inventory** and **Stash**, the **Wallet**, the **Inventory
+Context**, the six behaviour sliders and the selected **Location** — and the parts that
+are never saved: each Town Stop's **Supply**, the Sold container, the **Run** with its
+ground **Drops**, and the **Corpse**. Of those four only the Corpse is ever saved; it
+persists between Sessions until recovered. A Supply is rolled fresh by a **Restock**, the
+Sold container is stock the Town Stops hold, and a Run never spans Sessions. It does not
+hold authored data (the item catalog, distributions, container sizes and tuning defaults
+are an immutable `GameConfig`, the same for every hero) or the scene-scoped UI singletons
+(the drag cursor, the preview, the scene loader). Built hero-first, so the Equipment can
+take the hero as its stat receiver.
+_Avoid_: Session (the span of play, which outlives it); profile, save, save data (the
+save is its shadow, not the thing itself); player state ("player" is the person, see
+**Player**); character state; loadout
 
 **Run**:
 One trip from Town to a Location and back — the unit the loop turns on. It ends in a
