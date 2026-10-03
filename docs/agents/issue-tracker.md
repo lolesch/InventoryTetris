@@ -35,7 +35,7 @@ Run `gh issue view <number> --comments`.
 
 ## Frontiers — issues vs. implementation
 
-Twenty-seven open issues (scanned 2026-10-02, `main` @ `86ed536`); the frontier — an issue whose blockers are all closed and whose criteria are not already met by the code — is **#107** on the Services wire and **#125** / **#126** on the Sold tab wire. #107 is the only unblocked ticket of the Services epic, so that epic is a single wire until #108; the Sold tab epic (#124) is independent of it except that it gates #112 and #115.
+Twenty-six open issues (scanned 2026-10-03, `main` @ `8c789c9`); the frontier — an issue whose blockers are all closed and whose criteria are not already met by the code — is **#108** on the Services wire and **#125** / **#126** on the Sold tab wire. #108 is the only unblocked ticket of the Services epic, so that epic is a single wire until #109 / #110; the Sold tab epic (#124) is independent of it except that it gates #112 and #115.
 
 **Keep this table current:** update after every `/implement`, and PR-to-`main` by removing closed issues and re-scan the open set.
 
@@ -43,15 +43,14 @@ Twenty-seven open issues (scanned 2026-10-02, `main` @ `86ed536`); the frontier 
 
 | # | Title | Blockers | State vs. this branch |
 |---|---|---|---|
-| **107** | Services 1: name the per-hero unit, record the service model | #68 (closed) | **Built on `docs/107-hero-world-and-service-model`; closes on merge.** `CONTEXT.md` splits **Session** from the **Hero** (which now owns its containers, Wallet and **Behaviour Profile**) and the never-saved **World** (Supplies, Sold container, Run, Inventory Context); ADR-0015 records the service model and the final names; the spec is carried onto the branch. Honours #68 via ADR-0014 (amended). #112, #113, #114, #117 and the epic and neighbours that named the Hero State or `SessionChanged` (#106, #107, #115, #116, #124, #131) were reworded 2026-10-03 to the Hero, the World and `HeroLoaded`; #112 is now "build a Hero, then a World". |
-| 108 | Services 2: boot, `GameConfig`, locator, runner | #107 | **Frontier once #107 merges.** |
+| **108** | Services 2: boot, `GameConfig`, locator, runner | #107 (closed) | **Frontier.** The vocabulary is settled in ADR-0015: the locator, `GameConfig`, `GameRunner` and `Session` names are there. |
 | 109 | Services 3: item service replaces `ItemProvider` | #108 | Blocked. Parallel with #110. |
 | 110 | Services 4: `Hero` as a plain class | #108 | Blocked. Parallel with #109. |
 | 111 | Services 5: hero stat panel binds to `Hero` | #110 | Blocked. |
-| 112 | Services 6: the Hero State holder | #109, #110, **#131** | Blocked. Waits for the Sold tab contract so the staged basket never enters the Hero State; the Sold container is built instead. |
-| 113 | Services 7: simulation service on the Hero State | #109, #112 | Blocked. |
+| 112 | Services 6: the Hero and the World, built in explicit order | #109, #110, **#131** | Blocked. Waits for the Sold tab contract so the staged basket never enters the World; the Sold container is built instead. |
+| 113 | Services 7: simulation service over the Hero and the World | #109, #112 | Blocked. |
 | 117 | Services 11: migrate hero callers, delete `DummyTarget` | #111, #112 | Blocked. (Ahead of #114: #114 waits on it.) |
-| 114 | Services 8: replace on load, `SessionChanged`, rebinding | #112, #113, #117 | Blocked. |
+| 114 | Services 8: replace on load, `HeroLoaded`, rebinding | #112, #113, #117 | Blocked. |
 | 115 | Services 9: migrate inventory callers, GUI | #114, **#131** | Blocked. Waits for the Sold tab contract so it never migrates the basket's GUI callers. |
 | 116 | Services 10: migrate inventory callers, runtime + simulation | #114 (#103 closed) | Blocked. |
 | 118 | Services 12: `DebugPanel` replaces UnityEvent buttons | #112, #116 | Blocked. |
@@ -73,15 +72,14 @@ Twenty-seven open issues (scanned 2026-10-02, `main` @ `86ed536`); the frontier 
 
 ### Frontier (recommended order)
 
-1. **#107** — built on its branch; merge it to close.
-2. **#108** — unlocks the rest.
-3. **#109 / #110** — parallel; then #111, **#112**, **#113**, **#117**, **#114**, then #115 / #116 / #118, then **#119**.
-4. **The Sold tab wire runs beside it:** **#125** and **#126** now, then #127 → #128 → #129 → #130 → #131. Starting it beside #107–#110 keeps #112 from waiting on it.
-5. Off the wire, any time: **#122** (triage), **#69** (`/to-spec`). **#63** returns to the frontier once #116 closes.
+1. **#108** — the only unblocked Services ticket; unlocks the rest.
+2. **#109 / #110** — parallel; then #111, **#112**, **#113**, **#117**, **#114**, then #115 / #116 / #118, then **#119**.
+3. **The Sold tab wire runs beside it:** **#125** and **#126** now, then #127 → #128 → #129 → #130 → #131. Starting it beside #108–#110 keeps #112 from waiting on it.
+4. Off the wire, any time: **#122** (triage), **#69** (`/to-spec`). **#63** returns to the frontier once #116 closes.
 
 ### Notes from the scan
 
-- **The Services spec is carried onto the #107 branch** (`dev/specs/2026-10-01-services-over-providers-design.md`, copied from `origin/provider-off-monobehaviour`; #106's branch name `refactor/providers-off-monobehaviour` is wrong). It lands on `main` when #107 merges.
+- **The Services spec is on `main`** (`dev/specs/2026-10-01-services-over-providers-design.md`, carried unchanged from `origin/provider-off-monobehaviour` by #107's PR #132). **It still says "Hero State" and `SessionChanged`.** ADR-0015 supersedes that vocabulary: read it as the **Hero** and the **World**, and `HeroLoaded`. The spec's own Hero State contents list also says "Sell Basket", read as the Sold container (the next note). Issues #106, #112–#117, #124 and #131 were reworded to match on 2026-10-03.
 - **The Sold tab spec is on `main`** (`86ed536`, pushed 2026-10-02). It contradicts the Services spec in one place: the Hero State's contents there list a "Sell Basket", which #124 replaces with the Sold container; #112 and #115 were reworded and blocked on #131 for that reason.
 - #58, #121, #68, #94, #103 are closed and merged; #122 is the only follow-up they left.
 - Keep `docs/agents/` and `docs/adr/` out of any `main` → `GitPage` merge (see `CLAUDE.md`). `docs/_config.yml`'s `exclude: [agents, adr]` is unchanged by #87 — the new ADR lands inside the already-excluded `adr/` directory.
