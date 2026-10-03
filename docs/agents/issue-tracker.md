@@ -43,7 +43,7 @@ Twenty-seven open issues (scanned 2026-10-02, `main` @ `86ed536`); the frontier 
 
 | # | Title | Blockers | State vs. this branch |
 |---|---|---|---|
-| **107** | Services 1: name the per-hero unit, record the service model | #68 (closed) | **Built on `docs/107-hero-state-and-service-model`; closes on merge.** `CONTEXT.md` gains **Hero State** and splits **Session**; ADR-0015 records the service model and the final names; the spec is carried onto the branch. Honours #68 via ADR-0014 (amended). The event is `HeroStateChanged`, not `SessionChanged` — #114 still says the latter. |
+| **107** | Services 1: name the per-hero unit, record the service model | #68 (closed) | **Built on `docs/107-hero-world-and-service-model`; closes on merge.** `CONTEXT.md` splits **Session** from the **Hero** (which now owns its containers, Wallet and **Behaviour Profile**) and the never-saved **World** (Supplies, Sold container, Run, Inventory Context); ADR-0015 records the service model and the final names; the spec is carried onto the branch. Honours #68 via ADR-0014 (amended). **#110, #112, #113 and #114 still say "Hero State" and `SessionChanged`** — read them as Hero + World and `HeroLoaded` until reworded; #112 becomes "build a Hero, then a World". |
 | 108 | Services 2: boot, `GameConfig`, locator, runner | #107 | **Frontier once #107 merges.** |
 | 109 | Services 3: item service replaces `ItemProvider` | #108 | Blocked. Parallel with #110. |
 | 110 | Services 4: `Hero` as a plain class | #108 | Blocked. Parallel with #109. |
