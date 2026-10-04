@@ -142,6 +142,26 @@ the scratch-harness pattern above) and read the results it logs.
   bridge goes unresponsive, stop retrying and ask the user to press Stop rather than waiting
   it out.
 
+### Play Mode checks in batch mode, no Editor needed (verified 2026-10-04, #127)
+
+The worktree route above also runs *Play Mode*: an `-executeMethod` script under `Assets/Editor/` that
+opens the scene, sets `Application.runInBackground = true` and `EditorApplication.isPlaying = true`, then
+drives a coroutine from `EditorApplication.update` and ends with `EditorApplication.Exit(failures == 0 ? 0 : 1)`.
+Whole run ~15 s. Three things make it lie if you skip them:
+
+- **The player loop barely advances on its own** (`Time.time` stayed ~0.1 s after seconds of wall clock), so
+  fades never settle. Call `EditorApplication.isPaused = false; EditorApplication.Step();` on every tick while
+  waiting, and wait on `Time.time`, not on `Time.frameCount` or wall clock.
+- **`yield return Nested()` does not run `Nested`** under a bare `MoveNext()` loop: keep a stack of
+  `IEnumerator`s and push whatever the top yields. Without it every wait returns instantly and the run goes
+  red on mid-fade alphas, which reads as a wiring bug.
+- **Filter the Editor's own startup noise** from any `logMessageReceived` failure count: Unity Search throws an
+  `ArgumentOutOfRangeException` from `SearchDatabase.EnumerateAll` once at startup.
+
+Assert the triple from the section above (`CanvasGroup` alpha, announced context, group `ActiveMember`).
+A private field such as a display's bound `Container` is readable by reflection from the compiled Editor
+script. Delete the script and its `.meta` before committing.
+
 ## Enter Play Mode Settings — domain/scene reload disabled
 
 **Consequence for subscriptions, and it cost a session on 2026-09-21.** With both reloads
