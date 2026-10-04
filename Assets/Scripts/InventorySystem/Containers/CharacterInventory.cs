@@ -10,14 +10,14 @@ namespace ToolSmiths.InventorySystem.Inventories
     [System.Serializable]
     public class CharacterInventory : AbstractDimensionalContainer
     {
-        public CharacterInventory(Vector2Int dimensions) : base(dimensions) { }
+        public CharacterInventory(Vector2Int dimensions, IItemCatalog catalog) : base(dimensions, catalog) { }
 
         public override Package AddAtPosition(Vector2Int position, Package package)
         {
             if (!package.IsValid)
                 return package;
 
-            var dimensions = ItemView.Of(package.Item).Dimensions;
+            var dimensions = ViewOf(package.Item).Dimensions;
 
             if (IsEmptySpace(position, dimensions, out var otherItems))
                 TryAddToInventory();
@@ -32,7 +32,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             void TryAddToInventory()
             {
-                var amount = Math.Min(package.Amount, ItemView.Of(package.Item).StackLimit);
+                var amount = Math.Min(package.Amount, ViewOf(package.Item).StackLimit);
 
                 if (StoredPackages.TryAdd(position, new Package(this, package.Item, amount)))
                     _ = package.ReduceAmount(amount);
@@ -40,13 +40,13 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             bool TryStack(Package storedPackage, Vector2Int storedPosition)
             {
-                if (0 == storedPackage.SpaceLeft)
+                if (0 == storedPackage.SpaceLeft(Catalog))
                     return false;
 
-                if (!package.Item.StacksWith(storedPackage.Item, ItemView.Of(package.Item).StackLimit))
+                if (!package.Item.StacksWith(storedPackage.Item, ViewOf(package.Item).StackLimit))
                     return false;
 
-                var addedAmount = storedPackage.IncreaseAmount(package.Amount);
+                var addedAmount = storedPackage.IncreaseAmount(package.Amount, Catalog);
                 _ = package.ReduceAmount(addedAmount);
 
                 StoredPackages[storedPosition] = storedPackage;
@@ -74,7 +74,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             foreach (var package in StoredPackages)
             {
-                var itemDimensions = ItemView.Of(package.Value.Item).Dimensions;
+                var itemDimensions = ViewOf(package.Value.Item).Dimensions;
                 for (var x = package.Key.x; x < package.Key.x + itemDimensions.x; x++)
                     for (var y = package.Key.y; y < package.Key.y + itemDimensions.y; y++)
                         foreach (var requiredPosition in requiredPositions)

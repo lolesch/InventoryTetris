@@ -25,14 +25,16 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         private const string ArrowId = "test.arrow";
         private const string HelmId = "test.helm";
 
+        private static IItemCatalog catalog;
+
         [SetUp]
-        public void SetCatalog() => ItemView.Catalog = new TestCatalog()
+        public void SetCatalog() => catalog = new TestCatalog()
             .With(new TestDefinition { Id = SwordId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Sword, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
             .With(new TestDefinition { Id = ArrowId, Category = ItemCategory.Consumable, ConsumableType = ConsumableType.Arrow, Footprint = ItemSize.OneByOne, BaseStackLimit = 10u })
             .With(new TestDefinition { Id = HelmId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Helm, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u });
 
         [TearDown]
-        public void ClearCatalog() => ItemView.Catalog = null;
+        public void ClearCatalog() => catalog = null;
 
         private static CharacterStatModifier Affix(StatName stat, float value) =>
             new(stat, new StatModifier(new Vector2Int(0, 100), value, StatModifierType.FlatAdd));
@@ -41,7 +43,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         private static ItemInstance Arrows() => new(ArrowId, ItemRarity.Common, 1, null);
         private static ItemInstance Helm(float armor) => new(HelmId, ItemRarity.Rare, 5, new[] { Affix(StatName.Armor, armor) });
 
-        private static CharacterInventory Inventory(int width = 4, int height = 4) => new(new Vector2Int(width, height));
+        private static CharacterInventory Inventory(int width = 4, int height = 4) => new(new Vector2Int(width, height), catalog);
 
         // ── Working copy vs. live state ─────────────────────────────────────
 
@@ -103,7 +105,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         public void DisposeWithoutCommit_RestoresEveryContainerToItsSnapshot()
         {
             var inventory = Inventory();
-            var equipment = new CharacterEquipment(new Vector2Int(14, 1));
+            var equipment = new CharacterEquipment(new Vector2Int(14, 1), catalog);
 
             var original = new Package(inventory, Sword(), 1u);
             _ = inventory.TryAddToContainer(ref original);
@@ -148,7 +150,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         public void AMoveThatCannotReHomeADisplacedItem_LeavesEveryContainerTheCharacterSheetAndTheCursorUnchanged()
         {
             var stats = new FakeStatReceiver();
-            var equipment = new CharacterEquipment(new Vector2Int(14, 1), stats);
+            var equipment = new CharacterEquipment(new Vector2Int(14, 1), catalog, stats);
             var inventory = Inventory(1, 1);
 
             var wornHelm = new Package(inventory, Helm(4f), 1u);
@@ -204,7 +206,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         public void ACommittedMove_FiresOnContentChangedOncePerAffectedContainer()
         {
             var inventory = Inventory();
-            var equipment = new CharacterEquipment(new Vector2Int(14, 1));
+            var equipment = new CharacterEquipment(new Vector2Int(14, 1), catalog);
 
             var inventoryRefreshes = 0;
             var equipmentRefreshes = 0;
@@ -281,7 +283,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         public void EquippingInsideATransaction_AppliesAffixesThroughTheStatReceiverOnlyOnCommit()
         {
             var stats = new FakeStatReceiver();
-            var equipment = new CharacterEquipment(new Vector2Int(14, 1), stats);
+            var equipment = new CharacterEquipment(new Vector2Int(14, 1), catalog, stats);
             var source = Inventory();
 
             using (var transaction = new ItemTransaction(equipment, source))
@@ -300,7 +302,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         public void EquippingInsideARolledBackTransaction_NeverAppliesAffixes()
         {
             var stats = new FakeStatReceiver();
-            var equipment = new CharacterEquipment(new Vector2Int(14, 1), stats);
+            var equipment = new CharacterEquipment(new Vector2Int(14, 1), catalog, stats);
             var source = Inventory();
 
             using (new ItemTransaction(equipment, source))

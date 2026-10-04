@@ -19,7 +19,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         /// <param name="statReceiver">The character worn items apply their affixes to.
         /// Null in a pure container test that only exercises placement.</param>
-        public CharacterEquipment(Vector2Int dimensions, IStatReceiver statReceiver = null) : base(dimensions) =>
+        public CharacterEquipment(Vector2Int dimensions, IItemCatalog catalog, IStatReceiver statReceiver = null) : base(dimensions, catalog) =>
             this.statReceiver = statReceiver;
 
         protected override void OnPackageRemoved(Package package)
@@ -130,7 +130,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             void TryAddToInventory()
             {
-                var stackLimit = ItemView.Of(package.Item).StackLimit;
+                var stackLimit = ViewOf(package.Item).StackLimit;
                 if (1u < stackLimit)
                     Debug.LogWarning($"EquipmentItems should not be stackable! {stackLimit}");
 
@@ -314,12 +314,12 @@ namespace ToolSmiths.InventorySystem.Inventories
         }
 
         /// <summary>Whether a stored instance is equipment at all - the check that was <c>is EquipmentItem</c>.</summary>
-        private static bool IsEquipment(ItemInstance item) =>
-            item != null && ItemView.Of(item).Definition.Category == ItemCategory.Equipment;
+        private bool IsEquipment(ItemInstance item) =>
+            item != null && ViewOf(item).Definition.Category == ItemCategory.Equipment;
 
         /// <summary>The slot type a stored instance fills - was <c>(item as EquipmentItem).EquipmentType</c>.</summary>
-        private static EquipmentType EquipmentTypeOf(ItemInstance item) =>
-            ItemView.Of(item).Definition.EquipmentType;
+        private EquipmentType EquipmentTypeOf(ItemInstance item) =>
+            ViewOf(item).Definition.EquipmentType;
 
         public static bool IsTwoHandedWeapon(EquipmentType equipmentType) => equipmentType is > EquipmentType.TWOHANDEDWEAPONS and < EquipmentType.OFFHANDS;
 
@@ -329,7 +329,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// footprint - including the off-hand slot it visually fills - anchors at the weapon
         /// slot (issue #42); every other item is keyed where it was dropped.
         /// </summary>
-        private static Vector2Int AnchorOf(Vector2Int position, ItemInstance item)
+        private Vector2Int AnchorOf(Vector2Int position, ItemInstance item)
         {
             var equipmentType = EquipmentTypeOf(item);
 
@@ -351,7 +351,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// item's <see cref="ItemView.Dimensions"/> is its inventory-bag shape and is
         /// meaningless here (issue #12).
         /// </summary>
-        public static Vector2Int SlotFootprintOf(ItemInstance item) => SlotFootprint(EquipmentTypeOf(item));
+        public Vector2Int SlotFootprintOf(ItemInstance item) => SlotFootprint(EquipmentTypeOf(item));
 
         private static Vector2Int SlotFootprint(EquipmentType equipmentType) =>
             IsTwoHandedWeapon(equipmentType) ? new Vector2Int(2, 1) : new Vector2Int(1, 1);

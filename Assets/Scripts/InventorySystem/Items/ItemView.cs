@@ -20,18 +20,6 @@ namespace ToolSmiths.InventorySystem.Items
     /// </summary>
     public readonly struct ItemView
     {
-        /// <summary>
-        /// Ambient catalog for the call sites that cannot yet take one by constructor -
-        /// <c>Package</c> (a serialized struct), the container core, the slot displays, all
-        /// still in the predefined <c>Assembly-CSharp</c>. <c>ItemProvider.Awake</c> sets it
-        /// from the wired catalog asset; an EditMode test sets a fake in <c>[SetUp]</c>. This
-        /// mirrors how <c>AbstractItem</c>'s constructors reached <c>ItemProvider.Instance</c>
-        /// ambiently before the cutover - the same coupling, made explicit and swappable.
-        /// </summary>
-        // TODO(#15): the InventorySystem.Containers extraction replaces this static with a
-        // catalog injected into the container core and threaded to the displays.
-        public static IItemCatalog Catalog { get; set; }
-
         private readonly ItemInstance instance;
         private readonly ItemDefinition definition;
 
@@ -42,7 +30,8 @@ namespace ToolSmiths.InventorySystem.Items
         }
 
         /// <summary>
-        /// Pairs an instance with its definition from <paramref name="catalog"/>. Throws
+        /// Pairs an instance with its definition from <paramref name="catalog"/> - the container core
+        /// holds the one it was built with, the Unity edge reads <c>ItemService.Instance.View</c>. Throws
         /// <see cref="System.Collections.Generic.KeyNotFoundException"/> (via the catalog)
         /// when the instance's definition id is not in the catalog - a stored item whose
         /// template was deleted fails here, loudly, instead of rendering as a blank.
@@ -55,21 +44,6 @@ namespace ToolSmiths.InventorySystem.Items
                 throw new ArgumentNullException(nameof(catalog));
 
             return new ItemView(instance, catalog.Definition(instance.DefinitionId));
-        }
-
-        /// <summary>
-        /// Resolves <paramref name="instance"/> against the ambient <see cref="Catalog"/> -
-        /// the terse form for the runtime call sites. Throws
-        /// <see cref="InvalidOperationException"/> when no catalog has been set (the game
-        /// ran without an <c>ItemProvider</c>, or a test forgot its <c>[SetUp]</c>).
-        /// </summary>
-        public static ItemView Of(ItemInstance instance)
-        {
-            if (Catalog is null)
-                throw new InvalidOperationException(
-                    "ItemView.Catalog is not set - ItemProvider.Awake sets it at runtime; a test must set it in [SetUp]");
-
-            return Resolve(instance, Catalog);
         }
 
         /// <summary>The instance this view resolves.</summary>

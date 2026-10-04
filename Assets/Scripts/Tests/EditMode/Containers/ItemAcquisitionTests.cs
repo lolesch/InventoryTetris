@@ -20,18 +20,20 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         private const string HelmId = "test.helm";
         private const string PotionId = "test.potion";
 
+        private static IItemCatalog catalog;
+
         [SetUp]
-        public void SetCatalog() => ItemView.Catalog = new TestCatalog()
+        public void SetCatalog() => catalog = new TestCatalog()
             .With(new TestDefinition { Id = SwordId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Sword, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
             .With(new TestDefinition { Id = HelmId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Helm, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
             .With(new TestDefinition { Id = PotionId, Category = ItemCategory.Consumable, ConsumableType = ConsumableType.Potion, Footprint = ItemSize.OneByOne, BaseStackLimit = 5u });
 
         [TearDown]
-        public void ClearCatalog() => ItemView.Catalog = null;
+        public void ClearCatalog() => catalog = null;
 
         private static Package Of(string id, uint amount = 1u) => new(null, new ItemInstance(id, ItemRarity.Common, 1, null), amount);
-        private static CharacterInventory Inventory(int width = 4, int height = 4) => new(new Vector2Int(width, height));
-        private static CharacterEquipment Equipment(bool autoEquip = true) => new(new Vector2Int(14, 1), null) { autoEquip = autoEquip };
+        private static CharacterInventory Inventory(int width = 4, int height = 4) => new(new Vector2Int(width, height), catalog);
+        private static CharacterEquipment Equipment(bool autoEquip = true) => new(new Vector2Int(14, 1), catalog, null) { autoEquip = autoEquip };
 
         [Test]
         public void Equipment_AutoEquipOnAndSlotEmpty_Equips()

@@ -27,7 +27,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         private const string SilverId = "test.silver";
         private const string GoldId = "test.gold";
 
-        private TestCatalog catalog;
+        private static TestCatalog catalog;
         private FakeCurrencyMinter minter;
 
         [SetUp]
@@ -42,12 +42,11 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
                 .With(new TestDefinition { Id = SilverId, Category = ItemCategory.Currency, CurrencyType = CurrencyType.Silver, Footprint = ItemSize.OneByOne, BaseStackLimit = 999u })
                 .With(new TestDefinition { Id = GoldId, Category = ItemCategory.Currency, CurrencyType = CurrencyType.Gold, Footprint = ItemSize.OneByOne, BaseStackLimit = 999u });
 
-            ItemView.Catalog = catalog;
             minter = new FakeCurrencyMinter(catalog);
         }
 
         [TearDown]
-        public void ClearCatalog() => ItemView.Catalog = null;
+        public void ClearCatalog() => catalog = null;
 
         // ── fixtures ────────────────────────────────────────────────────────
 
@@ -64,7 +63,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         private static ItemInstance TwoHandedSword() => new(TwoHandedSwordId, ItemRarity.Rare, 7, new[] { Affix(StatName.PhysicalDamage, 6f) });
 
         private Wallet NewWallet(int width = 4, int height = 4) =>
-            new(new CharacterInventory(new Vector2Int(width, height)), minter);
+            new(new CharacterInventory(new Vector2Int(width, height), catalog), minter);
 
         private void SeedCash(Wallet wallet, CurrencyType type, uint count)
         {
@@ -130,7 +129,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         {
             var wallet = NewWallet();
             SeedCash(wallet, CurrencyType.Gold, 1u); // 1200
-            var store = new CharacterInventory(new Vector2Int(4, 4));
+            var store = new CharacterInventory(new Vector2Int(4, 4), catalog);
             var onShelf = new Package(store, Sword(), 1u);
             _ = store.AddAtPosition(new Vector2Int(0, 0), onShelf);
             var instance = store.StoredPackages[new Vector2Int(0, 0)].Item;
@@ -149,7 +148,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         {
             var wallet = NewWallet(1, 1);
             SeedCash(wallet, CurrencyType.Gold, 1u); // fills the wallet's only cell
-            var store = new CharacterInventory(new Vector2Int(4, 4));
+            var store = new CharacterInventory(new Vector2Int(4, 4), catalog);
             var onShelf = new Package(store, Sword(), 1u);
             _ = store.AddAtPosition(new Vector2Int(0, 0), onShelf);
             var instance = store.StoredPackages[new Vector2Int(0, 0)].Item;
@@ -168,7 +167,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         {
             var wallet = NewWallet();
             SeedCash(wallet, CurrencyType.Iron, 100u); // 100 < 315
-            var store = new CharacterInventory(new Vector2Int(4, 4));
+            var store = new CharacterInventory(new Vector2Int(4, 4), catalog);
             var onShelf = new Package(store, Sword(), 1u);
             _ = store.AddAtPosition(new Vector2Int(0, 0), onShelf);
             var instance = store.StoredPackages[new Vector2Int(0, 0)].Item;
@@ -208,12 +207,12 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         {
             var wallet = NewWallet();
             SeedCash(wallet, CurrencyType.Gold, 1u); // 1200
-            var store = new CharacterInventory(new Vector2Int(4, 4));
+            var store = new CharacterInventory(new Vector2Int(4, 4), catalog);
             _ = store.AddAtPosition(new Vector2Int(0, 0), new Package(store, Sword(), 1u));
             var instance = store.StoredPackages[new Vector2Int(0, 0)].Item;
 
-            var equipment = new CharacterEquipment(new Vector2Int(14, 1), null);
-            var inventory = new CharacterInventory(new Vector2Int(4, 4));
+            var equipment = new CharacterEquipment(new Vector2Int(14, 1), catalog, null);
+            var inventory = new CharacterInventory(new Vector2Int(4, 4), catalog);
             var player = new FakePlayer(equipment, inventory);
 
             var bought = VendorTransaction.Buy(store, new Vector2Int(0, 0),
@@ -228,14 +227,14 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         [Test]
         public void Buy_ThroughAPlayer_WithNoRoomAnywhere_RollsBack_AndChargesNothing()
         {
-            var inventory = new CharacterInventory(new Vector2Int(1, 1));
+            var inventory = new CharacterInventory(new Vector2Int(1, 1), catalog);
             var wallet = new Wallet(inventory, minter);
             SeedCash(wallet, CurrencyType.Gold, 1u); // fills the inventory's only cell
-            var store = new CharacterInventory(new Vector2Int(4, 4));
+            var store = new CharacterInventory(new Vector2Int(4, 4), catalog);
             _ = store.AddAtPosition(new Vector2Int(0, 0), new Package(store, Sword(), 1u));
             var instance = store.StoredPackages[new Vector2Int(0, 0)].Item;
 
-            var equipment = new CharacterEquipment(new Vector2Int(14, 1), null) { autoEquip = false };
+            var equipment = new CharacterEquipment(new Vector2Int(14, 1), catalog, null) { autoEquip = false };
             var player = new FakePlayer(equipment, inventory);
 
             var bought = VendorTransaction.Buy(store, new Vector2Int(0, 0),
@@ -251,7 +250,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         {
             var wallet = NewWallet();
             SeedCash(wallet, CurrencyType.Gold, 1u);
-            var store = new CharacterInventory(new Vector2Int(4, 4));
+            var store = new CharacterInventory(new Vector2Int(4, 4), catalog);
             _ = store.AddAtPosition(new Vector2Int(0, 0), new Package(store, Sword(), 1u));
 
             _ = VendorTransaction.Buy(store, new Vector2Int(0, 0),
@@ -282,7 +281,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         private static bool DragDrop(AbstractDimensionalContainer bag, Vector2Int at, ref Package inHand,
             Wallet wallet, float price)
         {
-            if (!bag.CanPlaceAt(at, ItemView.Of(inHand.Item).Dimensions))
+            if (!bag.CanPlaceAt(at, ItemView.Resolve(inHand.Item, catalog).Dimensions))
                 return false; // no room - nothing lands, nothing charged
 
             var cursor = new CursorHolder(null);
@@ -303,7 +302,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         {
             var wallet = NewWallet();
             SeedCash(wallet, CurrencyType.Gold, 1u); // 1200
-            var shelf = new CharacterInventory(new Vector2Int(4, 4));
+            var shelf = new CharacterInventory(new Vector2Int(4, 4), catalog);
             _ = shelf.AddAtPosition(new Vector2Int(0, 0), new Package(shelf, Sword(), 1u));
 
             var inHand = shelfPickUp(shelf, new Vector2Int(0, 0));
@@ -318,12 +317,12 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         {
             var wallet = NewWallet();
             SeedCash(wallet, CurrencyType.Gold, 1u); // 1200
-            var shelf = new CharacterInventory(new Vector2Int(4, 4));
+            var shelf = new CharacterInventory(new Vector2Int(4, 4), catalog);
             _ = shelf.AddAtPosition(new Vector2Int(0, 0), new Package(shelf, Sword(), 1u));
             var instance = shelf.StoredPackages[new Vector2Int(0, 0)].Item;
             var inHand = shelfPickUp(shelf, new Vector2Int(0, 0));
 
-            var price = VendorTransaction.BuyPrice(instance);
+            var price = VendorTransaction.BuyPrice(instance, catalog);
             var placed = DragDrop(wallet.Container, new Vector2Int(1, 1), ref inHand, wallet, price);
 
             Assert.That(placed, Is.True);
@@ -344,12 +343,12 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
                         new Package(wallet.Container, minter.MintCurrency(CurrencyType.Gold), 1u));
             var before = WalletValue(wallet); // 4 × 1200 = 4800
 
-            var shelf = new CharacterInventory(new Vector2Int(4, 4));
+            var shelf = new CharacterInventory(new Vector2Int(4, 4), catalog);
             _ = shelf.AddAtPosition(new Vector2Int(0, 0), new Package(shelf, TwoHandedSword(), 1u));
             var instance = shelf.StoredPackages[new Vector2Int(0, 0)].Item;
             var inHand = shelfPickUp(shelf, new Vector2Int(0, 0));
 
-            var placed = DragDrop(wallet.Container, new Vector2Int(0, 0), ref inHand, wallet, VendorTransaction.BuyPrice(instance));
+            var placed = DragDrop(wallet.Container, new Vector2Int(0, 0), ref inHand, wallet, VendorTransaction.BuyPrice(instance, catalog));
 
             Assert.That(placed, Is.False, "the drop could not land - the item stays in hand");
             Assert.That(Holds(wallet.Container, instance), Is.False, "nothing landed in the full bag");
@@ -362,12 +361,12 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         {
             var wallet = NewWallet();
             SeedCash(wallet, CurrencyType.Iron, 100u); // 100 < 315
-            var shelf = new CharacterInventory(new Vector2Int(4, 4));
+            var shelf = new CharacterInventory(new Vector2Int(4, 4), catalog);
             _ = shelf.AddAtPosition(new Vector2Int(0, 0), new Package(shelf, Sword(), 1u));
             var instance = shelf.StoredPackages[new Vector2Int(0, 0)].Item;
             var inHand = shelfPickUp(shelf, new Vector2Int(0, 0));
 
-            var placed = DragDrop(wallet.Container, new Vector2Int(0, 0), ref inHand, wallet, VendorTransaction.BuyPrice(instance));
+            var placed = DragDrop(wallet.Container, new Vector2Int(0, 0), ref inHand, wallet, VendorTransaction.BuyPrice(instance, catalog));
 
             Assert.That(placed, Is.False, "the drop was rejected before placing anything");
             Assert.That(Holds(wallet.Container, instance), Is.False, "nothing landed");
@@ -379,7 +378,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         {
             var wallet = NewWallet();
             SeedCash(wallet, CurrencyType.Gold, 1u);
-            var shelf = new CharacterInventory(new Vector2Int(4, 4));
+            var shelf = new CharacterInventory(new Vector2Int(4, 4), catalog);
             _ = shelf.AddAtPosition(new Vector2Int(0, 0), new Package(shelf, Sword(), 1u));
             var instance = shelf.StoredPackages[new Vector2Int(0, 0)].Item;
             var inHand = shelfPickUp(shelf, new Vector2Int(0, 0));
@@ -399,10 +398,10 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         {
             var wallet = NewWallet();
             SeedCash(wallet, CurrencyType.Gold, 1u); // 1200
-            var shelf = new CharacterInventory(new Vector2Int(4, 4));
+            var shelf = new CharacterInventory(new Vector2Int(4, 4), catalog);
             _ = shelf.AddAtPosition(new Vector2Int(0, 0), new Package(shelf, Sword(), 1u));
             var instance = shelf.StoredPackages[new Vector2Int(0, 0)].Item;
-            var priceAtPickUp = VendorTransaction.BuyPrice(instance); // 315
+            var priceAtPickUp = VendorTransaction.BuyPrice(instance, catalog); // 315
             var inHand = shelfPickUp(shelf, new Vector2Int(0, 0));
 
             // The store restocks while the drag is live - the shelf now sells a cheap arrow.
@@ -422,7 +421,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         {
             var sword = Sword();
 
-            Assert.That(VendorTransaction.BuyPrice(sword), Is.EqualTo(SwordSellValue * VendorTransaction.Markup));
+            Assert.That(VendorTransaction.BuyPrice(sword, catalog), Is.EqualTo(SwordSellValue * VendorTransaction.Markup));
         }
 
         // ── the check-then-queue protocol (TF#4) ───────────────────────────

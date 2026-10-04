@@ -1,6 +1,7 @@
 ﻿using TMPro;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Inventories;
+using ToolSmiths.InventorySystem.Services;
 using Submodules.Utility.UI;
 using UnityEngine;
 using UnityEngine.UI;
@@ -22,7 +23,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
             }
 
             if (coinIcon)
-                coinIcon.sprite = ItemProvider.Instance.GetIcon(newData.type);
+                coinIcon.sprite = ItemService.Instance.GetIcon(newData.type);
 
             if (amountText)
                 amountText.text = $"{newData.amount}";

@@ -35,7 +35,7 @@ Run `gh issue view <number> --comments`.
 
 ## Frontiers — issues vs. implementation
 
-Twenty-five open issues (scanned 2026-10-04, `main` @ `b41d14e`); the frontier — an issue whose blockers are all closed and whose criteria are not already met by the code — is **#109** and **#110** on the Services wire (parallel) and **#125** / **#126** on the Sold tab wire. #108 is merged: the registry, locator and game loop are in `Utility`, and `GameConfig`, `GameBoot` and `GameLoop` in `InventorySystem.Services` (ADR-0015, amended 2026-10-04). The Sold tab epic (#124) is independent of it except that it gates #112 and #115.
+Twenty-five open issues (scanned 2026-10-04, `main` @ `b41d14e`); the frontier — an issue whose blockers are all closed and whose criteria are not already met by the code — is **#110** on the Services wire (#109 is built, awaiting merge) and **#125** / **#126** on the Sold tab wire. #108 is merged: the registry, locator and game loop are in `Utility`, and `GameConfig`, `GameBoot` and `GameLoop` in `InventorySystem.Services` (ADR-0015, amended 2026-10-04). The Sold tab epic (#124) is independent of it except that it gates #112 and #115.
 
 **Keep this table current:** update after every `/implement`, and PR-to-`main` by removing closed issues and re-scan the open set.
 
@@ -43,7 +43,7 @@ Twenty-five open issues (scanned 2026-10-04, `main` @ `b41d14e`); the frontier �
 
 | # | Title | Blockers | State vs. this branch |
 |---|---|---|---|
-| 109 | Services 3: item service replaces `ItemProvider` | #108 (closed) | **Frontier.** Parallel with #110. |
+| 109 | Services 3: item service replaces `ItemProvider` | #108 (closed) | **Built on `feat/109-item-service`; closes on merge.** `IItemService`/`ItemService` in `InventorySystem.Services`; `ItemProvider`, its scene object, `CurrencyDropTableCoinSource` and the static `ItemView.Catalog`/`Of` are gone, and every container takes its `IItemCatalog` by constructor. EditMode 1037/1037 and PlayMode boot tests green in a shadow project; a scripted Play entry restocked the Supplies and a Run banked coins and items. **The by-hand Play pass in the Editor is still owed.** |
 | 110 | Services 4: `Hero` as a plain class | #108 (closed) | **Frontier.** Parallel with #109. |
 | 111 | Services 5: hero stat panel binds to `Hero` | #110 | Blocked. |
 | 112 | Services 6: the Hero and the World, built in explicit order | #109, #110, **#131** | Blocked. Waits for the Sold tab contract so the staged basket never enters the World; the Sold container is built instead. |
@@ -71,7 +71,7 @@ Twenty-five open issues (scanned 2026-10-04, `main` @ `b41d14e`); the frontier �
 
 ### Frontier (recommended order)
 
-1. **#109 / #110** — parallel; then #111, **#112**, **#113**, **#117**, **#114**, then #115 / #116 / #118, then **#119**.
+1. **#110** (and **#109**, built on its branch; merge it to close) — parallel; then #111, **#112**, **#113**, **#117**, **#114**, then #115 / #116 / #118, then **#119**.
 2. **The Sold tab wire runs beside it:** **#125** and **#126** now, then #127 → #128 → #129 → #130 → #131. Starting it beside #109–#110 keeps #112 from waiting on it.
 3. Off the wire, any time: **#122** (triage), **#69** (`/to-spec`). **#63** returns to the frontier once #116 closes.
 

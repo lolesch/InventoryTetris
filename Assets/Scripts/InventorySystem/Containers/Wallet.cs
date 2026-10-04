@@ -232,7 +232,7 @@ namespace ToolSmiths.InventorySystem.Inventories
                 if (!coins.StoredPackages.TryGetValue(position, out var stored))
                     continue;
 
-                var definition = ItemView.Of(stored.Item).Definition;
+                var definition = coins.ViewOf(stored.Item).Definition;
                 if (definition.Category != ItemCategory.Currency || definition.CurrencyType != type)
                     continue;
 
@@ -252,7 +252,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             foreach (var package in coins.StoredPackages)
             {
-                var definition = ItemView.Of(package.Value.Item).Definition;
+                var definition = coins.ViewOf(package.Value.Item).Definition;
                 if (definition.Category != ItemCategory.Currency)
                     continue;
 

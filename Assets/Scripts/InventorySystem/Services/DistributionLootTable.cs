@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using ToolSmiths.InventorySystem.Data.Distributions;
 using ToolSmiths.InventorySystem.Items;
 
-namespace ToolSmiths.InventorySystem.Inventories
+namespace ToolSmiths.InventorySystem.Services
 {
     /// <summary>
     /// The runtime <see cref="LootTable"/>: a pass-through over the two authored
-    /// distribution <see cref="AbstractProbabilityDistribution"/>s <c>ItemProvider</c> owns.
+    /// distribution <see cref="AbstractProbabilityDistribution"/>s <see cref="GameConfig"/> carries.
     /// <see cref="AbstractProbabilityDistribution.Probabilities"/> already hands back an
     /// enum-order vector summing to 1 - exactly the shape <see cref="LootTable"/> wants - so
     /// there is nothing to compute here.

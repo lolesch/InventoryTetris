@@ -29,16 +29,17 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 
         private FakeCurrencyMinter minter;
 
+        private static IItemCatalog catalog;
+
         [SetUp]
         public void SetCatalog()
         {
-            var catalog = new TestCatalog()
+            catalog = new TestCatalog()
                 .With(Coin(IronId, CurrencyType.Iron))
                 .With(Coin(CopperId, CurrencyType.Copper))
                 .With(Coin(SilverId, CurrencyType.Silver))
                 .With(Coin(GoldId, CurrencyType.Gold));
 
-            ItemView.Catalog = catalog;
             minter = new FakeCurrencyMinter(catalog);
 
             static TestDefinition Coin(string id, CurrencyType type) => new()
@@ -52,12 +53,12 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         }
 
         [TearDown]
-        public void ClearCatalog() => ItemView.Catalog = null;
+        public void ClearCatalog() => catalog = null;
 
         // ── fixtures ────────────────────────────────────────────────────────
 
         private Wallet NewWallet(int width = 6, int height = 6) =>
-            new(new CharacterInventory(new Vector2Int(width, height)), minter);
+            new(new CharacterInventory(new Vector2Int(width, height), catalog), minter);
 
         private void Seed(Wallet wallet, CurrencyType type, uint count)
         {
@@ -66,7 +67,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         }
 
         private static bool HoldsCurrency(Wallet wallet) => wallet.Container.StoredPackages.Values
-            .Any(package => ItemView.Of(package.Item).Definition.Category == ItemCategory.Currency);
+            .Any(package => ItemView.Resolve(package.Item, catalog).Definition.Category == ItemCategory.Currency);
 
         // ── MintCurrency rarities (CONTEXT.md "Denomination") ───────────────
         // A minted coin carries its denomination's fixed Rarity, so a silver Pile tints Rare
@@ -223,7 +224,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         public void Deposit_MintsTheLargestDenominationFirst()
         {
             var recorder = new RecordingMinter(minter);
-            var wallet = new Wallet(new CharacterInventory(new Vector2Int(6, 6)), recorder);
+            var wallet = new Wallet(new CharacterInventory(new Vector2Int(6, 6), catalog), recorder);
 
             wallet.Deposit(new Currency(iron: 1u, copper: 1u, silver: 1u, gold: 1u));
 
@@ -286,7 +287,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             wallet.Consolidate();
 
             var copperCell = wallet.Container.StoredPackages
-                .Single(entry => ItemView.Of(entry.Value.Item).Definition.CurrencyType == CurrencyType.Copper).Key;
+                .Single(entry => ItemView.Resolve(entry.Value.Item, catalog).Definition.CurrencyType == CurrencyType.Copper).Key;
             Assert.That(copperCell, Is.EqualTo(firstCell), "copper sits ahead of the loose iron");
         }
 

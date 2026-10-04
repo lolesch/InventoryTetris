@@ -26,7 +26,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             var bag = InventoryProvider.Instance.Inventory;
 
             var doomed = bag.StoredPackages
-                .Where(entry => ItemView.Of(entry.Value.Item).Definition.Category != ItemCategory.Currency)
+                .Where(entry => bag.ViewOf(entry.Value.Item).Definition.Category != ItemCategory.Currency)
                 .ToList();
 
             var contents = doomed

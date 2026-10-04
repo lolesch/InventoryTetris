@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using TMPro;
+using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Items;
 using Submodules.Utility.Extensions;
@@ -40,7 +41,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
              *  flavor text?
              */
 
-            var view = ItemView.Of(package.Item);
+            var view = ItemService.Instance.View(package.Item);
             var rarityColor = ItemView.RarityColorOf(package.Item.Rarity);
 
             if (itemName)
@@ -94,7 +95,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                 return;
             }
 
-            var view = ItemView.Of(package.Item);
+            var view = ItemService.Instance.View(package.Item);
             var rarityColor = ItemView.RarityColorOf(package.Item.Rarity);
 
             if (itemName)

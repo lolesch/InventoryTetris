@@ -9,7 +9,7 @@ namespace ToolSmiths.InventorySystem.Items
     /// <summary>
     /// Turns a <see cref="RollContext"/> into <see cref="ItemInstance"/>s - the <b>Roll</b>
     /// (<c>CONTEXT.md</c>). Replaces the ~30-method <c>GenerateRandomX</c> decision tree on
-    /// <c>ItemProvider</c>: instead of a hand-unrolled switch per equipment type, a roll is
+    /// the old item provider: instead of a hand-unrolled switch per equipment type, a roll is
     /// "pick a category, pick a definition of that category from the catalog, roll a rarity,
     /// roll that many affixes from the definition's pool". Adding an item type is data - a
     /// new definition in the catalog - not another switch arm.
@@ -74,7 +74,7 @@ namespace ToolSmiths.InventorySystem.Items
 
         /// <summary>
         /// Rolls one item of a given definition <em>at a given rarity</em> - the innermost
-        /// primitive, no loot table needed. This is what the debug UI on <c>ItemProvider</c>
+        /// primitive, no loot table needed. This is what the debug UI on the item service
         /// reaches for ("roll me a belt"): the caller has already decided the definition and
         /// the rarity. Throws when <paramref name="rarity"/> is the fail bucket
         /// (<c>NoDrop</c>) - that is not an item.

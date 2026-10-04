@@ -29,8 +29,10 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         private const string RingId = "test.ring";
         private const string PlankId = "test.plank";
 
+        private static IItemCatalog catalog;
+
         [SetUp]
-        public void SetCatalog() => ItemView.Catalog = new TestCatalog()
+        public void SetCatalog() => catalog = new TestCatalog()
             .With(new TestDefinition { Id = SwordId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Sword, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
             .With(new TestDefinition { Id = ArrowId, Category = ItemCategory.Consumable, ConsumableType = ConsumableType.Arrow, Footprint = ItemSize.OneByOne, BaseStackLimit = 10u })
             .With(new TestDefinition { Id = HelmId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Helm, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
@@ -38,7 +40,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             .With(new TestDefinition { Id = PlankId, Category = ItemCategory.Consumable, ConsumableType = ConsumableType.Arrow, Footprint = ItemSize.TwoByOne, BaseStackLimit = 1u });
 
         [TearDown]
-        public void ClearCatalog() => ItemView.Catalog = null;
+        public void ClearCatalog() => catalog = null;
 
         private static CharacterStatModifier Affix(StatName stat, float value) =>
             new(stat, new StatModifier(new Vector2Int(0, 100), value, StatModifierType.FlatAdd));
@@ -57,7 +59,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         [Test]
         public void CharacterInventory_NewlyConstructed_IsEmptyWithTheGivenCapacity()
         {
-            var inventory = new CharacterInventory(new Vector2Int(4, 4));
+            var inventory = new CharacterInventory(new Vector2Int(4, 4), catalog);
 
             Assert.That(inventory.StoredPackages, Is.Empty);
             Assert.That(inventory.Capacity, Is.EqualTo(16));
@@ -66,7 +68,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         [Test]
         public void CharacterInventory_AfterAddingAPackage_HoldsExactlyThatItem()
         {
-            var inventory = new CharacterInventory(new Vector2Int(4, 4));
+            var inventory = new CharacterInventory(new Vector2Int(4, 4), catalog);
             var package = new Package(inventory, Sword(), 1u);
 
             var accepted = inventory.TryAddToContainer(ref package);
@@ -79,7 +81,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         [Test]
         public void CharacterInventory_TwoPlainConsumables_MergeIntoOneStack()
         {
-            var inventory = new CharacterInventory(new Vector2Int(4, 4));
+            var inventory = new CharacterInventory(new Vector2Int(4, 4), catalog);
 
             var first = new Package(inventory, Arrows(), 4u);
             _ = inventory.TryAddToContainer(ref first);
@@ -93,7 +95,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         [Test]
         public void TryFindEmptyCell_OnAnEmptyContainer_ReturnsTheTopLeftCell()
         {
-            var inventory = new CharacterInventory(new Vector2Int(3, 3));
+            var inventory = new CharacterInventory(new Vector2Int(3, 3), catalog);
 
             var found = inventory.TryFindEmptyCell(new Vector2Int(1, 1), out var cell);
 
@@ -104,7 +106,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         [Test]
         public void TryFindEmptyCell_WithTheFirstColumnFull_ReturnsTheNextColumnsTopCell()
         {
-            var inventory = new CharacterInventory(new Vector2Int(2, 2));
+            var inventory = new CharacterInventory(new Vector2Int(2, 2), catalog);
 
             _ = inventory.AddAtPosition(new Vector2Int(0, 0), new Package(inventory, Arrows(), 1u));
             _ = inventory.AddAtPosition(new Vector2Int(0, 1), new Package(inventory, Arrows(), 1u));
@@ -118,7 +120,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         [Test]
         public void TryFindEmptyCell_WhenTheContainerIsFull_ReturnsFalse()
         {
-            var inventory = new CharacterInventory(new Vector2Int(1, 1));
+            var inventory = new CharacterInventory(new Vector2Int(1, 1), catalog);
 
             _ = inventory.AddAtPosition(new Vector2Int(0, 0), new Package(inventory, Helm(1f), 1u));
 
@@ -139,7 +141,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             // state, so this pins that it can't happen: cell 1 is a gap only a 1x1 fits,
             // the 2x1 plank has to skip it and land at cell 2-3, and a 1x1 added afterwards -
             // in its own, separate call - still finds cell 1, not cell 4 onward.
-            var inventory = new CharacterInventory(new Vector2Int(5, 1));
+            var inventory = new CharacterInventory(new Vector2Int(5, 1), catalog);
 
             _ = inventory.AddAtPosition(new Vector2Int(1, 0), new Package(inventory, Helm(1f), 1u)); // occupies cell 1, isolating cell 0 as a 1-wide gap
 
@@ -163,7 +165,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             // Arrows stack to 10; 25 forces TryAddAtEmpty's placement loop to walk three
             // separate free cells in one call - regression coverage for its rewrite from an
             // advancing nested for-loop to a TryFindEmptyCell-driven while-loop.
-            var inventory = new CharacterInventory(new Vector2Int(4, 4));
+            var inventory = new CharacterInventory(new Vector2Int(4, 4), catalog);
             var package = new Package(inventory, Arrows(), 25u);
 
             var accepted = inventory.TryAddToContainer(ref package);
@@ -180,7 +182,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             // container's state must be expressible as [{ x, y, definitionId + instance DTO,
             // amount }], with Package.Sender never serialized. No save file is written - this
             // asserts the shape is sufficient.
-            var source = new CharacterInventory(new Vector2Int(4, 4));
+            var source = new CharacterInventory(new Vector2Int(4, 4), catalog);
 
             var swordPackage = new Package(source, Sword(), 1u);
             _ = source.TryAddToContainer(ref swordPackage);
@@ -199,7 +201,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             Assert.That(rows, Has.Count.EqualTo(2));
 
             // Rebuild a fresh container from the rows alone.
-            var restored = new CharacterInventory(new Vector2Int(4, 4));
+            var restored = new CharacterInventory(new Vector2Int(4, 4), catalog);
             foreach (var row in rows)
                 _ = restored.AddAtPosition(
                     new Vector2Int(row.x, row.y),
@@ -220,13 +222,13 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         // ── CharacterEquipment + the injected interfaces ─────────────────────
 
         private static CharacterEquipment Equipment(IStatReceiver stats = null) =>
-            new(new Vector2Int(14, 1), stats);
+            new(new Vector2Int(14, 1), catalog, stats);
 
         [Test]
         public void CharacterEquipment_WithNoInjectedDeps_StillEquipsAndUnequips()
         {
             var equipment = Equipment();
-            var sender = new CharacterInventory(new Vector2Int(4, 4));
+            var sender = new CharacterInventory(new Vector2Int(4, 4), catalog);
 
             var package = new Package(sender, Helm(4f), 1u);
             var equipped = equipment.TryAddToContainer(ref package);
@@ -246,7 +248,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var stats = new FakeStatReceiver();
             var equipment = Equipment(stats);
 
-            var package = new Package(new CharacterInventory(new Vector2Int(4, 4)), Helm(4f), 1u);
+            var package = new Package(new CharacterInventory(new Vector2Int(4, 4), catalog), Helm(4f), 1u);
             _ = equipment.TryAddToContainer(ref package);
 
             Assert.That(stats.Added.Select(a => a.Stat), Is.EquivalentTo(new[] { StatName.Armor }));
@@ -259,7 +261,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var stats = new FakeStatReceiver();
             var equipment = Equipment(stats);
 
-            var package = new Package(new CharacterInventory(new Vector2Int(4, 4)), Helm(4f), 1u);
+            var package = new Package(new CharacterInventory(new Vector2Int(4, 4), catalog), Helm(4f), 1u);
             _ = equipment.TryAddToContainer(ref package);
             var stored = equipment.StoredPackages.Single();
 
@@ -273,7 +275,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         {
             var stats = new FakeStatReceiver();
             var equipment = Equipment(stats);
-            var sender = new CharacterInventory(new Vector2Int(4, 4));
+            var sender = new CharacterInventory(new Vector2Int(4, 4), catalog);
 
             var first = new Package(sender, Helm(2f), 1u);
             _ = equipment.TryAddToContainer(ref first);
@@ -302,7 +304,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             // on re-entry and the whole move rolls back (issue #12).
             var stats = new FakeStatReceiver();
             var equipment = Equipment(stats);
-            var bench = new CharacterInventory(new Vector2Int(4, 4));
+            var bench = new CharacterInventory(new Vector2Int(4, 4), catalog);
 
             var ringA = new Package(bench, Ring(1f), 1u);
             _ = equipment.TryAddToContainer(ref ringA);

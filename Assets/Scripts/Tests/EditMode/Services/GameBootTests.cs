@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using Submodules.Utility.Services;
 using System;
+using System.Collections.Generic;
 using ToolSmiths.InventorySystem.Services;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -10,6 +11,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
     [TestFixture]
     public sealed class GameBootTests
     {
+        private readonly List<UnityEngine.Object> created = new();
         private GameConfig testConfig;
 
         [SetUp]
@@ -18,7 +20,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             ServiceLocator.Reset();
             GameLoop.Uninstall();
             GameLoop.Reset();
-            testConfig = ScriptableObject.CreateInstance<GameConfig>();
+            testConfig = TestGameConfig.Create(created);
         }
 
         [TearDown]
@@ -26,7 +28,11 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         {
             ServiceLocator.Reset();
             GameLoop.Uninstall();
-            UnityEngine.Object.DestroyImmediate(testConfig);
+
+            foreach (var asset in created)
+                UnityEngine.Object.DestroyImmediate(asset);
+
+            created.Clear();
         }
 
         [Test]
@@ -36,6 +42,32 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             Assert.That(e.Message, Does.Contain(nameof(GameConfig)));
             Assert.That(e.Message, Does.Contain("Assets/Resources/GameConfig.asset"));
+        }
+
+        [Test]
+        public void Build_WithAConfigMissingWhatAServiceNeeds_Throws_AtBoot()
+        {
+            var empty = TestGameConfig.CreateEmpty(created);
+
+            var e = Assert.Throws<InvalidOperationException>(() => GameBoot.Build(empty));
+
+            Assert.That(e.Message, Does.Contain(nameof(GameConfig)));
+        }
+
+        [Test]
+        public void Build_RegistersTheItemService_UnderItsInterface()
+        {
+            var registry = GameBoot.Build(testConfig);
+
+            Assert.That(registry.Get<IItemService>(), Is.InstanceOf<ItemService>());
+        }
+
+        [Test]
+        public void Arm_MakesTheItemServiceReachableFromTheLocator()
+        {
+            GameBoot.Arm(testConfig);
+
+            Assert.That(ItemService.Instance, Is.SameAs(ServiceLocator.Get<IItemService>()));
         }
 
         [Test]

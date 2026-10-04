@@ -33,13 +33,16 @@ namespace ToolSmiths.InventorySystem.Services
         }
 
         /// <summary>The services of one boot. Add each new service here, registered under the
-        /// interface callers depend on. Throws when <paramref name="config"/> is missing.</summary>
+        /// interface callers depend on. Throws when <paramref name="config"/> is missing or lacks
+        /// something a service needs.</summary>
         public static ServiceRegistry Build(GameConfig config)
         {
             if (config == null)
                 throw MissingConfig();
 
-            return new ServiceRegistry();
+            var registry = new ServiceRegistry();
+            registry.Register<IItemService>(new ItemService(config, new UnityRollSource()));
+            return registry;
         }
 
         /// <summary>Builds from <paramref name="config"/>, arms the locator and installs the frame

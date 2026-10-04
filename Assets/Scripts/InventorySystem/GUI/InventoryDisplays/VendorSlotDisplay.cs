@@ -1,3 +1,4 @@
+using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
@@ -68,7 +69,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
             var wallet = InventoryProvider.Instance.Wallet;
 
-            return wallet == null || wallet.CanAfford(new Currency(VendorTransaction.BuyPrice(displayedPackage.Item) * displayedPackage.Amount));
+            return wallet == null || wallet.CanAfford(new Currency(VendorTransaction.BuyPrice(displayedPackage.Item, ItemService.Instance.Catalog) * displayedPackage.Amount));
         }
 
         protected override void SetDisplaySize(RectTransform display, Package package)
@@ -79,7 +80,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 gridLayout = GetComponentInParent<GridLayoutGroup>();
             if (gridLayout)
             {
-                var itemDimensions = ItemView.Of(package.Item).Dimensions;
+                var itemDimensions = ItemService.Instance.View(package.Item).Dimensions;
                 var additionalSpacing = gridLayout.spacing * new Vector2(itemDimensions.x - 1, itemDimensions.y - 1);
 
                 display.sizeDelta = gridLayout.cellSize * itemDimensions + additionalSpacing;
@@ -105,7 +106,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 return;
             }
 
-            var unitPrice = VendorTransaction.BuyPrice(package.Item);
+            var unitPrice = VendorTransaction.BuyPrice(package.Item, ItemService.Instance.Catalog);
 
             // Drag: a pick-up, not a completed move - nothing is charged, and the price is
             // read once and held on the cursor for the length of the drag (issue #31),
