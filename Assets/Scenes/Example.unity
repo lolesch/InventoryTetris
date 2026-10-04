@@ -6091,7 +6091,6 @@ MonoBehaviour:
   scaleFrom: 1
   moveFrom: {x: -640, y: 0}
   inventoryContext: 3
-  firstTab: {fileID: 0}
 --- !u!1 &478476820
 GameObject:
   m_ObjectHideFlags: 0
@@ -8576,7 +8575,6 @@ MonoBehaviour:
   scaleFrom: 1
   moveFrom: {x: -640, y: 0}
   inventoryContext: 3
-  firstTab: {fileID: 7022399921479454649}
 --- !u!1 &647175469
 GameObject:
   m_ObjectHideFlags: 0
@@ -18594,7 +18592,6 @@ MonoBehaviour:
   scaleFrom: 1
   moveFrom: {x: -640, y: 0}
   inventoryContext: 2
-  firstTab: {fileID: 0}
 --- !u!224 &1531969118 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 7022399922254581285, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
@@ -19220,7 +19217,6 @@ MonoBehaviour:
   scaleFrom: 1
   moveFrom: {x: 640, y: 0}
   inventoryContext: 1
-  firstTab: {fileID: 0}
 --- !u!1 &1563707323
 GameObject:
   m_ObjectHideFlags: 0
@@ -25715,7 +25711,6 @@ MonoBehaviour:
   scaleFrom: 1
   moveFrom: {x: -640, y: 0}
   inventoryContext: 4
-  firstTab: {fileID: 394682331}
 --- !u!1001 &2072412853
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -40,11 +40,6 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
                  "the same value. Must not be None.")]
         [SerializeField] private InventoryContext inventoryContext = InventoryContext.None;
 
-        [Tooltip("The tab toggle this panel returns to when it closes, so it always opens on the " +
-                 "same tab (the Supply) rather than wherever it was left. Leave empty for a panel " +
-                 "with no tabs.")]
-        [SerializeField] private PanelToggle firstTab;
-
         /// <summary>The one Inventory Context this panel was authored with - what a display
         /// living inside the panel (<c>SellBasketDisplay</c>) asks to learn which Town Stop it
         /// belongs to, rather than hard-coding one.</summary>
@@ -94,19 +89,6 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
             base.OnDisable();
 
             InventoryProvider.UnsubscribeContextChanged(OnContextChanged);
-        }
-
-        /// <summary>
-        /// The fade-out has finished, so the panel is out of sight and the tab can go back to
-        /// its first one without anyone watching the grids swap. Reset on close rather than on
-        /// open: opening would show the old tab and then switch it.
-        /// </summary>
-        protected override void OnDisappear()
-        {
-            base.OnDisappear();
-
-            if (Application.isPlaying && firstTab != null)
-                firstTab.SetToggle(true);
         }
 
         private void OnContextChanged(InventoryContext context) => ApplyContext(context);
