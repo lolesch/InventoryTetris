@@ -18,8 +18,9 @@ namespace ToolSmiths.InventorySystem.Inventories
     /// refuses a sale that can pay out; it discards its oldest instead
     /// (<see cref="SoldContainer.TryPlaceEvicting"/>).</para>
     ///
-    /// <para>It replaces the staged <see cref="SellBasket"/> and lands beside it until the
-    /// basket is removed; nothing in the GUI calls it yet.</para>
+    /// <para>It replaces the staged <see cref="SellBasket"/>, which stays in the code until the
+    /// staged sale code is deleted. The shift-click sink calls <see cref="TrySell"/> (issue #128);
+    /// the drop sale, <see cref="TrySellHeld"/>, has no GUI caller yet.</para>
     /// </summary>
     public static class Sale
     {

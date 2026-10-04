@@ -180,17 +180,8 @@ namespace ToolSmiths.InventorySystem.Inventories
             return true;
         }
 
-        private AbstractDimensionalContainer ContainerFor(ContainerRole role) => role switch
-        {
-            ContainerRole.Equipment => Equipment,
-            ContainerRole.Inventory => Inventory,
-            ContainerRole.Stash => Stash,
-            ContainerRole.Store => Store,
-            ContainerRole.HealerSupply => HealerSupply,
-            ContainerRole.Basket => Basket?.Container,
-            ContainerRole.Sold => Sold,
-            _ => null,
-        };
+        private AbstractDimensionalContainer ContainerFor(ContainerRole role) =>
+            ContainerRoleResolver.Resolve(role, Equipment, Inventory, Stash, Store, HealerSupply, Basket?.Container, Sold);
 
         /// <summary>
         /// Where a shift-click on <paramref name="source"/> should send its item, given the
@@ -300,9 +291,12 @@ namespace ToolSmiths.InventorySystem.Inventories
         public void ClearPlayerEquipment() => RemoveAllItems(Equipment);
         public void ClearPlayerInventory() => RemoveAllItems(Inventory);
         public void ClearPlayerStash() => RemoveAllItems(Stash);
+        /// <summary>A Supply's Restock clears the Sold container at the moment it refills (issue
+        /// #128): what was sold is stock like any other, so both Town Stops' Restock empty it.</summary>
         public void RestockStore()
         {
             RemoveAllItems(Store);
+            RemoveAllItems(Sold);
 
             for (var i = 0; i < 20; i++)
             {
@@ -320,6 +314,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         public void RestockHealerSupply()
         {
             RemoveAllItems(HealerSupply);
+            RemoveAllItems(Sold);
 
             for (var i = 0; i < 20; i++)
             {

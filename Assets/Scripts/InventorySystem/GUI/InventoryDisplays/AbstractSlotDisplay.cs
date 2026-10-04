@@ -123,6 +123,13 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
             switch (intent.Kind)
             {
+                case QuickMoveIntentKind.Sell:
+                    /// The shift-click sale (#128): one transaction over this slot's container,
+                    /// the Sold container and the Wallet. A sale that cannot pay out is a
+                    /// silent no-op, the click absorbed like any other quick-move.
+                    _ = Sale.TrySell(InventoryProvider.Instance.Sold, InventoryProvider.Instance.Wallet, Container, position);
+                    return true;
+
                 case QuickMoveIntentKind.SellBasket:
                     /// One transaction over the source and the basket: the item leaves this
                     /// slot and lands in the basket with its origin remembered; a full
