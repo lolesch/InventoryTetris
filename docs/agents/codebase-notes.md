@@ -406,8 +406,14 @@ a reference won't resolve.
   reads the last session's services as armed. The player loop only has the second:
   `PlayerLoopHook` removes its systems on `ExitingPlayMode`, because the loop outlives Stop.
 - **The boot's `[RuntimeInitializeOnLoadMethod]` hooks are only reachable from PlayMode.**
-  `Assets/Scripts/Tests/PlayMode/Services/` holds the one test that proves they fire; EditMode
+  `Assets/Scripts/Tests/PlayMode/Services/` holds the test that proves they fire; EditMode
   `Run All` does not include it, run it with `-testPlatform PlayMode`.
+- **A PlayMode test asmdef must not be `includePlatforms: ["Editor"]`.** The EditMode runner
+  then picks the fixture up and runs it with Play Mode off (it fails, and the PlayMode run skips
+  it as editor-only). Leave `includePlatforms` empty and guard `AssetDatabase` behind
+  `#if UNITY_EDITOR`. `Tests/PlayMode/Character/` (#111) instantiates `PLAYER.prefab` and drives
+  the real `CharacterStatPanel`; `Assembly-CSharp` types (`LocalPlayer`, the panel) are reached by
+  name, since a custom asmdef cannot reference it.
 
 ## Shared working directory + the `Utility` submodule
 

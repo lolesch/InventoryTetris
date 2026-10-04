@@ -50,6 +50,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             _resourcesView = Array.AsReadOnly(_resources);
             Level = level;
 
+            // The hero owns its stats for its whole life, so it never needs to let go of them.
+            foreach (var stat in _resources.Cast<CharacterStat>().Concat(_stats))
+                stat.TotalHasChanged += _ => StatsChanged?.Invoke();
+
             RequireResource(StatName.Health).RefillCurrent();
             RequireResource(StatName.Resource).RefillCurrent();
             RequireResource(StatName.Shield).RefillCurrent();
@@ -83,6 +87,14 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         /// the death sees the hit that caused it first.
         /// </summary>
         public event Action<DamageType, float, float> DamageReceived;
+
+        /// <summary>
+        /// The total of any stat or resource changed: gear equipped or removed, a level-up's next
+        /// threshold. What a view of the hero's numbers binds to (issue #111) - the hero knows no
+        /// view. A resource's current value moving (a hit, a regeneration tick) is not a change of
+        /// its total.
+        /// </summary>
+        public event Action StatsChanged;
 
         // --- stats --------------------------------------------------------------------------------
 

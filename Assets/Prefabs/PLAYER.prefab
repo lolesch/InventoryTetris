@@ -254,7 +254,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   data: {fileID: 11400000, guid: caa482c206cd46aa89b20481f2124e7a, type: 2}
-  characterStatPrefab: {fileID: 4578763057697142868}
 --- !u!222 &8449913807646653682
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -689,6 +688,7 @@ GameObject:
   - component: {fileID: 8275642864310160284}
   - component: {fileID: 2191786453188068313}
   - component: {fileID: 4719270759202219650}
+  - component: {fileID: 8481644474943236947}
   m_Layer: 5
   m_Name: Content
   m_TagString: Untagged
@@ -757,6 +757,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_HorizontalFit: 0
   m_VerticalFit: 2
+--- !u!114 &8481644474943236947
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5240918554580453036}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2732631bc6a89ca4b97a576d55128957, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Displays.CharacterStatPanel
+  character: {fileID: 6154631547769539889}
+  rowPrefab: {fileID: 4578763057697142868}
 --- !u!1 &6596900063687829679
 GameObject:
   m_ObjectHideFlags: 0

@@ -35,7 +35,7 @@ Run `gh issue view <number> --comments`.
 
 ## Frontiers — issues vs. implementation
 
-Twenty-three open issues (scanned 2026-10-04, `main` @ `27bd74a`, then updated for #110 on `feat/110-hero-plain-class`, which closes with its PR); the frontier — an issue whose blockers are all closed and whose criteria are not already met by the code — is **#111** on the Services wire (once the #110 PR merges) and **#125** / **#126** on the Sold tab wire. #109 is merged: `IItemService`/`ItemService` in `InventorySystem.Services`, and `ItemProvider` is gone. #110 is built: `Hero` and `HeroData` are in `InventorySystem.Characters`, `LocalPlayer` delegates to them. #108 is merged: the registry, locator and game loop are in `Utility`, and `GameConfig`, `GameBoot` and `GameLoop` in `InventorySystem.Services` (ADR-0015, amended 2026-10-04). The Sold tab epic (#124) is independent of it except that it gates #112 and #115.
+Twenty-two open issues (scanned 2026-10-04, `main` @ `45b9a03`, then updated for #111 on `feat/111-hero-stat-panel`, which closes with its PR); the frontier — an issue whose blockers are all closed and whose criteria are not already met by the code — is **#125** / **#126** on the Sold tab wire. The Services wire has no frontier of its own: #112 waits on #131, the end of the Sold tab wire. #109 is merged: `IItemService`/`ItemService` in `InventorySystem.Services`, and `ItemProvider` is gone. #110 is merged: `Hero` and `HeroData` are in `InventorySystem.Characters`, `LocalPlayer` delegates to them. #111 is built: `CharacterStatPanel` binds to `Hero.StatsChanged` and `LocalPlayer` holds no display. #108 is merged: the registry, locator and game loop are in `Utility`, and `GameConfig`, `GameBoot` and `GameLoop` in `InventorySystem.Services` (ADR-0015, amended 2026-10-04). The Sold tab epic (#124) is independent of it except that it gates #112 and #115.
 
 **Keep this table current:** update it at the end of every `/implement` — after `/code-review`, **before the PR is opened** — by removing the issue the branch closes, unblocking what it gated and re-scanning the open set. It is a `docs:` commit on the feature branch itself and is pushed with it, so the PR carries the tracker and merging the PR closes the issue and moves the frontier in one step. There is no separate tracker PR after the merge. When two branches run in parallel (as #109 and #110 did), the second to merge resolves the table conflict by re-scanning, not by picking a side.
 
@@ -43,10 +43,9 @@ Twenty-three open issues (scanned 2026-10-04, `main` @ `27bd74a`, then updated f
 
 | # | Title | Blockers | State vs. this branch |
 |---|---|---|---|
-| 111 | Services 5: hero stat panel binds to `Hero` | #110 (closes with its PR) | **Frontier once #110 merges.** `LocalPlayer` still owns the stat display pool; this moves it to a view bound to `Hero`. `Hero` has no `IHero` yet: add the seam here if the panel needs one. |
-| 112 | Services 6: the Hero and the World, built in explicit order | **#131** (#109 merged; #110 closes with its PR) | Blocked. `LocalPlayer.PickUpItem` still reaches the containers through `InventoryProvider`; `Hero` is not an `IItemReceiver` until this builds it in order. Waits for the Sold tab contract so the staged basket never enters the World; the Sold container is built instead. |
+| 112 | Services 6: the Hero and the World, built in explicit order | **#131** (#109, #110 merged) | Blocked. `LocalPlayer.PickUpItem` still reaches the containers through `InventoryProvider`; `Hero` is not an `IItemReceiver` until this builds it in order. Waits for the Sold tab contract so the staged basket never enters the World; the Sold container is built instead. |
 | 113 | Services 7: simulation service over the Hero and the World | #112 (#109 merged) | Blocked. |
-| 117 | Services 11: migrate hero callers, delete `DummyTarget` | #111, #112 | Blocked. (Ahead of #114: #114 waits on it.) |
+| 117 | Services 11: migrate hero callers, delete `DummyTarget` | #112 (#111 closes with its PR) | Blocked. (Ahead of #114: #114 waits on it.) |
 | 114 | Services 8: replace on load, `HeroLoaded`, rebinding | #112, #113, #117 | Blocked. |
 | 115 | Services 9: migrate inventory callers, GUI | #114, **#131** | Blocked. Waits for the Sold tab contract so it never migrates the basket's GUI callers. |
 | 116 | Services 10: migrate inventory callers, runtime + simulation | #114 (#103 closed) | Blocked. |
@@ -69,7 +68,7 @@ Twenty-three open issues (scanned 2026-10-04, `main` @ `27bd74a`, then updated f
 
 ### Frontier (recommended order)
 
-1. **#111** once the #110 PR merges; then **#112**, **#113**, **#117**, **#114**, then #115 / #116 / #118, then **#119**.
+1. **#112** once #131 closes (the Sold tab wire); then **#113**, **#117**, **#114**, then #115 / #116 / #118, then **#119**.
 2. **The Sold tab wire runs beside it:** **#125** and **#126** now, then #127 → #128 → #129 → #130 → #131. #112 waits on #131, so this wire is now the long pole for the Services epic.
 3. Off the wire, any time: **#122** (triage), **#69** (`/to-spec`). **#63** returns to the frontier once #116 closes.
 
