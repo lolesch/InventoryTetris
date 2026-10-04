@@ -33,6 +33,12 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// equipment → basket) and recognise it as a source (basket → backpack).</summary>
         public SellBasket.Basket Basket { get; private set; }
 
+        /// <summary>The Sold container (issue #126): what the player sold, bought back like a
+        /// Supply. Built beside the basket, sized like the Supply grid (<see cref="storeSize"/>).
+        /// Nothing in the GUI sells into it or shows it yet; <see cref="QuickMoveFor"/> already
+        /// knows it as a shelf.</summary>
+        public SoldContainer Sold { get; private set; }
+
         /// <summary>The player's spendable money, backed by <see cref="Inventory"/>'s coin
         /// cells. The wallet, not the container, owns currency logic since issue #14.</summary>
         public Wallet Wallet { get; private set; }
@@ -195,7 +201,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// directly tested; this is only the seam callers hold.
         /// </summary>
         public QuickMoveIntent QuickMoveFor(AbstractDimensionalContainer source) =>
-            QuickMoveResolver.Resolve(ActiveContext, source, Inventory, Stash, Equipment, Store, HealerSupply, Basket.Container);
+            QuickMoveResolver.Resolve(ActiveContext, source, Inventory, Stash, Equipment, Store, HealerSupply, Basket.Container, Sold);
 
         public void Awake()
         {
@@ -212,6 +218,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             Store = new(storeSize, items.Catalog);
             HealerSupply = new(storeSize, items.Catalog);
             Basket = new SellBasket.Basket(new(basketSize, items.Catalog));
+            Sold = new SoldContainer(storeSize, items.Catalog);
 
             Wallet = new Wallet(Inventory, items);
 

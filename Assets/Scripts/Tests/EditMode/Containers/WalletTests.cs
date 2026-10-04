@@ -234,6 +234,81 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             }));
         }
 
+        // ── CanDeposit (issue #126) ─────────────────────────────────────────
+        // The answer a sale asks before it queues its payout, so it never reaches the
+        // Deposit that silently drops what does not fit.
+
+        [Test]
+        public void CanDeposit_IntoARoomyWallet_IsTrue()
+        {
+            Assert.That(NewWallet().CanDeposit(new Currency(1u, 1u, 1u, 1u)), Is.True);
+        }
+
+        [Test]
+        public void CanDeposit_WhenEveryCellIsTaken_IsFalse()
+        {
+            var wallet = NewWallet(1, 1);
+            Seed(wallet, CurrencyType.Gold, 1u);
+
+            Assert.That(wallet.CanDeposit(new Currency(0u, 1u, 0u, 0u)), Is.False,
+                "one copper has no cell to land in");
+        }
+
+        [Test]
+        public void CanDeposit_WhenTheCoinStacksOntoAnExistingPile_IsTrue()
+        {
+            var wallet = NewWallet(1, 1);
+            Seed(wallet, CurrencyType.Gold, 1u);
+
+            Assert.That(wallet.CanDeposit(new Currency(0u, 0u, 0u, 3u)), Is.True,
+                "gold merges into the gold already there");
+        }
+
+        [Test]
+        public void CanDeposit_NeedsOneCellPerDenomination()
+        {
+            var wallet = NewWallet(1, 2);
+            Seed(wallet, CurrencyType.Gold, 1u);
+
+            Assert.That(wallet.CanDeposit(new Currency(0u, 1u, 0u, 0u)), Is.True, "one free cell, one new denomination");
+            Assert.That(wallet.CanDeposit(new Currency(0u, 1u, 1u, 0u)), Is.False, "two new denominations, one free cell");
+        }
+
+        [Test]
+        public void CanDeposit_AZeroPayout_IsTrue()
+        {
+            var wallet = NewWallet(1, 1);
+            Seed(wallet, CurrencyType.Gold, 1u);
+
+            Assert.That(wallet.CanDeposit(default), Is.True);
+        }
+
+        [Test]
+        public void CanDeposit_IsAPureQuestion_TheWalletIsUntouched()
+        {
+            var wallet = NewWallet(2, 1);
+            Seed(wallet, CurrencyType.Gold, 1u);
+
+            _ = wallet.CanDeposit(new Currency(0u, 4u, 0u, 0u));
+
+            Assert.That(wallet.Balance.Total, Is.EqualTo(1200u));
+            Assert.That(wallet.Container.StoredPackages.Count, Is.EqualTo(1), "the probe left no coins behind");
+        }
+
+        [Test]
+        public void CanDeposit_AgreesWithWhatDepositThenBanks()
+        {
+            var wallet = NewWallet(1, 1);
+            Seed(wallet, CurrencyType.Gold, 1u);
+            var payout = new Currency(0u, 1u, 0u, 0u);
+
+            Assert.That(wallet.CanDeposit(payout), Is.False);
+
+            wallet.Deposit(payout);
+
+            Assert.That(wallet.Balance.Total, Is.EqualTo(1200u), "the dropped coin is what CanDeposit warned about");
+        }
+
         // ── Consolidate ─────────────────────────────────────────────────────
 
         [Test]
