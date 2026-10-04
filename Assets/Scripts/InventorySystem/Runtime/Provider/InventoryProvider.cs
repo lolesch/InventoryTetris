@@ -181,7 +181,8 @@ namespace ToolSmiths.InventorySystem.Inventories
         }
 
         private AbstractDimensionalContainer ContainerFor(ContainerRole role) =>
-            ContainerRoleResolver.Resolve(role, Equipment, Inventory, Stash, Store, HealerSupply, Basket?.Container, Sold);
+            ContainerRoleResolver.Resolve(role, equipment: Equipment, inventory: Inventory, stash: Stash,
+                store: Store, healerSupply: HealerSupply, basket: Basket?.Container, sold: Sold);
 
         /// <summary>
         /// Where a shift-click on <paramref name="source"/> should send its item, given the
@@ -292,19 +293,25 @@ namespace ToolSmiths.InventorySystem.Inventories
         public void ClearPlayerInventory() => RemoveAllItems(Inventory);
         public void ClearPlayerStash() => RemoveAllItems(Stash);
         /// <summary>Both Town Stops' Restock, run when a Run is Recalled: the Vendor's shelf, the
-        /// Healer's shelf and, through each, the Sold container.</summary>
+        /// Healer's shelf and the Sold container, which is emptied once for both.</summary>
         public void RestockTownStops()
         {
-            RestockStore();
-            RestockHealerSupply();
+            RemoveAllItems(Sold);
+            FillStore();
+            FillHealerSupply();
         }
 
         /// <summary>A Supply's Restock clears the Sold container at the moment it refills (issue
-        /// #128): what was sold is stock like any other, so both Town Stops' Restock empty it.</summary>
+        /// #128): what was sold is stock like any other, so either Town Stop's Restock empties it.</summary>
         public void RestockStore()
         {
-            RemoveAllItems(Store);
             RemoveAllItems(Sold);
+            FillStore();
+        }
+
+        private void FillStore()
+        {
+            RemoveAllItems(Store);
 
             for (var i = 0; i < 20; i++)
             {
@@ -321,8 +328,13 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// <see cref="RestockStore"/>, from rolled consumables instead of equipment.</summary>
         public void RestockHealerSupply()
         {
-            RemoveAllItems(HealerSupply);
             RemoveAllItems(Sold);
+            FillHealerSupply();
+        }
+
+        private void FillHealerSupply()
+        {
+            RemoveAllItems(HealerSupply);
 
             for (var i = 0; i < 20; i++)
             {

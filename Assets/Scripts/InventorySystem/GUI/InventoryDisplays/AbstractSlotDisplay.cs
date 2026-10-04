@@ -437,25 +437,13 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         {
             var drag = DragProvider.Instance;
 
-            if (drag.IsHoldingPurchase && !LandsInHeroContainer)
+            if (!drag.MayLandIn(Container))
             {
-                CancelHeldDrag();
+                _ = CancelHeldDrag();
                 return;
             }
 
             DropItem(drag.DraggingPackage);
-        }
-
-        /// <summary>Whether this slot belongs to the Hero's bag or the Equipment - the only places
-        /// a purchase may land.</summary>
-        protected bool LandsInHeroContainer
-        {
-            get
-            {
-                var provider = InventoryProvider.Instance;
-
-                return Container != null && (Container == provider.Inventory || Container == provider.Equipment);
-            }
         }
 
         /// <summary>
@@ -464,17 +452,24 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         /// "this drop is turned away": a purchase released somewhere it cannot land, and a sale
         /// the Sold container refused.
         /// </summary>
-        protected void CancelHeldDrag()
+        /// <returns>Whether the item went back. False when neither its origin nor the bag had
+        /// room: it stays in hand, and the player is told so rather than left guessing.</returns>
+        protected bool CancelHeldDrag()
         {
             var drag = DragProvider.Instance;
 
-            _ = drag.CancelDrag();
+            var sentBack = drag.CancelDrag();
+
+            if (!sentBack)
+                Debug.LogWarning("Nothing had room for the item, so it stays in hand.");
 
             Container?.InvokeRefresh();
             drag.Origin?.Container?.InvokeRefresh();
 
             if (Container != null)
                 SyncPreviewAfterMove();
+
+            return sentBack;
         }
 
         /// <summary>
@@ -493,7 +488,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 return false;
 
             // A purchase that cannot land here is cancelled on release, so it shows the same red.
-            if (DragProvider.Instance.IsHoldingPurchase && !LandsInHeroContainer)
+            if (!DragProvider.Instance.MayLandIn(Container))
                 return false;
 
             if (Container == null)

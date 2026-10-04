@@ -74,19 +74,22 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// </summary>
         public static bool CanSellHeld(SoldContainer sold, Wallet wallet, Package held, float? carriedPrice = null)
         {
-            if (carriedPrice != null || sold == null || wallet == null || !held.IsValid || IsCurrency(sold, held))
+            if (carriedPrice != null || sold == null || wallet == null || !held.IsValid)
                 return false;
 
-            var payout = PayoutOf(sold, held);
+            var view = sold.ViewOf(held.Item);
+
+            if (IsCurrency(view))
+                return false;
+
+            var payout = PayoutOf(view, held);
 
             return 0u != payout.Total && wallet.CanDeposit(payout);
         }
 
-        private static bool IsCurrency(SoldContainer sold, Package package) =>
-            sold.ViewOf(package.Item).Definition.Category == ItemCategory.Currency;
+        private static bool IsCurrency(ItemView view) => view.Definition.Category == ItemCategory.Currency;
 
-        private static Currency PayoutOf(SoldContainer sold, Package package) =>
-            new(sold.ViewOf(package.Item).SellValue * package.Amount);
+        private static Currency PayoutOf(ItemView view, Package package) => new(view.SellValue * package.Amount);
 
         /// <summary>
         /// The tail both entries share, with <paramref name="package"/> already off its source
@@ -95,19 +98,21 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// </summary>
         private static bool Complete(ItemTransaction transaction, SoldContainer sold, Wallet wallet, Package package)
         {
-            if (IsCurrency(sold, package))
+            var view = sold.ViewOf(package.Item);
+
+            if (IsCurrency(view))
                 return false;
 
-            var payout = PayoutOf(sold, package);
+            var payout = PayoutOf(view, package);
 
             if (0u == payout.Total || !wallet.CanDeposit(payout))
                 return false;
 
-            if (!sold.TryPlaceEvicting(package, out var landed))
+            if (!sold.TryPlaceEvicting(package, out var landed, out var order))
                 return false;
 
             transaction.QueueEffect(() => wallet.Deposit(payout));
-            transaction.QueueEffect(() => sold.NoteSold(landed));
+            transaction.QueueEffect(() => sold.NoteSold(order, landed));
 
             transaction.Commit();
             return true;

@@ -175,7 +175,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             /// drop: the item goes back where it came from, not under the cursor.
             if (!Sale.TrySellHeld(provider.Sold, provider.Wallet, package))
             {
-                CancelHeldDrag();
+                _ = CancelHeldDrag();
                 return;
             }
 
