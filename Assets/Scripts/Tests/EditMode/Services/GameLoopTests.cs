@@ -86,19 +86,34 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
-        public void LeavingPlayMode_ClearsTheTickers_SoEditModeNeverSeesTheLastSessions()
+        public void EnteringEditMode_ClearsTheTickers_SoEditModeNeverSeesTheLastSessions()
         {
             var calls = 0;
             _ = Add(_ => calls++);
 
-            GameLoop.OnPlayModeStateChanged(PlayModeStateChange.ExitingPlayMode);
+            GameLoop.OnPlayModeStateChanged(PlayModeStateChange.EnteredEditMode);
             GameLoop.Tick(1f);
 
             Assert.That(calls, Is.Zero);
         }
 
         [Test]
-        public void EnteringEditMode_LeavesTheTickersAlone()
+        public void ExitingPlayMode_KeepsTheTickers_BecauseTheSceneIsStillBeingTornDown()
+        {
+            var calls = 0;
+            _ = Add(_ => calls++);
+
+            // The scene is still alive here; its OnDisable runs after this event. The loop system
+            // is removed by PlayerLoopHook so nothing ticks, but the registrations stay until
+            // Edit Mode is entered.
+            GameLoop.OnPlayModeStateChanged(PlayModeStateChange.ExitingPlayMode);
+            GameLoop.Tick(1f);
+
+            Assert.That(calls, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void EnteringPlayMode_LeavesTheTickersAlone()
         {
             var calls = 0;
             _ = Add(_ => calls++);
