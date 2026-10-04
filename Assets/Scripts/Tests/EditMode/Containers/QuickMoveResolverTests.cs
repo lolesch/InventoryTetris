@@ -39,12 +39,13 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         private readonly AbstractDimensionalContainer basket = new CharacterInventory(new Vector2Int(4, 4), catalog);
 
         private readonly AbstractDimensionalContainer healerSupply = new CharacterInventory(new Vector2Int(4, 4), catalog);
+        private readonly AbstractDimensionalContainer sold = new SoldContainer(new Vector2Int(4, 4), catalog);
 
         private QuickMoveIntent Resolve(InventoryContext context, AbstractDimensionalContainer source,
             AbstractDimensionalContainer backpack, AbstractDimensionalContainer stash,
             AbstractDimensionalContainer equipment, AbstractDimensionalContainer store,
             AbstractDimensionalContainer basket)
-            => QuickMoveResolver.Resolve(context, source, backpack, stash, equipment, store, healerSupply, basket);
+            => QuickMoveResolver.Resolve(context, source, backpack, stash, equipment, store, healerSupply, basket, sold);
 
         // ── Stash open: backpack ↔ Stash, equipment → Stash (byte-for-byte as today) ──
 
@@ -190,6 +191,20 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         public void HealerShelfSource_IsABuy_InEveryContext(InventoryContext context)
         {
             var intent = Resolve(context, healerSupply, backpack, stash, equipment, store, basket);
+
+            Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.Buy));
+        }
+
+        // ── The Sold container (issue #126): one more Supply, outside the table ──
+
+        [TestCase(InventoryContext.None)]
+        [TestCase(InventoryContext.Hero)]
+        [TestCase(InventoryContext.Stash)]
+        [TestCase(InventoryContext.Vendor)]
+        [TestCase(InventoryContext.Healer)]
+        public void SoldSource_IsABuy_InEveryContext(InventoryContext context)
+        {
+            var intent = Resolve(context, sold, backpack, stash, equipment, store, basket);
 
             Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.Buy));
         }

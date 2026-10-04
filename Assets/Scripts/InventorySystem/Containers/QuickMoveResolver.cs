@@ -19,7 +19,8 @@ namespace ToolSmiths.InventorySystem.Inventories
     /// Store and the Healer's, issue #121) is checked first, outside the table entirely: a
     /// shelf shift-click is always <see cref="QuickMoveIntentKind.Buy"/>, in every context - a
     /// Supply-local act, not a row (the Vendor row's "Supply" source in #86's design table
-    /// names this same exemption, not a second entry).</para>
+    /// names this same exemption, not a second entry). The Sold container (issue #126) is one
+    /// more shelf in that check: what the player sold is bought back like any Supply.</para>
     ///
     /// <para><see cref="InventoryContext.Hero"/> resolves to nothing: the Hero Panel's sink
     /// would be Equipment, but that row would duplicate right-click and has no ticket (#86's
@@ -30,12 +31,15 @@ namespace ToolSmiths.InventorySystem.Inventories
     {
         /// <param name="basket">The Sell Basket's grid container - recognized as a quick-move
         /// source so a basket shift-click returns its Package to the backpack.</param>
+        /// <param name="sold">The Sold container (issue #126) - a Supply, so a shift-click on it
+        /// is a Buy in every context.</param>
         public static QuickMoveIntent Resolve(InventoryContext context, AbstractDimensionalContainer source,
             AbstractDimensionalContainer backpack, AbstractDimensionalContainer stash,
             AbstractDimensionalContainer equipment, AbstractDimensionalContainer store,
-            AbstractDimensionalContainer healerSupply, AbstractDimensionalContainer basket)
+            AbstractDimensionalContainer healerSupply, AbstractDimensionalContainer basket,
+            AbstractDimensionalContainer sold)
         {
-            if (source == store || source == healerSupply)
+            if (source == store || source == healerSupply || source == sold)
                 return QuickMoveIntent.Buy;
 
             var hub = backpack;
