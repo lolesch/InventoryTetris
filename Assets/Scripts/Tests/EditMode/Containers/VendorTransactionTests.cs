@@ -414,6 +414,112 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
                 "the price paid is the pick-up price (315), never the restocked arrow's");
         }
 
+        // ── the pick-up gate (issue #125) ──────────────────────────────────
+        // One affordability predicate is read by the shelf tint, the grab and the drop, and it
+        // prices the amount actually lifted: Ctrl takes half the stack (the larger half of an
+        // odd one), so a red whole stack can still be taken by halves.
+
+        /// A Rare arrow worth 2 * 35 = 70 base units, 105 on the shelf.
+        private static ItemInstance Arrow() => new(ArrowId, ItemRarity.Rare, 7, new[] { Affix(StatName.PhysicalDamage, 2f) });
+
+        private const float ArrowBuyPrice = 2f * 35f * VendorTransaction.Markup; // 105
+
+        private static Package ArrowStack(uint amount) => new(null, Arrow(), amount);
+
+        [Test]
+        public void PickUpAmount_Whole_IsTheStack()
+        {
+            Assert.That(ArrowStack(4u).PickUpAmount(false), Is.EqualTo(4u));
+        }
+
+        [TestCase(4u, 2u)]
+        [TestCase(3u, 2u)]
+        [TestCase(2u, 1u)]
+        [TestCase(1u, 1u)]
+        public void PickUpAmount_Halved_IsTheLargerHalf_AndNeverLessThanOne(uint stack, uint expected)
+        {
+            Assert.That(ArrowStack(stack).PickUpAmount(true), Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void CanAffordPickUp_WholeStack_IsPricedForTheWholeStack()
+        {
+            var wallet = NewWallet();
+            SeedCash(wallet, CurrencyType.Iron, 400u); // 400 < 4 * 105
+
+            Assert.That(VendorTransaction.CanAffordPickUp(wallet, ArrowStack(4u), false, catalog), Is.False);
+        }
+
+        [Test]
+        public void CanAffordPickUp_CtrlHalf_IsPricedForTheHalf()
+        {
+            var wallet = NewWallet();
+            SeedCash(wallet, CurrencyType.Iron, 400u); // the whole is out of reach, the half (210) is not
+
+            Assert.That(VendorTransaction.CanAffordPickUp(wallet, ArrowStack(4u), true, catalog), Is.True);
+        }
+
+        [Test]
+        public void CanAffordPickUp_CtrlHalf_IsStillRefusedWhenTheHalfIsOutOfReach()
+        {
+            var wallet = NewWallet();
+            SeedCash(wallet, CurrencyType.Iron, 209u); // one under 2 * 105
+
+            Assert.That(VendorTransaction.CanAffordPickUp(wallet, ArrowStack(4u), true, catalog), Is.False);
+        }
+
+        [Test]
+        public void CanAffordPickUp_CtrlHalfOfAnOddStack_PricesWhatTheGrabActuallyTakes()
+        {
+            var wallet = NewWallet();
+            SeedCash(wallet, CurrencyType.Iron, 209u); // 3 halves to 2 on the cursor: 210
+
+            Assert.That(VendorTransaction.CanAffordPickUp(wallet, ArrowStack(3u), true, catalog), Is.False,
+                "the half left behind (1) is not the half lifted (2)");
+        }
+
+        [Test]
+        public void CanAffordPickUp_IsTrueAtTheExactPrice()
+        {
+            var wallet = NewWallet();
+            SeedCash(wallet, CurrencyType.Iron, 210u);
+
+            Assert.That(VendorTransaction.CanAffordPickUp(wallet, ArrowStack(2u), false, catalog), Is.True);
+        }
+
+        [Test]
+        public void CanAffordPickUp_CtrlOnASingleItem_PricesTheItem()
+        {
+            var wallet = NewWallet();
+            SeedCash(wallet, CurrencyType.Iron, 100u); // 100 < 105
+
+            Assert.That(VendorTransaction.CanAffordPickUp(wallet, ArrowStack(1u), true, catalog), Is.False,
+                "Ctrl cannot split a single item into something cheaper");
+        }
+
+        [Test]
+        public void CanAffordPickUp_WithoutAWallet_IsFalse()
+        {
+            Assert.That(VendorTransaction.CanAffordPickUp(null, ArrowStack(1u), false, catalog), Is.False);
+        }
+
+        [Test]
+        public void CanAffordPickUp_AndThePickUpPrice_AgreeWithTheDropGate()
+        {
+            var wallet = NewWallet();
+            SeedCash(wallet, CurrencyType.Iron, 210u);
+            var package = ArrowStack(4u);
+            var price = VendorTransaction.PickUpPrice(package, true, catalog);
+
+            Assert.That(price, Is.EqualTo(2f * ArrowBuyPrice), "the price held on the cursor is the half's");
+            Assert.That(VendorTransaction.CanAffordPickUp(wallet, package, true, catalog), Is.True);
+
+            using var transaction = new ItemTransaction(wallet.Container);
+
+            Assert.That(VendorTransaction.TryQueuePurchase(transaction, wallet, price), Is.True,
+                "what the grab allowed, the drop allows");
+        }
+
         // ── the markup rule ────────────────────────────────────────────────
 
         [Test]
