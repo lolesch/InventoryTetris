@@ -14,7 +14,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     ///
     /// Outgoing damage is exposed as the raw <c>PhysicalDamage</c> / <c>MagicalDamage</c> stat
     /// values — the sim owns the Strike / Cast cadence, so the adapter deliberately does
-    /// <em>not</em> fold in <c>CalculateDamageOutput</c>'s <c>AttackSpeed</c> term, which would
+    /// <em>not</em> fold in <see cref="Hero.CalculateDamageOutput"/>'s <c>AttackSpeed</c> term, which would
     /// double-count against a real cadence (ADR-0010). Incoming damage and Resource spend route
     /// through the existing <see cref="BaseCharacter"/> paths so the globes reflect sim state;
     /// <see cref="Regenerate"/> forwards to <see cref="BaseCharacter.Regenerate"/>, though the
