@@ -35,18 +35,17 @@ Run `gh issue view <number> --comments`.
 
 ## Frontiers — issues vs. implementation
 
-Twenty-five open issues (scanned 2026-10-04, `main` @ `b41d14e`); the frontier — an issue whose blockers are all closed and whose criteria are not already met by the code — is **#109** and **#110** on the Services wire (parallel) and **#125** / **#126** on the Sold tab wire. #108 is merged: the registry, locator and game loop are in `Utility`, and `GameConfig`, `GameBoot` and `GameLoop` in `InventorySystem.Services` (ADR-0015, amended 2026-10-04). The Sold tab epic (#124) is independent of it except that it gates #112 and #115.
+Twenty-four open issues (scanned 2026-10-04, `main` @ `b41d14e`, then updated for #110 on `feat/110-hero-plain-class`, which closes with its PR); the frontier — an issue whose blockers are all closed and whose criteria are not already met by the code — is **#109** and **#111** on the Services wire (#109 in parallel with the #110 branch, #111 once it merges) and **#125** / **#126** on the Sold tab wire. #110 is built: `Hero` and `HeroData` are in `InventorySystem.Characters`, `LocalPlayer` delegates to them. #108 is merged: the registry, locator and game loop are in `Utility`, and `GameConfig`, `GameBoot` and `GameLoop` in `InventorySystem.Services` (ADR-0015, amended 2026-10-04). The Sold tab epic (#124) is independent of it except that it gates #112 and #115.
 
-**Keep this table current:** update after every `/implement`, and PR-to-`main` by removing closed issues and re-scan the open set.
+**Keep this table current:** update it at the end of every `/implement` — after `/code-review`, **before the PR is opened** — by removing the issue the branch closes, unblocking what it gated and re-scanning the open set. It is a `docs:` commit on the feature branch itself and is pushed with it, so the PR carries the tracker and merging the PR closes the issue and moves the frontier in one step. There is no separate tracker PR after the merge. When two branches run in parallel (as #109 and #110 did), the second to merge resolves the table conflict by re-scanning, not by picking a side.
 
 ### Readiness of the open set
 
 | # | Title | Blockers | State vs. this branch |
 |---|---|---|---|
-| 109 | Services 3: item service replaces `ItemProvider` | #108 (closed) | **Frontier.** Parallel with #110. |
-| 110 | Services 4: `Hero` as a plain class | #108 (closed) | **Frontier.** Parallel with #109. |
-| 111 | Services 5: hero stat panel binds to `Hero` | #110 | Blocked. |
-| 112 | Services 6: the Hero and the World, built in explicit order | #109, #110, **#131** | Blocked. Waits for the Sold tab contract so the staged basket never enters the World; the Sold container is built instead. |
+| 109 | Services 3: item service replaces `ItemProvider` | #108 (closed) | **Frontier.** Parallel with the #110 branch. |
+| 111 | Services 5: hero stat panel binds to `Hero` | #110 (closes with its PR) | **Frontier once #110 merges.** `LocalPlayer` still owns the stat display pool; this moves it to a view bound to `Hero`. `Hero` has no `IHero` yet: add the seam here if the panel needs one. |
+| 112 | Services 6: the Hero and the World, built in explicit order | #109, **#131** (#110 closes with its PR) | Blocked. `LocalPlayer.PickUpItem` still reaches the containers through `InventoryProvider`; `Hero` is not an `IItemReceiver` until this builds it in order. Waits for the Sold tab contract so the staged basket never enters the World; the Sold container is built instead. |
 | 113 | Services 7: simulation service over the Hero and the World | #109, #112 | Blocked. |
 | 117 | Services 11: migrate hero callers, delete `DummyTarget` | #111, #112 | Blocked. (Ahead of #114: #114 waits on it.) |
 | 114 | Services 8: replace on load, `HeroLoaded`, rebinding | #112, #113, #117 | Blocked. |
@@ -71,8 +70,8 @@ Twenty-five open issues (scanned 2026-10-04, `main` @ `b41d14e`); the frontier �
 
 ### Frontier (recommended order)
 
-1. **#109 / #110** — parallel; then #111, **#112**, **#113**, **#117**, **#114**, then #115 / #116 / #118, then **#119**.
-2. **The Sold tab wire runs beside it:** **#125** and **#126** now, then #127 → #128 → #129 → #130 → #131. Starting it beside #109–#110 keeps #112 from waiting on it.
+1. **#109** (beside the #110 branch); then #111, **#112**, **#113**, **#117**, **#114**, then #115 / #116 / #118, then **#119**.
+2. **The Sold tab wire runs beside it:** **#125** and **#126** now, then #127 → #128 → #129 → #130 → #131. Starting it beside #109 and #110 keeps #112 from waiting on it.
 3. Off the wire, any time: **#122** (triage), **#69** (`/to-spec`). **#63** returns to the frontier once #116 closes.
 
 ### Notes from the scan
