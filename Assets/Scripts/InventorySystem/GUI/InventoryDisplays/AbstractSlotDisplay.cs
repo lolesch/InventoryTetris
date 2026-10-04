@@ -86,7 +86,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         public void OnPointerClick(PointerEventData eventData)
         {
             if (DragProvider.Instance.IsDragging)
-                DropItem(DragProvider.Instance.DraggingPackage);
+                Drop();
             else if (eventData.button != PointerEventData.InputButton.Right && Input.GetKey(KeyCode.LeftShift) && TryQuickMove())
                 return;
             else
@@ -289,7 +289,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         public void OnBeginDrag(PointerEventData eventData)
         {
             if (DragProvider.Instance.IsDragging)
-                DropItem(DragProvider.Instance.DraggingPackage);
+                Drop();
             else
                 MoveItem(eventData, pressPosition);
         }
@@ -299,7 +299,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         public void OnEndDrag(PointerEventData eventData) { }
 
-        public void OnDrop(PointerEventData eventData) => DropItem(DragProvider.Instance.DraggingPackage);
+        public void OnDrop(PointerEventData eventData) => Drop();
 
         /// <summary>
         /// Right-click and drag-pickup, the two behaviors that genuinely differ per
@@ -427,6 +427,57 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         protected abstract void DropItem(Package package);
 
         /// <summary>
+        /// Every drop enters here, before the display's own <see cref="DropItem"/>. A purchase in
+        /// progress - lifted off a Supply or the Sold tab, not yet paid for - only ever lands in
+        /// the Hero's bag or on the Equipment (issue #129 follow-up): released anywhere else, on
+        /// the Stash, another shelf, the world, it is cancelled and goes back where it came from,
+        /// free. It is never destroyed and never charged for a place it does not belong.
+        /// </summary>
+        private void Drop()
+        {
+            var drag = DragProvider.Instance;
+
+            if (drag.IsHoldingPurchase && !LandsInHeroContainer)
+            {
+                CancelHeldDrag();
+                return;
+            }
+
+            DropItem(drag.DraggingPackage);
+        }
+
+        /// <summary>Whether this slot belongs to the Hero's bag or the Equipment - the only places
+        /// a purchase may land.</summary>
+        protected bool LandsInHeroContainer
+        {
+            get
+            {
+                var provider = InventoryProvider.Instance;
+
+                return Container != null && (Container == provider.Inventory || Container == provider.Equipment);
+            }
+        }
+
+        /// <summary>
+        /// Ends the drag by sending the held Package back to where the drag started
+        /// (<see cref="DragProvider.CancelDrag"/>), and repaints both ends. The one statement of
+        /// "this drop is turned away": a purchase released somewhere it cannot land, and a sale
+        /// the Sold container refused.
+        /// </summary>
+        protected void CancelHeldDrag()
+        {
+            var drag = DragProvider.Instance;
+
+            _ = drag.CancelDrag();
+
+            Container?.InvokeRefresh();
+            drag.Origin?.Container?.InvokeRefresh();
+
+            if (Container != null)
+                SyncPreviewAfterMove();
+        }
+
+        /// <summary>
         /// Whether <see cref="DropItem"/> would place <paramref name="package"/> if the
         /// player released it over this slot now - the exact predicate the drag display's
         /// red "can't drop" tint shows, so the warning and the drop can never disagree
@@ -439,6 +490,10 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         public virtual bool WouldAcceptDrop(Package package)
         {
             if (!package.IsValid)
+                return false;
+
+            // A purchase that cannot land here is cancelled on release, so it shows the same red.
+            if (DragProvider.Instance.IsHoldingPurchase && !LandsInHeroContainer)
                 return false;
 
             if (Container == null)

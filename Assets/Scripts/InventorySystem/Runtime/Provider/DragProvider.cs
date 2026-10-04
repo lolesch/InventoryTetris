@@ -328,9 +328,15 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             if (!IsDragging || !DraggingPackage.IsValid)
                 return false;
 
-            var backpack = InventoryProvider.Instance.Inventory;
+            /// A purchase in progress that cannot take its exact cell back - a Ctrl-half pick-up
+            /// leaves the other half sitting in it - merges into its own shelf instead of
+            /// falling back to the Hero's bag: that fallback would hand over the unpaid half
+            /// for free. Anything else is the player's own item and may use the bag.
+            var fallback = IsHoldingPurchase && ReturnOrigin.Container != null
+                ? ReturnOrigin.Container
+                : InventoryProvider.Instance.Inventory;
 
-            var leftOnCursor = ReturnToOrigin.Return(DraggingPackage, ReturnOrigin.Container, ReturnOrigin.Cell, backpack);
+            var leftOnCursor = ReturnToOrigin.Return(DraggingPackage, ReturnOrigin.Container, ReturnOrigin.Cell, fallback);
 
             if (leftOnCursor.IsValid)
                 return false;

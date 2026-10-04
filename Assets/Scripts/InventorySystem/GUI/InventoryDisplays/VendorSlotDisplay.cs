@@ -143,7 +143,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         /// same slots. It accepts a purchase in progress - from any shelf - as a free return to
         /// its origin, never a sale: nobody is paid for something not yet owned. It accepts a
         /// player-owned Package as a sale, and refuses it, which shows the forbidden tint, when
-        /// the payout would not fit or would be 0 (<see cref="Sale.CanSellHeld"/>).
+        /// the payout would not fit or would be 0, or the item is currency
+        /// (<see cref="Sale.CanSellHeld"/>); releasing on that tint sends the item back to its
+        /// origin.
         /// </summary>
         public override bool WouldAcceptDrop(Package package)
         {
@@ -165,25 +167,17 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
             var provider = InventoryProvider.Instance;
 
-            /// A purchase in progress, dropped on any Supply or the Sold tab, is a return to
-            /// origin, not a sale (issues #31, #129): put it straight back on the cell it came
-            /// from, charge nothing, pay nothing.
-            if (DragProvider.Instance.IsHoldingPurchase)
+            /// A purchase in progress never reaches here: AbstractSlotDisplay.Drop sends it back
+            /// to its origin free (issues #31, #129), on this shelf or any other place that is not
+            /// the Hero's bag or equipment. What arrives is a player-owned Package, and it is a
+            /// sale: the one Sale statement, over the Sold container and the Wallet - the source
+            /// was vacated at pick-up. A sale that cannot pay out is turned away like any refused
+            /// drop: the item goes back where it came from, not under the cursor.
+            if (!Sale.TrySellHeld(provider.Sold, provider.Wallet, package))
             {
-                _ = DragProvider.Instance.CancelDrag();
-
-                Container?.InvokeRefresh();
-                DragProvider.Instance.Origin?.Container?.InvokeRefresh();
-
-                SyncPreviewAfterMove();
+                CancelHeldDrag();
                 return;
             }
-
-            /// A player-owned Package is a sale: the one Sale statement, over the Sold container
-            /// and the Wallet - the source was vacated at pick-up. A sale that cannot pay out
-            /// leaves the item in hand exactly as the player is holding it.
-            if (!Sale.TrySellHeld(provider.Sold, provider.Wallet, package))
-                return;
 
             DragProvider.Instance.EndDrag();
 

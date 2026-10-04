@@ -298,6 +298,15 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             // CONTEXT.md "Drop": a Drop still on the ground when the Run ends is gone, on
             // Recall or Death alike (issue #44).
             ReleaseLoot();
+
+            // Coming home by Recall brings the shops new stock; a Death does not.
+            if (Run.LastResult is { Outcome: RunOutcome.Recalled })
+            {
+                var inventory = InventoryProvider.Instance;
+
+                if (inventory != null)
+                    inventory.RestockTownStops();
+            }
         }
 
         /// <summary>Retire the live loot flow: unsubscribe first, then clear its ground Drops.</summary>

@@ -3833,7 +3833,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 175.2, y: -50}
+  m_AnchoredPosition: {x: 145.2, y: -50}
   m_SizeDelta: {x: 0, y: 80}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &328166504
@@ -6091,6 +6091,7 @@ MonoBehaviour:
   scaleFrom: 1
   moveFrom: {x: -640, y: 0}
   inventoryContext: 3
+  firstTab: {fileID: 0}
 --- !u!1 &478476820
 GameObject:
   m_ObjectHideFlags: 0
@@ -8575,6 +8576,7 @@ MonoBehaviour:
   scaleFrom: 1
   moveFrom: {x: -640, y: 0}
   inventoryContext: 3
+  firstTab: {fileID: 7022399921479454649}
 --- !u!1 &647175469
 GameObject:
   m_ObjectHideFlags: 0
@@ -12671,7 +12673,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4300357209923141593, guid: 78e009b2ac84c024cb6d1b44e344625d, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 320.4
+      value: 260.4
       objectReference: {fileID: 0}
     - target: {fileID: 4300357209923141593, guid: 78e009b2ac84c024cb6d1b44e344625d, type: 3}
       propertyPath: m_AnchoredPosition.y
@@ -15100,7 +15102,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 320.4, y: -29.945}
+  m_AnchoredPosition: {x: 260.4, y: -29.945}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 1, y: 1}
 --- !u!114 &1196335667
@@ -17125,7 +17127,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 175.2, y: -50}
+  m_AnchoredPosition: {x: 145.2, y: -50}
   m_SizeDelta: {x: 0, y: 80}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1407275552
@@ -18592,6 +18594,7 @@ MonoBehaviour:
   scaleFrom: 1
   moveFrom: {x: -640, y: 0}
   inventoryContext: 2
+  firstTab: {fileID: 0}
 --- !u!224 &1531969118 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 7022399922254581285, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
@@ -19217,6 +19220,7 @@ MonoBehaviour:
   scaleFrom: 1
   moveFrom: {x: 640, y: 0}
   inventoryContext: 1
+  firstTab: {fileID: 0}
 --- !u!1 &1563707323
 GameObject:
   m_ObjectHideFlags: 0
@@ -25711,6 +25715,7 @@ MonoBehaviour:
   scaleFrom: 1
   moveFrom: {x: -640, y: 0}
   inventoryContext: 4
+  firstTab: {fileID: 394682331}
 --- !u!1001 &2072412853
 PrefabInstance:
   m_ObjectHideFlags: 0

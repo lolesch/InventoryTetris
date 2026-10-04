@@ -291,6 +291,14 @@ namespace ToolSmiths.InventorySystem.Inventories
         public void ClearPlayerEquipment() => RemoveAllItems(Equipment);
         public void ClearPlayerInventory() => RemoveAllItems(Inventory);
         public void ClearPlayerStash() => RemoveAllItems(Stash);
+        /// <summary>Both Town Stops' Restock, run when a Run is Recalled: the Vendor's shelf, the
+        /// Healer's shelf and, through each, the Sold container.</summary>
+        public void RestockTownStops()
+        {
+            RestockStore();
+            RestockHealerSupply();
+        }
+
         /// <summary>A Supply's Restock clears the Sold container at the moment it refills (issue
         /// #128): what was sold is stock like any other, so both Town Stops' Restock empty it.</summary>
         public void RestockStore()

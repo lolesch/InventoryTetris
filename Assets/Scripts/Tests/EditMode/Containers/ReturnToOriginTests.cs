@@ -168,6 +168,28 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         }
 
         [Test]
+        public void Return_AHalfStackToItsOwnShelf_MergesBackIntoTheHalfThatStayed_WhenTheShelfIsTheFallback()
+        {
+            // A Ctrl-half pick-up of a shelf stack leaves the other half in the origin cell, so the
+            // exact cell is taken. A purchase in progress must then merge into its own shelf: the
+            // Hero's bag as the fallback would hand over the unpaid half for free.
+            var shelf = Inventory();
+            var bag = Inventory();
+            var arrows = Arrows();
+            var package = new Package(shelf, arrows, 10u);
+            _ = shelf.TryAddToContainer(ref package);
+            var cell = shelf.StoredPackages.Keys.Single();
+            var half = new Package(shelf, arrows, 5u);
+            _ = shelf.RemoveAtPosition(cell, half);
+
+            var left = ReturnToOrigin.Return(half, shelf, cell, shelf);
+
+            Assert.That(left.IsValid, Is.False, "it found a home");
+            Assert.That(shelf.StoredPackages.Values.Sum(p => (int)p.Amount), Is.EqualTo(10), "the shelf has its whole stack back");
+            Assert.That(bag.StoredPackages, Is.Empty, "nothing reached the bag");
+        }
+
+        [Test]
         public void Return_WhenTheOriginContainerIsGone_FallsBackToTheBackpack()
         {
             var backpack = Inventory();

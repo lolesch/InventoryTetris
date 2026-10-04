@@ -1,4 +1,6 @@
 using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Data.Enums;
+using ToolSmiths.InventorySystem.Items;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Inventories
@@ -14,7 +16,8 @@ namespace ToolSmiths.InventorySystem.Inventories
     /// <para>A sale either wholly happens or leaves every container and the Wallet untouched:
     /// a 0 payout, a payout the Wallet cannot bank (checked with <see cref="Wallet.CanDeposit"/>
     /// before the deposit is queued, the same check-then-queue order a purchase follows), a
-    /// Package too big for the Sold container even when empty. A full Sold container never
+    /// Package too big for the Sold container even when empty, and currency, which is never for
+    /// sale: it has a face value and the Wallet already holds it. A full Sold container never
     /// refuses a sale that can pay out; it discards its oldest instead
     /// (<see cref="SoldContainer.TryPlaceEvicting"/>).</para>
     ///
@@ -71,13 +74,16 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// </summary>
         public static bool CanSellHeld(SoldContainer sold, Wallet wallet, Package held, float? carriedPrice = null)
         {
-            if (carriedPrice != null || sold == null || wallet == null || !held.IsValid)
+            if (carriedPrice != null || sold == null || wallet == null || !held.IsValid || IsCurrency(sold, held))
                 return false;
 
             var payout = PayoutOf(sold, held);
 
             return 0u != payout.Total && wallet.CanDeposit(payout);
         }
+
+        private static bool IsCurrency(SoldContainer sold, Package package) =>
+            sold.ViewOf(package.Item).Definition.Category == ItemCategory.Currency;
 
         private static Currency PayoutOf(SoldContainer sold, Package package) =>
             new(sold.ViewOf(package.Item).SellValue * package.Amount);
@@ -89,6 +95,9 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// </summary>
         private static bool Complete(ItemTransaction transaction, SoldContainer sold, Wallet wallet, Package package)
         {
+            if (IsCurrency(sold, package))
+                return false;
+
             var payout = PayoutOf(sold, package);
 
             if (0u == payout.Total || !wallet.CanDeposit(payout))
