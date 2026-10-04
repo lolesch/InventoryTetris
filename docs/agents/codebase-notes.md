@@ -372,6 +372,19 @@ a reference won't resolve.
   `autoReferenced: true`. There is a matching `InventorySystem.Distributions.Editor.asmdef`
   for the two custom editors in that folder. Watch this whenever you touch
   `Data/Distributions/` or `ItemProvider.cs`.
+- **`Assets/Scripts/InventorySystem/Services/` is `InventorySystem.Services.asmdef`** (#108):
+  `GameConfig`, `GameBoot`, `GameLoop`. The generic parts (`IService`, `ServiceRegistry`,
+  `ServiceLocator`, `PlayerLoopHook`) live in the `Utility` submodule, in the `Utility` assembly.
+  `GameConfig` is the one root asset at `Assets/Resources/GameConfig.asset`; its fields are
+  `[field: SerializeField]` auto-properties, so a hand-written `.asset` uses the
+  `<Name>k__BackingField` keys.
+- **`ItemTypeData` lives in `Data/Statistics/`** (the `InventorySystem.Data` assembly), moved out of
+  `Data/` where it compiled into `Assembly-CSharp`. A custom asmdef cannot reference
+  `Assembly-CSharp`, so anything `GameConfig` references has to sit in an asmdef; the `.meta`
+  moved with it, so the GUID and every scene reference held.
+- **Static state needs a `SubsystemRegistration` reset** with domain reload disabled
+  (`ServiceLocator`, `GameLoop` have one; the player loop is the exception: `PlayerLoopHook` removes
+  its systems on `ExitingPlayMode` instead, because the loop outlives Stop).
 
 ## Shared working directory + the `Utility` submodule
 

@@ -60,13 +60,15 @@ None of the new names carries a `Provider` suffix.
 | `Hero`, `HeroData` | the domain Hero as a plain class built from its template (an SO for a new hero, a DTO for a loaded one) | `LocalPlayer` and `CharacterProvider` |
 | `World` | the never-saved unit, built after the Hero | the Supply, Sold container, Run and context scattered over four providers |
 | `Session` | holds the current Hero and World; replaces both on load and raises `HeroLoaded` | nothing: the hero used to be reached through the character provider |
-| `GameRunner` | the one hidden persistent `MonoBehaviour` that boot creates, hosting the simulation tick | the added driver component and the smoke-gate spawn |
+| `GameLoop` | one player-loop system that boot installs, hosting the simulation tick; no `MonoBehaviour`, no GameObject | the added driver component and the smoke-gate spawn |
+| `IService`, `ServiceRegistry`, `ServiceLocator` | the generic registry (one instance per registered type) and the static holder of the one the game booted with; in the `Utility` submodule | the per-class `.Instance` statics and their scan-and-create |
 | `DebugPanel` | one view that calls the services for the debug spawn, kill, heal and amount-slider controls | the `UnityEvent` debug buttons wired to provider methods |
 | `CharacterStatPanel` | a view bound to the hero's change events | the stat display pool the hero owned |
 
 The spec and tickets #106 to #119 say **Hero State**, and call the load event
 `SessionChanged`. Read them as the Hero and the World, and as `HeroLoaded`: the Session does
-not change when a hero loads. `DragProvider`, `PreviewProvider` and `SceneProvider` keep their
+not change when a hero loads. They also say `GameRunner` and "runner": read those as
+`GameLoop` (see Amendment 2026-10-04). `DragProvider`, `PreviewProvider` and `SceneProvider` keep their
 names: canvas-nested UI singletons and a shared-submodule class, out of scope.
 
 ## Considered options
@@ -104,8 +106,42 @@ differ per scene. Not adopted for this alone.
   to a `ScriptableObject` survives Stop.
 - `AbstractSceneSingleton`, `AbstractProvider` and the quitting reset guard stay in the
   shared `Utility` submodule, which AutoBattler also uses. This project stops using
-  `AbstractProvider` except through `SceneProvider`.
+  `AbstractProvider` except through `SceneProvider`. The submodule only gains the generic
+  registry and loop hook of the 2026-10-04 amendment, additively.
 - #110, #112 and #114 need rewording: the Hero State holder becomes building a Hero and then
   a World. Open for them: how the Hero's stat class and its containers are grouped in code,
   and whether the state services are properties of the current Hero and World or
   locator-resolved facades over them. Either keeps decision 4.
+
+## Amendment 2026-10-04 (#108): a type-keyed registry in Utility, and no runner object
+
+Two decisions made while building the boot, both replacing a line of the original.
+
+**The locator is a registry of plain `IService` instances, and it lives in `Utility`.** The
+original left the locator's shape open and put the `Utility` submodule out of scope. A
+type-keyed registry has no inventory vocabulary, and it enforces decision 1 directly: a second
+registration of one type throws, so a duplicate is unrepresentable. `IService` is a marker with
+no members, because config services and state services share nothing but the registry, and a
+base class would be empty. `ServiceLocator` holds the one registry the game booted with, is
+cleared in `SubsystemRegistration`, and throws when read unarmed. The change is additive and
+AutoBattler is unaffected. `GameConfig`, the boot and the frame tick stay in this project
+(`InventorySystem.Services`). Each service keeps a one-line `Instance` that delegates to the
+locator, so call sites read as before.
+
+*Rejected: a lazy `Instance` per service class.* It needs its own reset hook in every class (the
+forgotten-quitting-flag bug, repeated), makes construction order depend on which `Instance`
+fires first (the spec's story 10), surfaces a missing config at first use instead of at boot, and
+needs a private constructor or a setter per class to substitute a fake. *Rejected: one composite
+with a typed property per service.* It is checked at compile time, but every new service edits
+the composite, and #108 would have shipped it with nothing in it.
+
+**The frame tick is a player-loop system, not a hidden `MonoBehaviour`.** The only job of the
+runner was to give the simulation `Time.deltaTime` each frame, and scene-loading coroutines stay
+with `SceneProvider`, so nothing needs a GameObject. `PlayerLoopHook` (in `Utility`) installs a
+delegate once per marker type at the end of the `Update` phase, so it runs after every
+`MonoBehaviour.Update` as the old `DefaultExecutionOrder(10)` driver did, and removes it on
+leaving Play Mode, because the player loop is global and survives Stop with domain reload
+disabled. `GameLoop` installs it and holds the tickers; the simulation adds its ticker in #113.
+There is nothing in the hierarchy to hide, persist, destroy or leak, and the reset is symmetric
+with the locator's. The cost is no `OnDestroy` lifecycle and no coroutine host; neither is
+needed.

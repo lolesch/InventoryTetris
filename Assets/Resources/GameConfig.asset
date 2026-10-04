@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 499d3af294034d169c80a777455e696d, type: 3}
+  m_Name: GameConfig
+  m_EditorClassIdentifier: InventorySystem.Services::ToolSmiths.InventorySystem.Services.GameConfig
+  <ItemTypeData>k__BackingField: {fileID: 11400000, guid: be7b2766279a25b4bbc708817fa006cb, type: 2}
+  <Catalog>k__BackingField: {fileID: 11400000, guid: 0a6b9cc013fb6514389c3c806b51a50e, type: 2}
+  <ItemCategoryDistribution>k__BackingField: {fileID: 11400000, guid: ae878e2503b01aa4f8df8fc578e7a993, type: 2}
+  <ItemRarityDistribution>k__BackingField: {fileID: 11400000, guid: 1d3181e9dd35dea49b7900e07374d206, type: 2}
+  <CurrencyTypeDistribution>k__BackingField: {fileID: 11400000, guid: 9cd2eb73a0c901c4fa216cf2fe099481, type: 2}
+  <CurrencyDropTable>k__BackingField: {fileID: 11400000, guid: c47ab8125364fb141818083bd5391695, type: 2}
+  currencyIcons:
+  - {fileID: 21300000, guid: 3864edeca2ca51f4699fd8dd8575afcb, type: 3}
+  - {fileID: 21300000, guid: fe5e98231a1818b4199524a3e3b080e7, type: 3}
+  - {fileID: 21300000, guid: eb1a76efd1f6bba4fbd056a467f814a9, type: 3}
+  - {fileID: 21300000, guid: 3e178e2de62d3b5479fe6d64ae2c88a8, type: 3}
+  <EquipmentSize>k__BackingField: {x: 14, y: 1}
+  <InventorySize>k__BackingField: {x: 10, y: 6}
+  <StashSize>k__BackingField: {x: 10, y: 13}
+  <SupplySize>k__BackingField: {x: 10, y: 7}
+  <SoldSize>k__BackingField: {x: 10, y: 7}
+  <SimSpeed>k__BackingField: 1
+  <Engagement>k__BackingField: 3
+  <RetreatHealthFraction>k__BackingField: 0
+  <RecallBagFillFraction>k__BackingField: 1
+  <CastThreshold>k__BackingField: 0
+  <LootFilterMinimum>k__BackingField: 5
+  <CastCost>k__BackingField: 16
+  <XpLossFraction>k__BackingField: 0.25
+  <CurrencyFeeFraction>k__BackingField: 0.5
+  <Locations>k__BackingField:
+  - {fileID: 11400000, guid: 79be389ba1b44186ad2958d8b404c690, type: 2}
+  - {fileID: 11400000, guid: 547ec5b47c1b458f833aaae5f6dc7aa4, type: 2}

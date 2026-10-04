@@ -1,0 +1,20 @@
+{
+    "name": "InventorySystem.Services",
+    "rootNamespace": "",
+    "references": [
+        "Utility",
+        "InventorySystem.Data",
+        "InventorySystem.Items",
+        "InventorySystem.Distributions",
+        "InventorySystem.Locations"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
