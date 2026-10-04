@@ -22,6 +22,12 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         /// Cached so a wallet change can re-tint without waiting for a container refresh.
         private Package displayedPackage;
 
+        /// The displayed package's whole price in base units, taken once when the package
+        /// changes - while the services are armed. A repaint (hover, a wallet change, the
+        /// un-highlight in OnDisable) then never reads the locator: Stop clears it before the
+        /// scene's OnDisable calls run, so a read there throws once per stocked slot.
+        private float displayedPrice;
+
         protected override void OnEnable()
         {
             base.OnEnable();
@@ -37,12 +43,14 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         protected override void OnDisable()
         {
-            base.OnDisable();
-
+            // Before the base runs: it repaints, and a repaint that throws must not leave this
+            // slot subscribed to a Wallet that outlives it.
             var wallet = InventoryProvider.Instance.Wallet;
 
             if (wallet != null)
                 wallet.OnBalanceChanged -= OnWalletChanged;
+
+            base.OnDisable();
         }
 
         /// Cached before the base runs, because refreshing the display repaints the
@@ -50,6 +58,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         public override void RefreshSlotDisplay(Package package)
         {
             displayedPackage = package;
+            displayedPrice = package.IsValid
+                ? VendorTransaction.BuyPrice(package.Item, ItemService.Instance.Catalog) * package.Amount
+                : 0f;
 
             base.RefreshSlotDisplay(package);
         }
@@ -69,7 +80,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
             var wallet = InventoryProvider.Instance.Wallet;
 
-            return wallet == null || wallet.CanAfford(new Currency(VendorTransaction.BuyPrice(displayedPackage.Item, ItemService.Instance.Catalog) * displayedPackage.Amount));
+            return wallet == null || wallet.CanAfford(new Currency(displayedPrice));
         }
 
         protected override void SetDisplaySize(RectTransform display, Package package)
