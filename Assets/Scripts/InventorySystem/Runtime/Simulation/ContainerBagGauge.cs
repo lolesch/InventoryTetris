@@ -36,7 +36,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 var occupied = 0;
                 foreach (var entry in _container.StoredPackages)
                 {
-                    var footprint = ItemView.Of(entry.Value.Item).Dimensions;
+                    var footprint = _container.ViewOf(entry.Value.Item).Dimensions;
                     occupied += footprint.x * footprint.y;
                 }
 

@@ -1,6 +1,7 @@
 using NaughtyAttributes;
 using Submodules.Utility.Provider;
 using TMPro;
+using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Geometry;
 using ToolSmiths.InventorySystem.GUI.InventoryDisplays;
@@ -161,7 +162,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             position = DragGeometry.DropPosition(
                 (Vector2)Input.mousePosition / transform.lossyScale,
                 itemDisplay.pivot,
-                ItemView.Of(DraggingPackage.Item).Dimensions,
+                ItemService.Instance.View(DraggingPackage.Item).Dimensions,
                 (Vector2)hovered.transform.position / transform.lossyScale,
                 hovered.Position,
                 slotSize);
@@ -206,7 +207,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
             SetHoveredSlot(Origin);
 
-            var dimensions = ItemView.Of(package.Item).Dimensions;
+            var dimensions = ItemService.Instance.View(package.Item).Dimensions;
 
             itemDisplay.sizeDelta = (Vector2)dimensions * slotSize;
 
@@ -249,7 +250,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
             ReturnOrigin = from;
 
-            var dimensions = ItemView.Of(package.Item).Dimensions;
+            var dimensions = ItemService.Instance.View(package.Item).Dimensions;
 
             itemDisplay.sizeDelta = (Vector2)dimensions * slotSize;
             itemDisplay.pivot = DragGeometry.HandOverPivot;
@@ -281,7 +282,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         {
             if (icon)
             {
-                icon.sprite = ItemView.Of(package.Item).Icon;
+                icon.sprite = ItemService.Instance.View(package.Item).Icon;
                 icon.color = Color.white;
             }
 

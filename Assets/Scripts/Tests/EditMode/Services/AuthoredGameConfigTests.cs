@@ -9,8 +9,9 @@ namespace ToolSmiths.InventorySystem.Tests.Services
     /// <summary>
     /// Pins the authored <c>Assets/Resources/GameConfig.asset</c> to what the scene-scoped providers
     /// authored when it was carried over (issue #108): the same references, sizes and tuning, so the
-    /// move changed nothing. The providers still hold their own copies until they are retired, so
-    /// these values must change in both places or in neither.
+    /// move changed nothing. The item data is read from here by <c>ItemService</c> (#109); the sizes,
+    /// tuning and Locations are still held by their providers until those are retired, so those values
+    /// must change in both places or in neither.
     /// </summary>
     [TestFixture]
     public sealed class AuthoredGameConfigTests

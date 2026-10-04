@@ -22,7 +22,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         private const string HelmId = "test.helm";
         private const string PotionId = "test.potion";
 
-        private TestCatalog catalog;
+        private static TestCatalog catalog;
 
         [SetUp]
         public void SetCatalog()
@@ -34,11 +34,10 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
                 .With(new TestDefinition { Id = HelmId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Helm, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
                 .With(new TestDefinition { Id = PotionId, Category = ItemCategory.Consumable, ConsumableType = ConsumableType.Potion, Footprint = ItemSize.OneByOne, BaseStackLimit = 5u });
 
-            ItemView.Catalog = catalog;
         }
 
         [TearDown]
-        public void ClearCatalog() => ItemView.Catalog = null;
+        public void ClearCatalog() => catalog = null;
 
         // ── fixtures ────────────────────────────────────────────────────────
 
@@ -46,9 +45,9 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         private static ItemInstance Helm() => new(HelmId, ItemRarity.Common, 1, null);
         private static ItemInstance Potion() => new(PotionId, ItemRarity.Common, 1, null);
 
-        private static CharacterInventory Stash(int width = 4, int height = 4) => new(new Vector2Int(width, height));
-        private static CharacterInventory Inventory(int width = 4, int height = 4) => new(new Vector2Int(width, height));
-        private static CharacterEquipment Equipment() => new(new Vector2Int(14, 1), null);
+        private static CharacterInventory Stash(int width = 4, int height = 4) => new(new Vector2Int(width, height), catalog);
+        private static CharacterInventory Inventory(int width = 4, int height = 4) => new(new Vector2Int(width, height), catalog);
+        private static CharacterEquipment Equipment() => new(new Vector2Int(14, 1), catalog, null);
 
         /// <summary>The player's placement (<see cref="ItemAcquisition"/>) without the MonoBehaviour.</summary>
         private sealed class FakePlayer : IItemReceiver

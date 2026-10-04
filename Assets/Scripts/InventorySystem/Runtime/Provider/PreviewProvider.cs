@@ -1,4 +1,5 @@
 ﻿using Submodules.Utility.Provider;
+using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.GUI.Displays;
@@ -75,9 +76,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             {
                 var equippedItems = new Package[2];
 
-                if (package.Item != null && ItemView.Of(package.Item).Definition.Category == ItemCategory.Equipment)
+                if (package.Item != null && ItemService.Instance.View(package.Item).Definition.Category == ItemCategory.Equipment)
                 {
-                    var equipmentPositions = CharacterEquipment.GetTypeSpecificPositions(ItemView.Of(package.Item).Definition.EquipmentType);
+                    var equipmentPositions = CharacterEquipment.GetTypeSpecificPositions(ItemService.Instance.View(package.Item).Definition.EquipmentType);
 
                     for (var i = 0; i < equipmentPositions.Length; i++)
                         InventoryProvider.Instance.Equipment.StoredPackages.TryGetValue(equipmentPositions[i], out equippedItems[i]);
@@ -85,7 +86,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
                 var index = Input.GetKey(KeyCode.LeftControl) ? 1 : 0;
                 var priceOverride = slot is VendorSlotDisplay && package.Item != null
-                    ? VendorTransaction.BuyPrice(package.Item) * package.Amount
+                    ? VendorTransaction.BuyPrice(package.Item, ItemService.Instance.Catalog) * package.Amount
                     : -1f;
 
                 hoveredItem.Refresh(package, equippedItems[index], priceOverride);

@@ -7,7 +7,7 @@ namespace ToolSmiths.InventorySystem.Items
     /// <summary>
     /// The authored <see cref="IItemCatalog"/> - the single asset that aggregates every
     /// <see cref="ItemDefinitionAsset"/> in the project. Replaces the ~20
-    /// <c>List&lt;AbstractItemObject&gt;</c> fields on <c>ItemProvider</c>: the generator
+    /// <c>List&lt;AbstractItemObject&gt;</c> fields the old item provider held: the generator
     /// reads it to pick what to roll, a display reads it to resolve a stored instance back
     /// to its template.
     ///

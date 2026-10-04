@@ -2,6 +2,7 @@
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Inventories;
+using ToolSmiths.InventorySystem.Services;
 using Submodules.Utility.Extensions;
 using Submodules.Utility.UI;
 using UnityEngine;
@@ -25,7 +26,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
             public CharacterStatModifierData(CharacterStatModifier characterStatModifier)
             {
                 statMod = characterStatModifier;
-                icon = ItemProvider.Instance.ItemTypeData.GetStatIcon(statMod.Stat);
+                icon = ItemService.Instance.GetStatIcon(statMod.Stat);
                 displayText = $"{statMod.Modifier} {statMod.Modifier.Range.ToString().Colored(Color.gray)}";
                 displayFontSize = RollQualityFontSize(statMod.Modifier);
             }
@@ -47,7 +48,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                     _ => $"?? {difference:+ #.###;- #.###;#.###}",
                 };
 
-                icon = ItemProvider.Instance.ItemTypeData.GetStatIcon(statMod.Stat);
+                icon = ItemService.Instance.GetStatIcon(statMod.Stat);
                 displayText = $"{statMod.Modifier} {statMod.Modifier.Range.ToString().Colored(Color.gray)} {differenceString.Colored(comparisonColor)}";
                 displayFontSize = RollQualityFontSize(statMod.Modifier);
 

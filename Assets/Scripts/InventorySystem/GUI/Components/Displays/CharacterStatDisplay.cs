@@ -3,6 +3,7 @@ using TMPro;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Inventories;
+using ToolSmiths.InventorySystem.Services;
 using Submodules.Utility.Extensions;
 using Submodules.Utility.UI;
 using UnityEngine;
@@ -44,7 +45,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                     : $"({baseValue:0.##} + {flatAddModValue:0.##}) * {percentAddModValue:0.##} {percentMultModString:0.##}";
 
                 displayText = $"{stat.TotalValue:0.##}\t{modDetailText.Colored(Color.gray)}"; //{statName}
-                icon = ItemProvider.Instance.ItemTypeData.GetStatIcon(stat.Stat);
+                icon = ItemService.Instance.GetStatIcon(stat.Stat);
             }
         }
 

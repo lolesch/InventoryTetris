@@ -90,7 +90,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             var total = 0f;
 
             foreach (var package in basket.Container.StoredPackages.Values)
-                total += ItemView.Of(package.Item).SellValue * package.Amount;
+                total += basket.Container.ViewOf(package.Item).SellValue * package.Amount;
 
             return total;
         }

@@ -34,7 +34,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         private static readonly float SwordValue = 6f * 35f; // 210
         private static readonly float HelmValue = 4f * 20f;  // 80
 
-        private TestCatalog catalog;
+        private static TestCatalog catalog;
         private FakeCurrencyMinter minter;
 
         [SetUp]
@@ -47,12 +47,11 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
                 .With(new TestDefinition { Id = SilverId, Category = ItemCategory.Currency, CurrencyType = CurrencyType.Silver, Footprint = ItemSize.OneByOne, BaseStackLimit = 999u })
                 .With(new TestDefinition { Id = GoldId, Category = ItemCategory.Currency, CurrencyType = CurrencyType.Gold, Footprint = ItemSize.OneByOne, BaseStackLimit = 999u });
 
-            ItemView.Catalog = catalog;
             minter = new FakeCurrencyMinter(catalog);
         }
 
         [TearDown]
-        public void ClearCatalog() => ItemView.Catalog = null;
+        public void ClearCatalog() => catalog = null;
 
         // ── fixtures ────────────────────────────────────────────────────────
 
@@ -68,12 +67,12 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         /// A 1x1 coin worth 5 base units each.
         private static ItemInstance Copper() => ItemInstance.Coin(CopperId, CurrencyType.Copper);
 
-        private static CharacterInventory Inventory(int width = 4, int height = 4) => new(new Vector2Int(width, height));
-        private static CharacterEquipment Equipment(IStatReceiver stats = null) => new(new Vector2Int(14, 1), stats);
+        private static CharacterInventory Inventory(int width = 4, int height = 4) => new(new Vector2Int(width, height), catalog);
+        private static CharacterEquipment Equipment(IStatReceiver stats = null) => new(new Vector2Int(14, 1), catalog, stats);
         private static Vector2Int SlotFor(EquipmentType type) => CharacterEquipment.GetTypeSpecificPositions(type).First();
 
         private Wallet NewWallet(int width = 4, int height = 4) =>
-            new(new CharacterInventory(new Vector2Int(width, height)), minter);
+            new(new CharacterInventory(new Vector2Int(width, height), catalog), minter);
 
         private void SeedCash(Wallet wallet, CurrencyType type, uint count)
         {

@@ -368,16 +368,25 @@ a reference won't resolve.
 - **`Assets/Scripts/InventorySystem/Data/Distributions/*.cs` is its own
   `InventorySystem.Distributions.asmdef`** (custom asmdefs can't reference
   `Assembly-CSharp`, and `LootTable`'s only implementer was `internal` there). It
-  resolves from `ItemProvider` (still `Assembly-CSharp`) only because it is
-  `autoReferenced: true`. There is a matching `InventorySystem.Distributions.Editor.asmdef`
+  resolves from `Assembly-CSharp` only because it is `autoReferenced: true`; the
+  `InventorySystem.Services` asmdef, where `ItemService` builds its loot table from it, names
+  it explicitly. There is a matching `InventorySystem.Distributions.Editor.asmdef`
   for the two custom editors in that folder. Watch this whenever you touch
-  `Data/Distributions/` or `ItemProvider.cs`.
+  `Data/Distributions/` or `ItemService.cs`.
 - **`Assets/Scripts/InventorySystem/Services/` is `InventorySystem.Services.asmdef`** (#108):
   `GameConfig`, `GameBoot`, `GameLoop`. The generic parts (`IService`, `ServiceRegistry`,
   `ServiceLocator`, `PlayerLoopHook`) live in the `Utility` submodule, in the `Utility` assembly.
   `GameConfig` is the one root asset at `Assets/Resources/GameConfig.asset`; its fields are
   `[field: SerializeField]` auto-properties, so a hand-written `.asset` uses the
-  `<Name>k__BackingField` keys.
+  `<Name>k__BackingField` keys (a test writes them the same way, through `SerializedObject`:
+  `TestGameConfig` in the Services tests). #109 added `IItemService`/`ItemService` (the old
+  `ItemProvider`, deleted) plus `DistributionLootTable` and `UnityRollSource`, so the asmdef also
+  references `Containers` (`Package`, `ICurrencyMinter`), `Simulation` (`ICoinDropSource`, which
+  the service implements) and `Probability`. Every draw the service makes comes off its injected
+  `IRollSource`; nothing in it reaches `UnityEngine.Random`.
+- **The container core takes its catalog by constructor** (#109): `AbstractDimensionalContainer(dims,
+  catalog)` and `ViewOf(item)`. The static `ItemView.Catalog`/`ItemView.Of` are gone, so a test passes a
+  `TestCatalog` to each container it builds and the Unity edge reads `ItemService.Instance.View`.
 - **`ItemTypeData` lives in `Data/Statistics/`** (the `InventorySystem.Data` assembly), moved out of
   `Data/` where it compiled into `Assembly-CSharp`. A custom asmdef cannot reference
   `Assembly-CSharp`, so anything `GameConfig` references has to sit in an asmdef; the `.meta`

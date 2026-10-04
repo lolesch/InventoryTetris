@@ -6,7 +6,10 @@
         "InventorySystem.Data",
         "InventorySystem.Items",
         "InventorySystem.Distributions",
-        "InventorySystem.Locations"
+        "InventorySystem.Locations",
+        "InventorySystem.Probability",
+        "InventorySystem.Containers",
+        "InventorySystem.Simulation"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

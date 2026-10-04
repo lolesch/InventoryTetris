@@ -7,6 +7,8 @@ using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.GUI.InventoryDisplays;
 using ToolSmiths.InventorySystem.Runtime.Provider;
 using ToolSmiths.InventorySystem.Runtime.Simulation;
+using ToolSmiths.InventorySystem.Services;
+using ToolSmiths.InventorySystem.Utility.Extensions;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -198,30 +200,34 @@ namespace ToolSmiths.InventorySystem.Inventories
         public void Awake()
         {
             /// The container core lives in InventorySystem.Containers and names no
-            /// provider - it takes the character and the coin minter as interfaces here,
-            /// where the four containers are newed up. The drag cursor is wrapped per-move
+            /// provider - it takes the catalog, the character and the coin minter as
+            /// interfaces here, where the containers are newed up. The drag cursor is wrapped per-move
             /// as a CursorHolder by the slot displays, so the containers no longer hold one.
             var statReceiver = CharacterProvider.Instance.Player;
-            var currencyMinter = ItemProvider.Instance;
+            var items = ItemService.Instance;
 
-            Equipment = new(equipmentSize, statReceiver);
-            Inventory = new(inventorySize);
-            Stash = new(stashSize);
-            Store = new(storeSize);
-            HealerSupply = new(storeSize);
-            Basket = new SellBasket.Basket(new(basketSize));
+            Equipment = new(equipmentSize, items.Catalog, statReceiver);
+            Inventory = new(inventorySize, items.Catalog);
+            Stash = new(stashSize, items.Catalog);
+            Store = new(storeSize, items.Catalog);
+            HealerSupply = new(storeSize, items.Catalog);
+            Basket = new SellBasket.Basket(new(basketSize, items.Catalog));
 
-            Wallet = new Wallet(Inventory, currencyMinter);
+            Wallet = new Wallet(Inventory, items);
 
             RestockStore();
             RestockHealerSupply();
         }
 
+        // The item service holds no hero: the debug rolls and the Restock hand it the player's bonuses.
+        private static float MagicFind => CharacterProvider.Instance.Player.GetStatValue(StatName.IncreasedItemRarity);
+        private static float ItemQuantity => CharacterProvider.Instance.Player.GetStatValue(StatName.IncreasedItemQuantity);
+
         private void AddEquipment(EquipmentType equipmentType)
         {
             for (var i = 0; i < Amount; i++)
             {
-                var randomEquipment = ItemProvider.Instance.RollEquipment(equipmentType);
+                var randomEquipment = ItemService.Instance.RollEquipment(equipmentType, MagicFind);
                 _ = CharacterProvider.Instance.Player.PickUpItemOrStash(new Package(null, randomEquipment, 1u));
             }
         }
@@ -230,14 +236,14 @@ namespace ToolSmiths.InventorySystem.Inventories
         {
             for (var i = 0; i < Amount; i++)
             {
-                var randomConsumable = ItemProvider.Instance.RollConsumable(consumableType);
+                var randomConsumable = ItemService.Instance.RollConsumable(consumableType, MagicFind);
                 _ = CharacterProvider.Instance.Player.PickUpItemOrStash(new Package(null, randomConsumable, 1u));
             }
         }
 
         public void AddRandomLoot()
         {
-            var loot = ItemProvider.Instance.RollLoot(Amount);
+            var loot = ItemService.Instance.RollLoot(Amount, MagicFind, ItemQuantity);
 
             for (var i = 0; i < loot.Count; i++)
                 _ = CharacterProvider.Instance.Player.PickUpItemOrStash(loot[i]);
@@ -246,7 +252,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         public void AddRandomCurrency()
         {
             for (var i = 0; i < Amount; i++)
-                _ = CharacterProvider.Instance.Player.PickUpItemOrStash(ItemProvider.Instance.RollCurrency());
+                _ = CharacterProvider.Instance.Player.PickUpItemOrStash(ItemService.Instance.RollCurrency());
         }
 
         public void RemoveAllItems(AbstractDimensionalContainer container)
@@ -292,7 +298,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             for (var i = 0; i < 20; i++)
             {
-                var item = ItemProvider.Instance.RollEquipment();
+                var item = ItemService.Instance.RollEquipment(MagicFind);
 
                 var package = new Package(null, item, 1u);
 
@@ -309,7 +315,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             for (var i = 0; i < 20; i++)
             {
-                var item = ItemProvider.Instance.RollConsumable();
+                var item = ItemService.Instance.RollConsumable(MagicFind);
 
                 var package = new Package(null, item, 1u);
 

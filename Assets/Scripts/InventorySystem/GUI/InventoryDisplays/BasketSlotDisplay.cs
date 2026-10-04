@@ -1,3 +1,4 @@
+using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
@@ -38,7 +39,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 gridLayout = GetComponentInParent<GridLayoutGroup>();
             if (gridLayout)
             {
-                var itemDimensions = ItemView.Of(package.Item).Dimensions;
+                var itemDimensions = ItemService.Instance.View(package.Item).Dimensions;
                 var additionalSpacing = gridLayout.spacing * new Vector2(itemDimensions.x - 1, itemDimensions.y - 1);
 
                 display.sizeDelta = gridLayout.cellSize * itemDimensions + additionalSpacing;

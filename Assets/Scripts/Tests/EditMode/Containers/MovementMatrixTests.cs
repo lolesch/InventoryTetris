@@ -31,8 +31,10 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         private const string PlateHelmId = "test.platehelm"; // a helm with a real 2x2 bag footprint
         private const string ArrowId = "test.arrow";
 
+        private static IItemCatalog catalog;
+
         [SetUp]
-        public void SetCatalog() => ItemView.Catalog = new TestCatalog()
+        public void SetCatalog() => catalog = new TestCatalog()
             .With(new TestDefinition { Id = SwordId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Sword, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
             .With(new TestDefinition { Id = GreatSwordId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.GreatSword, Footprint = ItemSize.TwoByOne, BaseStackLimit = 1u })
             .With(new TestDefinition { Id = ShieldId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Shield, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
@@ -42,7 +44,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             .With(new TestDefinition { Id = ArrowId, Category = ItemCategory.Consumable, ConsumableType = ConsumableType.Arrow, Footprint = ItemSize.OneByOne, BaseStackLimit = 20u });
 
         [TearDown]
-        public void ClearCatalog() => ItemView.Catalog = null;
+        public void ClearCatalog() => catalog = null;
 
         // ── fixtures ────────────────────────────────────────────────────────
 
@@ -57,8 +59,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         private static ItemInstance PlateHelm(float armor) => new(PlateHelmId, ItemRarity.Rare, 5, new[] { Affix(StatName.Armor, armor) });
         private static ItemInstance Arrows() => new(ArrowId, ItemRarity.Common, 1, null);
 
-        private static CharacterInventory Inventory(int width = 4, int height = 4) => new(new Vector2Int(width, height));
-        private static CharacterEquipment Equipment(IStatReceiver stats = null) => new(new Vector2Int(14, 1), stats);
+        private static CharacterInventory Inventory(int width = 4, int height = 4) => new(new Vector2Int(width, height), catalog);
+        private static CharacterEquipment Equipment(IStatReceiver stats = null) => new(new Vector2Int(14, 1), catalog, stats);
 
         private static Vector2Int SlotFor(EquipmentType type) => CharacterEquipment.GetTypeSpecificPositions(type).First();
 
@@ -782,7 +784,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var sink = new FakeCursorSink();
             var cursor = new CursorHolder(sink);
             var equipment = Equipment(stats);
-            var source = new CappedInventory(new Vector2Int(4, 1), acceptLimit: 0);
+            var source = new CappedInventory(new Vector2Int(4, 1), catalog, acceptLimit: 0);
 
             var weapon = new Package(source, Sword(6f), 1u);
             _ = equipment.TryAddToContainer(ref weapon);
@@ -936,7 +938,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
                 var sink = new FakeCursorSink();
                 var cursor = new CursorHolder(sink);
                 var equipment = Equipment(stats);
-                var inventory = new CharacterInventory(inventorySize);
+                var inventory = new CharacterInventory(inventorySize, catalog);
 
                 var weapon = new Package(inventory, Sword(6f), 1u);
                 _ = equipment.TryAddToContainer(ref weapon);
@@ -1063,7 +1065,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             // hover of a helm (or a sword, or any non-1x1 item) over its own empty slot
             // (issue #12). CanEquipAt must use the paper-doll's own 1-slot footprint.
             var bulkyHelm = PlateHelm(4f);
-            Assert.That(ItemView.Of(bulkyHelm).Dimensions, Is.EqualTo(new Vector2Int(2, 2)), "premise: the helm is 2x2 in the bag");
+            Assert.That(ItemView.Resolve(bulkyHelm, catalog).Dimensions, Is.EqualTo(new Vector2Int(2, 2)), "premise: the helm is 2x2 in the bag");
 
             Assert.That(equipment.CanEquipAt(helmSlot, bulkyHelm), Is.True, "helm over its own empty slot");
 
@@ -1107,7 +1109,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         [Test]
         public void Sort_WhenTheReAddedLayoutWillNotReFit_RollsBackRatherThanDroppingItems()
         {
-            var inventory = new CappedInventory(new Vector2Int(4, 4), acceptLimit: 2);
+            var inventory = new CappedInventory(new Vector2Int(4, 4), catalog, acceptLimit: 2);
 
             _ = inventory.AddAtPosition(new Vector2Int(0, 0), new Package(inventory, Helm(1f), 1u));
             _ = inventory.AddAtPosition(new Vector2Int(1, 0), new Package(inventory, Helm(2f), 1u));
@@ -1132,7 +1134,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             private readonly int acceptLimit;
             private int reAdds;
 
-            public CappedInventory(Vector2Int dimensions, int acceptLimit) : base(dimensions) => this.acceptLimit = acceptLimit;
+            public CappedInventory(Vector2Int dimensions, IItemCatalog catalog, int acceptLimit) : base(dimensions, catalog) => this.acceptLimit = acceptLimit;
 
             public override bool TryAddToContainer(ref Package package) =>
                 reAdds++ < acceptLimit && base.TryAddToContainer(ref package);

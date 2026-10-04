@@ -1,3 +1,4 @@
+using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Inventories;
@@ -99,7 +100,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             if (!TryBeginMove(out var position, out var package))
                 return;
 
-            if (ItemView.Of(package.Item).Definition.Category != ItemCategory.Equipment)
+            if (ItemService.Instance.View(package.Item).Definition.Category != ItemCategory.Equipment)
                 Debug.LogWarning("Something went wrong!");
 
             #region UNEQUIP ITEM
