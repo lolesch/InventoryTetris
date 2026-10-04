@@ -70,8 +70,9 @@ cannot be picked up from any shelf at all.
     undo a mistake.
 11. As a player, I want to switch between the Supply and the Sold tab with a toggle, so that I
     can look at either without opening anything else.
-12. As a player, I want the tab I last looked at to still be showing when I reopen the panel,
-    so that I am not reset every time I walk away.
+12. As a player, I want a panel to always reopen on the Supply tab, so that I know where I am
+    when I come back. (Amended 2026-10-05 after play-testing: the original story kept the tab I
+    last looked at.)
 13. As a player, I want the Vendor and the Healer to show the same Sold tab, so that an item I
     sold at either stop is still there when I change my mind at the other.
 14. As a player, I want to buy a sold item back with shift-click, so that undoing a mistake is
@@ -172,8 +173,9 @@ cannot be picked up from any shelf at all.
 - **Tabs are `PanelToggle`s in a group of their own.** Each selling panel has a Supply toggle
   and a Sold toggle in a `ToggleGroup` that forbids switch-off, so one tab is always showing. A
   tab toggle never requests an Inventory Context: it chooses a view inside a panel that is
-  already open, and must not be a `SidePanelToggle`. A tab keeps its selection across the panel
-  closing and reopening. A sale does not switch tabs.
+  already open, and must not be a `SidePanelToggle`. A panel returns to its Supply tab when it
+  closes, so it always reopens on the Supply (amended 2026-10-05; it first kept the selection). A
+  sale does not switch tabs.
 - **Restock clears the Sold tab.** Each Supply's Restock clears the Sold container at the same
   moment it refills, so the Vendor's Restock and the Healer's both empty it.
 - **Deleted outright:** the basket display and its slot display, the Confirm and Cancel
