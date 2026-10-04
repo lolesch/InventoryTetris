@@ -180,16 +180,9 @@ namespace ToolSmiths.InventorySystem.Inventories
             return true;
         }
 
-        private AbstractDimensionalContainer ContainerFor(ContainerRole role) => role switch
-        {
-            ContainerRole.Equipment => Equipment,
-            ContainerRole.Inventory => Inventory,
-            ContainerRole.Stash => Stash,
-            ContainerRole.Store => Store,
-            ContainerRole.HealerSupply => HealerSupply,
-            ContainerRole.Basket => Basket?.Container,
-            _ => null,
-        };
+        private AbstractDimensionalContainer ContainerFor(ContainerRole role) =>
+            ContainerRoleResolver.Resolve(role, equipment: Equipment, inventory: Inventory, stash: Stash,
+                store: Store, healerSupply: HealerSupply, basket: Basket?.Container, sold: Sold);
 
         /// <summary>
         /// Where a shift-click on <paramref name="source"/> should send its item, given the
@@ -299,7 +292,24 @@ namespace ToolSmiths.InventorySystem.Inventories
         public void ClearPlayerEquipment() => RemoveAllItems(Equipment);
         public void ClearPlayerInventory() => RemoveAllItems(Inventory);
         public void ClearPlayerStash() => RemoveAllItems(Stash);
+        /// <summary>Both Town Stops' Restock, run when a Run is Recalled: the Vendor's shelf, the
+        /// Healer's shelf and the Sold container, which is emptied once for both.</summary>
+        public void RestockTownStops()
+        {
+            RemoveAllItems(Sold);
+            FillStore();
+            FillHealerSupply();
+        }
+
+        /// <summary>A Supply's Restock clears the Sold container at the moment it refills (issue
+        /// #128): what was sold is stock like any other, so either Town Stop's Restock empties it.</summary>
         public void RestockStore()
+        {
+            RemoveAllItems(Sold);
+            FillStore();
+        }
+
+        private void FillStore()
         {
             RemoveAllItems(Store);
 
@@ -317,6 +327,12 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// <summary>The Healer Supply's Restock (issue #121): the same refill as
         /// <see cref="RestockStore"/>, from rolled consumables instead of equipment.</summary>
         public void RestockHealerSupply()
+        {
+            RemoveAllItems(Sold);
+            FillHealerSupply();
+        }
+
+        private void FillHealerSupply()
         {
             RemoveAllItems(HealerSupply);
 

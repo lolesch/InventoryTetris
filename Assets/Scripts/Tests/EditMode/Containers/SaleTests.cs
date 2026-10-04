@@ -137,22 +137,6 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             Assert.That(wallet.Balance.Total, Is.EqualTo(HelmValue));
         }
 
-        [Test]
-        public void SellAStack_SellsItWhole_AndPaysTheAmountTimesTheValue()
-        {
-            var inventory = Inventory();
-            var wallet = WalletOver(Inventory());
-            var sold = Sold();
-            var coins = Copper();
-            var cell = Put(inventory, coins, 7u);
-
-            Assert.That(Sale.TrySell(sold, wallet, inventory, cell), Is.True);
-
-            Assert.That(inventory.StoredPackages, Is.Empty, "the whole stack left");
-            Assert.That(CountOf(sold, coins), Is.EqualTo(7u), "all seven landed in Sold");
-            Assert.That(wallet.Balance.Total, Is.EqualTo(7u * Currency.ironToCopper), "seven times the value, banked once");
-        }
-
         // ── from the Equipment ──────────────────────────────────────────────
 
         [Test]
@@ -297,28 +281,6 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         }
 
         [Test]
-        public void ASaleMergingIntoAStack_TakesThatStacksNewestPosition()
-        {
-            var source = Inventory();
-            var wallet = WalletOver(Inventory());
-            var sold = Sold(2, 1);
-            var coins = Copper();
-            var sword = Sword();
-            var helm = Helm();
-            _ = Sale.TrySell(sold, wallet, source, Put(source, coins, 3u)); // oldest
-            _ = Sale.TrySell(sold, wallet, source, Put(source, sword));
-            var more = Copper();
-            _ = Sale.TrySell(sold, wallet, source, Put(source, more, 2u));  // merges: the pile is now the newest
-
-            Assert.That(Sale.TrySell(sold, wallet, source, Put(source, helm)), Is.True);
-
-            Assert.That(Holds(sold, sword), Is.False, "the sword is now the oldest, so it fell off");
-            Assert.That(sold.StoredPackages.Values.Where(p => p.Item.DefinitionId == CopperId).Sum(p => (int)p.Amount),
-                Is.EqualTo(5), "the merged pile (3 + 2) kept its place");
-            Assert.That(Holds(sold, helm), Is.True);
-        }
-
-        [Test]
         public void ASaleThatCanNeverFit_LeavesEveryContainerAndTheWalletUntouched()
         {
             var source = Inventory();
@@ -335,6 +297,114 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             Assert.That(Holds(source, wide), Is.True, "the greatsword stayed");
             Assert.That(Holds(sold, resident), Is.True, "and nothing was evicted for a sale that could not happen");
             Assert.That(wallet.Balance.Total, Is.EqualTo(balance));
+        }
+
+        // ── currency is not for sale ───────────────────────────────────────
+
+        [Test]
+        public void Currency_IsNeverSold_ByShiftClick()
+        {
+            var inventory = Inventory();
+            var wallet = WalletOver(Inventory());
+            var sold = Sold();
+            var coins = Copper();
+            var cell = Put(inventory, coins, 5u);
+
+            Assert.That(Sale.TrySell(sold, wallet, inventory, cell), Is.False);
+
+            Assert.That(CountOf(inventory, coins), Is.EqualTo(5u), "the coins stayed");
+            Assert.That(sold.StoredPackages, Is.Empty);
+            Assert.That(wallet.Balance.Total, Is.Zero, "nothing was paid for money");
+        }
+
+        [Test]
+        public void Currency_IsNeverSold_ByDrop()
+        {
+            var wallet = WalletOver(Inventory());
+            var sold = Sold();
+            var held = new Package(null, Copper(), 5u);
+
+            Assert.That(Sale.CanSellHeld(sold, wallet, held), Is.False, "so the drop target shows the forbidden tint");
+            Assert.That(Sale.TrySellHeld(sold, wallet, held), Is.False);
+
+            Assert.That(sold.StoredPackages, Is.Empty);
+            Assert.That(wallet.Balance.Total, Is.Zero);
+        }
+
+        // ── the Sold container stays old-to-young: compact, then add ───────
+
+        private static Vector2Int CellOf(AbstractDimensionalContainer container, ItemInstance item) =>
+            container.StoredPackages.First(entry => ReferenceEquals(entry.Value.Item, item)).Key;
+
+        [Test]
+        public void ASale_LandsAfterTheOlderOnes_NotInAGapAMissingItemLeft()
+        {
+            var source = Inventory();
+            var wallet = WalletOver(Inventory());
+            var sold = Sold(5, 1);
+            var a = Sword();
+            var b = Helm();
+            var c = Helm(armor: 5f);
+            var d = Helm(armor: 6f);
+            _ = Sale.TrySell(sold, wallet, source, Put(source, a));
+            _ = Sale.TrySell(sold, wallet, source, Put(source, b));
+            _ = Sale.TrySell(sold, wallet, source, Put(source, c));
+            var bCell = CellOf(sold, b);
+            _ = sold.RemoveAtPosition(bCell, sold.StoredPackages[bCell]); // bought back: a gap in the middle
+
+            Assert.That(Sale.TrySell(sold, wallet, source, Put(source, d)), Is.True);
+
+            var cellA = CellOf(sold, a);
+            var cellC = CellOf(sold, c);
+            var cellD = CellOf(sold, d);
+            Assert.That(cellA.x, Is.LessThan(cellC.x));
+            Assert.That(cellC.x, Is.LessThan(cellD.x), "the newest is last, not in the hole b left");
+            Assert.That(cellD.x - cellA.x, Is.EqualTo(2), "and the three sit together with no gap");
+        }
+
+        [Test]
+        public void AfterCompacting_TheOldestIsStillTheOneThatFallsOff()
+        {
+            var source = Inventory();
+            var wallet = WalletOver(Inventory());
+            var sold = Sold(3, 1);
+            var a = Sword();
+            var b = Helm();
+            var c = Helm(armor: 5f);
+            var d = Helm(armor: 6f);
+            _ = Sale.TrySell(sold, wallet, source, Put(source, a));
+            _ = Sale.TrySell(sold, wallet, source, Put(source, b));
+            _ = Sale.TrySell(sold, wallet, source, Put(source, c));
+            var bCell = CellOf(sold, b);
+            _ = sold.RemoveAtPosition(bCell, sold.StoredPackages[bCell]);
+            _ = Sale.TrySell(sold, wallet, source, Put(source, d)); // fills the grid again: a, c, d
+
+            var e = Helm(armor: 7f);
+            Assert.That(Sale.TrySell(sold, wallet, source, Put(source, e)), Is.True);
+
+            Assert.That(Holds(sold, a), Is.False, "a was the oldest");
+            Assert.That(Holds(sold, c) && Holds(sold, d) && Holds(sold, e), Is.True);
+        }
+
+        [Test]
+        public void ARefusedSale_DoesNotReshuffleTheSoldContainer()
+        {
+            var source = Inventory();
+            var wallet = WalletOver(Inventory());
+            var sold = Sold(5, 1);
+            var a = Sword();
+            var b = Helm();
+            var c = Helm(armor: 5f);
+            _ = Sale.TrySell(sold, wallet, source, Put(source, a));
+            _ = Sale.TrySell(sold, wallet, source, Put(source, b));
+            _ = Sale.TrySell(sold, wallet, source, Put(source, c));
+            var bCell = CellOf(sold, b);
+            _ = sold.RemoveAtPosition(bCell, sold.StoredPackages[bCell]);
+            var cellC = CellOf(sold, c);
+
+            Assert.That(Sale.TrySell(sold, wallet, source, Put(source, Worthless())), Is.False);
+
+            Assert.That(CellOf(sold, c), Is.EqualTo(cellC), "a sale that pays nothing moved nothing, the gap included");
         }
 
         // ── a Package that carries a price is never a sale ─────────────────
@@ -363,6 +433,66 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 
             Assert.That(Holds(sold, sword), Is.True);
             Assert.That(wallet.Balance.Total, Is.EqualTo(SwordValue));
+        }
+
+        // ── the drop sale: the forbidden tint asks before release, the drop does it ──
+
+        [Test]
+        public void CanSellHeld_IsTrue_ForAPlayerPackageThatPaysAndFits()
+        {
+            var wallet = WalletOver(Inventory());
+
+            Assert.That(Sale.CanSellHeld(Sold(), wallet, new Package(null, Sword(), 1u)), Is.True);
+        }
+
+        [Test]
+        public void CanSellHeld_IsFalse_ForAPurchaseInProgress()
+        {
+            var wallet = WalletOver(Inventory());
+
+            Assert.That(Sale.CanSellHeld(Sold(), wallet, new Package(null, Sword(), 1u), carriedPrice: 315f), Is.False);
+        }
+
+        [Test]
+        public void CanSellHeld_IsFalse_WhenThePayoutIsZero()
+        {
+            var wallet = WalletOver(Inventory());
+
+            Assert.That(Sale.CanSellHeld(Sold(), wallet, new Package(null, Worthless(), 1u)), Is.False);
+        }
+
+        [Test]
+        public void CanSellHeld_IsFalse_WhenThePayoutWouldNotFit()
+        {
+            var wallet = WalletOver(Inventory(1, 1));
+            SeedCash(wallet, CurrencyType.Gold, 1u); // no free cell, no copper/silver pile to merge into
+
+            Assert.That(Sale.CanSellHeld(Sold(), wallet, new Package(null, Helm(), 1u)), Is.False);
+        }
+
+        [Test]
+        public void CanSellHeld_IsFalse_ForNothingInHand_OrNoSoldContainer()
+        {
+            var wallet = WalletOver(Inventory());
+
+            Assert.That(Sale.CanSellHeld(Sold(), wallet, default), Is.False);
+            Assert.That(Sale.CanSellHeld(null, wallet, new Package(null, Sword(), 1u)), Is.False);
+        }
+
+        [Test]
+        public void CanSellHeld_AgreesWithTrySellHeld()
+        {
+            var sword = new Package(null, Sword(), 1u);
+            var worthless = new Package(null, Worthless(), 1u);
+
+            foreach (var held in new[] { sword, worthless })
+            {
+                var wallet = WalletOver(Inventory());
+                var sold = Sold();
+                var asked = Sale.CanSellHeld(sold, wallet, held);
+
+                Assert.That(Sale.TrySellHeld(sold, wallet, held), Is.EqualTo(asked));
+            }
         }
 
         // ── guards ─────────────────────────────────────────────────────────

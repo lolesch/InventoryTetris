@@ -86,7 +86,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         public void OnPointerClick(PointerEventData eventData)
         {
             if (DragProvider.Instance.IsDragging)
-                DropItem(DragProvider.Instance.DraggingPackage);
+                Drop();
             else if (eventData.button != PointerEventData.InputButton.Right && Input.GetKey(KeyCode.LeftShift) && TryQuickMove())
                 return;
             else
@@ -123,6 +123,13 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
             switch (intent.Kind)
             {
+                case QuickMoveIntentKind.Sell:
+                    /// The shift-click sale (#128): one transaction over this slot's container,
+                    /// the Sold container and the Wallet. A sale that cannot pay out is a
+                    /// silent no-op, the click absorbed like any other quick-move.
+                    _ = Sale.TrySell(InventoryProvider.Instance.Sold, InventoryProvider.Instance.Wallet, Container, position);
+                    return true;
+
                 case QuickMoveIntentKind.SellBasket:
                     /// One transaction over the source and the basket: the item leaves this
                     /// slot and lands in the basket with its origin remembered; a full
@@ -282,7 +289,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         public void OnBeginDrag(PointerEventData eventData)
         {
             if (DragProvider.Instance.IsDragging)
-                DropItem(DragProvider.Instance.DraggingPackage);
+                Drop();
             else
                 MoveItem(eventData, pressPosition);
         }
@@ -292,7 +299,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         public void OnEndDrag(PointerEventData eventData) { }
 
-        public void OnDrop(PointerEventData eventData) => DropItem(DragProvider.Instance.DraggingPackage);
+        public void OnDrop(PointerEventData eventData) => Drop();
 
         /// <summary>
         /// Right-click and drag-pickup, the two behaviors that genuinely differ per
@@ -420,6 +427,52 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         protected abstract void DropItem(Package package);
 
         /// <summary>
+        /// Every drop enters here, before the display's own <see cref="DropItem"/>. A purchase in
+        /// progress - lifted off a Supply or the Sold tab, not yet paid for - only ever lands in
+        /// the Hero's bag or on the Equipment (issue #129 follow-up): released anywhere else, on
+        /// the Stash, another shelf, the world, it is cancelled and goes back where it came from,
+        /// free. It is never destroyed and never charged for a place it does not belong.
+        /// </summary>
+        private void Drop()
+        {
+            var drag = DragProvider.Instance;
+
+            if (!drag.MayLandIn(Container))
+            {
+                _ = CancelHeldDrag();
+                return;
+            }
+
+            DropItem(drag.DraggingPackage);
+        }
+
+        /// <summary>
+        /// Ends the drag by sending the held Package back to where the drag started
+        /// (<see cref="DragProvider.CancelDrag"/>), and repaints both ends. The one statement of
+        /// "this drop is turned away": a purchase released somewhere it cannot land, and a sale
+        /// the Sold container refused.
+        /// </summary>
+        /// <returns>Whether the item went back. False when neither its origin nor the bag had
+        /// room: it stays in hand, and the player is told so rather than left guessing.</returns>
+        protected bool CancelHeldDrag()
+        {
+            var drag = DragProvider.Instance;
+
+            var sentBack = drag.CancelDrag();
+
+            if (!sentBack)
+                Debug.LogWarning("Nothing had room for the item, so it stays in hand.");
+
+            Container?.InvokeRefresh();
+            drag.Origin?.Container?.InvokeRefresh();
+
+            if (Container != null)
+                SyncPreviewAfterMove();
+
+            return sentBack;
+        }
+
+        /// <summary>
         /// Whether <see cref="DropItem"/> would place <paramref name="package"/> if the
         /// player released it over this slot now - the exact predicate the drag display's
         /// red "can't drop" tint shows, so the warning and the drop can never disagree
@@ -432,6 +485,10 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         public virtual bool WouldAcceptDrop(Package package)
         {
             if (!package.IsValid)
+                return false;
+
+            // A purchase that cannot land here is cancelled on release, so it shows the same red.
+            if (!DragProvider.Instance.MayLandIn(Container))
                 return false;
 
             if (Container == null)

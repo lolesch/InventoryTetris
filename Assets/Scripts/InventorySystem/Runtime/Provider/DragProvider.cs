@@ -56,6 +56,21 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         /// </summary>
         public float? PurchasePrice { get; private set; }
 
+        /// <summary>Whether the held Package is a purchase in progress - lifted off a shelf and not
+        /// yet paid for. A drop target asks this before it treats the Package as the player's own:
+        /// a purchase is never a sale (issue #129), it returns to its origin free.</summary>
+        public bool IsHoldingPurchase => PurchasePrice != null;
+
+        /// <summary>Whether the held item may land in <paramref name="target"/>: a purchase only in
+        /// the Hero's bag or on the Equipment, anything else unrestricted. The one question the
+        /// drop and the drop tint both ask (<see cref="PurchaseDrop.MayLandIn"/>).</summary>
+        public bool MayLandIn(AbstractDimensionalContainer target)
+        {
+            var inventory = InventoryProvider.Instance;
+
+            return PurchaseDrop.MayLandIn(IsHoldingPurchase, target, inventory.Inventory, inventory.Equipment);
+        }
+
         /// <summary>
         /// Where <see cref="CancelDrag"/> returns the package currently in hand -
         /// <see cref="Origin"/>'s container and cell at pick-up, or the real container and
@@ -323,9 +338,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             if (!IsDragging || !DraggingPackage.IsValid)
                 return false;
 
-            var backpack = InventoryProvider.Instance.Inventory;
+            var fallback = PurchaseDrop.FallbackFor(IsHoldingPurchase, ReturnOrigin.Container, InventoryProvider.Instance.Inventory);
 
-            var leftOnCursor = ReturnToOrigin.Return(DraggingPackage, ReturnOrigin.Container, ReturnOrigin.Cell, backpack);
+            var leftOnCursor = ReturnToOrigin.Return(DraggingPackage, ReturnOrigin.Container, ReturnOrigin.Cell, fallback);
 
             if (leftOnCursor.IsValid)
                 return false;

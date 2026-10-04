@@ -91,15 +91,15 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.None));
         }
 
-        // ── Healer open: the same Sell Basket rows as the Vendor's (issue #121) ──
+        // ── Healer open: the same sale row as the Vendor's (issues #121, #128) ──
 
         [TestCase(nameof(backpack))]
         [TestCase(nameof(equipment))]
-        public void HealerContext_BackpackAndEquipment_SendTheItemToTheSellBasket(string sourceName)
+        public void HealerContext_BackpackAndEquipment_SellTheItem(string sourceName)
         {
             var intent = Resolve(InventoryContext.Healer, SourceOf(sourceName), backpack, stash, equipment, store, basket);
 
-            Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.SellBasket));
+            Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.Sell));
         }
 
         [Test]
@@ -132,22 +132,22 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.None));
         }
 
-        // ── Vendor open: shift-click sells into the Sell Basket (#33) ──
+        // ── Vendor open: shift-click sells through the Sale (#128, replacing #33's staging) ──
 
         [Test]
-        public void VendorContext_Backpack_SendsTheItemToTheSellBasket()
+        public void VendorContext_Backpack_SellsTheItem()
         {
             var intent = Resolve(InventoryContext.Vendor, backpack, backpack, stash, equipment, store, basket);
 
-            Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.SellBasket));
+            Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.Sell));
         }
 
         [Test]
-        public void VendorContext_Equipment_SendsTheItemToTheSellBasket()
+        public void VendorContext_Equipment_SellsTheItem()
         {
             var intent = Resolve(InventoryContext.Vendor, equipment, backpack, stash, equipment, store, basket);
 
-            Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.SellBasket));
+            Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.Sell));
         }
 
         [Test]

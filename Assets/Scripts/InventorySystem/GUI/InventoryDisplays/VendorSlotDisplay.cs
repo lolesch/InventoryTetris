@@ -139,22 +139,47 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         }
 
         /// <summary>
-        /// The shelf only accepts its own item back (a free return to the cell it came from,
-        /// issue #31). A player Package dropped here is no longer a sale - the Sell Basket
-        /// (#32) is the only way to sell, so a non-shelf drop is turned away rather than
-        /// banked.
+        /// A Supply slot is a drop target that sells (issue #129), and the Sold tab's slots are the
+        /// same slots. It accepts a purchase in progress - from any shelf - as a free return to
+        /// its origin, never a sale: nobody is paid for something not yet owned. It accepts a
+        /// player-owned Package as a sale, and refuses it, which shows the forbidden tint, when
+        /// the payout would not fit or would be 0, or the item is currency
+        /// (<see cref="Sale.CanSellHeld"/>); releasing on that tint sends the item back to its
+        /// origin.
         /// </summary>
-        public override bool WouldAcceptDrop(Package package) => package.IsValid && package.Sender == Container;
+        public override bool WouldAcceptDrop(Package package)
+        {
+            if (!package.IsValid)
+                return false;
+
+            if (DragProvider.Instance.IsHoldingPurchase)
+                return true;
+
+            var provider = InventoryProvider.Instance;
+
+            return Sale.CanSellHeld(provider.Sold, provider.Wallet, package);
+        }
 
         protected override void DropItem(Package package)
         {
-            if (!package.IsValid || package.Sender != Container)
+            if (!package.IsValid)
                 return;
 
-            /// The shelf's own item coming back is a return to origin, not a sale (issue #31):
-            /// put it straight back on the cell it came from, charge nothing. Any other
-            /// drop belongs to the Sell Basket (#32) - this shelf never sells.
-            _ = DragProvider.Instance.CancelDrag();
+            var provider = InventoryProvider.Instance;
+
+            /// A purchase in progress never reaches here: AbstractSlotDisplay.Drop sends it back
+            /// to its origin free (issues #31, #129), on this shelf or any other place that is not
+            /// the Hero's bag or equipment. What arrives is a player-owned Package, and it is a
+            /// sale: the one Sale statement, over the Sold container and the Wallet - the source
+            /// was vacated at pick-up. A sale that cannot pay out is turned away like any refused
+            /// drop: the item goes back where it came from, not under the cursor.
+            if (!Sale.TrySellHeld(provider.Sold, provider.Wallet, package))
+            {
+                _ = CancelHeldDrag();
+                return;
+            }
+
+            DragProvider.Instance.EndDrag();
 
             Container?.InvokeRefresh();
             DragProvider.Instance.Origin?.Container?.InvokeRefresh();

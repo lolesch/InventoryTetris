@@ -1,4 +1,6 @@
 using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Data.Enums;
+using ToolSmiths.InventorySystem.Items;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Inventories
@@ -14,12 +16,15 @@ namespace ToolSmiths.InventorySystem.Inventories
     /// <para>A sale either wholly happens or leaves every container and the Wallet untouched:
     /// a 0 payout, a payout the Wallet cannot bank (checked with <see cref="Wallet.CanDeposit"/>
     /// before the deposit is queued, the same check-then-queue order a purchase follows), a
-    /// Package too big for the Sold container even when empty. A full Sold container never
+    /// Package too big for the Sold container even when empty, and currency, which is never for
+    /// sale: it has a face value and the Wallet already holds it. A full Sold container never
     /// refuses a sale that can pay out; it discards its oldest instead
     /// (<see cref="SoldContainer.TryPlaceEvicting"/>).</para>
     ///
-    /// <para>It replaces the staged <see cref="SellBasket"/> and lands beside it until the
-    /// basket is removed; nothing in the GUI calls it yet.</para>
+    /// <para>It replaces the staged <see cref="SellBasket"/>, which stays in the code until the
+    /// staged sale code is deleted. The shift-click sink calls <see cref="TrySell"/> (issue #128);
+    /// the drop sale, <see cref="TrySellHeld"/>, is called by a Supply slot's drop (issue #129),
+    /// which asks <see cref="CanSellHeld"/> first for the forbidden tint.</para>
     /// </summary>
     public static class Sale
     {
@@ -62,22 +67,52 @@ namespace ToolSmiths.InventorySystem.Inventories
         }
 
         /// <summary>
+        /// Whether <see cref="TrySellHeld"/> would take <paramref name="held"/> - the drop target's
+        /// own answer, asked before release so it can show the forbidden tint, and by the drop
+        /// itself. Reads, never mutates. False for a purchase in progress, a payout of 0 and a
+        /// payout the Wallet cannot bank; the same refusals the sale makes.
+        /// </summary>
+        public static bool CanSellHeld(SoldContainer sold, Wallet wallet, Package held, float? carriedPrice = null)
+        {
+            if (carriedPrice != null || sold == null || wallet == null || !held.IsValid)
+                return false;
+
+            var view = sold.ViewOf(held.Item);
+
+            if (IsCurrency(view))
+                return false;
+
+            var payout = PayoutOf(view, held);
+
+            return 0u != payout.Total && wallet.CanDeposit(payout);
+        }
+
+        private static bool IsCurrency(ItemView view) => view.Definition.Category == ItemCategory.Currency;
+
+        private static Currency PayoutOf(ItemView view, Package package) => new(view.SellValue * package.Amount);
+
+        /// <summary>
         /// The tail both entries share, with <paramref name="package"/> already off its source
         /// on <paramref name="transaction"/>'s working copies. A false return leaves the
         /// transaction uncommitted, so disposing it restores everything.
         /// </summary>
         private static bool Complete(ItemTransaction transaction, SoldContainer sold, Wallet wallet, Package package)
         {
-            var payout = new Currency(sold.ViewOf(package.Item).SellValue * package.Amount);
+            var view = sold.ViewOf(package.Item);
+
+            if (IsCurrency(view))
+                return false;
+
+            var payout = PayoutOf(view, package);
 
             if (0u == payout.Total || !wallet.CanDeposit(payout))
                 return false;
 
-            if (!sold.TryPlaceEvicting(package, out var landed))
+            if (!sold.TryPlaceEvicting(package, out var landed, out var order))
                 return false;
 
             transaction.QueueEffect(() => wallet.Deposit(payout));
-            transaction.QueueEffect(() => sold.NoteSold(landed));
+            transaction.QueueEffect(() => sold.NoteSold(order, landed));
 
             transaction.Commit();
             return true;
