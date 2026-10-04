@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using ToolSmiths.InventorySystem.Data;
+﻿using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using Submodules.Utility.Extensions;
 using ToolSmiths.InventorySystem.Utility.Extensions;
@@ -8,6 +6,14 @@ using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Runtime.Character
 {
+    /// <summary>
+    /// The scene face of a <see cref="Hero"/>: the component the scene's displays and the
+    /// simulation hold, forwarding everything to the plain hero it owns. The stats, regeneration,
+    /// damage and XP live on the <see cref="Hero"/> (issue #110); what stays here is what needs a
+    /// <see cref="MonoBehaviour"/> - the death and depletion reactions, and the log lines that name
+    /// the object they came from. A subclass builds its hero once, on first ask, so it exists
+    /// whichever component's <c>Awake</c> or <c>OnEnable</c> reaches it first.
+    /// </summary>
     public abstract class BaseCharacter : MonoBehaviour
     {
         /// ADVANCED DAMAGE CONCEPT:
@@ -15,47 +21,34 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         // validate all BaseCharacters within that area as targets (Faction)
         // the area deals damage to all targets over its lifespan
 
-        [field: SerializeField] public bool IsInvincible { get; protected set; } = false;
-        [field: SerializeField] public bool IsBlocking { get; protected set; } = false;
-        [field: SerializeField] public bool SpendResource { get; set; } = true;
-        public bool IsDead => this.GetResource(StatName.Health).IsDepleted;
+        private Hero _hero;
 
-        [field: SerializeField] public CharacterStat[] CharacterStats { get; protected set; }
-        [field: SerializeField] public CharacterResource[] CharacterResources { get; protected set; }
+        public Hero Hero => _hero ??= BuildHero();
 
-        [field: SerializeField, Range(1, 100)] public uint CharacterLevel { get; protected set; } = 1;
+        protected abstract Hero BuildHero();
 
-        protected void OnValidate() => ResetStatsAndResources();
+        public bool IsInvincible => Hero.IsInvincible;
+        public bool IsBlocking => Hero.IsBlocking;
+        public bool SpendResource { get => Hero.SpendResource; set => Hero.SpendResource = value; }
+        public bool IsDead => Hero.IsDead;
+
+        public uint CharacterLevel => Hero.Level;
 
         protected void Start()
         {
-            var health = this.GetResource(StatName.Health);
+            var health = Hero.GetResource(StatName.Health);
             health.CurrentHasDepleted -= OnDeath;
             health.CurrentHasDepleted += OnDeath;
-            health.RefillCurrent();
 
-            var resource = this.GetResource(StatName.Resource);
+            var resource = Hero.GetResource(StatName.Resource);
             resource.CurrentHasDepleted -= CharacterResourceWarning;
             resource.CurrentHasDepleted += CharacterResourceWarning;
-            resource.RefillCurrent();
 
-            this.GetResource(StatName.Shield).RefillCurrent();
+            Hero.DamageDealt -= LogDamageDealt;
+            Hero.DamageDealt += LogDamageDealt;
 
-            //TODO: design Experience
-            this.GetResource(StatName.Experience).DepleteCurrent();
-
-            void CharacterResourceWarning() => Debug.LogWarning($"{name.ColoredComponent()} resource {"depleted".Colored(Color.red)}", this);
-        }
-
-        // Seconds each resource has been empty, tracked across calls so Regenerate stays
-        // a pure function of elapsed time - see ResourceRegen.Step.
-        private float healthSecondsEmpty;
-        private float resourceSecondsEmpty;
-        private float shieldSecondsEmpty;
-
-        protected void Update()
-        {
-            // Regeneration is driven by the SimulationDriver at sim speed (issue #45).
+            Hero.DamageReceived -= LogDamageReceived;
+            Hero.DamageReceived += LogDamageReceived;
         }
 
         /// <summary>
@@ -64,115 +57,33 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         /// <see cref="Simulation.SimulationDriver"/> at sim speed, in both Town and Field
         /// (issue #45). Dead heroes do not regenerate.
         /// </summary>
-        public void Regenerate(float deltaSeconds)
-        {
-            healthSecondsEmpty = ResourceRegen.Step(
-                this.GetResource(StatName.Health),
-                this.GetStat(StatName.HealthRegeneration).TotalValue,
-                recoveryDelay: -1f, healthSecondsEmpty, deltaSeconds);
-
-            resourceSecondsEmpty = ResourceRegen.Step(
-                this.GetResource(StatName.Resource),
-                this.GetStat(StatName.ResourceRegeneration).TotalValue,
-                recoveryDelay: 0f, resourceSecondsEmpty, deltaSeconds);
-
-            //TODO: design Shield recharge
-            shieldSecondsEmpty = ResourceRegen.Step(
-                this.GetResource(StatName.Shield),
-                this.GetStat(StatName.HealthRegeneration).TotalValue,
-                recoveryDelay: 2f, shieldSecondsEmpty, deltaSeconds);
-        }
-
-        [ContextMenu("ResetStatsAndResources")]
-        private void ResetStatsAndResources()
-        {
-            var resourcesOnly = new StatName[] { StatName.Health, StatName.Resource, StatName.Shield, StatName.Experience };
-
-            var statNames = Enum.GetValues(typeof(StatName)) as StatName[];
-            var statsOnly = statNames.ToList();
-
-            foreach (var resource in resourcesOnly)
-                statsOnly.Remove(resource);
-
-            if (CharacterStats.Length != statsOnly.Count)
-            {
-                CharacterStats = new CharacterStat[statsOnly.Count];
-
-                for (var i = 0; i < statsOnly.Count; i++)
-                    CharacterStats[i] = new CharacterStat(statsOnly[i], 1);
-            }
-
-            if (CharacterResources.Length != resourcesOnly.Length)
-            {
-                CharacterResources = new CharacterResource[] {
-                    new CharacterResource(StatName.Health, 100),
-                    new CharacterResource(StatName.Resource, 60),
-                    new CharacterResource(StatName.Shield, 0),
-                    new CharacterResource(StatName.Experience, 280),
-                };
-            }
-        }
+        public void Regenerate(float deltaSeconds) => Hero.Regenerate(deltaSeconds);
 
         protected abstract void OnDeath();
 
-        public void DealDamageTo(BaseCharacter target, DamageType damageType)
-        {
-            if (IsDead)
-                return;
-
-            var resourceCost = this.CalculateRequiredResource(damageType);
-            var resource = this.GetResource(StatName.Resource);
-
-            // TODO: if Shield protects resource
-            //var shield = GetResource(this, StatName.Shield);
-
-            //resourceCost = shield.RemoveFromCurrent(resourceCost);
-
-            if (resourceCost == 0 || CanSpendResource(resource, resourceCost))
-            {
-                resource.RemoveFromCurrent(resourceCost);
-
-                var damageOutput = this.CalculateDamageOutput(damageType);
-
-                Debug.Log($"{name.ColoredComponent()} deals {damageOutput.ToString().Colored(Color.red)} {damageType}", this);
-                target.ReceiveDamageFrom(this, damageType, damageOutput);
-            }
-
-            //AddDealtDPS(damageOutput);
-        }
-
-        private static bool CanSpendResource(CharacterResource resource, float amount) => amount <= resource.CurrentValue;
+        public void DealDamageTo(BaseCharacter target, DamageType damageType) => Hero.DealDamageTo(target.Hero, damageType);
 
         public void ReceiveDamageFrom(BaseCharacter dealer, DamageType damageType, float incomingDamage) =>
             ReceiveDamage(damageType, incomingDamage);
 
         /// <summary>
         /// The dealer-less incoming-damage path: mitigate by the matching resist, spend the
-        /// Shield, then the Health — identical to <see cref="ReceiveDamageFrom"/> minus the
+        /// Shield, then the Health - identical to <see cref="ReceiveDamageFrom"/> minus the
         /// (unused) dealer reference. The Encounter sim's enemies are not <see cref="BaseCharacter"/>s,
         /// so the hero adapter (issue #43) routes their Strikes through here.
         /// </summary>
-        public void ReceiveDamage(DamageType damageType, float incomingDamage)
+        public void ReceiveDamage(DamageType damageType, float incomingDamage) => Hero.ReceiveDamage(damageType, incomingDamage);
+
+        private void CharacterResourceWarning() => Debug.LogWarning($"{name.ColoredComponent()} resource {"depleted".Colored(Color.red)}", this);
+
+        private void LogDamageDealt(DamageType damageType, float damageOutput) =>
+            Debug.Log($"{name.ColoredComponent()} deals {damageOutput.ToString().Colored(Color.red)} {damageType}", this);
+
+        private void LogDamageReceived(DamageType damageType, float absorbed, float received)
         {
-            var health = this.GetResource(StatName.Health);
+            Debug.Log($"{name.ColoredComponent()} absorbs {absorbed.ToString().Colored(Color.red)} {damageType}", this);
 
-            if (health.IsDepleted)
-                return;
-
-            var mitigatedDamage = this.CalculateReceivingDamage(damageType, incomingDamage);
-
-            // TODO: if Shield protects resource instead => then skip shielding
-            var shield = this.GetResource(StatName.Shield);
-
-            var unshieldedDamage = shield.RemoveFromCurrent(mitigatedDamage);
-
-            Debug.Log($"{name.ColoredComponent()} absorbs {Mathf.Min(mitigatedDamage - unshieldedDamage, shield.TotalValue).ToString().Colored(Color.red)} {damageType}", this);
-
-            Debug.Log($"{name.ColoredComponent()} receives {Mathf.Min(unshieldedDamage, health.TotalValue).ToString().Colored(Color.red)} {damageType}", this);
-
-            health.RemoveFromCurrent(unshieldedDamage);
-
-            //AddReceivedDPS(healthDamage);
+            Debug.Log($"{name.ColoredComponent()} receives {received.ToString().Colored(Color.red)} {damageType}", this);
         }
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using ToolSmiths.InventorySystem.Data;
@@ -7,13 +8,21 @@ using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
 using Submodules.Utility.Extensions;
 using Submodules.Utility.Tools;
-using ToolSmiths.InventorySystem.Utility.Extensions;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Runtime.Character
 {
+    /// <summary>
+    /// The scene's hero: a thin wrapper over a <see cref="Hero"/> built from <see cref="HeroData"/>
+    /// (issue #110). Every behaviour - stats, XP, damage, regeneration, the item stats - is the
+    /// hero's; this keeps what is not yet: the stat display pool (until the stat panel binds to the
+    /// hero) and the pick-up, which reaches the containers through <c>InventoryProvider</c> until
+    /// the Hero and the World are built in order.
+    /// </summary>
     public sealed class LocalPlayer : BaseCharacter, IStatReceiver, IItemReceiver
     {
+        [SerializeField, Tooltip("The template the hero is built from.")] private HeroData data;
+
         //TODO: make the displayLogic its own component and design its layout individually and not via a pool
         [SerializeField] private CharacterStatDisplay characterStatPrefab;
         [SerializeField] private PrefabPool<CharacterStatDisplay> characterStatPool;
@@ -21,11 +30,15 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         // TODO: ATTRIBUTES and DERIVED STATS => define and calculate derived values => see Bone&Blood
         private void Awake() => characterStatPool = new(characterStatPrefab);
 
+        protected override Hero BuildHero() =>
+            // Unity's lifetime-aware == : a template that was never assigned.
+            data != null ? new Hero(data) : throw new InvalidOperationException($"{name} has no HeroData assigned.");
+
+        private IEnumerable<CharacterStat> StatsAndResources => Hero.Resources.Cast<CharacterStat>().Union(Hero.Stats);
+
         private void OnEnable()
         {
-            var statsAndResources = CharacterResources.Union(CharacterStats).ToArray();
-
-            foreach (var stat in statsAndResources)
+            foreach (var stat in StatsAndResources)
             {
                 stat.TotalHasChanged -= UpdateStatDisplays;
                 stat.TotalHasChanged += UpdateStatDisplays;
@@ -36,19 +49,15 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
         private void OnDisable()
         {
-            var statsAndResources = CharacterResources.Union(CharacterStats).ToArray();
-
-            foreach (var stat in statsAndResources)
+            foreach (var stat in StatsAndResources)
                 stat.TotalHasChanged -= UpdateStatDisplays;
         }
 
         private void UpdateStatDisplays(float debug = 0)
         {
-            var statsAndResources = CharacterResources.Union(CharacterStats).ToArray();
-
             characterStatPool.ReleaseAll();
 
-            foreach (var stat in statsAndResources)
+            foreach (var stat in StatsAndResources)
             {
                 //TODO: extend prefabPool to support IDisplay<T> that update the Refresh(newData) before activating the object
 
@@ -62,86 +71,18 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
         protected override void OnDeath() => Debug.LogWarning($"{name.ColoredComponent()} {"DIED!".Colored(Color.red)}", this);
 
-        public void GainExperience(float exp, uint monsterLevel)
-        {
-            if (this.GetResource(StatName.Health).IsDepleted)
-                return;
-
-            //TODO: design exp gain 
-            var levelDifference = monsterLevel - CharacterLevel;
-            var levelBalanceExp = exp * (1f + levelDifference / 100f);
-            var experience = this.GetResource(StatName.Experience);
-
-            while (0 < levelBalanceExp)
-            {
-                levelBalanceExp = experience.AddToCurrent(levelBalanceExp);
-
-                if (experience.IsFull)
-                {
-                    CharacterLevel++;
-
-                    var statMod = new StatModifier(new Vector2Int(0, int.MaxValue), CharacterLevel * 100 + 80);
-
-                    experience.AddModifier(statMod);
-                    experience.DepleteCurrent();
-
-                    CharacterProvider.Instance.HealPlayer();
-                }
-            }
-        }
+        public void GainExperience(float exp, uint monsterLevel) => Hero.GainExperience(exp, monsterLevel);
 
         public void AddItemStats(IReadOnlyList<CharacterStatModifier> stats)
         {
-            var resources = new StatName[] { StatName.Health, StatName.Resource, StatName.Shield, StatName.Experience };
-
-            foreach (var itemStat in stats)
-                if (resources.Contains(itemStat.Stat))
-                {
-                    for (var i = 0; i < CharacterResources.Length; i++)
-                        if (CharacterResources[i].Stat == itemStat.Stat)
-                        {
-                            CharacterResources[i].AddModifier(itemStat.Modifier);
-                            break;
-                        }
-                }
-                else
-                    for (var i = 0; i < CharacterStats.Length; i++)
-                        if (CharacterStats[i].Stat == itemStat.Stat)
-                        {
-                            CharacterStats[i].AddModifier(itemStat.Modifier);
-                            break;
-                        }
+            Hero.AddItemStats(stats);
 
             UpdateStatDisplays();
         }
 
         public void RemoveItemStats(IReadOnlyList<CharacterStatModifier> stats)
         {
-            var resources = new StatName[] { StatName.Health, StatName.Resource, StatName.Shield, StatName.Experience };
-            foreach (var itemStat in stats)
-            {
-                var couldRemove = false;
-
-                if (resources.Contains(itemStat.Stat))
-                {
-                    for (var i = CharacterResources.Length; i-- > 0;)
-                        if (CharacterResources[i].Stat == itemStat.Stat)
-                        {
-                            couldRemove = CharacterResources[i].TryRemoveModifier(itemStat.Modifier);
-                            break;
-                        }
-                }
-                else
-                    for (var i = CharacterStats.Length; i-- > 0;)
-                        if (CharacterStats[i].Stat == itemStat.Stat)
-                        {
-                            couldRemove = CharacterStats[i].TryRemoveModifier(itemStat.Modifier);
-                            break;
-                        }
-
-                if (!couldRemove)
-                    Debug.LogWarning($"could not remove {itemStat.Stat} modifier {itemStat.Modifier}!");
-            }
+            Hero.RemoveItemStats(stats);
 
             UpdateStatDisplays();
         }
@@ -183,21 +124,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         private static bool TryAcquire(ref Package package) =>
             ItemAcquisition.TryPlace(ref package, InventoryProvider.Instance.Equipment, InventoryProvider.Instance.Inventory);
 
-        public float CompareStatModifiers(CharacterStatModifier playerStatModifier, StatModifier other) => CompareStatModifiers(playerStatModifier.Stat, playerStatModifier.Modifier, other);
-        public float CompareStatModifiers(StatName stat, StatModifier current, StatModifier other)
-        {
-            var currentStat = this.GetStat(stat);
-            var clonedStat = currentStat.GetDeepCopy();
-            var clonedStat2 = currentStat.GetDeepCopy();
-
-            if (clonedStat.TryRemoveModifier(current))
-                clonedStat.AddModifier(other);
-
-            if (clonedStat2.TryRemoveModifier(other))
-                clonedStat2.AddModifier(current);
-
-            return clonedStat2.TotalValue - clonedStat.TotalValue;
-            //return currentStat.TotalValue - clonedStat.TotalValue;
-        }
+        public float CompareStatModifiers(CharacterStatModifier playerStatModifier, StatModifier other) => Hero.CompareStatModifiers(playerStatModifier, other);
+        public float CompareStatModifiers(StatName stat, StatModifier current, StatModifier other) => Hero.CompareStatModifiers(stat, current, other);
     }
 }

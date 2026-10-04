@@ -391,6 +391,16 @@ a reference won't resolve.
   `Data/` where it compiled into `Assembly-CSharp`. A custom asmdef cannot reference
   `Assembly-CSharp`, so anything `GameConfig` references has to sit in an asmdef; the `.meta`
   moved with it, so the GUID and every scene reference held.
+- **`Assets/Scripts/InventorySystem/Characters/` is `InventorySystem.Characters.asmdef`** (#110):
+  `Hero`, `HeroData`, `ResourceRegen`, plus the authored `DefaultHero.asset`. It references
+  `Data` and `Containers` (for `IStatReceiver`). `LocalPlayer`, `BaseCharacter` and `DummyTarget`
+  stay in `Assembly-CSharp` and delegate to it, so a test reaches the hero but never the component;
+  `AuthoredHeroAssetsTests` reads the prefab's `LocalPlayer` by type name for that reason. The
+  tests are `Tests/EditMode/Character/InventorySystem.Characters.Tests.asmdef`.
+- **`DummyTarget` keeps its stats serialized on the component** under `[FormerlySerializedAs]` of
+  the old `<Name>k__BackingField` keys, so `Example.unity` was not touched; its `Hero` wraps those
+  same instances. Verified in a batch-mode Play run that the scene's values carried over (level 5,
+  `SpendResource` off, Shield 250). It goes with #117.
 - **Static state needs a `SubsystemRegistration` reset** with domain reload disabled
   (`ServiceLocator`, `GameLoop` have one), **and a clear on `ExitingPlayMode`** so Edit Mode never
   reads the last session's services as armed. The player loop only has the second:

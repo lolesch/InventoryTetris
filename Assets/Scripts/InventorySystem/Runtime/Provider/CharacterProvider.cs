@@ -50,11 +50,7 @@ namespace ToolSmiths.InventorySystem.Inventories
                 HealPlayer();
         }
 
-        public void HealPlayer()
-        {
-            Player.GetResource(StatName.Health).RefillCurrent();
-            Player.GetResource(StatName.Resource).RefillCurrent();
-        }
+        public void HealPlayer() => Player.Hero.Heal();
 
         public void ToggleSpendingResource() => Player.SpendResource = !Player.SpendResource;
     }
