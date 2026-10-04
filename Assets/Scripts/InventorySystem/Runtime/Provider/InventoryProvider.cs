@@ -188,6 +188,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             ContainerRole.Store => Store,
             ContainerRole.HealerSupply => HealerSupply,
             ContainerRole.Basket => Basket?.Container,
+            ContainerRole.Sold => Sold,
             _ => null,
         };
 
