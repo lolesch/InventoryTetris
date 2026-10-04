@@ -43,7 +43,7 @@ Twenty-two open issues (scanned 2026-10-04, `main` @ `45b9a03`, then updated for
 
 | # | Title | Blockers | State vs. this branch |
 |---|---|---|---|
-| 112 | Services 6: the Hero and the World, built in explicit order | **#131** (#109 merged; #110 closes with its PR) | Blocked. `LocalPlayer.PickUpItem` still reaches the containers through `InventoryProvider`; `Hero` is not an `IItemReceiver` until this builds it in order. Waits for the Sold tab contract so the staged basket never enters the World; the Sold container is built instead. |
+| 112 | Services 6: the Hero and the World, built in explicit order | **#131** (#109, #110 merged) | Blocked. `LocalPlayer.PickUpItem` still reaches the containers through `InventoryProvider`; `Hero` is not an `IItemReceiver` until this builds it in order. Waits for the Sold tab contract so the staged basket never enters the World; the Sold container is built instead. |
 | 113 | Services 7: simulation service over the Hero and the World | #112 (#109 merged) | Blocked. |
 | 117 | Services 11: migrate hero callers, delete `DummyTarget` | #112 (#111 closes with its PR) | Blocked. (Ahead of #114: #114 waits on it.) |
 | 114 | Services 8: replace on load, `HeroLoaded`, rebinding | #112, #113, #117 | Blocked. |
