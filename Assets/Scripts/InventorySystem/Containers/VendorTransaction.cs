@@ -61,6 +61,24 @@ namespace ToolSmiths.InventorySystem.Inventories
             wallet != null && wallet.CanAfford(new Currency(price));
 
         /// <summary>
+        /// What lifting <paramref name="package"/> off a Supply shelf costs: the unit price
+        /// times the amount the pick-up actually takes (<see cref="Package.PickUpAmount"/>),
+        /// which is the half with <paramref name="half"/> (Ctrl). The price held on the cursor
+        /// for the drop.
+        /// </summary>
+        public static float PickUpPrice(Package package, bool half, IItemCatalog catalog) =>
+            BuyPrice(package.Item, catalog) * package.PickUpAmount(half);
+
+        /// <summary>
+        /// Whether <paramref name="wallet"/> can pay for lifting <paramref name="package"/>,
+        /// priced for the amount lifted. The one affordability predicate behind the shelf's
+        /// tint, the grab (an unaffordable item stays on the shelf) and, through
+        /// <see cref="CanAffordBuy"/>, the drop's transaction-level gate (issue #125).
+        /// </summary>
+        public static bool CanAffordPickUp(Wallet wallet, Package package, bool half, IItemCatalog catalog) =>
+            CanAffordBuy(wallet, PickUpPrice(package, half, catalog));
+
+        /// <summary>
         /// Queues the payment for a shelf purchase on <paramref name="transaction"/> - to
         /// run exactly on commit and be dropped on rollback. Buying by drag reads the price
         /// once at pick-up and pays that exact amount here, so the charge lands only when

@@ -326,6 +326,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             return true;
         }
 
+        /// <summary>Whether a pick-up right now takes half the stack (Ctrl held).</summary>
+        protected static bool HalvesOnPickUp => Input.GetKey(KeyCode.LeftControl);
+
         /// <summary>
         /// The "DRAG ITEM" tail every concrete slot falls through to once its own special-cases
         /// (use, equip, buy, stage...) don't apply: pick <paramref name="package"/> up off
@@ -343,8 +346,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         /// </summary>
         protected void BeginDrag(Vector2Int position, Package package, Vector2 pointerPosition, float? unitPrice = null)
         {
-            if (Input.GetKey(KeyCode.LeftControl) && 2 <= package.Amount)
-                _ = package.ReduceAmount(package.Amount / 2);
+            _ = package.ReduceAmount(package.Amount - package.PickUpAmount(HalvesOnPickUp));
 
             _ = Container.RemoveAtPosition(position, package);
 
