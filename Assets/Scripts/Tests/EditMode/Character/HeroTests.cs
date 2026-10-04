@@ -235,6 +235,105 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Character
             Assert.That(hero.GetStatValue(StatName.Armor), Is.EqualTo(20f), "untouched");
         }
 
+        // --- StatsChanged: what the stat panel binds to ---------------------------------------------
+
+        private static int CountStatsChanged(Hero hero, Action act)
+        {
+            var raised = 0;
+            hero.StatsChanged += () => raised++;
+
+            act();
+
+            return raised;
+        }
+
+        [Test]
+        public void StatsChanged_IsRaised_WhenGearIsEquipped()
+        {
+            var hero = NewHero();
+
+            var raised = CountStatsChanged(hero, () => hero.AddItemStats(new[] { On(StatName.Armor, Flat(10f)) }));
+
+            Assert.That(raised, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void StatsChanged_IsRaised_WhenGearIsUnequipped()
+        {
+            var hero = NewHero();
+            var gear = new[] { On(StatName.Armor, Flat(10f)) };
+            hero.AddItemStats(gear);
+
+            var raised = CountStatsChanged(hero, () => hero.RemoveItemStats(gear));
+
+            Assert.That(raised, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void StatsChanged_IsRaised_ForAResourceTotalToo()
+        {
+            var hero = NewHero();
+
+            var raised = CountStatsChanged(hero, () => hero.AddItemStats(new[] { On(StatName.Health, Flat(50f)) }));
+
+            Assert.That(raised, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void StatsChanged_IsRaised_WhenTheHeroLevelsUp()
+        {
+            var hero = NewHero();
+
+            var raised = CountStatsChanged(hero, () => hero.GainExperience(280f, monsterLevel: 1u));
+
+            Assert.That(raised, Is.GreaterThanOrEqualTo(1), "the next threshold is a new Experience total");
+        }
+
+        [Test]
+        public void StatsChanged_IsNotRaised_WhenOnlyACurrentValueMoves()
+        {
+            var hero = NewHero();
+
+            var raised = CountStatsChanged(hero, () =>
+            {
+                hero.ReceiveDamage(DamageType.PhysicalDamage, 30f);
+                hero.Regenerate(1f);
+                hero.GainExperience(50f, monsterLevel: 1u);
+            });
+
+            Assert.That(raised, Is.Zero, "the panel shows totals, not the globes' current values");
+        }
+
+        [Test]
+        public void StatsChanged_IsNotRaised_ByComparingTwoModifiers()
+        {
+            var hero = NewHero();
+            var worn = Flat(30f);
+            hero.AddItemStats(new[] { On(StatName.Armor, worn) });
+
+            var raised = CountStatsChanged(hero, () => _ = hero.CompareStatModifiers(StatName.Armor, Flat(40f), worn));
+
+            Assert.That(raised, Is.Zero, "a hover compares on copies");
+        }
+
+        [Test]
+        public void StatsChanged_IsNotRaised_ForAModifierThatLeavesTheTotalAlone()
+        {
+            var hero = NewHero();
+
+            var raised = CountStatsChanged(hero, () => hero.AddItemStats(new[] { On(StatName.Armor, Flat(0f)) }));
+
+            Assert.That(raised, Is.Zero);
+        }
+
+        [Test]
+        public void StatsChanged_HasNoListenersOnAFreshHero()
+        {
+            var hero = NewHero();
+
+            Assert.DoesNotThrow(() => hero.AddItemStats(new[] { On(StatName.Armor, Flat(10f)) }));
+        }
+
         // --- regeneration -------------------------------------------------------------------------
 
         [Test]
