@@ -43,9 +43,9 @@ Twenty-six open issues (scanned 2026-10-03, `main` @ `8c789c9`); the frontier �
 
 | # | Title | Blockers | State vs. this branch |
 |---|---|---|---|
-| **108** | Services 2: boot, `GameConfig`, locator, runner | #107 (closed) | **Frontier.** The vocabulary is settled in ADR-0015: the locator, `GameConfig`, `GameRunner` and `Session` names are there. |
-| 109 | Services 3: item service replaces `ItemProvider` | #108 | Blocked. Parallel with #110. |
-| 110 | Services 4: `Hero` as a plain class | #108 | Blocked. Parallel with #109. |
+| **108** | Services 2: boot, `GameConfig`, locator, game loop | #107 (closed) | **Built on `feat/108-services-boot`; closes on merge.** Generic registry (`IService`, `ServiceRegistry`, `ServiceLocator`) and `PlayerLoopHook` are in `Utility` (commits `2e81c0e`..`be8398e` on `feat/services-registry`, pushed; **merge it into Utility `main` alongside the PR**: the parent pins it); `GameConfig`, `GameBoot`, `GameLoop` are in the new `InventorySystem.Services` assembly. ADR-0015 amended 2026-10-04: no runner object, the frame tick is a player-loop system. `ItemTypeData` moved into the Data assembly. By hand: Play, Stop, Play again checked clean (2026-10-04); one loop system after boot is covered by the PlayMode test. |
+| 109 | Services 3: item service replaces `ItemProvider` | #108 | **Frontier once #108 merges.** Parallel with #110. |
+| 110 | Services 4: `Hero` as a plain class | #108 | **Frontier once #108 merges.** Parallel with #109. |
 | 111 | Services 5: hero stat panel binds to `Hero` | #110 | Blocked. |
 | 112 | Services 6: the Hero and the World, built in explicit order | #109, #110, **#131** | Blocked. Waits for the Sold tab contract so the staged basket never enters the World; the Sold container is built instead. |
 | 113 | Services 7: simulation service over the Hero and the World | #109, #112 | Blocked. |
@@ -72,7 +72,7 @@ Twenty-six open issues (scanned 2026-10-03, `main` @ `8c789c9`); the frontier �
 
 ### Frontier (recommended order)
 
-1. **#108** — the only unblocked Services ticket; unlocks the rest.
+1. **#108** — built on its branch; merge it to close, then it unlocks the rest.
 2. **#109 / #110** — parallel; then #111, **#112**, **#113**, **#117**, **#114**, then #115 / #116 / #118, then **#119**.
 3. **The Sold tab wire runs beside it:** **#125** and **#126** now, then #127 → #128 → #129 → #130 → #131. Starting it beside #108–#110 keeps #112 from waiting on it.
 4. Off the wire, any time: **#122** (triage), **#69** (`/to-spec`). **#63** returns to the frontier once #116 closes.
