@@ -42,7 +42,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private void SyncToPhase(RunPhase phase)
         {
             if (phase != RunPhase.InField)
-                RadioGroup.ClearActive();
+                RadioGroup.ResetGroup();
         }
         
         protected override void OnToggle()
