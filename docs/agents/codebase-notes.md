@@ -402,20 +402,20 @@ a reference won't resolve.
   same instances. Verified in a batch-mode Play run that the scene's values carried over (level 5,
   `SpendResource` off, Shield 250). It goes with #117.
 - **Static state needs a `SubsystemRegistration` reset** with domain reload disabled
-  (`ServiceLocator`, `GameLoop` have one), **and a clear on `ExitingPlayMode`** so Edit Mode never
-  reads the last session's services as armed. The player loop only has the second:
-  `PlayerLoopHook` removes its systems on `ExitingPlayMode`, because the loop outlives Stop.
-- **`ExitingPlayMode` fires before the scene is torn down, so `OnDisable` and `OnDestroy` run
-  with `ServiceLocator` already cleared.** `ItemService.Instance` there throws "No ServiceRegistry
-  is armed", once per object. Found 2026-10-04: the Supplies' `VendorSlotDisplay` repainted in
-  `OnDisable` and priced its item through the locator, 40 errors on every Stop. Rule: **nothing on
-  the disable or destroy path may read the locator**; take what a repaint needs when the view's
-  data changes (while armed) and cache it. The clear itself still sits at `ExitingPlayMode`
-  (`ServiceLocator` is in the `Utility` submodule, shared with AutoBattler); moving it to
-  `EnteredEditMode`, after teardown, would make teardown readers safe by construction; that is a
-  `Utility` change of its own, and `GameLoop` (in this repo) has the same clear point. Repro without the Editor
-  window: a `-executeMethod` harness that enters Play, steps 20 frames, calls
-  `EditorApplication.ExitPlaymode()` and exits on `EnteredEditMode`; grep the log for `No ServiceRegistry`.
+  (`ServiceLocator`, `GameLoop` have one), **and a clear on `EnteredEditMode`** so Edit Mode never
+  reads the last session's services as armed. Not on `ExitingPlayMode`: the services are armed
+  before the first scene loads, so they must outlive the last one, and `ExitingPlayMode` fires
+  while the scene is still alive - every `OnDisable` / `OnDestroy` that reads a service on the way
+  out would throw "No ServiceRegistry is armed" (found 2026-10-04: the Supply slots, 40 errors on
+  every Stop). `EnteredEditMode` is after teardown and still before any Edit Mode hook or window
+  runs. The player loop is the exception that proves it: `PlayerLoopHook` removes its systems on
+  `ExitingPlayMode`, because the loop outlives Stop and nothing should tick during teardown.
+  The registrations (`GameLoop` tickers) clear with the locator, on `EnteredEditMode`.
+- **A view still should not re-read a service on every repaint.** `VendorSlotDisplay` prices its
+  package once, in `RefreshSlotDisplay`, and repaints from the cached value; that is cheaper and it
+  keeps the repaint independent of what the locator holds. Repro for any Play-exit problem without
+  the Editor window: a `-executeMethod` harness that enters Play, steps 20 frames, calls
+  `EditorApplication.ExitPlaymode()` and exits on `EnteredEditMode`; grep the log for the error.
 - **The boot's `[RuntimeInitializeOnLoadMethod]` hooks are only reachable from PlayMode.**
   `Assets/Scripts/Tests/PlayMode/Services/` holds the one test that proves they fire; EditMode
   `Run All` does not include it, run it with `-testPlatform PlayMode`.

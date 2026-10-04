@@ -95,11 +95,13 @@ namespace ToolSmiths.InventorySystem.Services
         }
 
 #if UNITY_EDITOR
-        // The loop system is removed on leaving Play Mode (PlayerLoopHook); the tickers go with it,
-        // so Edit Mode never sees the last session's registrations.
+        // The loop system is removed on ExitingPlayMode (PlayerLoopHook), so nothing ticks while the
+        // scene is torn down; the registrations are cleared on entering Edit Mode, after that
+        // teardown, so Edit Mode never sees the last session's registrations. Same moment as the
+        // locator's clear.
         internal static void OnPlayModeStateChanged(PlayModeStateChange state)
         {
-            if (state == PlayModeStateChange.ExitingPlayMode)
+            if (state == PlayModeStateChange.EnteredEditMode)
                 Reset();
         }
 #endif
