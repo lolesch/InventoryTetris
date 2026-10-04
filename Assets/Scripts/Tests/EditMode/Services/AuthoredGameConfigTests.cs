@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using ToolSmiths.InventorySystem.Data.Enums;
+using ToolSmiths.InventorySystem.Locations;
 using ToolSmiths.InventorySystem.Services;
 using UnityEngine;
 
@@ -66,9 +67,18 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
+        public void TheAuthoredLists_CannotBeWrittenThroughTheReturnedView()
+        {
+            // With domain reload disabled a write to the ScriptableObject survives Stop.
+            Assert.That(config.Locations, Is.Not.InstanceOf<LocationConfig[]>());
+            Assert.That(config.CurrencyIcons, Is.Not.InstanceOf<System.Collections.Generic.List<Sprite>>());
+            Assert.That(((System.Collections.IList)config.Locations).IsReadOnly, Is.True);
+        }
+
+        [Test]
         public void Locations_AreTheTwoAuthoredAssets()
         {
-            Assert.That(config.Locations, Has.Length.EqualTo(2));
+            Assert.That(config.Locations, Has.Count.EqualTo(2));
 
             foreach (var location in config.Locations)
                 Assert.That(location, Is.Not.Null);

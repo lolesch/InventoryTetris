@@ -383,8 +383,12 @@ a reference won't resolve.
   `Assembly-CSharp`, so anything `GameConfig` references has to sit in an asmdef; the `.meta`
   moved with it, so the GUID and every scene reference held.
 - **Static state needs a `SubsystemRegistration` reset** with domain reload disabled
-  (`ServiceLocator`, `GameLoop` have one; the player loop is the exception: `PlayerLoopHook` removes
-  its systems on `ExitingPlayMode` instead, because the loop outlives Stop).
+  (`ServiceLocator`, `GameLoop` have one), **and a clear on `ExitingPlayMode`** so Edit Mode never
+  reads the last session's services as armed. The player loop only has the second:
+  `PlayerLoopHook` removes its systems on `ExitingPlayMode`, because the loop outlives Stop.
+- **The boot's `[RuntimeInitializeOnLoadMethod]` hooks are only reachable from PlayMode.**
+  `Assets/Scripts/Tests/PlayMode/Services/` holds the one test that proves they fire; EditMode
+  `Run All` does not include it, run it with `-testPlatform PlayMode`.
 
 ## Shared working directory + the `Utility` submodule
 

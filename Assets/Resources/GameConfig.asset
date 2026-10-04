@@ -37,6 +37,6 @@ MonoBehaviour:
   <CastCost>k__BackingField: 16
   <XpLossFraction>k__BackingField: 0.25
   <CurrencyFeeFraction>k__BackingField: 0.5
-  <Locations>k__BackingField:
+  locations:
   - {fileID: 11400000, guid: 79be389ba1b44186ad2958d8b404c690, type: 2}
   - {fileID: 11400000, guid: 547ec5b47c1b458f833aaae5f6dc7aa4, type: 2}

@@ -1,7 +1,11 @@
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using ToolSmiths.InventorySystem.Services;
+using UnityEditor;
+using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace ToolSmiths.InventorySystem.Tests.Services
 {
@@ -55,11 +59,54 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         [Test]
         public void AddingFromInsideATicker_Throws_AndTheFlagIsClearedAfterwards()
         {
-            _ = Add(dt => GameLoop.Add(x => { }));
+            InvalidOperationException thrown = null;
+            _ = Add(dt =>
+            {
+                try { GameLoop.Add(x => { }); }
+                catch (InvalidOperationException e) { thrown = e; }
+            });
 
-            _ = Assert.Throws<InvalidOperationException>(() => GameLoop.Tick(1f));
+            GameLoop.Tick(1f);
 
-            Assert.DoesNotThrow(() => GameLoop.Add(x => { }), "a throwing tick must not leave the loop locked");
+            Assert.That(thrown, Is.Not.Null);
+            Assert.DoesNotThrow(() => GameLoop.Add(x => { }), "the lock must be released once the tick ends");
+        }
+
+        [Test]
+        public void ATickerThatThrows_IsLogged_AndDoesNotStopTheTickersAfterIt()
+        {
+            var laterRan = false;
+            _ = Add(_ => throw new InvalidOperationException("boom"));
+            _ = Add(_ => laterRan = true);
+
+            LogAssert.Expect(LogType.Exception, new Regex("boom"));
+            GameLoop.Tick(1f);
+
+            Assert.That(laterRan, Is.True);
+        }
+
+        [Test]
+        public void LeavingPlayMode_ClearsTheTickers_SoEditModeNeverSeesTheLastSessions()
+        {
+            var calls = 0;
+            _ = Add(_ => calls++);
+
+            GameLoop.OnPlayModeStateChanged(PlayModeStateChange.ExitingPlayMode);
+            GameLoop.Tick(1f);
+
+            Assert.That(calls, Is.Zero);
+        }
+
+        [Test]
+        public void EnteringEditMode_LeavesTheTickersAlone()
+        {
+            var calls = 0;
+            _ = Add(_ => calls++);
+
+            GameLoop.OnPlayModeStateChanged(PlayModeStateChange.EnteredPlayMode);
+            GameLoop.Tick(1f);
+
+            Assert.That(calls, Is.EqualTo(1));
         }
 
         [Test]

@@ -3,6 +3,9 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.PlayerLoop;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace ToolSmiths.InventorySystem.Services
 {
@@ -41,18 +44,40 @@ namespace ToolSmiths.InventorySystem.Services
         }
 
         /// <summary>Installs the loop system once; installing again replaces it, never doubles it.</summary>
-        public static void Install() => PlayerLoopHook.Install<Update>(typeof(GameLoop), () => Tick(Time.deltaTime));
+        public static void Install()
+        {
+            PlayerLoopHook.Install<Update>(typeof(GameLoop), () => Tick(Time.deltaTime));
+
+#if UNITY_EDITOR
+            EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+            EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+#endif
+        }
 
         public static void Uninstall() => PlayerLoopHook.Remove(typeof(GameLoop));
 
+        /// <summary>Runs every ticker once. A ticker that throws is logged and does not stop the
+        /// ones after it, so one broken system cannot starve the rest of the frame.</summary>
         internal static void Tick(float deltaTime)
         {
             ticking = true;
 
             try
             {
+                // Forward on purpose, unlike the repo's reverse-loop convention: tickers run in
+                // the order they were added. Add/Remove are blocked while ticking, so the list
+                // cannot change under the loop. Do not "fix" this to a reverse loop.
                 for (var i = 0; i < tickers.Count; i++)
-                    tickers[i](deltaTime);
+                {
+                    try
+                    {
+                        tickers[i](deltaTime);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogException(e);
+                    }
+                }
             }
             finally
             {
@@ -68,6 +93,16 @@ namespace ToolSmiths.InventorySystem.Services
             tickers.Clear();
             ticking = false;
         }
+
+#if UNITY_EDITOR
+        // The loop system is removed on leaving Play Mode (PlayerLoopHook); the tickers go with it,
+        // so Edit Mode never sees the last session's registrations.
+        internal static void OnPlayModeStateChanged(PlayModeStateChange state)
+        {
+            if (state == PlayModeStateChange.ExitingPlayMode)
+                Reset();
+        }
+#endif
 
         private static void ThrowIfTicking()
         {

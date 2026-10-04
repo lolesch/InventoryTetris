@@ -44,7 +44,7 @@ namespace ToolSmiths.InventorySystem.Services
         // Order is the one ItemProvider.GetIcon indexes: Copper, Iron, Silver, Gold.
         // TODO: make it a serialized dictionary
         [SerializeField] private List<Sprite> currencyIcons = new();
-        public IReadOnlyList<Sprite> CurrencyIcons => currencyIcons;
+        public IReadOnlyList<Sprite> CurrencyIcons => currencyIcons.AsReadOnly();
 
         [field: Header("Container sizes")]
         [field: SerializeField] public Vector2Int EquipmentSize { get; private set; } = new(14, 1);
@@ -73,6 +73,7 @@ namespace ToolSmiths.InventorySystem.Services
         [field: SerializeField, Range(0f, 1f)] public float CurrencyFeeFraction { get; private set; } = 0.5f;
 
         [field: Header("Locations")]
-        [field: SerializeField] public LocationConfig[] Locations { get; private set; } = System.Array.Empty<LocationConfig>();
+        [SerializeField] private LocationConfig[] locations = System.Array.Empty<LocationConfig>();
+        public IReadOnlyList<LocationConfig> Locations => System.Array.AsReadOnly(locations);
     }
 }
