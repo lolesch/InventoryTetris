@@ -27,7 +27,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         private const string SwordId = "test.sword";
         private const string HelmId = "test.helm";
 
-        private TestCatalog catalog;
+        private static TestCatalog catalog;
 
         [SetUp]
         public void SetCatalog()
@@ -36,11 +36,10 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
                 .With(new TestDefinition { Id = SwordId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Sword, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
                 .With(new TestDefinition { Id = HelmId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Helm, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u });
 
-            ItemView.Catalog = catalog;
         }
 
         [TearDown]
-        public void ClearCatalog() => ItemView.Catalog = null;
+        public void ClearCatalog() => catalog = null;
 
         // ── fixtures ────────────────────────────────────────────────────────
 
@@ -50,8 +49,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         private static ItemInstance Sword() => new(SwordId, ItemRarity.Rare, 7, new[] { Affix(StatName.PhysicalDamage, 6f) });
         private static ItemInstance Helm() => new(HelmId, ItemRarity.Rare, 5, new[] { Affix(StatName.Armor, 4f) });
 
-        private static CharacterInventory Inventory(int width = 4, int height = 4) => new(new Vector2Int(width, height));
-        private static CharacterEquipment Equipment(IStatReceiver stats = null) => new(new Vector2Int(14, 1), stats);
+        private static CharacterInventory Inventory(int width = 4, int height = 4) => new(new Vector2Int(width, height), catalog);
+        private static CharacterEquipment Equipment(IStatReceiver stats = null) => new(new Vector2Int(14, 1), catalog, stats);
 
         // ── backpack source ─────────────────────────────────────────────────
 

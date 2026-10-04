@@ -27,7 +27,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
     {
         private const string EquipmentId = "fake.sword";
 
-        private InMemoryItemCatalog catalog;
+        private static InMemoryItemCatalog catalog;
 
         [SetUp]
         public void SetCatalog()
@@ -39,7 +39,6 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
                 Coin("fake.silver", CurrencyType.Silver),
                 Coin("fake.gold", CurrencyType.Gold));
 
-            ItemView.Catalog = catalog;
 
             static FakeItemDefinition Coin(string id, CurrencyType type) => new()
             {
@@ -51,7 +50,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [TearDown]
-        public void ClearCatalog() => ItemView.Catalog = null;
+        public void ClearCatalog() => catalog = null;
 
         // ─── fixtures ───────────────────────────────────────────────────────
 
@@ -68,7 +67,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             new(hero, location, new ConstantRollSource(0f), Behaviours.Engaging(5));
 
         private Wallet NewWallet(int width = 6, int height = 6) =>
-            new(new CharacterInventory(new Vector2Int(width, height)), new FakeCurrencyMinter(catalog));
+            new(new CharacterInventory(new Vector2Int(width, height), catalog), new FakeCurrencyMinter(catalog));
 
         private static HeroBehaviour Admitting(ItemRarity minimum) => new() { LootFilterMinimum = minimum };
 
@@ -84,7 +83,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var sim = NewEncounter(hero, location);
 
             var items = new ItemGenerator(catalog, new ConstantRollSource(0f));
-            var bag = new CharacterInventory(new Vector2Int(10, 10));
+            var bag = new CharacterInventory(new Vector2Int(10, 10), catalog);
             var lootFlow = new LootFlow(sim, Admitting(ItemRarity.Common), items,
                 new FakeCoinDropSource(), new BagItemReceiver(bag), NewWallet());
 
@@ -120,7 +119,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
             // category (one-hot, any value), PickDefinition (one candidate, any value), rarity.
             var items = new ItemGenerator(catalog, new QueuedRollSource(0f, 0f, rarityRoll));
-            var bag = new CharacterInventory(new Vector2Int(10, 10));
+            var bag = new CharacterInventory(new Vector2Int(10, 10), catalog);
             _ = new LootFlow(sim, Admitting(ItemRarity.Common), items, new FakeCoinDropSource(), new BagItemReceiver(bag), NewWallet());
 
             sim.Advance(0.1f);
@@ -138,7 +137,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
                 table: FakeLootTable.Fixed(ItemCategory.Equipment, ItemRarity.Common));
             var sim = NewEncounter(OneShotHero(), location);
             var items = new ItemGenerator(catalog, new ConstantRollSource(0f));
-            var bag = new CharacterInventory(new Vector2Int(10, 10));
+            var bag = new CharacterInventory(new Vector2Int(10, 10), catalog);
 
             var lootFlow = new LootFlow(sim, Admitting(ItemRarity.Common), items,
                 new FakeCoinDropSource(), new BagItemReceiver(bag), NewWallet());
@@ -156,7 +155,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
                 table: FakeLootTable.Fixed(ItemCategory.Equipment, ItemRarity.Common));
             var sim = NewEncounter(OneShotHero(), location);
             var items = new ItemGenerator(catalog, new ConstantRollSource(0f));
-            var bag = new CharacterInventory(new Vector2Int(10, 10));
+            var bag = new CharacterInventory(new Vector2Int(10, 10), catalog);
 
             var lootFlow = new LootFlow(sim, Admitting(ItemRarity.Unique), items,
                 new FakeCoinDropSource(), new BagItemReceiver(bag), NewWallet());
@@ -175,7 +174,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var sim = NewEncounter(OneShotHero(), location);
             var items = new ItemGenerator(catalog, new ConstantRollSource(0f));
 
-            var bag = new CharacterInventory(new Vector2Int(1, 1));
+            var bag = new CharacterInventory(new Vector2Int(1, 1), catalog);
             var filler = new Package(bag, new ItemInstance(EquipmentId, ItemRarity.Common, 1, null), 1u);
             Assert.That(bag.TryAddToContainer(ref filler), Is.True, "test setup: the one cell must already be full");
 
@@ -199,7 +198,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var items = new ItemGenerator(catalog, new ConstantRollSource(0f));
 
             // Room for exactly 2 of the 4 Commons that pass the filter.
-            var bag = new CharacterInventory(new Vector2Int(2, 1));
+            var bag = new CharacterInventory(new Vector2Int(2, 1), catalog);
 
             var lootFlow = new LootFlow(sim, Admitting(ItemRarity.Common), items,
                 new FakeCoinDropSource(), new BagItemReceiver(bag), NewWallet());
@@ -219,7 +218,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
                 table: FakeLootTable.Fixed(ItemCategory.Equipment, ItemRarity.Common));
             var sim = NewEncounter(OneShotHero(), location);
             var items = new ItemGenerator(catalog, new ConstantRollSource(0f));
-            var bag = new CharacterInventory(new Vector2Int(10, 10));
+            var bag = new CharacterInventory(new Vector2Int(10, 10), catalog);
             var player = new BagItemReceiver(bag) { Equips = _ => true }; // auto-equip on, slot empty
 
             var lootFlow = new LootFlow(sim, Admitting(ItemRarity.Common), items,
@@ -240,7 +239,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var sim = NewEncounter(OneShotHero(), location);
             var items = new ItemGenerator(catalog, new ConstantRollSource(0f));
             var boom = new System.InvalidOperationException("equip blew up");
-            var player = new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10))) { Throws = boom };
+            var player = new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10), catalog)) { Throws = boom };
             var wallet = NewWallet();
 
             var lootFlow = new LootFlow(sim, Admitting(ItemRarity.Common), items,
@@ -265,7 +264,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
                 table: FakeLootTable.Fixed(ItemCategory.Equipment, ItemRarity.Common));
             var sim = NewEncounter(OneShotHero(), location);
             var items = new ItemGenerator(catalog, new ConstantRollSource(0f));
-            var bag = new CharacterInventory(new Vector2Int(1, 1));
+            var bag = new CharacterInventory(new Vector2Int(1, 1), catalog);
             var filler = new Package(bag, new ItemInstance(EquipmentId, ItemRarity.Common, 1, null), 1u);
             Assert.That(bag.TryAddToContainer(ref filler), Is.True, "test setup: the one cell must already be full");
             var player = new BagItemReceiver(bag);
@@ -286,7 +285,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
                 table: FakeLootTable.Fixed(ItemCategory.Equipment, ItemRarity.Common));
             var sim = NewEncounter(OneShotHero(), location);
             var items = new ItemGenerator(catalog, new ConstantRollSource(0f));
-            var player = new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10))) { Equips = _ => true };
+            var player = new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10), catalog)) { Equips = _ => true };
 
             var lootFlow = new LootFlow(sim, Admitting(ItemRarity.Unique), items,
                 new FakeCoinDropSource(), player, NewWallet());
@@ -312,7 +311,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var items = new ItemGenerator(catalog, new ConstantRollSource(0f));
 
             var lootFlow = new LootFlow(sim, Admitting(ItemRarity.Common), items,
-                new FakeCoinDropSource(), new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10))), NewWallet());
+                new FakeCoinDropSource(), new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10), catalog)), NewWallet());
 
             Assert.That(() => sim.Advance(0.1f), Throws.Nothing,
                 "a misconfigured loot table must not crash the Encounter — combat cannot depend on itemization content being well-formed");
@@ -331,7 +330,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var wallet = NewWallet();
             var coins = new FakeCoinDropSource((CurrencyType.Iron, 7u)); // iron is Common
 
-            _ = new LootFlow(sim, Admitting(ItemRarity.Common), items, coins, new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10))), wallet);
+            _ = new LootFlow(sim, Admitting(ItemRarity.Common), items, coins, new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10), catalog)), wallet);
 
             sim.Advance(0.1f);
 
@@ -346,7 +345,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var wallet = NewWallet();
             var coins = new FakeCoinDropSource((CurrencyType.Iron, 7u)); // iron is Common
 
-            _ = new LootFlow(sim, Admitting(ItemRarity.Unique), items, coins, new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10))), wallet);
+            _ = new LootFlow(sim, Admitting(ItemRarity.Unique), items, coins, new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10), catalog)), wallet);
 
             sim.Advance(0.1f);
 
@@ -361,7 +360,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var wallet = NewWallet();
             var coins = new FakeCoinDropSource(); // dry — hands back (NONE, 0)
 
-            _ = new LootFlow(sim, Admitting(ItemRarity.Common), items, coins, new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10))), wallet);
+            _ = new LootFlow(sim, Admitting(ItemRarity.Common), items, coins, new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10), catalog)), wallet);
 
             Assert.That(() => sim.Advance(0.1f), Throws.Nothing);
             Assert.That(wallet.Balance.Total, Is.Zero);
@@ -378,7 +377,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var items = new ItemGenerator(catalog, new ConstantRollSource(0f));
 
             var lootFlow = new LootFlow(sim, Admitting(ItemRarity.Unique), items,
-                new FakeCoinDropSource(), new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10))), NewWallet());
+                new FakeCoinDropSource(), new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10), catalog)), NewWallet());
 
             sim.Advance(0.1f);
             Assert.That(lootFlow.GroundDrops, Has.Count.EqualTo(1));
@@ -398,7 +397,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         {
             var sim = NewEncounter(OneShotHero(), Profiles.Solo(EnemyArchetype.Skirmisher));
             var lootFlow = new LootFlow(sim, Admitting(ItemRarity.Common), new ItemGenerator(catalog, new SeededRollSource(1)),
-                new FakeCoinDropSource(), new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10))), NewWallet());
+                new FakeCoinDropSource(), new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10), catalog)), NewWallet());
 
             var recovered = new ItemInstance("fake.sword", ItemRarity.Common, 1, null);
             lootFlow.PlaceOnGround(recovered);
@@ -416,7 +415,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var wallet = NewWallet();
             var coins = new FakeCoinDropSource((CurrencyType.Iron, 7u)); // 7 base units
             var lootFlow = new LootFlow(sim, Admitting(ItemRarity.Common), new ItemGenerator(catalog, new SeededRollSource(1)),
-                coins, new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10))), wallet);
+                coins, new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10), catalog)), wallet);
 
             long banked = -1;
             lootFlow.CoinsBanked += amount => banked = amount;
@@ -433,7 +432,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var wallet = NewWallet();
             var coins = new FakeCoinDropSource((CurrencyType.Copper, 3u)); // 3 × 5 iron = 15
             var lootFlow = new LootFlow(sim, Admitting(ItemRarity.Common), new ItemGenerator(catalog, new SeededRollSource(1)),
-                coins, new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10))), wallet);
+                coins, new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10), catalog)), wallet);
 
             long banked = -1;
             lootFlow.CoinsBanked += amount => banked = amount;
@@ -450,7 +449,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var wallet = NewWallet();
             var coins = new FakeCoinDropSource((CurrencyType.Iron, 7u)); // iron is Common, filter is Unique
             var lootFlow = new LootFlow(sim, Admitting(ItemRarity.Unique), new ItemGenerator(catalog, new SeededRollSource(1)),
-                coins, new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10))), wallet);
+                coins, new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10), catalog)), wallet);
 
             var raised = false;
             lootFlow.CoinsBanked += _ => raised = true;
@@ -469,7 +468,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var behaviour = Admitting(ItemRarity.Common);
             var items = new ItemGenerator(catalog, new ConstantRollSource(0f));
             var coins = new FakeCoinDropSource();
-            var player = new BagItemReceiver(new CharacterInventory(new Vector2Int(4, 4)));
+            var player = new BagItemReceiver(new CharacterInventory(new Vector2Int(4, 4), catalog));
             var wallet = NewWallet();
 
             Assert.That(() => new LootFlow(null, behaviour, items, coins, player, wallet), Throws.ArgumentNullException);

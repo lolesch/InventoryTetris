@@ -23,7 +23,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             AbstractDimensionalContainer inventory)
         {
             if (package.Item != null && equipment != null && equipment.autoEquip
-                && ItemView.Of(package.Item).Definition.Category == ItemCategory.Equipment
+                && equipment.ViewOf(package.Item).Definition.Category == ItemCategory.Equipment
                 && equipment.AutoEquip(ref package))
                 return true;
 

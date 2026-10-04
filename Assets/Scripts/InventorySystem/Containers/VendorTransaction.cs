@@ -25,7 +25,8 @@ namespace ToolSmiths.InventorySystem.Inventories
         public const float Markup = 1.5f;
 
         /// <summary>What the vendor charges for <paramref name="item"/>, in base units.</summary>
-        public static float BuyPrice(ItemInstance item) => ItemView.Of(item).SellValue * Markup;
+        public static float BuyPrice(ItemInstance item, IItemCatalog catalog) =>
+            ItemView.Resolve(item, catalog).SellValue * Markup;
 
         /// <summary>
         /// Banks the proceeds of a sale. <paramref name="soldItem"/> has already left every
@@ -38,7 +39,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             if (wallet == null || !soldItem.IsValid)
                 return;
 
-            var proceeds = new Currency(ItemView.Of(soldItem.Item).SellValue * soldItem.Amount);
+            var proceeds = new Currency(wallet.Container.ViewOf(soldItem.Item).SellValue * soldItem.Amount);
 
             if (0u == proceeds.Total)
                 return;

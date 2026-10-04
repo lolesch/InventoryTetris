@@ -99,27 +99,6 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Items
             Assert.That(() => ItemView.Resolve(Instance("x"), null), Throws.ArgumentNullException);
         }
 
-        // ── the ambient Catalog / Of(...) - the terse form the runtime call sites use ──
-
-        [TearDown]
-        public void ClearAmbientCatalog() => ItemView.Catalog = null;
-
-        [Test]
-        public void Of_ResolvesAgainstTheAmbientCatalog()
-        {
-            ItemView.Catalog = new InMemoryItemCatalog(new FakeItemDefinition { Id = "belt", Footprint = ItemSize.TwoByOne });
-
-            Assert.That(ItemView.Of(Instance("belt")).Footprint, Is.EqualTo(ItemSize.TwoByOne));
-        }
-
-        [Test]
-        public void Of_WithNoCatalogSet_ThrowsInsteadOfNullReferencing()
-        {
-            ItemView.Catalog = null;
-
-            Assert.That(() => ItemView.Of(Instance("belt")), Throws.InvalidOperationException);
-        }
-
         // ── SellValue - the AbstractItem/CurrencyItem value switches, moved verbatim ──
 
         [Test]

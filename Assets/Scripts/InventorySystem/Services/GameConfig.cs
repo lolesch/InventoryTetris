@@ -19,8 +19,9 @@ namespace ToolSmiths.InventorySystem.Services
     /// Carries what the scene-scoped providers author today (issue #108): the item catalog, the
     /// category and rarity distributions, the currency distribution and drop table, the stat-icon
     /// data, the currency icons, the container sizes, the simulation tuning defaults and the
-    /// Locations. The providers still read their own copies until each is replaced, so a value
-    /// changed here is not live until its provider is retired.
+    /// Locations. The item data is live: <see cref="ItemService"/> is built from it (#109). The
+    /// container sizes, the tuning and the Locations are still read from their providers' own
+    /// copies until each is replaced, so a value changed here is not live until then.
     /// </summary>
     public sealed class GameConfig : ScriptableObject
     {
@@ -41,7 +42,7 @@ namespace ToolSmiths.InventorySystem.Services
         [field: SerializeField] public CurrencyTypeDistribution CurrencyTypeDistribution { get; private set; }
         [field: SerializeField] public CurrencyDropTable CurrencyDropTable { get; private set; }
 
-        // Order is the one ItemProvider.GetIcon indexes: Copper, Iron, Silver, Gold.
+        // Order is the one ItemService.GetIcon indexes: Copper, Iron, Silver, Gold.
         // TODO: make it a serialized dictionary
         [SerializeField] private List<Sprite> currencyIcons = new();
         public IReadOnlyList<Sprite> CurrencyIcons => currencyIcons.AsReadOnly();

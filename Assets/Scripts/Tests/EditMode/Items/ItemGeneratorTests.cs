@@ -307,7 +307,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Items
             Assert.That(loot[1], Is.Not.SameAs(loot[2]));
         }
 
-        // ── the targeted overloads (the ItemProvider debug helpers) ────────
+        // ── the targeted overloads (the item service debug helpers) ────────
 
         [Test]
         public void Roll_GivenADefinition_SkipsCategoryAndDefinitionSelection()

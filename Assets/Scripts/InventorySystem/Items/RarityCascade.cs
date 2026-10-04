@@ -17,7 +17,7 @@ namespace ToolSmiths.InventorySystem.Items
     ///
     /// This mirrors <c>RarityMagicFind</c> in <c>Assembly-CSharp</c>, which the inspector
     /// preview and the not-yet-cut <c>ItemRarityDistribution.Roll(magicFind)</c> still call;
-    /// the two copies converge when issue #8 routes <c>ItemProvider</c> through the
+    /// the two copies converge when issue #8 routes the item service through the
     /// generator - the same parallel-copy arrangement <see cref="ItemView"/> has with
     /// <c>AbstractItem</c>.
     /// </summary>

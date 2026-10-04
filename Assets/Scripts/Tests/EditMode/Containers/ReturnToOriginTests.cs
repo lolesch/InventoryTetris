@@ -26,15 +26,17 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         private const string RingId = "test.ring";
         private const string ArrowId = "test.arrow";
 
+        private static IItemCatalog catalog;
+
         [SetUp]
-        public void SetCatalog() => ItemView.Catalog = new TestCatalog()
+        public void SetCatalog() => catalog = new TestCatalog()
             .With(new TestDefinition { Id = SwordId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Sword, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
             .With(new TestDefinition { Id = HelmId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Helm, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
             .With(new TestDefinition { Id = RingId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Ring, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
             .With(new TestDefinition { Id = ArrowId, Category = ItemCategory.Consumable, ConsumableType = ConsumableType.Arrow, Footprint = ItemSize.OneByOne, BaseStackLimit = 20u });
 
         [TearDown]
-        public void ClearCatalog() => ItemView.Catalog = null;
+        public void ClearCatalog() => catalog = null;
 
         // ── fixtures ────────────────────────────────────────────────────────
 
@@ -46,8 +48,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         private static ItemInstance Ring(float health) => new(RingId, ItemRarity.Magic, 3, new[] { Affix(StatName.Health, health) });
         private static ItemInstance Arrows() => new(ArrowId, ItemRarity.Common, 1, null);
 
-        private static CharacterInventory Inventory(int width = 4, int height = 4) => new(new Vector2Int(width, height));
-        private static CharacterEquipment Equipment(IStatReceiver stats = null) => new(new Vector2Int(14, 1), stats);
+        private static CharacterInventory Inventory(int width = 4, int height = 4) => new(new Vector2Int(width, height), catalog);
+        private static CharacterEquipment Equipment(IStatReceiver stats = null) => new(new Vector2Int(14, 1), catalog, stats);
         private static Vector2Int SlotFor(EquipmentType type) => CharacterEquipment.GetTypeSpecificPositions(type).First();
 
         /// <summary>Drag pick-up: the slot display removes the item and the cursor now holds

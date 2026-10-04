@@ -29,7 +29,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         public CurrencyType CurrencyType { get; set; } = CurrencyType.NONE;
     }
 
-    /// <summary>An in-memory <see cref="IItemCatalog"/> - <c>ItemView.Catalog</c> for a test.</summary>
+    /// <summary>An in-memory <see cref="IItemCatalog"/> for a test.</summary>
     internal sealed class TestCatalog : IItemCatalog
     {
         private readonly Dictionary<string, ItemDefinition> byId = new();
@@ -79,7 +79,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 
     /// <summary>
     /// Mints a coin per denomination, ids resolved from the catalog it is handed - the
-    /// test stand-in for <c>ItemProvider</c> on the <see cref="ICurrencyMinter"/> seam.
+    /// test stand-in for the item service on the <see cref="ICurrencyMinter"/> seam.
     /// </summary>
     internal sealed class FakeCurrencyMinter : ICurrencyMinter
     {

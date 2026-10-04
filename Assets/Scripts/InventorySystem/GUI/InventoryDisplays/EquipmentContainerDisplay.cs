@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
@@ -35,7 +36,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                     containerSlotDisplays[current].RefreshSlotDisplay(package);
 
                     // Hacking in the preview of 2H in offhand slot
-                    if (current == 12 && package.Item != null && CharacterEquipment.IsTwoHandedWeapon(ItemView.Of(package.Item).Definition.EquipmentType))
+                    if (current == 12 && package.Item != null && CharacterEquipment.IsTwoHandedWeapon(ItemService.Instance.View(package.Item).Definition.EquipmentType))
                     {
                         (containerSlotDisplays[13] as EquipmentSlotDisplay).Refresh2HandSlotDisplay(package);
                         return;

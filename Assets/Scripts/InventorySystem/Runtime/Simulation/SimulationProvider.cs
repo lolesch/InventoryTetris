@@ -8,6 +8,7 @@ using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Locations;
 using ToolSmiths.InventorySystem.Runtime.Character;
 using ToolSmiths.InventorySystem.Runtime.Provider;
+using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Simulation;
 using ToolSmiths.InventorySystem.Utility.Extensions;
 using UnityEngine;
@@ -88,8 +89,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         public LocationConfig SelectedLocation { get; private set; }
 
         /// <summary>
-        /// The live Run's loot flow (issue #24) — <c>null</c> in Town or when the ItemProvider
-        /// is not configured. Exposed so the Combat Panel's stats readout can show a full bag
+        /// The live Run's loot flow (issue #24) — <c>null</c> in Town or when the inventory is
+        /// not wired. Exposed so the Combat Panel's stats readout can show a full bag
         /// visibly stranding loot.
         /// </summary>
         public LootFlow LootFlow => _lootFlow;
@@ -168,7 +169,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// <summary>
         /// The bag-full retreat trigger's measuring stick (issue #23), or <c>null</c> when the
         /// scene has no inventory wired — the fight then simply never auto-Recalls on a full bag,
-        /// the same way it earns no loot without an ItemProvider.
+        /// the same way it earns no loot without a Wallet.
         /// </summary>
         private static IBagGauge BagGauge()
         {
@@ -179,28 +180,21 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         /// <summary>
         /// Lay the per-kill loot flow over the live Encounter — the player as the item receiver
-        /// (so auto-equip applies), real Wallet, the ItemProvider's catalog / coin tables. A
-        /// no-op when the scene has no configured ItemProvider, or no InventoryProvider with its
-        /// Wallet wired yet (mirrors
+        /// (so auto-equip applies), real Wallet, the item service's catalog and coin odds. A
+        /// no-op when there is no InventoryProvider with its Wallet wired yet (mirrors
         /// <see cref="BagGauge"/>'s guard — a provider that hasn't finished resolving is the
-        /// same "nothing to earn or lose" case as a missing catalog, not a crash).
+        /// same "nothing to earn or lose" case, not a crash).
         /// </summary>
         private void WireLoot(EncounterSimulation encounter, LocalPlayer player)
         {
-            var itemProvider = ItemProvider.Instance;
-            if (itemProvider.Catalog == null || itemProvider.CurrencyDropTable == null
-                || itemProvider.CurrencyTypeDistribution == null)
-                return;
-
             var inventoryProvider = InventoryProvider.Instance;
             if (inventoryProvider == null || inventoryProvider.Wallet == null)
                 return;
 
-            _itemGenerator ??= new ItemGenerator(itemProvider.Catalog, new UnityRollSource());
-            var coins = new CurrencyDropTableCoinSource(
-                itemProvider.CurrencyTypeDistribution, itemProvider.CurrencyDropTable);
+            var items = ItemService.Instance;
+            _itemGenerator ??= new ItemGenerator(items.Catalog, _rolls);
 
-            _lootFlow = new LootFlow(encounter, Behaviour, _itemGenerator, coins,
+            _lootFlow = new LootFlow(encounter, Behaviour, _itemGenerator, items,
                 player, inventoryProvider.Wallet);
 
             // The Run accumulates the base-unit coin take so Death's fee reads it (issue #44).

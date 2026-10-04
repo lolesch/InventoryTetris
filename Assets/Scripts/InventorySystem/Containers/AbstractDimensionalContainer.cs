@@ -11,7 +11,19 @@ namespace ToolSmiths.InventorySystem.Inventories
     [Serializable]
     public abstract class AbstractDimensionalContainer
     {
-        public AbstractDimensionalContainer(Vector2Int dimensions) => Dimensions = dimensions;
+        /// <param name="catalog">Resolves a stored <see cref="ItemInstance"/> to its definition. The
+        /// container core takes it by constructor rather than reaching a global (ADR-0015).</param>
+        public AbstractDimensionalContainer(Vector2Int dimensions, IItemCatalog catalog)
+        {
+            Dimensions = dimensions;
+            Catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
+        }
+
+        /// <summary>The catalog this container resolves its items against.</summary>
+        public IItemCatalog Catalog { get; }
+
+        /// <summary>The display reads of <paramref name="item"/> - footprint, stack limit, value - from <see cref="Catalog"/>.</summary>
+        public ItemView ViewOf(ItemInstance item) => ItemView.Resolve(item, Catalog);
 
         [field: SerializeField] public readonly Vector2Int Dimensions;
         public int Capacity => Dimensions.x * Dimensions.y;
@@ -165,7 +177,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             if (!package.IsValid)
                 return false;
 
-            var stackLimit = ItemView.Of(package.Item).StackLimit;
+            var stackLimit = ViewOf(package.Item).StackLimit;
             if (stackLimit <= 1u)
                 return false;
 
@@ -173,7 +185,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             for (var i = 0; i < positions.Count && 0 < package.Amount; i++)
                 if (StoredPackages[positions[i]].Item.StacksWith(package.Item, stackLimit))
-                    if (0 < StoredPackages[positions[i]].SpaceLeft)
+                    if (0 < StoredPackages[positions[i]].SpaceLeft(Catalog))
                         package = AddAtPosition(positions[i], package);
 
             return 0 == package.Amount;
@@ -184,7 +196,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             if (!package.IsValid)
                 return false;
 
-            var dimensions = ItemView.Of(package.Item).Dimensions;
+            var dimensions = ViewOf(package.Item).Dimensions;
 
             // Resumes the scan from the last cell placed into rather than re-walking the
             // already-filled prefix from the origin on every iteration - O(cells) for a
@@ -366,13 +378,13 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// rejection when the cell is not even a slot for the item's type.
         /// </summary>
         public virtual bool CanReturnTo(Vector2Int position, ItemInstance item) =>
-            item != null && IsEmptySpace(position, ItemView.Of(item).Dimensions, out _);
+            item != null && IsEmptySpace(position, ViewOf(item).Dimensions, out _);
 
         // TODO package should implement IComparable
         public void Sort()
         {
             var sortedValues = StoredPackages.Values
-                .Select(package => (package, view: ItemView.Of(package.Item)))
+                .Select(package => (package, view: ViewOf(package.Item)))
                 .OrderByDescending(x => x.view.Footprint)                                     // by size
                 .ThenBy(x => x.view.Definition.Category == ItemCategory.Currency)             // by itemType (equipment before consumables before currency)
                 .ThenBy(x => x.view.Definition.Category == ItemCategory.Consumable)

@@ -177,7 +177,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         private static int DropCountFor(Enemy enemy, IHeroCombatant hero)
         {
             var baseCount = EnemyArchetypes.Of(enemy.Archetype).LootRolls;
-            var bonus = (int)(hero.IncreasedItemQuantity / 100f); // mirrors ItemProvider.AddBonusDrops
+            var bonus = (int)(hero.IncreasedItemQuantity / 100f); // mirrors ItemService.RollLoot's bonus drops
             return Math.Max(0, baseCount + bonus);
         }
     }

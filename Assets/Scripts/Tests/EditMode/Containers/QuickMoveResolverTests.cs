@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using ToolSmiths.InventorySystem.Inventories;
+using ToolSmiths.InventorySystem.Items;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
@@ -28,13 +29,16 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
     {
         // The resolver compares sources by MonoBehaviour reference identity (a container is
         // a UnityEngine.Object); distinct instances are enough - nothing here needs items.
-        private readonly AbstractDimensionalContainer backpack = new CharacterInventory(new Vector2Int(4, 4));
-        private readonly AbstractDimensionalContainer stash = new CharacterInventory(new Vector2Int(4, 4));
-        private readonly AbstractDimensionalContainer equipment = new CharacterEquipment(new Vector2Int(14, 1), null);
-        private readonly AbstractDimensionalContainer store = new CharacterInventory(new Vector2Int(4, 4));
-        private readonly AbstractDimensionalContainer basket = new CharacterInventory(new Vector2Int(4, 4));
+        // Routing only - no item is ever resolved - so an empty catalog is enough.
+        private static readonly IItemCatalog catalog = new TestCatalog();
 
-        private readonly AbstractDimensionalContainer healerSupply = new CharacterInventory(new Vector2Int(4, 4));
+        private readonly AbstractDimensionalContainer backpack = new CharacterInventory(new Vector2Int(4, 4), catalog);
+        private readonly AbstractDimensionalContainer stash = new CharacterInventory(new Vector2Int(4, 4), catalog);
+        private readonly AbstractDimensionalContainer equipment = new CharacterEquipment(new Vector2Int(14, 1), catalog, null);
+        private readonly AbstractDimensionalContainer store = new CharacterInventory(new Vector2Int(4, 4), catalog);
+        private readonly AbstractDimensionalContainer basket = new CharacterInventory(new Vector2Int(4, 4), catalog);
+
+        private readonly AbstractDimensionalContainer healerSupply = new CharacterInventory(new Vector2Int(4, 4), catalog);
 
         private QuickMoveIntent Resolve(InventoryContext context, AbstractDimensionalContainer source,
             AbstractDimensionalContainer backpack, AbstractDimensionalContainer stash,

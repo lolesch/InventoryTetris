@@ -2,6 +2,7 @@ using System.Collections;
 using System.Runtime.CompilerServices;
 using NaughtyAttributes;
 using TMPro;
+using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
@@ -188,7 +189,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         protected void BuyAt(Vector2Int position, Package package)
         {
             var wallet = InventoryProvider.Instance.Wallet;
-            var price = VendorTransaction.BuyPrice(package.Item) * package.Amount;
+            var price = VendorTransaction.BuyPrice(package.Item, ItemService.Instance.Catalog) * package.Amount;
 
             _ = VendorTransaction.Buy(Container, position, package, wallet, price,
                 CharacterProvider.Instance.Player, InventoryProvider.Instance.Equipment);
@@ -435,7 +436,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 return true;
 
             return DragProvider.Instance.TryGetDropPosition(this, out var position)
-                && Container.CanPlaceAt(position, ItemView.Of(package.Item).Dimensions);
+                && Container.CanPlaceAt(position, ItemService.Instance.View(package.Item).Dimensions);
         }
 
         protected virtual void SetDisplaySize(RectTransform display, Package package) { }
@@ -464,7 +465,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
                     if (icon)
                     {
-                        icon.sprite = ItemView.Of(package.Item).Icon;
+                        icon.sprite = ItemService.Instance.View(package.Item).Icon;
                         icon.color = Color.white;
                     }
 

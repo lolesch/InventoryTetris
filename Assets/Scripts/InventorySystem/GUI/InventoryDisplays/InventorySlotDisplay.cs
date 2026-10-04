@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Inventories;
@@ -31,7 +32,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             /// Nothing would land here - out of bounds, or 2+ items in the way. The item
             /// stays in hand exactly as the player is holding it; re-anchoring past this
             /// point is what snapped a rejected drop onto the grid.
-            if (!Container.CanPlaceAt(positionToAdd, ItemView.Of(package.Item).Dimensions))
+            if (!Container.CanPlaceAt(positionToAdd, ItemService.Instance.View(package.Item).Dimensions))
                 return;
 
             /// A store purchase rides the placement as a commit-time effect (issue #31): the
@@ -85,7 +86,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 gridLayout = GetComponentInParent<GridLayoutGroup>();
             if (gridLayout)
             {
-                var itemDimensions = ItemView.Of(package.Item).Dimensions;
+                var itemDimensions = ItemService.Instance.View(package.Item).Dimensions;
                 var additionalSpacing = gridLayout.spacing * new Vector2(itemDimensions.x - 1, itemDimensions.y - 1);
 
                 display.sizeDelta = gridLayout.cellSize * itemDimensions + additionalSpacing;
@@ -105,11 +106,11 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             #region USE ITEM
             if (eventData.button == PointerEventData.InputButton.Right)
             {
-                var category = ItemView.Of(package.Item).Definition.Category;
+                var category = ItemService.Instance.View(package.Item).Definition.Category;
 
                 if (category == ItemCategory.Consumable)
                 {
-                    Debug.Log($"Consuming {ItemView.Of(package.Item).DisplayName}");
+                    Debug.Log($"Consuming {ItemService.Instance.View(package.Item).DisplayName}");
 
                     _ = Container.RemoveAtPosition(position, new Package(Container, package.Item, 1)); // only consume one amount
 

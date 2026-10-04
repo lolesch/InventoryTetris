@@ -24,20 +24,22 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         private const string HelmId = "test.helm";     // 1x1
         private const string PlateId = "test.plate";   // 2x2
 
+        private static IItemCatalog catalog;
+
         [SetUp]
-        public void SetCatalog() => ItemView.Catalog = new TestCatalog()
+        public void SetCatalog() => catalog = new TestCatalog()
             .With(new TestDefinition { Id = RingId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Ring, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
             .With(new TestDefinition { Id = HelmId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Helm, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
             .With(new TestDefinition { Id = PlateId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Chest, Footprint = ItemSize.TwoByTwo, BaseStackLimit = 1u });
 
         [TearDown]
-        public void ClearCatalog() => ItemView.Catalog = null;
+        public void ClearCatalog() => catalog = null;
 
         private static ItemInstance Ring() => new(RingId, ItemRarity.Magic, 3, null);
         private static ItemInstance Helm() => new(HelmId, ItemRarity.Rare, 5, null);
         private static ItemInstance Plate() => new(PlateId, ItemRarity.Rare, 5, null);
 
-        private static CharacterInventory Inventory() => new(new Vector2Int(4, 4));
+        private static CharacterInventory Inventory() => new(new Vector2Int(4, 4), catalog);
 
         [Test]
         public void Under_ANullContainer_ReturnsAnInvalidPackage()

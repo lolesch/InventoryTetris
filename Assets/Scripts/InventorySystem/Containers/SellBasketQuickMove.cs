@@ -42,7 +42,7 @@ namespace ToolSmiths.InventorySystem.Inventories
                 return false;
 
             var destination = basket.Container;
-            var dimensions = ItemView.Of(stored.Item).Dimensions;
+            var dimensions = source.ViewOf(stored.Item).Dimensions;
 
             if (!destination.TryFindEmptyCell(dimensions, out var at))
                 return false;
