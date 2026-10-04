@@ -19,20 +19,17 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         /// slot underneath still reads.
         private static readonly Color UnaffordableBackground = new(1f, 0f, 0f, 0.2f);
 
-        /// Cached so a wallet change can re-tint without waiting for a container refresh.
-        private Package displayedPackage;
-
-        /// The displayed package's whole price in base units, taken once when the package
-        /// changes - while the services are armed. A repaint (hover, a wallet change, the
-        /// un-highlight in OnDisable) then never reads the locator: Stop clears it before the
-        /// scene's OnDisable calls run, so a read there throws once per stocked slot.
-        private float displayedPrice;
+        /// The displayed package's whole price in base units, or <c>null</c> for an empty slot.
+        /// Taken once when the package changes, so a wallet change can re-tint without waiting
+        /// for a container refresh and a repaint (hover, a wallet change, the un-highlight in
+        /// OnDisable) never prices the item again through the catalog.
+        private float? displayedPrice;
 
         protected override void OnEnable()
         {
             base.OnEnable();
 
-            var wallet = InventoryProvider.Instance.Wallet;
+            var wallet = CurrentWallet();
 
             if (wallet != null)
             {
@@ -45,7 +42,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         {
             // Before the base runs: it repaints, and a repaint that throws must not leave this
             // slot subscribed to a Wallet that outlives it.
-            var wallet = InventoryProvider.Instance.Wallet;
+            var wallet = CurrentWallet();
 
             if (wallet != null)
                 wallet.OnBalanceChanged -= OnWalletChanged;
@@ -57,10 +54,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         /// background and that has to price the incoming item, not the outgoing one.
         public override void RefreshSlotDisplay(Package package)
         {
-            displayedPackage = package;
             displayedPrice = package.IsValid
                 ? VendorTransaction.BuyPrice(package.Item, ItemService.Instance.Catalog) * package.Amount
-                : 0f;
+                : null;
 
             base.RefreshSlotDisplay(package);
         }
@@ -75,12 +71,21 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         /// also clears the tint for free on the slot an item was just bought out of.
         private bool CanAffordDisplayed()
         {
-            if (!displayedPackage.IsValid)
+            if (displayedPrice is not { } price)
                 return true;
 
-            var wallet = InventoryProvider.Instance.Wallet;
+            var wallet = CurrentWallet();
 
-            return wallet == null || wallet.CanAfford(new Currency(displayedPrice));
+            return wallet == null || wallet.CanAfford(new Currency(price));
+        }
+
+        // Unity's lifetime-aware ==: a destroyed provider is not literally null, and a repaint can
+        // run on the way out of Play Mode.
+        private static Wallet CurrentWallet()
+        {
+            var provider = InventoryProvider.Instance;
+
+            return provider != null ? provider.Wallet : null;
         }
 
         protected override void SetDisplaySize(RectTransform display, Package package)

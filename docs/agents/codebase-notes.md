@@ -407,15 +407,30 @@ a reference won't resolve.
   before the first scene loads, so they must outlive the last one, and `ExitingPlayMode` fires
   while the scene is still alive - every `OnDisable` / `OnDestroy` that reads a service on the way
   out would throw "No ServiceRegistry is armed" (found 2026-10-04: the Supply slots, 40 errors on
-  every Stop). `EnteredEditMode` is after teardown and still before any Edit Mode hook or window
-  runs. The player loop is the exception that proves it: `PlayerLoopHook` removes its systems on
-  `ExitingPlayMode`, because the loop outlives Stop and nothing should tick during teardown.
-  The registrations (`GameLoop` tickers) clear with the locator, on `EnteredEditMode`.
+  every Stop). `EnteredEditMode` is after teardown, so Edit Mode readers still never see the last
+  session's services; a hook that runs in the instant between the end of teardown and that event
+  could, and nothing here prevents that. Verified by the Play-exit check below, not by a Unity
+  guarantee. The player loop is the one thing that does go on `ExitingPlayMode`:
+  `PlayerLoopHook` removes its systems then, because the loop outlives Stop and nothing should
+  tick during teardown. The registrations (`GameLoop` tickers, `TimerTicker`) clear with the
+  locator, on `EnteredEditMode`.
 - **A view still should not re-read a service on every repaint.** `VendorSlotDisplay` prices its
   package once, in `RefreshSlotDisplay`, and repaints from the cached value; that is cheaper and it
-  keeps the repaint independent of what the locator holds. Repro for any Play-exit problem without
-  the Editor window: a `-executeMethod` harness that enters Play, steps 20 frames, calls
-  `EditorApplication.ExitPlaymode()` and exits on `EnteredEditMode`; grep the log for the error.
+  keeps the repaint independent of what the locator holds.
+- **The Play-exit check** (`Assets/Submodules/Utility/Editor/PlayExitCheck.cs`, in the `Utility`
+  submodule beside the lifetimes it guards, so every project that uses the module can run it) is
+  the only thing that sees teardown errors: a PlayMode test cannot stop Play Mode and the views
+  are out of a test assembly's reach. It enters Play in the scene you name, steps 20 frames, stops,
+  and fails if any `Error`/exception/assert is logged before Edit Mode is back. Run it with the
+  project closed:
+  `Unity.exe -batchmode -nographics -projectPath <proj> -executeMethod Submodules.Utility.Editor.PlayExitCheck.Run -playExitScene Assets/Scenes/Example.unity -logFile out.log`.
+  The **exit code is the verdict** (0 clean, 1 teardown errors listed under `[PlayExitCheck]`, 2
+  never got back to Edit Mode, 3 no scene given), unlike `-runTests`. Run it after touching
+  anything `OnDisable`, `OnDestroy`, a service's lifetime or a static cleared on leaving Play Mode.
+  It is inert unless `Run` started it, so it is the one `-executeMethod` script that is committed
+  on purpose; the "delete scratch runners before committing" rule above is for the throwaway ones.
+  The clear-point rules themselves are tested where the code lives: `ServiceLocatorTests` and
+  `TimerBootstrapperTests` in `Utility`, `GameLoopTests` here.
 - **The boot's `[RuntimeInitializeOnLoadMethod]` hooks are only reachable from PlayMode.**
   `Assets/Scripts/Tests/PlayMode/Services/` holds the one test that proves they fire; EditMode
   `Run All` does not include it, run it with `-testPlatform PlayMode`.

@@ -113,7 +113,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
-        public void EnteringEditMode_LeavesTheTickersAlone()
+        public void EnteringPlayMode_LeavesTheTickersAlone()
         {
             var calls = 0;
             _ = Add(_ => calls++);
