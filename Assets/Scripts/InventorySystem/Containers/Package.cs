@@ -33,6 +33,13 @@ namespace ToolSmiths.InventorySystem.Data
         public readonly uint SpaceLeft(IItemCatalog catalog) => ItemView.Resolve(Item, catalog).StackLimit - Amount;
         public readonly bool IsValid => Item != null && 0 < Amount;
 
+        /// <summary>
+        /// How much of this stack a pick-up lifts: all of it, or with <paramref name="half"/>
+        /// (Ctrl) the larger half of a splittable stack. The one statement of the split, so what
+        /// the cursor takes and what a shelf prices for it cannot disagree.
+        /// </summary>
+        public readonly uint PickUpAmount(bool half) => half && 2u <= Amount ? Amount - Amount / 2u : Amount;
+
         /// <summary>Tries to add to the amount (within stacking limit).</summary>
         /// <returns>The amount that was added</returns>
         public uint IncreaseAmount(uint amountToAdd, IItemCatalog catalog)

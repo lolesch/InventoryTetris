@@ -76,7 +76,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
             var wallet = CurrentWallet();
 
-            return wallet == null || wallet.CanAfford(new Currency(price));
+            return wallet == null || VendorTransaction.CanAffordBuy(wallet, price);
         }
 
         // Unity's lifetime-aware ==: a destroyed provider is not literally null, and a repaint can
@@ -121,6 +121,12 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 BuyAt(position, package);
                 return;
             }
+
+            // An item the player cannot afford stays on the shelf: priced for the amount this
+            // pick-up would take, so Ctrl-half of a red stack still lifts when the half is
+            // affordable (issue #125). The drop keeps its own gate as the transaction-level guarantee.
+            if (!VendorTransaction.CanAffordPickUp(CurrentWallet(), package, HalvesOnPickUp, ItemService.Instance.Catalog))
+                return;
 
             var unitPrice = VendorTransaction.BuyPrice(package.Item, ItemService.Instance.Catalog);
 
