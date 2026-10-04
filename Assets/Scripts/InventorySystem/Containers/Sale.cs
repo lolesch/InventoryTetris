@@ -20,7 +20,8 @@ namespace ToolSmiths.InventorySystem.Inventories
     ///
     /// <para>It replaces the staged <see cref="SellBasket"/>, which stays in the code until the
     /// staged sale code is deleted. The shift-click sink calls <see cref="TrySell"/> (issue #128);
-    /// the drop sale, <see cref="TrySellHeld"/>, has no GUI caller yet.</para>
+    /// the drop sale, <see cref="TrySellHeld"/>, is called by a Supply slot's drop (issue #129),
+    /// which asks <see cref="CanSellHeld"/> first for the forbidden tint.</para>
     /// </summary>
     public static class Sale
     {
@@ -63,13 +64,32 @@ namespace ToolSmiths.InventorySystem.Inventories
         }
 
         /// <summary>
+        /// Whether <see cref="TrySellHeld"/> would take <paramref name="held"/> - the drop target's
+        /// own answer, asked before release so it can show the forbidden tint, and by the drop
+        /// itself. Reads, never mutates. False for a purchase in progress, a payout of 0 and a
+        /// payout the Wallet cannot bank; the same refusals the sale makes.
+        /// </summary>
+        public static bool CanSellHeld(SoldContainer sold, Wallet wallet, Package held, float? carriedPrice = null)
+        {
+            if (carriedPrice != null || sold == null || wallet == null || !held.IsValid)
+                return false;
+
+            var payout = PayoutOf(sold, held);
+
+            return 0u != payout.Total && wallet.CanDeposit(payout);
+        }
+
+        private static Currency PayoutOf(SoldContainer sold, Package package) =>
+            new(sold.ViewOf(package.Item).SellValue * package.Amount);
+
+        /// <summary>
         /// The tail both entries share, with <paramref name="package"/> already off its source
         /// on <paramref name="transaction"/>'s working copies. A false return leaves the
         /// transaction uncommitted, so disposing it restores everything.
         /// </summary>
         private static bool Complete(ItemTransaction transaction, SoldContainer sold, Wallet wallet, Package package)
         {
-            var payout = new Currency(sold.ViewOf(package.Item).SellValue * package.Amount);
+            var payout = PayoutOf(sold, package);
 
             if (0u == payout.Total || !wallet.CanDeposit(payout))
                 return false;

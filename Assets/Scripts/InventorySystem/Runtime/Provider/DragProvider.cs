@@ -56,6 +56,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         /// </summary>
         public float? PurchasePrice { get; private set; }
 
+        /// <summary>Whether the held Package is a purchase in progress - lifted off a shelf and not
+        /// yet paid for. A drop target asks this before it treats the Package as the player's own:
+        /// a purchase is never a sale (issue #129), it returns to its origin free.</summary>
+        public bool IsHoldingPurchase => PurchasePrice != null;
+
         /// <summary>
         /// Where <see cref="CancelDrag"/> returns the package currently in hand -
         /// <see cref="Origin"/>'s container and cell at pick-up, or the real container and

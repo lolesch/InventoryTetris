@@ -365,6 +365,80 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             Assert.That(wallet.Balance.Total, Is.EqualTo(SwordValue));
         }
 
+        // ── the drop sale: the forbidden tint asks before release, the drop does it ──
+
+        [Test]
+        public void CanSellHeld_IsTrue_ForAPlayerPackageThatPaysAndFits()
+        {
+            var wallet = WalletOver(Inventory());
+
+            Assert.That(Sale.CanSellHeld(Sold(), wallet, new Package(null, Sword(), 1u)), Is.True);
+        }
+
+        [Test]
+        public void CanSellHeld_IsFalse_ForAPurchaseInProgress()
+        {
+            var wallet = WalletOver(Inventory());
+
+            Assert.That(Sale.CanSellHeld(Sold(), wallet, new Package(null, Sword(), 1u), carriedPrice: 315f), Is.False);
+        }
+
+        [Test]
+        public void CanSellHeld_IsFalse_WhenThePayoutIsZero()
+        {
+            var wallet = WalletOver(Inventory());
+
+            Assert.That(Sale.CanSellHeld(Sold(), wallet, new Package(null, Worthless(), 1u)), Is.False);
+        }
+
+        [Test]
+        public void CanSellHeld_IsFalse_WhenThePayoutWouldNotFit()
+        {
+            var wallet = WalletOver(Inventory(1, 1));
+            SeedCash(wallet, CurrencyType.Gold, 1u); // no free cell, no copper/silver pile to merge into
+
+            Assert.That(Sale.CanSellHeld(Sold(), wallet, new Package(null, Helm(), 1u)), Is.False);
+        }
+
+        [Test]
+        public void CanSellHeld_IsFalse_ForNothingInHand_OrNoSoldContainer()
+        {
+            var wallet = WalletOver(Inventory());
+
+            Assert.That(Sale.CanSellHeld(Sold(), wallet, default), Is.False);
+            Assert.That(Sale.CanSellHeld(null, wallet, new Package(null, Sword(), 1u)), Is.False);
+        }
+
+        [Test]
+        public void CanSellHeld_AgreesWithTrySellHeld()
+        {
+            var sword = new Package(null, Sword(), 1u);
+            var worthless = new Package(null, Worthless(), 1u);
+
+            foreach (var held in new[] { sword, worthless })
+            {
+                var wallet = WalletOver(Inventory());
+                var sold = Sold();
+                var asked = Sale.CanSellHeld(sold, wallet, held);
+
+                Assert.That(Sale.TrySellHeld(sold, wallet, held), Is.EqualTo(asked));
+            }
+        }
+
+        [Test]
+        public void AHeldHalfStack_SellsOnlyTheHalf()
+        {
+            var wallet = WalletOver(Inventory());
+            var sold = Sold();
+            var coins = Copper();
+            var half = new Package(null, coins, 3u); // a Ctrl-half pick-up of a stack of 6 holds 3
+
+            Assert.That(Sale.TrySellHeld(sold, wallet, half), Is.True);
+
+            Assert.That(CountOf(sold, coins), Is.EqualTo(3u));
+            Assert.That(wallet.Balance.Total, Is.EqualTo(3u * Currency.ironToCopper));
+        }
+
         // ── guards ─────────────────────────────────────────────────────────
 
         [Test]
