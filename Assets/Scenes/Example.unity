@@ -12409,6 +12409,7 @@ MonoBehaviour:
   <PreviousMember>k__BackingField: {fileID: 0}
   <UserCanUntoggle>k__BackingField: 0
   <GroupCanUntoggle>k__BackingField: 0
+  <ResetWithParentPanel>k__BackingField: 1
 --- !u!114 &963343018
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -20917,6 +20918,7 @@ MonoBehaviour:
   <PreviousMember>k__BackingField: {fileID: 0}
   <UserCanUntoggle>k__BackingField: 0
   <GroupCanUntoggle>k__BackingField: 0
+  <ResetWithParentPanel>k__BackingField: 1
 --- !u!114 &1738999153
 MonoBehaviour:
   m_ObjectHideFlags: 0
