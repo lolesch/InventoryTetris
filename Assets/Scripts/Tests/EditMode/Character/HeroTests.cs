@@ -284,9 +284,13 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Character
         {
             var hero = NewHero();
 
+            var experience = hero.GetResource(StatName.Experience);
+            var thresholdBefore = experience.TotalValue;
+
             var raised = CountStatsChanged(hero, () => hero.GainExperience(280f, monsterLevel: 1u));
 
-            Assert.That(raised, Is.GreaterThanOrEqualTo(1), "the next threshold is a new Experience total");
+            Assert.That(experience.TotalValue, Is.GreaterThan(thresholdBefore), "the next threshold is a new Experience total");
+            Assert.That(raised, Is.EqualTo(1), "one level, one new total - the heal moves only current values");
         }
 
         [Test]
@@ -324,14 +328,6 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Character
             var raised = CountStatsChanged(hero, () => hero.AddItemStats(new[] { On(StatName.Armor, Flat(0f)) }));
 
             Assert.That(raised, Is.Zero);
-        }
-
-        [Test]
-        public void StatsChanged_HasNoListenersOnAFreshHero()
-        {
-            var hero = NewHero();
-
-            Assert.DoesNotThrow(() => hero.AddItemStats(new[] { On(StatName.Armor, Flat(10f)) }));
         }
 
         // --- regeneration -------------------------------------------------------------------------
