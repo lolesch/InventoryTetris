@@ -95,7 +95,15 @@ namespace ToolSmiths.InventorySystem.Services
             RecoverCorpseAt(hero, profile);
         }
 
-        public RunResult Recall() => Run.Recall();
+        public event Action<RunResult> RunSettled;
+
+        public RunResult Recall()
+        {
+            var result = Run.Recall();
+            RunSettled?.Invoke(result);
+
+            return result;
+        }
 
         public void Tick(float deltaSeconds)
         {
@@ -123,7 +131,7 @@ namespace ToolSmiths.InventorySystem.Services
             if (run.HeroIsDown)
                 HandleHeroDeath(hero, run);
             else if (run.RecallRequested)
-                _ = run.Recall();
+                _ = Recall();
         }
 
         private RunState BuildRun(World world)
@@ -196,6 +204,8 @@ namespace ToolSmiths.InventorySystem.Services
 
             var fell = hero.SelectedLocation;
             SettlementFor(hero).Settle(result, fell != null ? ProfileFor(fell) : null);
+
+            RunSettled?.Invoke(result);
         }
 
         /// <summary>

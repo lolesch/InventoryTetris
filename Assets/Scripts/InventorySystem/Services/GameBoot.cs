@@ -82,7 +82,7 @@ namespace ToolSmiths.InventorySystem.Services
 
             // The heroes on disk. It reads and writes nothing until a caller asks.
             registry.Register<IHeroSaveService>(
-                new HeroSaveService(session, items, config, simulation.Locations, saves, new JsonUtilitySerializer()));
+                new HeroSaveService(session, items, config, simulation, saves, new JsonUtilitySerializer()));
 
             return registry;
         }

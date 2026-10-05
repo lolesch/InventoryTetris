@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using ToolSmiths.InventorySystem.Persistence;
 using ToolSmiths.InventorySystem.Runtime.Character;
+using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Services
@@ -24,6 +25,7 @@ namespace ToolSmiths.InventorySystem.Services
         private readonly ISession session;
         private readonly IItemService items;
         private readonly GameConfig config;
+        private readonly ISimulationService simulation;
         private readonly ILocationIndex locations;
         private readonly ISaveStore store;
         private readonly ISaveSerializer serializer;
@@ -35,18 +37,24 @@ namespace ToolSmiths.InventorySystem.Services
         /// <summary>Call sites at the Unity edge read the service as <c>HeroSaveService.Instance</c>.</summary>
         public static IHeroSaveService Instance => ServiceLocator.Get<IHeroSaveService>();
 
-        /// <param name="locations">Resolves the Location ids a save holds; the simulation service's registry.</param>
+        /// <param name="simulation">Its Location registry resolves the Location ids a save holds, and its
+        /// <see cref="ISimulationService.RunSettled"/> is a save point: a Recall and a Death each write the hero.
+        /// The subscription is made once, here; the service is one instance, so a hero load or a World swap
+        /// never needs it re-made.</param>
         /// <param name="utcNow">The clock for the saved-at stamp; the system clock when null.</param>
-        public HeroSaveService(ISession session, IItemService items, GameConfig config, ILocationIndex locations,
+        public HeroSaveService(ISession session, IItemService items, GameConfig config, ISimulationService simulation,
             ISaveStore store, ISaveSerializer serializer, Func<DateTime> utcNow = null)
         {
             this.session = session ?? throw new ArgumentNullException(nameof(session));
             this.items = items ?? throw new ArgumentNullException(nameof(items));
             this.config = config ?? throw new ArgumentNullException(nameof(config));
-            this.locations = locations ?? throw new ArgumentNullException(nameof(locations));
+            this.simulation = simulation ?? throw new ArgumentNullException(nameof(simulation));
+            locations = simulation.Locations;
             this.store = store ?? throw new ArgumentNullException(nameof(store));
             this.serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
             this.utcNow = utcNow;
+
+            simulation.RunSettled += _ => Save();
         }
 
         public string ActiveHeroId { get; private set; }
@@ -185,6 +193,10 @@ namespace ToolSmiths.InventorySystem.Services
             // The Session's hero is the file's only while it is the one this service loaded; a template
             // load or another load behind its back leaves the file alone.
             if (ActiveHeroId == null || !ReferenceEquals(activeHero, session.Hero))
+                return false;
+
+            // A hero in the Field holds a bag the Run has not settled; the file only ever holds a Town hero.
+            if (simulation.Run.Phase == RunPhase.InField)
                 return false;
 
             // A write that fails must not take the game down. The write is atomic, so the previous save is

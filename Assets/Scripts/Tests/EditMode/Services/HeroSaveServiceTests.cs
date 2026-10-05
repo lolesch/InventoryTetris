@@ -7,7 +7,9 @@ using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Locations;
+using ToolSmiths.InventorySystem.Runtime.Character;
 using ToolSmiths.InventorySystem.Services;
+using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Tests.Services
@@ -57,7 +59,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         private Setup NewSetup(ISaveStore over)
         {
             var game = TestGame.Create(config);
-            var saves = new HeroSaveService(game.Session, game.Items, config, game.Simulation.Locations, over,
+            var saves = new HeroSaveService(game.Session, game.Items, config, game.Simulation, over,
                 new JsonUtilitySerializer(), () => now);
 
             return new Setup { Game = game, Saves = saves };
@@ -402,6 +404,127 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             // but the hero it created is on disk.
             Assert.That(result.Entered, Is.False);
             Assert.That(setup.Saves.List().Count, Is.EqualTo(1));
+        }
+
+        // ── save points: a Run settles ──────────────────────────────────────
+
+        private static void TickUntilHome(Setup setup)
+        {
+            for (var i = 0; i < 100 && setup.Game.Simulation.Run.Phase == RunPhase.InField; i++)
+                setup.Game.Simulation.Tick(0.5f);
+
+            Assert.That(setup.Game.Simulation.Run.Phase, Is.EqualTo(RunPhase.InTown), "the Run never ended");
+        }
+
+        private static void PutPotionsInBag(Setup setup, uint amount)
+        {
+            var id = setup.Game.Items.Catalog.OfCategory(ItemCategory.Consumable).First().Id;
+            var package = new Package(setup.Game.Hero.Inventory, new ItemInstance(id, ItemRarity.Common, 1, null), amount);
+            Assert.That(setup.Game.Hero.Inventory.TryAddToContainer(ref package), Is.True);
+        }
+
+        private static bool BagHoldsPotions(Hero hero) =>
+            hero.Inventory.StoredPackages.Values.Any(p => hero.Inventory.ViewOf(p.Item).Definition.Category == ItemCategory.Consumable);
+
+        private Setup LoadedHero(out string id)
+        {
+            var setup = NewSetup();
+            id = setup.Saves.Create("Aria").Id;
+            _ = setup.Saves.Load(id);
+            return setup;
+        }
+
+        [Test]
+        public void ADeath_DrivesASave_WhoseHeroHasItsCorpseAndAnEmptyBag()
+        {
+            var setup = LoadedHero(out var id);
+            PutPotionsInBag(setup, 3u);
+            setup.Game.Simulation.Send(thornwood);
+            setup.Game.Hero.GetResource(StatName.Health).DepleteCurrent();
+            Tick();
+
+            TickUntilHome(setup);
+
+            var next = NewSetup();
+            _ = next.Saves.Load(id);
+            Assert.That(next.Game.Hero.Corpse.Exists, Is.True, "the bag was buried before the save was written");
+            Assert.That(BagHoldsPotions(next.Game.Hero), Is.False);
+            Assert.That(next.Saves.List().Single().SavedAtUtc, Is.EqualTo(now), "written by the Death, not earlier");
+        }
+
+        [Test]
+        public void ARecall_DrivesASave_WithTheBankedLootInTheBag()
+        {
+            var setup = LoadedHero(out var id);
+            setup.Game.Simulation.Send(thornwood);
+            PutPotionsInBag(setup, 3u);
+            Tick();
+
+            _ = setup.Game.Simulation.Recall();
+
+            var next = NewSetup();
+            _ = next.Saves.Load(id);
+            Assert.That(BagHoldsPotions(next.Game.Hero), Is.True);
+            Assert.That(next.Game.Hero.Corpse.Exists, Is.False);
+            Assert.That(next.Saves.List().Single().SavedAtUtc, Is.EqualTo(now));
+        }
+
+        [Test]
+        public void TheSettledEvent_FiresAfterTheSettlement_InBothCases()
+        {
+            var setup = LoadedHero(out _);
+            var seen = new List<(RunOutcome Outcome, RunPhase Phase, bool Corpse)>();
+            setup.Game.Simulation.RunSettled += result =>
+                seen.Add((result.Outcome, setup.Game.Simulation.Run.Phase, setup.Game.Hero.Corpse.Exists));
+
+            PutPotionsInBag(setup, 1u);
+            setup.Game.Simulation.Send(thornwood);
+            _ = setup.Game.Simulation.Recall();
+            setup.Game.Simulation.Send(thornwood);
+            setup.Game.Hero.GetResource(StatName.Health).DepleteCurrent();
+            TickUntilHome(setup);
+
+            Assert.That(seen, Is.EqualTo(new[]
+            {
+                (RunOutcome.Recalled, RunPhase.InTown, false),
+                (RunOutcome.Died, RunPhase.InTown, true),
+            }));
+        }
+
+        [Test]
+        public void NoSaveIsWritten_WhileARunIsStillInTheField()
+        {
+            var setup = LoadedHero(out var id);
+            Tick();
+            setup.Game.Simulation.Send(thornwood);
+            Tick();
+
+            Assert.That(setup.Saves.Save(), Is.False);
+
+            Assert.That(setup.Saves.List().Single().SavedAtUtc, Is.Not.EqualTo(now));
+            Assert.That(setup.Saves.ActiveHeroId, Is.EqualTo(id));
+        }
+
+        [Test]
+        public void TheSubscription_SurvivesAHeroLoad_AndWritesTheHeroThatIsNowActive()
+        {
+            var setup = NewSetup();
+            var first = setup.Saves.Create("First");
+            var second = setup.Saves.Create("Second");
+            _ = setup.Saves.Load(first.Id);
+            _ = setup.Saves.Load(second.Id);
+            Tick();
+            setup.Game.Simulation.Send(thornwood);
+            setup.Game.Hero.Wallet.Deposit(new Currency(50u));
+
+            _ = setup.Game.Simulation.Recall();
+
+            var list = setup.Saves.List().ToDictionary(hero => hero.Id);
+            Assert.That(list[second.Id].SavedAtUtc, Is.EqualTo(now));
+            Assert.That(list[first.Id].SavedAtUtc, Is.Not.EqualTo(now));
+            var next = NewSetup();
+            _ = next.Saves.Load(second.Id);
+            Assert.That(next.Game.Hero.Wallet.Balance.Total, Is.EqualTo(50u));
         }
 
         // ── the boot ────────────────────────────────────────────────────────

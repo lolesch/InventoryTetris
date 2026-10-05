@@ -1,4 +1,5 @@
 using Submodules.Utility.Services;
+using System;
 using ToolSmiths.InventorySystem.Locations;
 using ToolSmiths.InventorySystem.Simulation;
 
@@ -28,6 +29,16 @@ namespace ToolSmiths.InventorySystem.Services
         /// can show a full bag visibly stranding loot.
         /// </summary>
         LootFlow LootFlow { get; }
+
+        /// <summary>
+        /// Raised once, after a Run has ended and everything its end does has been applied: the Run is
+        /// back in Town, and on a Death the bag is already buried in the Corpse and the penalty paid. A
+        /// Recall raises it the same way. The Run's own ended event fires earlier, inside the Death
+        /// handling, so a save hooked to that one would write a hero with no Corpse and a full bag.
+        /// This one is the service's, not the Run's, so it survives a World swap: a subscriber attaches
+        /// once.
+        /// </summary>
+        event Action<RunResult> RunSettled;
 
         /// <summary>
         /// Send the hero to <paramref name="location"/>: <see cref="RunPhase.InTown"/> to

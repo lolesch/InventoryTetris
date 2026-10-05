@@ -82,7 +82,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         private Setup NewSetup()
         {
             var game = TestGame.Create(config);
-            var saves = new HeroSaveService(game.Session, game.Items, config, game.Simulation.Locations, store,
+            var saves = new HeroSaveService(game.Session, game.Items, config, game.Simulation, store,
                 new JsonUtilitySerializer(), () => now);
 
             return new Setup { Game = game, Saves = saves };
