@@ -9,7 +9,21 @@ prefix and a body paragraph summarizing the decision. If `/to-spec` — or any s
 defaults to writing the spec somewhere else (an issue body, a `docs/` subfolder), put
 it in `dev/specs/` instead.
 
-Implementation work is broken out of a spec with `/to-tickets` into GitHub Issues, then built one issue at a time with `/implement`, closed with `/code-review`. Execute inline, never use subagents. Before starting `/implement #N`, run `python dev/frontier.py` — `ready-for-agent` means the spec is written, not that the dependencies are closed. If `#N` isn't the frontier, surface that and stop. The frontier is derived from the issues' **Blocked by**, not recorded in a doc, so a PR carries no tracker commit. If the epic swaps a mechanism rather than just adding one, settle what replaces it with `/rederive` before the spec, and run `/drift-review` twice — over the existing slice once the swap is named, and over the new ticket slice before `/implement`. It catches a ticket fixing the mechanism a sibling ticket is about to replace (a stranded fix). **There is no per-phase implementation-plan document** — the issue is the unit of work; if one does not fit a single context window, split it into more issues rather than write a plan. Closing an issue-epic should surface implementation gaps against its spec, or delete it if the spec is fully covered.
+Implementation work flows spec -> `/to-tickets` (GitHub Issues) -> `/implement #N`, one issue at a
+time -> `/code-review`.
+
+- Execute inline, never with subagents.
+- Before `/implement #N`, run `python dev/frontier.py`. `ready-for-agent` means the spec is
+  written, not that the dependencies are closed. If `#N` isn't the frontier, surface that and stop.
+  The frontier is derived from each issue's **Blocked by**, so a PR carries no tracker commit.
+- An epic that swaps a mechanism rather than adding one: settle the replacement with `/rederive`
+  before the spec, then `/drift-review` twice, over the existing slice once the swap is named and
+  over the new ticket slice before `/implement`. It catches a stranded fix: a ticket fixing the
+  mechanism a sibling ticket is about to replace.
+- The issue is the unit of work; there is no per-phase implementation-plan document. An issue too
+  big for one context window splits into more issues.
+- Closing an issue-epic surfaces implementation gaps against its spec, or deletes the epic if the
+  spec is fully covered.
 
 ## Agent skills
 
