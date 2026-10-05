@@ -61,10 +61,15 @@ are not. Workaround: put a `public static` harness class in a real file under
 `Assets/Scripts/` (it lands in `Assembly-CSharp`, sees internals) and have `RunCommand`
 call one method on it — reflection inside a *compiled* file runs fine.
 
-**Other:** Unity content-hashes source, so `touch` alone won't retrigger a compile. A
-`.bak` file next to a script makes Unity emit a stray `.bak.meta` — delete before
-committing. Delete any `TestRunnerApi` bridge / scratch runner script before committing
-(it has happened twice — a "Do NOT commit" header is not enough).
+**Other:** Unity content-hashes source, so `touch` alone won't retrigger a compile.
+
+**Scratch runners and `.bak` files are caught by the pre-commit hook.** Enable it once per clone:
+`git config core.hooksPath dev/hooks`. It rejects a staged `TestRunnerApi` bridge script or
+`-executeMethod` runner (a file under `Assets/` that calls `EditorApplication.Exit(`,
+`TestRunnerApi` or `DELIBERATE_SENTINEL_ERROR`; tests and the `Utility` submodule are exempt,
+and `allow-scratch-runner` in a file exempts it), a `.bak` or `.bak.meta` (Unity emits that
+`.meta` for a `.bak` beside a script), a cut `.cs.meta`, and mojibake in added lines. Delete the
+runner and its `.meta` yourself when the run is done; the hook is the backstop.
 
 ## Scene authoring and verification on a worktree
 
@@ -94,8 +99,8 @@ instance beside this project's Personal license is fine (verified 2026-09-21).
 textures) and builds its own `Library/`; later runs are a compile plus the tests, ~90 s.
 **`-executeMethod` aborts before running when the project has any `error CS`**, so the first
 run doubles as a compile gate — grep the log for `error CS` and for `Aborting batchmode`.
-**Delete the `-executeMethod` script and its `.meta` before committing**, same rule as the
-bridge scratch runners above.
+Delete the `-executeMethod` script and its `.meta` when done (the pre-commit hook above
+rejects it).
 
 **The Editor beats you to it.** Opening a worktree in the Editor (a human does this to smoke
 a change) takes the project lock and every later `-runTests` there aborts in under a second
@@ -221,13 +226,8 @@ still on disk. A fresh checkout / Library wipe breaks.
 **Confirm the shape before touching a meta.** `AssetDatabase.AssetPathToGUID(path)` is the
 authority: `""` means Unity ignored it (**cut**), any other value means it resolved
 (**full** or **short**). On disk the signature of a **cut** meta is that it starts the
-importer block and never finishes it:
-
-```bash
-find Assets -name '*.cs.meta' -not -path '*/Library/*' | while read -r f; do
-  grep -q MonoImporter "$f" && [ -n "$(tail -c1 "$f")" ] && echo "CUT $f"
-done
-```
+importer block and never finishes it: `MonoImporter` present, last byte not a newline. The
+pre-commit hook (`dev/hooks/pre-commit`) runs that check on every staged `*.cs.meta`.
 
 **`grep -L assetBundleVariant` finds the opposite set.** The cut lands *at* that line, so a
 **cut** meta still contains the string and the grep skips it; what it returns is every
@@ -243,27 +243,25 @@ To repair a genuinely **cut** meta: rewrite it canonically (`fileFormatVersion: 
 Then `AssetDatabase.ImportAsset(path, ForceUpdate | ForceSynchronousImport)` +
 `CompilationPipeline.RequestScriptCompilation()` through the bridge.
 
-## Source is CRLF + UTF-8 — stream editors corrupt it silently
+## Source is CRLF + UTF-8 — stream editors can still corrupt it
 
-Source under `Assets/Scripts/` is **CRLF-terminated UTF-8**, and the docstrings are dense
-with em dashes (—) and other non-ASCII. There is no `.gitattributes`, so nothing normalises
-this on commit. Two stream editors damage it without failing:
+Source under `Assets/Scripts/` and the docs are **CRLF in the working tree, LF in the index**
+(`.gitattributes`: `*.cs` and `*.md` are `text eol=crlf`, so this holds whatever `core.autocrlf`
+says). The docstrings are dense with em dashes (—) and other non-ASCII. Because git normalises
+on add, a stream editor's line-ending flip no longer shows up as churn. The encoding damage does:
 
-- **`sed -i` rewrites the file with LF endings even when it changes nothing**, so a glob
-  like `sed -i 's/x/y/' dir/*.cs` marks every file in the directory dirty with a
-  whole-file ending flip.
 - **`perl -0pi -e` mojibakes existing UTF-8** (— becomes â) as soon as the replacement
   string itself contains a wide character — it switches to character semantics on output
-  only.
+  only. The pre-commit hook rejects mojibake in added lines of `*.cs` and `*.md`.
+- **`sed -i`** rewrites with LF; harmless to git now, but it still changes the working copy that
+  Unity and the editors read.
 
-Neither failure shows up in a test run: the code still compiles and the suite still passes,
-so it reaches review as unrelated churn or as corrupted prose.
+Neither failure shows up in a test run: the code still compiles and the suite still passes.
 
 **Use an editor tool that preserves encoding and endings** (Claude Code's `Edit`) for
 anything touching these files, even mechanical multi-file renames. If a stream editor is
-genuinely the right tool, restrict the glob to files that will actually match, then check
-`git diff --name-only` against `git status --short` and `git checkout --` anything that
-shows modified with no content diff. This file and the rest of `docs/` are CRLF too.
+genuinely the right tool, restrict the glob to files that will actually match and check
+`git diff` afterwards.
 
 ## The "Scene(s) Have Been Modified" modal
 

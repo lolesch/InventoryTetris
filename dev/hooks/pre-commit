@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# Rejects the commit mistakes docs/agents/codebase-notes.md used to warn about in prose.
+# Enable once per clone:  git config core.hooksPath dev/hooks
+# Bypass a deliberate case:  git commit --no-verify   (or put `allow-scratch-runner` in the file)
+
+fail=0
+report() { echo "pre-commit: $1" >&2; fail=1; }
+
+staged() { git diff --cached --name-only --diff-filter=AM -z "$@" | tr '\0' '\n'; }
+
+# 1. Scratch runners: bridge / -executeMethod scripts that end the Editor or drive the test runner.
+#    Tests, the Utility submodule and files marked `allow-scratch-runner` are exempt.
+while IFS= read -r f; do
+  case "$f" in Assets/Scripts/Tests/*|Assets/Submodules/*) continue ;; esac
+  blob=$(git show ":$f")
+  grep -q 'allow-scratch-runner' <<<"$blob" && continue
+  if grep -qE 'EditorApplication\.Exit\(|TestRunnerApi|DELIBERATE_SENTINEL_ERROR' <<<"$blob"; then
+    report "$f looks like a scratch runner (Exit / TestRunnerApi / sentinel). Delete it and its .meta, or add 'allow-scratch-runner'."
+  fi
+done < <(staged -- 'Assets/*.cs')
+
+# 2. Editor backup files and their stray metas.
+while IFS= read -r f; do
+  report "$f is a backup file; delete it before committing."
+done < <(staged | grep -E '\.bak(\.meta)?$')
+
+# 3. Cut .cs.meta: opens the MonoImporter block and stops mid-line, so Unity ignores the script.
+while IFS= read -r f; do
+  blob=$(git show ":$f")
+  if grep -q MonoImporter <<<"$blob" && [ -n "$(git show ":$f" | tail -c1)" ]; then
+    report "$f is a cut .meta (no trailing newline); see codebase-notes.md, 'broken .meta'."
+  fi
+done < <(staged -- '*.cs.meta')
+
+# 4. Mojibake in added lines of source and docs (UTF-8 re-read as Latin-1: em dash becomes 'â€”').
+moji=$'\xc3\xa2\xe2\x82\xac'
+while IFS= read -r f; do
+  if git diff --cached -U0 -- "$f" | grep -a '^+' | grep -aqF "$moji"; then
+    report "$f has mojibake in added lines (a stream editor re-encoded UTF-8); use the Edit tool."
+  fi
+done < <(staged -- '*.cs' '*.md')
+
+exit "$fail"

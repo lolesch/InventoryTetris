@@ -33,8 +33,8 @@ Read before writing a script, or during `/code-review`/`/simplify`.
 ### Codebase notes
 
 `docs/agents/codebase-notes.md` — read before Unity compile or test verification (`dotnet build`
-lies; drive the `unity-mcp` bridge), an asmdef change, or a scripted multi-file edit (`sed -i` and
-`perl -pi` corrupt the CRLF + UTF-8 source). It also covers broken `.cs.meta` files, the scene-save
+lies; drive the `unity-mcp` bridge), an asmdef change, or a scripted multi-file edit (`perl -pi`
+mojibakes the UTF-8 source), and to enable the pre-commit hook (`git config core.hooksPath dev/hooks`). It also covers broken `.cs.meta` files, the scene-save
 modal and the `Utility` submodule.
 
 ## GitHub Pages: keep `docs/agents/` and `docs/adr/` out of `GitPage`
