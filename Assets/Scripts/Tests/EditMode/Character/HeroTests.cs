@@ -399,6 +399,35 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Character
         // --- level and XP -------------------------------------------------------------------------
 
         [Test]
+        public void GainExperience_FromAMonsterBelowTheHero_DoesNotWrapTheLevelDifference()
+        {
+            var hero = NewHero();
+            hero.GainExperience(280f, monsterLevel: 1u);
+            Assert.That(hero.Level, Is.EqualTo(2u), "precondition: one level-up");
+
+            hero.GainExperience(10f, monsterLevel: 1u);
+
+            Assert.That(hero.Level, Is.EqualTo(2u), "10 XP from a lower-level monster is a few XP, not a wrapped uint");
+            Assert.That(hero.GetResource(StatName.Experience).CurrentValue, Is.InRange(0f, 10f));
+        }
+
+        [Test]
+        public void ASparseTemplate_RegeneratesAndCalculatesDamage_WithoutThrowing()
+        {
+            var hero = new Hero(Array.Empty<CharacterStat>(), new[]
+            {
+                new CharacterResource(StatName.Health, 100f),
+                new CharacterResource(StatName.Resource, 100f),
+                new CharacterResource(StatName.Shield, 0f),
+                new CharacterResource(StatName.Experience, 280f),
+            });
+
+            Assert.DoesNotThrow(() => hero.Regenerate(1f));
+            Assert.That(hero.CalculateDamageOutput(DamageType.PhysicalDamage), Is.Zero);
+            Assert.That(hero.CalculateReceivingDamage(DamageType.PhysicalDamage, 10f), Is.EqualTo(10f));
+        }
+
+        [Test]
         public void GainExperience_BelowTheThreshold_KeepsTheLevel()
         {
             var hero = NewHero();

@@ -199,7 +199,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             return null;
         }
 
-        public float GetStatValue(StatName stat) => GetStat(stat).TotalValue;
+        /// <summary>The stat's total, or 0 for a stat the template never authored, so a sparse template
+        /// costs a bonus rather than a NullReferenceException on every tick.</summary>
+        public float GetStatValue(StatName stat) => GetStat(stat)?.TotalValue ?? 0f;
 
         public void AddItemStats(IReadOnlyList<CharacterStatModifier> stats)
         {
@@ -250,18 +252,18 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         {
             _healthSecondsEmpty = ResourceRegen.Step(
                 GetResource(StatName.Health),
-                GetStat(StatName.HealthRegeneration).TotalValue,
+                GetStatValue(StatName.HealthRegeneration),
                 recoveryDelay: -1f, _healthSecondsEmpty, deltaSeconds);
 
             _resourceSecondsEmpty = ResourceRegen.Step(
                 GetResource(StatName.Resource),
-                GetStat(StatName.ResourceRegeneration).TotalValue,
+                GetStatValue(StatName.ResourceRegeneration),
                 recoveryDelay: 0f, _resourceSecondsEmpty, deltaSeconds);
 
             //TODO: design Shield recharge
             _shieldSecondsEmpty = ResourceRegen.Step(
                 GetResource(StatName.Shield),
-                GetStat(StatName.HealthRegeneration).TotalValue,
+                GetStatValue(StatName.HealthRegeneration),
                 recoveryDelay: 2f, _shieldSecondsEmpty, deltaSeconds);
         }
 
@@ -280,8 +282,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
                 return;
 
             //TODO: design exp gain
-            var levelDifference = monsterLevel - Level;
-            var levelBalanceExp = exp * (1f + levelDifference / 100f);
+            // Signed: both levels are uint, so a monster below the hero would wrap to ~4 billion.
+            var levelDifference = (float)monsterLevel - Level;
+            var levelBalanceExp = exp * Mathf.Max(0f, 1f + levelDifference / 100f);
             var experience = GetResource(StatName.Experience);
 
             while (0 < levelBalanceExp)

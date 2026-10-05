@@ -67,10 +67,12 @@ namespace ToolSmiths.InventorySystem.Services
                 throw new ArgumentNullException(nameof(location));
 
             var hero = session.Hero;
-            hero.SelectedLocation = location;
 
             var profile = ProfileFor(location);
             Run.Send(profile);
+
+            // After the Run accepted it: a refused Send must not move the Location a Death is judged against.
+            hero.SelectedLocation = location;
 
             RecoverCorpseAt(hero, profile);
         }
@@ -81,10 +83,11 @@ namespace ToolSmiths.InventorySystem.Services
                 throw new ArgumentNullException(nameof(location));
 
             var hero = session.Hero;
-            hero.SelectedLocation = location;
 
             var profile = ProfileFor(location);
             Run.Relocate(profile);
+
+            hero.SelectedLocation = location;
 
             RecoverCorpseAt(hero, profile);
         }

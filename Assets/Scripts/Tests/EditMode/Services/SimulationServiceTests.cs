@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using ToolSmiths.InventorySystem.Data;
@@ -125,6 +126,16 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.InTown));
             Assert.That(service.LootFlow, Is.Null);
             Assert.That(session.World.VendorSupply.StoredPackages, Is.Not.Empty, "a Recall brings the shops new stock");
+        }
+
+        [Test]
+        public void ARefusedSend_LeavesTheSelectedLocationAlone()
+        {
+            service.Send(thornwood);
+
+            Assert.Throws<InvalidOperationException>(() => service.Send(ashfen));
+
+            Assert.That(session.Hero.SelectedLocation, Is.SameAs(thornwood));
         }
 
         [Test]
