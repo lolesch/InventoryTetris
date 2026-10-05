@@ -45,16 +45,25 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         {
             base.BeforeAppear();
 
-            // The Hero's Behaviour Profile: the sliders write it live, and the sim reads it live.
-            _behaviour = Session.Instance.Hero.Behaviour;
-
-            ApplyAll();
+            BindBehaviour();
 
             // BeforeAppear runs on every fade-in and the panel stays enabled between them, so
             // OnPanelDisable is not a reliable pair — detach before attach so a re-appear cannot
             // stack a second listener that writes the behaviour once per duplicate on each drag.
             SetSliderListeners(add: false);
             SetSliderListeners(add: true);
+
+            // A hero load (#114) replaces the Hero and with it the Profile: the sliders go on
+            // writing the new one and show its values.
+            _ = Session.TrySubscribeHeroLoaded(BindBehaviour);
+        }
+
+        // The Hero's Behaviour Profile: the sliders write it live, and the sim reads it live.
+        private void BindBehaviour()
+        {
+            _behaviour = Session.Instance.Hero.Behaviour;
+
+            ApplyAll();
         }
 
         private void SetSliderListeners(bool add)
@@ -78,6 +87,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             base.OnDisable();
 
             SetSliderListeners(add: false);
+            Session.UnsubscribeHeroLoaded(BindBehaviour);
 
             _behaviour = null;
         }

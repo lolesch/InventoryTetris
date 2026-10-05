@@ -13,10 +13,20 @@ namespace ToolSmiths.InventorySystem.Services
     /// before it; the Wallet is backed by the hero's Inventory, so that comes first too; and the
     /// World holds nothing the hero needs, so it is built last. Nothing in here calls a locator
     /// or finds anything in a scene, so a test builds the lot from a test config and fakes.
+    ///
+    /// The Session it returns builds a hero load's pair the same way (#114), so a loaded Hero is
+    /// never a different shape from the booted one.
     /// </summary>
     public static class SessionBuilder
     {
         public static Session Build(GameConfig config, HeroData data, IItemService items)
+        {
+            var (hero, world) = BuildPair(config, data, items);
+
+            return new Session(hero, world, loaded => BuildPair(config, loaded, items));
+        }
+
+        private static (Hero Hero, World World) BuildPair(GameConfig config, HeroData data, IItemService items)
         {
             if (config == null)
                 throw new ArgumentNullException(nameof(config));
@@ -49,6 +59,7 @@ namespace ToolSmiths.InventorySystem.Services
             // 4. The Healer's side effect (issue #58): a full Health and Resource refill on every
             // genuine entry into its context. The Hero and the World are built and replaced together,
             // so the subscription lives and dies with the pair: a hero load (#114) rebinds nothing.
+            // It is wired here, not by a view or by the inventory service, so a load builds it again.
             // Changed only fires on an actual change, so a re-request or the way out never heals.
             world.Context.Changed += context =>
             {
@@ -56,7 +67,7 @@ namespace ToolSmiths.InventorySystem.Services
                     hero.Heal();
             };
 
-            return new Session(hero, world);
+            return (hero, world);
         }
 
         // The sliders' starting positions; the live values are the hero's from here on.

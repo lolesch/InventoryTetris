@@ -40,11 +40,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (!Application.isPlaying)
                 return;
 
-            _run = SimulationService.Instance.Run;
-            _run.PhaseChanged -= SyncToPhase;
-            _run.PhaseChanged += SyncToPhase;
+            _ = Session.TrySubscribeHeroLoaded(BindRun);
 
-            SyncToPhase(_run.Phase);
+            BindRun();
         }
 
         // Lets go of the Run it subscribed to, not whatever the service holds by now.
@@ -52,6 +50,24 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         {
             base.OnDisable();
 
+            Session.UnsubscribeHeroLoaded(BindRun);
+
+            ReleaseRun();
+        }
+
+        // A hero load (#114) replaces the World and with it the Run: follow the new one.
+        private void BindRun()
+        {
+            ReleaseRun();
+
+            _run = SimulationService.Instance.Run;
+            _run.PhaseChanged += SyncToPhase;
+
+            SyncToPhase(_run.Phase);
+        }
+
+        private void ReleaseRun()
+        {
             if (_run == null)
                 return;
 

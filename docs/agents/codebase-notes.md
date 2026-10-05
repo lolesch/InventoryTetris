@@ -423,6 +423,15 @@ a reference won't resolve.
   `DummyTarget` and the scene's dummy panel and damage buttons are gone; `CharacterProvider` is down
   to `KillPlayer` and `ToggleSpendingResource` for the scene's two remaining debug controls
   (#118, #119).
+- **A hero load replaces the pair and views rebind on `HeroLoaded`** (#114). `ISession.TryLoad(HeroData)`
+  builds a Hero and a World whole and swaps both; it **refuses while the Run is `InField`** (Recall first).
+  Try it in Play Mode from the menu **ToolSmiths > Hero > Load Default Hero** (`Assets/Editor/LoadHeroMenu.cs`,
+  Play only; #118's `DebugPanel` is its eventual home). A view that holds anything of the old pair (a
+  subscription, a bound container, a cached `Run` or `Behaviour`) subscribes with
+  `Session.TrySubscribeHeroLoaded` in `OnEnable` and releases in `OnDisable`; a view that re-reads a service
+  every `Update` needs nothing. The Inventory Context event is `IInventoryService.ContextChanged`, which
+  follows the current World, so the three context subscribers did not change. There is no Field face
+  registration any more (`cba7728`): its reachability is the `CanvasGroup` hierarchy.
 - **Editing a scene through the open Editor saves the Editor's memory, not the file.** If the
   working copy of `Example.unity` differs from what the Editor loaded (a branch switch, a hand
   edit), a `RunCommand` that deletes objects and saves also rewrites every other difference

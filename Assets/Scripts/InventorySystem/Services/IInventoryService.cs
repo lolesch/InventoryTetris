@@ -1,4 +1,5 @@
 using Submodules.Utility.Services;
+using System;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Inventories;
 
@@ -13,6 +14,18 @@ namespace ToolSmiths.InventorySystem.Services
     /// </summary>
     public interface IInventoryService : IService
     {
+        /// <summary>
+        /// The Inventory Context's change event, stable across a hero load: it follows whichever World
+        /// is current, so a panel or toggle that subscribes once is still subscribed after a swap. It
+        /// fires for every change of the current World's context, and once more on a load with the new
+        /// World's starting context (<see cref="InventoryContext.None"/>), so a panel that was up for
+        /// the discarded World comes down. The discarded World's context reaches no one.
+        /// </summary>
+        event Action<InventoryContext> ContextChanged;
+
+        /// <summary>The current World's active Inventory Context.</summary>
+        InventoryContext ActiveContext { get; }
+
         /// <summary>The container <paramref name="role"/> names on the current Hero and World, or null for none.</summary>
         AbstractDimensionalContainer ContainerFor(ContainerRole role);
 

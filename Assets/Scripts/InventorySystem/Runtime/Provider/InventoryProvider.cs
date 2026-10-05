@@ -21,7 +21,9 @@ namespace ToolSmiths.InventorySystem.Inventories
     /// <see cref="IInventoryService"/>'s. What stays here is what needs a scene object - the
     /// debug buttons' <c>UnityEvent</c> targets (#118 moves them), the Field face registration and
     /// the debug flags. Every member reads the current Hero and World on each call and caches
-    /// neither, so the swap a hero load brings (#114) needs no change here.
+    /// neither, so the swap a hero load brings (#114) needs no change here: the context event is
+    /// the service's, which follows the World, and a display rebinds its container on
+    /// <see cref="ISession.HeroLoaded"/>.
     /// </summary>
     internal sealed class InventoryProvider : AbstractProvider<InventoryProvider>
     {
@@ -53,12 +55,14 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// subscribes to it here.</summary>
         private static InventoryContextState ContextState => Session.Instance.World.Context;
 
-        public InventoryContext ActiveContext => ContextState.Active;
+        public InventoryContext ActiveContext => InventoryService.Instance.ActiveContext;
 
+        /// <summary>Forwards to the inventory service's event, which follows the current World: a
+        /// subscriber stays subscribed through a hero load (#114) and is told the new World starts closed.</summary>
         public event Action<InventoryContext> OnContextChanged
         {
-            add => ContextState.Changed += value;
-            remove => ContextState.Changed -= value;
+            add => InventoryService.Instance.ContextChanged += value;
+            remove => InventoryService.Instance.ContextChanged -= value;
         }
 
         /// <summary>Requests <paramref name="context"/> (issue #84) - the entry-point side of
