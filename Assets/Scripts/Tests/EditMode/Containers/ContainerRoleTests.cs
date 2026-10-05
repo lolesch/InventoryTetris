@@ -22,7 +22,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             Assert.AreEqual(1, (int)ContainerRole.Equipment);
             Assert.AreEqual(2, (int)ContainerRole.Inventory);
             Assert.AreEqual(3, (int)ContainerRole.Stash);
-            Assert.AreEqual(4, (int)ContainerRole.Store);
+            Assert.AreEqual(4, (int)ContainerRole.VendorSupply);
             Assert.AreEqual(5, (int)ContainerRole.HealerSupply);
             Assert.AreEqual(6, (int)ContainerRole.Sold);
         }
@@ -36,18 +36,18 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         [TestCase(ContainerRole.Equipment)]
         [TestCase(ContainerRole.Inventory)]
         [TestCase(ContainerRole.Stash)]
-        [TestCase(ContainerRole.Store)]
+        [TestCase(ContainerRole.VendorSupply)]
         [TestCase(ContainerRole.HealerSupply)]
         [TestCase(ContainerRole.Sold)]
         public void EveryRoleResolvesToItsOwnContainer(ContainerRole role)
         {
             var all = new Dictionary<ContainerRole, AbstractDimensionalContainer>();
             foreach (var r in new[] { ContainerRole.Equipment, ContainerRole.Inventory, ContainerRole.Stash,
-                                      ContainerRole.Store, ContainerRole.HealerSupply, ContainerRole.Sold })
+                                      ContainerRole.VendorSupply, ContainerRole.HealerSupply, ContainerRole.Sold })
                 all[r] = NewContainer();
 
             var resolved = ContainerRoleResolver.Resolve(role, all[ContainerRole.Equipment], all[ContainerRole.Inventory],
-                all[ContainerRole.Stash], all[ContainerRole.Store], all[ContainerRole.HealerSupply],
+                all[ContainerRole.Stash], all[ContainerRole.VendorSupply], all[ContainerRole.HealerSupply],
                 all[ContainerRole.Sold]);
 
             Assert.That(resolved, Is.SameAs(all[role]));

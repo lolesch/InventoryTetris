@@ -16,7 +16,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             ContainerRole.Equipment => equipment,
             ContainerRole.Inventory => inventory,
             ContainerRole.Stash => stash,
-            ContainerRole.Store => store,
+            ContainerRole.VendorSupply => store,
             ContainerRole.HealerSupply => healerSupply,
             ContainerRole.Sold => sold,
             _ => null,

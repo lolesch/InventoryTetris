@@ -18,8 +18,9 @@ namespace ToolSmiths.InventorySystem.Inventories
         Equipment,
         Inventory,
         Stash,
-        Store,
-        /// <summary>The Healer's Supply shelf (issue #121): consumables, bought like the Store's.
+        /// <summary>The Vendor's Supply shelf.</summary>
+        VendorSupply,
+        /// <summary>The Healer's Supply shelf (issue #121): consumables, bought like the Vendor Supply's.
         /// The members are serialized by value in scenes and prefabs, so inserting or deleting a
         /// member shifts every one after it: re-serialize every display in the same change.</summary>
         HealerSupply,
