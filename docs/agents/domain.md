@@ -21,22 +21,6 @@ How the engineering skills should consume this repo's domain documentation when 
 
 If any of these files don't exist, **proceed silently**. Don't flag their absence; don't suggest creating them upfront. The `/domain-modeling` skill (reached via `/grill-with-docs` and `/improve-codebase-architecture`) creates them lazily when terms or decisions actually get resolved.
 
-## File structure
-
-This is a Unity project, so source lives under `Assets/`, not `src/`:
-
-```
-/
-├── GLOSSARY.md                     ← domain glossary (created lazily)
-├── docs/
-│   ├── adr/                       ← architecture decision records (created lazily)
-│   └── agents/                    ← this config; see the note in CLAUDE.md
-├── dev/
-│   ├── specs/                     ← design specs
-│   └── plans/                     ← implementation plans
-└── Assets/                        ← Unity source, scenes, prefabs, ScriptableObjects
-```
-
 ## Use the glossary's vocabulary
 
 When your output names a domain concept (in an issue title, a refactor proposal, a hypothesis, a test name), use the term as defined in `GLOSSARY.md`. Don't drift to synonyms the glossary explicitly avoids.
