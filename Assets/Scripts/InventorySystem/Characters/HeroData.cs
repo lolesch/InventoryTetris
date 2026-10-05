@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using UnityEngine;
 
@@ -30,8 +31,33 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             }
         }
 
+        /// <summary>
+        /// One item of the kit a newly created hero starts with: a definition from the catalog, by its
+        /// stable id, at a rarity and in a stack. An unset rarity reads as Common and an unset amount as 1.
+        /// </summary>
+        [Serializable]
+        public struct StarterItem
+        {
+            [SerializeField] private string definitionId;
+            [SerializeField] private ItemRarity rarity;
+            [SerializeField] private uint amount;
+
+            public StarterItem(string definitionId, ItemRarity rarity = ItemRarity.Common, uint amount = 1u)
+            {
+                this.definitionId = definitionId;
+                this.rarity = rarity;
+                this.amount = amount;
+            }
+
+            public string DefinitionId => definitionId;
+            public ItemRarity Rarity => rarity == default ? ItemRarity.Common : rarity;
+            public uint Amount => amount == 0u ? 1u : amount;
+        }
+
         [SerializeField] private BaseStat[] stats = Array.Empty<BaseStat>();
         [SerializeField] private BaseStat[] resources = Array.Empty<BaseStat>();
+        [SerializeField] private StarterItem[] starterItems = Array.Empty<StarterItem>();
+        [SerializeField] private Currency starterCoins;
 
         [field: SerializeField, Range(1, 100)] public uint Level { get; private set; } = 1;
 
@@ -40,5 +66,14 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
         /// <summary>Health, Resource, Shield and Experience: the stats that also track a current value.</summary>
         public IReadOnlyList<BaseStat> Resources => Array.AsReadOnly(resources);
+
+        /// <summary>
+        /// The kit a hero created from this template starts with, placed the way a Drop is. Empty is a
+        /// valid kit. Never applied to a hero that is loaded.
+        /// </summary>
+        public IReadOnlyList<StarterItem> StarterItems => Array.AsReadOnly(starterItems ?? Array.Empty<StarterItem>());
+
+        /// <summary>The coins a newly created hero starts with.</summary>
+        public Currency StarterCoins => starterCoins;
     }
 }
