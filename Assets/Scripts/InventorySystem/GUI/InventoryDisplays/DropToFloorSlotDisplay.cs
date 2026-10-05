@@ -13,6 +13,11 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         public CanvasGroup CanvasGroup => canvasGroup != null ? canvasGroup : canvasGroup = GetComponent<CanvasGroup>();
         protected override void DropItem(Package package)
         {
+            /// An empty hand drops nothing, and has no Origin to repaint: a grab the Supply
+            /// refused (an item the player cannot afford) still ends in a drop on this sink.
+            if (!package.IsValid)
+                return;
+
             /// A sink: the item is gone (no floor container to receive it) and the drag is
             /// over. Was SetPackage with an empty Package purely to hide the display.
             DragProvider.Instance.EndDrag();
