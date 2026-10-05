@@ -48,5 +48,5 @@ Labels carry the rest of an issue's state (`needs-triage`, `ready-for-agent`, `r
   "Hero State" and `SessionChanged`. ADR-0015 supersedes that vocabulary: read it as the
   **Hero** and the **World**, and `HeroLoaded`. Its "Sell Basket" is the Sold container
   (ADR-0016).
-- **#63** (ground items display) still owes a refresh: its "shift-quick-move to the floor"
-  criterion must become a ground row in #86's context table.
+- **#63** (ground items display) is built: its "shift-quick-move to the floor" criterion is the
+  `Hero` context's ground row in #86's table (`QuickMoveIntentKind.Drop`, only while a Run has a ground).

@@ -55,8 +55,9 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         /// <summary>
         /// Item Drops still lying on the ground — failed the loot filter, or passed it but did
-        /// found no room. Cleared by <see cref="ClearGround"/>, never by anything else; a
-        /// picked-up Drop is simply not added here in the first place.
+        /// found no room. Cleared by <see cref="ClearGround"/>; a Drop the player takes later leaves
+        /// one at a time through <see cref="PickUpFromGround"/>. A Drop that was picked up on the
+        /// spot is simply not added here in the first place.
         /// </summary>
         public IReadOnlyList<ItemInstance> GroundDrops => _groundDrops;
 
@@ -64,7 +65,55 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// Discards every Drop still on the ground — the Run-end rule (GLOSSARY.md "Drop": "a
         /// Drop still on the ground when the Run ends is gone, on Recall or Death alike").
         /// </summary>
-        public void ClearGround() => _groundDrops.Clear();
+        public void ClearGround()
+        {
+            if (_groundDrops.Count == 0)
+                return;
+
+            _groundDrops.Clear();
+            GroundChanged?.Invoke();
+        }
+
+        /// <summary>
+        /// Raised after <see cref="GroundDrops"/> gained or lost an entry - a kill grounding a Drop,
+        /// a Corpse recovery, a Quick Move to the ground, a pick-up, or the Run-end clear. Carries
+        /// nothing: the Ground Items List (issue #63) re-reads the list, because
+        /// <see cref="ItemInstance"/> is value-equal and an event naming one could not say which
+        /// of two equal Drops it meant.
+        /// </summary>
+        public event Action GroundChanged;
+
+        /// <summary>
+        /// The player picks <paramref name="item"/> up off the ground, through the same acquisition
+        /// entry point a kill's Drop goes through - auto-equip, else the bag. A pick-up that finds
+        /// no room (or throws, surfaced through <see cref="PlacementFailed"/>) leaves the Drop
+        /// where it lay. The Drop is found by reference, not by value: two equal swords on the
+        /// ground are two slots, and the one clicked is the one that goes.
+        /// </summary>
+        /// <returns>Whether the player took it. False also for an item no longer on the ground.</returns>
+        public bool PickUpFromGround(ItemInstance item)
+        {
+            var index = IndexOnGround(item);
+            if (index < 0 || !TryPlace(item))
+                return false;
+
+            // TryPlace runs engine-side code that may itself have touched the ground; look again.
+            index = IndexOnGround(item);
+            if (0 <= index)
+                _groundDrops.RemoveAt(index);
+
+            GroundChanged?.Invoke();
+            return true;
+        }
+
+        private int IndexOnGround(ItemInstance item)
+        {
+            for (var i = 0; i < _groundDrops.Count; i++)
+                if (ReferenceEquals(_groundDrops[i], item))
+                    return i;
+
+            return -1;
+        }
 
         /// <summary>Unsubscribes from the encounter's events so the LootFlow can be collected.</summary>
         public void Dispose() => _encounter.EnemyDefeated -= OnEnemyDefeated;
@@ -81,6 +130,7 @@ namespace ToolSmiths.InventorySystem.Simulation
                 throw new ArgumentNullException(nameof(item));
 
             _groundDrops.Add(item);
+            GroundChanged?.Invoke();
         }
 
         /// <summary>
@@ -129,6 +179,7 @@ namespace ToolSmiths.InventorySystem.Simulation
                 return;
             }
 
+            var grounded = false;
             for (var i = 0; i < drops.Count; i++)
             {
                 var item = drops[i];
@@ -136,7 +187,12 @@ namespace ToolSmiths.InventorySystem.Simulation
                     continue; // equipped, or landed in the bag
 
                 _groundDrops.Add(item);
+                grounded = true;
             }
+
+            // Once per kill, after the list is whole: a listener repaints one list, not one per Drop.
+            if (grounded)
+                GroundChanged?.Invoke();
         }
 
         /// <summary>

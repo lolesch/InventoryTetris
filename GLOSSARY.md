@@ -97,7 +97,9 @@ names a hub (the **Inventory**), one sink, and a set of sources, and every row f
 same three rules: the hub goes to the sink, the **Equipment** goes to the sink in any
 context but `Hero`, and a listed source comes back to the hub. A context with no rows
 moves nothing — the **Supply** is never a sink, and its own shift-click stays a **Buy** in
-every context. A move between containers always executes — into the target container, or the
+every context. `Hero` has one row of its own: while a **Run** has a ground, the **Inventory**
+drops its item there, into the **Ground Items List**; in Town there is no ground, so `Hero`
+moves nothing. A move between containers always executes — into the target container, or the
 hand if that is full. A retrieval from the **Stash** and a **Buy** go through the player's
 acquisition entry point instead, so auto-equip applies, and when nothing has room they roll
 back with nothing moved.
@@ -455,7 +457,9 @@ _Avoid_: skill bar, action bar, power bar
 **Ground Items List**:
 A pooled list of slot displays for items lying on the ground. Each entry shows the
 item name and icon, supports hover preview and click-to-pick-up. One slot per item,
-not spatial.
+not spatial. A click picks the **Drop** up through the player's acquisition entry point,
+so a full bag leaves it lying there. It also shows what the player dropped there by Quick
+Move, and like any **Drop** it is gone when the Run ends.
 _Avoid_: loot beam, drop list, world items
 
 
