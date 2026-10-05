@@ -42,16 +42,11 @@ Unity.exe -runTests -batchmode -projectPath <proj> -testPlatform EditMode \
 ~2–4 min. Trust the parsed `<test-run ... passed= failed=>` and `grep -c "error CS"`,
 not the exit code.
 
-**Running the EditMode suite through the bridge** (works with the Editor open): put two
-**top-level** classes in one `Unity_RunCommand` script (the bridge's auto-fixer
-duplicates nested/private ones) — an `ICallbacks` implementation that writes
-`passed=N failed=M` to `Temp/results.txt` on `RunFinished`, and an
-`IRunCommand`/`ICallbacks` that creates a `TestRunnerApi`, registers callbacks, and
-`Execute`s an `ExecutionSettings(new Filter { testMode = TestMode.EditMode })`. Poll for
-a *completion marker inside the file*, not file existence (it's created immediately then
-updated). A `groupNames` regex on the `Filter` scopes to one namespace. The human
-`Run All` in the Editor is still the official gate before closing an issue; the bridge
-run is a real pre-check, not a replacement.
+**Running the EditMode suite through the bridge** (works with the Editor open): `Unity_RunCommand`
+`ToolSmiths.InventorySystem.EditorScripts.EditModeTestRunner.Run();` (or `Run("Wallet")` to scope by
+regex), then poll `Temp/editmode-results.txt` for `DONE`, not for the file's existence. The human
+`Run All` in the Editor is still the official gate before closing an issue; this is the pre-check.
+Source: `Assets/Editor/EditModeTestRunner.cs`.
 
 **`Unity_RunCommand` reflection restriction:** any dynamic bridge script that touches
 `System.Reflection` (even just the `using` plus a `BindingFlags` expression) throws an
@@ -149,19 +144,13 @@ the scratch-harness pattern above) and read the results it logs.
 
 ### Play Mode checks in batch mode, no Editor needed (verified 2026-10-04, #127)
 
-The worktree route above also runs *Play Mode*: an `-executeMethod` script under `Assets/Editor/` that
-opens the scene, sets `Application.runInBackground = true` and `EditorApplication.isPlaying = true`, then
-drives a coroutine from `EditorApplication.update` and ends with `EditorApplication.Exit(failures == 0 ? 0 : 1)`.
-Whole run ~15 s. Three things make it lie if you skip them:
-
-- **The player loop barely advances on its own** (`Time.time` stayed ~0.1 s after seconds of wall clock), so
-  fades never settle. Call `EditorApplication.isPaused = false; EditorApplication.Step();` on every tick while
-  waiting, and wait on `Time.time`, not on `Time.frameCount` or wall clock.
-- **`yield return Nested()` does not run `Nested`** under a bare `MoveNext()` loop: keep a stack of
-  `IEnumerator`s and push whatever the top yields. Without it every wait returns instantly and the run goes
-  red on mid-fade alphas, which reads as a wiring bug.
-- **Filter the Editor's own startup noise** from any `logMessageReceived` failure count: Unity Search throws an
-  `ArgumentOutOfRangeException` from `SearchDatabase.EnumerateAll` once at startup.
+The worktree route above also runs *Play Mode*. Write a `public static void Run()` under `Assets/Editor/`
+that calls `PlayModeDriver.Start(scenePath, Routine)` and run it with `-executeMethod`; the exit code is the
+verdict (0 pass, 1 failed check or logged error, 2 timeout). Whole run ~15 s once the worktree is imported.
+`Assets/Editor/PlayModeDriver.cs` handles what makes a bare script lie: it steps the player loop every tick,
+runs yielded routines through a stack, and ignores Unity Search's startup exception. Wait with
+`PlayModeDriver.Wait` (on `Time.time`); `PlayModeDriver.SelfTest` is the template. Verified in batch
+2026-10-05.
 
 Assert the triple from the section above (`CanvasGroup` alpha, announced context, group `ActiveMember`).
 A private field such as a display's bound `Container` is readable by reflection from the compiled Editor
