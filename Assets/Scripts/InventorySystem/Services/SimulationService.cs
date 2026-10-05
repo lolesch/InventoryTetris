@@ -55,7 +55,7 @@ namespace ToolSmiths.InventorySystem.Services
             get
             {
                 var world = session.World;
-                return world.Run ??= BuildRun(session.Hero, world);
+                return world.Run ??= BuildRun(world);
             }
         }
 
@@ -96,6 +96,9 @@ namespace ToolSmiths.InventorySystem.Services
             var hero = session.Hero;
             var dt = deltaSeconds * Mathf.Max(0f, hero.Behaviour.SimSpeed);
 
+            // Hosted by GameLoop, so this runs after every MonoBehaviour.Update of the frame: a panel
+            // that polls the Run in Update sees the previous frame's tick, never a half-stepped one.
+
             // Regeneration belongs to the living hero at sim speed, in both Town and Field
             // (issue #45). Dead heroes do not regenerate.
             if (!hero.IsDead)
@@ -117,11 +120,11 @@ namespace ToolSmiths.InventorySystem.Services
                 _ = run.Recall();
         }
 
-        private RunState BuildRun(Hero hero, World world)
+        private RunState BuildRun(World world)
         {
             RunState run = null;
 
-            run = new RunState(profile => StartEncounter(hero, world, profile, run),
+            run = new RunState(profile => StartEncounter(world, profile, run),
                 new RunPenalty(config.XpLossFraction, config.CurrencyFeeFraction));
             run.RunEnded += () => OnRunEnded(world, run);
 
@@ -132,8 +135,12 @@ namespace ToolSmiths.InventorySystem.Services
         /// The <see cref="EncounterSimulation"/> factory <see cref="RunState"/> hands its Send -
         /// builds the live Encounter and, on top of it, this Run's loot flow and XP settlement.
         /// </summary>
-        private EncounterSimulation StartEncounter(Hero hero, World world, EncounterProfile profile, RunState run)
+        private EncounterSimulation StartEncounter(World world, EncounterProfile profile, RunState run)
         {
+            // The hero is read when the Encounter starts, not when the Run was built: the Run holds
+            // only its World, so nothing here goes stale across a hero change.
+            var hero = session.Hero;
+
             var combatant = new HeroCombatant(hero, Mathf.Max(0f, config.CastCost));
 
             // A Relocate builds its replacement while the old Encounter's loot flow is still

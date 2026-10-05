@@ -180,6 +180,20 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
+        public void Tick_AutoRecalls_WhenTheBehaviourProfileSaysRetreat_AndRestocks()
+        {
+            session.World.VendorSupply.RemoveAll();
+            session.Hero.Behaviour.RetreatHealthFraction = 1f;
+            service.Send(thornwood);
+
+            TickUntilHome();
+
+            Assert.That(service.Run.LastResult?.Outcome, Is.EqualTo(RunOutcome.Recalled));
+            Assert.That(session.Hero.Corpse.Exists, Is.False);
+            Assert.That(session.World.VendorSupply.StoredPackages, Is.Not.Empty);
+        }
+
+        [Test]
         public void Tick_InTown_AdvancesNoEncounter()
         {
             service.Tick(1f);

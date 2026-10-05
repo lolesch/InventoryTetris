@@ -24,7 +24,7 @@ namespace ToolSmiths.InventorySystem.Services
         /// <summary>
         /// MVP flat Cast cost (spec <i>HeroBehaviour</i> / ADR-0010 — "flat for the MVP"; the
         /// <c>/prototype</c> starting point is 16). There is no gear stat for it yet, so it is a
-        /// constructor parameter the provider can tune rather than a hidden constant.
+        /// constructor parameter (read from <c>GameConfig</c> by the simulation service) rather than a hidden constant.
         /// </summary>
         public const float DefaultCastCost = 16f;
 
