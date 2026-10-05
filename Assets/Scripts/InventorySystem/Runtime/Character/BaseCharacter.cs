@@ -34,22 +34,48 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
         public uint CharacterLevel => Hero.Level;
 
-        protected void Start()
+        // The hero the reactions below are bound to. A face that reads its hero off the Session
+        // (LocalPlayer) outlives a Stop with scene reload disabled, and the next Play entry (or a
+        // hero load, #114) hands it a different hero, so the binding follows the hero it sees.
+        private Hero _bound;
+
+        protected void Start() => Bind(Hero);
+
+        private void Update()
         {
-            var health = Hero.GetResource(StatName.Health);
-            health.CurrentHasDepleted -= OnDeath;
+            var hero = Hero;
+
+            if (!ReferenceEquals(hero, _bound))
+                Bind(hero);
+        }
+
+        private void Bind(Hero hero)
+        {
+            Unbind(_bound);
+            _bound = hero;
+
+            var health = hero.GetResource(StatName.Health);
             health.CurrentHasDepleted += OnDeath;
 
-            var resource = Hero.GetResource(StatName.Resource);
-            resource.CurrentHasDepleted -= CharacterResourceWarning;
+            var resource = hero.GetResource(StatName.Resource);
             resource.CurrentHasDepleted += CharacterResourceWarning;
 
-            Hero.DamageDealt -= LogDamageDealt;
-            Hero.DamageDealt += LogDamageDealt;
-
-            Hero.DamageReceived -= LogDamageReceived;
-            Hero.DamageReceived += LogDamageReceived;
+            hero.DamageDealt += LogDamageDealt;
+            hero.DamageReceived += LogDamageReceived;
         }
+
+        private void Unbind(Hero hero)
+        {
+            if (hero == null)
+                return;
+
+            hero.GetResource(StatName.Health).CurrentHasDepleted -= OnDeath;
+            hero.GetResource(StatName.Resource).CurrentHasDepleted -= CharacterResourceWarning;
+            hero.DamageDealt -= LogDamageDealt;
+            hero.DamageReceived -= LogDamageReceived;
+        }
+
+        private void OnDestroy() => Unbind(_bound);
 
         /// <summary>
         /// Applies one step of Health, Resource and Shield regeneration for
