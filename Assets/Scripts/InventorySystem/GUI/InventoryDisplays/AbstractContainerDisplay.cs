@@ -1,3 +1,4 @@
+using Submodules.Utility.Services;
 using System.Collections.Generic;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Inventories;
@@ -18,13 +19,14 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         [SerializeField] private ContainerRole role;
 
         /// <summary>
-        /// Self-registers with <see cref="InventoryProvider"/> for <see cref="role"/> rather than
-        /// waiting to be pushed a container by a hard scene reference - the seam that lets a
+        /// Binds itself to the container <see cref="role"/> names, asked of the inventory service,
+        /// rather than waiting to be pushed one by a hard scene reference - the seam that lets a
         /// display spawned at runtime (the Vendor's slot grids) bind itself with no Inspector
-        /// wiring back on the provider. Unconditional rather than guarded on <c>Container == null</c>:
+        /// wiring. Unconditional rather than guarded on <c>Container == null</c>:
         /// with domain/scene reload disabled a display survives Play Mode Stop with a now-stale
-        /// <see cref="Container"/> reference, so every enable re-resolves against whatever provider
-        /// is live (issue #46, #85's OnEnable-not-Awake lesson).
+        /// <see cref="Container"/> reference, so every enable re-resolves against whatever the
+        /// current Hero and World hold (#85's OnEnable-not-Awake lesson). Left unbound while no
+        /// service is armed - an enable in Edit Mode.
         ///
         /// A hero load replaces every container (#114), so the registration runs again on
         /// <see cref="ISession.HeroLoaded"/>: <see cref="SetupDisplay"/> lets go of the old container's
@@ -39,13 +41,21 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         private void OnDisable() => Session.UnsubscribeHeroLoaded(Register);
 
-        private void Register() => _ = InventoryProvider.TryRegisterDisplay(this, role);
+        private void Register()
+        {
+            if (!ServiceLocator.IsArmed)
+                return;
+
+            var container = InventoryService.Instance.ContainerFor(role);
+            if (container != null)
+                SetupDisplay(container);
+        }
 
 #if UNITY_EDITOR
         /// <summary>
         /// The "wiring took" check for <see cref="role"/> - without this, an unwired field would deserialize to
         /// <see cref="ContainerRole.Unassigned"/> and get silently ignored by every consumer
-        /// (<see cref="InventoryProvider.TryRegisterDisplay"/> just returns false), so a
+        /// (<see cref="Register"/> just returns without binding), so a
         /// misconfigured display never draws and nothing says why.
         /// </summary>
         private void OnValidate()
@@ -113,10 +123,6 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
                     current++;
                 }
-
-            //Icon.color = InventoryProvider.Instance.ContainerToAddTo == Container
-            //    ? new Color(1, .84f, 0, 1)
-            //    : Color.white;
         }
     }
 }

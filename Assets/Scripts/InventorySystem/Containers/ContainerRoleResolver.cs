@@ -2,7 +2,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 {
     /// <summary>
     /// Which container a <see cref="ContainerRole"/> names: the pure half of how a display binds
-    /// itself (<c>InventoryProvider.TryRegisterDisplay</c>). Held apart from the provider so the
+    /// itself (<c>IInventoryService.ContainerFor</c>). Held apart from the service so the
     /// mapping is tested at the container seam - a missing arm leaves a display unbound with no
     /// error, because an unresolved role just returns no container.
     /// </summary>

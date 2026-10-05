@@ -1,3 +1,4 @@
+using Submodules.Utility.Services;
 using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Inventories;
@@ -101,14 +102,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             return wallet == null || VendorTransaction.CanAffordBuy(wallet, price);
         }
 
-        // Unity's lifetime-aware ==: a destroyed provider is not literally null, and a repaint can
-        // run on the way out of Play Mode.
-        private static Wallet CurrentWallet()
-        {
-            var provider = InventoryProvider.Instance;
-
-            return provider != null ? provider.Wallet : null;
-        }
+        // Null while nothing is armed: a repaint can run in Edit Mode, after the services are cleared.
+        private static Wallet CurrentWallet() =>
+            ServiceLocator.IsArmed ? Session.Instance.Hero.Wallet : null;
 
         protected override void SetDisplaySize(RectTransform display, Package package)
         {
@@ -177,9 +173,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             if (DragProvider.Instance.IsHoldingPurchase)
                 return true;
 
-            var provider = InventoryProvider.Instance;
-
-            return Sale.CanSellHeld(provider.Sold, provider.Wallet, package);
+            return Sale.CanSellHeld(Session.Instance.World.Sold, Session.Instance.Hero.Wallet, package);
         }
 
         protected override void DropItem(Package package)
@@ -187,15 +181,13 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             if (!package.IsValid)
                 return;
 
-            var provider = InventoryProvider.Instance;
-
             /// A purchase in progress never reaches here: AbstractSlotDisplay.Drop sends it back
             /// to its origin free (issues #31, #129), on this shelf or any other place that is not
             /// the Hero's bag or equipment. What arrives is a player-owned Package, and it is a
             /// sale: the one Sale statement, over the Sold container and the Wallet - the source
             /// was vacated at pick-up. A sale that cannot pay out is turned away like any refused
             /// drop: the item goes back where it came from, not under the cursor.
-            if (!Sale.TrySellHeld(provider.Sold, provider.Wallet, package))
+            if (!Sale.TrySellHeld(Session.Instance.World.Sold, Session.Instance.Hero.Wallet, package))
             {
                 _ = CancelHeldDrag();
                 return;

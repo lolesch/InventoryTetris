@@ -34,7 +34,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             /// equip and the queued payment can never fail at commit and strand an unpaid
             /// item equipped.
             var purchasePrice = DragProvider.Instance.PurchasePrice;
-            var wallet = InventoryProvider.Instance.Wallet;
+            var wallet = Session.Instance.Hero.Wallet;
 
             /// The whole equip runs inside one transaction (issue #10): the weapon under the
             /// drop goes to the hand, exactly as a plain swap does; a 2H also sheds a
@@ -43,7 +43,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             /// fires the container refreshes, applies the worn affixes and hands the cursor
             /// its displaced item.
             var origin = DragProvider.Instance.Origin?.Container;
-            var inventory = InventoryProvider.Instance.Inventory;
+            var inventory = Session.Instance.Hero.Inventory;
             var cursor = new CursorHolder(DragProvider.Instance);
 
             using (var transaction = new ItemTransaction(cursor, Container, origin ?? inventory).ReHomeThrough(origin ?? inventory))
@@ -109,7 +109,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 /// A player-driven unequip always executes (issue #10): the item lands in the
                 /// inventory, or - if it is full - in hand. The affix lift is a commit-time
                 /// effect either way.
-                var inventory = InventoryProvider.Instance.Inventory;
+                var inventory = Session.Instance.Hero.Inventory;
                 var cursor = new CursorHolder(DragProvider.Instance);
 
                 using var transaction = new ItemTransaction(cursor, Container, inventory).ReHomeThrough(inventory);

@@ -1,6 +1,8 @@
+using Submodules.Utility.Services;
 using Submodules.Utility.UI;
 using ToolSmiths.InventorySystem.GUI.Components.Panels;
 using ToolSmiths.InventorySystem.Inventories;
+using ToolSmiths.InventorySystem.Services;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
@@ -76,7 +78,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         /// </summary>
         protected override void OnToggle()
         {
-            if (IsOn && panel != null && InventoryProvider.Instance is { } provider && !panel.IsUpIn(provider.ActiveContext))
+            if (IsOn && panel != null && ServiceLocator.IsArmed && !panel.IsUpIn(InventoryService.Instance.ActiveContext))
                 panel.RequestContext(true);
         }
 
@@ -114,7 +116,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         {
             base.OnEnable();
 
-            if (InventoryProvider.TrySubscribeContextChanged(SyncToContext, out var activeContext))
+            if (InventoryService.TrySubscribeContextChanged(SyncToContext, out var activeContext))
                 SyncToContext(activeContext);
         }
 
@@ -122,7 +124,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         {
             base.OnDisable();
 
-            InventoryProvider.UnsubscribeContextChanged(SyncToContext);
+            InventoryService.UnsubscribeContextChanged(SyncToContext);
         }
 
         /// <summary>
@@ -158,7 +160,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         /// </summary>
         private void UserToggle()
         {
-            if (panel == null || InventoryProvider.Instance == null)
+            if (panel == null || !ServiceLocator.IsArmed)
                 return;
 
             var wasOn = IsOn;

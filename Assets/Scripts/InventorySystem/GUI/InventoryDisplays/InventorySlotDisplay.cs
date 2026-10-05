@@ -43,7 +43,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             /// purchase cannot reach the placement and the queued payment can never fail at
             /// commit and strand an unpaid item in the bag.
             var purchasePrice = DragProvider.Instance.PurchasePrice;
-            var wallet = InventoryProvider.Instance.Wallet;
+            var wallet = Session.Instance.Hero.Wallet;
 
             /// The whole drop runs inside one transaction (issue #10): the placement mutates
             /// a working copy, and the item the drag landed on goes to the hand - a drag
@@ -51,7 +51,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             /// rolls back leaving the dragged item in hand. Commit fires the container
             /// refreshes and hands the cursor its displaced item.
             var origin = DragProvider.Instance.Origin?.Container;
-            var inventory = InventoryProvider.Instance.Inventory;
+            var inventory = Session.Instance.Hero.Inventory;
             var cursor = new CursorHolder(DragProvider.Instance);
 
             using (var transaction = new ItemTransaction(cursor, Container, origin ?? inventory).ReHomeThrough(origin ?? inventory))
@@ -124,7 +124,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                     /// equip displaces back into this same container. A player-driven move
                     /// always executes - one displaced item that will not re-fit overflows
                     /// to the hand, and only a second homeless item rolls the move back.
-                    var equipment = InventoryProvider.Instance.Equipment;
+                    var equipment = Session.Instance.Hero.Equipment;
                     var cursor = new CursorHolder(DragProvider.Instance);
 
                     using var transaction = new ItemTransaction(cursor, Container, equipment)

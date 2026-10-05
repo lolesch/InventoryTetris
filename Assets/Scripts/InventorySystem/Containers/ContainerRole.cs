@@ -3,9 +3,9 @@ namespace ToolSmiths.InventorySystem.Inventories
     /// <summary>
     /// Which player container a scene- or runtime-instanced
     /// <see cref="ToolSmiths.InventorySystem.GUI.InventoryDisplays.AbstractContainerDisplay"/>
-    /// should bind to. Lets a display resolve its own container by asking
-    /// <see cref="InventoryProvider"/> for it (<see cref="InventoryProvider.TryRegisterDisplay"/>),
-    /// rather than the provider holding a hard scene reference to every display it owns - the
+    /// should bind to. Lets a display resolve its own container by asking the inventory service
+    /// for it (<c>IInventoryService.ContainerFor</c>),
+    /// rather than the service holding a hard scene reference to every display it owns - the
     /// direction that broke once the Vendor's slot grids started spawning at runtime instead of
     /// being hand-placed.
     /// </summary>

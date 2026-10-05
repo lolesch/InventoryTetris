@@ -1,5 +1,5 @@
 using Submodules.Utility.UI;
-using ToolSmiths.InventorySystem.Inventories;
+using ToolSmiths.InventorySystem.Services;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
@@ -10,7 +10,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
         protected override void OnClick()
         {
             base.OnClick();
-            InventoryProvider.Instance.SyncContextToPhase(true);
+            InventoryService.Instance.SyncContextToPhase(true);
         }
     }
 }
