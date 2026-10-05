@@ -39,6 +39,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             SetRanges(amounts, copper: new Vector2Int(4, 12), iron: new Vector2Int(10, 30));
 
             var so = new SerializedObject(config);
+            Assign(so, "DefaultHero", authored.DefaultHero);
             Assign(so, "ItemTypeData", authored.ItemTypeData);
             Assign(so, "Catalog", authored.Catalog);
             Assign(so, "ItemCategoryDistribution", authored.ItemCategoryDistribution);

@@ -23,7 +23,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
         private Hero _hero;
 
-        public Hero Hero => _hero ??= BuildHero();
+        public virtual Hero Hero => _hero ??= BuildHero();
 
         protected abstract Hero BuildHero();
 

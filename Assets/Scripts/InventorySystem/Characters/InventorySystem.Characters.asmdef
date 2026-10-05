@@ -3,7 +3,9 @@
     "rootNamespace": "",
     "references": [
         "InventorySystem.Data",
-        "InventorySystem.Containers"
+        "InventorySystem.Items",
+        "InventorySystem.Containers",
+        "InventorySystem.Simulation"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

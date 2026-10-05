@@ -14,54 +14,65 @@ using UnityEngine.UI;
 
 namespace ToolSmiths.InventorySystem.Inventories
 {
+    /// <summary>
+    /// The scene's face of the inventory, a thin facade over the Hero and the World the Session
+    /// was booted with (issue #112, ADR-0015): the containers, the Wallet and the Inventory
+    /// Context are the Hero's and the World's, acquisition and Restock are
+    /// <see cref="IInventoryService"/>'s. What stays here is what needs a scene object - the
+    /// debug buttons' <c>UnityEvent</c> targets (#118 moves them), the Field face registration and
+    /// the debug flags. Every member reads the current Hero and World on each call and caches
+    /// neither, so the swap a hero load brings (#114) needs no change here.
+    /// </summary>
     internal sealed class InventoryProvider : AbstractProvider<InventoryProvider>
     {
         // TODO: move player related inventories into the local player?
-        [field: SerializeField] public CharacterEquipment Equipment { get; private set; }
-        [field: SerializeField] public CharacterInventory Inventory { get; private set; }
-        [field: SerializeField] public CharacterInventory Stash { get; private set; }
-        [field: SerializeField] public CharacterInventory Store { get; private set; }
+        public CharacterEquipment Equipment => Session.Instance.Hero.Equipment;
+        public CharacterInventory Inventory => Session.Instance.Hero.Inventory;
+        public CharacterInventory Stash => Session.Instance.Hero.Stash;
+
+        /// <summary>The Vendor's Supply (the World's <see cref="World.VendorSupply"/>).</summary>
+        public CharacterInventory Store => Session.Instance.World.VendorSupply;
 
         /// <summary>The Healer's Supply (issue #121): the second Supply after the Vendor's
         /// <see cref="Store"/>, stocked with consumables and bought from the same way. Sized like
-        /// the Store (<see cref="storeSize"/>) - one size for every Supply shelf.</summary>
-        [field: SerializeField] public CharacterInventory HealerSupply { get; private set; }
+        /// the Store - one size for every Supply shelf.</summary>
+        public CharacterInventory HealerSupply => Session.Instance.World.HealerSupply;
 
         /// <summary>The Sold container (issue #126): what the player sold, bought back like a
-        /// Supply. Sized like the Supply grid (<see cref="storeSize"/>), sold into by
-        /// <see cref="Sale"/>, shown on each selling panel's Sold tab, and known to
-        /// <see cref="QuickMoveFor"/> as a shelf.</summary>
-        public SoldContainer Sold { get; private set; }
+        /// Supply, sold into by <see cref="Sale"/>, shown on each selling panel's Sold tab, and
+        /// known to <see cref="QuickMoveFor"/> as a shelf.</summary>
+        public SoldContainer Sold => Session.Instance.World.Sold;
 
         /// <summary>The player's spendable money, backed by <see cref="Inventory"/>'s coin
         /// cells. The wallet, not the container, owns currency logic since issue #14.</summary>
-        public Wallet Wallet { get; private set; }
+        public Wallet Wallet => Session.Instance.Hero.Wallet;
 
         /// <summary>The Inventory Context: which panels are up and where a Quick Move lands.
-        /// The rule itself is the engine-free <see cref="InventoryContextState"/>; the provider
-        /// only carries it to the scene, and every panel and toggle subscribes to it here.</summary>
-        private readonly InventoryContextState inventoryContext = new();
+        /// The rule itself is the engine-free <see cref="InventoryContextState"/>, owned by the
+        /// World; the provider only carries it to the scene, and every panel and toggle
+        /// subscribes to it here.</summary>
+        private static InventoryContextState ContextState => Session.Instance.World.Context;
 
-        public InventoryContext ActiveContext => inventoryContext.Active;
+        public InventoryContext ActiveContext => ContextState.Active;
 
         public event Action<InventoryContext> OnContextChanged
         {
-            add => inventoryContext.Changed += value;
-            remove => inventoryContext.Changed -= value;
+            add => ContextState.Changed += value;
+            remove => ContextState.Changed -= value;
         }
 
         /// <summary>Requests <paramref name="context"/> (issue #84) - the entry-point side of
         /// <see cref="InventoryContextState.Set"/>.</summary>
-        public void SetContext(InventoryContext context) => inventoryContext.Set(context);
+        public void SetContext(InventoryContext context) => ContextState.Set(context);
 
         /// <summary>Closes whatever context is active - always <see cref="InventoryContext.None"/>,
         /// never a per-context clear (see <see cref="InventoryContextState.Close"/>).</summary>
-        public void CloseContext() => inventoryContext.Close();
+        public void CloseContext() => ContextState.Close();
 
         /// <summary>Drops the active context to <see cref="InventoryContext.None"/> if the Run
         /// phase just made it unreachable (see <see cref="InventoryContextState.SyncToPhase"/>) -
         /// the Send/Recall/Death/Go-Venture side of phase reachability (#84).</summary>
-        public void SyncContextToPhase(bool inField) => inventoryContext.SyncToPhase(inField);
+        public void SyncContextToPhase(bool inField) => ContextState.SyncToPhase(inField);
 
         /// <summary>The InFields face - unreachable while it is up (InField, and the Go Venture
         /// preview alike, since both show it). Not authored: registered by
@@ -131,12 +142,6 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         [field: SerializeField] public bool ShowDebugPositions { get; private set; }
 
-        [Space]
-        [SerializeField] private Vector2Int equipmentSize = new(14, 1);
-        [SerializeField] private Vector2Int inventorySize = new(10, 6);
-        [SerializeField] private Vector2Int stashSize = new(10, 16);
-        [SerializeField] private Vector2Int storeSize = new(10, 16);
-
         [SerializeField] private Slider amountSlider;
         [SerializeField] private TextMeshProUGUI amountText;
         private uint Amount => amountSlider != null ? (uint)amountSlider.value : 1;
@@ -161,7 +166,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             if (provider == null)
                 return false;
 
-            var container = provider.ContainerFor(role);
+            var container = InventoryService.Instance.ContainerFor(role);
             if (container == null)
                 return false;
 
@@ -169,54 +174,28 @@ namespace ToolSmiths.InventorySystem.Inventories
             return true;
         }
 
-        private AbstractDimensionalContainer ContainerFor(ContainerRole role) =>
-            ContainerRoleResolver.Resolve(role, equipment: Equipment, inventory: Inventory, stash: Stash,
-                store: Store, healerSupply: HealerSupply, sold: Sold);
-
         /// <summary>
         /// Where a shift-click on <paramref name="source"/> should send its item, given the
         /// Inventory Context active right now (#30). The four containers and the context are all
-        /// here, so a caller that holds one slot's container can ask with just that -
-        /// rather than assembling the same six arguments at every slot display, which is
-        /// how <c>VendorSlotDisplay</c> came to pass its own container as both the source
+        /// behind the inventory service, so a caller that holds one slot's container can ask with
+        /// just that - rather than assembling the same six arguments at every slot display, which
+        /// is how <c>VendorSlotDisplay</c> came to pass its own container as both the source
         /// and the shelf. <see cref="QuickMoveResolver"/> keeps the matrix and stays
         /// directly tested; this is only the seam callers hold.
         /// </summary>
         public QuickMoveIntent QuickMoveFor(AbstractDimensionalContainer source) =>
-            QuickMoveResolver.Resolve(ActiveContext, source, Inventory, Stash, Equipment, Store, HealerSupply, Sold);
-
-        public void Awake()
-        {
-            /// The container core lives in InventorySystem.Containers and names no
-            /// provider - it takes the catalog, the character and the coin minter as
-            /// interfaces here, where the containers are newed up. The drag cursor is wrapped per-move
-            /// as a CursorHolder by the slot displays, so the containers no longer hold one.
-            var statReceiver = CharacterProvider.Instance.Player;
-            var items = ItemService.Instance;
-
-            Equipment = new(equipmentSize, items.Catalog, statReceiver);
-            Inventory = new(inventorySize, items.Catalog);
-            Stash = new(stashSize, items.Catalog);
-            Store = new(storeSize, items.Catalog);
-            HealerSupply = new(storeSize, items.Catalog);
-            Sold = new SoldContainer(storeSize, items.Catalog);
-
-            Wallet = new Wallet(Inventory, items);
-
-            RestockStore();
-            RestockHealerSupply();
-        }
+            InventoryService.Instance.QuickMoveFor(source);
 
         // The item service holds no hero: the debug rolls and the Restock hand it the player's bonuses.
-        private static float MagicFind => CharacterProvider.Instance.Player.GetStatValue(StatName.IncreasedItemRarity);
-        private static float ItemQuantity => CharacterProvider.Instance.Player.GetStatValue(StatName.IncreasedItemQuantity);
+        private static float MagicFind => Session.Instance.Hero.GetStatValue(StatName.IncreasedItemRarity);
+        private static float ItemQuantity => Session.Instance.Hero.GetStatValue(StatName.IncreasedItemQuantity);
 
         private void AddEquipment(EquipmentType equipmentType)
         {
             for (var i = 0; i < Amount; i++)
             {
                 var randomEquipment = ItemService.Instance.RollEquipment(equipmentType, MagicFind);
-                _ = CharacterProvider.Instance.Player.PickUpItemOrStash(new Package(null, randomEquipment, 1u));
+                _ = InventoryService.Instance.PickUpOrStash(new Package(null, randomEquipment, 1u));
             }
         }
 
@@ -225,7 +204,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             for (var i = 0; i < Amount; i++)
             {
                 var randomConsumable = ItemService.Instance.RollConsumable(consumableType, MagicFind);
-                _ = CharacterProvider.Instance.Player.PickUpItemOrStash(new Package(null, randomConsumable, 1u));
+                _ = InventoryService.Instance.PickUpOrStash(new Package(null, randomConsumable, 1u));
             }
         }
 
@@ -234,13 +213,13 @@ namespace ToolSmiths.InventorySystem.Inventories
             var loot = ItemService.Instance.RollLoot(Amount, MagicFind, ItemQuantity);
 
             for (var i = 0; i < loot.Count; i++)
-                _ = CharacterProvider.Instance.Player.PickUpItemOrStash(loot[i]);
+                _ = InventoryService.Instance.PickUpOrStash(loot[i]);
         }
 
         public void AddRandomCurrency()
         {
             for (var i = 0; i < Amount; i++)
-                _ = CharacterProvider.Instance.Player.PickUpItemOrStash(ItemService.Instance.RollCurrency());
+                _ = InventoryService.Instance.PickUpOrStash(ItemService.Instance.RollCurrency());
         }
 
         public void RemoveAllItems(AbstractDimensionalContainer container)
@@ -280,60 +259,18 @@ namespace ToolSmiths.InventorySystem.Inventories
         public void ClearPlayerEquipment() => RemoveAllItems(Equipment);
         public void ClearPlayerInventory() => RemoveAllItems(Inventory);
         public void ClearPlayerStash() => RemoveAllItems(Stash);
+
         /// <summary>Both Town Stops' Restock, run when a Run is Recalled: the Vendor's shelf, the
         /// Healer's shelf and the Sold container, which is emptied once for both.</summary>
-        public void RestockTownStops()
-        {
-            RemoveAllItems(Sold);
-            FillStore();
-            FillHealerSupply();
-        }
+        public void RestockTownStops() => InventoryService.Instance.RestockTownStops();
 
         /// <summary>A Supply's Restock clears the Sold container at the moment it refills (issue
         /// #128): what was sold is stock like any other, so either Town Stop's Restock empties it.</summary>
-        public void RestockStore()
-        {
-            RemoveAllItems(Sold);
-            FillStore();
-        }
-
-        private void FillStore()
-        {
-            RemoveAllItems(Store);
-
-            for (var i = 0; i < 20; i++)
-            {
-                var item = ItemService.Instance.RollEquipment(MagicFind);
-
-                var package = new Package(null, item, 1u);
-
-                _ = Store?.TryAddToContainer(ref package);
-            }
-            Store.Sort();
-        }
+        public void RestockStore() => InventoryService.Instance.RestockVendorSupply();
 
         /// <summary>The Healer Supply's Restock (issue #121): the same refill as
         /// <see cref="RestockStore"/>, from rolled consumables instead of equipment.</summary>
-        public void RestockHealerSupply()
-        {
-            RemoveAllItems(Sold);
-            FillHealerSupply();
-        }
-
-        private void FillHealerSupply()
-        {
-            RemoveAllItems(HealerSupply);
-
-            for (var i = 0; i < 20; i++)
-            {
-                var item = ItemService.Instance.RollConsumable(MagicFind);
-
-                var package = new Package(null, item, 1u);
-
-                _ = HealerSupply?.TryAddToContainer(ref package);
-            }
-            HealerSupply.Sort();
-        }
+        public void RestockHealerSupply() => InventoryService.Instance.RestockHealerSupply();
 
         public void StashInventory()
         {

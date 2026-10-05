@@ -9,6 +9,7 @@
         "InventorySystem.Locations",
         "InventorySystem.Containers",
         "InventorySystem.Simulation",
+        "InventorySystem.Characters",
         "Utility",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",

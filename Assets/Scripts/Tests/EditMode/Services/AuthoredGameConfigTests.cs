@@ -9,9 +9,10 @@ namespace ToolSmiths.InventorySystem.Tests.Services
     /// <summary>
     /// Pins the authored <c>Assets/Resources/GameConfig.asset</c> to what the scene-scoped providers
     /// authored when it was carried over (issue #108): the same references, sizes and tuning, so the
-    /// move changed nothing. The item data is read from here by <c>ItemService</c> (#109); the sizes,
-    /// tuning and Locations are still held by their providers until those are retired, so those values
-    /// must change in both places or in neither.
+    /// move changed nothing. The item data is read from here by <c>ItemService</c> (#109), and the
+    /// default hero, the container sizes and the Behaviour Profile defaults by <c>SessionBuilder</c>
+    /// (#112); the rest of the tuning and the Locations are still held by their providers until those
+    /// are retired, so those values must change in both places or in neither.
     /// </summary>
     [TestFixture]
     public sealed class AuthoredGameConfigTests
@@ -26,12 +27,21 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         {
             Assert.That(config, Is.Not.Null, "Assets/Resources/GameConfig.asset is missing");
 
+            Assert.That(config.DefaultHero, Is.Not.Null);
             Assert.That(config.ItemTypeData, Is.Not.Null);
             Assert.That(config.Catalog, Is.Not.Null);
             Assert.That(config.ItemCategoryDistribution, Is.Not.Null);
             Assert.That(config.ItemRarityDistribution, Is.Not.Null);
             Assert.That(config.CurrencyTypeDistribution, Is.Not.Null);
             Assert.That(config.CurrencyDropTable, Is.Not.Null);
+        }
+
+        [Test]
+        public void TheDefaultHero_IsTheAuthoredDefaultHeroAsset()
+        {
+            Assert.That(UnityEditor.AssetDatabase.GetAssetPath(config.DefaultHero),
+                Is.EqualTo("Assets/Scripts/InventorySystem/Characters/DefaultHero.asset"),
+                "the scene's LocalPlayer used to serialize this template; the boot builds the hero from it now");
         }
 
         [Test]

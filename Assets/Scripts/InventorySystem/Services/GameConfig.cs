@@ -4,6 +4,7 @@ using ToolSmiths.InventorySystem.Data.Distributions;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Locations;
+using ToolSmiths.InventorySystem.Runtime.Character;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Services
@@ -19,14 +20,20 @@ namespace ToolSmiths.InventorySystem.Services
     /// Carries what the scene-scoped providers author today (issue #108): the item catalog, the
     /// category and rarity distributions, the currency distribution and drop table, the stat-icon
     /// data, the currency icons, the container sizes, the simulation tuning defaults and the
-    /// Locations. The item data is live: <see cref="ItemService"/> is built from it (#109). The
-    /// container sizes, the tuning and the Locations are still read from their providers' own
-    /// copies until each is replaced, so a value changed here is not live until then.
+    /// Locations. The item data is live: <see cref="ItemService"/> is built from it (#109). So are
+    /// the default hero, the container sizes and the Behaviour Profile defaults: <see cref="SessionBuilder"/>
+    /// builds the Hero and the World from them (#112). The rest of the tuning and the Locations are
+    /// still read from their providers' own copies until each is replaced, so a value changed
+    /// here is not live until then.
     /// </summary>
     public sealed class GameConfig : ScriptableObject
     {
         /// <summary>The <c>Resources</c> key the boot loads: <c>Assets/Resources/GameConfig.asset</c>.</summary>
         public const string ResourceKey = "GameConfig";
+
+        [field: Header("Hero")]
+        [field: SerializeField, Tooltip("The template the boot builds the first Hero from, so a bare scene works with no menu.")]
+        public HeroData DefaultHero { get; private set; }
 
         [field: Header("Items")]
         [field: SerializeField, Tooltip("Stat-icon lookup for the character and item-stat displays. Not on the roll path.")]

@@ -1,6 +1,7 @@
 ﻿using Submodules.Utility.Provider;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Runtime.Character;
+using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Utility.Extensions;
 using UnityEngine;
 
@@ -18,7 +19,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         public void DummyDealsPhysicalDamageToPlayer() => DealDamage(Dummy, Player, DamageType.PhysicalDamage);
         public void DummyDealsMagicalDamageToPlayer() => DealDamage(Dummy, Player, DamageType.MagicalDamage);
-        public void KillPlayer() => Player.GetResource(StatName.Health).DepleteCurrent();
+        public void KillPlayer() => Session.Instance.Hero.GetResource(StatName.Health).DepleteCurrent();
         public void KillDummy() => Dummy.GetResource(StatName.Health).DepleteCurrent();
 
         /// <summary>
@@ -50,8 +51,8 @@ namespace ToolSmiths.InventorySystem.Inventories
                 HealPlayer();
         }
 
-        public void HealPlayer() => Player.Hero.Heal();
+        public void HealPlayer() => Session.Instance.Hero.Heal();
 
-        public void ToggleSpendingResource() => Player.SpendResource = !Player.SpendResource;
+        public void ToggleSpendingResource() => Session.Instance.Hero.SpendResource = !Session.Instance.Hero.SpendResource;
     }
 }

@@ -46,14 +46,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         [Tooltip("MVP flat Cast cost the hero adapter reports - no gear stat for it yet (ADR-0010, /prototype starting point 16).")]
         [SerializeField] private float castCost = HeroCombatant.DefaultCastCost;
 
-        [Header("Behaviour defaults (issue #27's sliders write these live)")]
-        [SerializeField, Range(1f, 8f)] private float simSpeed = 1f;
-        [SerializeField, Min(1)] private int engagement = 3;
-        [SerializeField, Range(0f, 1f)] private float retreatHealthFraction;
-        [SerializeField, Range(0f, 1f)] private float recallBagFillFraction = 1f;
-        [SerializeField, Range(0f, 1f)] private float castThreshold;
-        [SerializeField] private ItemRarity lootFilterMinimum = ItemRarity.Common;
-
         [Header("Death penalty (issue #21 — unfrozen balance numbers)")]
         [SerializeField, Range(0f, 1f)] private float xpLossFraction = 0.25f;
         [SerializeField, Range(0f, 1f)] private float currencyFeeFraction = 0.5f;
@@ -79,11 +71,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         public RunState Run => _run ??= BuildRun();
 
         /// <summary>
-        /// The six slider-fed values that steer the hero (issue #23). Seeded here with inert
-        /// MVP defaults; issue #27's sliders overwrite them on their change event. Read live —
-        /// never snapshotted.
+        /// The six slider-fed values that steer the hero (issue #23): the Hero's Behaviour
+        /// Profile, seeded from <c>GameConfig</c>'s defaults when the Hero is built (#112).
+        /// Issue #27's sliders overwrite them on their change event. Read live — never
+        /// snapshotted.
         /// </summary>
-        public HeroBehaviour Behaviour { get; } = new();
+        public HeroBehaviour Behaviour => Session.Instance.Hero.Behaviour;
 
         /// <summary>The Location a <see cref="Send"/> will (or last did) go to — persisted per the save constraints.</summary>
         public LocationConfig SelectedLocation { get; private set; }
@@ -104,24 +97,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         private void Awake()
         {
-            ApplyBehaviourDefaults();
-
             if (!TryGetComponent<SimulationDriver>(out _))
                 _ = gameObject.AddComponent<SimulationDriver>();
-        }
-
-        private void OnValidate() => ApplyBehaviourDefaults();
-
-        private void ApplyBehaviourDefaults()
-        {
-            if (Behaviour == null) return;
-
-            Behaviour.SimSpeed = Mathf.Max(1f, simSpeed);
-            Behaviour.Engagement = Mathf.Max(1, engagement);
-            Behaviour.RetreatHealthFraction = Mathf.Clamp01(retreatHealthFraction);
-            Behaviour.RecallBagFillFraction = Mathf.Clamp01(recallBagFillFraction);
-            Behaviour.CastThreshold = Mathf.Clamp01(castThreshold);
-            Behaviour.LootFilterMinimum = lootFilterMinimum;
         }
 
         private RunState BuildRun()
