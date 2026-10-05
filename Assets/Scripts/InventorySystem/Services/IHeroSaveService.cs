@@ -103,8 +103,9 @@ namespace ToolSmiths.InventorySystem.Services
         /// Registers a normaliser that runs at the start of every <see cref="Save"/> that is going to
         /// write, before the hero is read. It exists for state the engine-free save code cannot see: a
         /// Package held on the cursor belongs to no container, so the drag provider registers one that
-        /// returns it to its origin. Normalisers run in registration order; one that throws is logged
-        /// and skipped, and the save goes ahead. Registering the same one twice keeps one.
+        /// returns it to its origin. Normalisers run in registration order. One that throws is logged,
+        /// the others still run, and this save is skipped: the previous file is intact and the next save
+        /// point retries. Registering the same one twice keeps one.
         /// </summary>
         void AddBeforeSave(System.Action normaliser);
 

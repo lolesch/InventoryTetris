@@ -1,3 +1,4 @@
+using Submodules.Utility.Services;
 using NUnit.Framework;
 using Submodules.Utility.Persistence;
 using System.Collections.Generic;
@@ -84,6 +85,77 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(result.Entered, Is.True);
             Assert.That(playing.ActiveHeroId, Is.Not.EqualTo(existing.Id));
             Assert.That(onDisk.Keys(), Is.EqualTo(new[] { existing.Id }), "the saves were not touched");
+        }
+
+        [Test]
+        public void TheStartFreshToggle_IsReadFromEditorPrefs_AndIsOffByDefault()
+        {
+            var had = UnityEditor.EditorPrefs.HasKey(GameBoot.StartFreshKey);
+            var was = UnityEditor.EditorPrefs.GetBool(GameBoot.StartFreshKey, false);
+
+            try
+            {
+                UnityEditor.EditorPrefs.DeleteKey(GameBoot.StartFreshKey);
+                Assert.That(GameBoot.StartFreshEachPlay, Is.False);
+
+                UnityEditor.EditorPrefs.SetBool(GameBoot.StartFreshKey, true);
+                Assert.That(GameBoot.StartFreshEachPlay, Is.True);
+            }
+            finally
+            {
+                if (had)
+                    UnityEditor.EditorPrefs.SetBool(GameBoot.StartFreshKey, was);
+                else
+                    UnityEditor.EditorPrefs.DeleteKey(GameBoot.StartFreshKey);
+            }
+        }
+
+        private static void Unboot()
+        {
+            GameExit.Reset();
+            ServiceLocator.Reset();
+            GameLoop.Uninstall();
+        }
+
+        [Test]
+        public void APlayEntry_ContinuesTheLastHero_InstallsTheQuitSave_AndCreatesNoSecondHero()
+        {
+            var store = new InMemorySaveStore();
+            var seeding = ServiceOver(TestGame.Create(config), config, store);
+            var veteran = seeding.Create("Veteran");
+            seeding.SetLastSelected(veteran.Id);
+
+            try
+            {
+                GameBoot.Boot(config, store);
+
+                var saves = ServiceLocator.Get<IHeroSaveService>();
+                Assert.That(saves.ActiveHeroId, Is.EqualTo(veteran.Id));
+                Assert.That(saves.List().Count, Is.EqualTo(1));
+                Assert.That(GameExit.IsInstalled, Is.True);
+            }
+            finally
+            {
+                Unboot();
+            }
+        }
+
+        [Test]
+        public void AFirstPlayEntry_CreatesAHero_AndWritesItAtOnce()
+        {
+            var store = new InMemorySaveStore();
+
+            try
+            {
+                GameBoot.Boot(config, store);
+
+                Assert.That(ServiceLocator.Get<IHeroSaveService>().ActiveHeroId, Is.Not.Null);
+                Assert.That(store.Keys().Count, Is.EqualTo(2), "the hero and the Account file");
+            }
+            finally
+            {
+                Unboot();
+            }
         }
     }
 }

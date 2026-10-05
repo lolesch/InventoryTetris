@@ -201,5 +201,32 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(after.Session.Hero.Corpse.Exists, Is.True);
             Assert.That(after.Session.Hero.Corpse.Items, Is.Empty);
         }
+
+        [Test]
+        public void ALocationNotInTheAuthoredList_HasNoSaveableId()
+        {
+            var game = NewGame();
+            var unlisted = Location("unlisted");
+
+            Assert.That(game.Simulation.Locations.TryGetId(game.Simulation.Locations.ProfileFor(unlisted), out _), Is.False);
+        }
+
+        [Test]
+        public void ACorpseAtALocationWithNoSaveableId_IsSavedWithItsItems_AndReportedOnLoadNotLost()
+        {
+            var before = NewGame();
+            var sword = Gear(before);
+            var unlisted = Location("unlisted");
+            before.Session.Hero.Corpse.Bury(before.Simulation.Locations.ProfileFor(unlisted), new[] { sword });
+
+            var saved = ThroughText(CorpseMapper.ToDto(before.Session.Hero.Corpse, before.Simulation.Locations));
+
+            Assert.That(saved.locationId, Is.Empty);
+            Assert.That(saved.items.Length, Is.EqualTo(1), "the items are in the file, not forgotten");
+            var after = NewGame();
+            var report = CorpseMapper.Restore(saved, after.Session.Hero.Corpse, after.Simulation.Locations, after.Items.Catalog);
+            Assert.That(report.Skipped.Single().Reason, Is.EqualTo(SkipReason.UnknownLocation));
+            Assert.That(after.Session.Hero.Corpse.Exists, Is.False);
+        }
     }
 }

@@ -130,7 +130,7 @@ namespace ToolSmiths.InventorySystem.Services
             var deleted = store.Delete(Checked(id));
 
             if (LastSelectedHeroId == id)
-                SetLastSelected(null);
+                TrySetLastSelected(null);
 
             if (ActiveHeroId == id)
             {
@@ -186,36 +186,34 @@ namespace ToolSmiths.InventorySystem.Services
             ActiveHeroId = id;
             activeHero = session.Hero;
             activeName = result.Payload.name;
-            SetLastSelected(id);
+            TrySetLastSelected(id);
 
             if (result.Status == LoadStatus.RestoredFromBackup)
                 Debug.LogWarning($"Hero save '{id}' was damaged; loaded its backup instead. The next save replaces the damaged file.");
 
-            Quarantine(id, report);
+            // The file still holds what the load left out until it is written again, so a load that
+            // quarantined something writes the hero at once: the next load must not append it a second time.
+            // The write is skipped if the sidecar could not be written, so the items stay in the file.
+            if (Quarantine(id, report))
+                _ = Save();
 
             return new HeroLoadResult(result.Status, true, report);
         }
 
         public HeroLoadResult LoadLastOrCreate()
         {
-            var candidates = new List<string>();
-
+            // The last-selected hero first; the common launch reads one file. Only when it cannot be
+            // used are the other files listed, newest first.
             var last = LastSelectedHeroId;
-            if (last != null)
-                candidates.Add(last);
+            if (last != null && TryContinue(last, out var continued))
+                return continued;
 
-            candidates.AddRange(List()
-                .Where(hero => hero.Status is LoadStatus.Loaded or LoadStatus.RestoredFromBackup)
-                .Select(hero => hero.Id)
-                .Where(id => id != last));
-
-            foreach (var id in candidates)
+            foreach (var hero in List())
             {
-                var result = Load(id);
-
-                // Entered, or readable but refused (a Run is in the Field): either way, nothing to create.
-                if (result.Status is LoadStatus.Loaded or LoadStatus.RestoredFromBackup)
-                    return result;
+                if (hero.Id != last
+                    && hero.Status is LoadStatus.Loaded or LoadStatus.RestoredFromBackup
+                    && TryContinue(hero.Id, out continued))
+                    return continued;
             }
 
             return Load(Create(FirstHeroName).Id);
@@ -232,7 +230,10 @@ namespace ToolSmiths.InventorySystem.Services
             if (simulation.Run.Phase == RunPhase.InField)
                 return false;
 
-            RunNormalisers();
+            // A normaliser that failed left the hero in a state that is not safe to write (a held Package
+            // that is in no container). The previous file still holds it, so keep that one.
+            if (!RunNormalisers())
+                return false;
 
             // A write that fails must not take the game down. The write is atomic, so the previous save is
             // untouched; every save point writes the whole hero, so the next one is the retry.
@@ -248,10 +249,12 @@ namespace ToolSmiths.InventorySystem.Services
             }
         }
 
-        // Each runs on its own: one that throws must not keep the hero from being saved, and must not
-        // keep the others from running.
-        private void RunNormalisers()
+        // Each runs on its own, so one that throws does not keep the others from running. A failure
+        // vetoes this write, not the next: the previous file is intact and the next save point retries.
+        private bool RunNormalisers()
         {
+            var allRan = true;
+
             foreach (var normaliser in beforeSave.ToArray())
             {
                 try
@@ -260,8 +263,31 @@ namespace ToolSmiths.InventorySystem.Services
                 }
                 catch (Exception exception)
                 {
-                    Debug.LogError($"A before-save step failed and was skipped: {exception.Message}");
+                    allRan = false;
+                    Debug.LogError($"A before-save step failed, so this save was skipped and the previous one kept: {exception.Message}");
                 }
+            }
+
+            return allRan;
+        }
+
+        // Entered, or readable but refused (a Run is in the Field): either way, nothing to create.
+        private bool TryContinue(string id, out HeroLoadResult result)
+        {
+            result = Load(id);
+            return result.Status is LoadStatus.Loaded or LoadStatus.RestoredFromBackup;
+        }
+
+        // The last-selected id is a convenience: failing to remember it must not undo a load or a delete.
+        private void TrySetLastSelected(string id)
+        {
+            try
+            {
+                SetLastSelected(id);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"Could not remember the last-selected hero: {exception.Message}");
             }
         }
 
@@ -276,7 +302,7 @@ namespace ToolSmiths.InventorySystem.Services
                     _ = store.SetAside(id);
 
                     if (LastSelectedHeroId == id)
-                        SetLastSelected(null);
+                        TrySetLastSelected(null);
 
                     Debug.LogError($"Hero save '{id}' is damaged and its backup is no use: {result.Failure} It was set aside, not deleted.");
                     break;
@@ -289,14 +315,25 @@ namespace ToolSmiths.InventorySystem.Services
 
         // What the load could not place goes to a sidecar beside the hero file, one JSON line each. The
         // game never reads it back, and a save never rewrites it. The items are already gone from the
-        // loaded hero, so the next save will not carry them either.
-        private void Quarantine(string id, RestoreReport report)
+        // loaded hero, so the next save will not carry them either. Returns whether something was
+        // quarantined, and so the file should be written again.
+        private bool Quarantine(string id, RestoreReport report)
         {
             if (report.IsClean)
-                return;
+                return false;
 
-            store.AppendSideFile($"{id}.quarantine.json", QuarantineLog.Lines(report, utcNow?.Invoke() ?? DateTime.UtcNow));
+            try
+            {
+                store.AppendSideFile($"{id}.quarantine.json", QuarantineLog.Lines(report, utcNow?.Invoke() ?? DateTime.UtcNow));
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError($"Hero save '{id}': {report.Skipped.Count} saved item(s) could not be restored and could not be written to {id}.quarantine.json ({exception.Message}). The save file keeps them.");
+                return false;
+            }
+
             Debug.LogWarning($"Hero save '{id}': {report.Skipped.Count} saved item(s) could not be restored and were written to {id}.quarantine.json.");
+            return true;
         }
 
         private HeroSummary SummaryOf(string id)

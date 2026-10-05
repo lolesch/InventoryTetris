@@ -19,9 +19,16 @@ namespace ToolSmiths.InventorySystem.Services
     public static class GameBoot
     {
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        private static void BootOnPlayEntry()
+        private static void BootOnPlayEntry() => Boot(Load(), SaveStoreForPlay(StartFreshEachPlay));
+
+        /// <summary>
+        /// A Play entry over <paramref name="saves"/>: arms the services, continues the last hero (or
+        /// creates one) and installs the quit save. Separate from the hook so a test can run it over an
+        /// in-memory store.
+        /// </summary>
+        internal static void Boot(GameConfig config, ISaveStore saves)
         {
-            Arm(Load(), SaveStoreForPlay(StartFreshEachPlay));
+            Arm(config, saves);
 
             ContinueLastHero();
             GameExit.Install(ServiceLocator.Get<ISimulationService>(), ServiceLocator.Get<IHeroSaveService>());

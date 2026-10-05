@@ -57,16 +57,27 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             public bool FailWrites { get; set; }
 
+            /// <summary>Fails the writes of this one key only.</summary>
+            public string FailKey { get; set; }
+
+            public bool FailSideFiles { get; set; }
+
             public bool TryRead(string key, out string content) => real.TryRead(key, out content);
             public bool TryReadBackup(string key, out string content) => real.TryReadBackup(key, out content);
             public bool Delete(string key) => real.Delete(key);
             public IReadOnlyCollection<string> Keys() => real.Keys();
             public bool SetAside(string key) => real.SetAside(key);
-            public void AppendSideFile(string fileName, string text) => real.AppendSideFile(fileName, text);
+            public void AppendSideFile(string fileName, string text)
+            {
+                if (FailSideFiles)
+                    throw new IOException("the disk is full");
+
+                real.AppendSideFile(fileName, text);
+            }
 
             public void Write(string key, string content)
             {
-                if (FailWrites)
+                if (FailWrites || key == FailKey)
                     throw new IOException("the disk is full");
 
                 real.Write(key, content);
@@ -298,6 +309,76 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             _ = setup.Saves.Load(hero.Id);
 
             Assert.That(inner.SideFiles, Is.Empty);
+        }
+
+        [Test]
+        public void AnAccountWriteThatFails_DoesNotUndoALoad_AndOnlyWarns()
+        {
+            var setup = NewSetup();
+            var hero = setup.Saves.Create("Aria");
+            store.FailKey = "account";
+            ExpectLog(LogType.Warning, "Could not remember the last-selected hero");
+
+            var result = setup.Saves.Load(hero.Id);
+
+            Assert.That(result.Entered, Is.True);
+            Assert.That(setup.Saves.ActiveHeroId, Is.EqualTo(hero.Id));
+        }
+
+        [Test]
+        public void ALoadThatQuarantinedSomething_WritesTheHeroAtOnce_SoTheNextLoadAppendsNothingMore()
+        {
+            var setup = NewSetup();
+            var id = SaveWithAnItemWhoseDefinitionIsGone(setup);
+            ExpectLog(LogType.Warning, "could not be restored");
+            _ = setup.Saves.Load(id);
+            var sidecar = inner.SideFiles[$"{id}.quarantine.json"];
+
+            Assert.That(HeroSlot(id).Load().Payload.stash.packages.Any(p => p.instance.definitionId == "deleted-in-a-patch"), Is.False,
+                "the item is no longer in the hero file");
+            _ = NewSetup().Saves.Load(id);
+
+            Assert.That(inner.SideFiles[$"{id}.quarantine.json"], Is.EqualTo(sidecar));
+        }
+
+        [Test]
+        public void ASidecarThatCannotBeWritten_KeepsTheItemsInTheHeroFile()
+        {
+            var setup = NewSetup();
+            var id = SaveWithAnItemWhoseDefinitionIsGone(setup);
+            store.FailSideFiles = true;
+            ExpectLog(LogType.Error, "could not be written to");
+
+            var result = setup.Saves.Load(id);
+
+            Assert.That(result.Entered, Is.True);
+            Assert.That(HeroSlot(id).Load().Payload.stash.packages.Any(p => p.instance.definitionId == "deleted-in-a-patch"), Is.True,
+                "nothing was lost: the file still has it");
+        }
+
+        [Test]
+        public void ANormaliserThatThrows_SkipsThisSave_KeepsThePreviousFile_AndTheNextSaveRetries()
+        {
+            var setup = NewSetup();
+            var hero = setup.Saves.Create("Aria");
+            _ = setup.Saves.Load(hero.Id);
+            var fail = true;
+            setup.Saves.AddBeforeSave(() =>
+            {
+                if (fail)
+                    throw new System.InvalidOperationException("nowhere to put it");
+            });
+            setup.Game.Hero.Wallet.Deposit(new Currency(5u));
+            ExpectLog(LogType.Error, "this save was skipped.*nowhere to put it");
+
+            Assert.That(setup.Saves.Save(), Is.False);
+
+            var survivor = NewSetup();
+            _ = survivor.Saves.Load(hero.Id);
+            Assert.That(survivor.Game.Hero.Wallet.Balance.Total, Is.Zero, "the previous file is kept");
+
+            fail = false;
+            Assert.That(setup.Saves.Save(), Is.True);
         }
     }
 }

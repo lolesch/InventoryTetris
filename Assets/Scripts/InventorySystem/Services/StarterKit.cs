@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Runtime.Character;
 using UnityEngine;
@@ -21,6 +22,10 @@ namespace ToolSmiths.InventorySystem.Services
             foreach (var starter in data.StarterItems)
                 Place(hero, starter, items);
 
+            // Gear raises the maximums but not the current values, so a new hero is topped up after the
+            // kit is worn, and starts at full Health and Resource.
+            hero.Heal();
+
             var coins = data.StarterCoins;
             if (coins.Total == 0u)
                 return;
@@ -37,7 +42,7 @@ namespace ToolSmiths.InventorySystem.Services
 
             try
             {
-                item = items.Create(starter.DefinitionId, starter.Rarity);
+                item = items.Create(starter.DefinitionId, starter.Rarity == default ? ItemRarity.Common : starter.Rarity);
             }
             catch (KeyNotFoundException)
             {
@@ -45,7 +50,7 @@ namespace ToolSmiths.InventorySystem.Services
                 return;
             }
 
-            if (!hero.PickUpItem(item, starter.Amount))
+            if (!hero.PickUpItem(item, starter.Amount == 0u ? 1u : starter.Amount))
                 Debug.LogWarning($"{nameof(StarterKit)}: there is no room for '{starter.DefinitionId}'; the hero starts without it.");
         }
     }

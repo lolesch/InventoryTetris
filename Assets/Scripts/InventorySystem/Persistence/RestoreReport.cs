@@ -28,6 +28,9 @@ namespace ToolSmiths.InventorySystem.Persistence
 
         /// <summary>The Corpse's Location id is not an authored Location any more, so its items have nowhere to be recovered.</summary>
         UnknownLocation,
+
+        /// <summary>The item holds a value this build cannot read (an enum name that no longer exists), so it cannot be rebuilt.</summary>
+        Unreadable,
     }
 
     /// <summary>

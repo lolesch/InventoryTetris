@@ -228,11 +228,18 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             var game = TestGame.Create(config);
             var hero = game.Hero;
             var saved = Snapshot(PlayedGame());
-            saved.behaviour.lootFilterMinimum = "NotARarity";
 
-            Assert.Throws<ArgumentException>(() => game.Session.TryLoad(saved, game.Simulation.Locations, out _));
+            Assert.Throws<InvalidOperationException>(() => game.Session.TryLoad(saved, new ThrowingLocations(), out _));
 
             Assert.That(game.Hero, Is.SameAs(hero));
+        }
+
+        // A restore that dies part way: the Location lookup is the last thing the restore calls.
+        private sealed class ThrowingLocations : ILocationIndex
+        {
+            public LocationConfig Find(string id) => throw new InvalidOperationException("the lookup failed");
+            public bool TryGetProfile(string locationId, out EncounterProfile profile) => throw new InvalidOperationException("the lookup failed");
+            public bool TryGetId(EncounterProfile profile, out string locationId) => throw new InvalidOperationException("the lookup failed");
         }
 
         [Test]
@@ -291,6 +298,24 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             Assert.That(saved.id, Is.EqualTo("hero-1"));
             Assert.That(saved.name, Is.EqualTo("Aria"));
+        }
+
+        [Test]
+        public void AnItemWithAValueThisBuildCannotRead_IsSkippedAsUnreadable_AndTheHeroStillLoads()
+        {
+            var saved = Snapshot(PlayedGame());
+            var after = TestGame.Create(config);
+            var instance = new ItemInstance(
+                after.Items.Catalog.OfCategory(ItemCategory.Consumable).First().Id, ItemRarity.Common, 1, null).ToDto();
+            instance.rarity = "NoSuchRarityAnyMore";
+            saved.stash.packages = saved.stash.packages.Append(new PackageDto { x = 7, y = 5, instance = instance, amount = 1u }).ToArray();
+            saved.behaviour.lootFilterMinimum = "NoSuchRarityAnyMore";
+
+            var ok = after.Session.TryLoad(saved, after.Simulation.Locations, out var report);
+
+            Assert.That(ok, Is.True);
+            Assert.That(report.Skipped.Single().Reason, Is.EqualTo(SkipReason.Unreadable));
+            Assert.That(after.Hero.Level, Is.GreaterThan(1u), "the rest of the hero loaded");
         }
     }
 }

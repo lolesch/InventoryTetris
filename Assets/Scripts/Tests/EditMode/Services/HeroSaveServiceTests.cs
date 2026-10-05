@@ -623,18 +623,17 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
-        public void ANormaliserThatThrows_IsLoggedAndSkipped_AndTheSaveStillGoes()
+        public void ANormaliserThatThrows_StillLetsTheOthersRun_ButSkipsTheWrite()
         {
             var setup = LoadedHero(out var id);
+            var otherRan = false;
             setup.Saves.AddBeforeSave(() => throw new InvalidOperationException("boom"));
-            setup.Saves.AddBeforeSave(() => setup.Game.Hero.Wallet.Deposit(new Currency(5u)));
+            setup.Saves.AddBeforeSave(() => otherRan = true);
             LogAssert.Expect(LogType.Error, new Regex("before-save step failed.*boom"));
 
-            Assert.That(setup.Saves.Save(), Is.True);
+            Assert.That(setup.Saves.Save(), Is.False);
 
-            var next = NewSetup();
-            _ = next.Saves.Load(id);
-            Assert.That(next.Game.Hero.Wallet.Balance.Total, Is.EqualTo(5u), "the next normaliser ran, and so did the save");
+            Assert.That(otherRan, Is.True);
         }
 
         [Test]

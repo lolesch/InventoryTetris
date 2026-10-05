@@ -57,9 +57,9 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             for (var i = 0; i < items.Length; i++)
             {
                 var element = kit.GetArrayElementAtIndex(i);
-                element.FindPropertyRelative("definitionId").stringValue = items[i].Id;
-                element.FindPropertyRelative("rarity").intValue = (int)ItemRarity.Common;
-                element.FindPropertyRelative("amount").intValue = (int)items[i].Amount;
+                element.FindPropertyRelative("<DefinitionId>k__BackingField").stringValue = items[i].Id;
+                element.FindPropertyRelative("<Rarity>k__BackingField").intValue = (int)ItemRarity.Common;
+                element.FindPropertyRelative("<Amount>k__BackingField").intValue = (int)items[i].Amount;
             }
 
             so.FindProperty("starterCoins").FindPropertyRelative("<Gold>k__BackingField").intValue = goldCoins;
@@ -170,6 +170,19 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(result.Entered, Is.True);
             Assert.That(Held(game.Hero, gearId), Is.GreaterThan(0));
             Assert.That(Held(game.Hero, gearId), Is.LessThan(400));
+        }
+
+        [Test]
+        public void TheKit_TopsTheHeroUp_SoGearThatRaisesTheMaximumsDoesNotLeaveItWounded()
+        {
+            var game = TestGame.Create(config);
+            _ = game.Hero.GetResource(StatName.Health).RemoveFromCurrent(5f);
+            _ = game.Hero.GetResource(StatName.Resource).RemoveFromCurrent(5f);
+
+            StarterKit.Apply(game.Hero, config.DefaultHero, game.Items);
+
+            Assert.That(game.Hero.GetResource(StatName.Health).CurrentValue, Is.EqualTo(game.Hero.GetResource(StatName.Health).TotalValue));
+            Assert.That(game.Hero.GetResource(StatName.Resource).CurrentValue, Is.EqualTo(game.Hero.GetResource(StatName.Resource).TotalValue));
         }
     }
 }

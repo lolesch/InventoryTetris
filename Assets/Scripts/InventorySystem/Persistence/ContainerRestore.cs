@@ -29,8 +29,8 @@ namespace ToolSmiths.InventorySystem.Persistence
         /// Places <paramref name="dto"/>'s packages into <paramref name="target"/> at their saved
         /// cells. A null section places nothing, so a save from before a container existed loads.
         /// Items are rebuilt through the catalog overload, so a saved coin re-stamps onto the
-        /// current denomination ladder. An enum name that does not parse throws, as the item round
-        /// trip does.
+        /// current denomination ladder. An item that cannot be rebuilt (an unknown definition, or an
+        /// enum name that no longer parses) is skipped and reported.
         /// </summary>
         public void Place(SavedContainer source, ContainerDto dto, AbstractDimensionalContainer target)
         {
@@ -56,6 +56,12 @@ namespace ToolSmiths.InventorySystem.Persistence
                 catch (KeyNotFoundException)
                 {
                     skipped.Add(new SkippedPackage(source, entry, SkipReason.UnknownDefinition));
+                    continue;
+                }
+                catch (Exception exception) when (exception is ArgumentException or FormatException or OverflowException)
+                {
+                    // A renamed stat or a removed rarity in one item must not stop the hero loading.
+                    skipped.Add(new SkippedPackage(source, entry, SkipReason.Unreadable));
                     continue;
                 }
 

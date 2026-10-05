@@ -33,25 +33,22 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
         /// <summary>
         /// One item of the kit a newly created hero starts with: a definition from the catalog, by its
-        /// stable id, at a rarity and in a stack. An unset rarity reads as Common and an unset amount as 1.
+        /// stable id, at a rarity and in a stack. The starter kit reads an unset rarity as Common and an
+        /// unset amount as 1.
         /// </summary>
         [Serializable]
         public struct StarterItem
         {
-            [SerializeField] private string definitionId;
-            [SerializeField] private ItemRarity rarity;
-            [SerializeField] private uint amount;
+            [field: SerializeField] public string DefinitionId { get; private set; }
+            [field: SerializeField] public ItemRarity Rarity { get; private set; }
+            [field: SerializeField] public uint Amount { get; private set; }
 
             public StarterItem(string definitionId, ItemRarity rarity = ItemRarity.Common, uint amount = 1u)
             {
-                this.definitionId = definitionId;
-                this.rarity = rarity;
-                this.amount = amount;
+                DefinitionId = definitionId;
+                Rarity = rarity;
+                Amount = amount;
             }
-
-            public string DefinitionId => definitionId;
-            public ItemRarity Rarity => rarity == default ? ItemRarity.Common : rarity;
-            public uint Amount => amount == 0u ? 1u : amount;
         }
 
         [SerializeField] private BaseStat[] stats = Array.Empty<BaseStat>();

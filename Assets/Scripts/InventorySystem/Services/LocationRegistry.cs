@@ -65,8 +65,10 @@ namespace ToolSmiths.InventorySystem.Services
                 if (!ReferenceEquals(entry.Value, profile))
                     continue;
 
+                // Only an id the lookup resolves back is a saveable one: an id-less Location, or one that
+                // is not in the authored list, could never be found again on load.
                 locationId = entry.Key.Id;
-                return true;
+                return byId.TryGetValue(locationId ?? string.Empty, out var registered) && registered == entry.Key;
             }
 
             locationId = null;

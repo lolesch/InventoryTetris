@@ -16,7 +16,7 @@ namespace ToolSmiths.InventorySystem.Persistence
         /// <summary>
         /// Restores <paramref name="dto"/> onto <paramref name="hero"/>, which must be new and
         /// outfitted. Returns what could not be placed. A selected Location that is no longer authored
-        /// leaves none selected. An enum name that does not parse throws, as the item round trip does.
+        /// leaves none selected, and a loot filter name that no longer parses leaves the builder's default.
         /// </summary>
         public static RestoreReport Restore(HeroDto dto, Hero hero, ILocationIndex locations)
         {
@@ -70,8 +70,8 @@ namespace ToolSmiths.InventorySystem.Persistence
             behaviour.RecallBagFillFraction = saved.recallBagFillFraction;
             behaviour.CastThreshold = saved.castThreshold;
 
-            if (!string.IsNullOrEmpty(saved.lootFilterMinimum))
-                behaviour.LootFilterMinimum = (ItemRarity)Enum.Parse(typeof(ItemRarity), saved.lootFilterMinimum);
+            if (Enum.TryParse<ItemRarity>(saved.lootFilterMinimum, out var filter))
+                behaviour.LootFilterMinimum = filter;
         }
     }
 }

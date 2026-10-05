@@ -133,12 +133,15 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         /// A Recall or a Death can fire while a drag is in progress, and the save that follows would not
         /// find the held Package in any container. The save service runs this first: the drag ends as a
         /// cancel does (<see cref="CancelDrag"/>) - back at its origin cell, or in the bag when that is
-        /// taken, never destroyed and never touching the Wallet.
+        /// taken, never destroyed and never touching the Wallet. When it finds no room it throws, which
+        /// skips the save rather than writing a hero without the Package.
         /// </summary>
         private void ReturnHeldToOrigin()
         {
-            if (IsDragging)
-                _ = CancelDrag();
+            // Throwing vetoes the save: a Package left on the cursor is in no container, so writing now would
+            // drop it from the file. The previous save still holds it.
+            if (IsDragging && !CancelDrag())
+                throw new System.InvalidOperationException("The Package in hand has no room at its origin or in the bag.");
         }
 
         /// <summary>
