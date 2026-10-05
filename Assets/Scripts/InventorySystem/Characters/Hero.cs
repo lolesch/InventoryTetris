@@ -5,6 +5,7 @@ using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
+using ToolSmiths.InventorySystem.Locations;
 using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
 
@@ -127,6 +128,16 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
         /// <summary>The six sliders the player sets on the hero (Behaviour Profile). Throws if the hero was never <see cref="Outfit"/>ted.</summary>
         public HeroBehaviour Behaviour => _behaviour ?? throw NotOutfitted();
+
+        /// <summary>
+        /// The one Corpse a Death can leave behind (ADR-0009), the hero's own: it saves with it, and a
+        /// hero that is replaced takes it along. Empty until a Death buries the bag in it; the
+        /// settlement is the only thing that writes it.
+        /// </summary>
+        public Corpse Corpse { get; } = new();
+
+        /// <summary>The Location a Send will (or last did) go to. <c>null</c> until the hero was first sent.</summary>
+        public LocationConfig SelectedLocation { get; set; }
 
         /// <summary>Whether <see cref="Outfit"/> has run.</summary>
         public bool IsOutfitted => _equipment != null;

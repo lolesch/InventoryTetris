@@ -1,5 +1,5 @@
 using Submodules.Utility.UI;
-using ToolSmiths.InventorySystem.Runtime.Simulation;
+using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
 
@@ -19,8 +19,10 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
         {
             base.OnClick();
 
-            if (SimulationProvider.Instance.Run.Phase == RunPhase.InField)
-                SimulationProvider.Instance.Recall();
+            var simulation = SimulationService.Instance;
+
+            if (simulation.Run.Phase == RunPhase.InField)
+                _ = simulation.Recall();
         }
     }
 }

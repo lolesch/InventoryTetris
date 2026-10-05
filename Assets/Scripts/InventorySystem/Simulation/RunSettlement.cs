@@ -15,19 +15,27 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// Everything Unity-typed - the live bag, the Wallet, the character sheet, the ground - sits
     /// behind <see cref="ISettlementBag"/>, <see cref="ISettlementLedger"/> and
     /// <see cref="ILootGround"/>, so the rules are verified through this interface against
-    /// in-memory ports. The engine side (<c>SimulationProvider</c>) binds the ports and owns
+    /// in-memory ports. The engine side (<c>SimulationService</c>) binds the ports and owns
     /// nothing else about Death.
     /// </summary>
     public sealed class RunSettlement
     {
         private readonly ISettlementBag _bag;
         private readonly ISettlementLedger _ledger;
-        private readonly Corpse _corpse = new();
+        private readonly Corpse _corpse;
 
         public RunSettlement(ISettlementBag bag, ISettlementLedger ledger)
+            : this(bag, ledger, new Corpse()) { }
+
+        /// <summary>
+        /// Settles onto <paramref name="corpse"/>, which belongs to whoever owns the hero (the Hero
+        /// itself, in the game): the rules are stateless over it, so one can be built for each use.
+        /// </summary>
+        public RunSettlement(ISettlementBag bag, ISettlementLedger ledger, Corpse corpse)
         {
             _bag = bag ?? throw new ArgumentNullException(nameof(bag));
             _ledger = ledger ?? throw new ArgumentNullException(nameof(ledger));
+            _corpse = corpse ?? throw new ArgumentNullException(nameof(corpse));
         }
 
         /// <summary>The one standing Corpse - exposed for the debug panel's read-out, mutated only in here.</summary>

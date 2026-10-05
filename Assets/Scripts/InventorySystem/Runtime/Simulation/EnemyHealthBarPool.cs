@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Submodules.Utility.Tools;
+using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
 
@@ -11,8 +12,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     ///
     /// Only the <i>binding</i> is polled — <see cref="Update"/> compares the Run's current
     /// <see cref="EncounterSimulation"/> to the one it holds, once a frame. The sim is rebuilt on
-    /// every <see cref="RunState.Send"/> and <see cref="RunState.Relocate"/>, and <see cref="SimulationProvider"/> may not exist when
-    /// this enables, so there is no moment to subscribe once and be done; and doing it in one
+    /// every <see cref="RunState.Send"/> and <see cref="RunState.Relocate"/>, and a hero load replaces the Run
+    /// itself, so there is no moment to subscribe once and be done; and doing it in one
     /// place in <c>Update</c> leaves no <c>Awake</c>/<c>OnDisable</c> asymmetry to go silently
     /// dead on the second Play entry under disabled domain reload (<c>codebase-notes.md</c>).
     /// Everything else is events: <see cref="EncounterSimulation.EnemySpawned"/> takes a bar,
@@ -41,8 +42,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         private void Update()
         {
-            var provider = SimulationProvider.Instance;
-            var encounter = provider != null ? provider.Run.Encounter : null;
+            var encounter = SimulationService.Instance.Run.Encounter;
             if (encounter == _bound)
                 return;
 

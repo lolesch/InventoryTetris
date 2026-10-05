@@ -4,6 +4,7 @@
     "references": [
         "InventorySystem.Data",
         "InventorySystem.Items",
+        "InventorySystem.Locations",
         "InventorySystem.Containers",
         "InventorySystem.Simulation"
     ],
