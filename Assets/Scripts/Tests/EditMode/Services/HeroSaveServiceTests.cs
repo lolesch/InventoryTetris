@@ -62,10 +62,8 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         private Setup NewSetup(ISaveStore over)
         {
             var game = TestGame.Create(config);
-            var saves = new HeroSaveService(game.Session, game.Items, config, game.Simulation, over,
-                new JsonUtilitySerializer(), () => now);
 
-            return new Setup { Game = game, Saves = saves };
+            return new Setup { Game = game, Saves = game.SavesOver(config, over, () => now) };
         }
 
         private void Tick(int minutes = 1) => now = now.AddMinutes(minutes);
@@ -551,9 +549,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         {
             PutPotionsInBag(setup, amount);
             var cell = setup.Game.Hero.Inventory.StoredPackages.Keys.Single();
-            Assert.That(setup.Game.Hero.Inventory.TryGetPackageAt(cell, out var stored), Is.True);
-            _ = setup.Game.Hero.Inventory.RemoveAtPosition(cell, stored);
-            held = stored;
+            held = TestPackages.PickUp(setup.Game.Hero.Inventory, cell);
             Assert.That(held.IsValid, Is.True);
             Assert.That(PotionsInBag(setup.Game.Hero), Is.Zero, "the cursor holds them now");
             return cell;

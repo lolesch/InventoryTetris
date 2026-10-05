@@ -28,7 +28,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         private static HeroSaveService ServiceOver(TestGame game, GameConfig config, ISaveStore store) =>
-            new(game.Session, game.Items, config, game.Simulation, store, new JsonUtilitySerializer());
+            game.SavesOver(config, store);
 
         [Test]
         public void WipeAll_DeletesEveryHeroSaveAndTheAccountFile_ThenAPlayEntryCreatesAFreshHero()

@@ -1,4 +1,9 @@
+using NUnit.Framework;
+using Submodules.Utility.Persistence;
+using System;
 using System.Collections.Generic;
+using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Locations;
 using ToolSmiths.InventorySystem.Runtime.Character;
 using ToolSmiths.InventorySystem.Services;
@@ -20,6 +25,13 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
         public Hero Hero => Session.Hero;
 
+        /// <summary>
+        /// The save service a boot builds for this game, over <paramref name="store"/>. Share one store
+        /// between games to save in one and load in another, as a quit and a relaunch do.
+        /// </summary>
+        public HeroSaveService SavesOver(GameConfig config, ISaveStore store, Func<DateTime> utcNow = null) =>
+            new(Session, Items, config, Simulation, store, new JsonUtilitySerializer(), utcNow);
+
         public static TestGame Create(GameConfig config)
         {
             var rolls = new SessionBuilderTests.FixedRolls(0.5f);
@@ -35,10 +47,26 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
     }
 
+    internal static class TestPackages
+    {
+        /// <summary>
+        /// A drag pick-up as the slot display runs it: the package leaves the container and is now in hand.
+        /// <c>RemoveAtPosition</c> returns what is <em>left over</em>, not what was removed, so the hand is
+        /// the stored package read before the removal.
+        /// </summary>
+        public static Package PickUp(AbstractDimensionalContainer from, Vector2Int cell)
+        {
+            Assert.That(from.TryGetPackageAt(cell, out var stored), Is.True, $"nothing stored at {cell}");
+            _ = from.RemoveAtPosition(cell, stored);
+
+            return stored;
+        }
+    }
+
     internal static class TestLocations
     {
         /// <summary>A valid Location with this id, over the config's own loot distributions.</summary>
-        public static LocationConfig Create(GameConfig config, List<Object> created, string id)
+        public static LocationConfig Create(GameConfig config, List<UnityEngine.Object> created, string id)
         {
             var location = ScriptableObject.CreateInstance<LocationConfig>();
             created.Add(location);

@@ -6,6 +6,16 @@ This file is the shared channel for that knowledge across machines — an agent'
 
 ---
 
+## Running the tests headless
+
+`dev/run-tests.sh [EditMode|PlayMode] [filter]` runs the suite with the Editor closed and prints the
+compile errors, the totals and each failing test's message; its exit status is the verdict
+(Unity's exit code is not). The filter is Unity's `-testFilter` (a test, fixture or namespace,
+`;`-separated), so `dev/run-tests.sh EditMode HeroSaveServiceTests` is a ~25 s loop and the full
+EditMode suite ~90 s. It restores `ProjectSettings`, which every run rewrites, and sends a PlayMode
+run's saves to a scratch folder (`-savesFolder`, below). With the Editor open on the project the run
+aborts on the project lock: use a worktree or a shadow copy of `Assets`, `Packages` and `ProjectSettings`.
+
 ## Verifying a C# change compiles
 
 **`dotnet build` lies here.** The generated `.csproj`s are stale — they omit newer
@@ -232,6 +242,19 @@ To repair a genuinely **cut** meta: rewrite it canonically (`fileFormatVersion: 
 Then `AssetDatabase.ImportAsset(path, ForceUpdate | ForceSynchronousImport)` +
 `CompilationPipeline.RequestScriptCompilation()` through the bridge.
 
+## Scripted edits from git-bash
+
+The Bash tool is git-bash on Windows, so a `python` or `.exe` call sees Windows paths and the shell
+sees MSYS ones:
+
+- **`/tmp` is not the same folder to both.** A script written to `/tmp/x.py` and run by `python` fails
+  to import its neighbours. Write throwaway scripts to the session's scratchpad directory and run them
+  from there.
+- **Inline `python - <<'EOF'` heredocs break on a stray backtick or quote in the body** (one killed a
+  command with `Permission denied`). Past a few lines, write the script to a file and run it.
+- **Anything that rewrites many files must keep each file's line endings** (CRLF and LF both exist in
+  the working tree). Read with `newline=''`, detect `\r\n`, and convert the replacement strings.
+
 ## Source is CRLF + UTF-8 — stream editors can still corrupt it
 
 Source under `Assets/Scripts/` and the docs are **CRLF in the working tree, LF in the index**
@@ -351,6 +374,24 @@ that doesn't match your diff:
    `CS0104` ambiguous-reference errors (two classes, same short name, two namespaces)
    that are not bugs in your branch. Fix with `git submodule update <path>`, never by
    editing source to route around the ambiguity.
+
+## Test fixtures for the Services tests
+
+`Assets/Scripts/Tests/EditMode/Services/` has the fixtures a persistence or simulation test needs;
+reach for them before writing a local copy.
+
+- **`TestGameConfig.Create(created)`** builds a `GameConfig` from the authored assets with the test's
+  own coin odds. Its fields are written through `SerializedObject` with `<Name>k__BackingField` keys
+  (`DefaultHero`, `Catalog`, ...), which is also how a test swaps a template.
+- **`TestGame.Create(config)`** is one whole game (items, session, simulation) as a boot builds it.
+  **`game.SavesOver(config, store)`** adds its save service. Share *one* store between two games to
+  save in one and load in the other; a fresh store per game sees nothing.
+- **`TestLocations.Create` / `Author`** make Locations with stable ids and make them the config's
+  authored list. A Location made but not authored has no saveable id.
+- **`TestPackages.PickUp(container, cell)`** is a drag pick-up. `RemoveAtPosition` returns what is
+  *left over*, not what was removed, so the hand is the package read before the removal.
+- A restore or save test that expects an `Error` log must name it (`LogAssert.Expect`); EditMode fails
+  on an unexpected one.
 
 ## Knowledge that lives outside git
 

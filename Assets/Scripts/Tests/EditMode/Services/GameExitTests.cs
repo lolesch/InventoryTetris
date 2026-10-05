@@ -49,7 +49,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         private (TestGame Game, HeroSaveService Saves, string Id) Playing()
         {
             var game = TestGame.Create(config);
-            var saves = new HeroSaveService(game.Session, game.Items, config, game.Simulation, store, new JsonUtilitySerializer());
+            var saves = game.SavesOver(config, store);
             var id = saves.Create("Aria").Id;
             _ = saves.Load(id);
 
@@ -59,7 +59,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         private (TestGame Game, HeroSaveService Saves) Reloaded(string id)
         {
             var game = TestGame.Create(config);
-            var saves = new HeroSaveService(game.Session, game.Items, config, game.Simulation, store, new JsonUtilitySerializer());
+            var saves = game.SavesOver(config, store);
             _ = saves.Load(id);
 
             return (game, saves);
@@ -111,7 +111,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         public void AQuitWithNoSavedHero_WritesNothing_AndDoesNotThrow()
         {
             var game = TestGame.Create(config);
-            var saves = new HeroSaveService(game.Session, game.Items, config, game.Simulation, store, new JsonUtilitySerializer());
+            var saves = game.SavesOver(config, store);
 
             Assert.DoesNotThrow(() => GameExit.SaveHero(game.Simulation, saves));
 

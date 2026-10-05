@@ -73,10 +73,8 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         private (TestGame Game, HeroSaveService Saves) NewGame()
         {
             var game = TestGame.Create(config);
-            var saves = new HeroSaveService(game.Session, game.Items, config, game.Simulation,
-                store, new JsonUtilitySerializer());
 
-            return (game, saves);
+            return (game, game.SavesOver(config, store));
         }
 
         private static int Held(Hero hero, string id) =>

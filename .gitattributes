@@ -3,3 +3,6 @@
 *.md text eol=crlf
 # Hooks run under bash: a CRLF shebang breaks them.
 dev/hooks/* text eol=lf
+
+# Scripts run under bash: a CRLF shebang breaks them.
+dev/*.sh text eol=lf

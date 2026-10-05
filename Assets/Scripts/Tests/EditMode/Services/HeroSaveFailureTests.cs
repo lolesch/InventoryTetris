@@ -93,10 +93,8 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         private Setup NewSetup()
         {
             var game = TestGame.Create(config);
-            var saves = new HeroSaveService(game.Session, game.Items, config, game.Simulation, store,
-                new JsonUtilitySerializer(), () => now);
 
-            return new Setup { Game = game, Saves = saves };
+            return new Setup { Game = game, Saves = game.SavesOver(config, store, () => now) };
         }
 
         private SaveSlot<HeroDto> HeroSlot(string id, int version = 1) =>
