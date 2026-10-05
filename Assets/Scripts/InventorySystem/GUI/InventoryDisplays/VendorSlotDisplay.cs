@@ -30,11 +30,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         // Hero's Wallet, which CurrentWallet no longer names by then.
         private Wallet watched;
 
-        protected override void OnEnable()
+        private void OnEnable()
         {
-            base.OnEnable();
-
-            _ = Session.TrySubscribeHeroLoaded(WatchWallet);
+            _ =Session.TrySubscribeHeroLoaded(WatchWallet);
 
             WatchWallet();
         }

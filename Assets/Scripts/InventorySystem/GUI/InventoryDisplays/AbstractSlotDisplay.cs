@@ -30,10 +30,6 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         [SerializeField] protected TextMeshProUGUI amount;
         [SerializeField] protected Image slotBackground;
 
-        [SerializeField] protected TextMeshProUGUI debugPosition;
-        [Tooltip("Writes the slot's grid position into the debug label. Off by default; was the inventory provider's scene-wide flag.")]
-        [SerializeField] private bool showDebugPosition;
-
         [Space]
         [Tooltip("Pixels the item frame grows outward on every side while hovered.")]
         [SerializeField] protected float hoverExpand = 1f;
@@ -55,14 +51,6 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         /// The item's untinted background color, as RefreshSlotDisplay derived it from rarity.
         private Color baseBackgroundColor = Color.white;
 
-        protected virtual void OnEnable() => RefreshDebugPosition();
-
-        private void RefreshDebugPosition()
-        {
-            if (debugPosition != null)
-                debugPosition.text = showDebugPosition ? Position.ToString() : "";
-        }
-
         protected virtual void OnDisable()
         {
             ClearHighlight();
@@ -75,8 +63,6 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             Position = position;
             Container = container;
             owner = containerDisplay;
-
-            RefreshDebugPosition();
         }
 
         /// Where the pointer went down on this slot. OnBeginDrag only fires once Unity's 10px

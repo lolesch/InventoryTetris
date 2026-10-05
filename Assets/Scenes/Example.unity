@@ -3336,7 +3336,6 @@ MonoBehaviour:
     <StoredPackages>k__BackingField: []
   <HealerSupply>k__BackingField:
     <StoredPackages>k__BackingField: []
-  <ShowDebugPositions>k__BackingField: 0
   equipmentSize: {x: 14, y: 1}
   inventorySize: {x: 10, y: 6}
   stashSize: {x: 10, y: 13}
@@ -14522,7 +14521,6 @@ MonoBehaviour:
   background: {fileID: 0}
   amount: {fileID: 0}
   slotBackground: {fileID: 0}
-  debugPosition: {fileID: 0}
   hoverExpand: 1
   hoverLighten: 0.1
 --- !u!1001 &1267847925
