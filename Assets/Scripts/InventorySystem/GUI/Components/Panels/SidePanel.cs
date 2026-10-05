@@ -1,5 +1,7 @@
+using Submodules.Utility.Services;
 using Submodules.Utility.UI;
 using ToolSmiths.InventorySystem.Inventories;
+using ToolSmiths.InventorySystem.Services;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.GUI.Components.Panels
@@ -68,10 +70,9 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
         private bool? shown;
 
         /// <summary>
-        /// Play mode only: reading a provider's <c>Instance</c> in the editor <i>creates</i> a
-        /// provider GameObject when none exists (issue #46), and a panel that enables at
-        /// edit-adjacent times - opening the scene, a domain reload, prefab isolation - would
-        /// otherwise reach this while the player is only editing.
+        /// Only while the services are armed (Play mode): a panel that enables at edit-adjacent
+        /// times - opening the scene, a domain reload, prefab isolation - is left unsubscribed
+        /// rather than reading a service nothing has built.
         ///
         /// <see cref="ApplyContext"/> runs here rather than only on the event so a panel that
         /// enables into an already-open context (the scene loads, or the panel was disabled
@@ -79,7 +80,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
         /// </summary>
         private void OnEnable()
         {
-            if (InventoryProvider.TrySubscribeContextChanged(OnContextChanged, out var activeContext))
+            if (InventoryService.TrySubscribeContextChanged(OnContextChanged, out var activeContext))
                 ApplyContext(activeContext);
         }
 
@@ -87,7 +88,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
         {
             base.OnDisable();
 
-            InventoryProvider.UnsubscribeContextChanged(OnContextChanged);
+            InventoryService.UnsubscribeContextChanged(OnContextChanged);
         }
 
         private void OnContextChanged(InventoryContext context) => ApplyContext(context);
@@ -128,14 +129,15 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
             if (!Application.isPlaying || inventoryContext == InventoryContext.None)
                 return false;
 
-            var provider = InventoryProvider.Instance;
-            if (provider == null)
+            if (!ServiceLocator.IsArmed)
                 return false;
 
+            var inventory = InventoryService.Instance;
+
             if (open)
-                provider.SetContext(inventoryContext);
+                inventory.SetContext(inventoryContext);
             else
-                provider.CloseContext();
+                inventory.CloseContext();
 
             return true;
         }

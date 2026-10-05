@@ -58,6 +58,35 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(service.ContainerFor(ContainerRole.Sold), Is.SameAs(world.Sold));
         }
 
+        // ── the Inventory Context requests ───────────────────────────────────
+
+        [Test]
+        public void SetContext_AndCloseContext_DriveTheWorldsContext()
+        {
+            service.SetContext(InventoryContext.Vendor);
+
+            Assert.That(service.ActiveContext, Is.EqualTo(InventoryContext.Vendor));
+            Assert.That(session.World.Context.Active, Is.EqualTo(InventoryContext.Vendor));
+
+            service.CloseContext();
+
+            Assert.That(service.ActiveContext, Is.EqualTo(InventoryContext.None));
+        }
+
+        [Test]
+        public void SyncContextToPhase_ClosesAContextTheFieldMakesUnreachable_AndLeavesTheHeroPanel()
+        {
+            service.SetContext(InventoryContext.Vendor);
+            service.SyncContextToPhase(true);
+
+            Assert.That(service.ActiveContext, Is.EqualTo(InventoryContext.None), "a Town Stop is unreachable in the field");
+
+            service.SetContext(InventoryContext.Hero);
+            service.SyncContextToPhase(true);
+
+            Assert.That(service.ActiveContext, Is.EqualTo(InventoryContext.Hero), "the Hero Panel is reachable in both faces");
+        }
+
         // ── Quick Move ───────────────────────────────────────────────────────
 
         [Test]

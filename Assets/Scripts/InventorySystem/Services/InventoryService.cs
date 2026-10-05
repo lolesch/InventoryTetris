@@ -68,6 +68,12 @@ namespace ToolSmiths.InventorySystem.Services
 
         public InventoryContext ActiveContext => session.World.Context.Active;
 
+        public void SetContext(InventoryContext context) => session.World.Context.Set(context);
+
+        public void CloseContext() => session.World.Context.Close();
+
+        public void SyncContextToPhase(bool inField) => session.World.Context.SyncToPhase(inField);
+
         private void Attach(World world)
         {
             attached = world;

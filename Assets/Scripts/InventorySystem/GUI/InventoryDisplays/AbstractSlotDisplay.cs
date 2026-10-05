@@ -31,6 +31,8 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         [SerializeField] protected Image slotBackground;
 
         [SerializeField] protected TextMeshProUGUI debugPosition;
+        [Tooltip("Writes the slot's grid position into the debug label. Off by default; was the inventory provider's scene-wide flag.")]
+        [SerializeField] private bool showDebugPosition;
 
         [Space]
         [Tooltip("Pixels the item frame grows outward on every side while hovered.")]
@@ -53,10 +55,12 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         /// The item's untinted background color, as RefreshSlotDisplay derived it from rarity.
         private Color baseBackgroundColor = Color.white;
 
-        protected virtual void OnEnable()
+        protected virtual void OnEnable() => RefreshDebugPosition();
+
+        private void RefreshDebugPosition()
         {
             if (debugPosition != null)
-                debugPosition.text = InventoryProvider.Instance.ShowDebugPositions ? Position.ToString() : "";
+                debugPosition.text = showDebugPosition ? Position.ToString() : "";
         }
 
         protected virtual void OnDisable()
@@ -72,8 +76,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             Container = container;
             owner = containerDisplay;
 
-            if (debugPosition != null)
-                debugPosition.text = InventoryProvider.Instance.ShowDebugPositions ? Position.ToString() : "";
+            RefreshDebugPosition();
         }
 
         /// Where the pointer went down on this slot. OnBeginDrag only fires once Unity's 10px
@@ -118,7 +121,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
             FadeOutPreview();
 
-            var intent = InventoryProvider.Instance.QuickMoveFor(Container);
+            var intent = InventoryService.Instance.QuickMoveFor(Container);
 
             switch (intent.Kind)
             {
@@ -126,7 +129,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                     /// The shift-click sale (#128): one transaction over this slot's container,
                     /// the Sold container and the Wallet. A sale that cannot pay out is a
                     /// silent no-op, the click absorbed like any other quick-move.
-                    _ = Sale.TrySell(InventoryProvider.Instance.Sold, InventoryProvider.Instance.Wallet, Container, position);
+                    _ = Sale.TrySell(Session.Instance.World.Sold, Session.Instance.Hero.Wallet, Container, position);
                     return true;
 
                 case QuickMoveIntentKind.Acquire:
@@ -134,8 +137,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                     /// PickUpTransaction.Run - the player's acquisition entry point - instead
                     /// of a plain move, so a Package with an empty gear slot and auto-equip on
                     /// lands there instead of the Inventory.
-                    _ = PickUpTransaction.Run(Container, position, Session.Instance.Hero,
-                        InventoryProvider.Instance.Inventory, InventoryProvider.Instance.Equipment);
+                    var hero = Session.Instance.Hero;
+
+                    _ = PickUpTransaction.Run(Container, position, hero, hero.Inventory, hero.Equipment);
                     return true;
 
                 case QuickMoveIntentKind.MoveToContainer:
@@ -179,11 +183,10 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         /// </summary>
         protected void BuyAt(Vector2Int position, Package package)
         {
-            var wallet = InventoryProvider.Instance.Wallet;
+            var hero = Session.Instance.Hero;
             var price = VendorTransaction.BuyPrice(package.Item, ItemService.Instance.Catalog) * package.Amount;
 
-            _ = VendorTransaction.Buy(Container, position, package, wallet, price,
-                Session.Instance.Hero, InventoryProvider.Instance.Equipment);
+            _ = VendorTransaction.Buy(Container, position, package, hero.Wallet, price, hero, hero.Equipment);
         }
 
         public void OnPointerExit(PointerEventData eventData)

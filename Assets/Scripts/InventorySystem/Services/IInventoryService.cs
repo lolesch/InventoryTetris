@@ -26,6 +26,19 @@ namespace ToolSmiths.InventorySystem.Services
         /// <summary>The current World's active Inventory Context.</summary>
         InventoryContext ActiveContext { get; }
 
+        /// <summary>Requests <paramref name="context"/> on the current World (issue #84) - the entry-point side of <see cref="InventoryContextState.Set"/>.</summary>
+        void SetContext(InventoryContext context);
+
+        /// <summary>Closes whatever context is active: always <see cref="InventoryContext.None"/>, never a per-context clear (see <see cref="InventoryContextState.Close"/>).</summary>
+        void CloseContext();
+
+        /// <summary>
+        /// Drops the active context to <see cref="InventoryContext.None"/> if the Run phase just made it
+        /// unreachable (see <see cref="InventoryContextState.SyncToPhase"/>) - the Send/Recall/Death/
+        /// Go-Venture side of phase reachability (#84).
+        /// </summary>
+        void SyncContextToPhase(bool inField);
+
         /// <summary>The container <paramref name="role"/> names on the current Hero and World, or null for none.</summary>
         AbstractDimensionalContainer ContainerFor(ContainerRole role);
 
