@@ -6,7 +6,7 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.Runtime.Simulation
 {
     /// <summary>
-    /// Five sliders wired to <see cref="HeroBehaviour"/> (issue #27). Each slider writes its
+    /// Five sliders and the <c>AutoPickup</c> debug toggle (issue #63) wired to <see cref="HeroBehaviour"/> (issue #27). Each slider writes its
     /// value on its <see cref="AbstractSlider.OnValueChanged"/> event — read live, never polled — and
     /// shows its own readout. The sim-speed slider uses a logarithmic response curve: a slider
     /// position of 0 maps to 1x, and 1 maps to ~8x, giving fine control at low speeds where the
@@ -38,6 +38,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         [SerializeField] private ValueSlider resourceReserveSlider;
         [SerializeField] private RarityFilterSlider lootFilterSlider;
         [SerializeField] private SimSpeedSlider simSpeedSlider;
+        [SerializeField, Tooltip("Debug (issue #63): on picks up what the filter admits, off leaves every item on the ground.")]
+        private AutoPickupToggle autoPickupToggle;
 
         private HeroBehaviour _behaviour;
 
@@ -74,6 +76,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             Wire(lootFilterSlider, OnLootFilterChanged, add);
             Wire(simSpeedSlider, OnSimSpeedChanged, add);
 
+            if (autoPickupToggle != null)
+            {
+                autoPickupToggle.Toggled -= OnAutoPickupToggled;
+                if (add) autoPickupToggle.Toggled += OnAutoPickupToggled;
+            }
+
             static void Wire(AbstractSlider slider, System.Action<float> handler, bool add)
             {
                 if (slider == null) return;
@@ -101,6 +109,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (resourceReserveSlider != null) resourceReserveSlider.SetValueWithoutNotify(_behaviour.CastThreshold);
             if (lootFilterSlider != null) lootFilterSlider.SetStepIndexWithoutNotify(HeroBehaviour.RarityIndex(_behaviour.LootFilterMinimum));
             if (simSpeedSlider != null) simSpeedSlider.SetSimSpeedWithoutNotify(_behaviour.SimSpeed);
+            if (autoPickupToggle != null) autoPickupToggle.SyncToggle(_behaviour.AutoPickup);
         }
 
         private void OnRetreatHealthChanged(float value)
@@ -121,6 +130,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private void OnLootFilterChanged(float value)
         {
             if (_behaviour != null) _behaviour.LootFilterMinimum = lootFilterSlider.Selected;
+        }
+
+        private void OnAutoPickupToggled(bool on)
+        {
+            if (_behaviour != null) _behaviour.AutoPickup = on;
         }
 
         private void OnSimSpeedChanged(float value)

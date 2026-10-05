@@ -11,10 +11,12 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// Turns each of an Encounter's kills into Loot (issue #24; spec "Loot flow"). Subscribed
     /// to <see cref="EncounterSimulation.EnemyDefeated"/>: rolls the kill's item Drops against
     /// a <see cref="RollContext"/> built from the Encounter's own Location and hero (its loot
-    /// table, source level and live magic find), tests each against
-    /// <see cref="HeroBehaviour.AdmitsItem"/>, and offers a pass to the player's acquisition
-    /// entry point (<see cref="IItemReceiver"/> — auto-equip, else the bag) — one that finds no
-    /// room, or that fails the filter, stays on the ground as a <see cref="GroundDrops"/> entry.
+    /// table, source level and live magic find), and lays each on the ground as a
+    /// <see cref="GroundDrops"/> entry (issue #63): the player takes it through
+    /// <see cref="PickUpFromGround"/> - the acquisition entry point (<see cref="IItemReceiver"/> —
+    /// auto-equip, else the bag). With the debug switch <see cref="HeroBehaviour.AutoPickup"/> on,
+    /// a Drop that passes <see cref="HeroBehaviour.AdmitsItem"/> is offered to that entry point
+    /// on the spot instead, and only one that fails the filter or finds no room stays down.
     /// Separately rolls one coin Pile per kill and banks it to the wallet iff
     /// <see cref="HeroBehaviour.AdmitsCoin"/> passes.
     ///
@@ -54,8 +56,9 @@ namespace ToolSmiths.InventorySystem.Simulation
         }
 
         /// <summary>
-        /// Item Drops still lying on the ground — failed the loot filter, or passed it but did
-        /// found no room. Cleared by <see cref="ClearGround"/>; a Drop the player takes later leaves
+        /// Item Drops still lying on the ground - every kill's, until the player picks them up (or,
+        /// with <see cref="HeroBehaviour.AutoPickup"/> on, the ones the filter or the bag turned away).
+        /// Cleared by <see cref="ClearGround"/>; a Drop the player takes later leaves
         /// one at a time through <see cref="PickUpFromGround"/>. A Drop that was picked up on the
         /// spot is simply not added here in the first place.
         /// </summary>
@@ -142,7 +145,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         public event Action<long> CoinsBanked;
 
         /// <summary>
-        /// Raised when the player's pick-up threw for a Drop; the Drop is on the ground. The
+        /// Raised when the player's pick-up threw for a Drop; the Drop stays on the ground. The
         /// engine-side driver logs it - this class stays free of engine calls.
         /// </summary>
         public event Action<ItemInstance, Exception> PlacementFailed;
@@ -183,7 +186,9 @@ namespace ToolSmiths.InventorySystem.Simulation
             for (var i = 0; i < drops.Count; i++)
             {
                 var item = drops[i];
-                if (_behaviour.AdmitsItem(item.Rarity) && TryPlace(item))
+
+                // Picking up is the player's click (issue #63) unless the debug switch hands it back.
+                if (_behaviour.AutoPickup && _behaviour.AdmitsItem(item.Rarity) && TryPlace(item))
                     continue; // equipped, or landed in the bag
 
                 _groundDrops.Add(item);
@@ -197,11 +202,12 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         /// <summary>
         /// Offers <paramref name="item"/> to the player. An equip applies stats and refreshes the
-        /// character sheet, all of it engine-side code running inside the same tick as the kill,
-        /// so a throw there gets the roll's treatment above: the kill still resolves and the item
-        /// stays on the ground, with the failure surfaced through <see cref="PlacementFailed"/>
-        /// rather than swallowed. (A throw after a partial equip can leave the item both equipped
-        /// and on the ground - the Run-end clear drops the copy; losing it would be worse.)
+        /// character sheet, all of it engine-side code - and on an auto-pick-up it runs inside the
+        /// same tick as the kill - so a throw there gets the roll's treatment above: the kill still
+        /// resolves and the item stays on the ground, with the failure surfaced through
+        /// <see cref="PlacementFailed"/> rather than swallowed. (A throw after a partial equip can
+        /// leave the item both equipped and on the ground - the Run-end clear drops the copy;
+        /// losing it would be worse.)
         /// </summary>
         private bool TryPlace(ItemInstance item)
         {

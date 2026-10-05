@@ -167,9 +167,12 @@ _Avoid_: frag, takedown, defeat
 Loot lying on the ground at a Location — shed by a defeated enemy, or laid out from a
 Corpse when the hero returns for it — not yet picked up. Drops accumulate as enemies
 fall, never as one bundle at the end; a Drop still on the ground when the Run ends is
-gone, on Recall or Death alike. A Drop the hero's loot filter admits is picked up through
-the player's acquisition entry point (see **Quick Move**) — auto-equip into an empty slot,
-else the **Inventory**; with no room it stays on the ground.
+gone, on Recall or Death alike. By default a Drop lies in the **Ground Items List** until the
+player clicks it; the click goes through the player's acquisition entry point (see **Quick
+Move**) — auto-equip into an empty slot, else the **Inventory**; with no room it stays on the
+ground. A debug switch on the Combat Panel, `AutoPickup`, hands that back to the hero: on, a
+Drop the hero's loot filter admits is picked up the same way as it falls, and only the rest
+stay down. A coin Pile the filter admits banks to the Wallet on the spot either way.
 _Avoid_: pile (that is coins), ground loot, spill, cache
 
 **Corpse**:

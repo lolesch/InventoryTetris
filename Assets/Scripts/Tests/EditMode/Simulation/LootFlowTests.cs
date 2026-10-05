@@ -69,7 +69,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         private Wallet NewWallet(int width = 6, int height = 6) =>
             new(new CharacterInventory(new Vector2Int(width, height), catalog), new FakeCurrencyMinter(catalog));
 
-        private static HeroBehaviour Admitting(ItemRarity minimum) => new() { LootFilterMinimum = minimum };
+        // The kill-time pick-up tests below are the AutoPickup-on path (issue #63's debug switch).
+        private static HeroBehaviour Admitting(ItemRarity minimum) => new() { LootFilterMinimum = minimum, AutoPickup = true };
 
         // ─── AC: drop count against a RollContext (Location's table, source level, magic find) ──
 
@@ -404,6 +405,77 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
             Assert.That(lootFlow.GroundDrops, Has.Count.EqualTo(1));
             Assert.That(lootFlow.GroundDrops[0], Is.SameAs(recovered));
+        }
+
+        // ─── AutoPickup off (the default, issue #63): a kill's Drops all lie on the ground ──
+
+        [TestCase(ItemRarity.Common)]
+        [TestCase(ItemRarity.Unique)]
+        public void WithAutoPickupOff_AnItem_LandsOnTheGround_WhateverTheFilterSays(ItemRarity filterMinimum)
+        {
+            var (lootFlow, player, bag) = KillWithAutoPickupOff(filterMinimum);
+
+            Assert.That(lootFlow.GroundDrops, Has.Count.EqualTo(1));
+            Assert.That(bag.StoredPackages, Is.Empty, "nothing is picked up on the hero's behalf");
+            Assert.That(player.Offered, Is.Empty, "and nothing is auto-equipped either");
+        }
+
+        [Test]
+        public void WithAutoPickupOff_TheClickIsWhatPicksItUp_ThroughTheAcquisitionEntryPoint()
+        {
+            var (lootFlow, player, _) = KillWithAutoPickupOff(ItemRarity.Common);
+
+            _ = lootFlow.PickUpFromGround(lootFlow.GroundDrops[0]);
+
+            Assert.That(player.Equipped, Has.Count.EqualTo(1), "auto-equip applies to the click");
+            Assert.That(lootFlow.GroundDrops, Is.Empty);
+        }
+
+        [Test]
+        public void WithAutoPickupOff_EveryDropLiesOnTheGround_EvenWithRoomInTheBag()
+        {
+            var hero = OneShotHero();
+            hero.IncreasedItemQuantity = 300f; // 1 base + 3 bonus = 4 drops
+
+            var (lootFlow, _, bag) = KillWithAutoPickupOff(ItemRarity.Common, hero);
+
+            Assert.That(lootFlow.GroundDrops, Has.Count.EqualTo(4));
+            Assert.That(bag.StoredPackages, Is.Empty);
+        }
+
+        [Test]
+        public void AutoPickup_IsReadLive_PerKill()
+        {
+            var behaviour = new HeroBehaviour { LootFilterMinimum = ItemRarity.Common, AutoPickup = false };
+            var location = Profiles.Solo(EnemyArchetype.Skirmisher,
+                table: FakeLootTable.Fixed(ItemCategory.Equipment, ItemRarity.Common));
+            var sim = NewEncounter(OneShotHero(), location);
+            var bag = new CharacterInventory(new Vector2Int(10, 10), catalog);
+            var lootFlow = new LootFlow(sim, behaviour, new ItemGenerator(catalog, new ConstantRollSource(0f)),
+                new FakeCoinDropSource(), new BagItemReceiver(bag), NewWallet());
+
+            behaviour.AutoPickup = true; // flipped after the flow was built, before the kill
+
+            sim.Advance(0.1f);
+
+            Assert.That(bag.StoredPackages, Has.Count.EqualTo(1));
+            Assert.That(lootFlow.GroundDrops, Is.Empty);
+        }
+
+        private (LootFlow lootFlow, BagItemReceiver player, CharacterInventory bag) KillWithAutoPickupOff(
+            ItemRarity filterMinimum, FakeHero hero = null)
+        {
+            var location = Profiles.Solo(EnemyArchetype.Skirmisher,
+                table: FakeLootTable.Fixed(ItemCategory.Equipment, ItemRarity.Common));
+            var sim = NewEncounter(hero ?? OneShotHero(), location);
+            var bag = new CharacterInventory(new Vector2Int(10, 10), catalog);
+            var player = new BagItemReceiver(bag) { Equips = _ => true }; // auto-equip on, slot empty
+
+            var lootFlow = new LootFlow(sim, new HeroBehaviour { LootFilterMinimum = filterMinimum, AutoPickup = false },
+                new ItemGenerator(catalog, new ConstantRollSource(0f)), new FakeCoinDropSource(), player, NewWallet());
+
+            sim.Advance(0.1f);
+            return (lootFlow, player, bag);
         }
 
         // ─── the Ground Items List (issue #63): the list follows GroundChanged, picks up through the player ──

@@ -55,6 +55,14 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <summary>The lowest <see cref="ItemRarity"/> <see cref="AdmitsItem"/> / <see cref="AdmitsCoin"/> will pick up.</summary>
         public ItemRarity LootFilterMinimum { get; set; }
 
+        /// <summary>
+        /// A debug switch (issue #63): on, a kill's item Drops that pass <see cref="AdmitsItem"/> are
+        /// picked up on the hero's behalf, as before the Ground Items List; off - the default - every
+        /// item Drop lies on the ground until the player clicks it. Coins are not affected: a Pile that
+        /// passes <see cref="AdmitsCoin"/> banks either way.
+        /// </summary>
+        public bool AutoPickup { get; set; }
+
         /// <summary>Sim speed multiplier, 1..~8 log-mapped — consumed as <c>clock.Advance(dt * SimSpeed)</c> (issue #26).</summary>
         public float SimSpeed { get; set; }
 
