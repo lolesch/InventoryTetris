@@ -32,30 +32,22 @@ replaces `[SerializeField, ReadOnly] protected T x = null; public T X => x;`.
 `Select(toggle)` etc. keep `toggle.Owner != this` even when every current call site
 satisfies it — it protects the API from future and external callers.
 
-## Seal classes
-
-`sealed` unless something subclasses it.
-
 ## Public API needs an interface
 
 Every class or MonoBehaviour that other systems call into gets an `IThing`, and callers
 depend on that instead of the concrete type. Keeps call sites mockable and keeps
 serialized fields and Unity lifecycle methods out of the contract.
 
-## Guard `UnityEditor` usings
+## Enforced by the pre-commit hook
 
-```csharp
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
-```
+`dev/hooks/pre-commit` (enable: `git config core.hooksPath dev/hooks`) rejects what a linter would:
 
-Put the `using` inside the same guard as the call site. Player builds don't reference
-`UnityEditor.dll`, so a bare `using UnityEditor;` fails with `CS0246` even if nothing
-under it runs.
+- A class that nothing inherits and that is not `sealed`, `abstract`, `static` or `partial`.
+- A `using UnityEditor;` outside an `Editor`/`Tests` folder that is not under `#if UNITY_EDITOR`
+  (a player build has no `UnityEditor.dll`, so it fails with `CS0246` even if nothing runs).
 
-Files that compile editor-only by construction (asmdef `includePlatforms: ["Editor"]`,
-an `Editor`/`EditMode` folder — see `codebase-notes.md`'s asmdef section) need no guard.
+Files that compile editor-only by construction (asmdef `includePlatforms: ["Editor"]`, an
+`Editor`/`EditMode` folder; see `codebase-notes.md`'s asmdef section) need no guard.
 
 ## Reverse `for` loops
 

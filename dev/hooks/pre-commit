@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
-# Rejects the commit mistakes docs/agents/codebase-notes.md used to warn about in prose.
+# Rejects the commit mistakes docs/agents/codebase-notes.md and coding-conventions.md used to warn about in prose.
 # Enable once per clone:  git config core.hooksPath dev/hooks
 # Bypass a deliberate case:  git commit --no-verify   (or put `allow-scratch-runner` in the file)
 
 fail=0
+base="${PRECOMMIT_BASE:-HEAD}"   # tests point this at the empty tree to scan a whole index as "added"
 report() { echo "pre-commit: $1" >&2; fail=1; }
 
-staged() { git diff --cached --name-only --diff-filter=AM -z "$@" | tr '\0' '\n'; }
+staged() { git diff --cached "$base" --name-only --diff-filter=AM -z "$@" | tr '\0' '\n'; }
 
 # 1. Scratch runners: bridge / -executeMethod scripts that end the Editor or drive the test runner.
 #    Tests, the Utility submodule and files marked `allow-scratch-runner` are exempt.
@@ -35,9 +36,31 @@ done < <(staged -- '*.cs.meta')
 # 4. Mojibake in added lines of source and docs (UTF-8 re-read as Latin-1: em dash becomes 'â€”').
 moji=$'\xc3\xa2\xe2\x82\xac'
 while IFS= read -r f; do
-  if git diff --cached -U0 -- "$f" | grep -a '^+' | grep -aqF "$moji"; then
+  if git diff --cached "$base" -U0 -- "$f" | grep -a '^+' | grep -aqF "$moji"; then
     report "$f has mojibake in added lines (a stream editor re-encoded UTF-8); use the Edit tool."
   fi
 done < <(staged -- '*.cs' '*.md')
+
+# 5. A `using UnityEditor;` outside Editor/Tests folders sits under `#if UNITY_EDITOR`
+#    (a player build has no UnityEditor.dll, so a bare using fails with CS0246).
+while IFS= read -r f; do
+  case "$f" in */Editor/*|Assets/Scripts/Tests/*) continue ;; esac
+  git show ":$f" | tr -d '\r' | awk '
+    /^[[:space:]]*$/ { next }
+    /^using UnityEditor/ && prev !~ /^#if UNITY_EDITOR/ { bad = 1 }
+    { prev = $0 }
+    END { exit bad }' || report "$f has a bare 'using UnityEditor;'; wrap it in #if UNITY_EDITOR."
+done < <(staged -- 'Assets/*.cs')
+
+# 6. A concrete class is `sealed` unless some class in Assets inherits it (coding-conventions.md).
+decl='^\+[[:space:]]*(\[[^]]*\][[:space:]]*)*((public|internal|protected|private|unsafe)[[:space:]]+)*class[[:space:]]+[A-Za-z_]'
+while IFS= read -r f; do
+  while IFS= read -r line; do
+    grep -qE '\b(sealed|abstract|static|partial)\b' <<<"$line" && continue
+    name=$(sed -E 's/.*\bclass[[:space:]]+([A-Za-z_0-9]+).*/\1/' <<<"$line")
+    grep -rEqs --include='*.cs' "class[[:space:]]+[A-Za-z_0-9]+(<[^>]*>)?[[:space:]]*:[^{]*\b$name\b" Assets \
+      || report "$f: class $name has no subclass; make it sealed."
+  done < <(git diff --cached "$base" -U0 -- "$f" | grep -aE "$decl")
+done < <(staged -- 'Assets/*.cs')
 
 exit "$fail"
