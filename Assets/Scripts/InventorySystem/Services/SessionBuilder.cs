@@ -29,6 +29,14 @@ namespace ToolSmiths.InventorySystem.Services
                 (save, locations) => BuildSavedPair(config, save, locations, items));
         }
 
+        /// <summary>
+        /// A Hero built the way the Session builds one - outfitted, template-fresh - without the World or
+        /// the Session. What a save service writes for a newly created hero, so the file holds the same
+        /// shape a load restores.
+        /// </summary>
+        public static Hero BuildHero(GameConfig config, HeroData data, IItemService items) =>
+            BuildPair(config, data, items).Hero;
+
         // A saved hero is built from the one default template and then restored onto: retuning the
         // template changes every saved hero, and the pair is the same shape as a new one.
         private static (Hero Hero, World World, RestoreReport Report) BuildSavedPair(

@@ -3,6 +3,7 @@
     "rootNamespace": "",
     "references": [
         "Utility",
+        "Utility.Persistence",
         "InventorySystem.Data",
         "InventorySystem.Items",
         "InventorySystem.Distributions",

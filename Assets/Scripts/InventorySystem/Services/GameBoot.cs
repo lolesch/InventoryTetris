@@ -1,5 +1,7 @@
+using Submodules.Utility.Persistence;
 using Submodules.Utility.Services;
 using System;
+using System.IO;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Services
@@ -18,7 +20,13 @@ namespace ToolSmiths.InventorySystem.Services
     public static class GameBoot
     {
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        private static void BootOnPlayEntry() => Arm(Load());
+        private static void BootOnPlayEntry() => Arm(Load(), new FileSaveStore(SavesFolder()));
+
+        /// <summary>
+        /// Where the hero files live: a folder under the platform's persistent data path. The one place
+        /// that path is named, so everything below takes a store and a test never touches it.
+        /// </summary>
+        private static string SavesFolder() => Path.Combine(Application.persistentDataPath, "saves");
 
         /// <summary>The root <see cref="GameConfig"/> from <c>Resources</c>. Throws, naming where it
         /// is expected, when there is none.</summary>
@@ -32,10 +40,17 @@ namespace ToolSmiths.InventorySystem.Services
             return config;
         }
 
+        /// <summary>
+        /// <see cref="Build(GameConfig, ISaveStore)"/> over an in-memory save store: what a test builds,
+        /// so no test reads or writes the real saves folder.
+        /// </summary>
+        public static ServiceRegistry Build(GameConfig config) => Build(config, new InMemorySaveStore());
+
         /// <summary>The services of one boot. Add each new service here, registered under the
         /// interface callers depend on. Throws when <paramref name="config"/> is missing or lacks
         /// something a service needs.</summary>
-        public static ServiceRegistry Build(GameConfig config)
+        /// <param name="saves">Where the hero files are kept. The composition root picks it.</param>
+        public static ServiceRegistry Build(GameConfig config, ISaveStore saves)
         {
             if (config == null)
                 throw MissingConfig();
@@ -62,17 +77,25 @@ namespace ToolSmiths.InventorySystem.Services
             // Both Supplies start stocked, as the Vendor's and Healer's shelves were on Awake.
             inventory.RestockTownStops();
 
-            registry.Register<ISimulationService>(new SimulationService(session, items, inventory, config, rolls));
+            var simulation = new SimulationService(session, items, inventory, config, rolls);
+            registry.Register<ISimulationService>(simulation);
+
+            // The heroes on disk. It reads and writes nothing until a caller asks.
+            registry.Register<IHeroSaveService>(
+                new HeroSaveService(session, items, config, simulation.Locations, saves, new JsonUtilitySerializer()));
 
             return registry;
         }
 
+        /// <summary><see cref="Arm(GameConfig, ISaveStore)"/> over an in-memory save store, for a test.</summary>
+        public static void Arm(GameConfig config) => Arm(config, new InMemorySaveStore());
+
         /// <summary>Builds from <paramref name="config"/>, arms the locator, installs the frame loop
         /// and hands it the simulation's tick. Builds first, so a failed build leaves nothing
         /// half-armed.</summary>
-        public static void Arm(GameConfig config)
+        public static void Arm(GameConfig config, ISaveStore saves)
         {
-            var registry = Build(config);
+            var registry = Build(config, saves);
 
             ServiceLocator.Install(registry);
             GameLoop.Install();
