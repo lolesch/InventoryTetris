@@ -2,6 +2,7 @@
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Runtime.Character;
+using ToolSmiths.InventorySystem.Services;
 using Submodules.Utility.Extensions;
 using ToolSmiths.InventorySystem.Utility.Extensions;
 using UnityEngine;
@@ -60,6 +61,8 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
         {
             if (!_bound && character)
             {
+                _ = Session.TrySubscribeHeroLoaded(FollowCharacter);
+
                 _resource = character.GetResource(resourceName);
                 _recovery = character.GetStat(recoveryName);
             }
@@ -69,6 +72,8 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 
         private void OnDisable()
         {
+            Session.UnsubscribeHeroLoaded(FollowCharacter);
+
             Release();
 
             if (!_bound)
@@ -76,6 +81,21 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                 _resource = null;
                 _recovery = null;
             }
+        }
+
+        // A hero load (#114) replaces the character's Hero and with it its resource and stat: let go
+        // of the old ones and follow the new. A display driven by Bind stays on what it was handed.
+        private void FollowCharacter()
+        {
+            if (_bound || !character)
+                return;
+
+            Release();
+
+            _resource = character.GetResource(resourceName);
+            _recovery = character.GetStat(recoveryName);
+
+            Acquire();
         }
 
         private void Acquire()
