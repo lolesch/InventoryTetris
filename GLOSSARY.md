@@ -205,10 +205,31 @@ its stats, level and XP, its **Equipment**, **Inventory** and **Stash**, its **W
 its **Behaviour Profile**, the **Location** it is set to be Sent to, and its **Corpse** if
 it has one. That is the whole of what saves, and nothing the hero does not own does.
 During a Run the player never controls it directly; they set its Behaviour Profile and
-its gear and it fights autonomously. One hero per Session for the MVP; picking from among
-several saved heroes (which replaces the Hero and the **World**, see **Session**) is
-deferred.
+its gear and it fights autonomously. One hero per Session; several can be saved and one
+loaded (which replaces the Hero and the **World**, see **Session**), but a screen to
+choose among them is deferred.
 _Avoid_: character, unit, avatar, champion; "player" for the thing in the Field
+
+**Hero save**:
+One file holding one **Hero**, named by a generated id that never changes, and nothing else.
+It holds the hero's display name, level, the current Health, Resource, Shield and
+Experience, its **Behaviour Profile**, its selected **Location** (by id), its **Corpse** if
+it has one, and the packages in its **Equipment**, **Inventory** and **Stash** by cell
+(the **Wallet** is coins in the Inventory, so it saves with it). It never holds the **World**
+(**Supply**, the Sold container, the **Run** and its ground **Drops**, the **Inventory
+Context**), authored data (the item catalog, `GameConfig`), a derived stat, or a reference
+to the template the hero was built from: a stat is recomputed from level and gear on load.
+A loaded hero is the default template with the file restored over it, so a file is never a
+different shape from a new hero. It is written when a **Run** has settled and on quitting,
+never while a Run is in the Field.
+_Avoid_: save game, profile, character file; "save" for the **Session** (the Hero saves,
+the Session holds none)
+
+**Account**:
+The tier above the **Hero**: it owns the list of heroes and which one was chosen last, and
+nothing the hero does. It is its own small file beside the **Hero saves**. A Stash or Wallet
+shared across heroes would be Account state; none is yet (ADR-0014 leaves it open).
+_Avoid_: profile, save file, user
 
 **Behaviour Profile**:
 The six sliders the player sets on the **Hero** — how it fights and when it Auto-Recalls.
@@ -230,12 +251,13 @@ The span of play between app start and quit. It contains many Runs and holds one
 `InTown` on the next launch; the World is never saved. A Run never spans Sessions:
 quitting mid-Run banks what the hero already picked up and discards the rest. The
 Session outlives both — loading a hero swaps the Hero and the World together and the
-Session carries on — and is the *top* persistence tier for the MVP: a Stash or Wallet
-shared across heroes would need a tier above it, which is deferred (ADR-0014) — do not
-let persistence code assume the Session is the outermost owner. The Session owns no
-container, Wallet or XP itself; say "the Hero" for those.
-_Avoid_: playthrough, save file (the save is the Session's shadow, not the thing itself);
-"session" for the replaceable per-hero unit (that is the **Hero** and its **World**)
+Session carries on. What saves is the **Hero**, as a **Hero save**; the **Account** above
+it only lists the heroes and remembers the last one chosen, and a Stash or Wallet shared
+across heroes would be Account state, which is deferred (ADR-0014) — do not let persistence
+code assume the Session is the outermost owner. The Session owns no container, Wallet or XP
+itself and saves nothing; say "the Hero" for those.
+_Avoid_: playthrough, save file (the Hero saves, in a **Hero save**; the Session holds no
+save); "session" for the replaceable per-hero unit (that is the **Hero** and its **World**)
 
 **World**:
 What a **Session** holds around the **Hero** while that hero is loaded, and never saves:
