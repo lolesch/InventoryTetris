@@ -454,6 +454,55 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Character
         }
 
         [Test]
+        public void AHeroRestoredToALevel_CarriesTheSameExperienceModifiers_AsOneLeveledByGainingXp()
+        {
+            var earned = NewHero();
+            earned.GainExperience(1000f, monsterLevel: 1u);
+            var built = NewHero();
+
+            built.RestoreLevel(earned.Level);
+
+            var earnedExperience = earned.GetResource(StatName.Experience);
+            var builtExperience = built.GetResource(StatName.Experience);
+            Assert.That(built.Level, Is.EqualTo(3u));
+            Assert.That(builtExperience.StatModifiers, Is.EqualTo(earnedExperience.StatModifiers));
+            Assert.That(builtExperience.TotalValue, Is.EqualTo(earnedExperience.TotalValue));
+        }
+
+        [Test]
+        public void RestoreLevel_ReplaysNeitherTheHealNorTheDepletedBar()
+        {
+            var hero = NewHero();
+            Drain(hero, StatName.Health, 10f);
+            hero.GetResource(StatName.Experience).AddToCurrent(50f);
+
+            hero.RestoreLevel(4u);
+
+            Assert.That(hero.GetResource(StatName.Health).CurrentValue, Is.EqualTo(10f));
+            Assert.That(hero.GetResource(StatName.Experience).CurrentValue, Is.EqualTo(50f));
+        }
+
+        [Test]
+        public void RestoreLevel_ToTheCurrentLevel_ChangesNothing()
+        {
+            var hero = NewHero();
+
+            hero.RestoreLevel(1u);
+
+            Assert.That(hero.Level, Is.EqualTo(1u));
+            Assert.That(hero.GetResource(StatName.Experience).StatModifiers, Is.Empty);
+        }
+
+        [Test]
+        public void RestoreLevel_ToALowerLevel_Throws()
+        {
+            var hero = NewHero();
+            hero.RestoreLevel(3u);
+
+            Assert.Throws<ArgumentOutOfRangeException>(() => hero.RestoreLevel(2u));
+        }
+
+        [Test]
         public void LevelUp_HealsTheHeroItself()
         {
             var hero = NewHero();

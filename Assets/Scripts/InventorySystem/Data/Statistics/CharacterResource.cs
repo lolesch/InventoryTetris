@@ -51,6 +51,12 @@ namespace ToolSmiths.InventorySystem.Data
         public void RefillCurrent() => SetCurrentTo(TotalValue);
         public void DepleteCurrent() => SetCurrentTo(0);
 
+        /// <summary>
+        /// Sets the current value outright, within 0 and the total: a saved value put back, not a gain or
+        /// a loss. Set after the modifiers that raise the total are in place, or the total clamps it.
+        /// </summary>
+        public void RestoreCurrent(float value) => SetCurrentTo(value);
+
         private void SetCurrentTo(float value) => SetCurrentTo(value, TotalValue);
 
         private void SetCurrentTo(float value, float total)

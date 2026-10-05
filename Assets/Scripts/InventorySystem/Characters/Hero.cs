@@ -295,13 +295,31 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
                 {
                     Level++;
 
-                    var statMod = new StatModifier(new Vector2Int(0, int.MaxValue), Level * 100 + 80);
-
-                    experience.AddModifier(statMod);
+                    experience.AddModifier(LevelProgression.ExperienceThresholdModifier(Level));
                     experience.DepleteCurrent();
 
                     Heal();
                 }
+            }
+        }
+
+        /// <summary>
+        /// Puts a saved level back: the hero carries the Experience modifiers of every level it climbed
+        /// past, exactly as if it had earned them, without replaying the XP gain, the heal or the
+        /// depleted bar. Touches no current value, so the caller sets those after the maximums are in
+        /// place. Only climbs: a level below the current one throws.
+        /// </summary>
+        public void RestoreLevel(uint level)
+        {
+            if (level < Level)
+                throw new ArgumentOutOfRangeException(nameof(level), level, $"A hero at level {Level} cannot be restored to a lower level.");
+
+            var experience = RequireResource(StatName.Experience);
+
+            while (Level < level)
+            {
+                Level++;
+                experience.AddModifier(LevelProgression.ExperienceThresholdModifier(Level));
             }
         }
 

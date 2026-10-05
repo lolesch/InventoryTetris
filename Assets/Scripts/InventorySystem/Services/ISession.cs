@@ -1,5 +1,6 @@
 using Submodules.Utility.Services;
 using System;
+using ToolSmiths.InventorySystem.Persistence;
 using ToolSmiths.InventorySystem.Runtime.Character;
 
 namespace ToolSmiths.InventorySystem.Services
@@ -31,5 +32,16 @@ namespace ToolSmiths.InventorySystem.Services
         /// without a Run built yet, it succeeds. A build that throws leaves the current pair in place.
         /// </summary>
         bool TryLoad(HeroData data);
+
+        /// <summary>
+        /// The same load for a saved hero: the pair is built exactly as for a template, from the default
+        /// template, and <paramref name="save"/> is restored onto the new Hero before the swap. Refuses
+        /// while the Run is <c>InField</c>, returning <c>false</c>, a <c>null</c> report and changing
+        /// nothing. <paramref name="report"/> is what the restore could not place - an unknown item, a
+        /// package with no room - for the caller to quarantine. A restore that throws (an enum name
+        /// that does not parse) leaves the current pair in place.
+        /// </summary>
+        /// <param name="locations">Resolves the saved Location ids; the simulation service's registry.</param>
+        bool TryLoad(HeroDto save, ILocationIndex locations, out RestoreReport report);
     }
 }

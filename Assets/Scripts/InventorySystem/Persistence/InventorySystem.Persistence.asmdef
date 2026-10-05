@@ -1,0 +1,21 @@
+{
+    "name": "InventorySystem.Persistence",
+    "rootNamespace": "",
+    "references": [
+        "InventorySystem.Data",
+        "InventorySystem.Items",
+        "InventorySystem.Containers",
+        "InventorySystem.Simulation",
+        "InventorySystem.Locations",
+        "InventorySystem.Characters"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

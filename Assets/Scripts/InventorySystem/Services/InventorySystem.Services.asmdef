@@ -3,6 +3,7 @@
     "rootNamespace": "",
     "references": [
         "Utility",
+        "Utility.Persistence",
         "InventorySystem.Data",
         "InventorySystem.Items",
         "InventorySystem.Distributions",
@@ -10,7 +11,8 @@
         "InventorySystem.Probability",
         "InventorySystem.Containers",
         "InventorySystem.Simulation",
-        "InventorySystem.Characters"
+        "InventorySystem.Characters",
+        "InventorySystem.Persistence"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

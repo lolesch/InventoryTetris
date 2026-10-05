@@ -1,4 +1,5 @@
 using Submodules.Utility.Services;
+using System;
 using ToolSmiths.InventorySystem.Locations;
 using ToolSmiths.InventorySystem.Simulation;
 
@@ -13,6 +14,13 @@ namespace ToolSmiths.InventorySystem.Services
     /// </summary>
     public interface ISimulationService : IService
     {
+        /// <summary>
+        /// The authored Locations by stable id, and the one <see cref="EncounterProfile"/> this service
+        /// runs each of them as. The loader reads it so a restored Corpse matches the profile a
+        /// <see cref="Send"/> uses.
+        /// </summary>
+        ILocationRegistry Locations { get; }
+
         /// <summary>The current World's Run FSM - <see cref="RunPhase.InTown"/> until a <see cref="Send"/>. Built on the first ask.</summary>
         RunState Run { get; }
 
@@ -21,6 +29,16 @@ namespace ToolSmiths.InventorySystem.Services
         /// can show a full bag visibly stranding loot.
         /// </summary>
         LootFlow LootFlow { get; }
+
+        /// <summary>
+        /// Raised once, after a Run has ended and everything its end does has been applied: the Run is
+        /// back in Town, and on a Death the bag is already buried in the Corpse and the penalty paid. A
+        /// Recall raises it the same way. The Run's own ended event fires earlier, inside the Death
+        /// handling, so a save hooked to that one would write a hero with no Corpse and a full bag.
+        /// This one is the service's, not the Run's, so it survives a World swap: a subscriber attaches
+        /// once.
+        /// </summary>
+        event Action<RunResult> RunSettled;
 
         /// <summary>
         /// Send the hero to <paramref name="location"/>: <see cref="RunPhase.InTown"/> to
@@ -39,6 +57,14 @@ namespace ToolSmiths.InventorySystem.Services
 
         /// <summary>End the Run with everything kept. Refused once the hero is down - that ends in a Death.</summary>
         RunResult Recall();
+
+        /// <summary>
+        /// Ends a live Run so the game can close in Town: a Recall, or the Death when the hero is already
+        /// down, in that order of precedence the tick uses. Raises <see cref="RunSettled"/> like either
+        /// does. Nothing happens when no Run is in the Field.
+        /// </summary>
+        /// <returns>Whether a Run was ended.</returns>
+        bool LeaveField();
 
         /// <summary>
         /// One frame of the simulation, <paramref name="deltaSeconds"/> of real time: the Hero's

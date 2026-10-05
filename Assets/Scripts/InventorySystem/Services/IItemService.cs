@@ -36,6 +36,13 @@ namespace ToolSmiths.InventorySystem.Services
         /// <summary>Rolls a coin denomination, then a pile size for it. Invalid when no coins fell.</summary>
         Package RollCurrency();
 
+        /// <summary>
+        /// One item of a given definition at a given rarity, through the generator - no loot table. What a
+        /// new hero's starter kit is made of. Throws <see cref="System.Collections.Generic.KeyNotFoundException"/>
+        /// for an id the catalog does not hold.
+        /// </summary>
+        ItemInstance Create(string definitionId, ItemRarity rarity);
+
         /// <summary>A random equipment item of any type, at <paramref name="magicFind"/>.</summary>
         ItemInstance RollEquipment(float magicFind = 0f);
 

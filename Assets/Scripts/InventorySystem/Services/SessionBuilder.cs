@@ -1,5 +1,6 @@
 using System;
 using ToolSmiths.InventorySystem.Inventories;
+using ToolSmiths.InventorySystem.Persistence;
 using ToolSmiths.InventorySystem.Runtime.Character;
 using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
@@ -23,7 +24,33 @@ namespace ToolSmiths.InventorySystem.Services
         {
             var (hero, world) = BuildPair(config, data, items);
 
-            return new Session(hero, world, loaded => BuildPair(config, loaded, items));
+            return new Session(hero, world,
+                loaded => BuildPair(config, loaded, items),
+                (save, locations) => BuildSavedPair(config, save, locations, items));
+        }
+
+        /// <summary>
+        /// A Hero built the way the Session builds one - outfitted, template-fresh - without the World or
+        /// the Session. What a save service writes for a newly created hero, so the file holds the same
+        /// shape a load restores. This is the one place a starter kit is placed: a hero that is created
+        /// gets it, a hero that is loaded is built without it and restored over.
+        /// </summary>
+        public static Hero BuildHero(GameConfig config, HeroData data, IItemService items)
+        {
+            var hero = BuildPair(config, data, items).Hero;
+            StarterKit.Apply(hero, data, items);
+
+            return hero;
+        }
+
+        // A saved hero is built from the one default template and then restored onto: retuning the
+        // template changes every saved hero, and the pair is the same shape as a new one.
+        private static (Hero Hero, World World, RestoreReport Report) BuildSavedPair(
+            GameConfig config, HeroDto save, ILocationIndex locations, IItemService items)
+        {
+            var (hero, world) = BuildPair(config, config?.DefaultHero, items);
+
+            return (hero, world, HeroRestore.Restore(save, hero, locations));
         }
 
         private static (Hero Hero, World World) BuildPair(GameConfig config, HeroData data, IItemService items)

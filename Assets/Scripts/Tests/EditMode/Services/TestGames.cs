@@ -1,0 +1,96 @@
+using NUnit.Framework;
+using Submodules.Utility.Persistence;
+using System;
+using System.Collections.Generic;
+using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Inventories;
+using ToolSmiths.InventorySystem.Locations;
+using ToolSmiths.InventorySystem.Runtime.Character;
+using ToolSmiths.InventorySystem.Services;
+using UnityEditor;
+using UnityEngine;
+
+namespace ToolSmiths.InventorySystem.Tests.Services
+{
+    /// <summary>
+    /// One whole game as a fresh boot builds it - its own items, session and simulation service - plus
+    /// the authored Locations a save refers to by id. For the persistence tests, which build a game,
+    /// change it, save it, and load the save into a second one.
+    /// </summary>
+    internal sealed class TestGame
+    {
+        public ItemService Items { get; private set; }
+        public Session Session { get; private set; }
+        public SimulationService Simulation { get; private set; }
+
+        public Hero Hero => Session.Hero;
+
+        /// <summary>
+        /// The save service a boot builds for this game, over <paramref name="store"/>. Share one store
+        /// between games to save in one and load in another, as a quit and a relaunch do.
+        /// </summary>
+        public HeroSaveService SavesOver(GameConfig config, ISaveStore store, Func<DateTime> utcNow = null) =>
+            new(Session, Items, config, Simulation, store, new JsonUtilitySerializer(), utcNow);
+
+        public static TestGame Create(GameConfig config)
+        {
+            var rolls = new SessionBuilderTests.FixedRolls(0.5f);
+            var items = new ItemService(config, rolls);
+            var session = SessionBuilder.Build(config, GameBoot.Load().DefaultHero, items);
+
+            return new TestGame
+            {
+                Items = items,
+                Session = session,
+                Simulation = new SimulationService(session, items, new InventoryService(session, items), config, rolls),
+            };
+        }
+    }
+
+    internal static class TestPackages
+    {
+        /// <summary>
+        /// A drag pick-up as the slot display runs it: the package leaves the container and is now in hand.
+        /// <c>RemoveAtPosition</c> returns what is <em>left over</em>, not what was removed, so the hand is
+        /// the stored package read before the removal.
+        /// </summary>
+        public static Package PickUp(AbstractDimensionalContainer from, Vector2Int cell)
+        {
+            Assert.That(from.TryGetPackageAt(cell, out var stored), Is.True, $"nothing stored at {cell}");
+            _ = from.RemoveAtPosition(cell, stored);
+
+            return stored;
+        }
+    }
+
+    internal static class TestLocations
+    {
+        /// <summary>A valid Location with this id, over the config's own loot distributions.</summary>
+        public static LocationConfig Create(GameConfig config, List<UnityEngine.Object> created, string id)
+        {
+            var location = ScriptableObject.CreateInstance<LocationConfig>();
+            created.Add(location);
+
+            var so = new SerializedObject(location);
+            so.FindProperty("id").stringValue = id;
+            so.FindProperty("categoryDistribution").objectReferenceValue = config.ItemCategoryDistribution;
+            so.FindProperty("rarityDistribution").objectReferenceValue = config.ItemRarityDistribution;
+            _ = so.ApplyModifiedPropertiesWithoutUndo();
+
+            return location;
+        }
+
+        /// <summary>Makes <paramref name="locations"/> the config's authored Locations.</summary>
+        public static void Author(GameConfig config, params LocationConfig[] locations)
+        {
+            var so = new SerializedObject(config);
+            var array = so.FindProperty("locations");
+            array.arraySize = locations.Length;
+
+            for (var i = 0; i < locations.Length; i++)
+                array.GetArrayElementAtIndex(i).objectReferenceValue = locations[i];
+
+            _ = so.ApplyModifiedPropertiesWithoutUndo();
+        }
+    }
+}

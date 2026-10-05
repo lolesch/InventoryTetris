@@ -33,7 +33,7 @@ namespace ToolSmiths.InventorySystem.Services
         private readonly GameConfig config;
         private readonly IRollSource rolls;
         private readonly ItemGenerator generator;
-        private readonly Dictionary<LocationConfig, EncounterProfile> profiles = new();
+        private readonly LocationRegistry locations;
 
         /// <summary>Call sites at the Unity edge read the service as <c>SimulationService.Instance.Run</c>.</summary>
         public static ISimulationService Instance => ServiceLocator.Get<ISimulationService>();
@@ -48,7 +48,10 @@ namespace ToolSmiths.InventorySystem.Services
             this.rolls = rolls ?? throw new ArgumentNullException(nameof(rolls));
 
             generator = new ItemGenerator(items.Catalog, rolls);
+            locations = new LocationRegistry(config.Locations);
         }
+
+        public ILocationRegistry Locations => locations;
 
         public RunState Run
         {
@@ -92,7 +95,30 @@ namespace ToolSmiths.InventorySystem.Services
             RecoverCorpseAt(hero, profile);
         }
 
-        public RunResult Recall() => Run.Recall();
+        public event Action<RunResult> RunSettled;
+
+        public RunResult Recall()
+        {
+            var result = Run.Recall();
+            RunSettled?.Invoke(result);
+
+            return result;
+        }
+
+        public bool LeaveField()
+        {
+            var run = Run;
+            if (run.Phase != RunPhase.InField)
+                return false;
+
+            // Death first, as in the tick: a hero already down cannot be recalled out of its Death.
+            if (run.HeroIsDown)
+                HandleHeroDeath(session.Hero, run);
+            else
+                _ = Recall();
+
+            return true;
+        }
 
         public void Tick(float deltaSeconds)
         {
@@ -120,7 +146,7 @@ namespace ToolSmiths.InventorySystem.Services
             if (run.HeroIsDown)
                 HandleHeroDeath(hero, run);
             else if (run.RecallRequested)
-                _ = run.Recall();
+                _ = Recall();
         }
 
         private RunState BuildRun(World world)
@@ -193,6 +219,8 @@ namespace ToolSmiths.InventorySystem.Services
 
             var fell = hero.SelectedLocation;
             SettlementFor(hero).Settle(result, fell != null ? ProfileFor(fell) : null);
+
+            RunSettled?.Invoke(result);
         }
 
         /// <summary>
@@ -208,17 +236,8 @@ namespace ToolSmiths.InventorySystem.Services
         private static RunSettlement SettlementFor(Hero hero) =>
             new(new ContainerSettlementBag(hero), new PlayerWalletLedger(hero), hero.Corpse);
 
-        /// <summary>
-        /// The one memoized <see cref="EncounterProfile"/> per <see cref="LocationConfig"/>.
-        /// Profiles are immutable, so sharing one across Runs and heroes is safe.
-        /// </summary>
-        private EncounterProfile ProfileFor(LocationConfig location)
-        {
-            if (!profiles.TryGetValue(location, out var profile))
-                profiles[location] = profile = location.ToProfile();
-
-            return profile;
-        }
+        // The memo lives on the registry, so a saved Corpse restores onto the profile a Send uses.
+        private EncounterProfile ProfileFor(LocationConfig location) => locations.ProfileFor(location);
 
         private void OnRunEnded(World world, RunState run)
         {

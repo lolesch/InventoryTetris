@@ -10,7 +10,9 @@
         "InventorySystem.Containers",
         "InventorySystem.Simulation",
         "InventorySystem.Characters",
+        "InventorySystem.Persistence",
         "Utility",
+        "Utility.Persistence",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
         "UnityEditor"
