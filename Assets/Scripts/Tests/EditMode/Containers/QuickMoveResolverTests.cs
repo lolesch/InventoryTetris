@@ -20,8 +20,9 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
     /// Panel's sink would be Equipment, but that row duplicates right-click and has no ticket,
     /// and the Hero context has no Town Stop, so it has no sink at all. It is asserted here
     /// rather than left implicit, because "a Quick Move with only the Hero Panel open does
-    /// nothing" is a stated outcome of #85, not an oversight. The Healer gained the Vendor's
-    /// sale rows in #121.</para>
+    /// nothing" is a stated outcome of #85, not an oversight. The one exception is #63's
+    /// ground row: in a Run, a backpack shift-click drops to the ground. The Healer gained the
+    /// Vendor's sale rows in #121.</para>
     /// </summary>
     [TestFixture]
     public sealed class QuickMoveResolverTests
