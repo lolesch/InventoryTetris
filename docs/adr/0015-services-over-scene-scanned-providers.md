@@ -153,8 +153,8 @@ Settles the two questions the Consequences section left open for #112.
 **The Hero is one class: stats, then what it owns.** `Hero` keeps its stats and resources and gains
 `Equipment`, `Inventory`, `Stash`, `Wallet` and `Behaviour` (the Behaviour Profile), handed to it once
 by `Outfit` after construction, because the Equipment takes the hero as its stat receiver and so
-cannot exist first. A hero that was never outfitted (the legacy `DummyTarget`, until #117) throws
-when asked for a container. `Hero` also implements `IItemReceiver`: the placement (auto-equip, else
+cannot exist first. A hero that was never outfitted throws
+when asked for a container (the legacy `DummyTarget` was the one such hero; #117 deleted it). `Hero` also implements `IItemReceiver`: the placement (auto-equip, else
 the Inventory, nothing behind that) is the hero's. `World` holds the two Supplies, the Sold
 container and the Inventory Context. Both are plain classes.
 

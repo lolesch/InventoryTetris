@@ -66,7 +66,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                                                                                  // if (compareTo.Item.Affixes[i].Modifier.Type == stat.Modifier.Type) // find a corresponding mod type
                             {
                                 other = compareTo.Item.Affixes[i].Modifier.Value;
-                                difference = CharacterProvider.Instance.Player.CompareStatModifiers(stat, compareTo.Item.Affixes[i].Modifier);
+                                difference = Session.Instance.Hero.CompareStatModifiers(stat, compareTo.Item.Affixes[i].Modifier);
                             }
 
                     return stat.Modifier.Value.CompareTo(other);

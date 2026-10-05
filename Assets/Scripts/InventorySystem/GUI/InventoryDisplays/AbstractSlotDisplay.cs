@@ -134,7 +134,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                     /// PickUpTransaction.Run - the player's acquisition entry point - instead
                     /// of a plain move, so a Package with an empty gear slot and auto-equip on
                     /// lands there instead of the Inventory.
-                    _ = PickUpTransaction.Run(Container, position, CharacterProvider.Instance.Player,
+                    _ = PickUpTransaction.Run(Container, position, Session.Instance.Hero,
                         InventoryProvider.Instance.Inventory, InventoryProvider.Instance.Equipment);
                     return true;
 
@@ -183,7 +183,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             var price = VendorTransaction.BuyPrice(package.Item, ItemService.Instance.Catalog) * package.Amount;
 
             _ = VendorTransaction.Buy(Container, position, package, wallet, price,
-                CharacterProvider.Instance.Player, InventoryProvider.Instance.Equipment);
+                Session.Instance.Hero, InventoryProvider.Instance.Equipment);
         }
 
         public void OnPointerExit(PointerEventData eventData)
