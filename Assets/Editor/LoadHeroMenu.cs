@@ -1,29 +1,24 @@
-using ToolSmiths.InventorySystem.Services;
+using Submodules.Utility.Services;
+using ToolSmiths.InventorySystem.GUI.Components.Panels;
 using UnityEditor;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.EditorScripts
 {
     /// <summary>
-    /// The dev-invocable hero load (#114): builds a fresh Hero and World from the default hero
-    /// template and swaps both into the Session, as a load of a saved hero will. Play Mode only, and
-    /// refused while a Run is in the Field (<see cref="ISession.TryLoad"/>) - Recall first. A
-    /// button for it belongs on the <c>DebugPanel</c>.
+    /// The dev-invocable hero load (#114) from the Editor menu, for a scene without the
+    /// <c>DebugPanel</c> button: <see cref="DebugPanel.LoadDefault"/> builds a fresh Hero and World
+    /// from the default hero template and swaps both into the Session. Play Mode only, and refused
+    /// while a Run is in the Field - Recall first.
     /// </summary>
     internal static class LoadHeroMenu
     {
         private const string Menu = "ToolSmiths/Hero/Load Default Hero";
 
         [MenuItem(Menu)]
-        private static void LoadDefaultHero()
-        {
-            if (Session.Instance.TryLoad(GameBoot.Load().DefaultHero))
-                Debug.Log("Loaded a new Hero and World from the default hero.");
-            else
-                Debug.LogWarning("A Run is in the Field: Recall before loading a hero.");
-        }
+        private static void LoadDefaultHero() => DebugPanel.LoadDefault();
 
         [MenuItem(Menu, true)]
-        private static bool CanLoadDefaultHero() => Application.isPlaying && Submodules.Utility.Services.ServiceLocator.IsArmed;
+        private static bool CanLoadDefaultHero() => Application.isPlaying && ServiceLocator.IsArmed;
     }
 }

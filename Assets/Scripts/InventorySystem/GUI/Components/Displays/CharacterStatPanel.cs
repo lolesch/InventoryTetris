@@ -32,9 +32,9 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 
         private void OnEnable()
         {
-            _ = Session.TrySubscribeHeroLoaded(Rebind);
-
-            Rebind();
+            // No Session armed (an enable in Edit Mode): no Hero to show.
+            if (Session.TrySubscribeHeroLoaded(Rebind))
+                Rebind();
         }
 
         private void OnDisable()
