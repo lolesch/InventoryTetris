@@ -16,7 +16,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
     /// that passes <see cref="HeroBehaviour.AdmitsItem"/> <em>and</em> fits lands in the bag,
     /// everything else stays on the ground. A coin Pile banks to the wallet iff
     /// <see cref="HeroBehaviour.AdmitsCoin"/> passes. <see cref="LootFlow.ClearGround"/> is the
-    /// Run-end rule (CONTEXT.md "Drop").
+    /// Run-end rule (GLOSSARY.md "Drop").
     ///
     /// Real <see cref="CharacterInventory"/> and <see cref="Wallet"/> throughout, per the
     /// ticket's acceptance criteria — only the rolls (<see cref="IRollSource"/>,

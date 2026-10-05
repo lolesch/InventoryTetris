@@ -8,7 +8,7 @@ namespace ToolSmiths.InventorySystem.Simulation
     public interface ISettlementLedger
     {
         /// <summary>
-        /// Withdraw the Death fee - <paramref name="baseUnits"/> iron-equivalent (<c>CONTEXT.md</c>
+        /// Withdraw the Death fee - <paramref name="baseUnits"/> iron-equivalent (<c>GLOSSARY.md</c>
         /// <i>Base Unit</i>) - from the Wallet. Never takes more than is there.
         /// </summary>
         void ChargeFee(long baseUnits);

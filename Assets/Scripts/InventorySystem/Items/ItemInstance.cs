@@ -8,7 +8,7 @@ namespace ToolSmiths.InventorySystem.Items
 {
     /// <summary>
     /// One rolled item - this chest, with these affixes, at this rarity
-    /// (<c>CONTEXT.md</c> "Item Instance"). Immutable after construction: a craft, socket
+    /// (<c>GLOSSARY.md</c> "Item Instance"). Immutable after construction: a craft, socket
     /// or identify operation returns a <em>new</em> instance rather than mutating this one,
     /// which is what keeps the Phase 2 transaction snapshot sound - a rolled-back change
     /// cannot leak through a shared reference.
@@ -41,7 +41,7 @@ namespace ToolSmiths.InventorySystem.Items
 
         /// <summary>
         /// Whether this instance may merge into a stack with <paramref name="other"/>
-        /// (<c>CONTEXT.md</c> "Package"): same definition, a stack limit above one, and
+        /// (<c>GLOSSARY.md</c> "Package"): same definition, a stack limit above one, and
         /// neither side carrying instance state. Equipment (stack limit 1) never reaches a
         /// true here. <paramref name="stackLimit"/> is the definition's
         /// <see cref="ItemDefinition.BaseStackLimit"/>, resolved by the caller through

@@ -520,8 +520,8 @@ shared a base commit, and the untangle hit a `Utility` submodule merge conflict.
 
 ## Working the issue tracker
 
-Before `/implement #N`, walk that issue's own **Blocked by** chain (transitively, via
-`gh issue view <N> --json body` or the epic's tracking table). `ready-for-agent` on an
+Before `/implement #N`, run `python dev/frontier.py` (it derives the frontier from each open
+issue's **Blocked by**). `ready-for-agent` on an
 issue means its spec is written, **not** that its dependencies are closed. If `#N` is not
 the actual frontier, surface the gap and let the user decide — don't silently build the
 blockers inside it (that blows past the "one ticket per session" rule) or silently
@@ -530,7 +530,7 @@ substitute a different issue.
 ## Multi-device / knowledge that lives outside git
 
 - An agent's private memory is **per-machine** and does not sync. The shared, on-disk
-  channels are: this file, `CONTEXT.md`, `docs/adr/`, `dev/specs/`, and GitHub Issues.
+  channels are: this file, `GLOSSARY.md`, `docs/adr/`, `dev/specs/`, and GitHub Issues.
   If a fact matters on both the laptop and the tower, it belongs in one of those, not in
   memory.
 - **`NewArtwork`** branch (off an old `main`, pushed, no PR) is the only copy of three

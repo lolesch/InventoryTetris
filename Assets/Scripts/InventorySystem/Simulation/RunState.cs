@@ -93,7 +93,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <summary>
         /// Raised once a Run ends, on both outcomes — <see cref="Recall"/> and
         /// <see cref="HandleDeath"/> alike. The loot flow (issue #24) subscribes to clear
-        /// whatever Drops are still on the ground, per CONTEXT.md's Drop entry: "a Drop still
+        /// whatever Drops are still on the ground, per GLOSSARY.md's Drop entry: "a Drop still
         /// on the ground when the Run ends is gone, on Recall or Death alike."
         /// </summary>
         public event Action RunEnded;

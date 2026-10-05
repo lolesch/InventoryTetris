@@ -7,7 +7,7 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// kill, items land in the bag on pickup. The one thing the result <em>delivers</em> is the
     /// Death case — <see cref="XpLost"/>, <see cref="CurrencyFee"/>, and (issue #22) the Corpse.
     ///
-    /// Currency figures are in <b>base units</b> (iron-equivalent, the <c>CONTEXT.md</c> <i>Base
+    /// Currency figures are in <b>base units</b> (iron-equivalent, the <c>GLOSSARY.md</c> <i>Base
     /// Unit</i> scale — the same total <c>Currency.Total</c> reports). The engine-side adapter
     /// (issue #26) maps them back to a <c>Currency</c> when it applies the fee to the Wallet;
     /// keeping this struct on a plain integer keeps the whole module engine-free.

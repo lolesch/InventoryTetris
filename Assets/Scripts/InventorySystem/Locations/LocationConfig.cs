@@ -13,7 +13,7 @@ using System.Runtime.CompilerServices;
 namespace ToolSmiths.InventorySystem.Locations
 {
     /// <summary>
-    /// The authored field destination (<c>CONTEXT.md</c> "Location") — a
+    /// The authored field destination (<c>GLOSSARY.md</c> "Location") — a
     /// <see cref="ScriptableObject"/> a designer fills in the inspector: a stable id
     /// (never the asset GUID, never the asset name), a display name, a fixed source level, the
     /// loot table a Run there rolls against, which enemy <see cref="EnemyArchetype"/> it

@@ -2,11 +2,11 @@
 
 How the engineering skills should consume this repo's domain documentation when exploring the codebase.
 
-**Layout: single-context.** One `CONTEXT.md` at the repo root plus `docs/adr/`.
+**Layout: single-context.** One `GLOSSARY.md` at the repo root plus `docs/adr/`.
 
 ## Before exploring, read these
 
-- **`CONTEXT.md`** at the repo root — the domain glossary.
+- **`GLOSSARY.md`** at the repo root — the domain glossary.
 - **`docs/agents/codebase-notes.md`** — durable engineering gotchas (Unity compile/test
   verification, assembly-definition layout, the shared submodule, broken `.meta` files).
   Read before any Unity compile verification or asmdef change.
@@ -27,7 +27,7 @@ This is a Unity project, so source lives under `Assets/`, not `src/`:
 
 ```
 /
-├── CONTEXT.md                     ← domain glossary (created lazily)
+├── GLOSSARY.md                     ← domain glossary (created lazily)
 ├── docs/
 │   ├── adr/                       ← architecture decision records (created lazily)
 │   └── agents/                    ← this config; see the note in CLAUDE.md
@@ -39,7 +39,7 @@ This is a Unity project, so source lives under `Assets/`, not `src/`:
 
 ## Use the glossary's vocabulary
 
-When your output names a domain concept (in an issue title, a refactor proposal, a hypothesis, a test name), use the term as defined in `CONTEXT.md`. Don't drift to synonyms the glossary explicitly avoids.
+When your output names a domain concept (in an issue title, a refactor proposal, a hypothesis, a test name), use the term as defined in `GLOSSARY.md`. Don't drift to synonyms the glossary explicitly avoids.
 
 If the concept you need isn't in the glossary yet, that's a signal — either you're inventing language the project doesn't use (reconsider) or there's a real gap (note it for `/domain-modeling`).
 

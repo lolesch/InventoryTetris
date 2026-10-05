@@ -219,7 +219,7 @@ namespace ToolSmiths.InventorySystem.Services
 
         private void OnRunEnded(World world, RunState run)
         {
-            // CONTEXT.md "Drop": a Drop still on the ground when the Run ends is gone, on Recall or
+            // GLOSSARY.md "Drop": a Drop still on the ground when the Run ends is gone, on Recall or
             // Death alike (issue #44).
             ReleaseLoot(world);
 

@@ -8,7 +8,7 @@ namespace ToolSmiths.InventorySystem.Items
 {
     /// <summary>
     /// Turns a <see cref="RollContext"/> into <see cref="ItemInstance"/>s - the <b>Roll</b>
-    /// (<c>CONTEXT.md</c>). Replaces the ~30-method <c>GenerateRandomX</c> decision tree on
+    /// (<c>GLOSSARY.md</c>). Replaces the ~30-method <c>GenerateRandomX</c> decision tree on
     /// the old item provider: instead of a hand-unrolled switch per equipment type, a roll is
     /// "pick a category, pick a definition of that category from the catalog, roll a rarity,
     /// roll that many affixes from the definition's pool". Adding an item type is data - a
@@ -87,7 +87,7 @@ namespace ToolSmiths.InventorySystem.Items
                 throw new ArgumentException("NoDrop is the fail bucket, not a rarity to roll at", nameof(rarity));
 
             // A coin's rarity is its denomination's rung, not a roll, and it carries no affixes -
-            // every coin comes off the same ladder whichever path minted it (CONTEXT.md "Denomination").
+            // every coin comes off the same ladder whichever path minted it (GLOSSARY.md "Denomination").
             if (definition.Category == ItemCategory.Currency)
                 return ItemInstance.Coin(definition.Id, definition.CurrencyType);
 
@@ -96,7 +96,7 @@ namespace ToolSmiths.InventorySystem.Items
             var affixes = new List<CharacterStatModifier>(
                 (implicitStats?.Count ?? 0) + AffixCountFor(rarity) + (uniqueAffixes?.Count ?? 0));
 
-            // Implicit stats are guaranteed and pre-roll (CONTEXT.md "Affix").
+            // Implicit stats are guaranteed and pre-roll (GLOSSARY.md "Affix").
             if (implicitStats != null)
                 for (var i = 0; i < implicitStats.Count; i++)
                     affixes.Add(implicitStats[i]);

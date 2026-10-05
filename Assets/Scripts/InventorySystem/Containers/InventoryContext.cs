@@ -2,7 +2,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 {
     /// <summary>
     /// Which panels are up and where a Quick Move lands - one answer to both questions
-    /// (the Inventory Context of <c>CONTEXT.md</c>). Single-valued: exactly one is active, so a
+    /// (the Inventory Context of <c>GLOSSARY.md</c>). Single-valued: exactly one is active, so a
     /// Stash-and-Vendor-at-once state does not exist to be a bug. <see cref="None"/> is a real
     /// state, not a missing one.
     ///

@@ -19,7 +19,7 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// per Cast cadence whether or not a Cast is affordable that beat, so the latch tracks the
     /// pool continuously. <see cref="AdmitsItem"/> and
     /// <see cref="AdmitsCoin"/> are the loot filter, reading a coin denomination's fixed Rarity
-    /// off CONTEXT.md's Denomination ladder (iron Common … gold Unique). <see cref="Engagement"/>
+    /// off GLOSSARY.md's Denomination ladder (iron Common … gold Unique). <see cref="Engagement"/>
     /// is re-read by the sim's spawn schedule every spawn tick, so raising it mid-Run refills
     /// toward the new target; <see cref="SimSpeed"/> is plain storage the clock adapter (issue
     /// #26) reads directly.
@@ -93,7 +93,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <summary>The loot filter for items: admits <paramref name="rarity"/> at or above <see cref="LootFilterMinimum"/>.</summary>
         public bool AdmitsItem(ItemRarity rarity) => rarity >= LootFilterMinimum;
 
-        /// <summary>The loot filter for coins: admits <paramref name="denomination"/> by its fixed Rarity on CONTEXT.md's ladder.</summary>
+        /// <summary>The loot filter for coins: admits <paramref name="denomination"/> by its fixed Rarity on GLOSSARY.md's ladder.</summary>
         public bool AdmitsCoin(CurrencyType denomination) => Currency.RarityOf(denomination) >= LootFilterMinimum;
 
         // ─── slider mapping helpers (issue #27) ─────────────────────────────
