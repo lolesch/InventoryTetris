@@ -57,10 +57,9 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 
         private void OnEnable()
         {
-            if (!_bound && followsHero)
+            // No Session armed (an enable in Edit Mode): nothing to follow, and the Hero is not there to read.
+            if (!_bound && followsHero && Session.TrySubscribeHeroLoaded(FollowHero))
             {
-                _ = Session.TrySubscribeHeroLoaded(FollowHero);
-
                 var hero = Session.Instance.Hero;
                 _resource = hero.GetResource(resourceName);
                 _recovery = hero.GetStat(recoveryName);
