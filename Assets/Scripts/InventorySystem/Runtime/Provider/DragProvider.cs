@@ -1,5 +1,6 @@
 using NaughtyAttributes;
 using Submodules.Utility.Provider;
+using Submodules.Utility.Services;
 using TMPro;
 using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Data;
@@ -66,9 +67,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         /// drop and the drop tint both ask (<see cref="PurchaseDrop.MayLandIn"/>).</summary>
         public bool MayLandIn(AbstractDimensionalContainer target)
         {
-            var inventory = InventoryProvider.Instance;
+            if (!ServiceLocator.IsArmed)
+                return false;
 
-            return PurchaseDrop.MayLandIn(IsHoldingPurchase, target, inventory.Inventory, inventory.Equipment);
+            var hero = Session.Instance.Hero;
+
+            return PurchaseDrop.MayLandIn(IsHoldingPurchase, target, hero.Inventory, hero.Equipment);
         }
 
         /// <summary>
@@ -113,13 +117,13 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         /// </summary>
         private void OnEnable()
         {
-            _ = InventoryProvider.TrySubscribeContextChanged(OnContextChanged, out _);
+            _ = InventoryService.TrySubscribeContextChanged(OnContextChanged, out _);
             _ = Session.TrySubscribeHeroLoaded(OnHeroLoaded);
         }
 
         private void OnDisable()
         {
-            InventoryProvider.UnsubscribeContextChanged(OnContextChanged);
+            InventoryService.UnsubscribeContextChanged(OnContextChanged);
             Session.UnsubscribeHeroLoaded(OnHeroLoaded);
         }
 
@@ -353,10 +357,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         /// decide whether to leave it there.</returns>
         public bool CancelDrag()
         {
-            if (!IsDragging || !DraggingPackage.IsValid)
+            if (!IsDragging || !DraggingPackage.IsValid || !ServiceLocator.IsArmed)
                 return false;
 
-            var fallback = PurchaseDrop.FallbackFor(IsHoldingPurchase, ReturnOrigin.Container, InventoryProvider.Instance.Inventory);
+            var fallback = PurchaseDrop.FallbackFor(IsHoldingPurchase, ReturnOrigin.Container, Session.Instance.Hero.Inventory);
 
             var leftOnCursor = ReturnToOrigin.Return(DraggingPackage, ReturnOrigin.Container, ReturnOrigin.Cell, fallback);
 

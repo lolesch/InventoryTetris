@@ -12,8 +12,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
     /// <summary>
     /// The scene's hero: a thin wrapper over the <see cref="Hero"/> the Session was booted with
     /// (issues #110, #112). Every behaviour - stats, XP, damage, regeneration, the item stats and
-    /// the pick-up - is the hero's; this keeps the scene face and the debug Stash overflow, which
-    /// is the inventory service's. The stat sheet is the <c>CharacterStatPanel</c>'s, bound to the
+    /// the pick-up - is the hero's; this keeps the scene face. The acquisition entry point with
+    /// the debug Stash overflow is the inventory service's (<see cref="IInventoryService.PickUpOrStash"/>).
+    /// The stat sheet is the <c>CharacterStatPanel</c>'s, bound to the
     /// hero's change events (issue #111).
     /// </summary>
     public sealed class LocalPlayer : BaseCharacter, IStatReceiver, IItemReceiver
@@ -34,16 +35,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         public void AddItemStats(IReadOnlyList<CharacterStatModifier> stats) => Hero.AddItemStats(stats);
 
         public void RemoveItemStats(IReadOnlyList<CharacterStatModifier> stats) => Hero.RemoveItemStats(stats);
-
-        /// <summary>
-        /// The debug spawners' entry: the placement of
-        /// <see cref="PickUpItem(ItemInstance, uint)"/>, plus - in a debug build - an overflow to
-        /// the Stash so a spawn burst is not lost to a full bag
-        /// (<see cref="IInventoryService.PickUpOrStash"/>). Anything that must treat "no room" as
-        /// a fact (loot, Buy, Stash retrieval, Corpse recovery) goes through
-        /// <see cref="IItemReceiver"/> instead.
-        /// </summary>
-        public bool PickUpItemOrStash(Package package) => InventoryService.Instance.PickUpOrStash(package);
 
         /// <see cref="IItemReceiver"/> takes item+amount apart rather than a <c>Package</c>,
         /// since <c>Package</c> is Containers-resident and IItemReceiver lives in Items -

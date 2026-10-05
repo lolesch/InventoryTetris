@@ -80,8 +80,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
                 {
                     var equipmentPositions = CharacterEquipment.GetTypeSpecificPositions(ItemService.Instance.View(package.Item).Definition.EquipmentType);
 
+                    var equipped = Session.Instance.Hero.Equipment.StoredPackages;
+
                     for (var i = 0; i < equipmentPositions.Length; i++)
-                        InventoryProvider.Instance.Equipment.StoredPackages.TryGetValue(equipmentPositions[i], out equippedItems[i]);
+                        _ = equipped.TryGetValue(equipmentPositions[i], out equippedItems[i]);
                 }
 
                 var index = Input.GetKey(KeyCode.LeftControl) ? 1 : 0;
