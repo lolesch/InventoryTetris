@@ -3,14 +3,17 @@ using Submodules.Utility.Persistence;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
+using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Locations;
 using ToolSmiths.InventorySystem.Runtime.Character;
 using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace ToolSmiths.InventorySystem.Tests.Services
 {
@@ -525,6 +528,129 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             var next = NewSetup();
             _ = next.Saves.Load(second.Id);
             Assert.That(next.Game.Hero.Wallet.Balance.Total, Is.EqualTo(50u));
+        }
+
+        // ── before-save normalisers ─────────────────────────────────────────
+
+        [Test]
+        public void ARegisteredNormaliser_RunsBeforeTheSnapshot()
+        {
+            var setup = LoadedHero(out var id);
+            setup.Saves.AddBeforeSave(() => setup.Game.Hero.Wallet.Deposit(new Currency(7u)));
+
+            Assert.That(setup.Saves.Save(), Is.True);
+
+            var next = NewSetup();
+            _ = next.Saves.Load(id);
+            Assert.That(next.Game.Hero.Wallet.Balance.Total, Is.EqualTo(7u), "the normaliser's change is in the file");
+        }
+
+        // The cursor's job, without the canvas: lift a package out of the bag, then let a normaliser do
+        // what the drag provider does - Return to Origin.
+        private static Vector2Int LiftPotions(Setup setup, uint amount, out Package held)
+        {
+            PutPotionsInBag(setup, amount);
+            var cell = setup.Game.Hero.Inventory.StoredPackages.Keys.Single();
+            Assert.That(setup.Game.Hero.Inventory.TryGetPackageAt(cell, out var stored), Is.True);
+            _ = setup.Game.Hero.Inventory.RemoveAtPosition(cell, stored);
+            held = stored;
+            Assert.That(held.IsValid, Is.True);
+            Assert.That(PotionsInBag(setup.Game.Hero), Is.Zero, "the cursor holds them now");
+            return cell;
+        }
+
+        private static int PotionsInBag(Hero hero) =>
+            hero.Inventory.StoredPackages.Values
+                .Where(p => hero.Inventory.ViewOf(p.Item).Definition.Category == ItemCategory.Consumable)
+                .Sum(p => (int)p.Amount);
+
+        [Test]
+        public void APackageOnTheCursorAtARecall_IsBackAtItsOrigin_AndInTheSave()
+        {
+            var setup = LoadedHero(out var id);
+            var wallet = setup.Game.Hero.Wallet.Balance.Total;
+            var cell = LiftPotions(setup, 3u, out var held);
+            var inventory = setup.Game.Hero.Inventory;
+            setup.Saves.AddBeforeSave(() => held = ReturnToOrigin.Return(held, inventory, cell, inventory));
+            setup.Game.Simulation.Send(thornwood);
+
+            _ = setup.Game.Simulation.Recall();
+
+            Assert.That(held.IsValid, Is.False, "the package found a home");
+            var next = NewSetup();
+            _ = next.Saves.Load(id);
+            Assert.That(next.Game.Hero.Inventory.TryGetPackageAt(cell, out var back), Is.True, "at its origin cell");
+            Assert.That(back.Amount, Is.EqualTo(3u));
+            Assert.That(PotionsInBag(next.Game.Hero), Is.EqualTo(3));
+            Assert.That(next.Game.Hero.Wallet.Balance.Total, Is.EqualTo(wallet));
+        }
+
+        [Test]
+        public void APackageOnTheCursorWhoseOriginIsTaken_LandsElsewhereInTheBag_AndLosesNothing()
+        {
+            var setup = LoadedHero(out var id);
+            var cell = LiftPotions(setup, 3u, out var held);
+            var inventory = setup.Game.Hero.Inventory;
+            var gear = new Package(inventory, new ItemInstance(
+                setup.Game.Items.Catalog.OfCategory(ItemCategory.Equipment).First().Id, ItemRarity.Common, 1, null), 1u);
+            Assert.That(inventory.TryAddAtPosition(cell, ref gear), Is.True, "something took the freed cell");
+            setup.Saves.AddBeforeSave(() => held = ReturnToOrigin.Return(held, inventory, cell, inventory));
+
+            Assert.That(setup.Saves.Save(), Is.True);
+
+            Assert.That(held.IsValid, Is.False);
+            var next = NewSetup();
+            _ = next.Saves.Load(id);
+            Assert.That(PotionsInBag(next.Game.Hero), Is.EqualTo(3));
+            Assert.That(next.Game.Hero.Inventory.StoredPackages.Count, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void ARemovedNormaliser_NoLongerRuns_AndARegistrationMadeTwiceRunsOnce()
+        {
+            var setup = LoadedHero(out _);
+            var runs = 0;
+            void Count() => runs++;
+            setup.Saves.AddBeforeSave(Count);
+            setup.Saves.AddBeforeSave(Count);
+
+            _ = setup.Saves.Save();
+            Assert.That(runs, Is.EqualTo(1));
+
+            setup.Saves.RemoveBeforeSave(Count);
+            _ = setup.Saves.Save();
+            Assert.That(runs, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void ANormaliserThatThrows_IsLoggedAndSkipped_AndTheSaveStillGoes()
+        {
+            var setup = LoadedHero(out var id);
+            setup.Saves.AddBeforeSave(() => throw new InvalidOperationException("boom"));
+            setup.Saves.AddBeforeSave(() => setup.Game.Hero.Wallet.Deposit(new Currency(5u)));
+            LogAssert.Expect(LogType.Error, new Regex("before-save step failed.*boom"));
+
+            Assert.That(setup.Saves.Save(), Is.True);
+
+            var next = NewSetup();
+            _ = next.Saves.Load(id);
+            Assert.That(next.Game.Hero.Wallet.Balance.Total, Is.EqualTo(5u), "the next normaliser ran, and so did the save");
+        }
+
+        [Test]
+        public void NoNormaliserRuns_WhenNothingWillBeWritten()
+        {
+            var setup = NewSetup();
+            var runs = 0;
+            setup.Saves.AddBeforeSave(() => runs++);
+            Assert.That(setup.Saves.Save(), Is.False, "no active hero");
+
+            var id = setup.Saves.Create("Aria").Id;
+            _ = setup.Saves.Load(id);
+            setup.Game.Simulation.Send(thornwood);
+            Assert.That(setup.Saves.Save(), Is.False, "a Run in the Field");
+
+            Assert.That(runs, Is.Zero);
         }
 
         // ── the boot ────────────────────────────────────────────────────────

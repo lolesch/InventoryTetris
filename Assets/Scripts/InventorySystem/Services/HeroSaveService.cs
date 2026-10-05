@@ -30,6 +30,7 @@ namespace ToolSmiths.InventorySystem.Services
         private readonly ISaveStore store;
         private readonly ISaveSerializer serializer;
         private readonly Func<DateTime> utcNow;
+        private readonly List<Action> beforeSave = new();
 
         private Hero activeHero;
         private string activeName;
@@ -57,7 +58,39 @@ namespace ToolSmiths.InventorySystem.Services
             simulation.RunSettled += _ => Save();
         }
 
+        /// <summary>
+        /// Registers a before-save normaliser from a view that may be enabled before a boot has armed the
+        /// services (an enable in Edit Mode): does nothing, and says so, rather than throwing from the locator.
+        /// </summary>
+        /// <returns>Whether the normaliser was registered.</returns>
+        public static bool TryAddBeforeSave(Action normaliser)
+        {
+            if (!ServiceLocator.IsArmed)
+                return false;
+
+            Instance.AddBeforeSave(normaliser);
+            return true;
+        }
+
+        /// <summary>The matching removal for <see cref="TryAddBeforeSave"/>, tolerant of nothing being armed.</summary>
+        public static void TryRemoveBeforeSave(Action normaliser)
+        {
+            if (ServiceLocator.IsArmed)
+                Instance.RemoveBeforeSave(normaliser);
+        }
+
         public string ActiveHeroId { get; private set; }
+
+        public void AddBeforeSave(Action normaliser)
+        {
+            if (normaliser == null)
+                throw new ArgumentNullException(nameof(normaliser));
+
+            if (!beforeSave.Contains(normaliser))
+                beforeSave.Add(normaliser);
+        }
+
+        public void RemoveBeforeSave(Action normaliser) => beforeSave.Remove(normaliser);
 
         public string LastSelectedHeroId
         {
@@ -199,6 +232,8 @@ namespace ToolSmiths.InventorySystem.Services
             if (simulation.Run.Phase == RunPhase.InField)
                 return false;
 
+            RunNormalisers();
+
             // A write that fails must not take the game down. The write is atomic, so the previous save is
             // untouched; every save point writes the whole hero, so the next one is the retry.
             try
@@ -210,6 +245,23 @@ namespace ToolSmiths.InventorySystem.Services
             {
                 Debug.LogError($"Could not save hero '{ActiveHeroId}': {exception.Message} The previous save is untouched; the next save point tries again.");
                 return false;
+            }
+        }
+
+        // Each runs on its own: one that throws must not keep the hero from being saved, and must not
+        // keep the others from running.
+        private void RunNormalisers()
+        {
+            foreach (var normaliser in beforeSave.ToArray())
+            {
+                try
+                {
+                    normaliser();
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogError($"A before-save step failed and was skipped: {exception.Message}");
+                }
             }
         }
 

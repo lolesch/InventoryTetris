@@ -119,12 +119,26 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         {
             _ = InventoryService.TrySubscribeContextChanged(OnContextChanged, out _);
             _ = Session.TrySubscribeHeroLoaded(OnHeroLoaded);
+            _ = HeroSaveService.TryAddBeforeSave(ReturnHeldToOrigin);
         }
 
         private void OnDisable()
         {
             InventoryService.UnsubscribeContextChanged(OnContextChanged);
             Session.UnsubscribeHeroLoaded(OnHeroLoaded);
+            HeroSaveService.TryRemoveBeforeSave(ReturnHeldToOrigin);
+        }
+
+        /// <summary>
+        /// A Recall or a Death can fire while a drag is in progress, and the save that follows would not
+        /// find the held Package in any container. The save service runs this first: the drag ends as a
+        /// cancel does (<see cref="CancelDrag"/>) - back at its origin cell, or in the bag when that is
+        /// taken, never destroyed and never touching the Wallet.
+        /// </summary>
+        private void ReturnHeldToOrigin()
+        {
+            if (IsDragging)
+                _ = CancelDrag();
         }
 
         /// <summary>
