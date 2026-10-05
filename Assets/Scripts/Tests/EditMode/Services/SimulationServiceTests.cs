@@ -24,7 +24,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
     [TestFixture]
     public sealed class SimulationServiceTests
     {
-        private readonly List<Object> created = new();
+        private readonly List<UnityEngine.Object> created = new();
         private GameConfig config;
         private ItemService items;
         private Session session;
@@ -49,7 +49,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         public void TearDown()
         {
             foreach (var asset in created)
-                Object.DestroyImmediate(asset);
+                UnityEngine.Object.DestroyImmediate(asset);
 
             created.Clear();
         }
