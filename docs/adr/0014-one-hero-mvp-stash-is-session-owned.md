@@ -29,7 +29,7 @@ roadmap, because they are product calls rather than modelling ones:
   save sections separable from the hero's, so lifting them to a higher tier later is a
   change of owner rather than a format rewrite.
 - `CONTEXT.md` carries a deferral note on the **Session** entry and on the Stash role in
-  **Inventory / Stash / Supply / Sell Basket**, so the next reader need not re-derive
+  **Inventory / Stash / Supply / Sold tab**, so the next reader need not re-derive
   this.
 - Revisit when picking among several saved heroes (see *Hero*) is scheduled — the two
   features are the same decision.

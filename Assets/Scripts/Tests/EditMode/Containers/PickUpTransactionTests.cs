@@ -12,8 +12,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
     /// by the shift-click-out-of-the-Stash retrieval (issue #86) and <see
     /// cref="VendorTransaction.Buy"/>'s player-path. <see cref="FakePlayer"/> runs
     /// <see cref="ItemAcquisition"/> - the rule <c>LocalPlayer</c> itself delegates to - without
-    /// the MonoBehaviour or the provider singleton, so this stays a pure container-seam test - prior art:
-    /// <see cref="SellBasketQuickMoveTests"/>.
+    /// the MonoBehaviour or the provider singleton, so this stays a pure container-seam test.
     /// </summary>
     [TestFixture]
     public sealed class PickUpTransactionTests

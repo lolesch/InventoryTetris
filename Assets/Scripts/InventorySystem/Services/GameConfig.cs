@@ -55,7 +55,7 @@ namespace ToolSmiths.InventorySystem.Services
         [field: SerializeField, Tooltip("One size for every Supply shelf (the Vendor's and the Healer's).")]
         public Vector2Int SupplySize { get; private set; } = new(10, 7);
 
-        [field: SerializeField, Tooltip("The Sold container (epic #124). The Sell Basket's size is not carried: that container is deleted.")]
+        [field: SerializeField, Tooltip("The Sold container (epic #124).")]
         public Vector2Int SoldSize { get; private set; } = new(10, 7);
 
         [field: Header("Simulation: Behaviour Profile defaults")]

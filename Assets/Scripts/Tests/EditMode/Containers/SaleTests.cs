@@ -17,8 +17,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
     /// the sale fits; the sale order is the only ledger.
     ///
     /// <para>Assertions are on container contents, the Wallet balance and the stat receiver,
-    /// never on event counts (ADR-0007). Prior art: <see cref="SellBasketTests"/> and
-    /// <see cref="SellBasketQuickMoveTests"/>, whose staged flow this runs beside.</para>
+    /// never on event counts (ADR-0007).</para>
     /// </summary>
     [TestFixture]
     public sealed class SaleTests

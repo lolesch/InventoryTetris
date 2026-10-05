@@ -18,16 +18,14 @@ namespace ToolSmiths.InventorySystem.Inventories
         Equipment,
         Inventory,
         Stash,
-        Store,
-        Basket,
-        /// <summary>The Healer's Supply shelf (issue #121): consumables, bought like the Store's.
-        /// Appended last: the members are serialized by value in scenes and prefabs, so
-        /// inserting before <see cref="Basket"/> would silently rebind every Basket display.</summary>
+        /// <summary>The Vendor's Supply shelf.</summary>
+        VendorSupply,
+        /// <summary>The Healer's Supply shelf (issue #121): consumables, bought like the Vendor Supply's.
+        /// The members are serialized by value in scenes and prefabs, so inserting or deleting a
+        /// member shifts every one after it: re-serialize every display in the same change.</summary>
         HealerSupply,
         /// <summary>The Sold container (issues #124, #127): what the player sold, shown on each
-        /// selling panel's Sold tab. Both panels' Sold grids bind the one container. Appended
-        /// after <see cref="HealerSupply"/> for the same reason that one was appended after
-        /// <see cref="Basket"/>: the members are serialized by value.</summary>
+        /// selling panel's Sold tab. Both panels' Sold grids bind the one container.</summary>
         Sold,
     }
 }

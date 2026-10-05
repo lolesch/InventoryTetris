@@ -97,8 +97,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         /// The shift-click quick-move dispatch (issue #67), hoisted here so every slot
         /// display gets it for free instead of hand-rolling the same preamble -
         /// <see cref="QuickMoveResolver"/> read, <see cref="QuickMoveIntentKind"/> switched
-        /// on, move executed - four times with growing odds one copy is wrong or missing
-        /// (<see cref="BasketSlotDisplay"/> shipped without it entirely). <see cref="MoveItem"/>
+        /// on, move executed - four times with growing odds one copy is wrong or missing. <see cref="MoveItem"/>
         /// is left with only the right-click and drag-pickup branches, which genuinely
         /// differ per container.
         /// </summary>
@@ -130,13 +129,6 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                     _ = Sale.TrySell(InventoryProvider.Instance.Sold, InventoryProvider.Instance.Wallet, Container, position);
                     return true;
 
-                case QuickMoveIntentKind.SellBasket:
-                    /// One transaction over the source and the basket: the item leaves this
-                    /// slot and lands in the basket with its origin remembered; a full
-                    /// basket leaves it where it is (#33).
-                    _ = SellBasketQuickMove.SendToBasket(InventoryProvider.Instance.Basket, Container, position);
-                    return true;
-
                 case QuickMoveIntentKind.Acquire:
                     /// The Stash retrieval row (issue #86): routed through
                     /// PickUpTransaction.Run - the player's acquisition entry point - instead
@@ -149,8 +141,6 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 case QuickMoveIntentKind.MoveToContainer:
                     var target = intent.Target;
                     var cursor = new CursorHolder(DragProvider.Instance);
-                    var basket = InventoryProvider.Instance.Basket;
-                    var leavingBasket = basket != null && Container == basket.Container;
 
                     using (var transaction = new ItemTransaction(cursor, Container, target).ReHomeThrough(target))
                     {
@@ -158,12 +148,6 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                         _ = transaction.TryReHomeToContainerOrHand(ref package, new PackageOrigin(Container, position));
 
                         transaction.Commit();
-
-                        /// A Package leaving the basket for good clears its ledger entry
-                        /// (<see cref="SellBasket.Basket.Origins"/>) rather than leaving a
-                        /// stale one <see cref="SellBasket.Cancel"/> would only skip over.
-                        if (leavingBasket && !transaction.Aborted)
-                            _ = basket.Origins.Remove(position);
                     }
                     return true;
 
@@ -306,8 +290,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         /// container (consume / equip / unequip / buy). Shift-click no longer reaches this -
         /// <see cref="TryQuickMove"/> handles it before <see cref="OnPointerClick"/> ever
         /// calls here. Virtual with an empty default: a container with nothing of its own to
-        /// do on right-click or drag-pickup (<see cref="BasketSlotDisplay"/>) needs no
-        /// override at all.
+        /// do on right-click or drag-pickup needs no override at all.
         /// </summary>
         protected virtual void MoveItem(PointerEventData eventData, Vector2 pointerPosition) { }
 

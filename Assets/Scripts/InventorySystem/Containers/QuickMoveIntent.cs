@@ -5,8 +5,7 @@ namespace ToolSmiths.InventorySystem.Inventories
     /// <see cref="MoveToContainer"/> is a plain container-to-container move; <see cref="Buy"/>
     /// is produced for the vendor shelf, whose own shift-click is always a buy;
     /// <see cref="Sell"/> (issue #128) is the shift-click sale through <see cref="Sale"/>, the
-    /// sink of the Vendor and Healer contexts; <see cref="SellBasket"/> is the staging intent it
-    /// replaced, kept only until the staged sale code is deleted. Each is a distinct intent so
+    /// sink of the Vendor and Healer contexts. Each is a distinct intent so
     /// the resolver's table can grow without the slot displays branching on
     /// containers. <see cref="Acquire"/> is #86's source-to-hub row that must honour
     /// auto-equip - it routes through the player's acquisition entry point
@@ -16,7 +15,6 @@ namespace ToolSmiths.InventorySystem.Inventories
     {
         None = 0,
         MoveToContainer = 1,
-        SellBasket = 2,
         Buy = 3,
         Acquire = 4,
         Sell = 5,
@@ -42,8 +40,6 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         public static QuickMoveIntent MoveTo(AbstractDimensionalContainer target) =>
             new(QuickMoveIntentKind.MoveToContainer, target);
-
-        public static QuickMoveIntent SellBasket => new(QuickMoveIntentKind.SellBasket, null);
 
         public static QuickMoveIntent Buy => new(QuickMoveIntentKind.Buy, null);
 

@@ -21,8 +21,7 @@ namespace ToolSmiths.InventorySystem.Inventories
     /// refuses a sale that can pay out; it discards its oldest instead
     /// (<see cref="SoldContainer.TryPlaceEvicting"/>).</para>
     ///
-    /// <para>It replaces the staged <see cref="SellBasket"/>, which stays in the code until the
-    /// staged sale code is deleted. The shift-click sink calls <see cref="TrySell"/> (issue #128);
+    /// <para>It replaced the staged Sell Basket, which is deleted (issue #131). The shift-click sink calls <see cref="TrySell"/> (issue #128);
     /// the drop sale, <see cref="TrySellHeld"/>, is called by a Supply slot's drop (issue #129),
     /// which asks <see cref="CanSellHeld"/> first for the forbidden tint.</para>
     /// </summary>

@@ -11,15 +11,13 @@ namespace ToolSmiths.InventorySystem.Inventories
         public static AbstractDimensionalContainer Resolve(ContainerRole role,
             AbstractDimensionalContainer equipment, AbstractDimensionalContainer inventory,
             AbstractDimensionalContainer stash, AbstractDimensionalContainer store,
-            AbstractDimensionalContainer healerSupply, AbstractDimensionalContainer basket,
-            AbstractDimensionalContainer sold) => role switch
+            AbstractDimensionalContainer healerSupply, AbstractDimensionalContainer sold) => role switch
         {
             ContainerRole.Equipment => equipment,
             ContainerRole.Inventory => inventory,
             ContainerRole.Stash => stash,
-            ContainerRole.Store => store,
+            ContainerRole.VendorSupply => store,
             ContainerRole.HealerSupply => healerSupply,
-            ContainerRole.Basket => basket,
             ContainerRole.Sold => sold,
             _ => null,
         };
