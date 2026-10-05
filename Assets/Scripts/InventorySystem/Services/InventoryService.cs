@@ -1,6 +1,5 @@
 using Submodules.Utility.Services;
 using System;
-using System.Linq;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Inventories;
@@ -68,29 +67,31 @@ namespace ToolSmiths.InventorySystem.Services
 
         public void RestockVendorSupply()
         {
-            Clear(session.World.Sold);
+            session.World.Sold.RemoveAll();
             Fill(session.World.VendorSupply, () => items.RollEquipment(MagicFind));
         }
 
         public void RestockHealerSupply()
         {
-            Clear(session.World.Sold);
+            session.World.Sold.RemoveAll();
             Fill(session.World.HealerSupply, () => items.RollConsumable(MagicFind));
         }
 
         public void RestockTownStops()
         {
-            Clear(session.World.Sold);
+            session.World.Sold.RemoveAll();
             Fill(session.World.VendorSupply, () => items.RollEquipment(MagicFind));
             Fill(session.World.HealerSupply, () => items.RollConsumable(MagicFind));
         }
 
         // A hero without the stat (a template that never authored it) rolls at no bonus.
-        private float MagicFind => session.Hero.GetStat(StatName.IncreasedItemRarity)?.TotalValue ?? 0f;
+        public float MagicFind => session.Hero.GetStat(StatName.IncreasedItemRarity)?.TotalValue ?? 0f;
+
+        public float ItemQuantity => session.Hero.GetStat(StatName.IncreasedItemQuantity)?.TotalValue ?? 0f;
 
         private static void Fill(AbstractDimensionalContainer supply, Func<ItemInstance> roll)
         {
-            Clear(supply);
+            supply.RemoveAll();
 
             for (var i = 0; i < SupplyStock; i++)
             {
@@ -99,12 +100,6 @@ namespace ToolSmiths.InventorySystem.Services
             }
 
             supply.Sort();
-        }
-
-        private static void Clear(AbstractDimensionalContainer container)
-        {
-            foreach (var stored in container.StoredPackages.ToList())
-                _ = container.RemoveAtPosition(stored.Key, stored.Value);
         }
     }
 }

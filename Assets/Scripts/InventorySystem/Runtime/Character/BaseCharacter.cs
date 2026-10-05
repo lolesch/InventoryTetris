@@ -35,47 +35,47 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         public uint CharacterLevel => Hero.Level;
 
         // The hero the reactions below are bound to. A face that reads its hero off the Session
-        // (LocalPlayer) outlives a Stop with scene reload disabled, and the next Play entry (or a
-        // hero load, #114) hands it a different hero, so the binding follows the hero it sees.
+        // (LocalPlayer) outlives a Stop with scene reload disabled, and the next Play entry hands
+        // it a different hero. Awake and Start do not run again, OnEnable does, and the boot has
+        // already built the new Session by then, so each enable binds to the hero it finds and
+        // each disable lets go of the one it bound. A hero load that swaps the hero under an
+        // enabled face (#114) has to disable and enable it, or this has to grow an event.
         private Hero _bound;
 
-        protected void Start() => Bind(Hero);
-
-        private void Update()
+        private void OnEnable()
         {
-            var hero = Hero;
+            _bound = Hero;
 
-            if (!ReferenceEquals(hero, _bound))
-                Bind(hero);
+            // A template without a Health or Resource stat has nothing to react to; skip it.
+            var health = _bound.GetResource(StatName.Health);
+            if (health != null)
+                health.CurrentHasDepleted += OnDeath;
+
+            var resource = _bound.GetResource(StatName.Resource);
+            if (resource != null)
+                resource.CurrentHasDepleted += CharacterResourceWarning;
+
+            _bound.DamageDealt += LogDamageDealt;
+            _bound.DamageReceived += LogDamageReceived;
         }
 
-        private void Bind(Hero hero)
+        private void OnDisable()
         {
-            Unbind(_bound);
-            _bound = hero;
-
-            var health = hero.GetResource(StatName.Health);
-            health.CurrentHasDepleted += OnDeath;
-
-            var resource = hero.GetResource(StatName.Resource);
-            resource.CurrentHasDepleted += CharacterResourceWarning;
-
-            hero.DamageDealt += LogDamageDealt;
-            hero.DamageReceived += LogDamageReceived;
-        }
-
-        private void Unbind(Hero hero)
-        {
-            if (hero == null)
+            if (_bound == null)
                 return;
 
-            hero.GetResource(StatName.Health).CurrentHasDepleted -= OnDeath;
-            hero.GetResource(StatName.Resource).CurrentHasDepleted -= CharacterResourceWarning;
-            hero.DamageDealt -= LogDamageDealt;
-            hero.DamageReceived -= LogDamageReceived;
-        }
+            var health = _bound.GetResource(StatName.Health);
+            if (health != null)
+                health.CurrentHasDepleted -= OnDeath;
 
-        private void OnDestroy() => Unbind(_bound);
+            var resource = _bound.GetResource(StatName.Resource);
+            if (resource != null)
+                resource.CurrentHasDepleted -= CharacterResourceWarning;
+
+            _bound.DamageDealt -= LogDamageDealt;
+            _bound.DamageReceived -= LogDamageReceived;
+            _bound = null;
+        }
 
         /// <summary>
         /// Applies one step of Health, Resource and Shield regeneration for

@@ -152,18 +152,14 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// reference to every display it owns - the direction that broke once the Vendor's slot
         /// grids started spawning at runtime instead of being hand-placed. Subscribed from
         /// <see cref="AbstractContainerDisplay.OnEnable"/>; mirrors
-        /// <see cref="TrySubscribeContextChanged"/>'s guard-and-resolve shape, so a display
-        /// enabling mid-domain-reload or at edit time is left unbound rather than creating a
-        /// provider (issue #46).
+        /// <see cref="TrySubscribeContextChanged"/>'s guard, so a display enabling at edit time is
+        /// left unbound (issue #46). The container comes from the inventory service, so no
+        /// provider object has to exist in the scene (#112).
         /// </summary>
         /// <returns>Whether <paramref name="display"/> was actually bound.</returns>
         public static bool TryRegisterDisplay(AbstractContainerDisplay display, ContainerRole role)
         {
             if (!Application.isPlaying)
-                return false;
-
-            var provider = Instance;
-            if (provider == null)
                 return false;
 
             var container = InventoryService.Instance.ContainerFor(role);
@@ -187,8 +183,8 @@ namespace ToolSmiths.InventorySystem.Inventories
             InventoryService.Instance.QuickMoveFor(source);
 
         // The item service holds no hero: the debug rolls and the Restock hand it the player's bonuses.
-        private static float MagicFind => Session.Instance.Hero.GetStatValue(StatName.IncreasedItemRarity);
-        private static float ItemQuantity => Session.Instance.Hero.GetStatValue(StatName.IncreasedItemQuantity);
+        private static float MagicFind => InventoryService.Instance.MagicFind;
+        private static float ItemQuantity => InventoryService.Instance.ItemQuantity;
 
         private void AddEquipment(EquipmentType equipmentType)
         {
@@ -222,12 +218,7 @@ namespace ToolSmiths.InventorySystem.Inventories
                 _ = InventoryService.Instance.PickUpOrStash(ItemService.Instance.RollCurrency());
         }
 
-        public void RemoveAllItems(AbstractDimensionalContainer container)
-        {
-            var storedPackages = container?.StoredPackages.ToList();
-            for (var i = 0; i < storedPackages.Count; i++)
-                _ = container.RemoveAtPosition(storedPackages[i].Key, storedPackages[i].Value);
-        }
+        public void RemoveAllItems(AbstractDimensionalContainer container) => container?.RemoveAll();
 
         public void SetAmountText() => amountText.text = amountSlider.value.ToString();
 

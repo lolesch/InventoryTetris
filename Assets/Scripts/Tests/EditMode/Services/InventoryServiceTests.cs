@@ -166,6 +166,25 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(session.World.VendorSupply.StoredPackages, Has.Count.EqualTo(once));
         }
 
+        // ── the Hero's bonuses ───────────────────────────────────────────────
+
+        [Test]
+        public void MagicFindAndItemQuantity_AreTheHerosStatTotals_AndNeverAnError()
+        {
+            var hero = session.Hero;
+            Assume.That(hero.GetStat(StatName.IncreasedItemRarity), Is.Not.Null, "the authored hero has the stat");
+            Assume.That(hero.GetStat(StatName.IncreasedItemQuantity), Is.Not.Null, "the authored hero has the stat");
+
+            hero.AddItemStats(new[]
+            {
+                new CharacterStatModifier(StatName.IncreasedItemRarity, new StatModifier(new UnityEngine.Vector2Int(0, 1000), 10f)),
+                new CharacterStatModifier(StatName.IncreasedItemQuantity, new StatModifier(new UnityEngine.Vector2Int(0, 1000), 20f)),
+            });
+
+            Assert.That(service.MagicFind, Is.EqualTo(hero.GetStatValue(StatName.IncreasedItemRarity)).And.GreaterThan(0f));
+            Assert.That(service.ItemQuantity, Is.EqualTo(hero.GetStatValue(StatName.IncreasedItemQuantity)).And.GreaterThan(0f));
+        }
+
         // ── the session is read on every call ────────────────────────────────
 
         [Test]

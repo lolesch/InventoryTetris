@@ -27,6 +27,12 @@ namespace ToolSmiths.InventorySystem.Services
         /// </summary>
         bool PickUpOrStash(Package package);
 
+        /// <summary>The Hero's magic find, handed to every roll. A hero whose template never authored the stat has none: 0, not an error.</summary>
+        float MagicFind { get; }
+
+        /// <summary>The Hero's item quantity bonus, handed to every loot roll. 0 for a hero that never authored the stat.</summary>
+        float ItemQuantity { get; }
+
         /// <summary>The Vendor's Restock: refills its shelf, and clears the Sold container (#128).</summary>
         void RestockVendorSupply();
 
