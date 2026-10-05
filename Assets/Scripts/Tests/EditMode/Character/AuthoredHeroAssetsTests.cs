@@ -6,15 +6,16 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.Tests.EditMode.Character
 {
     /// <summary>
-    /// The authored side of issue #110: the scene's <c>LocalPlayer</c> is built from
-    /// <c>DefaultHero.asset</c> now, so its prefab has to point at it. <c>LocalPlayer</c> lives in
-    /// the predefined assembly, out of a test assembly's reach, so the component is read by name.
+    /// The authored side of issues #110 and #112: the scene's <c>LocalPlayer</c> wraps the hero the
+    /// boot built from <c>DefaultHero.asset</c> (<c>GameConfig.DefaultHero</c>), so its prefab holds
+    /// no template of its own. <c>LocalPlayer</c> lives in the predefined assembly, out of a test
+    /// assembly's reach, so the component is read by name.
     /// </summary>
     [TestFixture]
     public sealed class AuthoredHeroAssetsTests
     {
         [Test]
-        public void ThePlayerPrefab_BuildsItsLocalPlayerFromTheDefaultHeroData()
+        public void ThePlayerPrefab_HoldsNoHeroTemplate_TheBootBuildsTheHero()
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/PLAYER.prefab");
             Assert.That(prefab, Is.Not.Null, "Assets/Prefabs/PLAYER.prefab is missing");
@@ -23,11 +24,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Character
                 component => component != null && component.GetType().Name == "LocalPlayer");
             Assert.That(localPlayer, Is.Not.Null, "no LocalPlayer on the prefab");
 
-            var data = new SerializedObject(localPlayer).FindProperty("data").objectReferenceValue;
-
-            Assert.That(data, Is.Not.Null, "LocalPlayer.data is unassigned");
-            Assert.That(data, Is.InstanceOf<HeroData>());
-            Assert.That(AssetDatabase.GetAssetPath(data), Is.EqualTo("Assets/Scripts/InventorySystem/Characters/DefaultHero.asset"));
+            Assert.That(new SerializedObject(localPlayer).FindProperty("data"), Is.Null,
+                "a template on the component would be a second hero that the containers do not know");
         }
 
         private static MonoBehaviour ComponentNamed(GameObject prefab, string typeName) =>

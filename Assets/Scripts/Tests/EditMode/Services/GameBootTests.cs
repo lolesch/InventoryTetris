@@ -63,6 +63,64 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
+        public void Build_BuildsTheHeroAndItsWorld_FromTheDefaultHero_AndRegistersThem()
+        {
+            var registry = GameBoot.Build(testConfig);
+
+            var session = registry.Get<ISession>();
+
+            Assert.That(session.Hero.IsOutfitted, Is.True);
+            Assert.That(session.Hero.Level, Is.EqualTo(testConfig.DefaultHero.Level));
+            Assert.That(session.World.Context.Active, Is.EqualTo(Inventories.InventoryContext.None));
+            Assert.That(registry.Get<IInventoryService>(), Is.InstanceOf<InventoryService>());
+        }
+
+        [Test]
+        public void Build_StocksBothSupplies_AsTheShelvesWereOnAwake()
+        {
+            var session = GameBoot.Build(testConfig).Get<ISession>();
+
+            Assert.That(session.World.VendorSupply.StoredPackages, Is.Not.Empty);
+            Assert.That(session.World.HealerSupply.StoredPackages, Is.Not.Empty);
+            Assert.That(session.World.Sold.StoredPackages, Is.Empty);
+        }
+
+        [Test]
+        public void Build_WithAConfigThatHasNoDefaultHero_Throws_NamingTheField()
+        {
+            var so = new UnityEditor.SerializedObject(testConfig);
+            so.FindProperty($"<{nameof(GameConfig.DefaultHero)}>k__BackingField").objectReferenceValue = null;
+            _ = so.ApplyModifiedPropertiesWithoutUndo();
+
+            var e = Assert.Throws<InvalidOperationException>(() => GameBoot.Build(testConfig));
+
+            Assert.That(e.Message, Does.Contain(nameof(GameConfig.DefaultHero)));
+        }
+
+        [Test]
+        public void Arm_MakesTheSessionAndTheInventoryServiceReachableFromTheLocator()
+        {
+            GameBoot.Arm(testConfig);
+
+            Assert.That(Session.Instance, Is.SameAs(ServiceLocator.Get<ISession>()));
+            Assert.That(InventoryService.Instance, Is.SameAs(ServiceLocator.Get<IInventoryService>()));
+        }
+
+        [Test]
+        public void Arm_AfterAReset_BuildsANewHero_SoNothingLeaksFromTheLastPlayEntry()
+        {
+            GameBoot.Arm(testConfig);
+            var first = Session.Instance.Hero;
+            first.Wallet.Deposit(new ToolSmiths.InventorySystem.Data.Currency(7u));
+
+            ServiceLocator.Reset();
+            GameBoot.Arm(testConfig);
+
+            Assert.That(Session.Instance.Hero, Is.Not.SameAs(first));
+            Assert.That(Session.Instance.Hero.Wallet.Balance.Total, Is.Zero);
+        }
+
+        [Test]
         public void Arm_MakesTheItemServiceReachableFromTheLocator()
         {
             GameBoot.Arm(testConfig);

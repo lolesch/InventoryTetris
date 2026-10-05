@@ -40,8 +40,25 @@ namespace ToolSmiths.InventorySystem.Services
             if (config == null)
                 throw MissingConfig();
 
+            if (config.DefaultHero == null)
+                throw new InvalidOperationException(
+                    $"{nameof(GameConfig)}.{nameof(GameConfig.DefaultHero)} is not assigned - {nameof(GameBoot)} cannot build a Hero without it.");
+
             var registry = new ServiceRegistry();
-            registry.Register<IItemService>(new ItemService(config, new UnityRollSource()));
+
+            var items = new ItemService(config, new UnityRollSource());
+            registry.Register<IItemService>(items);
+
+            // The Hero, then its World, in the one order (SessionBuilder).
+            var session = SessionBuilder.Build(config, config.DefaultHero, items);
+            registry.Register<ISession>(session);
+
+            var inventory = new InventoryService(session, items);
+            registry.Register<IInventoryService>(inventory);
+
+            // Both Supplies start stocked, as the Vendor's and Healer's shelves were on Awake.
+            inventory.RestockTownStops();
+
             return registry;
         }
 

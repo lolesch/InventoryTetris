@@ -421,6 +421,14 @@ a reference won't resolve.
   the old `<Name>k__BackingField` keys, so `Example.unity` was not touched; its `Hero` wraps those
   same instances. Verified in a batch-mode Play run that the scene's values carried over (level 5,
   `SpendResource` off, Shield 250). It goes with #117.
+- **The Hero and the World are built at boot** (#112): `SessionBuilder` (hero, then what it owns, then
+  the World) is called by `GameBoot.Build` with `GameConfig.DefaultHero`, so a missing default hero
+  fails at boot. `Services` now references `Characters`; `Characters` references `Items` and
+  `Simulation` (`Hero` is an `IItemReceiver` and owns the `HeroBehaviour`). The container sizes and
+  the Behaviour Profile defaults in `GameConfig` are **live** now, and the providers' own copies are
+  gone (`InventoryProvider`'s sizes, `SimulationProvider`'s six slider fields), so the scene still
+  holds their stale serialized values, harmless until a scene save drops them. `PLAYER.prefab`'s
+  `LocalPlayer` has no `data` field any more.
 - **Static state needs a `SubsystemRegistration` reset** with domain reload disabled
   (`ServiceLocator`, `GameLoop` have one), **and a clear on `EnteredEditMode`** so Edit Mode never
   reads the last session's services as armed. Not on `ExitingPlayMode`: the services are armed

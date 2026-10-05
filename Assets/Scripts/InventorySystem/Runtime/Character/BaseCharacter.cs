@@ -23,7 +23,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
         private Hero _hero;
 
-        public Hero Hero => _hero ??= BuildHero();
+        public virtual Hero Hero => _hero ??= BuildHero();
 
         protected abstract Hero BuildHero();
 
@@ -34,21 +34,47 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
         public uint CharacterLevel => Hero.Level;
 
-        protected void Start()
+        // The hero the reactions below are bound to. A face that reads its hero off the Session
+        // (LocalPlayer) outlives a Stop with scene reload disabled, and the next Play entry hands
+        // it a different hero. Awake and Start do not run again, OnEnable does, and the boot has
+        // already built the new Session by then, so each enable binds to the hero it finds and
+        // each disable lets go of the one it bound. A hero load that swaps the hero under an
+        // enabled face (#114) has to disable and enable it, or this has to grow an event.
+        private Hero _bound;
+
+        private void OnEnable()
         {
-            var health = Hero.GetResource(StatName.Health);
-            health.CurrentHasDepleted -= OnDeath;
-            health.CurrentHasDepleted += OnDeath;
+            _bound = Hero;
 
-            var resource = Hero.GetResource(StatName.Resource);
-            resource.CurrentHasDepleted -= CharacterResourceWarning;
-            resource.CurrentHasDepleted += CharacterResourceWarning;
+            // A template without a Health or Resource stat has nothing to react to; skip it.
+            var health = _bound.GetResource(StatName.Health);
+            if (health != null)
+                health.CurrentHasDepleted += OnDeath;
 
-            Hero.DamageDealt -= LogDamageDealt;
-            Hero.DamageDealt += LogDamageDealt;
+            var resource = _bound.GetResource(StatName.Resource);
+            if (resource != null)
+                resource.CurrentHasDepleted += CharacterResourceWarning;
 
-            Hero.DamageReceived -= LogDamageReceived;
-            Hero.DamageReceived += LogDamageReceived;
+            _bound.DamageDealt += LogDamageDealt;
+            _bound.DamageReceived += LogDamageReceived;
+        }
+
+        private void OnDisable()
+        {
+            if (_bound == null)
+                return;
+
+            var health = _bound.GetResource(StatName.Health);
+            if (health != null)
+                health.CurrentHasDepleted -= OnDeath;
+
+            var resource = _bound.GetResource(StatName.Resource);
+            if (resource != null)
+                resource.CurrentHasDepleted -= CharacterResourceWarning;
+
+            _bound.DamageDealt -= LogDamageDealt;
+            _bound.DamageReceived -= LogDamageReceived;
+            _bound = null;
         }
 
         /// <summary>

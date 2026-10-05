@@ -380,6 +380,14 @@ namespace ToolSmiths.InventorySystem.Inventories
         public virtual bool CanReturnTo(Vector2Int position, ItemInstance item) =>
             item != null && IsEmptySpace(position, ViewOf(item).Dimensions, out _);
 
+        /// <summary>Takes every stored package out, one <see cref="RemoveAtPosition"/> at a time, so a
+        /// subclass's removal hook runs for each.</summary>
+        public void RemoveAll()
+        {
+            foreach (var stored in StoredPackages.ToList())
+                _ = RemoveAtPosition(stored.Key, stored.Value);
+        }
+
         // TODO package should implement IComparable
         public void Sort()
         {

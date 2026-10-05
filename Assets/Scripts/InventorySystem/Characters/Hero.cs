@@ -4,6 +4,8 @@ using System.Linq;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Inventories;
+using ToolSmiths.InventorySystem.Items;
+using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Runtime.Character
@@ -18,9 +20,16 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
     /// reaching into a UI pool, and the <c>LocalPlayer</c> component is only a wrapper that
     /// delegates here. Levelling up heals the hero itself, not through the character locator.
     ///
-    /// <see cref="IStatReceiver"/> is the seat the container core takes it by.
+    /// <see cref="IStatReceiver"/> is the seat the container core takes it by, and
+    /// <see cref="IItemReceiver"/> the one loot, a Buy and the Corpse recovery put items through.
+    ///
+    /// What the hero owns besides its stats - Equipment, Inventory, Stash, Wallet and the
+    /// Behaviour Profile - arrives through <see cref="Outfit"/>, after construction, because the
+    /// Equipment takes the hero as its stat receiver and so cannot exist before it. The one place
+    /// that order is written down is <c>SessionBuilder</c>; a hero that was never outfitted (the
+    /// legacy dummy) holds none of it and says so when asked.
     /// </summary>
-    public sealed class Hero : IStatReceiver
+    public sealed class Hero : IStatReceiver, IItemReceiver
     {
         private readonly CharacterStat[] _stats;
         private readonly CharacterResource[] _resources;
@@ -32,6 +41,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         private float _healthSecondsEmpty;
         private float _resourceSecondsEmpty;
         private float _shieldSecondsEmpty;
+
+        private CharacterEquipment _equipment;
+        private CharacterInventory _inventory;
+        private CharacterInventory _stash;
+        private Wallet _wallet;
+        private HeroBehaviour _behaviour;
 
         /// <summary>A new hero from a template: every stat and resource at its base value, and full but for the XP.</summary>
         public Hero(HeroData data)
@@ -95,6 +110,57 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         /// its total.
         /// </summary>
         public event Action StatsChanged;
+
+        // --- what the hero owns -------------------------------------------------------------------
+
+        /// <summary>What the hero wears. Throws if the hero was never <see cref="Outfit"/>ted.</summary>
+        public CharacterEquipment Equipment => _equipment ?? throw NotOutfitted();
+
+        /// <summary>The bag. Throws if the hero was never <see cref="Outfit"/>ted.</summary>
+        public CharacterInventory Inventory => _inventory ?? throw NotOutfitted();
+
+        /// <summary>The Stash, per hero for the MVP (ADR-0014). Throws if the hero was never <see cref="Outfit"/>ted.</summary>
+        public CharacterInventory Stash => _stash ?? throw NotOutfitted();
+
+        /// <summary>The spendable money, backed by <see cref="Inventory"/>'s coin cells. Throws if the hero was never <see cref="Outfit"/>ted.</summary>
+        public Wallet Wallet => _wallet ?? throw NotOutfitted();
+
+        /// <summary>The six sliders the player sets on the hero (Behaviour Profile). Throws if the hero was never <see cref="Outfit"/>ted.</summary>
+        public HeroBehaviour Behaviour => _behaviour ?? throw NotOutfitted();
+
+        /// <summary>Whether <see cref="Outfit"/> has run.</summary>
+        public bool IsOutfitted => _equipment != null;
+
+        /// <summary>
+        /// Hands the hero what it owns, once. Called by the builder after the hero exists, because
+        /// the <paramref name="equipment"/> was built with the hero as its stat receiver.
+        /// </summary>
+        public void Outfit(CharacterEquipment equipment, CharacterInventory inventory, CharacterInventory stash,
+            Wallet wallet, HeroBehaviour behaviour)
+        {
+            if (IsOutfitted)
+                throw new InvalidOperationException("This Hero is already outfitted; build a new one instead of outfitting it twice.");
+
+            _equipment = equipment ?? throw new ArgumentNullException(nameof(equipment));
+            _inventory = inventory ?? throw new ArgumentNullException(nameof(inventory));
+            _stash = stash ?? throw new ArgumentNullException(nameof(stash));
+            _wallet = wallet ?? throw new ArgumentNullException(nameof(wallet));
+            _behaviour = behaviour ?? throw new ArgumentNullException(nameof(behaviour));
+        }
+
+        /// <summary>
+        /// The placement every acquisition shares: auto-equip into an empty slot, else the
+        /// Inventory, and nothing behind that. <c>false</c> means no room, so the caller decides
+        /// what that costs (<see cref="ItemAcquisition"/>).
+        /// </summary>
+        public bool PickUpItem(ItemInstance item, uint amount)
+        {
+            var package = new Package(null, item, amount);
+            return ItemAcquisition.TryPlace(ref package, Equipment, Inventory);
+        }
+
+        private static InvalidOperationException NotOutfitted() =>
+            new("This Hero has no Equipment, Inventory, Stash, Wallet or Behaviour Profile: it was never outfitted by the builder.");
 
         // --- stats --------------------------------------------------------------------------------
 

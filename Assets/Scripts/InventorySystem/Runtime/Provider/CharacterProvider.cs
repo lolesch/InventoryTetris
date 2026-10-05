@@ -18,7 +18,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         public void DummyDealsPhysicalDamageToPlayer() => DealDamage(Dummy, Player, DamageType.PhysicalDamage);
         public void DummyDealsMagicalDamageToPlayer() => DealDamage(Dummy, Player, DamageType.MagicalDamage);
-        public void KillPlayer() => Player.GetResource(StatName.Health).DepleteCurrent();
+        public void KillPlayer() => Player.Hero.GetResource(StatName.Health).DepleteCurrent();
         public void KillDummy() => Dummy.GetResource(StatName.Health).DepleteCurrent();
 
         /// <summary>

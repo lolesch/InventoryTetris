@@ -9,7 +9,8 @@
         "InventorySystem.Locations",
         "InventorySystem.Probability",
         "InventorySystem.Containers",
-        "InventorySystem.Simulation"
+        "InventorySystem.Simulation",
+        "InventorySystem.Characters"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

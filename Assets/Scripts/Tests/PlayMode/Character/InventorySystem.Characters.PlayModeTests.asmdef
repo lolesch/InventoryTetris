@@ -5,6 +5,7 @@
         "InventorySystem.Characters",
         "InventorySystem.Data",
         "InventorySystem.Services",
+        "Utility",
         "Unity.TextMeshPro",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
