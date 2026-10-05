@@ -22,9 +22,10 @@ namespace ToolSmiths.InventorySystem.Services
     /// data, the currency icons, the container sizes, the simulation tuning defaults and the
     /// Locations. The item data is live: <see cref="ItemService"/> is built from it (#109). So are
     /// the default hero, the container sizes and the Behaviour Profile defaults: <see cref="SessionBuilder"/>
-    /// builds the Hero and the World from them (#112). The rest of the tuning and the Locations are
-    /// still read from their providers' own copies until each is replaced, so a value changed
-    /// here is not live until then.
+    /// builds the Hero and the World from them (#112), and <see cref="SimulationService"/> reads the
+    /// cast cost and the Death penalty fractions from it (#113). The Locations are still read from
+    /// their providers' own copies until each is replaced, so a value changed here is not live
+    /// until then.
     /// </summary>
     public sealed class GameConfig : ScriptableObject
     {

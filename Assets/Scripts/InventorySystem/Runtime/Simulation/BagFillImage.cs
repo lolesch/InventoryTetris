@@ -1,5 +1,6 @@
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Runtime.Provider;
+using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
 using UnityEngine.UI;

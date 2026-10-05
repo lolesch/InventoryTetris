@@ -429,6 +429,13 @@ a reference won't resolve.
   gone (`InventoryProvider`'s sizes, `SimulationProvider`'s six slider fields), so the scene still
   holds their stale serialized values, harmless until a scene save drops them. `PLAYER.prefab`'s
   `LocalPlayer` has no `data` field any more.
+- **The simulation service owns the Run's rules** (#113): `SimulationService` builds the `RunState` lazily
+  per `World` (so a fresh World has no Run) and runs the Death and recovery rules against the Hero's
+  own `Corpse`. The engine-side adapters (`HeroCombatant`, `ContainerSettlementBag`,
+  `PlayerWalletLedger`, `ContainerBagGauge`) moved from `Runtime/Simulation/` into `Services/`, the
+  one asmdef that can see a `Hero`; `Characters` now references `Locations` (`Hero.SelectedLocation`).
+  A recovered chest goes through `Hero.PickUpItem`, so it auto-equips rather than landing in the bag.
+  `SimulationProvider` is an empty shell left on `SIMULATION_PROVIDER` in `Example.unity` until #119.
 - **Static state needs a `SubsystemRegistration` reset** with domain reload disabled
   (`ServiceLocator`, `GameLoop` have one), **and a clear on `EnteredEditMode`** so Edit Mode never
   reads the last session's services as armed. Not on `ExitingPlayMode`: the services are armed

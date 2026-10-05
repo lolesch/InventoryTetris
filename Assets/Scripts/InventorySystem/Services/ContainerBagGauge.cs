@@ -3,7 +3,7 @@ using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Simulation;
 
-namespace ToolSmiths.InventorySystem.Runtime.Simulation
+namespace ToolSmiths.InventorySystem.Services
 {
     /// <summary>
     /// The <see cref="IBagGauge"/> adapter over a real container (issue #23) — the one thing the

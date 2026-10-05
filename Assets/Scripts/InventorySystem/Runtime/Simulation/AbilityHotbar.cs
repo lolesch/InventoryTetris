@@ -1,4 +1,5 @@
 using Submodules.Utility.UI;
+using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
 
@@ -22,40 +23,36 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         [SerializeField] private ScaleTween strikeIcon;
         [SerializeField] private ScaleTween castIcon;
 
+        private RunState run;
         private EncounterSimulation encounter;
 
         /// <summary>
         /// Play mode only, mirroring <see cref="RunPhasePanel.OnEnable"/>'s guard: a panel that
         /// enables edit-adjacent (scene load, domain reload, prefab isolation) is left
-        /// unsubscribed rather than creating a provider.
+        /// unsubscribed rather than reading a service that was never armed.
         /// </summary>
         private void OnEnable()
         {
             if (!Application.isPlaying)
                 return;
 
-            var provider = SimulationProvider.Instance;
-            if (provider == null)
-                return;
+            run = SimulationService.Instance.Run;
+            run.PhaseChanged -= SyncToPhase;
+            run.PhaseChanged += SyncToPhase;
+            run.Relocated -= OnRelocated;
+            run.Relocated += OnRelocated;
 
-            provider.Run.PhaseChanged -= SyncToPhase;
-            provider.Run.PhaseChanged += SyncToPhase;
-            provider.Run.Relocated -= OnRelocated;
-            provider.Run.Relocated += OnRelocated;
-
-            SyncToPhase(provider.Run.Phase);
+            SyncToPhase(run.Phase);
         }
 
+        // Lets go of the Run it subscribed to, not whatever the service holds by now.
         private void OnDisable()
         {
-            if (Application.isPlaying)
+            if (run != null)
             {
-                var provider = SimulationProvider.Instance;
-                if (provider != null)
-                {
-                    provider.Run.PhaseChanged -= SyncToPhase;
-                    provider.Run.Relocated -= OnRelocated;
-                }
+                run.PhaseChanged -= SyncToPhase;
+                run.Relocated -= OnRelocated;
+                run = null;
             }
 
             UnsubscribeEncounter();
@@ -76,7 +73,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         private void SubscribeEncounter()
         {
-            encounter = SimulationProvider.Instance.Run.Encounter;
+            encounter = run.Encounter;
             if (encounter == null)
                 return;
 

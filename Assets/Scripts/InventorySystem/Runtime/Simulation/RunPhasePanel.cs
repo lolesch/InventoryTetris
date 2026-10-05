@@ -1,4 +1,5 @@
 using Submodules.Utility.UI;
+using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
 
@@ -27,36 +28,35 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                  "enable, against whatever the Run's phase actually is right now.")]
         [SerializeField] private RunPhase activeDuring = RunPhase.InTown;
 
+        private RunState _run;
+
         /// <summary>
         /// Play mode only, mirroring <see cref="ToolSmiths.InventorySystem.Inventories.InventoryProvider.TrySubscribeContextChanged"/>'s
         /// guard: a panel that enables edit-adjacent (scene load, domain reload, prefab
-        /// isolation) is left unsubscribed rather than creating a provider.
+        /// isolation) is left unsubscribed rather than reading a service that was never armed.
         /// </summary>
         private void OnEnable()
         {
             if (!Application.isPlaying)
                 return;
 
-            var provider = SimulationProvider.Instance;
-            if (provider == null)
-                return;
+            _run = SimulationService.Instance.Run;
+            _run.PhaseChanged -= SyncToPhase;
+            _run.PhaseChanged += SyncToPhase;
 
-            provider.Run.PhaseChanged -= SyncToPhase;
-            provider.Run.PhaseChanged += SyncToPhase;
-
-            SyncToPhase(provider.Run.Phase);
+            SyncToPhase(_run.Phase);
         }
 
+        // Lets go of the Run it subscribed to, not whatever the service holds by now.
         protected override void OnDisable()
         {
             base.OnDisable();
 
-            if (!Application.isPlaying)
+            if (_run == null)
                 return;
 
-            var provider = SimulationProvider.Instance;
-            if (provider != null)
-                provider.Run.PhaseChanged -= SyncToPhase;
+            _run.PhaseChanged -= SyncToPhase;
+            _run = null;
         }
 
         private void SyncToPhase(RunPhase phase) => ToggleState(phase == activeDuring);

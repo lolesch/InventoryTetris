@@ -1,4 +1,5 @@
 using Submodules.Utility.UI;
+using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
 
@@ -44,10 +45,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         {
             base.BeforeAppear();
 
-            var provider = SimulationProvider.Instance;
-            if (provider == null) return;
-
-            _behaviour = provider.Behaviour;
+            // The Hero's Behaviour Profile: the sliders write it live, and the sim reads it live.
+            _behaviour = Session.Instance.Hero.Behaviour;
 
             ApplyAll();
 

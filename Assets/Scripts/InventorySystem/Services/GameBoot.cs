@@ -46,7 +46,10 @@ namespace ToolSmiths.InventorySystem.Services
 
             var registry = new ServiceRegistry();
 
-            var items = new ItemService(config, new UnityRollSource());
+            // One roll source for every draw the services make, so a test seeds it once.
+            var rolls = new UnityRollSource();
+
+            var items = new ItemService(config, rolls);
             registry.Register<IItemService>(items);
 
             // The Hero, then its World, in the one order (SessionBuilder).
@@ -59,17 +62,21 @@ namespace ToolSmiths.InventorySystem.Services
             // Both Supplies start stocked, as the Vendor's and Healer's shelves were on Awake.
             inventory.RestockTownStops();
 
+            registry.Register<ISimulationService>(new SimulationService(session, items, inventory, config, rolls));
+
             return registry;
         }
 
-        /// <summary>Builds from <paramref name="config"/>, arms the locator and installs the frame
-        /// loop. Builds first, so a failed build leaves nothing half-armed.</summary>
+        /// <summary>Builds from <paramref name="config"/>, arms the locator, installs the frame loop
+        /// and hands it the simulation's tick. Builds first, so a failed build leaves nothing
+        /// half-armed.</summary>
         public static void Arm(GameConfig config)
         {
             var registry = Build(config);
 
             ServiceLocator.Install(registry);
             GameLoop.Install();
+            GameLoop.Add(registry.Get<ISimulationService>().Tick);
         }
 
         private static InvalidOperationException MissingConfig() => new(

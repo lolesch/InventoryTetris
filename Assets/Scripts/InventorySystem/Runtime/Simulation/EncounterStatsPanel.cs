@@ -1,3 +1,4 @@
+using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Simulation;
 using TMPro;
 using UnityEngine;
@@ -20,18 +21,17 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         private void Update()
         {
-            var provider = SimulationProvider.Instance;
-            if (provider == null) return;
+            var simulation = SimulationService.Instance;
 
-            RefreshCombatStats(provider);
-            RefreshLastRun(provider.Run);
+            RefreshCombatStats(simulation);
+            RefreshLastRun(simulation.Run);
         }
 
-        private void RefreshCombatStats(SimulationProvider provider)
+        private void RefreshCombatStats(ISimulationService simulation)
         {
             if (combatStatsText == null) return;
 
-            var encounter = provider.Run.Encounter;
+            var encounter = simulation.Run.Encounter;
             if (encounter == null)
             {
                 combatStatsText.text = string.Empty;
@@ -39,7 +39,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             }
 
             var hero = encounter.Hero;
-            var groundDrops = provider.LootFlow?.GroundDrops.Count ?? 0;
+            var groundDrops = simulation.LootFlow?.GroundDrops.Count ?? 0;
 
             combatStatsText.text =
                 (encounter.IsArriving
@@ -49,7 +49,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 $"Hero HP {hero.HealthFraction * 100f:0}%   Resource {hero.ResourceFraction * 100f:0}%\n" +
                 $"XP gained {encounter.SettledXp}\n" +
                 $"Sim time {encounter.Duration:0.0}s\n" +
-                $"Ground drops {groundDrops}   coins banked {provider.Run.CurrencyBanked:n0}";
+                $"Ground drops {groundDrops}   coins banked {simulation.Run.CurrencyBanked:n0}";
         }
 
         private void RefreshLastRun(RunState run)

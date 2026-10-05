@@ -162,6 +162,18 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
+        public void Arm_HostsTheSimulationsTick_OnTheGameLoop()
+        {
+            GameBoot.Arm(testConfig);
+            var resource = Session.Instance.Hero.GetResource(ToolSmiths.InventorySystem.Data.Enums.StatName.Resource);
+            _ = resource.RemoveFromCurrent(resource.TotalValue);
+
+            GameLoop.Tick(1f);
+
+            Assert.That(resource.CurrentValue, Is.GreaterThan(0f), "the loop ticked the hero's regeneration, with nothing spawned or added");
+        }
+
+        [Test]
         public void Arm_AfterAReset_StartsFromACleanBoot_WithoutDoublingTheLoop()
         {
             GameBoot.Arm(testConfig);

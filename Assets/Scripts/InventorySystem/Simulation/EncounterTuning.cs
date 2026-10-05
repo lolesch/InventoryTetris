@@ -20,7 +20,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// Whether the first Encounter waits one spawn delay — the Location's own
         /// <c>SpawnInterval ± SpawnJitter</c> — before its opening bodies arrive, instead of
         /// having them at open. Off by default so a test sees the Roster the moment the sim is
-        /// built; the <c>SimulationProvider</c> turns it on for a real Send or Relocate.
+        /// built; the <c>SimulationService</c> turns it on for a real Send or Relocate.
         /// </summary>
         public bool DelayFirstSpawn { get; set; }
 

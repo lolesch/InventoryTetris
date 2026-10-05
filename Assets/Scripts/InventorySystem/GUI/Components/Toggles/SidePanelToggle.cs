@@ -18,9 +18,10 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
     /// Stops. It does not decide whether the panel is up: the panel subscribes to the Inventory
     /// Context and derives its own visibility (<see cref="SidePanel"/>), which is why
     /// <see cref="OnToggle"/> is empty - the hook a <see cref="PanelToggle"/> would have faded the
-    /// panel from is simply not this class's job. The Town Stops going non-interactable during a
-    /// Run (<see cref="InventoryProvider.IsFieldReachable"/>) is the same split from the other
-    /// side - the input-side expression of a fact the context is the authority for.</para>
+    /// panel from is simply not this class's job. Reachability follows the same rule from the
+    /// other side: the Town Stops sit under the InTown face, so while that face is hidden
+    /// (a Run, or the Go Venture preview) its <c>CanvasGroup</c> takes them out of reach of a
+    /// click and of <see cref="hotkey"/> alike - no check of the toggle's own.</para>
     ///
     /// <para><b>The pressed visual resyncs from the context, not from the group it no longer
     /// shares an authority with.</b> <see cref="SyncToContext"/> sets this toggle's own state from
@@ -53,15 +54,11 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
                  "authored.")]
         [SerializeField] private SidePanel panel;
 
-        [Tooltip("Optional hotkey. Inert whenever the toggle is non-interactable - which " +
-                 "InventoryProvider.IsFieldReachable arranges for the Field face and for InField.")]
+        [Tooltip("Optional hotkey. Inert whenever the toggle is non-interactable - which includes " +
+                 "sitting under a hidden panel: a Town Stop is out of reach while the InTown face " +
+                 "is hidden, whereas the Hero Panel's toggle sits under the HUD and keeps its hotkey " +
+                 "in the field.")]
         [SerializeField] private KeyCode hotkey = KeyCode.None;
-
-        [Tooltip("Whether this toggle is gated by InventoryProvider.IsFieldReachable at all. " +
-                 "Only ever consulted for a toggle in a RadioGroup; an ungrouped toggle, such " +
-                 "as the Hero Panel's, is never field-gated - the Hero is reachable in both " +
-                 "faces, so its hotkey must survive the field.")]
-        [SerializeField] private bool gatedByFieldReachability = true;
 
         protected override void OnClick() => UserToggle();
 
@@ -84,23 +81,15 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         }
 
         /// <summary>
-        /// <c>interactable</c> is the phase gate: unreachable whenever
-        /// <see cref="InventoryProvider.IsFieldReachable"/> says so (InField and the Go Venture
-        /// preview alike, since both show the same face) - so no <c>RunPhase</c> dependency is
-        /// needed here. Asked every frame rather than pushed by a controller (issue #85), the
-        /// same way <see cref="SyncToContext"/> asks the panel instead of being told.
-        ///
-        /// <para>Only a toggle in a <see cref="ToggleGroup"/> is gated - a Town Stop. The Hero
-        /// Panel's toggle belongs to no group and is reachable in both faces, so gating it would
-        /// take its hotkey away in the field for nothing; keying the gate on the group makes that
-        /// exemption structural instead of a per-instance checkbox the scene can get wrong.</para>
+        /// The hotkey, asked every frame like <see cref="SyncToContext"/> asks the panel. Reachability
+        /// is not decided here: <see cref="Selectable.IsInteractable"/> includes the
+        /// <c>CanvasGroup</c>s above this toggle, so a hidden parent panel (InTown while the Field face
+        /// is up) silences the key without a phase or provider dependency. The Hero Panel's toggle has
+        /// no such panel above it and stays reachable in both faces, structurally.
         /// </summary>
         private void Update()
         {
-            if (gatedByFieldReachability && RadioGroup && InventoryProvider.Instance != null)
-                interactable = InventoryProvider.Instance.IsFieldReachable;
-
-            if (hotkey == KeyCode.None || !interactable)
+            if (hotkey == KeyCode.None || !IsInteractable())
                 return;
 
             if (!Input.GetKeyDown(hotkey))
@@ -195,6 +184,19 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
                 Debug.LogWarning($"{name}: SidePanelToggle drives no panel - it will never " +
                                  "request the Inventory Context and its pressed visual cannot " +
                                  "track one (issues #84, #85).", gameObject);
+
+            // Reachability is the hierarchy's, not this toggle's: a Town Stop (grouped) must sit under
+            // the face that hides it, the Hero Panel's (ungrouped) under none, or the hotkey is wrong
+            // in one of the two faces.
+            var hidingPanel = GetComponentInParent<SimplePanel>(true);
+
+            if (RadioGroup && hidingPanel == null)
+                Debug.LogWarning($"{name}: a grouped SidePanelToggle sits under no SimplePanel - its hotkey " +
+                                 "stays live while the Town face is hidden.", gameObject);
+
+            if (!RadioGroup && hidingPanel != null)
+                Debug.LogWarning($"{name}: an ungrouped SidePanelToggle sits under '{hidingPanel.name}' - its " +
+                                 "hotkey goes dead whenever that panel is hidden.", gameObject);
         }
 #endif // UNITY_EDITOR
     }
