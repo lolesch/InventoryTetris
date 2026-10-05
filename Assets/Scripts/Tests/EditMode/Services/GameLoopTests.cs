@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text.RegularExpressions;
 using ToolSmiths.InventorySystem.Services;
 using UnityEditor;
@@ -36,8 +37,8 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         public void Tick_RunsEveryTicker_InTheOrderTheyWereAdded_WithTheDelta()
         {
             var seen = new List<string>();
-            _ = Add(dt => seen.Add($"a{dt}"));
-            _ = Add(dt => seen.Add($"b{dt}"));
+            _ = Add(dt => seen.Add($"a{dt.ToString(CultureInfo.InvariantCulture)}"));
+            _ = Add(dt => seen.Add($"b{dt.ToString(CultureInfo.InvariantCulture)}"));
 
             GameLoop.Tick(0.5f);
 
