@@ -530,7 +530,7 @@ substitute a different issue.
 ## Multi-device / knowledge that lives outside git
 
 - An agent's private memory is **per-machine** and does not sync. The shared, on-disk
-  channels are: this file, `CONTEXT.md`, `docs/adr/`, `dev/specs/`, and GitHub Issues.
+  channels are: this file, `GLOSSARY.md`, `docs/adr/`, `dev/specs/`, and GitHub Issues.
   If a fact matters on both the laptop and the tower, it belongs in one of those, not in
   memory.
 - **`NewArtwork`** branch (off an old `main`, pushed, no PR) is the only copy of three

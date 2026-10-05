@@ -23,7 +23,7 @@ See `docs/agents/triage-labels.md`.
 
 ### Domain docs
 
-Single-context: one `CONTEXT.md` at the repo root plus `docs/adr/`, both created lazily. See `docs/agents/domain.md`.
+Single-context: one `GLOSSARY.md` at the repo root plus `docs/adr/`, both created lazily. See `docs/agents/domain.md`.
 
 ### Coding conventions
 
@@ -55,4 +55,4 @@ That exclude is the enforcement; prefer leaving `docs/agents/` and `docs/adr/` o
 `main` -> `GitPage` merge anyway. Without it these files would be *published*, though
 not rendered: Jekyll copies files with no YAML front matter to the destination verbatim,
 so they would be fetchable at `/agents/issue-tracker.md` rather than turned into HTML.
-A root `CONTEXT.md` sits outside `docs/` and is never part of the site.
+A root `GLOSSARY.md` sits outside `docs/` and is never part of the site.

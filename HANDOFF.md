@@ -16,7 +16,7 @@ cd InventoryTetris
 git submodule update --init          # Assets/Submodules/Utility does NOT auto-checkout
 ```
 
-Then read `CLAUDE.md` → `CONTEXT.md` → `docs/agents/codebase-notes.md` before touching
+Then read `CLAUDE.md` → `GLOSSARY.md` → `docs/agents/codebase-notes.md` before touching
 Unity or assembly definitions. Agent memory does **not** travel between machines — the
 repo files are the shared channel now.
 
