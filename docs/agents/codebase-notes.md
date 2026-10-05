@@ -160,128 +160,45 @@ Whole run ~15 s. Three things make it lie if you skip them:
 
 Assert the triple from the section above (`CanvasGroup` alpha, announced context, group `ActiveMember`).
 A private field such as a display's bound `Container` is readable by reflection from the compiled Editor
-script. Delete the script and its `.meta` before committing.
+script.
 
 ## Enter Play Mode Settings — domain/scene reload disabled
 
-**Consequence for subscriptions, and it cost a session on 2026-09-21.** With both reloads
-disabled, a **scene object survives a Play session**: exiting Play calls `OnDisable` on it,
-but re-entering Play does **not** call `Awake` again — only `OnEnable`. So a component that
-subscribes to an event in `Awake` and unsubscribes in `OnDisable` is **permanently
-unsubscribed from the second Play entry onward**, silently, for the rest of the Editor
-session. Subscribe in `OnEnable` (and `OnDisable` to release), or the unsubscribe outlives
-the subscribe.
+`ProjectSettings/EditorSettings.asset` has both `DisableDomainReload` and `DisableSceneReload` on
+(`m_EnterPlayModeOptions: 3`). Two consequences:
 
-The symptom is nasty because it is half-working: a sibling that subscribes in `OnEnable`
-keeps reacting, so the *system* looks alive while this one component quietly stops. In #85 it
-read as "the panels moved but the toggle stayed pressed" — which looks like a logic bug in the
-toggle/context handshake, not like a lifecycle bug. Guard `OnEnable` with `override` when the
-base chain owns it (`Selectable` does); declaring a same-named method instead hides the
-base's rather than running beside it.
+- **A scene object survives a Play session.** Exiting Play calls `OnDisable`; re-entering does
+  **not** call `Awake` again, only `OnEnable`. A component that subscribes in `Awake` and
+  unsubscribes in `OnDisable` is permanently unsubscribed from the second Play entry on, silently,
+  while a sibling that subscribes in `OnEnable` keeps working, so the system looks half-alive (in
+  #85: "the panels moved but the toggle stayed pressed"). Subscribe in `OnEnable`, release in
+  `OnDisable`. Use `override` when the base chain owns `OnEnable` (`Selectable` does); a same-named
+  method hides the base's instead of running beside it.
+- **Statics survive Stop.** `AbstractSceneSingleton<T>._isQuitting` is set by `OnApplicationQuit`
+  and never reset, so the next Play entry would return `null` from every provider's `Instance`.
+  `Utility/Editor/ProviderQuittingResetGuard.cs` resets it on `ExitingEditMode`. It walks
+  `AbstractSceneSingleton<T>` because that declares the field: `GetField` never sees a private
+  base-class field through a derived type, so a guard that names the wrong type silently stops
+  working (it did, 2026-09-21, after the class split). After any refactor that moves a field between
+  base classes, grep for the guarded field's name; nothing fails to compile. No test covers the
+  guard. For new statics see the `SubsystemRegistration` bullet under Assembly definitions.
 
-`ProjectSettings/EditorSettings.asset` now has `m_EnterPlayModeOptionsEnabled: 1` /
-`m_EnterPlayModeOptions: 3` (both `DisableDomainReload` and `DisableSceneReload`) —
-applied 2026-09-18, verified live via the bridge
-(`EditorSettings.enterPlayModeOptionsEnabled` / `.enterPlayModeOptions`) on the
-`test/unity-6.6` worktree. Default was off; this is not 6.6-specific and is safe to
-carry onto any branch.
+## `com.unity.ai.assistant` — the bridge package
 
-**Read the "stale provider `Instance`" bullet above before relying on this.**
-`AbstractProvider<T>.Instance` (`Assets/Submodules/Utility/Provider/AbstractProvider.cs:24`)
-self-heals via Unity's overridden `== null` (true for a destroyed-but-not-literally-null
-object), not via domain reload — Play Mode exit always destroys play-only objects
-including `DontDestroyOnLoad` ones, reload or not, so a fresh `Instance` lookup on
-re-entry should still work. But the *existing* stale-static gotcha above was observed on
-an *irregular* exit path (`AssetDatabase.ImportAsset` while playing); disabling domain
-reload makes every *ordinary* exit behave a little more like that path (no full managed-state
-wipe in between). Re-validate with a few by-hand Play → Stop → Play cycles before trusting
-provider state across repeated sessions — don't assume this note alone proves it's fine.
-`SimulationProvider` and `TimerBootstrapper` both re-arm via
-`[RuntimeInitializeOnLoadMethod]`, which fires on every Play Mode entry independent of
-domain reload, so those two are already covered.
+Backs `unity-mcp`; pinned at `2.20.0-pre.1`. The manifest diff does not say why these versions are
+off limits:
 
-**The "re-validate" caution above found a real bug, 2026-09-19.** `AbstractProvider<T>`'s
-static `_isQuitting` flag (`AbstractProvider.cs:11`) is set `true` by `OnApplicationQuit`
-and never reset. In a build that's harmless — the process exits right after quitting, so
-there's no next session to leak into — but with domain reload disabled the flag survives
-Stop, and the *next* Play entry inherits `_isQuitting == true`, which makes
-`AbstractProvider<T>.Instance` return `null` unconditionally for every provider
-(`SimulationProvider`, `InventoryProvider`, `DragProvider`, `PreviewProvider`,
-`ItemProvider`, `CharacterProvider`, `SceneProvider`) for the rest of the Editor session.
-Symptom: `MinimapController.OnEnable` hit its `provider == null` guard and never called
-`SyncToPhase`, leaving both `inTownPanel`/`inFieldPanel` faded out on the second Play
-entry onward. Since this is purely an Editor artifact of disabled domain reload, the fix
-lives in `Assets/Submodules/Utility/Editor/ProviderQuittingResetGuard.cs`, not in
-`AbstractProvider<T>` itself: it resets every closed `AbstractProvider<T>`'s
-`_isQuitting` via reflection on `EditorApplication.playModeStateChanged`'s
-`ExitingEditMode` (the moment Play is pressed), mirroring what a fresh process would do.
-Verified live via the bridge: `SimulationProvider.Instance` was `null` on a second Play
-entry before the fix, resolves correctly after.
+- `2.7.0-pre.3` to `2.15.0-pre.2` cap MCP connections by Unity license tier; on this project's
+  **Personal** license they throttle the bridge. `2.16.0-pre.1` lifts the cap.
+- `2.13.0-pre.2` has an external livelock report on Unity 6000.5.1f1
+  ([CoplayDev/unity-mcp#1219](https://github.com/CoplayDev/unity-mcp/issues/1219)); not reproduced here.
+- `2.6.0-pre.1` trips Unity 6.6's `UAC0005` analyzer as a hard error.
 
-**That fix regressed silently, 2026-09-21.** `_isQuitting` no longer lives on
-`AbstractProvider<T>` — commit `3010155` (submodule) split the class into
-`AbstractSceneSingleton<T>` (scan/create/disable-duplicates, now the field's actual
-declaring type, `Provider/AbstractSceneSingleton.cs`) and a thinner `AbstractProvider<T>`
-(adds the `DontDestroyOnLoad` promise on top). `ProviderQuittingResetGuard` was never
-updated: it still walked the hierarchy for a closed `AbstractProvider<T>` and called
-`GetField("_isQuitting", ...)` on *that* type — but a private field declared on a base
-type is never visible through `GetField` on a derived type (`FlattenHierarchy` only
-surfaces inherited public/protected static members, never private ones), so the call
-silently returned `null` and the reset stopped firing for every `AbstractProvider<T>`
-consumer. It also never reached `DragProvider`/`PreviewProvider` at all, which the same
-split moved onto `AbstractSceneSingleton<T>` directly (no longer `DontDestroyOnLoad` —
-they're nested under the root canvas). Fixed by retargeting the walk at the closed
-`AbstractSceneSingleton<T>` instead — the common base for both the `AbstractProvider<T>`
-subtree and any direct `AbstractSceneSingleton<T>` consumer, and the type that actually
-declares the field. **Lesson for next time:** a reflection-based guard that hardcodes a
-type name silently stops working when that name's hierarchy changes — grep for the
-guarded field name after any refactor that moves fields between base classes, since nothing
-here would compile-fail. No automated test covers this guard (see the Tests section) —
-compiled clean via the bridge, not re-verified live in Play Mode this round.
-
-## `com.unity.ai.assistant` version — pin history and upgrade path
-
-This package backs the `unity-mcp` bridge (`Unity_RunCommand`, `Unity_GetConsoleLogs`,
-etc.) that the rest of this file assumes. Its version has moved twice for reasons that
-aren't visible from the manifest diff alone:
-
-- **Pinned at `2.6.0-pre.1`** (`115d4f4`) when the bridge was first added — the last
-  version before Unity license-tier connection gating existed.
-- **`2.7.0-pre.3` → `2.15.0-pre.2` cap MCP/AI-Gateway connections by Unity license
-  tier** (Personal / Pro / Enterprise). On a **Personal** license (this project's) this
-  range throttles the bridge. Lifted again in `2.16.0-pre.1` ("no longer capped or
-  gated by entitlement limits").
-- **`2.6.0-pre.1`'s own source trips Unity 6.6's `UAC0005` analyzer as a hard error** —
-  why the `test/unity-6.6` spike branch (`62c2f78`) removed the package entirely rather
-  than upgrade it.
-- **`2.13.0-pre.2` has an external, gdb-traced livelock report** on Unity 6000.5.1f1
-  (`AssetDatabase::InitialRefresh` spins forever) —
-  [CoplayDev/unity-mcp#1219](https://github.com/CoplayDev/unity-mcp/issues/1219). Not
-  reproduced by us, but avoid landing exactly on that version.
-
-**Verified 2026-09-18**, on the `test/unity-6.6` worktree with Unity 6000.6.0f1 and the
-Editor live-paired to the bridge: bumping straight to **`2.19.0-pre.2`** (current
-release — skip past the capped range and the `2.13.0-pre.2` report rather than stepping
-through it one minor version at a time) resolves clean, `0 error CS`, no `UAC0005`, and
-the EditMode suite passes **698/698** both headless (`-runTests -batchmode`) and live
-through the bridge itself. Every gotcha in this file's "Verifying a C# change compiles"
-section still holds at `2.19.0-pre.2`:
-
-- The reflection restriction is still enforced, but the error changed for the better —
-  it used to be an uncatchable `UNEXPECTED_ERROR: Object reference not set`
-  (`NullReferenceException`); it's now a named, catchable error: `"Script uses one or
-  more unauthorized namespaces: Namespace System.Reflection is imported at line 1."` The
-  workaround (put reflection in a compiled file under `Assets/Scripts/`) is unchanged.
-- The two-top-level-class `ICallbacks`/`IRunCommand` pattern for running the EditMode
-  suite through the bridge still compiles and runs as documented.
-- The dynamic script wrapping namespace (`Unity.AI.Assistant.Agent.Dynamic.Extension.Editor`)
-  is unchanged.
-
-**Not yet exercised:** a manual Play-mode smoke pass on `2.19.0-pre.2`/6.6 — only
-EditMode tests and ad hoc `RunCommand` scripts have run so far. The `test/unity-6.6`
-worktree itself is a stale spike (its `main` merge-base predates this file, `e9fbf70`)
-— treat its findings as validated guidance to replay on a fresh branch cut from current
-`main`, not as a branch to build the real upgrade on top of.
+To upgrade, jump straight to the current release rather than stepping through minors. Verified
+2026-09-18 at `2.19.0-pre.2` on Unity 6000.6.0f1: 0 `error CS`, EditMode suite green headless and
+through the bridge, every gotcha under "Verifying a C# change compiles" unchanged. The reflection
+restriction there is now a named, catchable error (`Script uses one or more unauthorized
+namespaces: Namespace System.Reflection ...`); the workaround is the same.
 
 ## `CS0103` / `CS0246` that is really a broken `.meta`
 
@@ -317,20 +234,15 @@ done
 **short** meta, all of them healthy. A scan built on it hands you a long, confident,
 entirely wrong worklist — that is exactly how #80 got filed.
 
-Measured 2026-09-19 (#80): **91 of 282** metas were **short** and **zero** were **cut**.
-Copying `Assets Packages ProjectSettings` to a scratch dir with **no `Library/`** and
-running EditMode there — the one check a warm Library cannot fake — gave 762/762 passing,
-no `CS0103`/`CS0246`, no `Parser Failure`. The same fresh-import run after normalising all
-91 gave the identical 762/762, and the `ForceReserializeAssets` pass that does it silently
-drops each meta's `timeCreated:` line. Both Unity (auto-creating a meta for a script a tool
-adds mid-compile) and hand-authoring produce the **short** shape; it costs nothing and
-normalising it buys nothing.
+Measured 2026-09-19 (#80): 91 of 282 metas were **short**, none **cut**; EditMode on a copy with no
+`Library/` passed 762/762 before and after normalising them, so leave **short** metas alone.
 
 To repair a genuinely **cut** meta: rewrite it canonically (`fileFormatVersion: 2` …
 `assetBundleVariant: ` + trailing newline), **preserving the committed GUID** — grep
 `Assets/Scenes/*.unity` for that GUID first; scene `m_Script` refs break if it changes.
 Then `AssetDatabase.ImportAsset(path, ForceUpdate | ForceSynchronousImport)` +
 `CompilationPipeline.RequestScriptCompilation()` through the bridge.
+
 ## Source is CRLF + UTF-8 — stream editors corrupt it silently
 
 Source under `Assets/Scripts/` is **CRLF-terminated UTF-8**, and the docstrings are dense
@@ -374,132 +286,62 @@ treats it as background dirt and discards it ~1 s later. Explicit saves always w
 ## Assembly definitions — namespace ≠ asmdef
 
 **Folder path decides which assembly a file compiles into; the namespace does not.**
-Re-derive the assembly graph folder-by-folder rather than trusting namespace names when
-a reference won't resolve.
+Re-derive the assembly graph folder-by-folder (the `*.asmdef` files) rather than trusting
+namespace names when a reference won't resolve.
 
-- **`Assembly-CSharp` has zero test coverage in this repo.** Any code that needs to be
-  unit-tested must live in its own asmdef, not in `Assembly-CSharp`. This is why
-  `LocationConfig` got `InventorySystem.Locations.asmdef` instead of the simpler home.
-- **`InventorySystem.Simulation` and `InventorySystem.Locations` are Unity-free by
-  convention, not by flag.** `noEngineReferences` is `false`, but files still get **no**
-  implicit `using`. A file under `Assets/Scripts/InventorySystem/Simulation/` that needs
-  `Mathf` must `using UnityEngine;`; one that needs `System.Math` must `using System;`.
-  Check every new file here.
-- **`Assets/Scripts/InventorySystem/Data/Distributions/*.cs` is its own
-  `InventorySystem.Distributions.asmdef`** (custom asmdefs can't reference
-  `Assembly-CSharp`, and `LootTable`'s only implementer was `internal` there). It
-  resolves from `Assembly-CSharp` only because it is `autoReferenced: true`; the
-  `InventorySystem.Services` asmdef, where `ItemService` builds its loot table from it, names
-  it explicitly. There is a matching `InventorySystem.Distributions.Editor.asmdef`
-  for the two custom editors in that folder. Watch this whenever you touch
-  `Data/Distributions/` or `ItemService.cs`.
-- **`Assets/Scripts/InventorySystem/Services/` is `InventorySystem.Services.asmdef`** (#108):
-  `GameConfig`, `GameBoot`, `GameLoop`. The generic parts (`IService`, `ServiceRegistry`,
-  `ServiceLocator`, `PlayerLoopHook`) live in the `Utility` submodule, in the `Utility` assembly.
-  `GameConfig` is the one root asset at `Assets/Resources/GameConfig.asset`; its fields are
-  `[field: SerializeField]` auto-properties, so a hand-written `.asset` uses the
-  `<Name>k__BackingField` keys (a test writes them the same way, through `SerializedObject`:
-  `TestGameConfig` in the Services tests). #109 added `IItemService`/`ItemService` (the old
-  `ItemProvider`, deleted) plus `DistributionLootTable` and `UnityRollSource`, so the asmdef also
-  references `Containers` (`Package`, `ICurrencyMinter`), `Simulation` (`ICoinDropSource`, which
-  the service implements) and `Probability`. Every draw the service makes comes off its injected
-  `IRollSource`; nothing in it reaches `UnityEngine.Random`.
-- **The container core takes its catalog by constructor** (#109): `AbstractDimensionalContainer(dims,
-  catalog)` and `ViewOf(item)`. The static `ItemView.Catalog`/`ItemView.Of` are gone, so a test passes a
-  `TestCatalog` to each container it builds and the Unity edge reads `ItemService.Instance.View`.
-- **`ItemTypeData` lives in `Data/Statistics/`** (the `InventorySystem.Data` assembly), moved out of
-  `Data/` where it compiled into `Assembly-CSharp`. A custom asmdef cannot reference
-  `Assembly-CSharp`, so anything `GameConfig` references has to sit in an asmdef; the `.meta`
-  moved with it, so the GUID and every scene reference held.
-- **`Assets/Scripts/InventorySystem/Characters/` is `InventorySystem.Characters.asmdef`** (#110):
-  `Hero`, `HeroData`, `ResourceRegen`, plus the authored `DefaultHero.asset`. It references
-  `Data` and `Containers` (for `IStatReceiver`). `LocalPlayer` and `BaseCharacter`
-  stay in `Assembly-CSharp` and delegate to it, so a test reaches the hero but never the component;
-  `AuthoredHeroAssetsTests` reads the prefab's `LocalPlayer` by type name for that reason. The
-  tests are `Tests/EditMode/Character/InventorySystem.Characters.Tests.asmdef`.
-- **The Healer's refill is wired where the Session is built** (#117): `SessionBuilder` subscribes
-  `world.Context.Changed` to `hero.Heal()` for the Healer context. The Hero and the World are built
-  and replaced together, so the subscription needs no rebinding on a hero load (#114).
-  `DummyTarget` and the scene's dummy panel and damage buttons are gone; `CharacterProvider` is down
-  to `KillPlayer` and `ToggleSpendingResource` for the scene's two remaining debug controls
-  (#118, #119).
-- **A hero load replaces the pair and views rebind on `HeroLoaded`** (#114). `ISession.TryLoad(HeroData)`
-  builds a Hero and a World whole and swaps both; it **refuses while the Run is `InField`** (Recall first).
-  Try it in Play Mode from the menu **ToolSmiths > Hero > Load Default Hero** (`Assets/Editor/LoadHeroMenu.cs`,
-  Play only; #118's `DebugPanel` is its eventual home). A view that holds anything of the old pair (a
-  subscription, a bound container, a cached `Run` or `Behaviour`) subscribes with
-  `Session.TrySubscribeHeroLoaded` in `OnEnable` and releases in `OnDisable`; a view that re-reads a service
-  every `Update` needs nothing. The Inventory Context event is `IInventoryService.ContextChanged`, which
-  follows the current World, so the three context subscribers did not change. There is no Field face
-  registration any more (`cba7728`): its reachability is the `CanvasGroup` hierarchy.
+- **`Assembly-CSharp` has zero test coverage.** Code that needs unit tests lives in its own
+  asmdef. A custom asmdef **cannot reference `Assembly-CSharp`**, so whatever one needs must sit in
+  an asmdef too: `Data/Distributions/` is `InventorySystem.Distributions` (it resolves from
+  `Assembly-CSharp` only because it is `autoReferenced`; `InventorySystem.Services` names it
+  explicitly), and `ItemTypeData` moved to `Data/Statistics/` for `GameConfig`'s sake (move the
+  `.meta` with the file so the GUID and scene references hold). `LocalPlayer`, `BaseCharacter` and
+  the panels stay in `Assembly-CSharp` and delegate to asmdef types; tests reach them by type name.
+- **`Simulation` and `Locations` are Unity-free by convention, not by flag.** `noEngineReferences`
+  is `false`, but files get **no** implicit `using`: a file there that needs `Mathf` must
+  `using UnityEngine;`, one that needs `System.Math` must `using System;`. Check every new file.
+- **`GameConfig`** (`Assets/Resources/GameConfig.asset`) uses `[field: SerializeField]`
+  auto-properties, so a hand-written `.asset` or a test's `SerializedObject` uses
+  `<Name>k__BackingField` keys (`TestGameConfig` in the Services tests).
 - **Editing a scene through the open Editor saves the Editor's memory, not the file.** If the
   working copy of `Example.unity` differs from what the Editor loaded (a branch switch, a hand
   edit), a `RunCommand` that deletes objects and saves also rewrites every other difference
   (1.8k diff lines on #117). `EditorSceneManager.OpenScene` the scene first so memory equals disk,
   then edit and `SaveOpenScenes`; check `diff` against a copy taken before.
-- **The Hero and the World are built at boot** (#112): `SessionBuilder` (hero, then what it owns, then
-  the World) is called by `GameBoot.Build` with `GameConfig.DefaultHero`, so a missing default hero
-  fails at boot. `Services` now references `Characters`; `Characters` references `Items` and
-  `Simulation` (`Hero` is an `IItemReceiver` and owns the `HeroBehaviour`). The container sizes and
-  the Behaviour Profile defaults in `GameConfig` are **live** now, and the providers' own copies are
-  gone (`InventoryProvider`'s sizes, `SimulationProvider`'s six slider fields), so the scene still
-  holds their stale serialized values, harmless until a scene save drops them. `PLAYER.prefab`'s
-  `LocalPlayer` has no `data` field any more.
-- **The simulation service owns the Run's rules** (#113): `SimulationService` builds the `RunState` lazily
-  per `World` (so a fresh World has no Run) and runs the Death and recovery rules against the Hero's
-  own `Corpse`. The engine-side adapters (`HeroCombatant`, `ContainerSettlementBag`,
-  `PlayerWalletLedger`, `ContainerBagGauge`) moved from `Runtime/Simulation/` into `Services/`, the
-  one asmdef that can see a `Hero`; `Characters` now references `Locations` (`Hero.SelectedLocation`).
-  A recovered chest goes through `Hero.PickUpItem`, so it auto-equips rather than landing in the bag.
-  `SimulationProvider` is an empty shell left on `SIMULATION_PROVIDER` in `Example.unity` until #119.
-- **Static state needs a `SubsystemRegistration` reset** with domain reload disabled
-  (`ServiceLocator`, `GameLoop` have one), **and a clear on `EnteredEditMode`** so Edit Mode never
-  reads the last session's services as armed. Not on `ExitingPlayMode`: the services are armed
-  before the first scene loads, so they must outlive the last one, and `ExitingPlayMode` fires
-  while the scene is still alive - every `OnDisable` / `OnDestroy` that reads a service on the way
-  out would throw "No ServiceRegistry is armed" (found 2026-10-04: the Supply slots, 40 errors on
-  every Stop). `EnteredEditMode` is after teardown, so Edit Mode readers still never see the last
-  session's services; a hook that runs in the instant between the end of teardown and that event
-  could, and nothing here prevents that. Verified by the Play-exit check below, not by a Unity
-  guarantee. The player loop is the one thing that does go on `ExitingPlayMode`:
-  `PlayerLoopHook` removes its systems then, because the loop outlives Stop and nothing should
-  tick during teardown. The registrations (`GameLoop` tickers, `TimerTicker`) clear with the
-  locator, on `EnteredEditMode`.
-- **A view still should not re-read a service on every repaint.** `VendorSlotDisplay` prices its
-  package once, in `RefreshSlotDisplay`, and repaints from the cached value; that is cheaper and it
-  keeps the repaint independent of what the locator holds.
-- **The Play-exit check** (`Assets/Submodules/Utility/Editor/PlayExitCheck.cs`, in the `Utility`
-  submodule beside the lifetimes it guards, so every project that uses the module can run it) is
-  the only thing that sees teardown errors: a PlayMode test cannot stop Play Mode and the views
-  are out of a test assembly's reach. It enters Play in the scene you name, steps 20 frames, stops,
-  and fails if any `Error`/exception/assert is logged before Edit Mode is back. Run it with the
-  project closed:
+- **Static state needs a `SubsystemRegistration` reset** (`ServiceLocator`, `GameLoop` have one)
+  **and a clear on `EnteredEditMode`**, not on `ExitingPlayMode`: the services outlive the last
+  scene, and `ExitingPlayMode` fires while it is still alive, so every `OnDisable` / `OnDestroy`
+  that reads a service would throw "No ServiceRegistry is armed" (40 errors per Stop, 2026-10-04).
+  `PlayerLoopHook` is the one thing that goes on `ExitingPlayMode`: the loop outlives Stop and
+  nothing should tick during teardown. Tests: `ServiceLocatorTests` and `TimerBootstrapperTests`
+  in `Utility`, `GameLoopTests` here.
+- **The Play-exit check** (`Assets/Submodules/Utility/Editor/PlayExitCheck.cs`) is the only thing
+  that sees teardown errors: a PlayMode test cannot stop Play Mode. It enters Play in the scene
+  you name, steps 20 frames, stops, and fails on any `Error`/exception/assert logged before Edit
+  Mode is back. Run it with the project closed, after touching anything `OnDisable`, `OnDestroy`,
+  a service's lifetime or a static cleared on leaving Play Mode:
   `Unity.exe -batchmode -nographics -projectPath <proj> -executeMethod Submodules.Utility.Editor.PlayExitCheck.Run -playExitScene Assets/Scenes/Example.unity -logFile out.log`.
   The **exit code is the verdict** (0 clean, 1 teardown errors listed under `[PlayExitCheck]`, 2
-  never got back to Edit Mode, 3 no scene given), unlike `-runTests`. Run it after touching
-  anything `OnDisable`, `OnDestroy`, a service's lifetime or a static cleared on leaving Play Mode.
-  It is inert unless `Run` started it, so it is the one `-executeMethod` script that is committed
-  on purpose; the "delete scratch runners before committing" rule above is for the throwaway ones.
-  The clear-point rules themselves are tested where the code lives: `ServiceLocatorTests` and
-  `TimerBootstrapperTests` in `Utility`, `GameLoopTests` here.
+  never got back to Edit Mode, 3 no scene given), unlike `-runTests`. It is inert unless `Run`
+  started it, so it is the one `-executeMethod` script that is committed on purpose.
 - **The boot's `[RuntimeInitializeOnLoadMethod]` hooks are only reachable from PlayMode.**
-  `Assets/Scripts/Tests/PlayMode/Services/` holds the test that proves they fire; EditMode
-  `Run All` does not include it, run it with `-testPlatform PlayMode`.
+  `Assets/Scripts/Tests/PlayMode/Services/` proves they fire; EditMode `Run All` does not include
+  it, run it with `-testPlatform PlayMode`.
 - **A PlayMode test asmdef must not be `includePlatforms: ["Editor"]`.** The EditMode runner
   then picks the fixture up and runs it with Play Mode off (it fails, and the PlayMode run skips
   it as editor-only). Leave `includePlatforms` empty and guard `AssetDatabase` behind
-  `#if UNITY_EDITOR`. `Tests/PlayMode/Character/` (#111) instantiates `PLAYER.prefab` and drives
-  the real `CharacterStatPanel`; `Assembly-CSharp` types (`LocalPlayer`, the panel) are reached by
-  name, since a custom asmdef cannot reference it.
+  `#if UNITY_EDITOR`.
 
-## Shared working directory + the `Utility` submodule
+## Shared working directory, worktrees, and the `Utility` submodule
 
-The primary working directory and the `Assets/Submodules/Utility` submodule checkout are
-**one folder on disk, shared across concurrent sessions and branches.** Before trusting a
-compile error that doesn't match your diff:
+The primary working directory and the `Assets/Submodules/Utility` checkout are **one folder on
+disk, shared across concurrent sessions and branches.** Open `git worktree add <path> -b <branch>`
+for any new independent line of work (an issue, a prototype, a docs/spec pass); plain checkout only
+continues the task already checked out. Mixing work into one checkout cross-contaminated two
+branches once, and the untangle hit a submodule merge conflict. Before trusting a compile error
+that doesn't match your diff:
 
 1. `git branch --show-current` — the checked-out branch can change between turns (another
-   session or the user switches it) without you ever running `git checkout`. Uncommitted
+   session or the user switches it) without you running `git checkout`. Uncommitted
    changes survive a non-conflicting switch, so you can find yourself on the wrong branch
    with your edits still present.
 2. `git submodule status Assets/Submodules/Utility` — a leading `+` means the submodule's
@@ -510,36 +352,16 @@ compile error that doesn't match your diff:
    that are not bugs in your branch. Fix with `git submodule update <path>`, never by
    editing source to route around the ambiguity.
 
-## Worktrees, not in-place checkout
+## Knowledge that lives outside git
 
-For any new independent line of work (a new issue, a prototype, a docs/spec pass), open
-`git worktree add <path> -b <branch>` rather than `git checkout` in the primary working
-directory. Reserve plain checkout for continuing the task already checked out. Mixing new
-work into the primary checkout's branch has silently cross-contaminated two branches that
-shared a base commit, and the untangle hit a `Utility` submodule merge conflict.
+Agent memory is per-machine; this file, `GLOSSARY.md`, `docs/adr/`, `dev/specs/` and GitHub Issues
+are the shared channels. A fact that matters on both the laptop and the tower belongs in one of them.
 
-## Working the issue tracker
-
-Before `/implement #N`, run `python dev/frontier.py` (it derives the frontier from each open
-issue's **Blocked by**). `ready-for-agent` on an
-issue means its spec is written, **not** that its dependencies are closed. If `#N` is not
-the actual frontier, surface the gap and let the user decide — don't silently build the
-blockers inside it (that blows past the "one ticket per session" rule) or silently
-substitute a different issue.
-
-## Multi-device / knowledge that lives outside git
-
-- An agent's private memory is **per-machine** and does not sync. The shared, on-disk
-  channels are: this file, `GLOSSARY.md`, `docs/adr/`, `dev/specs/`, and GitHub Issues.
-  If a fact matters on both the laptop and the tower, it belongs in one of those, not in
-  memory.
 - **`NewArtwork`** branch (off an old `main`, pushed, no PR) is the only copy of three
   imported Asset Store UI packs under `Assets/Art/` (`GUI_Parts`, `Modern GDR - Free
   icons pack`, `RVFX / UIShaderEffects-EdgeEffects`, ~53 MB committed raw). Pull
   selectively into `main`/features, never wholesale. RVFX ships both a uGUI/Canvas and a
-  UI Toolkit implementation — this project is Canvas-based, so the uGUI half is the
-  usable one.
+  UI Toolkit implementation; this project is Canvas-based, so the uGUI half is the usable one.
 - **This repo uses no Git LFS.** Don't set one up without asking — it was tried once for
   a 279 MB audio pack that the user then rejected, and reverted. The only committed
   binaries are 6 pre-existing `*.dll`s.
-- `Assets/Scenes/Example.unity` is the only scene (`HUD.unity` was deleted as unused).

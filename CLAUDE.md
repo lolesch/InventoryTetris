@@ -32,27 +32,13 @@ Read before writing a script, or during `/code-review`/`/simplify`.
 
 ### Codebase notes
 
-`docs/agents/codebase-notes.md` holds durable engineering gotchas that aren't in the code
-or git history — Unity compile/test verification (`dotnet build` lies; drive the
-`unity-mcp` bridge), assembly-definition layout (namespace ≠ asmdef), the shared `Utility`
-submodule, broken `.cs.meta` files, the scene-save modal, and the CRLF + UTF-8 source that
-`sed -i` / `perl -pi` corrupt silently. Read it before any Unity compile verification,
-asmdef change, or scripted multi-file edit. It's also the cross-machine channel for that kind of
-knowledge — agent memory is per-device and doesn't sync; this file does.
+`docs/agents/codebase-notes.md` — read before Unity compile or test verification (`dotnet build`
+lies; drive the `unity-mcp` bridge), an asmdef change, or a scripted multi-file edit (`sed -i` and
+`perl -pi` corrupt the CRLF + UTF-8 source). It also covers broken `.cs.meta` files, the scene-save
+modal and the `Utility` submodule.
 
-## GitHub Pages: do not merge `docs/agents/` into `GitPage`
+## GitHub Pages: keep `docs/agents/` and `docs/adr/` out of `GitPage`
 
-The published site at <https://lolesch.github.io/InventoryTetris/> is built from the
-**`GitPage` branch**, path `/docs` (verified via `gh api repos/lolesch/InventoryTetris/pages`).
-Nothing under `docs/` on `main` is published today.
-
-`docs/agents/` is agent configuration, not site content, and so is the `docs/adr/`
-directory `/domain-modeling` will create. Both are excluded from the built site by
-`exclude:` in `docs/_config.yml`, which is kept byte-identical on `main` and `GitPage`
-so a merge in either direction cannot resolve the protection away.
-
-That exclude is the enforcement; prefer leaving `docs/agents/` and `docs/adr/` out of a
-`main` -> `GitPage` merge anyway. Without it these files would be *published*, though
-not rendered: Jekyll copies files with no YAML front matter to the destination verbatim,
-so they would be fetchable at `/agents/issue-tracker.md` rather than turned into HTML.
-A root `GLOSSARY.md` sits outside `docs/` and is never part of the site.
+The site at <https://lolesch.github.io/InventoryTetris/> builds from the `GitPage` branch, path
+`/docs`. Leave `docs/agents/` and `docs/adr/` out of a `main` -> `GitPage` merge; `exclude:` in
+`docs/_config.yml` (byte-identical on both branches) is the backstop that stops Jekyll publishing them.
