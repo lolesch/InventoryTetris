@@ -26,6 +26,13 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         }
 
         [Test]
+        public void TheBootInstalledTheQuitHandler_ThatSavesTheHeroOnExit()
+        {
+            // A test cannot quit, so the signal itself is checked by the Play-exit check; this is the wiring.
+            Assert.That(GameExit.IsInstalled, Is.True);
+        }
+
+        [Test]
         public void TheBootBuiltTheItemService_FromTheAuthoredConfig_AndNoItemProviderIsInTheScene()
         {
             var items = ItemService.Instance;

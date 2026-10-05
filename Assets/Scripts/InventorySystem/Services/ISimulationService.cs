@@ -59,6 +59,14 @@ namespace ToolSmiths.InventorySystem.Services
         RunResult Recall();
 
         /// <summary>
+        /// Ends a live Run so the game can close in Town: a Recall, or the Death when the hero is already
+        /// down, in that order of precedence the tick uses. Raises <see cref="RunSettled"/> like either
+        /// does. Nothing happens when no Run is in the Field.
+        /// </summary>
+        /// <returns>Whether a Run was ended.</returns>
+        bool LeaveField();
+
+        /// <summary>
         /// One frame of the simulation, <paramref name="deltaSeconds"/> of real time: the Hero's
         /// regeneration (Town and Field alike), the Encounter while a Run is in the Field, and the
         /// Run's two ways home (a Death, or the Behaviour Profile's auto-Recall). Scaled by the

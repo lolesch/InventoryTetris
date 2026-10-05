@@ -310,6 +310,19 @@ namespace names when a reference won't resolve.
   The **exit code is the verdict** (0 clean, 1 teardown errors listed under `[PlayExitCheck]`, 2
   never got back to Edit Mode, 3 no scene given), unlike `-runTests`. It is inert unless `Run`
   started it, so it is the one `-executeMethod` script that is committed on purpose.
+- **`Application.quitting` fires on an Editor Stop with domain reload disabled** (verified 2026-10-05,
+  Unity 6000.6.0f1, `m_EnterPlayModeOptions: 3`). `GameExit` (the quit save, #170) hangs off it: a Play-exit
+  check run showed the hero written a second time at Stop, ~1 s after the Play-entry write, and 0
+  teardown errors. The handler is released on `EnteredEditMode`, like the locator's clear. To re-verify,
+  run the Play-exit check with `-savesFolder <scratch>` and look for `<id>.sav.bak` beside `<id>.sav`.
+- **`-savesFolder <path>` points the boot's save store at a scratch folder.** The boot continues the
+  last hero (or creates one) on every Play entry, so any headless run that enters Play Mode writes
+  hero files. Pass it to the Play-exit check and to `-runTests -testPlatform PlayMode`; without it the
+  files land under `Application.persistentDataPath/saves`, the player's real saves. EditMode tests
+  never need it (`GameBoot.Build`/`Arm` default to an in-memory store).
+- **A PlayMode test cannot assume the boot's services.** `CharacterStatPanelPlayModeTests` re-arms the
+  locator with `GameBoot.Arm(config)` (in-memory saves, no hero loaded), so a later fixture sees that,
+  not the Play-entry boot. Assert boot wiring that `Arm` does not touch (`GameExit.IsInstalled`), not state.
 - **The boot's `[RuntimeInitializeOnLoadMethod]` hooks are only reachable from PlayMode.**
   `Assets/Scripts/Tests/PlayMode/Services/` proves they fire; EditMode `Run All` does not include
   it, run it with `-testPlatform PlayMode`.

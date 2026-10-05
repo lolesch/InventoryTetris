@@ -20,13 +20,49 @@ namespace ToolSmiths.InventorySystem.Services
     public static class GameBoot
     {
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        private static void BootOnPlayEntry() => Arm(Load(), new FileSaveStore(SavesFolder()));
+        private static void BootOnPlayEntry()
+        {
+            Arm(Load(), new FileSaveStore(SavesFolder()));
+
+            ContinueLastHero();
+            GameExit.Install(ServiceLocator.Get<ISimulationService>(), ServiceLocator.Get<IHeroSaveService>());
+        }
+
+        // Pressing Play, or launching, continues the last-selected hero, or creates one on a first launch.
+        // A save that cannot be read must not stop the game booting: the template hero plays on, and
+        // nothing is written over the files (the service saves only a hero it loaded).
+        private static void ContinueLastHero()
+        {
+            try
+            {
+                _ = ServiceLocator.Get<IHeroSaveService>().LoadLastOrCreate();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError($"Could not continue the last hero; starting from the default template: {exception.Message}");
+            }
+        }
+
+        private const string SavesFolderArgument = "-savesFolder";
 
         /// <summary>
-        /// Where the hero files live: a folder under the platform's persistent data path. The one place
-        /// that path is named, so everything below takes a store and a test never touches it.
+        /// Where the hero files live: a folder under the platform's persistent data path, or the folder
+        /// named by <c>-savesFolder &lt;path&gt;</c> on the command line, so a headless run (the Play-exit
+        /// check, a PlayMode run) points at a scratch folder and never writes the player's saves. The one
+        /// place that path is named, so everything below takes a store and a test never touches it.
         /// </summary>
-        private static string SavesFolder() => Path.Combine(Application.persistentDataPath, "saves");
+        private static string SavesFolder()
+        {
+            var args = Environment.GetCommandLineArgs();
+
+            for (var i = 0; i < args.Length - 1; i++)
+            {
+                if (args[i] == SavesFolderArgument && !string.IsNullOrWhiteSpace(args[i + 1]))
+                    return args[i + 1];
+            }
+
+            return Path.Combine(Application.persistentDataPath, "saves");
+        }
 
         /// <summary>The root <see cref="GameConfig"/> from <c>Resources</c>. Throws, naming where it
         /// is expected, when there is none.</summary>

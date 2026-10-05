@@ -105,6 +105,21 @@ namespace ToolSmiths.InventorySystem.Services
             return result;
         }
 
+        public bool LeaveField()
+        {
+            var run = Run;
+            if (run.Phase != RunPhase.InField)
+                return false;
+
+            // Death first, as in the tick: a hero already down cannot be recalled out of its Death.
+            if (run.HeroIsDown)
+                HandleHeroDeath(session.Hero, run);
+            else
+                _ = Recall();
+
+            return true;
+        }
+
         public void Tick(float deltaSeconds)
         {
             var hero = session.Hero;
