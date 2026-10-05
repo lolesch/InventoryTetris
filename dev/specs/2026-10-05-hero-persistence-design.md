@@ -174,6 +174,12 @@ persistent data path; tests inject an in-memory store. A first launch with no Ac
 hero files creates a hero named "Hero" from the default template, with a fresh GUID, and writes it
 at once, so quitting in Town without ever pressing Send still leaves a save.
 
+**New-hero starting state.** A newly created hero starts with a small authored kit: a list of item
+definition ids and coin amounts on its template, placed through the same acquisition entry point a
+Drop uses (auto-equip into an empty slot, else the Inventory). It reuses the item generator and adds
+no new code path. An empty list is a valid kit, so the kit's contents are a tuning matter and not a
+precondition. It applies only to a hero that is created, never to one that is loaded.
+
 **Loading into the game.** `ISession` gains a load that takes a hero Dto, beside the existing load
 that takes a template. The session already holds the one function that builds a Hero and World pair;
 that function (in the builder) gains a path that restores a Dto onto the hero it just built, so a
