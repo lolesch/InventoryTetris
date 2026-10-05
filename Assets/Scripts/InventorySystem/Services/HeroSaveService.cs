@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using ToolSmiths.InventorySystem.Persistence;
 using ToolSmiths.InventorySystem.Runtime.Character;
+using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Services
 {
@@ -133,7 +134,10 @@ namespace ToolSmiths.InventorySystem.Services
             var result = HeroSlot(Checked(id)).Load();
 
             if (!result.HasPayload)
+            {
+                NoteUnreadable(id, result);
                 return new HeroLoadResult(result.Status, false, null);
+            }
 
             if (!session.TryLoad(result.Payload, locations, out var report))
                 return new HeroLoadResult(result.Status, false, null);
@@ -142,6 +146,11 @@ namespace ToolSmiths.InventorySystem.Services
             activeHero = session.Hero;
             activeName = result.Payload.name;
             SetLastSelected(id);
+
+            if (result.Status == LoadStatus.RestoredFromBackup)
+                Debug.LogWarning($"Hero save '{id}' was damaged; loaded its backup instead. The next save replaces the damaged file.");
+
+            Quarantine(id, report);
 
             return new HeroLoadResult(result.Status, true, report);
         }
@@ -178,8 +187,52 @@ namespace ToolSmiths.InventorySystem.Services
             if (ActiveHeroId == null || !ReferenceEquals(activeHero, session.Hero))
                 return false;
 
-            HeroSlot(ActiveHeroId).Save(HeroMapper.ToDto(session.Hero, ActiveHeroId, activeName, locations));
-            return true;
+            // A write that fails must not take the game down. The write is atomic, so the previous save is
+            // untouched; every save point writes the whole hero, so the next one is the retry.
+            try
+            {
+                HeroSlot(ActiveHeroId).Save(HeroMapper.ToDto(session.Hero, ActiveHeroId, activeName, locations));
+                return true;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError($"Could not save hero '{ActiveHeroId}': {exception.Message} The previous save is untouched; the next save point tries again.");
+                return false;
+            }
+        }
+
+        // A file that cannot become a hero. Corrupt (the backup was tried already) is set aside, never
+        // deleted, so what is in it can still be recovered by hand. A newer version is left exactly as it
+        // is: this build must not read it as a hero, and must not overwrite it.
+        private void NoteUnreadable(string id, LoadResult<HeroDto> result)
+        {
+            switch (result.Status)
+            {
+                case LoadStatus.Corrupt:
+                    _ = store.SetAside(id);
+
+                    if (LastSelectedHeroId == id)
+                        SetLastSelected(null);
+
+                    Debug.LogError($"Hero save '{id}' is damaged and its backup is no use: {result.Failure} It was set aside, not deleted.");
+                    break;
+
+                case LoadStatus.NewerVersion:
+                    Debug.LogWarning($"Hero save '{id}' was written by a newer version of the game. It is left untouched and not loaded.");
+                    break;
+            }
+        }
+
+        // What the load could not place goes to a sidecar beside the hero file, one JSON line each. The
+        // game never reads it back, and a save never rewrites it. The items are already gone from the
+        // loaded hero, so the next save will not carry them either.
+        private void Quarantine(string id, RestoreReport report)
+        {
+            if (report.IsClean)
+                return;
+
+            store.AppendSideFile($"{id}.quarantine.json", QuarantineLog.Lines(report, utcNow?.Invoke() ?? DateTime.UtcNow));
+            Debug.LogWarning($"Hero save '{id}': {report.Skipped.Count} saved item(s) could not be restored and were written to {id}.quarantine.json.");
         }
 
         private HeroSummary SummaryOf(string id)
