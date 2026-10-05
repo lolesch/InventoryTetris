@@ -25,3 +25,10 @@ a player facing item catalogue with a dummy character to equip. For theory craft
 
 ### Loot Filter
 a more dedicated filter than the current rarity slider.
+
+
+### Rework Experience
+Experience should not be a resource at all. we instead should have an experienceGainBonus stat. This links to more design on what a level actually is or wnats to express.
+
+### Pause Menu
+pauses inGame time by stopping ticker time propagation. Gives access to return to the main menu, quitting or returning to the game.
