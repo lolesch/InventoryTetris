@@ -78,6 +78,35 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             Assert.That(ground.Placed, Is.Empty);
         }
 
+        // ── Place: a Package already in hand (the cursor dropped on the floor slot) ──
+
+        [Test]
+        public void Place_LaysOneGroundEntryPerUnit_OfAPackageInHand()
+        {
+            var potion = new ItemInstance(PotionId, ItemRarity.Common, 1, null);
+
+            var placed = DropTransaction.Place(new Package(null, potion, 3u), ground);
+
+            Assert.That(placed, Is.True);
+            Assert.That(ground.Placed, Is.EqualTo(new[] { potion, potion, potion }));
+        }
+
+        [Test]
+        public void Place_OfAnEmptyHand_DropsNothing()
+        {
+            Assert.That(DropTransaction.Place(default, ground), Is.False);
+            Assert.That(ground.Placed, Is.Empty);
+        }
+
+        [Test]
+        public void Place_WithNoGround_ReportsItSoTheCallerKeepsTheItem()
+        {
+            var sword = new ItemInstance(SwordId, ItemRarity.Common, 1, null);
+
+            Assert.That(DropTransaction.Place(new Package(null, sword, 1u), null), Is.False,
+                "the floor slot sends the item back instead of deleting it");
+        }
+
         [Test]
         public void Run_WithNoGround_LeavesTheItemWhereItWas()
         {

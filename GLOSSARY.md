@@ -461,8 +461,10 @@ _Avoid_: skill bar, action bar, power bar
 A pooled list of slot displays for items lying on the ground. Each entry shows the
 item name and icon, supports hover preview and click-to-pick-up. One slot per item,
 not spatial. A click picks the **Drop** up through the player's acquisition entry point,
-so a full bag leaves it lying there. It also shows what the player dropped there by Quick
-Move, and like any **Drop** it is gone when the Run ends.
+so a full bag leaves it lying there. It also shows what the player dropped there — by Quick
+Move or by releasing a drag on the floor slot — and like any **Drop** it is gone when the Run
+ends. With no Run there is no ground, and an item released on the floor slot goes back where it
+came from.
 _Avoid_: loot beam, drop list, world items
 
 
