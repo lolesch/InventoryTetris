@@ -14,7 +14,7 @@ namespace ToolSmiths.InventorySystem.Persistence
         /// Corpse whose profile the index never handed out is a bug in the caller, not a bad save,
         /// so it throws rather than writing a Corpse nothing can recover.
         /// </summary>
-        public static CorpseDto ToDto(Corpse corpse, ILocationProfiles locations)
+        public static CorpseDto ToDto(Corpse corpse, ILocationIndex locations)
         {
             if (corpse == null)
                 throw new ArgumentNullException(nameof(corpse));
@@ -42,7 +42,7 @@ namespace ToolSmiths.InventorySystem.Persistence
         /// authored buries nothing and reports every item, so a sidecar can keep them. A null or
         /// empty Dto is no Corpse. An enum name that does not parse throws, as the item round trip does.
         /// </summary>
-        public static RestoreReport Restore(CorpseDto dto, Corpse target, ILocationProfiles locations, IItemCatalog catalog)
+        public static RestoreReport Restore(CorpseDto dto, Corpse target, ILocationIndex locations, IItemCatalog catalog)
         {
             if (target == null)
                 throw new ArgumentNullException(nameof(target));

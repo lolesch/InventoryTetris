@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ToolSmiths.InventorySystem.Persistence
 {
@@ -56,5 +57,9 @@ namespace ToolSmiths.InventorySystem.Persistence
         public IReadOnlyList<SkippedPackage> Skipped { get; }
 
         public bool IsClean => Skipped.Count == 0;
+
+        /// <summary>This report followed by <paramref name="other"/>, so the parts of one restore read as one list.</summary>
+        public RestoreReport Plus(RestoreReport other) =>
+            new(Skipped.Concat(other.Skipped).ToArray());
     }
 }

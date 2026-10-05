@@ -32,7 +32,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             config = TestGameConfig.Create(created);
             thornwood = Location("thornwood");
             ashfen = Location("ashfen");
-            Author(config, thornwood, ashfen);
+            TestLocations.Author(config, thornwood, ashfen);
         }
 
         [TearDown]
@@ -44,55 +44,11 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             created.Clear();
         }
 
-        private LocationConfig Location(string id)
-        {
-            var location = ScriptableObject.CreateInstance<LocationConfig>();
-            created.Add(location);
+        private LocationConfig Location(string id) => TestLocations.Create(config, created, id);
 
-            var so = new SerializedObject(location);
-            so.FindProperty("id").stringValue = id;
-            so.FindProperty("categoryDistribution").objectReferenceValue = config.ItemCategoryDistribution;
-            so.FindProperty("rarityDistribution").objectReferenceValue = config.ItemRarityDistribution;
-            _ = so.ApplyModifiedPropertiesWithoutUndo();
+        private TestGame NewGame() => TestGame.Create(config);
 
-            return location;
-        }
-
-        private static void Author(GameConfig target, params LocationConfig[] locations)
-        {
-            var so = new SerializedObject(target);
-            var array = so.FindProperty("locations");
-            array.arraySize = locations.Length;
-
-            for (var i = 0; i < locations.Length; i++)
-                array.GetArrayElementAtIndex(i).objectReferenceValue = locations[i];
-
-            _ = so.ApplyModifiedPropertiesWithoutUndo();
-        }
-
-        // One whole game: its own items, session and simulation service, as a fresh boot builds them.
-        private sealed class Game
-        {
-            public ItemService Items;
-            public Session Session;
-            public SimulationService Simulation;
-        }
-
-        private Game NewGame()
-        {
-            var rolls = new SessionBuilderTests.FixedRolls(0.5f);
-            var items = new ItemService(config, rolls);
-            var session = SessionBuilder.Build(config, GameBoot.Load().DefaultHero, items);
-
-            return new Game
-            {
-                Items = items,
-                Session = session,
-                Simulation = new SimulationService(session, items, new InventoryService(session, items), config, rolls),
-            };
-        }
-
-        private static ItemInstance Gear(Game game) =>
+        private static ItemInstance Gear(TestGame game) =>
             new(game.Items.Catalog.OfCategory(ItemCategory.Equipment).First().Id, ItemRarity.Common, 1, null);
 
         private static CorpseDto ThroughText(CorpseDto dto) => JsonUtility.FromJson<CorpseDto>(JsonUtility.ToJson(dto));
@@ -138,7 +94,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         [Test]
         public void TwoLocationsWithOneId_AreRefusedAtBoot()
         {
-            Author(config, thornwood, Location("thornwood"));
+            TestLocations.Author(config, thornwood, Location("thornwood"));
 
             var exception = Assert.Throws<InvalidOperationException>(() => NewGame());
 

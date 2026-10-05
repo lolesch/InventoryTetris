@@ -5,7 +5,9 @@
         "InventorySystem.Data",
         "InventorySystem.Items",
         "InventorySystem.Containers",
-        "InventorySystem.Simulation"
+        "InventorySystem.Simulation",
+        "InventorySystem.Locations",
+        "InventorySystem.Characters"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
