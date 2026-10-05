@@ -23,9 +23,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             Assert.AreEqual(2, (int)ContainerRole.Inventory);
             Assert.AreEqual(3, (int)ContainerRole.Stash);
             Assert.AreEqual(4, (int)ContainerRole.Store);
-            Assert.AreEqual(5, (int)ContainerRole.RetiredBasket);
-            Assert.AreEqual(6, (int)ContainerRole.HealerSupply);
-            Assert.AreEqual(7, (int)ContainerRole.Sold);
+            Assert.AreEqual(5, (int)ContainerRole.HealerSupply);
+            Assert.AreEqual(6, (int)ContainerRole.Sold);
         }
 
         // ── Each role resolves to its container (the provider binds displays through this) ──
@@ -60,14 +59,6 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var c = NewContainer();
 
             Assert.That(ContainerRoleResolver.Resolve(ContainerRole.Unassigned, c, c, c, c, c, c), Is.Null);
-        }
-
-        [Test]
-        public void TheRetiredBasketRoleResolvesToNothing()
-        {
-            var c = NewContainer();
-
-            Assert.That(ContainerRoleResolver.Resolve(ContainerRole.RetiredBasket, c, c, c, c, c, c), Is.Null);
         }
     }
 }

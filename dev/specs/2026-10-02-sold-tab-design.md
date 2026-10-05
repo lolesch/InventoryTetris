@@ -188,10 +188,11 @@ cannot be picked up from any shelf at all.
   scenes, the serialized Supply-blocker references, and any persistent event on the deleted
   buttons are removed, not rewired — a Cancel button once also called a Restock. No scene or
   prefab may be left holding a missing-script reference.
-- **The container role enum is serialized by value.** The Sold role is appended after the
-  Healer Supply's, and the basket's value stays reserved when the basket role is retired,
-  because deleting it would shift every later member and silently rebind displays in scenes and
-  prefabs. The value may be deleted only in a change that re-serializes every display.
+- **The container role enum is serialized by value.** The Sold role sits after the
+  Healer Supply's. The basket's role is deleted with the basket, in the same change that
+  re-serializes every display, because deleting a member shifts every later one and would
+  otherwise silently rebind displays in scenes and prefabs. (Amended in #131: it was first
+  specced as a reserved value; no stale member is kept.)
 - **Ownership.** The Sold container belongs to the Hero State, like the basket and the Supplies
   it sits beside, and is excluded from any save: it is stock the Town Stops hold, not the
   hero's belongings.

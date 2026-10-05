@@ -12474,7 +12474,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   containerSlotDisplays: []
-  role: 7
+  role: 6
   slotDisplayPrefab: {fileID: 6015830565917705070, guid: 4074f0a68487e5945a927571eefb6790, type: 3}
 --- !u!224 &1023377245
 RectTransform:
@@ -21813,7 +21813,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   containerSlotDisplays: []
-  role: 6
+  role: 5
   slotDisplayPrefab: {fileID: 6015830565917705070, guid: 4074f0a68487e5945a927571eefb6790, type: 3}
 --- !u!224 &1909361642
 RectTransform:
@@ -22564,7 +22564,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   containerSlotDisplays: []
-  role: 7
+  role: 6
   slotDisplayPrefab: {fileID: 6015830565917705070, guid: 4074f0a68487e5945a927571eefb6790, type: 3}
 --- !u!224 &1967687309
 RectTransform:

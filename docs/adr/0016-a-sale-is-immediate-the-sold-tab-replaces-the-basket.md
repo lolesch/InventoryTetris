@@ -30,10 +30,11 @@ a free cancel.
   Supplies, not to the Hero: it is stock the Town Stops hold, not the hero's belongings, and it
   is excluded from any save. Persistence does not have to decide anything about it.
 - **A Restock clears it.** Closing a panel or changing Town Stop leaves it alone.
-- **The `ContainerRole` value stays reserved.** The members are serialized by value in scenes
-  and prefabs, and `HealerSupply` and `Sold` follow the retired role, so the value is kept as
-  `RetiredBasket` rather than deleted. It resolves to no container. Delete it only in a change
-  that re-serializes every display.
+- **The basket's `ContainerRole` is deleted, not reserved.** The members are serialized by
+  value in scenes and prefabs, so removing one shifts the members after it. #131 removed it and
+  re-serialized every display in the same change (`HealerSupply` 6 → 5, `Sold` 7 → 6); no stale
+  member is kept. Any later role (a per-stop Vendor and Healer Sold container is likely) is a
+  new member, re-serialized the same way if it is not appended.
 
 ## Consequences
 
