@@ -23,7 +23,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             Assert.AreEqual(2, (int)ContainerRole.Inventory);
             Assert.AreEqual(3, (int)ContainerRole.Stash);
             Assert.AreEqual(4, (int)ContainerRole.Store);
-            Assert.AreEqual(5, (int)ContainerRole.Basket);
+            Assert.AreEqual(5, (int)ContainerRole.RetiredBasket);
             Assert.AreEqual(6, (int)ContainerRole.HealerSupply);
             Assert.AreEqual(7, (int)ContainerRole.Sold);
         }
@@ -38,19 +38,18 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         [TestCase(ContainerRole.Inventory)]
         [TestCase(ContainerRole.Stash)]
         [TestCase(ContainerRole.Store)]
-        [TestCase(ContainerRole.Basket)]
         [TestCase(ContainerRole.HealerSupply)]
         [TestCase(ContainerRole.Sold)]
         public void EveryRoleResolvesToItsOwnContainer(ContainerRole role)
         {
             var all = new Dictionary<ContainerRole, AbstractDimensionalContainer>();
             foreach (var r in new[] { ContainerRole.Equipment, ContainerRole.Inventory, ContainerRole.Stash,
-                                      ContainerRole.Store, ContainerRole.Basket, ContainerRole.HealerSupply, ContainerRole.Sold })
+                                      ContainerRole.Store, ContainerRole.HealerSupply, ContainerRole.Sold })
                 all[r] = NewContainer();
 
             var resolved = ContainerRoleResolver.Resolve(role, all[ContainerRole.Equipment], all[ContainerRole.Inventory],
                 all[ContainerRole.Stash], all[ContainerRole.Store], all[ContainerRole.HealerSupply],
-                all[ContainerRole.Basket], all[ContainerRole.Sold]);
+                all[ContainerRole.Sold]);
 
             Assert.That(resolved, Is.SameAs(all[role]));
         }
@@ -60,7 +59,15 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         {
             var c = NewContainer();
 
-            Assert.That(ContainerRoleResolver.Resolve(ContainerRole.Unassigned, c, c, c, c, c, c, c), Is.Null);
+            Assert.That(ContainerRoleResolver.Resolve(ContainerRole.Unassigned, c, c, c, c, c, c), Is.Null);
+        }
+
+        [Test]
+        public void TheRetiredBasketRoleResolvesToNothing()
+        {
+            var c = NewContainer();
+
+            Assert.That(ContainerRoleResolver.Resolve(ContainerRole.RetiredBasket, c, c, c, c, c, c), Is.Null);
         }
     }
 }

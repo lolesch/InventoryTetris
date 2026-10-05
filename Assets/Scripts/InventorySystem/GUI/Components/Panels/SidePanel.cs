@@ -29,8 +29,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
     /// <see cref="ToolSmiths.InventorySystem.GUI.Components.Toggles.SidePanelToggle"/> calls
     /// <see cref="RequestContext"/> from its own click/hotkey edge and no longer fades this panel
     /// itself: two layers deciding visibility is what this rework removes. The request lands
-    /// synchronously, so a staged Sell Basket sale still cancels the instant the Vendor leaves,
-    /// not once its fade finishes.</para>
+    /// synchronously, so the context a panel derives from never lags its fade.</para>
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class SidePanel : SimplePanel
@@ -41,8 +40,8 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
         [SerializeField] private InventoryContext inventoryContext = InventoryContext.None;
 
         /// <summary>The one Inventory Context this panel was authored with - what a display
-        /// living inside the panel (<c>SellBasketDisplay</c>) asks to learn which Town Stop it
-        /// belongs to, rather than hard-coding one.</summary>
+        /// living inside the panel asks to learn which Town Stop it belongs to, rather than
+        /// hard-coding one.</summary>
         public InventoryContext Context => inventoryContext;
 
         /// <summary>

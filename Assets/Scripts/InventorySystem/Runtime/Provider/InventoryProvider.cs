@@ -27,16 +27,10 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// the Store (<see cref="storeSize"/>) - one size for every Supply shelf.</summary>
         [field: SerializeField] public CharacterInventory HealerSupply { get; private set; }
 
-        /// <summary>The Sell Basket (issue #32/#33) - the grid the player stages a sale in,
-        /// with the origin ledger a Cancel uses to return each Package. Owned here with the
-        /// other player containers so a shift-click quick-move can both target it (backpack /
-        /// equipment → basket) and recognise it as a source (basket → backpack).</summary>
-        public SellBasket.Basket Basket { get; private set; }
-
         /// <summary>The Sold container (issue #126): what the player sold, bought back like a
-        /// Supply. Built beside the basket, sized like the Supply grid (<see cref="storeSize"/>).
-        /// Nothing in the GUI sells into it or shows it yet; <see cref="QuickMoveFor"/> already
-        /// knows it as a shelf.</summary>
+        /// Supply. Sized like the Supply grid (<see cref="storeSize"/>), sold into by
+        /// <see cref="Sale"/>, shown on each selling panel's Sold tab, and known to
+        /// <see cref="QuickMoveFor"/> as a shelf.</summary>
         public SoldContainer Sold { get; private set; }
 
         /// <summary>The player's spendable money, backed by <see cref="Inventory"/>'s coin
@@ -143,11 +137,6 @@ namespace ToolSmiths.InventorySystem.Inventories
         [SerializeField] private Vector2Int stashSize = new(10, 16);
         [SerializeField] private Vector2Int storeSize = new(10, 16);
 
-        /// <summary>The Sell Basket's grid size (issue #66) - the basket alongside the Supply
-        /// shelf (<see cref="Store"/>), sized the same way <see cref="Stash"/> and
-        /// <see cref="Inventory"/> are, and bound by <see cref="SellBasketDisplay"/>.</summary>
-        [SerializeField] private Vector2Int basketSize = new(5, 3);
-
         [SerializeField] private Slider amountSlider;
         [SerializeField] private TextMeshProUGUI amountText;
         private uint Amount => amountSlider != null ? (uint)amountSlider.value : 1;
@@ -182,7 +171,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         private AbstractDimensionalContainer ContainerFor(ContainerRole role) =>
             ContainerRoleResolver.Resolve(role, equipment: Equipment, inventory: Inventory, stash: Stash,
-                store: Store, healerSupply: HealerSupply, basket: Basket?.Container, sold: Sold);
+                store: Store, healerSupply: HealerSupply, sold: Sold);
 
         /// <summary>
         /// Where a shift-click on <paramref name="source"/> should send its item, given the
@@ -194,7 +183,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// directly tested; this is only the seam callers hold.
         /// </summary>
         public QuickMoveIntent QuickMoveFor(AbstractDimensionalContainer source) =>
-            QuickMoveResolver.Resolve(ActiveContext, source, Inventory, Stash, Equipment, Store, HealerSupply, Basket.Container, Sold);
+            QuickMoveResolver.Resolve(ActiveContext, source, Inventory, Stash, Equipment, Store, HealerSupply, Sold);
 
         public void Awake()
         {
@@ -210,7 +199,6 @@ namespace ToolSmiths.InventorySystem.Inventories
             Stash = new(stashSize, items.Catalog);
             Store = new(storeSize, items.Catalog);
             HealerSupply = new(storeSize, items.Catalog);
-            Basket = new SellBasket.Basket(new(basketSize, items.Catalog));
             Sold = new SoldContainer(storeSize, items.Catalog);
 
             Wallet = new Wallet(Inventory, items);

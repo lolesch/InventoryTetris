@@ -19,15 +19,20 @@ namespace ToolSmiths.InventorySystem.Inventories
         Inventory,
         Stash,
         Store,
-        Basket,
+        /// <summary>Retired (issue #131): the Sell Basket's role. The value stays reserved because
+        /// the members are serialized by value, and <see cref="HealerSupply"/> and <see cref="Sold"/>
+        /// follow it; deleting it would shift them and silently rebind every display. Nothing
+        /// resolves it, so a display still carrying it is left unbound. Delete it only in a change
+        /// that re-serializes every display.</summary>
+        RetiredBasket,
         /// <summary>The Healer's Supply shelf (issue #121): consumables, bought like the Store's.
         /// Appended last: the members are serialized by value in scenes and prefabs, so
-        /// inserting before <see cref="Basket"/> would silently rebind every Basket display.</summary>
+        /// inserting before <see cref="RetiredBasket"/> would silently rebind every display after it.</summary>
         HealerSupply,
         /// <summary>The Sold container (issues #124, #127): what the player sold, shown on each
         /// selling panel's Sold tab. Both panels' Sold grids bind the one container. Appended
         /// after <see cref="HealerSupply"/> for the same reason that one was appended after
-        /// <see cref="Basket"/>: the members are serialized by value.</summary>
+        /// <see cref="RetiredBasket"/>: the members are serialized by value.</summary>
         Sold,
     }
 }

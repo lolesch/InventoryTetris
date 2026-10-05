@@ -3346,7 +3346,6 @@ MonoBehaviour:
   inventorySize: {x: 10, y: 6}
   stashSize: {x: 10, y: 13}
   storeSize: {x: 10, y: 7}
-  basketSize: {x: 10, y: 7}
   amountSlider: {fileID: 322413267}
   amountText: {fileID: 1817569713}
 --- !u!4 &322785546

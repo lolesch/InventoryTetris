@@ -29,9 +29,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
 #if UNITY_EDITOR
         /// <summary>
-        /// The "wiring took" check for <see cref="role"/>, mirroring
-        /// <see cref="ToolSmiths.InventorySystem.GUI.InventoryDisplays.SellBasketDisplay"/>'s
-        /// <c>supplyBlocker</c> check - without this, an unwired field would deserialize to
+        /// The "wiring took" check for <see cref="role"/> - without this, an unwired field would deserialize to
         /// <see cref="ContainerRole.Unassigned"/> and get silently ignored by every consumer
         /// (<see cref="InventoryProvider.TryRegisterDisplay"/> just returns false), so a
         /// misconfigured display never draws and nothing says why.

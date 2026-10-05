@@ -84,25 +84,25 @@ intermediate `None`, so the Hero Panel's own derived answer never flips and it s
 throughout, with no flicker. This is a deliberate behaviour change from #75's
 "handover still publishes `None` between the two announcements" criterion. The two
 subscribers that depended on that gap both key on the *new* value rather than on the
-`None` — the Sell Basket cancels on any context that is not the Vendor, the Healer refills
-on entering the Healer — so both still fire exactly once per handover, and now fire only
+`None` — the Sell Basket cancelled on any context that is not the Vendor (the basket is gone,
+ADR-0016), the Healer refills on entering the Healer — so both fired exactly once per handover, and now fire only
 on a genuine change rather than on a re-request of the context already active.
 
 **One layer decides visibility.** The toggle drives the request and nothing else — it no
 longer fades the panel it drives, and its pressed visual resyncs from the context so a
-button and a panel cannot disagree. A staged Sell Basket sale cancels the instant the
-Vendor leaves, not once its fade finishes.
+button and a panel cannot disagree. *(Amended by ADR-0016: a staged sale that cancelled the
+instant the Vendor left no longer exists - a sale is immediate, so nothing is staged to cancel.)*
 
 **A context with no rows moves nothing.** The `Hero` and `Healer` contexts have no sink
 rows yet, so a Quick Move there does nothing. Both are stated outcomes, not omissions: the
 Hero Panel's sink would be Equipment, which duplicates right-click and has no ticket, and
-the Healer gained the Vendor's Sell Basket rows in #121, so it no longer resolves to
+the Healer gained the Vendor's sale rows in #121, so it no longer resolves to
 nothing. If the Hero Panel's row lands, it is a row in the routing table, not a change to
 the mechanism.
 
 **The Healer refill lives in `CharacterProvider`, not on a scene object.** The provider
 subscribes to the context and refills on a genuine entry into `Healer` — the same
-"key on the new value" rule the Sell Basket uses. An earlier `HealerAction` component placed
+"key on the new value" rule the Sell Basket used. An earlier `HealerAction` component placed
 in the scene did the same job and only added something to misplace.
 
 The rule itself lives in an engine-free `InventoryContextState` below the provider, for the

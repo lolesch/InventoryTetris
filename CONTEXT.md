@@ -47,10 +47,10 @@ flagged unique with a fixed affix list, not a separate kind of thing.
 
 **Container**:
 Any grid that holds packages. The four in play are the **Inventory** (the player's
-backpack), the **Stash**, a Town Stop's **Supply**, the **Sell Basket**, and the
+backpack), the **Stash**, a Town Stop's **Supply**, the **Sold tab**, and the
 **Equipment** paperdoll.
 
-**Inventory / Stash / Supply / Sell Basket**:
+**Inventory / Stash / Supply / Sold tab**:
 Four distinct *roles*, all currently played by the same type. Only Equipment is its own
 type. Say which role you mean — "the Stash" is never a class.
 The Stash belongs to the **Hero** for the MVP (one hero, so nothing shares it) and
@@ -69,15 +69,15 @@ Refilling a Supply with a fresh roll, discarding whatever was left unsold. The t
 makes a Supply finite rather than endless.
 _Avoid_: refresh, reroll, resupply, replenish
 
-**Sell Basket**:
-The grid a sale is staged in before it commits. A Package entering the basket is not sold:
-the sale happens on **Confirm**, as one consolidated payout equal to the previewed total,
-and a **Cancel** hands every staged Package back to its **Package Origin** with the
-**Wallet** untouched. Staging is modal — while the basket holds anything, the Supply is
-blocked (ADR-0012). Only some Town Stops offer one; the Vendor and the Healer do. There is
-one basket, shown by the panel of whichever of them is open; leaving that Town Stop - for
-another one included - cancels what is staged.
-_Avoid_: cart, sell slot, trade window; bare "basket"
+**Sold tab**:
+Where what the player sold goes. A sale is immediate: shift-click an item, or drop it on the
+Supply or the Sold tab, and it is paid out at once and lands here, never on the shelf. The Sold
+tab is a **Supply** - its items are bought back like any shelf, at the Markup, so a mis-click
+is recoverable but not free. It holds a limited number of Packages; a sale that needs room
+discards the oldest. A **Restock** clears it; closing a panel or changing Town Stop leaves it
+alone. One container, shown as a tab beside the Supply by every Town Stop that buys (the
+Vendor and the Healer). It belongs to the **World**, not the hero, and is not saved (ADR-0016).
+_Avoid_: sell basket, basket, cart, buyback, trade window
 
 **Displacement**:
 What happens when a placement pushes stored items out of the way — e.g. equipping a
@@ -112,7 +112,7 @@ _Avoid_: sender, source, from, home
 Sending a Package back to its Package Origin: the exact cell if it is still free, else
 anywhere in the **Inventory**, else the Package stays on the cursor. It never destroys a
 Package and never touches the **Wallet**. The one primitive a cancelled drag, a closed
-panel and a cancelled sale all go through.
+panel and a purchase returned off the cursor all go through.
 _Avoid_: undo, revert, rollback (a rollback is a Transaction's, not a Package's)
 
 **Transaction**:
@@ -338,7 +338,7 @@ _Avoid_: defeat, loss, game over, fail, wipe
 A **Town Stop** that instantly refills the hero's Health and Resource each time it is
 entered (the refill is the player's resource globes filling; audio feedback is deferred).
 Its **Side Panel** shows its own **Supply** of consumables, bought like the Vendor's, and
-has a **Sell Basket** of its own.
+has a **Sold tab** of its own.
 _Avoid_: shrine, fountain, well
 
 ## Combat

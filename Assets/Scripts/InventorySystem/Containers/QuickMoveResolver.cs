@@ -12,8 +12,8 @@ namespace ToolSmiths.InventorySystem.Inventories
     /// <para>Wired rows: with the Stash open, the hub is the sink's source and vice versa
     /// (backpack ↔ Stash), and Equipment sends to the Stash; with the Vendor or the Healer open
     /// (issues #33, #121 - both selling Town Stops), backpack and Equipment are sold through the
-    /// <see cref="Sale"/> (issue #128; it replaced staging into the Sell Basket) and a basket
-    /// Package, until the basket is deleted, returns to the backpack. Retrieving from the Stash is <see cref="QuickMoveIntentKind.Acquire"/>, not a
+    /// <see cref="Sale"/> (issue #128; it replaced staging into the Sell Basket, deleted in #131).
+    /// Retrieving from the Stash is <see cref="QuickMoveIntentKind.Acquire"/>, not a
     /// plain move - a Package that lands back in the Inventory this way must have a chance to
     /// auto-equip (issue #35's entry point), which a plain <c>MoveToContainer</c> never
     /// offered. Every other row is unchanged from #30/#33's matrix. Each Supply shelf (the
@@ -30,15 +30,12 @@ namespace ToolSmiths.InventorySystem.Inventories
     /// </summary>
     public static class QuickMoveResolver
     {
-        /// <param name="basket">The Sell Basket's grid container - recognized as a quick-move
-        /// source so a basket shift-click returns its Package to the backpack.</param>
         /// <param name="sold">The Sold container (issue #126) - a Supply, so a shift-click on it
         /// is a Buy in every context.</param>
         public static QuickMoveIntent Resolve(InventoryContext context, AbstractDimensionalContainer source,
             AbstractDimensionalContainer backpack, AbstractDimensionalContainer stash,
             AbstractDimensionalContainer equipment, AbstractDimensionalContainer store,
-            AbstractDimensionalContainer healerSupply, AbstractDimensionalContainer basket,
-            AbstractDimensionalContainer sold)
+            AbstractDimensionalContainer healerSupply, AbstractDimensionalContainer sold)
         {
             if (source == store || source == healerSupply || source == sold)
                 return QuickMoveIntent.Buy;
@@ -52,8 +49,7 @@ namespace ToolSmiths.InventorySystem.Inventories
                     (stash, QuickMoveIntent.Acquire)),
 
                 InventoryContext.Vendor or InventoryContext.Healer => Route(source, hub, equipment,
-                    sink: QuickMoveIntent.Sell,
-                    (basket, QuickMoveIntent.MoveTo(hub))),
+                    sink: QuickMoveIntent.Sell),
 
                 _ => QuickMoveIntent.None,
             };
