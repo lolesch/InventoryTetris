@@ -116,6 +116,21 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
+        public void HeroContextQuickMove_DropsToTheGround_OnlyWhileARunHasOne()
+        {
+            session.World.Context.Set(InventoryContext.Hero);
+            var bag = session.Hero.Inventory;
+
+            Assert.That(inventory.QuickMoveFor(bag).Kind, Is.EqualTo(QuickMoveIntentKind.None), "Town has no ground (issue #63)");
+
+            service.Send(thornwood);
+            Assert.That(inventory.QuickMoveFor(bag).Kind, Is.EqualTo(QuickMoveIntentKind.Drop));
+
+            _ = service.Recall();
+            Assert.That(inventory.QuickMoveFor(bag).Kind, Is.EqualTo(QuickMoveIntentKind.None), "the Run's end takes the ground with it");
+        }
+
+        [Test]
         public void Recall_EndsTheRun_RetiresTheLootFlow_AndRestocksTheShops()
         {
             session.World.VendorSupply.RemoveAll();

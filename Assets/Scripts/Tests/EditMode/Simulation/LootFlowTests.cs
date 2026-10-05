@@ -69,7 +69,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         private Wallet NewWallet(int width = 6, int height = 6) =>
             new(new CharacterInventory(new Vector2Int(width, height), catalog), new FakeCurrencyMinter(catalog));
 
-        private static HeroBehaviour Admitting(ItemRarity minimum) => new() { LootFilterMinimum = minimum };
+        // The kill-time pick-up tests below are the AutoPickup-on path (issue #63's debug switch).
+        private static HeroBehaviour Admitting(ItemRarity minimum) => new() { LootFilterMinimum = minimum, AutoPickup = true };
 
         // ─── AC: drop count against a RollContext (Location's table, source level, magic find) ──
 
@@ -404,6 +405,215 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
             Assert.That(lootFlow.GroundDrops, Has.Count.EqualTo(1));
             Assert.That(lootFlow.GroundDrops[0], Is.SameAs(recovered));
+        }
+
+        // ─── AutoPickup off (the default, issue #63): a kill's Drops all lie on the ground ──
+
+        [TestCase(ItemRarity.Common)]
+        [TestCase(ItemRarity.Unique)]
+        public void WithAutoPickupOff_AnItem_LandsOnTheGround_WhateverTheFilterSays(ItemRarity filterMinimum)
+        {
+            var (lootFlow, player, bag) = KillWithAutoPickupOff(filterMinimum);
+
+            Assert.That(lootFlow.GroundDrops, Has.Count.EqualTo(1));
+            Assert.That(bag.StoredPackages, Is.Empty, "nothing is picked up on the hero's behalf");
+            Assert.That(player.Offered, Is.Empty, "and nothing is auto-equipped either");
+        }
+
+        [Test]
+        public void WithAutoPickupOff_TheClickIsWhatPicksItUp_ThroughTheAcquisitionEntryPoint()
+        {
+            var (lootFlow, player, _) = KillWithAutoPickupOff(ItemRarity.Common);
+
+            _ = lootFlow.PickUpFromGround(lootFlow.GroundDrops[0]);
+
+            Assert.That(player.Equipped, Has.Count.EqualTo(1), "auto-equip applies to the click");
+            Assert.That(lootFlow.GroundDrops, Is.Empty);
+        }
+
+        [Test]
+        public void WithAutoPickupOff_EveryDropLiesOnTheGround_EvenWithRoomInTheBag()
+        {
+            var hero = OneShotHero();
+            hero.IncreasedItemQuantity = 300f; // 1 base + 3 bonus = 4 drops
+
+            var (lootFlow, _, bag) = KillWithAutoPickupOff(ItemRarity.Common, hero);
+
+            Assert.That(lootFlow.GroundDrops, Has.Count.EqualTo(4));
+            Assert.That(bag.StoredPackages, Is.Empty);
+        }
+
+        [Test]
+        public void AutoPickup_IsReadLive_PerKill()
+        {
+            var behaviour = new HeroBehaviour { LootFilterMinimum = ItemRarity.Common, AutoPickup = false };
+            var location = Profiles.Solo(EnemyArchetype.Skirmisher,
+                table: FakeLootTable.Fixed(ItemCategory.Equipment, ItemRarity.Common));
+            var sim = NewEncounter(OneShotHero(), location);
+            var bag = new CharacterInventory(new Vector2Int(10, 10), catalog);
+            var lootFlow = new LootFlow(sim, behaviour, new ItemGenerator(catalog, new ConstantRollSource(0f)),
+                new FakeCoinDropSource(), new BagItemReceiver(bag), NewWallet());
+
+            behaviour.AutoPickup = true; // flipped after the flow was built, before the kill
+
+            sim.Advance(0.1f);
+
+            Assert.That(bag.StoredPackages, Has.Count.EqualTo(1));
+            Assert.That(lootFlow.GroundDrops, Is.Empty);
+        }
+
+        private (LootFlow lootFlow, BagItemReceiver player, CharacterInventory bag) KillWithAutoPickupOff(
+            ItemRarity filterMinimum, FakeHero hero = null)
+        {
+            var location = Profiles.Solo(EnemyArchetype.Skirmisher,
+                table: FakeLootTable.Fixed(ItemCategory.Equipment, ItemRarity.Common));
+            var sim = NewEncounter(hero ?? OneShotHero(), location);
+            var bag = new CharacterInventory(new Vector2Int(10, 10), catalog);
+            var player = new BagItemReceiver(bag) { Equips = _ => true }; // auto-equip on, slot empty
+
+            var lootFlow = new LootFlow(sim, new HeroBehaviour { LootFilterMinimum = filterMinimum, AutoPickup = false },
+                new ItemGenerator(catalog, new ConstantRollSource(0f)), new FakeCoinDropSource(), player, NewWallet());
+
+            sim.Advance(0.1f);
+            return (lootFlow, player, bag);
+        }
+
+        // ─── the Ground Items List (issue #63): the list follows GroundChanged, picks up through the player ──
+
+        private LootFlow NewIdleLootFlow(BagItemReceiver player)
+        {
+            var sim = NewEncounter(OneShotHero(), Profiles.Solo(EnemyArchetype.Skirmisher));
+            return new LootFlow(sim, Admitting(ItemRarity.Common), new ItemGenerator(catalog, new SeededRollSource(1)),
+                new FakeCoinDropSource(), player, NewWallet());
+        }
+
+        private static ItemInstance Sword() => new("fake.sword", ItemRarity.Common, 1, null);
+
+        [Test]
+        public void GroundChanged_FiresWhenAnItemIsPlacedOnTheGround()
+        {
+            var lootFlow = NewIdleLootFlow(new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10), catalog)));
+            var changes = 0;
+            lootFlow.GroundChanged += () => changes++;
+
+            lootFlow.PlaceOnGround(Sword());
+
+            Assert.That(changes, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void GroundChanged_FiresWhenAKillGroundsADrop()
+        {
+            var location = Profiles.Solo(EnemyArchetype.Skirmisher,
+                table: FakeLootTable.Fixed(ItemCategory.Equipment, ItemRarity.Common));
+            var sim = NewEncounter(OneShotHero(), location);
+            var lootFlow = new LootFlow(sim, Admitting(ItemRarity.Unique), new ItemGenerator(catalog, new ConstantRollSource(0f)),
+                new FakeCoinDropSource(), new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10), catalog)), NewWallet());
+            var changes = 0;
+            lootFlow.GroundChanged += () => changes++;
+
+            sim.Advance(0.1f);
+
+            Assert.That(changes, Is.EqualTo(1), "the filtered-out Drop is a ground entry");
+        }
+
+        [Test]
+        public void GroundChanged_FiresWhenTheGroundIsCleared_ButNotWhenItWasAlreadyEmpty()
+        {
+            var lootFlow = NewIdleLootFlow(new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10), catalog)));
+            var changes = 0;
+            lootFlow.GroundChanged += () => changes++;
+
+            lootFlow.ClearGround();
+            Assert.That(changes, Is.Zero, "nothing to clear, nothing to repaint");
+
+            lootFlow.PlaceOnGround(Sword());
+            lootFlow.ClearGround();
+            Assert.That(changes, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void PickUpFromGround_HandsTheItemToThePlayer_AndRemovesItFromTheGround()
+        {
+            var bag = new CharacterInventory(new Vector2Int(10, 10), catalog);
+            var player = new BagItemReceiver(bag);
+            var lootFlow = NewIdleLootFlow(player);
+            var sword = Sword();
+            lootFlow.PlaceOnGround(sword);
+            var changes = 0;
+            lootFlow.GroundChanged += () => changes++;
+
+            var picked = lootFlow.PickUpFromGround(sword);
+
+            Assert.That(picked, Is.True);
+            Assert.That(player.Offered, Is.EqualTo(new[] { sword }), "through the acquisition entry point");
+            Assert.That(lootFlow.GroundDrops, Is.Empty);
+            Assert.That(changes, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void PickUpFromGround_WithNoRoom_LeavesTheItemOnTheGround()
+        {
+            var full = new CharacterInventory(new Vector2Int(1, 1), catalog);
+            var filler = new Package(full, Sword(), 1u);
+            Assert.That(full.TryAddToContainer(ref filler), Is.True);
+            var lootFlow = NewIdleLootFlow(new BagItemReceiver(full));
+            var sword = Sword();
+            lootFlow.PlaceOnGround(sword);
+            var changes = 0;
+            lootFlow.GroundChanged += () => changes++;
+
+            var picked = lootFlow.PickUpFromGround(sword);
+
+            Assert.That(picked, Is.False);
+            Assert.That(lootFlow.GroundDrops, Has.Count.EqualTo(1));
+            Assert.That(changes, Is.Zero);
+        }
+
+        [Test]
+        public void PickUpFromGround_OfAnItemNotOnTheGround_DoesNotOfferItToThePlayer()
+        {
+            var player = new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10), catalog));
+            var lootFlow = NewIdleLootFlow(player);
+
+            var picked = lootFlow.PickUpFromGround(Sword());
+
+            Assert.That(picked, Is.False, "a stale click on a slot that already left the list");
+            Assert.That(player.Offered, Is.Empty);
+        }
+
+        [Test]
+        public void PickUpFromGround_TakesTheClickedInstance_WhenEqualItemsLieOnTheGround()
+        {
+            var player = new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10), catalog));
+            var lootFlow = NewIdleLootFlow(player);
+            var first = Sword();
+            var second = Sword();
+            lootFlow.PlaceOnGround(first);
+            lootFlow.PlaceOnGround(second);
+
+            _ = lootFlow.PickUpFromGround(second);
+
+            Assert.That(lootFlow.GroundDrops, Has.Count.EqualTo(1));
+            Assert.That(lootFlow.GroundDrops[0], Is.SameAs(first), "ItemInstance is value-equal; the ground removes by identity");
+        }
+
+        [Test]
+        public void PickUpFromGround_WhenThePlayerThrows_LeavesTheItemOnTheGround_AndSurfacesTheFailure()
+        {
+            var boom = new System.InvalidOperationException("equip blew up");
+            var player = new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10), catalog)) { Throws = boom };
+            var lootFlow = NewIdleLootFlow(player);
+            var sword = Sword();
+            lootFlow.PlaceOnGround(sword);
+            System.Exception reported = null;
+            lootFlow.PlacementFailed += (_, exception) => reported = exception;
+
+            var picked = lootFlow.PickUpFromGround(sword);
+
+            Assert.That(picked, Is.False);
+            Assert.That(lootFlow.GroundDrops, Has.Count.EqualTo(1));
+            Assert.That(reported, Is.SameAs(boom));
         }
 
         // ─── AC: the Run tracks what coins bank, so Death's fee reads the real take ──

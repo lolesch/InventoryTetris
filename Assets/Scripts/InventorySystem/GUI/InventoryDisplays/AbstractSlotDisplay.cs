@@ -7,6 +7,7 @@ using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Runtime.Provider;
+using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -116,6 +117,14 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                     /// the Sold container and the Wallet. A sale that cannot pay out is a
                     /// silent no-op, the click absorbed like any other quick-move.
                     _ = Sale.TrySell(Session.Instance.World.Sold, Session.Instance.Hero.Wallet, Container, position);
+                    return true;
+
+                case QuickMoveIntentKind.Drop:
+                    /// The Hero context's ground row (issue #63): the item leaves the bag for the
+                    /// Run's ground, where the Ground Items List shows it. A Run with no ground
+                    /// never resolves to this intent, so a missing loot flow is only a race
+                    /// with the Run ending - a silent no-op, the click absorbed.
+                    _ = DropTransaction.Run(Container, position, SimulationService.Instance.LootFlow);
                     return true;
 
                 case QuickMoveIntentKind.Acquire:

@@ -23,19 +23,25 @@ namespace ToolSmiths.InventorySystem.Inventories
     /// names this same exemption, not a second entry). The Sold container (issue #126) is one
     /// more shelf in that check: what the player sold is bought back like any Supply.</para>
     ///
-    /// <para><see cref="InventoryContext.Hero"/> resolves to nothing: the Hero Panel's sink
-    /// would be Equipment, but that row would duplicate right-click and has no ticket (#86's
-    /// stated out-of-scope). It is a stated outcome, not an omission - it never reaches
-    /// <see cref="Route"/>.</para>
+    /// <para><see cref="InventoryContext.Hero"/> has no Town Stop, so no sink of its own: the Hero
+    /// Panel's sink would be Equipment, but that row would duplicate right-click and has no ticket
+    /// (#86's stated out-of-scope). Its one row is the ground (issue #63): while a Run has a
+    /// ground, a shift-click on the backpack drops the item there. Equipment stays out of it -
+    /// rule two's Hero exemption holds, so a stray shift-click never unequips to the dirt. With
+    /// no ground (Town) the Hero context resolves to nothing, a stated outcome, not an omission.
+    /// It never reaches <see cref="Route"/>.</para>
     /// </summary>
     public static class QuickMoveResolver
     {
         /// <param name="sold">The Sold container (issue #126) - a Supply, so a shift-click on it
         /// is a Buy in every context.</param>
+        /// <param name="groundOpen">Whether a Run has a ground to drop on (issue #63): true in the
+        /// Field, false in Town.</param>
         public static QuickMoveIntent Resolve(InventoryContext context, AbstractDimensionalContainer source,
             AbstractDimensionalContainer backpack, AbstractDimensionalContainer stash,
             AbstractDimensionalContainer equipment, AbstractDimensionalContainer store,
-            AbstractDimensionalContainer healerSupply, AbstractDimensionalContainer sold)
+            AbstractDimensionalContainer healerSupply, AbstractDimensionalContainer sold,
+            bool groundOpen = false)
         {
             if (source == store || source == healerSupply || source == sold)
                 return QuickMoveIntent.Buy;
@@ -44,6 +50,8 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             return context switch
             {
+                InventoryContext.Hero when groundOpen && source == hub => QuickMoveIntent.Drop,
+
                 InventoryContext.Stash => Route(source, hub, equipment,
                     sink: QuickMoveIntent.MoveTo(stash),
                     (stash, QuickMoveIntent.Acquire)),

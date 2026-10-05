@@ -10,6 +10,8 @@ namespace ToolSmiths.InventorySystem.Inventories
     /// containers. <see cref="Acquire"/> is #86's source-to-hub row that must honour
     /// auto-equip - it routes through the player's acquisition entry point
     /// (<see cref="ToolSmiths.InventorySystem.Items.IItemReceiver"/>) instead of a plain move.
+    /// <see cref="Drop"/> (issue #63) lays the item on the Run's ground - the Hero context's one
+    /// sink, and only while a Run has a ground.
     /// </summary>
     public enum QuickMoveIntentKind
     {
@@ -18,6 +20,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         Buy = 3,
         Acquire = 4,
         Sell = 5,
+        Drop = 6,
     }
 
     /// <summary>
@@ -46,5 +49,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         public static QuickMoveIntent Acquire => new(QuickMoveIntentKind.Acquire, null);
 
         public static QuickMoveIntent Sell => new(QuickMoveIntentKind.Sell, null);
+
+        public static QuickMoveIntent Drop => new(QuickMoveIntentKind.Drop, null);
     }
 }
