@@ -151,10 +151,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6710603046912445380}
     m_Modifications:
-    - target: {fileID: 292869630088620566, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
-      propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
-      value: 1801810542
-      objectReference: {fileID: 0}
     - target: {fileID: 1060812048922288248, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
       propertyPath: m_Sprite
       value: 
@@ -288,10 +284,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6710603046912445380}
     m_Modifications:
-    - target: {fileID: 292869630088620566, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
-      propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
-      value: 1801810542
-      objectReference: {fileID: 0}
     - target: {fileID: 1060812048922288248, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
       propertyPath: m_Sprite
       value: 
@@ -425,10 +417,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6710603046912445380}
     m_Modifications:
-    - target: {fileID: 292869630088620566, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
-      propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
-      value: 1801810542
-      objectReference: {fileID: 0}
     - target: {fileID: 1060812048922288248, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
       propertyPath: m_Sprite
       value: 
@@ -562,10 +550,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6710603046912445380}
     m_Modifications:
-    - target: {fileID: 292869630088620566, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
-      propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
-      value: 1801810542
-      objectReference: {fileID: 0}
     - target: {fileID: 1060812048922288248, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
       propertyPath: m_Sprite
       value: 
@@ -711,10 +695,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6710603046912445380}
     m_Modifications:
-    - target: {fileID: 292869630088620566, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
-      propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
-      value: 1801810542
-      objectReference: {fileID: 0}
     - target: {fileID: 2148585357408591780, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -844,10 +824,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6710603046912445380}
     m_Modifications:
-    - target: {fileID: 292869630088620566, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
-      propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
-      value: 1801810542
-      objectReference: {fileID: 0}
     - target: {fileID: 1060812048922288248, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
       propertyPath: m_Sprite
       value: 
@@ -981,10 +957,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6710603046912445380}
     m_Modifications:
-    - target: {fileID: 292869630088620566, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
-      propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
-      value: 1801810542
-      objectReference: {fileID: 0}
     - target: {fileID: 1060812048922288248, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
       propertyPath: m_Sprite
       value: 
@@ -1118,10 +1090,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6710603046912445380}
     m_Modifications:
-    - target: {fileID: 292869630088620566, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
-      propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
-      value: 1801810542
-      objectReference: {fileID: 0}
     - target: {fileID: 1060812048922288248, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
       propertyPath: m_Sprite
       value: 
@@ -1255,10 +1223,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6710603046912445380}
     m_Modifications:
-    - target: {fileID: 292869630088620566, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
-      propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
-      value: 1801810542
-      objectReference: {fileID: 0}
     - target: {fileID: 1060812048922288248, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
       propertyPath: m_Sprite
       value: 
@@ -1392,10 +1356,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6710603046912445380}
     m_Modifications:
-    - target: {fileID: 292869630088620566, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
-      propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
-      value: 1801810542
-      objectReference: {fileID: 0}
     - target: {fileID: 1060812048922288248, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
       propertyPath: m_Sprite
       value: 
@@ -1529,10 +1489,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6710603046912445380}
     m_Modifications:
-    - target: {fileID: 292869630088620566, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
-      propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
-      value: 1801810542
-      objectReference: {fileID: 0}
     - target: {fileID: 1060812048922288248, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
       propertyPath: m_Sprite
       value: 
@@ -1662,10 +1618,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6710603046912445380}
     m_Modifications:
-    - target: {fileID: 292869630088620566, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
-      propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
-      value: 1801810542
-      objectReference: {fileID: 0}
     - target: {fileID: 1060812048922288248, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
       propertyPath: m_Sprite
       value: 
@@ -1811,10 +1763,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6710603046912445380}
     m_Modifications:
-    - target: {fileID: 292869630088620566, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
-      propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
-      value: 1801810542
-      objectReference: {fileID: 0}
     - target: {fileID: 1060812048922288248, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
       propertyPath: m_Sprite
       value: 
@@ -1948,10 +1896,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6710603046912445380}
     m_Modifications:
-    - target: {fileID: 292869630088620566, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
-      propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
-      value: 1801810542
-      objectReference: {fileID: 0}
     - target: {fileID: 1060812048922288248, guid: 2efb086721d7ecd459cfd431fea571c1, type: 3}
       propertyPath: m_Sprite
       value: 

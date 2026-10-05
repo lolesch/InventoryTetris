@@ -118,18 +118,15 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
         /// a panel with no role must not touch the context at all, not even to close it.
         /// </summary>
         /// <returns>
-        /// <c>true</c> when the request actually reached the provider. The caller gates its own
-        /// toggle state on this, so a request that could not be made - no provider, no authored
+        /// <c>true</c> when the request actually reached the inventory service. The caller gates its own
+        /// toggle state on this, so a request that could not be made - no armed service, no authored
         /// context, not playing - leaves the button where it was instead of flipping it into a
         /// state the context knows nothing about. That divergence is the whole bug class here:
         /// a pressed toggle and an open panel are one fact and must not be able to disagree.
         /// </returns>
         public bool RequestContext(bool open)
         {
-            if (!Application.isPlaying || inventoryContext == InventoryContext.None)
-                return false;
-
-            if (!ServiceLocator.IsArmed)
+            if (!Application.isPlaying || inventoryContext == InventoryContext.None || !ServiceLocator.IsArmed)
                 return false;
 
             var inventory = InventoryService.Instance;

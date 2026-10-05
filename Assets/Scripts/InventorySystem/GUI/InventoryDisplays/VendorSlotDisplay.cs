@@ -30,11 +30,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         // Hero's Wallet, which CurrentWallet no longer names by then.
         private Wallet watched;
 
-        protected override void OnEnable()
+        private void OnEnable()
         {
-            base.OnEnable();
-
-            _ = Session.TrySubscribeHeroLoaded(WatchWallet);
+            _ =Session.TrySubscribeHeroLoaded(WatchWallet);
 
             WatchWallet();
         }
@@ -167,18 +165,20 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         /// </summary>
         public override bool WouldAcceptDrop(Package package)
         {
-            if (!package.IsValid)
+            if (!package.IsValid || !ServiceLocator.IsArmed)
                 return false;
 
             if (DragProvider.Instance.IsHoldingPurchase)
                 return true;
 
-            return Sale.CanSellHeld(Session.Instance.World.Sold, Session.Instance.Hero.Wallet, package);
+            var session = Session.Instance;
+
+            return Sale.CanSellHeld(session.World.Sold, session.Hero.Wallet, package);
         }
 
         protected override void DropItem(Package package)
         {
-            if (!package.IsValid)
+            if (!package.IsValid || !ServiceLocator.IsArmed)
                 return;
 
             /// A purchase in progress never reaches here: AbstractSlotDisplay.Drop sends it back
@@ -187,7 +187,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             /// sale: the one Sale statement, over the Sold container and the Wallet - the source
             /// was vacated at pick-up. A sale that cannot pay out is turned away like any refused
             /// drop: the item goes back where it came from, not under the cursor.
-            if (!Sale.TrySellHeld(Session.Instance.World.Sold, Session.Instance.Hero.Wallet, package))
+            var session = Session.Instance;
+
+            if (!Sale.TrySellHeld(session.World.Sold, session.Hero.Wallet, package))
             {
                 _ = CancelHeldDrag();
                 return;

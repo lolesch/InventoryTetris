@@ -113,8 +113,6 @@ namespace ToolSmiths.InventorySystem.Inventories
                 Instance.OnContextChanged -= handler;
         }
 
-        [field: SerializeField] public bool ShowDebugPositions { get; private set; }
-
         [SerializeField] private Slider amountSlider;
         [SerializeField] private TextMeshProUGUI amountText;
         private uint Amount => amountSlider != null ? (uint)amountSlider.value : 1;

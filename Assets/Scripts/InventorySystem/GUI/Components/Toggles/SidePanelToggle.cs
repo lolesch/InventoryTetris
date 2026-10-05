@@ -44,7 +44,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
     /// a sibling the group silently deactivates on its way out, which is what keeps a
     /// Stash-to-Vendor handover to the one <see cref="SidePanel.RequestContext"/> call the incoming
     /// toggle makes, with no intermediate close. The request goes through the panel
-    /// (<see cref="SidePanel.RequestContext"/>), not straight to the provider - the toggle still
+    /// (<see cref="SidePanel.RequestContext"/>), not straight to the inventory service - the toggle still
     /// carries no context of its own, only which panel to ask.</para>
     /// </summary>
     [DisallowMultipleComponent]
@@ -86,7 +86,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         /// The hotkey, asked every frame like <see cref="SyncToContext"/> asks the panel. Reachability
         /// is not decided here: <see cref="Selectable.IsInteractable"/> includes the
         /// <c>CanvasGroup</c>s above this toggle, so a hidden parent panel (InTown while the Field face
-        /// is up) silences the key without a phase or provider dependency. The Hero Panel's toggle has
+        /// is up) silences the key without a phase or service dependency. The Hero Panel's toggle has
         /// no such panel above it and stays reachable in both faces, structurally.
         /// </summary>
         private void Update()
@@ -152,7 +152,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         }
 
         /// <summary>
-        /// The click/hotkey edge. Does nothing when there is no panel or provider to request from -
+        /// The click/hotkey edge. Does nothing when there is no panel or armed service to request from -
         /// a toggle that pressed without a context behind it is how a stuck button and a
         /// pressed-but-empty panel start. Turning on is requested by <see cref="OnToggle"/>;
         /// turning off is requested here, and only once the toggle really switched off, so a
