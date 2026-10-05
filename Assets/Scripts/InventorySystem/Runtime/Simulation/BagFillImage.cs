@@ -1,3 +1,4 @@
+using Submodules.Utility.Services;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Runtime.Provider;
 using ToolSmiths.InventorySystem.Services;
@@ -36,6 +37,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         private void Update()
         {
+            if (!ServiceLocator.IsArmed) return;
+
             var bag = Session.Instance.Hero.Inventory;
 
             // The gauge is bound to one container; rebuild only if a hero load swaps it.

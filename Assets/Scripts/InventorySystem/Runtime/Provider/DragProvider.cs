@@ -1,5 +1,6 @@
 using NaughtyAttributes;
 using Submodules.Utility.Provider;
+using Submodules.Utility.Services;
 using TMPro;
 using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Data;
@@ -66,6 +67,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         /// drop and the drop tint both ask (<see cref="PurchaseDrop.MayLandIn"/>).</summary>
         public bool MayLandIn(AbstractDimensionalContainer target)
         {
+            if (!ServiceLocator.IsArmed)
+                return false;
+
             var hero = Session.Instance.Hero;
 
             return PurchaseDrop.MayLandIn(IsHoldingPurchase, target, hero.Inventory, hero.Equipment);
@@ -353,7 +357,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         /// decide whether to leave it there.</returns>
         public bool CancelDrag()
         {
-            if (!IsDragging || !DraggingPackage.IsValid)
+            if (!IsDragging || !DraggingPackage.IsValid || !ServiceLocator.IsArmed)
                 return false;
 
             var fallback = PurchaseDrop.FallbackFor(IsHoldingPurchase, ReturnOrigin.Container, Session.Instance.Hero.Inventory);
