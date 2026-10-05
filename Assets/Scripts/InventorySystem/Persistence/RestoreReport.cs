@@ -8,6 +8,9 @@ namespace ToolSmiths.InventorySystem.Persistence
         Equipment,
         Inventory,
         Stash,
+
+        /// <summary>The Hero's Corpse. Its items have no cell, so a skipped entry's x and y are 0 and its amount 1.</summary>
+        Corpse,
     }
 
     /// <summary>Why a saved package was left out of the restored hero.</summary>
@@ -21,6 +24,9 @@ namespace ToolSmiths.InventorySystem.Persistence
 
         /// <summary>The saved stack size is zero, so there is nothing to place.</summary>
         EmptyStack,
+
+        /// <summary>The Corpse's Location id is not an authored Location any more, so its items have nowhere to be recovered.</summary>
+        UnknownLocation,
     }
 
     /// <summary>

@@ -4,7 +4,8 @@
     "references": [
         "InventorySystem.Data",
         "InventorySystem.Items",
-        "InventorySystem.Containers"
+        "InventorySystem.Containers",
+        "InventorySystem.Simulation"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -33,7 +33,7 @@ namespace ToolSmiths.InventorySystem.Services
         private readonly GameConfig config;
         private readonly IRollSource rolls;
         private readonly ItemGenerator generator;
-        private readonly Dictionary<LocationConfig, EncounterProfile> profiles = new();
+        private readonly LocationRegistry locations;
 
         /// <summary>Call sites at the Unity edge read the service as <c>SimulationService.Instance.Run</c>.</summary>
         public static ISimulationService Instance => ServiceLocator.Get<ISimulationService>();
@@ -48,7 +48,10 @@ namespace ToolSmiths.InventorySystem.Services
             this.rolls = rolls ?? throw new ArgumentNullException(nameof(rolls));
 
             generator = new ItemGenerator(items.Catalog, rolls);
+            locations = new LocationRegistry(config.Locations);
         }
+
+        public ILocationRegistry Locations => locations;
 
         public RunState Run
         {
@@ -208,17 +211,8 @@ namespace ToolSmiths.InventorySystem.Services
         private static RunSettlement SettlementFor(Hero hero) =>
             new(new ContainerSettlementBag(hero), new PlayerWalletLedger(hero), hero.Corpse);
 
-        /// <summary>
-        /// The one memoized <see cref="EncounterProfile"/> per <see cref="LocationConfig"/>.
-        /// Profiles are immutable, so sharing one across Runs and heroes is safe.
-        /// </summary>
-        private EncounterProfile ProfileFor(LocationConfig location)
-        {
-            if (!profiles.TryGetValue(location, out var profile))
-                profiles[location] = profile = location.ToProfile();
-
-            return profile;
-        }
+        // The memo lives on the registry, so a saved Corpse restores onto the profile a Send uses.
+        private EncounterProfile ProfileFor(LocationConfig location) => locations.ProfileFor(location);
 
         private void OnRunEnded(World world, RunState run)
         {

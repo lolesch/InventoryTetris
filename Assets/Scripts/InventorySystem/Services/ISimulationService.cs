@@ -13,6 +13,13 @@ namespace ToolSmiths.InventorySystem.Services
     /// </summary>
     public interface ISimulationService : IService
     {
+        /// <summary>
+        /// The authored Locations by stable id, and the one <see cref="EncounterProfile"/> this service
+        /// runs each of them as. The loader reads it so a restored Corpse matches the profile a
+        /// <see cref="Send"/> uses.
+        /// </summary>
+        ILocationRegistry Locations { get; }
+
         /// <summary>The current World's Run FSM - <see cref="RunPhase.InTown"/> until a <see cref="Send"/>. Built on the first ask.</summary>
         RunState Run { get; }
 
