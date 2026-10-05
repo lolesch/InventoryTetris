@@ -528,7 +528,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
+        m_TargetAssemblyTypeName: ToolSmiths.InventorySystem.GUI.Components.Panels.DebugPanel, Assembly-CSharp
         m_MethodName: SetAmountText
         m_Mode: 1
         m_Arguments:

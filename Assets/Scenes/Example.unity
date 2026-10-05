@@ -274,7 +274,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
+      value: ToolSmiths.InventorySystem.GUI.Components.Panels.DebugPanel, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -408,7 +408,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
+      value: ToolSmiths.InventorySystem.GUI.Components.Panels.DebugPanel, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -1082,7 +1082,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
+      value: ToolSmiths.InventorySystem.GUI.Components.Panels.DebugPanel, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -1537,7 +1537,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
+      value: ToolSmiths.InventorySystem.GUI.Components.Panels.DebugPanel, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -2209,7 +2209,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
+      value: ToolSmiths.InventorySystem.GUI.Components.Panels.DebugPanel, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -2821,14 +2821,14 @@ PrefabInstance:
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 1590650150}
+      objectReference: {fileID: 322785545}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: KillPlayer
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.CharacterProvider, Assembly-CSharp
+      value: ToolSmiths.InventorySystem.GUI.Components.Panels.DebugPanel, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -3307,7 +3307,7 @@ GameObject:
   - component: {fileID: 322785546}
   - component: {fileID: 322785545}
   m_Layer: 0
-  m_Name: INVENTORY_PROVIDER
+  m_Name: DEBUG_PANEL
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3322,24 +3322,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 322785544}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8d82caa079099b146bc2f9a50b54d454, type: 3}
+  m_Script: {fileID: 11500000, guid: 773c3ed96fac4cb89a162d2cc2e50b1a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  <Equipment>k__BackingField:
-    <StoredPackages>k__BackingField: []
-    autoEquip: 1
-  <Inventory>k__BackingField:
-    <StoredPackages>k__BackingField: []
-  <Stash>k__BackingField:
-    <StoredPackages>k__BackingField: []
-  <Store>k__BackingField:
-    <StoredPackages>k__BackingField: []
-  <HealerSupply>k__BackingField:
-    <StoredPackages>k__BackingField: []
-  equipmentSize: {x: 14, y: 1}
-  inventorySize: {x: 10, y: 6}
-  stashSize: {x: 10, y: 13}
-  storeSize: {x: 10, y: 7}
   amountSlider: {fileID: 322413267}
   amountText: {fileID: 1817569713}
 --- !u!4 &322785546
@@ -3484,14 +3469,14 @@ PrefabInstance:
     - target: {fileID: 7732425298350059325, guid: cf0141580ffbbc444b72dd3d441cf354, type: 3}
       propertyPath: onValueChanged.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 1590650150}
+      objectReference: {fileID: 322785545}
     - target: {fileID: 7732425298350059325, guid: cf0141580ffbbc444b72dd3d441cf354, type: 3}
       propertyPath: onValueChanged.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: ToggleSpendingResource
       objectReference: {fileID: 0}
     - target: {fileID: 7732425298350059325, guid: cf0141580ffbbc444b72dd3d441cf354, type: 3}
       propertyPath: onValueChanged.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.CharacterProvider, Assembly-CSharp
+      value: ToolSmiths.InventorySystem.GUI.Components.Panels.DebugPanel, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7732425298734919702, guid: cf0141580ffbbc444b72dd3d441cf354, type: 3}
       propertyPath: m_Sprite
@@ -3608,7 +3593,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
+      value: ToolSmiths.InventorySystem.GUI.Components.Panels.DebugPanel, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -4100,7 +4085,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
+      value: ToolSmiths.InventorySystem.GUI.Components.Panels.DebugPanel, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -6584,7 +6569,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
+      value: ToolSmiths.InventorySystem.GUI.Components.Panels.DebugPanel, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -7114,7 +7099,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 322785545}
-        m_TargetAssemblyTypeName: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
+        m_TargetAssemblyTypeName: ToolSmiths.InventorySystem.GUI.Components.Panels.DebugPanel, Assembly-CSharp
         m_MethodName: RestockHealerSupply
         m_Mode: 1
         m_Arguments:
@@ -7591,7 +7576,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
+      value: ToolSmiths.InventorySystem.GUI.Components.Panels.DebugPanel, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -8146,7 +8131,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
+      value: ToolSmiths.InventorySystem.GUI.Components.Panels.DebugPanel, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -9729,7 +9714,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
+      value: ToolSmiths.InventorySystem.GUI.Components.Panels.DebugPanel, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -9968,7 +9953,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
+      value: ToolSmiths.InventorySystem.GUI.Components.Panels.DebugPanel, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -10708,7 +10693,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
+      value: ToolSmiths.InventorySystem.GUI.Components.Panels.DebugPanel, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -11014,7 +10999,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
+      value: ToolSmiths.InventorySystem.GUI.Components.Panels.DebugPanel, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -12800,7 +12785,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
+      value: ToolSmiths.InventorySystem.GUI.Components.Panels.DebugPanel, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -13427,15 +13412,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 34a52130df184bd4be63b7dddbbfc41a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.Runtime.Simulation.SimulationProvider
-  castCost: 16
-  simSpeed: 1
-  engagement: 3
-  retreatHealthFraction: 0
-  recallBagFillFraction: 1
-  castThreshold: 0
-  lootFilterMinimum: 5
-  xpLossFraction: 0.25
-  currencyFeeFraction: 0.5
 --- !u!4 &1129816803
 Transform:
   m_ObjectHideFlags: 0
@@ -13474,7 +13450,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
+      value: ToolSmiths.InventorySystem.GUI.Components.Panels.DebugPanel, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -14765,7 +14741,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
+      value: ToolSmiths.InventorySystem.GUI.Components.Panels.DebugPanel, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -15337,7 +15313,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7732425298350059325, guid: cf0141580ffbbc444b72dd3d441cf354, type: 3}
       propertyPath: onValueChanged.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
+      value: ToolSmiths.InventorySystem.GUI.Components.Panels.DebugPanel, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7732425298734919702, guid: cf0141580ffbbc444b72dd3d441cf354, type: 3}
       propertyPath: m_Sprite
@@ -15831,7 +15807,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
+      value: ToolSmiths.InventorySystem.GUI.Components.Panels.DebugPanel, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -16450,7 +16426,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
+      value: ToolSmiths.InventorySystem.GUI.Components.Panels.DebugPanel, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -17112,7 +17088,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
+      value: ToolSmiths.InventorySystem.GUI.Components.Panels.DebugPanel, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -17472,7 +17448,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
+      value: ToolSmiths.InventorySystem.GUI.Components.Panels.DebugPanel, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -19264,7 +19240,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
+      value: ToolSmiths.InventorySystem.GUI.Components.Panels.DebugPanel, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -20393,7 +20369,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
+      value: ToolSmiths.InventorySystem.GUI.Components.Panels.DebugPanel, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -22069,8 +22045,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
+      - m_Target: {fileID: 322785545}
+        m_TargetAssemblyTypeName: ToolSmiths.InventorySystem.GUI.Components.Panels.DebugPanel, Assembly-CSharp
         m_MethodName: ClearPlayerEquipment
         m_Mode: 1
         m_Arguments:
@@ -22104,7 +22080,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
+      value: ToolSmiths.InventorySystem.GUI.Components.Panels.DebugPanel, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -23536,7 +23512,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: ToolSmiths.InventorySystem.Inventories.InventoryProvider, Assembly-CSharp
+      value: ToolSmiths.InventorySystem.GUI.Components.Panels.DebugPanel, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 7022399922254581282, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
