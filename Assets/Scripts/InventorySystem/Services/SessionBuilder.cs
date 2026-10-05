@@ -46,6 +46,16 @@ namespace ToolSmiths.InventorySystem.Services
                 new SoldContainer(config.SoldSize, catalog),
                 new InventoryContextState());
 
+            // 4. The Healer's side effect (issue #58): a full Health and Resource refill on every
+            // genuine entry into its context. The Hero and the World are built and replaced together,
+            // so the subscription lives and dies with the pair: a hero load (#114) rebinds nothing.
+            // Changed only fires on an actual change, so a re-request or the way out never heals.
+            world.Context.Changed += context =>
+            {
+                if (context == InventoryContext.Healer)
+                    hero.Heal();
+            };
+
             return new Session(hero, world);
         }
 

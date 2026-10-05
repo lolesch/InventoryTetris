@@ -36,7 +36,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         public void RemoveItemStats(IReadOnlyList<CharacterStatModifier> stats) => Hero.RemoveItemStats(stats);
 
         /// <summary>
-        /// The debug spawners' (and the legacy <c>DummyTarget</c>'s) entry: the placement of
+        /// The debug spawners' entry: the placement of
         /// <see cref="PickUpItem(ItemInstance, uint)"/>, plus - in a debug build - an overflow to
         /// the Stash so a spawn burst is not lost to a full bag
         /// (<see cref="IInventoryService.PickUpOrStash"/>). Anything that must treat "no room" as

@@ -169,6 +169,55 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(second.World.Context.Active, Is.EqualTo(InventoryContext.None));
         }
 
+        // ── the Healer ───────────────────────────────────────────────────────
+
+        [Test]
+        public void EnteringTheHealer_RefillsTheHerosHealthAndResource()
+        {
+            var session = Build();
+            var health = session.Hero.GetResource(StatName.Health);
+            var resource = session.Hero.GetResource(StatName.Resource);
+            health.DepleteCurrent();
+            resource.DepleteCurrent();
+
+            session.World.Context.Set(InventoryContext.Healer);
+
+            Assert.That(health.CurrentValue, Is.EqualTo(health.TotalValue));
+            Assert.That(resource.CurrentValue, Is.EqualTo(resource.TotalValue));
+        }
+
+        [Test]
+        public void TheHealerRefill_FiresOncePerEntry_NeverOnTheWayOut_NorForAnotherContext()
+        {
+            var session = Build();
+            var health = session.Hero.GetResource(StatName.Health);
+
+            health.DepleteCurrent();
+            session.World.Context.Set(InventoryContext.Vendor);
+            Assert.That(health.CurrentValue, Is.Zero, "the Vendor does not heal");
+
+            session.World.Context.Set(InventoryContext.Healer);
+            Assert.That(health.CurrentValue, Is.EqualTo(health.TotalValue), "entry heals");
+
+            health.DepleteCurrent();
+            session.World.Context.Set(InventoryContext.Healer);
+            session.World.Context.Close();
+            Assert.That(health.CurrentValue, Is.Zero, "a re-request and the close do not heal again");
+        }
+
+        [Test]
+        public void TheHealerRefill_BelongsToItsOwnHero_NotToAnotherBuild()
+        {
+            var first = Build();
+            var second = Build();
+            var health = second.Hero.GetResource(StatName.Health);
+            health.DepleteCurrent();
+
+            first.World.Context.Set(InventoryContext.Healer);
+
+            Assert.That(health.CurrentValue, Is.Zero);
+        }
+
         // ── arguments ────────────────────────────────────────────────────────
 
         [Test]

@@ -413,14 +413,21 @@ a reference won't resolve.
   moved with it, so the GUID and every scene reference held.
 - **`Assets/Scripts/InventorySystem/Characters/` is `InventorySystem.Characters.asmdef`** (#110):
   `Hero`, `HeroData`, `ResourceRegen`, plus the authored `DefaultHero.asset`. It references
-  `Data` and `Containers` (for `IStatReceiver`). `LocalPlayer`, `BaseCharacter` and `DummyTarget`
+  `Data` and `Containers` (for `IStatReceiver`). `LocalPlayer` and `BaseCharacter`
   stay in `Assembly-CSharp` and delegate to it, so a test reaches the hero but never the component;
   `AuthoredHeroAssetsTests` reads the prefab's `LocalPlayer` by type name for that reason. The
   tests are `Tests/EditMode/Character/InventorySystem.Characters.Tests.asmdef`.
-- **`DummyTarget` keeps its stats serialized on the component** under `[FormerlySerializedAs]` of
-  the old `<Name>k__BackingField` keys, so `Example.unity` was not touched; its `Hero` wraps those
-  same instances. Verified in a batch-mode Play run that the scene's values carried over (level 5,
-  `SpendResource` off, Shield 250). It goes with #117.
+- **The Healer's refill is wired where the Session is built** (#117): `SessionBuilder` subscribes
+  `world.Context.Changed` to `hero.Heal()` for the Healer context. The Hero and the World are built
+  and replaced together, so the subscription needs no rebinding on a hero load (#114).
+  `DummyTarget` and the scene's dummy panel and damage buttons are gone; `CharacterProvider` is down
+  to `KillPlayer` and `ToggleSpendingResource` for the scene's two remaining debug controls
+  (#118, #119).
+- **Editing a scene through the open Editor saves the Editor's memory, not the file.** If the
+  working copy of `Example.unity` differs from what the Editor loaded (a branch switch, a hand
+  edit), a `RunCommand` that deletes objects and saves also rewrites every other difference
+  (1.8k diff lines on #117). `EditorSceneManager.OpenScene` the scene first so memory equals disk,
+  then edit and `SaveOpenScenes`; check `diff` against a copy taken before.
 - **The Hero and the World are built at boot** (#112): `SessionBuilder` (hero, then what it owns, then
   the World) is called by `GameBoot.Build` with `GameConfig.DefaultHero`, so a missing default hero
   fails at boot. `Services` now references `Characters`; `Characters` references `Items` and
