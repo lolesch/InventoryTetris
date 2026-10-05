@@ -31,7 +31,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private RunState _run;
 
         /// <summary>
-        /// Play mode only, mirroring <see cref="ToolSmiths.InventorySystem.Inventories.InventoryProvider.TrySubscribeContextChanged"/>'s
+        /// Play mode only, mirroring <see cref="ToolSmiths.InventorySystem.Services.InventoryService.TrySubscribeContextChanged"/>'s
         /// guard: a panel that enables edit-adjacent (scene load, domain reload, prefab
         /// isolation) is left unsubscribed rather than reading a service that was never armed.
         /// </summary>

@@ -66,9 +66,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         /// drop and the drop tint both ask (<see cref="PurchaseDrop.MayLandIn"/>).</summary>
         public bool MayLandIn(AbstractDimensionalContainer target)
         {
-            var inventory = InventoryProvider.Instance;
+            var hero = Session.Instance.Hero;
 
-            return PurchaseDrop.MayLandIn(IsHoldingPurchase, target, inventory.Inventory, inventory.Equipment);
+            return PurchaseDrop.MayLandIn(IsHoldingPurchase, target, hero.Inventory, hero.Equipment);
         }
 
         /// <summary>
@@ -113,13 +113,13 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         /// </summary>
         private void OnEnable()
         {
-            _ = InventoryProvider.TrySubscribeContextChanged(OnContextChanged, out _);
+            _ = InventoryService.TrySubscribeContextChanged(OnContextChanged, out _);
             _ = Session.TrySubscribeHeroLoaded(OnHeroLoaded);
         }
 
         private void OnDisable()
         {
-            InventoryProvider.UnsubscribeContextChanged(OnContextChanged);
+            InventoryService.UnsubscribeContextChanged(OnContextChanged);
             Session.UnsubscribeHeroLoaded(OnHeroLoaded);
         }
 
@@ -356,7 +356,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             if (!IsDragging || !DraggingPackage.IsValid)
                 return false;
 
-            var fallback = PurchaseDrop.FallbackFor(IsHoldingPurchase, ReturnOrigin.Container, InventoryProvider.Instance.Inventory);
+            var fallback = PurchaseDrop.FallbackFor(IsHoldingPurchase, ReturnOrigin.Container, Session.Instance.Hero.Inventory);
 
             var leftOnCursor = ReturnToOrigin.Return(DraggingPackage, ReturnOrigin.Container, ReturnOrigin.Cell, fallback);
 

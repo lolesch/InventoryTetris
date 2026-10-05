@@ -23,6 +23,35 @@ namespace ToolSmiths.InventorySystem.Services
         /// <summary>Call sites at the Unity edge read the service as <c>InventoryService.Instance.RestockTownStops()</c>.</summary>
         public static IInventoryService Instance => ServiceLocator.Get<IInventoryService>();
 
+        /// <summary>
+        /// Detach-before-attach subscribe to <see cref="IInventoryService.ContextChanged"/> for a view that
+        /// tracks the Inventory Context. The event follows whichever World is current, so one subscription
+        /// outlives a hero load. Does nothing, and says so, when no service is armed - an enable in Edit
+        /// Mode - rather than throwing from the locator.
+        /// </summary>
+        /// <returns>Whether the subscription was made; <paramref name="activeContext"/> is only meaningful when it was.</returns>
+        public static bool TrySubscribeContextChanged(Action<InventoryContext> handler, out InventoryContext activeContext)
+        {
+            activeContext = default;
+
+            if (!ServiceLocator.IsArmed)
+                return false;
+
+            var service = Instance;
+            service.ContextChanged -= handler;
+            service.ContextChanged += handler;
+
+            activeContext = service.ActiveContext;
+            return true;
+        }
+
+        /// <summary>The matching detach for <see cref="TrySubscribeContextChanged"/>, tolerant of nothing being armed.</summary>
+        public static void UnsubscribeContextChanged(Action<InventoryContext> handler)
+        {
+            if (ServiceLocator.IsArmed)
+                Instance.ContextChanged -= handler;
+        }
+
         // The World the relay is attached to, so a hero load can let go of exactly that one.
         private World attached;
 
