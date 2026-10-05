@@ -5733,7 +5733,6 @@ MonoBehaviour:
   toggledOnSprite: {fileID: 0}
   panel: {fileID: 630857822}
   hotkey: 118
-  gatedByFieldReachability: 1
 --- !u!114 &427819268
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7443,7 +7442,6 @@ MonoBehaviour:
   toggledOnSprite: {fileID: 0}
   panel: {fileID: 2069960140}
   hotkey: 104
-  gatedByFieldReachability: 1
 --- !u!114 &612742130
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10550,7 +10548,6 @@ MonoBehaviour:
   toggledOnSprite: {fileID: 0}
   panel: {fileID: 1561434728}
   hotkey: 105
-  gatedByFieldReachability: 1
 --- !u!114 &856665806
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16231,7 +16228,6 @@ MonoBehaviour:
   toggledOnSprite: {fileID: 0}
   panel: {fileID: 1525008107}
   hotkey: 115
-  gatedByFieldReachability: 1
 --- !u!114 &1393504393
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -25142,7 +25138,7 @@ MonoBehaviour:
   <PreviousMember>k__BackingField: {fileID: 0}
   <UserCanUntoggle>k__BackingField: 0
   <GroupCanUntoggle>k__BackingField: 1
-  <ResetWithParentPanel>k__BackingField: 0
+  <ResetWithParentPanel>k__BackingField: 1
 --- !u!1 &2144819083
 GameObject:
   m_ObjectHideFlags: 0
