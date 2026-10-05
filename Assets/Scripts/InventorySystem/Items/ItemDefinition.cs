@@ -6,7 +6,7 @@ namespace ToolSmiths.InventorySystem.Items
 {
     /// <summary>
     /// The immutable template for a kind of item - what a Rare Chest <em>can be</em>,
-    /// before anything is rolled (see <c>CONTEXT.md</c> "Item Definition"). The generator,
+    /// before anything is rolled (see <c>GLOSSARY.md</c> "Item Definition"). The generator,
     /// the containers and the displays all read an item through this contract.
     ///
     /// It is an interface, not a class, so a test passes a fake and no
@@ -41,7 +41,7 @@ namespace ToolSmiths.InventorySystem.Items
         IReadOnlyList<AffixSlot> AffixPool { get; }
 
         /// <summary>
-        /// Guaranteed modifiers that are not rolled (<c>CONTEXT.md</c> "Implicit stats").
+        /// Guaranteed modifiers that are not rolled (<c>GLOSSARY.md</c> "Implicit stats").
         /// A roll merges these into the instance's combined affix list.
         /// </summary>
         IReadOnlyList<CharacterStatModifier> ImplicitStats { get; }
@@ -51,7 +51,7 @@ namespace ToolSmiths.InventorySystem.Items
 
         /// <summary>
         /// A Unique is an ordinary definition flagged unique with a fixed affix list, not a
-        /// separate kind of thing (<c>CONTEXT.md</c> "Rarity").
+        /// separate kind of thing (<c>GLOSSARY.md</c> "Rarity").
         /// </summary>
         bool IsUnique { get; }
 

@@ -6,7 +6,7 @@ using static ToolSmiths.InventorySystem.Tests.EditMode.Items.Sample;
 namespace ToolSmiths.InventorySystem.Tests.EditMode.Items
 {
     /// <summary>
-    /// Stacking identity (<c>CONTEXT.md</c> "Package", foundational-rework spec): two
+    /// Stacking identity (<c>GLOSSARY.md</c> "Package", foundational-rework spec): two
     /// instances merge into one stack iff same definition, a stack limit above one, and
     /// neither carries rolled state. Currency and a plain consumable stack; equipment and a
     /// rolled consumable never do. <c>AbstractItem.Equals</c> ignoring affixes is not carried

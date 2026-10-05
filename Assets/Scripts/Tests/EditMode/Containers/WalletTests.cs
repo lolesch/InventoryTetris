@@ -69,7 +69,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         private static bool HoldsCurrency(Wallet wallet) => wallet.Container.StoredPackages.Values
             .Any(package => ItemView.Resolve(package.Item, catalog).Definition.Category == ItemCategory.Currency);
 
-        // ── MintCurrency rarities (CONTEXT.md "Denomination") ───────────────
+        // ── MintCurrency rarities (GLOSSARY.md "Denomination") ───────────────
         // A minted coin carries its denomination's fixed Rarity, so a silver Pile tints Rare
         // and a gold Pile tints Unique instead of everything coming back Common.
 

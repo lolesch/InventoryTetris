@@ -4,7 +4,7 @@ namespace ToolSmiths.InventorySystem.Simulation
 {
     /// <summary>
     /// Rolls one coin Pile per kill — a denomination and a pile size (spec "Loot flow";
-    /// CONTEXT.md "Pile"). Owns its own randomness, the same seam <c>ItemGenerator</c> (via
+    /// GLOSSARY.md "Pile"). Owns its own randomness, the same seam <c>ItemGenerator</c> (via
     /// <c>InventorySystem.Items.IRollSource</c>) already keeps constructor-side rather than
     /// per-call, so a Pile roll composes the same way an item roll does.
     ///

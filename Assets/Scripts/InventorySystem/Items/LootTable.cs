@@ -5,7 +5,7 @@ namespace ToolSmiths.InventorySystem.Items
 {
     /// <summary>
     /// The authored, weighted outcome sets a <see cref="RollContext"/> carries - "the loot
-    /// table in play" (<c>CONTEXT.md</c> "Roll Context"). It says <em>which category</em>
+    /// table in play" (<c>GLOSSARY.md</c> "Roll Context"). It says <em>which category</em>
     /// drops and <em>at which rarity</em>; the generator then draws a concrete definition
     /// from the catalog and rolls its affixes.
     ///

@@ -4,7 +4,7 @@ namespace ToolSmiths.InventorySystem.Items
 {
     /// <summary>
     /// Everything a <see cref="ItemGenerator.Roll"/> depends on beyond the definition
-    /// (<c>CONTEXT.md</c> "Roll Context"): the source level the item rolls at, the magic
+    /// (<c>GLOSSARY.md</c> "Roll Context"): the source level the item rolls at, the magic
     /// find biasing its rarity, and the loot table in play. Passing this as a parameter -
     /// rather than reaching a singleton, as <c>new EquipmentItem(...)</c> did - is the whole
     /// point of the seam: per-source scaling and drop tables now have somewhere to plug in.

@@ -13,7 +13,7 @@ namespace ToolSmiths.InventorySystem.Items
 {
     /// <summary>
     /// The authored adapter over <see cref="ItemDefinition"/> - one immutable template plus
-    /// its art, edited by a designer in the inspector (<c>CONTEXT.md</c> "Item Definition").
+    /// its art, edited by a designer in the inspector (<c>GLOSSARY.md</c> "Item Definition").
     /// A base item and a unique are the <em>same type</em>: a unique is this asset with
     /// <see cref="IsUnique"/> set and <see cref="UniqueAffixes"/> filled, not a separate
     /// <c>AbstractItemObject</c> hierarchy.

@@ -9,7 +9,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
     /// triggers: retreat and bag-fill fire an auto-Recall signal at their configured fraction;
     /// <c>CastThreshold</c> gates the <i>start</i> of a casting run by resource hysteresis
     /// (ADR-0010) and releases only once the pool is spent to empty; the loot filter admits
-    /// items and coin denominations by minimum <see cref="ItemRarity"/> (CONTEXT.md's
+    /// items and coin denominations by minimum <see cref="ItemRarity"/> (GLOSSARY.md's
     /// iron-Common … gold-Unique ladder). <c>Engagement</c> and <c>SimSpeed</c> are read live by
     /// the sim / clock adapter (issue #26) — plain storage here, nothing to assert.
     /// </summary>

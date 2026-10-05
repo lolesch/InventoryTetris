@@ -23,7 +23,7 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// the count-and-filter decision and the placement wiring ("the sim asks 'did it fit' and
     /// records the answer", spec "Loot flow"). <see cref="ClearGround"/> is not wired to
     /// anything here — a caller (a test today, <see cref="RunState.RunEnded"/> for real, issue
-    /// #26) calls it when a Run ends, on both outcomes (CONTEXT.md "Drop").
+    /// #26) calls it when a Run ends, on both outcomes (GLOSSARY.md "Drop").
     /// </summary>
     public sealed class LootFlow : ILootGround
     {
@@ -61,7 +61,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         public IReadOnlyList<ItemInstance> GroundDrops => _groundDrops;
 
         /// <summary>
-        /// Discards every Drop still on the ground — the Run-end rule (CONTEXT.md "Drop": "a
+        /// Discards every Drop still on the ground — the Run-end rule (GLOSSARY.md "Drop": "a
         /// Drop still on the ground when the Run ends is gone, on Recall or Death alike").
         /// </summary>
         public void ClearGround() => _groundDrops.Clear();
@@ -170,7 +170,7 @@ namespace ToolSmiths.InventorySystem.Simulation
                 return;
 
             _wallet.Deposit(Currency.Of(type, amount));
-            CoinsBanked?.Invoke(checked((long)amount * Currency.ValueOf(type))); // the Pile's value in iron base units (CONTEXT.md "Base Unit")
+            CoinsBanked?.Invoke(checked((long)amount * Currency.ValueOf(type))); // the Pile's value in iron base units (GLOSSARY.md "Base Unit")
         }
 
         /// <summary>The archetype's base roll count plus the hero's <c>IncreasedItemQuantity</c> bonus.</summary>

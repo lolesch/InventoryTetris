@@ -24,7 +24,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Statistics
             Assert.That(actual.Gold, Is.EqualTo(gold), "gold");
         }
 
-        // Each rung's fixed Rarity (CONTEXT.md "Denomination"): iron Common, copper Magic,
+        // Each rung's fixed Rarity (GLOSSARY.md "Denomination"): iron Common, copper Magic,
         // silver Rare, gold Unique - the one ladder the mint path and the loot filter share.
         [TestCase(CurrencyType.Iron, ItemRarity.Common)]
         [TestCase(CurrencyType.Copper, ItemRarity.Magic)]
