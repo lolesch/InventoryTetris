@@ -145,3 +145,31 @@ disabled. `GameLoop` installs it and holds the tickers; the simulation adds its 
 There is nothing in the hierarchy to hide, persist, destroy or leak, and the reset is symmetric
 with the locator's. The cost is no `OnDestroy` lifecycle and no coroutine host; neither is
 needed.
+
+## Amendment 2026-10-05 (#112): how the Hero and the World are grouped and reached
+
+Settles the two questions the Consequences section left open for #112.
+
+**The Hero is one class: stats, then what it owns.** `Hero` keeps its stats and resources and gains
+`Equipment`, `Inventory`, `Stash`, `Wallet` and `Behaviour` (the Behaviour Profile), handed to it once
+by `Outfit` after construction, because the Equipment takes the hero as its stat receiver and so
+cannot exist first. A hero that was never outfitted (the legacy `DummyTarget`, until #117) throws
+when asked for a container. `Hero` also implements `IItemReceiver`: the placement (auto-equip, else
+the Inventory, nothing behind that) is the hero's. `World` holds the two Supplies, the Sold
+container and the Inventory Context. Both are plain classes.
+
+**State services are locator-resolved facades over the Session, not properties of the Hero.**
+`ISession` holds the current Hero and World; `IInventoryService` operates on whichever it holds
+*at the time of the call* (containers by role, Quick Move, acquisition with the debug Stash
+overflow, Restock). A hero load (#114) swaps the Session's pair and every reader of the service
+follows without being told, which is decision 4 for free. Properties of the Hero would have meant
+every caller holding a Hero, which a swap invalidates.
+
+**One builder writes the order.** `SessionBuilder.Build(config, heroData, items)` is the one place
+that says hero, then what it owns, then the World; it touches no locator and no scene. `GameBoot`
+calls it with `GameConfig.DefaultHero`, registers the Session and the inventory service, and
+stocks both Supplies, so a bare scene has a Hero and a World at boot. `InventoryProvider` and
+`CharacterProvider` forward to these on every call; `LocalPlayer` wraps the booted Hero and holds no
+template of its own. The Behaviour Profile's defaults moved from `SimulationProvider`'s Inspector
+fields to `GameConfig`, so the Hero is built with them and the provider's `Behaviour` is the Hero's.
+
