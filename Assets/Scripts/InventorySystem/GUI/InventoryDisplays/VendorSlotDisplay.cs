@@ -25,29 +25,51 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         /// OnDisable) never prices the item again through the catalog.
         private float? displayedPrice;
 
+        // The Wallet this slot is subscribed to, held so a hero load (#114) can let go of the old
+        // Hero's Wallet, which CurrentWallet no longer names by then.
+        private Wallet watched;
+
         protected override void OnEnable()
         {
             base.OnEnable();
 
-            var wallet = CurrentWallet();
+            _ = Session.TrySubscribeHeroLoaded(WatchWallet);
 
-            if (wallet != null)
-            {
-                wallet.OnBalanceChanged -= OnWalletChanged;
-                wallet.OnBalanceChanged += OnWalletChanged;
-            }
+            WatchWallet();
         }
 
         protected override void OnDisable()
         {
             // Before the base runs: it repaints, and a repaint that throws must not leave this
             // slot subscribed to a Wallet that outlives it.
-            var wallet = CurrentWallet();
+            Session.UnsubscribeHeroLoaded(WatchWallet);
 
-            if (wallet != null)
-                wallet.OnBalanceChanged -= OnWalletChanged;
+            Unwatch();
 
             base.OnDisable();
+        }
+
+        /// <summary>Follows the current Hero's Wallet, and repaints: the tint is the new Hero's affordability.</summary>
+        private void WatchWallet()
+        {
+            Unwatch();
+
+            watched = CurrentWallet();
+
+            if (watched != null)
+            {
+                watched.OnBalanceChanged += OnWalletChanged;
+                RefreshBackground();
+            }
+        }
+
+        private void Unwatch()
+        {
+            if (watched == null)
+                return;
+
+            watched.OnBalanceChanged -= OnWalletChanged;
+            watched = null;
         }
 
         /// Cached before the base runs, because refreshing the display repaints the

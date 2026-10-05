@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Runtime.Character;
+using ToolSmiths.InventorySystem.Services;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.GUI.Displays
@@ -11,6 +12,8 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
     /// rebuilt whenever the <see cref="Hero"/> announces a change (issue #111). The hero knows no
     /// view - this subscribes to <see cref="Hero.StatsChanged"/>, and the scene's
     /// <see cref="BaseCharacter"/> only hands over the hero it owns.
+    ///
+    /// Rebinds to the new hero when <see cref="ISession.HeroLoaded"/> replaces it (#114).
     ///
     /// Subscribes in <see cref="OnEnable"/> and releases in <see cref="OnDisable"/>, never in
     /// <c>Awake</c>: with domain reload disabled a scene object keeps its <c>Awake</c> across Play
@@ -38,14 +41,30 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                 return;
             }
 
+            _ = Session.TrySubscribeHeroLoaded(Rebind);
+
+            Rebind();
+        }
+
+        private void OnDisable()
+        {
+            Session.UnsubscribeHeroLoaded(Rebind);
+
+            Release();
+        }
+
+        // A hero load replaces the Hero (#114): let go of the old one's change event and bind the new one's.
+        private void Rebind()
+        {
+            Release();
+
             _hero = character.Hero;
-            _hero.StatsChanged -= MarkDirty;
             _hero.StatsChanged += MarkDirty;
 
             Refresh();
         }
 
-        private void OnDisable()
+        private void Release()
         {
             if (_hero != null)
                 _hero.StatsChanged -= MarkDirty;

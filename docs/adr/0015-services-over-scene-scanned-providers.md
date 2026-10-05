@@ -173,3 +173,30 @@ stocks both Supplies, so a bare scene has a Hero and a World at boot. `Inventory
 template of its own. The Behaviour Profile's defaults moved from `SimulationProvider`'s Inspector
 fields to `GameConfig`, so the Hero is built with them and the provider's `Behaviour` is the Hero's.
 
+## Amendment 2026-10-05 (#114): a load refuses during a Run, and the seams follow the World
+
+**A hero load refuses while the Run is in the Field.** `ISession.TryLoad(HeroData)` returns `false`
+and changes nothing when `World.Run` is `InField`. Ending the Run for the caller would settle one
+nobody asked to end (a Death's penalty, a Recall's Restock), so the caller Recalls first. In Town,
+with or without a Run built yet, it builds the Hero and the World whole, swaps both, and raises
+`HeroLoaded`; a build that throws leaves the current pair in place. `Session` holds the one function
+that builds a pair (`SessionBuilder`'s), so a loaded Hero is never a different shape from the booted one.
+
+**The Inventory Context event is the inventory service's, not the World's.** `IInventoryService.ContextChanged`
+relays whichever World's context is current, so a panel or toggle that subscribes once stays subscribed
+through a swap, and the old World's context reaches nobody. On a load it fires once with the new World's
+starting context (closed), which brings down a panel that was up for the old World. The service also
+stocks the new World's Supplies, as boot does. `InventoryProvider.OnContextChanged` forwards to it, so
+`SidePanel`, `SidePanelToggle` and `DragProvider` needed no change of their own subscription.
+
+**The Field face has no registration to move.** The spec's "Field face panel registration" was removed
+before this ticket (`cba7728`: Town Stop reachability follows its panel's `CanvasGroup`), so nothing
+registers once from the panel's enable and nothing is discarded with a World. The criterion holds
+structurally; do not reintroduce a registration.
+
+**What rebinds on `HeroLoaded`** is exactly what holds something of the old pair: the container displays
+(role resolution re-runs), `CharacterStatPanel` and `BaseCharacter` (the Hero), `BehaviourSlidersPanel`
+(the Behaviour Profile), `RunPhasePanel` and `AbilityHotbar` (the Run), `VendorSlotDisplay` (the Wallet), and
+`DragProvider`, which drops what is on the cursor because it came out of the discarded pair. A view that
+reads a service on every `Update` (`BagFillImage`, `EncounterStatsPanel`, `EnemyHealthBarPool`) follows a
+swap with no code. Views subscribe through `Session.TrySubscribeHeroLoaded`, detach-before-attach.

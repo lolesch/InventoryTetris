@@ -23,10 +23,42 @@ namespace ToolSmiths.InventorySystem.Services
         /// <summary>Call sites at the Unity edge read the service as <c>InventoryService.Instance.RestockTownStops()</c>.</summary>
         public static IInventoryService Instance => ServiceLocator.Get<IInventoryService>();
 
+        // The World the relay is attached to, so a hero load can let go of exactly that one.
+        private World attached;
+
         public InventoryService(ISession session, IItemService items)
         {
             this.session = session ?? throw new ArgumentNullException(nameof(session));
             this.items = items ?? throw new ArgumentNullException(nameof(items));
+
+            Attach(session.World);
+            session.HeroLoaded += OnHeroLoaded;
+        }
+
+        public event Action<InventoryContext> ContextChanged;
+
+        public InventoryContext ActiveContext => session.World.Context.Active;
+
+        private void Attach(World world)
+        {
+            attached = world;
+            world.Context.Changed += RelayContext;
+        }
+
+        private void RelayContext(InventoryContext context) => ContextChanged?.Invoke(context);
+
+        // A new World is a new context and new shelves. The relay moves to it, so a subscriber of
+        // ContextChanged stays subscribed through the swap, and the shelves are stocked as a booted
+        // World's are. Subscribers are told once what the new World starts at (closed), so a panel
+        // that was up for the old World comes down.
+        private void OnHeroLoaded()
+        {
+            attached.Context.Changed -= RelayContext;
+            Attach(session.World);
+
+            RestockTownStops();
+
+            ContextChanged?.Invoke(session.World.Context.Active);
         }
 
         public AbstractDimensionalContainer ContainerFor(ContainerRole role)

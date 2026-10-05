@@ -111,9 +111,27 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         /// purchase, so opening the Stash or closing every panel cannot strand or duplicate
         /// one. Detach-before-attach, so a re-enable cannot subscribe twice (cf. da14ce2).
         /// </summary>
-        private void OnEnable() => _ = InventoryProvider.TrySubscribeContextChanged(OnContextChanged, out _);
+        private void OnEnable()
+        {
+            _ = InventoryProvider.TrySubscribeContextChanged(OnContextChanged, out _);
+            _ = Session.TrySubscribeHeroLoaded(OnHeroLoaded);
+        }
 
-        private void OnDisable() => InventoryProvider.UnsubscribeContextChanged(OnContextChanged);
+        private void OnDisable()
+        {
+            InventoryProvider.UnsubscribeContextChanged(OnContextChanged);
+            Session.UnsubscribeHeroLoaded(OnHeroLoaded);
+        }
+
+        /// <summary>
+        /// What is on the cursor came out of the discarded Hero's or World's container, and goes
+        /// with it (#114): a drop into the new Hero's bag would carry an item across the load.
+        /// </summary>
+        private void OnHeroLoaded()
+        {
+            if (IsDragging)
+                EndDrag();
+        }
 
         /// <summary>
         /// Any context other than the Vendor means the Vendor is no longer the one open, and a

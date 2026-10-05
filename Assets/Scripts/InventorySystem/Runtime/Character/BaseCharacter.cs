@@ -1,5 +1,6 @@
 ﻿using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
+using ToolSmiths.InventorySystem.Services;
 using Submodules.Utility.Extensions;
 using ToolSmiths.InventorySystem.Utility.Extensions;
 using UnityEngine;
@@ -38,11 +39,32 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         // (LocalPlayer) outlives a Stop with scene reload disabled, and the next Play entry hands
         // it a different hero. Awake and Start do not run again, OnEnable does, and the boot has
         // already built the new Session by then, so each enable binds to the hero it finds and
-        // each disable lets go of the one it bound. A hero load that swaps the hero under an
-        // enabled face (#114) has to disable and enable it, or this has to grow an event.
+        // each disable lets go of the one it bound. A hero load (#114) swaps the hero under an
+        // enabled face, so it rebinds on HeroLoaded the same way: let go of the one it bound, bind
+        // the one it finds.
         private Hero _bound;
 
         private void OnEnable()
+        {
+            _ = Session.TrySubscribeHeroLoaded(Rebind);
+
+            Bind();
+        }
+
+        private void OnDisable()
+        {
+            Session.UnsubscribeHeroLoaded(Rebind);
+
+            Unbind();
+        }
+
+        private void Rebind()
+        {
+            Unbind();
+            Bind();
+        }
+
+        private void Bind()
         {
             _bound = Hero;
 
@@ -59,7 +81,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             _bound.DamageReceived += LogDamageReceived;
         }
 
-        private void OnDisable()
+        private void Unbind()
         {
             if (_bound == null)
                 return;

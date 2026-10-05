@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Inventories;
+using ToolSmiths.InventorySystem.Services;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
@@ -24,8 +25,21 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         /// with domain/scene reload disabled a display survives Play Mode Stop with a now-stale
         /// <see cref="Container"/> reference, so every enable re-resolves against whatever provider
         /// is live (issue #46, #85's OnEnable-not-Awake lesson).
+        ///
+        /// A hero load replaces every container (#114), so the registration runs again on
+        /// <see cref="ISession.HeroLoaded"/>: <see cref="SetupDisplay"/> lets go of the old container's
+        /// content event and binds the new one's.
         /// </summary>
-        private void OnEnable() => _ = InventoryProvider.TryRegisterDisplay(this, role);
+        private void OnEnable()
+        {
+            _ = Session.TrySubscribeHeroLoaded(Register);
+
+            Register();
+        }
+
+        private void OnDisable() => Session.UnsubscribeHeroLoaded(Register);
+
+        private void Register() => _ = InventoryProvider.TryRegisterDisplay(this, role);
 
 #if UNITY_EDITOR
         /// <summary>
