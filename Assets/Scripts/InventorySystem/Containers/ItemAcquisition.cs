@@ -8,7 +8,7 @@ namespace ToolSmiths.InventorySystem.Inventories
     /// The placement rule behind <see cref="IItemReceiver"/>: auto-equip into an empty slot,
     /// else the Inventory - and nothing behind that. A <c>false</c> means no room, so the
     /// caller decides what that costs (a Buy or Stash retrieval rolls back, a Drop stays on
-    /// the ground). Lives in Containers - not on the <c>LocalPlayer</c> MonoBehaviour - so
+    /// the ground). Lives in Containers - not on a MonoBehaviour - so
     /// the rule itself is unit-tested, and the test receivers call it rather than mirror it.
     /// </summary>
     public static class ItemAcquisition

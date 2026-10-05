@@ -1,31 +1,24 @@
 using NUnit.Framework;
-using ToolSmiths.InventorySystem.Runtime.Character;
 using UnityEditor;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Tests.EditMode.Character
 {
     /// <summary>
-    /// The authored side of issues #110 and #112: the scene's <c>LocalPlayer</c> wraps the hero the
-    /// boot built from <c>DefaultHero.asset</c> (<c>GameConfig.DefaultHero</c>), so its prefab holds
-    /// no template of its own. <c>LocalPlayer</c> lives in the predefined assembly, out of a test
-    /// assembly's reach, so the component is read by name.
+    /// The authored side of issues #110, #112 and #119: the boot builds the hero from
+    /// <c>DefaultHero.asset</c> (<c>GameConfig.DefaultHero</c>), so no component holds a hero or a
+    /// template of its own, and the <c>PLAYER</c> prefab's stat panel reads the Session's hero.
+    /// <c>CharacterStatPanel</c> lives in the predefined assembly, out of a test assembly's reach, so
+    /// the component is read by name.
     /// </summary>
     [TestFixture]
     public sealed class AuthoredHeroAssetsTests
     {
-        [Test]
-        public void ThePlayerPrefab_HoldsNoHeroTemplate_TheBootBuildsTheHero()
+        private static GameObject PlayerPrefab()
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/PLAYER.prefab");
             Assert.That(prefab, Is.Not.Null, "Assets/Prefabs/PLAYER.prefab is missing");
-
-            var localPlayer = System.Array.Find(prefab.GetComponentsInChildren<MonoBehaviour>(true),
-                component => component != null && component.GetType().Name == "LocalPlayer");
-            Assert.That(localPlayer, Is.Not.Null, "no LocalPlayer on the prefab");
-
-            Assert.That(new SerializedObject(localPlayer).FindProperty("data"), Is.Null,
-                "a template on the component would be a second hero that the containers do not know");
+            return prefab;
         }
 
         private static MonoBehaviour ComponentNamed(GameObject prefab, string typeName) =>
@@ -33,29 +26,25 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Character
                 component => component != null && component.GetType().Name == typeName);
 
         [Test]
-        public void ThePlayerPrefab_ShowsItsHeroOnACharacterStatPanel()
+        public void ThePlayerPrefab_HoldsNoHeroComponent_TheBootBuildsTheHero()
         {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/PLAYER.prefab");
-            var localPlayer = ComponentNamed(prefab, "LocalPlayer");
-            var panel = ComponentNamed(prefab, "CharacterStatPanel");
+            // A leftover component of a deleted script is a missing script: the hero has no scene face.
+            foreach (var child in PlayerPrefab().GetComponentsInChildren<Transform>(true))
+                Assert.That(GameObjectUtility.GetMonoBehavioursWithMissingScriptCount(child.gameObject), Is.Zero,
+                    $"{child.name} holds a component whose script is gone");
+        }
+
+        [Test]
+        public void ThePlayerPrefab_ShowsTheSessionsHeroOnACharacterStatPanel()
+        {
+            var panel = ComponentNamed(PlayerPrefab(), "CharacterStatPanel");
             Assert.That(panel, Is.Not.Null, "no CharacterStatPanel on the prefab");
 
             var serialized = new SerializedObject(panel);
 
-            Assert.That(serialized.FindProperty("character").objectReferenceValue, Is.SameAs(localPlayer),
-                "the panel reads the hero off the player's character");
+            Assert.That(serialized.FindProperty("character"), Is.Null, "the panel reads the hero off the Session, not a character");
             Assert.That(serialized.FindProperty("rowPrefab").objectReferenceValue, Is.Not.Null,
                 "the panel has no row to make its rows from");
-        }
-
-        [Test]
-        public void TheLocalPlayer_HoldsNoStatDisplay()
-        {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/PLAYER.prefab");
-            var localPlayer = new SerializedObject(ComponentNamed(prefab, "LocalPlayer"));
-
-            Assert.That(localPlayer.FindProperty("characterStatPrefab"), Is.Null);
-            Assert.That(localPlayer.FindProperty("characterStatPool"), Is.Null);
         }
     }
 }

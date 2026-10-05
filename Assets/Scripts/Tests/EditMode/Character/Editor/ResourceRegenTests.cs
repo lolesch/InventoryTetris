@@ -7,7 +7,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Character
 {
     /// <summary>
     /// Locks in <see cref="ResourceRegen.Step"/> &#8212; the synchronous replacement for
-    /// <c>BaseCharacter</c>'s old <c>async void</c> regen (issue #17). The interesting behaviour is
+    /// the character component's old <c>async void</c> regen (issue #17). The interesting behaviour is
     /// the per-resource post-depletion rule carried by <c>recoveryDelay</c>: never (Health, -1),
     /// immediate (Resource, 0), and a timed wait (Shield, 2s).
     /// </summary>

@@ -7,7 +7,7 @@ namespace ToolSmiths.InventorySystem.Items
     /// item where it was (a Buy or Stash retrieval rolls back, a Drop stays on the ground).
     /// Lives in <c>InventorySystem.Items</c> because that's the lowest assembly that has
     /// <see cref="ItemInstance"/>; <c>Package</c> is Containers-resident, so this takes
-    /// the item and amount apart instead. Implemented by <c>LocalPlayer</c>.
+    /// the item and amount apart instead. Implemented by <c>Hero</c>.
     /// </summary>
     public interface IItemReceiver
     {

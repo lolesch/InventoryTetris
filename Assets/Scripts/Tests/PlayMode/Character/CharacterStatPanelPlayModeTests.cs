@@ -1,10 +1,12 @@
 using System.Collections;
 using System.Linq;
 using NUnit.Framework;
+using Submodules.Utility.Services;
 using TMPro;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Runtime.Character;
+using ToolSmiths.InventorySystem.Services;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -14,9 +16,9 @@ using UnityEngine.TestTools;
 namespace ToolSmiths.InventorySystem.Tests.PlayMode.Character
 {
     /// <summary>
-    /// The stat sheet's life cycle (issue #111), on the real <c>PLAYER</c> prefab. <c>CharacterStatPanel</c>
-    /// and <c>LocalPlayer</c> live in the predefined assembly, out of a test assembly's reach, so they are
-    /// read by name; the boot's <c>ItemService</c> is what draws the rows' icons, so this needs Play Mode.
+    /// The stat sheet's life cycle (issues #111, #114), on the real <c>PLAYER</c> prefab. <c>CharacterStatPanel</c>
+    /// lives in the predefined assembly, out of a test assembly's reach, so it is read by name; the boot's
+    /// <c>ItemService</c> is what draws the rows' icons and its Session holds the hero, so this needs Play Mode.
     /// Run with the PlayMode filter; <c>Run All</c> in the EditMode tab does not include it.
     /// </summary>
     public sealed class CharacterStatPanelPlayModeTests
@@ -40,9 +42,8 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Character
             Assert.Ignore("the PLAYER prefab is loaded by path, which only the Editor can do");
 #endif
 
-            var localPlayer = Named("LocalPlayer");
             _panel = Named("CharacterStatPanel");
-            _hero = (Hero)localPlayer.GetType().GetProperty("Hero").GetValue(localPlayer);
+            _hero = Session.Instance.Hero;
 
             yield return null;
         }
@@ -107,6 +108,52 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Character
 
             Assert.That(Rows(false), Is.EqualTo(_hero.Resources.Count + _hero.Stats.Count));
             Assert.That(Rows(true), Is.EqualTo(made), "the lost rows are made again, not made on top of a growing list");
+        }
+
+        [UnityTest]
+        public IEnumerator TheSheet_FollowsTheHeroTheNextPlayEntryBoots_AndNoLongerTheOldOne()
+        {
+            var old = _hero;
+
+            // The next Play entry: the boot builds a new Session, then the surviving panel is enabled again.
+            _panel.enabled = false;
+            ServiceLocator.Reset();
+            GameBoot.Arm(GameBoot.Load());
+            _panel.enabled = true;
+
+            var current = Session.Instance.Hero;
+            Assert.That(current, Is.Not.SameAs(old), "the boot built a new hero");
+
+            var before = Sheet();
+            current.AddItemStats(Gear);
+            yield return null;
+            var worn = Sheet();
+            Assert.That(worn, Is.Not.EqualTo(before), "the new hero's change updates the sheet");
+
+            old.AddItemStats(Gear);
+            yield return null;
+            Assert.That(Sheet(), Is.EqualTo(worn), "the old hero is no longer listened to");
+        }
+
+        [UnityTest]
+        public IEnumerator TheSheet_RebindsWhenAHeroLoads()
+        {
+            var old = _hero;
+
+            Assert.That(Session.Instance.TryLoad(GameBoot.Load().DefaultHero), Is.True, "a Town session accepts a hero load");
+
+            var current = Session.Instance.Hero;
+            Assert.That(current, Is.Not.SameAs(old), "the load replaced the hero");
+
+            var before = Sheet();
+            current.AddItemStats(Gear);
+            yield return null;
+            var worn = Sheet();
+            Assert.That(worn, Is.Not.EqualTo(before), "the loaded hero's change updates the sheet");
+
+            old.AddItemStats(Gear);
+            yield return null;
+            Assert.That(Sheet(), Is.EqualTo(worn), "the replaced hero is no longer listened to");
         }
     }
 }

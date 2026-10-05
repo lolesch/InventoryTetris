@@ -8,9 +8,6 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
     [RequireComponent(typeof(GridLayoutGroup))]
 
     [System.Serializable]
-    // Left from when the provider's Awake had to build the containers first; the Hero and World are
-    // built at boot now, before any scene, so the order no longer matters to the binding.
-    [DefaultExecutionOrder(20)]
     internal sealed class InventoryContainerDisplay : AbstractContainerDisplay
     {
         [SerializeField] private AbstractSlotDisplay slotDisplayPrefab;

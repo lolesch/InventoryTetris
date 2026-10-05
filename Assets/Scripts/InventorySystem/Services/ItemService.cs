@@ -164,7 +164,7 @@ namespace ToolSmiths.InventorySystem.Services
             return null;
         }
 
-        // ── debug helpers (the InventoryProvider buttons, the Restock) ──────
+        // ── debug helpers (the DebugPanel buttons, the Restock) ──────
 
         public ItemInstance RollEquipment(float magicFind = 0f) =>
             RollFrom(PickDefinition(ItemCategory.Equipment, _ => true), magicFind);

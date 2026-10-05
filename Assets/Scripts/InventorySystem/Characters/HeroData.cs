@@ -8,7 +8,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
     /// <summary>
     /// The template a <see cref="Hero"/> is built from: its base stats, base resources and
     /// starting level. An authored asset for a new hero (a DTO takes its place for a loaded one);
-    /// <c>DefaultHero.asset</c> reproduces what the scene's <c>LocalPlayer</c> used to serialize.
+    /// <c>DefaultHero.asset</c> reproduces what the scene's player component used to serialize.
     /// Read-only by construction - the <see cref="Hero"/> copies the values into stats of its own,
     /// because with domain reload disabled a runtime write to a <see cref="ScriptableObject"/>
     /// survives Stop.

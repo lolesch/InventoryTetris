@@ -8,7 +8,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
     /// <summary>
     /// The ADR-0009 <i>Death is corpse-recovery, not haul-forfeit</i> rules, verified through
     /// <see cref="RunSettlement"/>'s interface (finding #2 of the 2026-09-08 architecture
-    /// review — these rules had zero coverage while they lived in <c>SimulationProvider</c>).
+    /// review — these rules had zero coverage while they lived in the scene's simulation component).
     /// A Death buries the bag's non-currency contents as the one Location-tagged Corpse, charges
     /// the currency fee, forfeits the XP and revives the hero; re-entering that Location lays the
     /// Corpse back out, to the bag where it fits and the ground where it does not.

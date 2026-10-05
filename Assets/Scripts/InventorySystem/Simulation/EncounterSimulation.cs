@@ -36,7 +36,7 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// Engine-free and deterministic: every roll (arrival jitter, Roster size, spawn type, Pack
     /// size, jitter, spawn desync) is drawn from the injected <see cref="IRollSource"/>, in that
     /// order. The arrival-jitter roll is only drawn with <see cref="EncounterTuning.DelayFirstSpawn"/>.
-    /// It never references <c>BaseCharacter</c>.
+    /// It never references the hero.
     /// </summary>
     public sealed class EncounterSimulation
     {

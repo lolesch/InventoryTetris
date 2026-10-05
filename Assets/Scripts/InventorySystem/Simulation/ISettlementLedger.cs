@@ -3,7 +3,7 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// <summary>
     /// The hero's wallet and character sheet as <see cref="RunSettlement"/> needs to touch them
     /// on a Death (ADR-0009): the currency fee, the forfeited XP, and the revive. The engine
-    /// binds this to the live <c>Wallet</c> and <c>LocalPlayer</c>; a test records the calls.
+    /// binds this to the live <c>Wallet</c> and <c>Hero</c>; a test records the calls.
     /// </summary>
     public interface ISettlementLedger
     {

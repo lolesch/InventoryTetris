@@ -10,8 +10,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
     /// <summary>
     /// The hero's stat sheet: one <see cref="CharacterStatDisplay"/> row per stat and resource,
     /// rebuilt whenever the <see cref="Hero"/> announces a change (issue #111). The hero knows no
-    /// view - this subscribes to <see cref="Hero.StatsChanged"/>, and the scene's
-    /// <see cref="BaseCharacter"/> only hands over the hero it owns.
+    /// view - this subscribes to <see cref="Hero.StatsChanged"/> of the Session's Hero.
     ///
     /// Rebinds to the new hero when <see cref="ISession.HeroLoaded"/> replaces it (#114).
     ///
@@ -23,7 +22,6 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
     /// </summary>
     public sealed class CharacterStatPanel : MonoBehaviour
     {
-        [SerializeField, Tooltip("The character whose hero the sheet shows.")] private BaseCharacter character;
         [SerializeField, Tooltip("The row every stat is shown in; the rows are made beside it.")] private CharacterStatDisplay rowPrefab;
 
         // Made at runtime, so the Play session that made them destroys them while this component, with
@@ -34,13 +32,6 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 
         private void OnEnable()
         {
-            // Unity's lifetime-aware == : a character that was never assigned.
-            if (character == null)
-            {
-                Debug.LogError($"{name} has no character whose stats it could show.", this);
-                return;
-            }
-
             _ = Session.TrySubscribeHeroLoaded(Rebind);
 
             Rebind();
@@ -58,7 +49,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
         {
             Release();
 
-            _hero = character.Hero;
+            _hero = Session.Instance.Hero;
             _hero.StatsChanged += MarkDirty;
 
             Refresh();

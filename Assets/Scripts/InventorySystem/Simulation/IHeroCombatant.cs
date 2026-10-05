@@ -7,7 +7,7 @@ namespace ToolSmiths.InventorySystem.Simulation
     ///
     /// Every value is read live, not snapshotted — re-gearing mid-Encounter is meant to change
     /// the fight on the spot (spec story 10). The runtime adapter reads these off
-    /// <c>BaseCharacter</c> stats; a test supplies a fake.
+    /// the <c>Hero</c>'s stats; a test supplies a fake.
     /// </summary>
     public interface IHeroCombatant : ICombatant
     {

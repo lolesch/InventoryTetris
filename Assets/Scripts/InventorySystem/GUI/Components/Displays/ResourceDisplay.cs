@@ -1,10 +1,8 @@
 ﻿using TMPro;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
-using ToolSmiths.InventorySystem.Runtime.Character;
 using ToolSmiths.InventorySystem.Services;
 using Submodules.Utility.Extensions;
-using ToolSmiths.InventorySystem.Utility.Extensions;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -19,7 +17,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
         [SerializeField] private TextMeshProUGUI currentText;
         [SerializeField] private TextMeshProUGUI recoveryText;
 
-        [SerializeField] private BaseCharacter character;
+        [SerializeField, Tooltip("Show the Session's Hero. Off: the display is driven by Bind, like an enemy's health bar.")] private bool followsHero;
         [SerializeField] private StatName resourceName = StatName.Health;
         [SerializeField] private StatName recoveryName = StatName.HealthRegeneration;
 
@@ -30,8 +28,8 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
         private bool _bound;
 
         /// <summary>
-        /// Drive this display from a resource handed in, instead of from <c>character</c> — an
-        /// enemy's health, which no <see cref="BaseCharacter"/> owns. <paramref name="recovery"/>
+        /// Drive this display from a resource handed in, instead of from the Hero — an
+        /// enemy's health, which no Hero owns. <paramref name="recovery"/>
         /// is optional: without it the recovery text is left alone. Stays bound across a
         /// disable/enable (a pooled bar) until <see cref="Unbind"/>.
         /// </summary>
@@ -59,12 +57,13 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 
         private void OnEnable()
         {
-            if (!_bound && character)
+            if (!_bound && followsHero)
             {
-                _ = Session.TrySubscribeHeroLoaded(FollowCharacter);
+                _ = Session.TrySubscribeHeroLoaded(FollowHero);
 
-                _resource = character.GetResource(resourceName);
-                _recovery = character.GetStat(recoveryName);
+                var hero = Session.Instance.Hero;
+                _resource = hero.GetResource(resourceName);
+                _recovery = hero.GetStat(recoveryName);
             }
 
             Acquire();
@@ -72,7 +71,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 
         private void OnDisable()
         {
-            Session.UnsubscribeHeroLoaded(FollowCharacter);
+            Session.UnsubscribeHeroLoaded(FollowHero);
 
             Release();
 
@@ -83,17 +82,18 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
             }
         }
 
-        // A hero load (#114) replaces the character's Hero and with it its resource and stat: let go
-        // of the old ones and follow the new. A display driven by Bind stays on what it was handed.
-        private void FollowCharacter()
+        // A hero load (#114) replaces the Hero and with it its resource and stat: let go of the old
+        // ones and follow the new. A display driven by Bind stays on what it was handed.
+        private void FollowHero()
         {
-            if (_bound || !character)
+            if (_bound || !followsHero)
                 return;
 
             Release();
 
-            _resource = character.GetResource(resourceName);
-            _recovery = character.GetStat(recoveryName);
+            var hero = Session.Instance.Hero;
+            _resource = hero.GetResource(resourceName);
+            _recovery = hero.GetStat(recoveryName);
 
             Acquire();
         }
