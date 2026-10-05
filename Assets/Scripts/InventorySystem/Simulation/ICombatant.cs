@@ -25,8 +25,8 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         /// <summary>
         /// Take a physical hit. <paramref name="rawDamage"/> is pre-mitigation; the combatant
-        /// applies its own Armor. The hero adapter routes this through the live
-        /// <c>BaseCharacter.ReceiveDamageFrom</c> path.
+        /// applies its own Armor. The hero adapter routes this through the
+        /// live <c>Hero.ReceiveDamage</c> path.
         /// </summary>
         void ReceivePhysical(float rawDamage);
 

@@ -10,7 +10,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
     /// <summary>
     /// The placement rule behind <see cref="IItemReceiver"/> (issue #103): auto-equip into an
     /// empty slot, else the Inventory, and <c>false</c> - with nothing moved anywhere else - when
-    /// neither has room. This is the rule <c>LocalPlayer</c> delegates to, so it is the one place
+    /// neither has room. This is the rule <c>Hero</c> delegates to, so it is the one place
     /// "no Stash fallback on the receiver path" can be pinned without a scene.
     /// </summary>
     [TestFixture]

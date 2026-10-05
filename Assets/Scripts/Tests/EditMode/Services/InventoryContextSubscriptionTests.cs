@@ -8,8 +8,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 {
     /// <summary>
     /// The edge's Inventory Context subscription (issue #116): the guarded, detach-before-attach
-    /// subscribe the views and the drag cursor share, over the booted locator. It replaces
-    /// <c>InventoryProvider.TrySubscribeContextChanged</c>, so the contract that facade kept is
+    /// subscribe the views and the drag cursor share, over the booted locator. The contract
     /// held here: one subscription however often it is made, a no-op while nothing is armed.
     /// </summary>
     [TestFixture]

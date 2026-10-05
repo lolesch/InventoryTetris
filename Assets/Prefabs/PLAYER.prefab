@@ -210,7 +210,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2808864171146761161}
-  - component: {fileID: 6154631547769539889}
   - component: {fileID: 8449913807646653682}
   - component: {fileID: 2238040398290741669}
   - component: {fileID: 2484489284144723264}
@@ -241,18 +240,6 @@ RectTransform:
   m_AnchoredPosition: {x: 20, y: 0}
   m_SizeDelta: {x: 210, y: -40}
   m_Pivot: {x: 0, y: 0.5}
---- !u!114 &6154631547769539889
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2808864171146761160}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3a1d854912199534491df4462f45b537, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!222 &8449913807646653682
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -768,7 +755,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2732631bc6a89ca4b97a576d55128957, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Displays.CharacterStatPanel
-  character: {fileID: 6154631547769539889}
   rowPrefab: {fileID: 4578763057697142868}
 --- !u!1 &6596900063687829679
 GameObject:

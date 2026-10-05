@@ -245,7 +245,7 @@ MonoBehaviour:
   percentageText: {fileID: 8435987960190914300}
   currentText: {fileID: 1024256946147954348}
   recoveryText: {fileID: 0}
-  character: {fileID: 0}
+  followsHero: 0
   resourceName: 11
   recoveryName: 12
   globeVolume:
@@ -288,7 +288,7 @@ MonoBehaviour:
   percentageText: {fileID: 0}
   currentText: {fileID: 0}
   recoveryText: {fileID: 0}
-  character: {fileID: 0}
+  followsHero: 0
   resourceName: 17
   recoveryName: 12
   globeVolume:

@@ -41,7 +41,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         {
             Assert.That(UnityEditor.AssetDatabase.GetAssetPath(config.DefaultHero),
                 Is.EqualTo("Assets/Scripts/InventorySystem/Characters/DefaultHero.asset"),
-                "the scene's LocalPlayer used to serialize this template; the boot builds the hero from it now");
+                "the scene's player component used to serialize this template; the boot builds the hero from it now");
         }
 
         [Test]

@@ -433,8 +433,8 @@ questions at once: which panels are up, and where a **Quick Move** lands. Entry 
 *request* a context; every panel *derives* its visibility from it. A context names the
 **Hero Panel** plus at most one Town Stop's panel, so the panel set is derived rather than
 announced, and a panel that belongs to every context can never be the thing that names one
-(ADR-0013). It is held by the **World** (reached through the `InventoryProvider` until
-the services epic retires it, ADR-0015) and read by the trade flow for **Quick Move**
+(ADR-0013). It is held by the **World** (reached through the inventory service,
+ADR-0015) and read by the trade flow for **Quick Move**
 routing. Its members are not homogeneous and need not be — the Stash is the player's
 own storage, the Vendor is someone else's — because the only question the enum answers is
 which context is active. Run phase is not a member: only `None` and `Hero` are reachable

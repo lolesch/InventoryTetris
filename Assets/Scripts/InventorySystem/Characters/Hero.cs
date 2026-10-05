@@ -18,8 +18,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
     /// <c>GameObject</c>, so every one of those is testable on its own (issue #110, ADR-0015).
     ///
     /// Holds no view: the stat panel binds to the stats' change events instead of the model
-    /// reaching into a UI pool, and the <c>LocalPlayer</c> component is only a wrapper that
-    /// delegates here. Levelling up heals the hero itself, not through the character locator.
+    /// reaching into a UI pool, and no scene component wraps it: the Session holds it.
+    /// Levelling up heals the hero itself, not through a locator.
     ///
     /// <see cref="IStatReceiver"/> is the seat the container core takes it by, and
     /// <see cref="IItemReceiver"/> the one loot, a Buy and the Corpse recovery put items through.

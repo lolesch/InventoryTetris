@@ -281,8 +281,8 @@ namespace names when a reference won't resolve.
   an asmdef too: `Data/Distributions/` is `InventorySystem.Distributions` (it resolves from
   `Assembly-CSharp` only because it is `autoReferenced`; `InventorySystem.Services` names it
   explicitly), and `ItemTypeData` moved to `Data/Statistics/` for `GameConfig`'s sake (move the
-  `.meta` with the file so the GUID and scene references hold). `LocalPlayer`, `BaseCharacter` and
-  the panels stay in `Assembly-CSharp` and delegate to asmdef types; tests reach them by type name.
+  `.meta` with the file so the GUID and scene references hold). The scene's
+  panels and displays stay in `Assembly-CSharp` and delegate to asmdef types; tests reach them by type name.
 - **`Simulation` and `Locations` are Unity-free by convention, not by flag.** `noEngineReferences`
   is `false`, but files get **no** implicit `using`: a file there that needs `Mathf` must
   `using UnityEngine;`, one that needs `System.Math` must `using System;`. Check every new file.

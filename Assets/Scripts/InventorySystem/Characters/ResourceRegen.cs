@@ -2,7 +2,7 @@ using ToolSmiths.InventorySystem.Data;
 namespace ToolSmiths.InventorySystem.Runtime.Character
 {
     /// <summary>
-    /// One synchronous step of resource regeneration, carved out of <see cref="BaseCharacter"/>'s
+    /// One synchronous step of resource regeneration, carved out of the character component's
     /// old <c>async void</c> <c>Update()</c> path (issue #17) so the Encounter sim can later drive
     /// regen from the combat tick instead of the frame loop.
     /// <para>
