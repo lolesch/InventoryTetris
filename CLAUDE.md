@@ -12,7 +12,9 @@ it in `dev/specs/` instead.
 Implementation work flows spec -> `/to-tickets` (GitHub Issues) -> `/implement #N`, one issue at a
 time -> `/code-review`.
 
-- Execute inline, never with subagents.
+- Execute inline by default. Starting subagents needs the user's decision each time, including
+  `/implement-spec`, which runs implementer and merger subagents: ask before spawning, state what
+  would run, and wait for a clear yes. One approval covers that one run, never later ones.
 - Before `/implement #N`, run `python dev/frontier.py`. `ready-for-agent` means the spec is
   written, not that the dependencies are closed. If `#N` isn't the frontier, surface that and stop.
   The frontier is derived from each issue's **Blocked by**, so a PR carries no tracker commit.
