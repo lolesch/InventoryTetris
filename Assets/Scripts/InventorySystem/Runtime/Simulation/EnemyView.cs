@@ -18,22 +18,23 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// </para>
     /// </summary>
     [DisallowMultipleComponent]
+    [RequireComponent(typeof(CanvasGroup))]
     public sealed class EnemyView : MonoBehaviour
     {
-        [SerializeField, Tooltip("Child that is mirrored to face the hero. Nothing else is.")]
-        private RectTransform sprite;
-        [SerializeField] private Image spriteImage;
-        [SerializeField] private EnemyHealthBarDisplay health;
-        [SerializeField, Tooltip("Hides a view that has no position yet, so a fresh one never flashes at the arena's origin.")]
-        private CanvasGroup visibility;
-        [SerializeField, Tooltip("The hit flash feedback (#179). Optional: the arena binds it behind its hitFlash switch.")]
-        private EnemyHitFlash hitFlash;
-        [SerializeField, Tooltip("The damage number feedback (#181). Optional: the arena binds it behind its damageNumbers switch.")]
-        private EnemyDamageNumbers damageNumbers;
-        [SerializeField, Tooltip("The hit shake feedback (#180), on the sprite child. Optional: the arena binds it behind its hitShake switch.")]
-        private EnemyHitShake hitShake;
+        [SerializeField, Tooltip("The sprite child: the image, and the one thing mirrored to face the hero. The hit flash and the hit shake are found under it.")]
+        private Image spriteImage;
         [SerializeField, Tooltip("The target ring (#182), off until the arena marks this view. Optional: it is shown behind the arena's targetHighlight switch.")]
         private Image highlight;
+
+        // The rest are found once in Awake: they sit on this object or under it, so a serialized slot for each
+        // only restated the hierarchy. The feedbacks are optional (a prefab may drop one); the bar is not.
+        private RectTransform _sprite;
+        private EnemyHealthBarDisplay _health;
+        // Hides a view that has no position yet, so a fresh one never flashes at the arena's origin.
+        private CanvasGroup _visibility;
+        private EnemyHitFlash _hitFlash;
+        private EnemyDamageNumbers _damageNumbers;
+        private EnemyHitShake _hitShake;
 
         private RectTransform _rect;
         private EnemyVisuals.Entry _entry;
@@ -43,6 +44,17 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private ArenaWalk _walk;
 
         private RectTransform Rect => _rect ? _rect : _rect = (RectTransform)transform;
+
+        // Runs once per instance, as the pool makes it: the arena only binds a view it has activated.
+        private void Awake()
+        {
+            _sprite = spriteImage.rectTransform;
+            _health = GetComponentInChildren<EnemyHealthBarDisplay>(true);
+            _visibility = GetComponent<CanvasGroup>();
+            _damageNumbers = GetComponent<EnemyDamageNumbers>();
+            _hitFlash = GetComponentInChildren<EnemyHitFlash>(true);
+            _hitShake = GetComponentInChildren<EnemyHitShake>(true);
+        }
 
         /// <summary>The enemy this view stands for; null while pooled.</summary>
         public Enemy Enemy { get; private set; }
@@ -63,13 +75,14 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         public bool HasArrived => _walk.Arrived;
 
         /// <summary>The hit flash feedback, or null when the prefab has none.</summary>
-        public EnemyHitFlash HitFlash => hitFlash;
+        public EnemyHitFlash HitFlash => _hitFlash;
 
         /// <summary>The damage number feedback, or null when the prefab has none.</summary>
-        public EnemyDamageNumbers DamageNumbers => damageNumbers;
+        public EnemyDamageNumbers DamageNumbers => _damageNumbers;
 
         /// <summary>The hit shake feedback, or null when the prefab has none.</summary>
-        public EnemyHitShake HitShake => hitShake;
+        public EnemyHitShake HitShake => _hitShake;
+
         /// <summary>Whether the target ring is showing on this view. Reset in <see cref="Unbind"/>.</summary>
         public bool IsHighlighted => highlight != null && highlight.enabled;
 
@@ -93,7 +106,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             spriteImage.sprite = entry.Sprite;
             spriteImage.enabled = entry.Sprite != null;
             Rect.sizeDelta = entry.Size;
-            health.Bind(enemy);
+            _health.Bind(enemy);
+
+            // A view the pool just made has never been through Unbind, so it starts as the prefab was saved:
+            // a ring left enabled there would show on every fresh view, whether or not it is the target.
+            SetHighlighted(false);
         }
 
         /// <summary>
@@ -121,7 +138,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             // A view that died before it was ever put on the ring is still invisible; leave it so.
             if (IsPlaced)
-                visibility.alpha = ArenaLayout.DyingAlpha(_dyingElapsed, _dyingDuration);
+                _visibility.alpha = ArenaLayout.DyingAlpha(_dyingElapsed, _dyingDuration);
 
             return _dyingElapsed >= _dyingDuration;
         }
@@ -130,19 +147,18 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         // subscribes to on Bind is released here, so a dying view and a pooled one hold none.
         private void Detach()
         {
-            if (health != null)
-                health.Unbind();
+            _health.Unbind();
 
             // Only the listening stops: the flash a killing blow just queued plays out while dying.
-            if (hitFlash != null)
-                hitFlash.Detach();
+            if (_hitFlash != null)
+                _hitFlash.Detach();
 
             // Likewise only the listening: the killing blow's number is flushed while the view fades.
-            if (damageNumbers != null)
-                damageNumbers.Detach();
+            if (_damageNumbers != null)
+                _damageNumbers.Detach();
             // Same for the shake: the killing blow's jolt settles on its own.
-            if (hitShake != null)
-                hitShake.Detach();
+            if (_hitShake != null)
+                _hitShake.Detach();
 
             Enemy = null;
         }
@@ -153,15 +169,15 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             Detach();
 
             // Clears the tint as well: a pooled view starts un-tinted.
-            if (hitFlash != null)
-                hitFlash.Unbind();
+            if (_hitFlash != null)
+                _hitFlash.Unbind();
 
             // Shows what a release without a fade still owes, then drops the rest: no pending damage is pooled.
-            if (damageNumbers != null)
-                damageNumbers.Unbind();
+            if (_damageNumbers != null)
+                _damageNumbers.Unbind();
             // Sprite back at rest: a pooled view starts with zero shake offset.
-            if (hitShake != null)
-                hitShake.Unbind();
+            if (_hitShake != null)
+                _hitShake.Unbind();
             SetHighlighted(false);
 
             SlotAngle = 0f;
@@ -171,11 +187,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _walk = default;
             _sign = 1;
 
-            if (sprite != null)
-                sprite.localScale = Vector3.one;
+            _sprite.localScale = Vector3.one;
 
             Rect.anchoredPosition = Vector2.zero;
-            visibility.alpha = 0f;
+            _visibility.alpha = 0f;
         }
 
         /// <summary>
@@ -203,10 +218,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 Rect.anchoredPosition = position;
 
             _sign = ArenaLayout.FacingSign(position.x, anchor.x, _sign, deadZone);
-            if (!Mathf.Approximately(sprite.localScale.x, _sign))
-                sprite.localScale = new Vector3(_sign, 1f, 1f);
+            if (!Mathf.Approximately(_sprite.localScale.x, _sign))
+                _sprite.localScale = new Vector3(_sign, 1f, 1f);
 
-            visibility.alpha = 1f;
+            _visibility.alpha = 1f;
 
             return moved;
         }
