@@ -26,6 +26,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         [SerializeField] private EnemyHealthBarDisplay health;
         [SerializeField, Tooltip("Hides a view that has no position yet, so a fresh one never flashes at the arena's origin.")]
         private CanvasGroup visibility;
+        [SerializeField, Tooltip("The hit flash feedback (#179). Optional: the arena binds it behind its hitFlash switch.")]
+        private EnemyHitFlash hitFlash;
 
         private RectTransform _rect;
         private EnemyVisuals.Entry _entry;
@@ -49,6 +51,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         /// <summary>Whether the view has been put on the ring since it was bound.</summary>
         public bool IsPlaced { get; private set; }
+
+        /// <summary>The hit flash feedback, or null when the prefab has none.</summary>
+        public EnemyHitFlash HitFlash => hitFlash;
 
         /// <summary>Stand for <paramref name="enemy"/> on the ring at <paramref name="slotAngle"/>, dressed as <paramref name="entry"/> says.</summary>
         public void Bind(Enemy enemy, EnemyVisuals.Entry entry, float slotAngle)
@@ -99,13 +104,21 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (health != null)
                 health.Unbind();
 
+            // Only the listening stops: the flash a killing blow just queued plays out while dying.
+            if (hitFlash != null)
+                hitFlash.Detach();
+
             Enemy = null;
         }
 
-        /// <summary>Let go of the enemy and clear every pooled state: position, facing, visibility, dying.</summary>
+        /// <summary>Let go of the enemy and clear every pooled state: position, facing, flash tint, visibility, dying.</summary>
         public void Unbind()
         {
             Detach();
+
+            // Clears the tint as well: a pooled view starts un-tinted.
+            if (hitFlash != null)
+                hitFlash.Unbind();
 
             SlotAngle = 0f;
             IsPlaced = false;

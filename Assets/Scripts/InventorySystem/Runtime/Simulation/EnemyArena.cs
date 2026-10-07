@@ -54,6 +54,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private bool deathFade = true;
         [SerializeField, Min(0f), Tooltip("Sim seconds the fade takes; scales with sim speed and stops on pause.")]
         private float deathFadeSeconds = 0.5f;
+        [SerializeField, Tooltip("Feedback: the sprite flashes white on each hit. Independent of the others; off binds nothing.")]
+        private bool hitFlash = true;
 
         private readonly Dictionary<Enemy, EnemyView> _views = new();
         // Views whose enemy fell and that are fading out. Not in _views: no slot, no events, no highlight.
@@ -164,6 +166,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             var view = Pool.GetObject();
             view.Bind(enemy, entry, angle);
+            if (hitFlash && view.HitFlash != null)
+                view.HitFlash.Bind(enemy, entry.Sprite);
             _views.Add(enemy, view);
         }
 
