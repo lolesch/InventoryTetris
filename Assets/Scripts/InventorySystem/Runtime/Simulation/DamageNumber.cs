@@ -82,7 +82,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 return;
             }
 
-            _elapsed += SimDelta();
+            _elapsed += SimulationService.Instance.SimDelta(Time.deltaTime);
 
             if (DamageNumberMotion.IsFinished(_elapsed, _duration))
             {
@@ -104,15 +104,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         {
             Rect.anchoredPosition = _origin + new Vector2(0f, DamageNumberMotion.Rise(_elapsed, _duration, _height));
             label.alpha = DamageNumberMotion.Alpha(_elapsed, _duration, _hold);
-        }
-
-        /// <summary>The seconds the sim moved this frame, as <c>SimulationService.Tick</c> feeds it: 0 while paused.</summary>
-        private static float SimDelta()
-        {
-            if (SimulationService.Instance.IsPaused)
-                return 0f;
-
-            return Time.deltaTime * Mathf.Max(0f, Session.Instance.Hero.Behaviour.SimSpeed);
         }
     }
 }

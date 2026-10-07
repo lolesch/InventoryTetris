@@ -144,6 +144,9 @@ namespace ToolSmiths.InventorySystem.Services
             PausedChanged?.Invoke(value);
         }
 
+        public float SimDelta(float deltaSeconds) =>
+            IsPaused ? 0f : deltaSeconds * Mathf.Max(0f, session.Hero.Behaviour.SimSpeed);
+
         public void Tick(float deltaSeconds)
         {
             // A frozen Run stands still whole: no regeneration, no Encounter, no auto-Recall.
@@ -151,7 +154,7 @@ namespace ToolSmiths.InventorySystem.Services
                 return;
 
             var hero = session.Hero;
-            var dt = deltaSeconds * Mathf.Max(0f, hero.Behaviour.SimSpeed);
+            var dt = SimDelta(deltaSeconds);
 
             // Hosted by GameLoop, so this runs after every MonoBehaviour.Update of the frame: a panel
             // that polls the Run in Update sees the previous frame's tick, never a half-stepped one.
