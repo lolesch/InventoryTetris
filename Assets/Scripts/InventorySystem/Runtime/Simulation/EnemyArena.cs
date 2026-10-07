@@ -53,6 +53,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private float slotJitterDegrees = 12f;
         [SerializeField, Min(0f), Tooltip("Canvas units beyond its ring a new figure appears at, before it walks in.")]
         private float spawnMargin = 100f;
+        [SerializeField, Tooltip("Feedback: the sprite flashes white on each hit. Independent of the others; off binds nothing.")]
+        private bool hitFlash = true;
 
         private readonly Dictionary<Enemy, EnemyView> _views = new();
         private readonly List<float> _angles = new();
@@ -133,6 +135,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             var view = Pool.GetObject();
             view.Bind(enemy, entry, angle);
+            if (hitFlash && view.HitFlash != null)
+                view.HitFlash.Bind(enemy, entry.Sprite);
             _views.Add(enemy, view);
         }
 

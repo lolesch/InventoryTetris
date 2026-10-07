@@ -26,6 +26,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         [SerializeField] private EnemyHealthBarDisplay health;
         [SerializeField, Tooltip("Hides a view that has no position yet, so a fresh one never flashes at the arena's origin.")]
         private CanvasGroup visibility;
+        [SerializeField, Tooltip("The hit flash feedback (#179). Optional: the arena binds it behind its hitFlash switch.")]
+        private EnemyHitFlash hitFlash;
 
         private RectTransform _rect;
         private EnemyVisuals.Entry _entry;
@@ -49,6 +51,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// <summary>Whether the walk-in has reached the ring since the view was bound. Reset in <see cref="Unbind"/>.</summary>
         public bool HasArrived => _walk.Arrived;
 
+        /// <summary>The hit flash feedback, or null when the prefab has none.</summary>
+        public EnemyHitFlash HitFlash => hitFlash;
+
         /// <summary>Stand for <paramref name="enemy"/> on the ring at <paramref name="slotAngle"/>, dressed as <paramref name="entry"/> says.</summary>
         public void Bind(Enemy enemy, EnemyVisuals.Entry entry, float slotAngle)
         {
@@ -62,11 +67,14 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             health.Bind(enemy);
         }
 
-        /// <summary>Let go of the enemy and clear every pooled state: position, facing, visibility, the walk-in.</summary>
+        /// <summary>Let go of the enemy and clear every pooled state: position, facing, flash tint, visibility, the walk-in.</summary>
         public void Unbind()
         {
             if (health != null)
                 health.Unbind();
+
+            if (hitFlash != null)
+                hitFlash.Unbind();
 
             Enemy = null;
             SlotAngle = 0f;
