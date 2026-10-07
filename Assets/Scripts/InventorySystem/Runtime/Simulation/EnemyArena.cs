@@ -60,12 +60,15 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private bool hitFlash = true;
         [SerializeField, Tooltip("Feedback: the sprite shakes on each hit. Independent of the others; off binds nothing.")]
         private bool hitShake = true;
+        [SerializeField, Tooltip("Feedback: a ring marks the enemy the hero's next Strike hits. Independent of the others.")]
+        private bool targetHighlight = true;
 
         private readonly Dictionary<Enemy, EnemyView> _views = new();
         // Views whose enemy fell and that are fading out. Not in _views: no slot, no events, no highlight.
         private readonly List<EnemyView> _dying = new();
         private readonly List<float> _angles = new();
         private readonly List<EnemyView> _ordered = new();
+        private EnemyView _marked;
         private PrefabPool<EnemyView> _pool;
         private EncounterSimulation _bound;
         private AbstractToggle _anchorOwner;
@@ -88,6 +91,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             }
 
             Place();
+            MarkTarget();
             FadeDying(SimDelta());
         }
 
@@ -121,6 +125,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             foreach (var view in _views.Values)
                 Release(view);
             _views.Clear();
+            _marked = null;
 
             // The Run ended, so no fade lingers: dying views go back at once too.
             foreach (var view in _dying)
@@ -178,6 +183,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (!_views.Remove(enemy, out var view))
                 return;
 
+            if (view == _marked)
+                _marked = null;
+
             if (view != null && deathFade && deathFadeSeconds > 0f)
             {
                 view.BeginDying(deathFadeSeconds);
@@ -194,8 +202,37 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (view == null)
                 return;
 
+            if (view == _marked)
+                _marked = null;
+
             view.Unbind();
             Pool.ReleaseObject(view);
+        }
+
+        /// <summary>
+        /// Moves the target ring to the view of <see cref="EncounterSimulation.StrikeTarget"/>, which changes as
+        /// health does, after a kill, and is null with no living enemy. Read from <c>_views</c> only: a dying
+        /// enemy has left it, so it is never marked. Nothing is marked with the switch off or no Encounter.
+        /// </summary>
+        private void MarkTarget()
+        {
+            EnemyView target = null;
+            if (targetHighlight && _bound != null)
+            {
+                var enemy = _bound.StrikeTarget;
+                if (enemy != null)
+                    _views.TryGetValue(enemy, out target);
+            }
+
+            if (target == _marked)
+                return;
+
+            if (_marked != null)
+                _marked.SetHighlighted(false);
+
+            _marked = target;
+            if (_marked != null)
+                _marked.SetHighlighted(true);
         }
 
         /// <summary>
