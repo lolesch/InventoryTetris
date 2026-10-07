@@ -28,6 +28,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private CanvasGroup visibility;
         [SerializeField, Tooltip("The hit flash feedback (#179). Optional: the arena binds it behind its hitFlash switch.")]
         private EnemyHitFlash hitFlash;
+        [SerializeField, Tooltip("The damage number feedback (#181). Optional: the arena binds it behind its damageNumbers switch.")]
+        private EnemyDamageNumbers damageNumbers;
 
         private RectTransform _rect;
         private EnemyVisuals.Entry _entry;
@@ -58,6 +60,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         /// <summary>The hit flash feedback, or null when the prefab has none.</summary>
         public EnemyHitFlash HitFlash => hitFlash;
+
+        /// <summary>The damage number feedback, or null when the prefab has none.</summary>
+        public EnemyDamageNumbers DamageNumbers => damageNumbers;
 
         /// <summary>Stand for <paramref name="enemy"/> on the ring at <paramref name="slotAngle"/>, dressed as <paramref name="entry"/> says.</summary>
         public void Bind(Enemy enemy, EnemyVisuals.Entry entry, float slotAngle)
@@ -112,6 +117,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (hitFlash != null)
                 hitFlash.Detach();
 
+            // Likewise only the listening: the killing blow's number is flushed while the view fades.
+            if (damageNumbers != null)
+                damageNumbers.Detach();
+
             Enemy = null;
         }
 
@@ -123,6 +132,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             // Clears the tint as well: a pooled view starts un-tinted.
             if (hitFlash != null)
                 hitFlash.Unbind();
+
+            // Shows what a release without a fade still owes, then drops the rest: no pending damage is pooled.
+            if (damageNumbers != null)
+                damageNumbers.Unbind();
 
             SlotAngle = 0f;
             IsDying = false;
