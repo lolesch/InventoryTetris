@@ -2,7 +2,6 @@
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Services;
-using Submodules.Utility.Extensions;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -10,10 +9,15 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 {
     public sealed class ResourceDisplay : MonoBehaviour
     {
-        [SerializeField] private Image resourceImage;
+        /// <summary>Which edge the fill grows from.</summary>
+        private enum FillDirection { LeftToRight, RightToLeft, BottomToTop, TopToBottom }
+
+        [SerializeField, Tooltip("RectMask2D that clips its child to the current value, as the ValueSlider does. Keeps sliced, tiled and shaped fills intact, which an Image's Filled type does not.")]
+        private RectMask2D fillMask;
+        [SerializeField, Tooltip("The edge the fill grows from: a bar from the left, a globe from the bottom.")]
+        private FillDirection fillDirection;
         // [SerializeField] protected Image impactImage; // TODO: look it up in RuadhWarbands
 
-        [SerializeField] private TextMeshProUGUI percentageText;
         [SerializeField] private TextMeshProUGUI currentText;
         [SerializeField] private TextMeshProUGUI recoveryText;
 
@@ -26,6 +30,14 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
         private CharacterResource _resource;
         private CharacterStat _recovery;
         private bool _bound;
+        private float _fraction = 1f;
+        private Vector2 _maskSize;
+        private float _current;
+        private float _total;
+        private float _recoveryTotal;
+        private bool _altShown;
+
+        private static bool AltHeld => ModifierKeys.Alt;
 
         /// <summary>
         /// Drive this display from a resource handed in, instead of from the Hero — an
@@ -65,6 +77,11 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                 _recovery = hero.GetStat(recoveryName);
             }
 
+            if (currentText)
+                currentText.text = string.Empty;
+            if (recoveryText)
+                recoveryText.text = string.Empty;
+            
             Acquire();
         }
 
@@ -74,11 +91,10 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 
             Release();
 
-            if (!_bound)
-            {
-                _resource = null;
-                _recovery = null;
-            }
+            if (_bound) 
+                return;
+            _resource = null;
+            _recovery = null;
         }
 
         // A hero load (#114) replaces the Hero and with it its resource and stat: let go of the old
@@ -125,25 +141,72 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                 _recovery.TotalHasChanged -= UpdateRechargeDisplay;
         }
 
+        private void LateUpdate()
+        {
+            // The padding is in pixels of the mask's rect, so a layout that resizes the bar has to re-cut the fill.
+            if (fillMask && fillMask.rectTransform.rect.size != _maskSize)
+                ApplyFill();
+
+            // The texts are formatted when a value changes, so a change of the Alt state has to re-format them.
+            // Compared as a held state, not as KeyDown/KeyUp: either Alt counts, and an Alt+Tab never sends the KeyUp.
+            if (AltHeld != _altShown)
+                RefreshTexts();
+        }
+
         private void UpdateDisplay(float previous, float current, float total)
         {
-            if (resourceImage)
-                if (0 < globeVolume.length)
-                    resourceImage.fillAmount = globeVolume.Evaluate(current / total);
-                else
-                    resourceImage.fillAmount = current / total;
+            _current = current;
+            _total = total;
 
-            if (percentageText)
-                percentageText.text = $"{current / total * 100:0} %";
+            var fraction = 0 < total ? Mathf.Clamp01(current / total) : 0f;
 
-            if (currentText)
-                currentText.text = $"{current:0} / {total:0}";
+            _fraction = Mathf.Clamp01(0 < globeVolume.length ? globeVolume.Evaluate(fraction) : fraction);
+            ApplyFill();
+            RefreshTexts();
         }
 
         private void UpdateRechargeDisplay(float total)
         {
-            if (recoveryText)
-                recoveryText.text = $"{total:0} / sec";
+            _recoveryTotal = total;
+
+            RefreshTexts();
+        }
+
+        /// <summary>Alt swaps the figures for a percentage. The texts are formatted from the cached values, so
+        /// they can be redrawn on a key press without waiting for the resource to change.</summary>
+        private void RefreshTexts()
+        {
+            _altShown = AltHeld;
+
+            if (currentText && _resource != null)
+                currentText.text = _altShown
+                    ? $"{resourceName}: {(0 < _total ? _current / _total * 100 : 0f):0.#}%"
+                    : $"{_current:0.#} / {_total:0.#}";
+
+            if (recoveryText && _recovery != null)
+                recoveryText.text = _altShown
+                    ? $"{recoveryName}: {_recoveryTotal:F1} / sec"
+                    : $"{_recoveryTotal:F1}";
+        }
+
+        /// <summary>Clips the mask from the far edge, so what is left shows <see cref="_fraction"/> of the bar.</summary>
+        private void ApplyFill()
+        {
+            if (!fillMask)
+                return;
+
+            _maskSize = fillMask.rectTransform.rect.size;
+
+            var hidden = 1f - _fraction;
+            var left = fillDirection == FillDirection.RightToLeft ? _maskSize.x * hidden : 0f;
+            var bottom = fillDirection == FillDirection.TopToBottom ? _maskSize.y * hidden : 0f;
+            var right = fillDirection == FillDirection.LeftToRight ? _maskSize.x * hidden : 0f;
+            var top = fillDirection == FillDirection.BottomToTop ? _maskSize.y * hidden : 0f;
+
+            var padding = new Vector4(left, bottom, right, top);
+
+            if (fillMask.padding != padding)
+                fillMask.padding = padding;
         }
     }
 }
