@@ -106,6 +106,14 @@ namespace ToolSmiths.InventorySystem.Geometry
         }
 
         /// <summary>
+        /// The opacity of a dying figure: 1 when it starts to fall, linearly down to 0 after
+        /// <paramref name="duration"/> seconds of sim time. With no duration it is already gone.
+        /// </summary>
+        /// <param name="elapsed">Sim seconds since the death.</param>
+        public static float DyingAlpha(float elapsed, float duration) =>
+            duration <= 0f ? 0f : Mathf.Clamp01(1f - (elapsed / duration));
+
+        /// <summary>
         /// The sprite's <c>scale.x</c>: +1 when the anchor is to the right of the enemy, -1 to the left.
         /// Inside the dead zone (<c>|dx| &lt; deadZone</c>) the current sign is kept, so an enemy standing
         /// straight above or below the hero does not flicker. Art is authored facing right.

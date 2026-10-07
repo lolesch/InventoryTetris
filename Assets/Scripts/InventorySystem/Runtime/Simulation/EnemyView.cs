@@ -30,6 +30,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private RectTransform _rect;
         private EnemyVisuals.Entry _entry;
         private int _sign = 1;
+        private float _dyingElapsed;
+        private float _dyingDuration;
 
         private RectTransform Rect => _rect ? _rect : _rect = (RectTransform)transform;
 
@@ -41,6 +43,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         /// <summary>The sprite's <c>scale.x</c> sign: +1 faces right, -1 faces left.</summary>
         public int FacingSign => _sign;
+
+        /// <summary>Whether the enemy fell and the view is fading out. Never a target for the highlight.</summary>
+        public bool IsDying { get; private set; }
 
         /// <summary>Whether the view has been put on the ring since it was bound.</summary>
         public bool IsPlaced { get; private set; }
@@ -58,15 +63,55 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             health.Bind(enemy);
         }
 
-        /// <summary>Let go of the enemy and clear every pooled state: position, facing, visibility.</summary>
-        public void Unbind()
+        /// <summary>
+        /// The enemy fell: let go of it and fade out over <paramref name="duration"/> sim seconds, in
+        /// place. Whatever the enemy's last hit queued (flash, number) may still play, because only the
+        /// link to the enemy is cut, not the view's own state. The arena drives <see cref="AdvanceDying"/>
+        /// and releases the view when that reports it finished.
+        /// </summary>
+        public void BeginDying(float duration)
+        {
+            Detach();
+            IsDying = true;
+            _dyingElapsed = 0f;
+            _dyingDuration = duration;
+        }
+
+        /// <summary>Moves the fade on by <paramref name="simDelta"/> sim seconds; true once it is over.</summary>
+        public bool AdvanceDying(float simDelta)
+        {
+            if (!IsDying)
+                return false;
+
+            _dyingElapsed += simDelta;
+
+            // A view that died before it was ever put on the ring is still invisible; leave it so.
+            if (IsPlaced)
+                visibility.alpha = ArenaLayout.DyingAlpha(_dyingElapsed, _dyingDuration);
+
+            return _dyingElapsed >= _dyingDuration;
+        }
+
+        // Cuts the link to the enemy so the view takes no further events from it. Everything the view
+        // subscribes to on Bind is released here, so a dying view and a pooled one hold none.
+        private void Detach()
         {
             if (health != null)
                 health.Unbind();
 
             Enemy = null;
+        }
+
+        /// <summary>Let go of the enemy and clear every pooled state: position, facing, visibility, dying.</summary>
+        public void Unbind()
+        {
+            Detach();
+
             SlotAngle = 0f;
             IsPlaced = false;
+            IsDying = false;
+            _dyingElapsed = 0f;
+            _dyingDuration = 0f;
             _sign = 1;
 
             if (sprite != null)

@@ -185,6 +185,29 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Geometry
         }
 
         [Test]
+        public void DyingAlpha_StartsOpaqueAndFallsLinearlyToZero()
+        {
+            Assert.That(ArenaLayout.DyingAlpha(0f, 0.4f), Is.EqualTo(1f).Within(Eps));
+            Assert.That(ArenaLayout.DyingAlpha(0.1f, 0.4f), Is.EqualTo(0.75f).Within(Eps));
+            Assert.That(ArenaLayout.DyingAlpha(0.2f, 0.4f), Is.EqualTo(0.5f).Within(Eps));
+            Assert.That(ArenaLayout.DyingAlpha(0.4f, 0.4f), Is.EqualTo(0f).Within(Eps));
+        }
+
+        [Test]
+        public void DyingAlpha_StaysWithinZeroAndOne_OutsideTheInterval()
+        {
+            Assert.That(ArenaLayout.DyingAlpha(-1f, 0.4f), Is.EqualTo(1f));
+            Assert.That(ArenaLayout.DyingAlpha(9f, 0.4f), Is.EqualTo(0f));
+        }
+
+        [Test]
+        public void DyingAlpha_WithNoDuration_IsAlreadyGone()
+        {
+            Assert.That(ArenaLayout.DyingAlpha(0f, 0f), Is.EqualTo(0f));
+            Assert.That(ArenaLayout.DyingAlpha(0f, -1f), Is.EqualTo(0f));
+        }
+
+        [Test]
         public void DamageAccumulator_SumsPerEnemyAndFlushesOnce()
         {
             var accumulator = new DamageAccumulator<string>();

@@ -20,13 +20,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// place in <c>Update</c> leaves no <c>Awake</c>/<c>OnDisable</c> asymmetry to go silently
     /// dead on the second Play entry under disabled domain reload (<c>codebase-notes.md</c>).
     /// Everything else is events: <see cref="EncounterSimulation.EnemySpawned"/> takes a view,
-    /// <see cref="EncounterSimulation.EnemyDefeated"/> gives it back, and each view follows its own
-    /// enemy's health.
+    /// <see cref="EncounterSimulation.EnemyDefeated"/> retires it (issue #178: the view fades out for a
+    /// short sim-time interval, detached from the enemy, and is pooled when that ends), and each view
+    /// follows its own enemy's health.
     ///
-    /// A clear is safe by construction (it needs an empty enemy list, so every view was already
-    /// released by <c>EnemyDefeated</c>). A hero death or an auto-Recall leaves live enemies with
-    /// nothing firing for them - the Run ending nulls the Encounter, and that release-all is what
-    /// empties the arena.
+    /// A hero death or an auto-Recall leaves live enemies with nothing firing for them - the Run ending
+    /// nulls the Encounter, and that release-all is what empties the arena, dying views included.
     ///
     /// The anchor is the active Location's Hero icon (its <see cref="ToggleCheckmark"/> image), resolved
     /// every frame from the Locations' <see cref="ToggleGroup"/>: it moves on a Relocate and goes null once
@@ -51,8 +50,14 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private float facingDeadZone = 12f;
         [SerializeField, Range(0f, 45f), Tooltip("Degrees a new figure may sit off the middle of the widest gap.")]
         private float slotJitterDegrees = 12f;
+        [SerializeField, Tooltip("A defeated enemy fades out before it is pooled. Off: it is released at once.")]
+        private bool deathFade = true;
+        [SerializeField, Min(0f), Tooltip("Sim seconds the fade takes; scales with sim speed and stops on pause.")]
+        private float deathFadeSeconds = 0.5f;
 
         private readonly Dictionary<Enemy, EnemyView> _views = new();
+        // Views whose enemy fell and that are fading out. Not in _views: no slot, no events, no highlight.
+        private readonly List<EnemyView> _dying = new();
         private readonly List<float> _angles = new();
         private readonly List<EnemyView> _ordered = new();
         private PrefabPool<EnemyView> _pool;
@@ -77,6 +82,16 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             }
 
             Place();
+            FadeDying(SimDelta());
+        }
+
+        /// <summary>The sim's clock for this frame: what <c>SimulationService.Tick</c> feeds the Run, 0 while paused.</summary>
+        private static float SimDelta()
+        {
+            if (SimulationService.Instance.IsPaused)
+                return 0f;
+
+            return Time.deltaTime * Mathf.Max(0f, Session.Instance.Hero.Behaviour.SimSpeed);
         }
 
         // Update never runs while disabled, so a disabled arena would hold a subscription no one
@@ -109,11 +124,29 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             foreach (var view in _views.Values)
                 Release(view);
             _views.Clear();
+
+            // The Run ended, so no fade lingers: dying views go back at once too.
+            foreach (var view in _dying)
+                Release(view);
+            _dying.Clear();
         }
 
         private void OnEnemySpawned(Enemy enemy) => SpawnView(enemy);
 
         private void OnEnemyDefeated(Enemy enemy) => RemoveView(enemy);
+
+        private void FadeDying(float simDelta)
+        {
+            for (var i = _dying.Count; i-- > 0;)
+            {
+                var view = _dying[i];
+                if (view == null || view.AdvanceDying(simDelta))
+                {
+                    _dying.RemoveAt(i);
+                    Release(view);
+                }
+            }
+        }
 
         /// <summary>Takes a pooled view for <paramref name="enemy"/> and gives it the emptiest slot of the ring.</summary>
         private void SpawnView(Enemy enemy)
@@ -134,10 +167,22 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _views.Add(enemy, view);
         }
 
-        /// <summary>Releases <paramref name="enemy"/>'s view back to the pool.</summary>
+        /// <summary>
+        /// <paramref name="enemy"/> fell: its view fades out where it stands, then goes back to the pool
+        /// (at once when the fade is off). The killing blow's <c>CurrentHasChanged</c> fired before
+        /// <c>EnemyDefeated</c>, so whatever it queued on the view still plays during the fade.
+        /// </summary>
         private void RemoveView(Enemy enemy)
         {
-            if (_views.Remove(enemy, out var view))
+            if (!_views.Remove(enemy, out var view))
+                return;
+
+            if (view != null && deathFade && deathFadeSeconds > 0f)
+            {
+                view.BeginDying(deathFadeSeconds);
+                _dying.Add(view);
+            }
+            else
                 Release(view);
         }
 
@@ -200,6 +245,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         {
             _ordered.Clear();
             _ordered.AddRange(_views.Values);
+            _ordered.AddRange(_dying);
             _ordered.Sort((a, b) => ((RectTransform)b.transform).anchoredPosition.y
                 .CompareTo(((RectTransform)a.transform).anchoredPosition.y));
 
