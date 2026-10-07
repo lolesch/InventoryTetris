@@ -43,12 +43,18 @@ namespace ToolSmiths.InventorySystem.Services
             return hero;
         }
 
-        // A saved hero is built from the one default template and then restored onto: retuning the
-        // template changes every saved hero, and the pair is the same shape as a new one.
+        // A saved hero is built from its template and then restored onto: retuning the template changes
+        // every hero saved from it, and the pair is the same shape as a new one. A save with no template,
+        // or one that is no longer authored, is built from the default template.
         private static (Hero Hero, World World, RestoreReport Report) BuildSavedPair(
             GameConfig config, HeroDto save, ILocationIndex locations, IItemService items)
         {
-            var (hero, world) = BuildPair(config, config?.DefaultHero, items);
+            var template = config?.FindHero(save?.templateId);
+
+            if (template != null && !string.IsNullOrEmpty(save.templateId) && template.Id != save.templateId)
+                Debug.LogWarning($"Hero template '{save.templateId}' is no longer authored; the hero was built from '{template.Id}' instead.");
+
+            var (hero, world) = BuildPair(config, template, items);
 
             return (hero, world, HeroRestore.Restore(save, hero, locations));
         }

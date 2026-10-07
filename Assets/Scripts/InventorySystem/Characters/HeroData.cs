@@ -51,12 +51,26 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             }
         }
 
+        [Tooltip("Stable id a saved hero references - a slug the author picks. Never the asset name, never the Unity asset GUID.")]
+        [SerializeField] private string id;
+        [SerializeField] private string displayName;
+        [SerializeField] private Sprite icon;
+
         [SerializeField] private BaseStat[] stats = Array.Empty<BaseStat>();
         [SerializeField] private BaseStat[] resources = Array.Empty<BaseStat>();
         [SerializeField] private StarterItem[] starterItems = Array.Empty<StarterItem>();
         [SerializeField] private Currency starterCoins;
 
         [field: SerializeField, Range(1, 100)] public uint Level { get; private set; } = 1;
+
+        /// <summary>Stable identity a hero save references, so a rename or move of the asset never orphans a save.</summary>
+        public string Id => id;
+
+        /// <summary>The template's own name (a class or archetype); a saved hero carries a name of its own.</summary>
+        public string DisplayName => displayName;
+
+        /// <summary>The portrait a hero selection and the hero panel show. May be unassigned: a view shows nothing then.</summary>
+        public Sprite Icon => icon;
 
         /// <summary>Every stat that is not a resource.</summary>
         public IReadOnlyList<BaseStat> Stats => Array.AsReadOnly(stats);

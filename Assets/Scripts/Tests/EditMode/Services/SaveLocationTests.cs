@@ -84,7 +84,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             Assert.That(result.Entered, Is.True);
             Assert.That(playing.ActiveHeroId, Is.Not.EqualTo(existing.Id));
-            Assert.That(onDisk.Keys(), Is.EqualTo(new[] { existing.Id }), "the saves were not touched");
+            Assert.That(onDisk.Keys(), Is.EqualTo(new[] { HeroFileKey.Compose("Veteran", existing.Id) }), "the saves were not touched");
         }
 
         [Test]

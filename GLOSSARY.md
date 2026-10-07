@@ -216,14 +216,16 @@ choose among them is deferred.
 _Avoid_: character, unit, avatar, champion; "player" for the thing in the Field
 
 **Hero save**:
-One file holding one **Hero**, named by a generated id that never changes, and nothing else.
-It holds the hero's display name, level, the current Health, Resource, Shield and
+One file holding one **Hero**, named `Name_id`: the hero's name, for the eye, and a generated id
+that never changes, which is the identity (a rename moves the file, never the id), and nothing else.
+It holds the hero's display name, the id of the template it was built from (`HeroData`: its icon and
+class name), level, the current Health, Resource, Shield and
 Experience, its **Behaviour Profile**, its selected **Location** (by id), its **Corpse** if
 it has one, and the packages in its **Equipment**, **Inventory** and **Stash** by cell
 (the **Wallet** is coins in the Inventory, so it saves with it). It never holds the **World**
 (**Supply**, the Sold container, the **Run** and its ground **Drops**, the **Inventory
-Context**), authored data (the item catalog, `GameConfig`), a derived stat, or a reference
-to the template the hero was built from: a stat is recomputed from level and gear on load.
+Context**), authored data (the item catalog, `GameConfig`), or a derived stat: a stat is recomputed
+from the template, level and gear on load.
 A loaded hero is the default template with the file restored over it, so a file is never a
 different shape from a new hero. It is written when a **Run** has settled and on quitting,
 never while a Run is in the Field.

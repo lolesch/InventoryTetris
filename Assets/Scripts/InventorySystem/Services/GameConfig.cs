@@ -36,6 +36,47 @@ namespace ToolSmiths.InventorySystem.Services
         [field: SerializeField, Tooltip("The template the boot builds the first Hero from, so a bare scene works with no menu.")]
         public HeroData DefaultHero { get; private set; }
 
+        [SerializeField, Tooltip("The templates a new hero can be created from, in the order a selection screen offers them. The default hero is always offered first, listed or not.")]
+        private HeroData[] heroes = System.Array.Empty<HeroData>();
+
+        /// <summary>The templates a hero can be created from: the default hero first, then the listed ones, each once.</summary>
+        public IReadOnlyList<HeroData> Heroes
+        {
+            get
+            {
+                var roster = new List<HeroData>();
+
+                if (DefaultHero != null)
+                    roster.Add(DefaultHero);
+
+                foreach (var hero in heroes ?? System.Array.Empty<HeroData>())
+                {
+                    if (hero != null && !roster.Contains(hero))
+                        roster.Add(hero);
+                }
+
+                return roster.AsReadOnly();
+            }
+        }
+
+        /// <summary>
+        /// The template whose <see cref="HeroData.Id"/> is <paramref name="id"/>, or the default hero when
+        /// the id is empty or names a template that is no longer authored: a save must still load.
+        /// </summary>
+        public HeroData FindHero(string id)
+        {
+            if (!string.IsNullOrEmpty(id))
+            {
+                foreach (var hero in Heroes)
+                {
+                    if (string.Equals(hero.Id, id, System.StringComparison.Ordinal))
+                        return hero;
+                }
+            }
+
+            return DefaultHero;
+        }
+
         [field: Header("Items")]
         [field: SerializeField, Tooltip("Stat-icon lookup for the character and item-stat displays. Not on the roll path.")]
         public ItemTypeData ItemTypeData { get; private set; }

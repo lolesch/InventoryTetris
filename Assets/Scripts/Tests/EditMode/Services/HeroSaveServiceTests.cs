@@ -82,7 +82,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(hero.Level, Is.EqualTo(1u));
             Assert.That(hero.Status, Is.EqualTo(LoadStatus.Loaded));
             Assert.That(hero.SavedAtUtc, Is.EqualTo(now));
-            Assert.That(store.Keys(), Is.EqualTo(new[] { hero.Id }));
+            Assert.That(store.Keys(), Is.EqualTo(new[] { HeroFileKey.Compose("Aria", hero.Id) }));
             Assert.That(saves.List().Single().Id, Is.EqualTo(hero.Id));
         }
 
@@ -163,18 +163,101 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         // ── rename ──────────────────────────────────────────────────────────
 
         [Test]
-        public void Rename_ChangesTheDisplayName_AndNeverMovesTheFile()
+        public void Rename_ChangesTheName_AndMovesTheFileToIt_ButNeverTheId()
         {
             var saves = NewSetup().Saves;
             var hero = saves.Create("Before");
-            var filesBefore = store.Keys().ToArray();
 
             var renamed = saves.Rename(hero.Id, "  After ");
 
             Assert.That(renamed, Is.True);
-            Assert.That(store.Keys(), Is.EqualTo(filesBefore));
+            Assert.That(store.Keys(), Is.EqualTo(new[] { HeroFileKey.Compose("After", hero.Id) }), "one file, under the new name");
             Assert.That(saves.List().Single().Name, Is.EqualTo("After"));
             Assert.That(saves.List().Single().Id, Is.EqualTo(hero.Id));
+        }
+
+        [Test]
+        public void ARenameThatDoesNotChangeTheFileName_WritesInPlace()
+        {
+            var saves = NewSetup().Saves;
+            var hero = saves.Create("Aria");
+
+            Assert.That(saves.Rename(hero.Id, "ARIA"), Is.True);
+
+            Assert.That(store.Keys().Count, Is.EqualTo(1));
+            Assert.That(saves.List().Single().Name, Is.EqualTo("ARIA"));
+        }
+
+        [Test]
+        public void ARenameOfTheLastSelectedHero_KeepsItSelected()
+        {
+            var saves = NewSetup().Saves;
+            var hero = saves.Create("Before");
+            saves.SetLastSelected(hero.Id);
+
+            _ = saves.Rename(hero.Id, "After");
+
+            Assert.That(saves.LastSelectedHeroId, Is.EqualTo(hero.Id));
+            Assert.That(saves.Load(hero.Id).Entered, Is.True);
+        }
+
+        // ── the file name ───────────────────────────────────────────────────
+
+        [Test]
+        public void AHeroFile_IsNamedAfterTheHeroAndItsId()
+        {
+            var saves = NewSetup().Saves;
+
+            var hero = saves.Create("Sir Aria");
+
+            Assert.That(store.Keys().Single(), Is.EqualTo($"Sir-Aria_{hero.Id}"));
+        }
+
+        [Test]
+        public void ANameThatIsNotAFileName_StillMakesAFileThatLoads()
+        {
+            var saves = NewSetup().Saves;
+
+            var hero = saves.Create("a/b:c*?\"<>|  ");
+
+            Assert.That(saves.Load(hero.Id).Entered, Is.True);
+            Assert.That(saves.List().Single().Name, Is.EqualTo("a/b:c*?\"<>|"), "the name is kept whole; only the file name is cut down");
+        }
+
+        [Test]
+        public void AHeroFromBeforeNamesWereInTheFileName_LoadsAndIsMovedOnItsNextSave()
+        {
+            var setup = NewSetup();
+            var hero = setup.Saves.Create("Veteran");
+            var legacy = hero.Id;
+            store.TryRead(HeroFileKey.Compose("Veteran", hero.Id), out var text);
+            store.Delete(HeroFileKey.Compose("Veteran", hero.Id));
+            store.Write(legacy, text);
+            var again = NewSetup();
+
+            Assert.That(again.Saves.List().Single().Name, Is.EqualTo("Veteran"));
+            Assert.That(again.Saves.Load(hero.Id).Entered, Is.True);
+            Assert.That(again.Saves.Save(), Is.True);
+
+            Assert.That(store.Keys(), Is.EquivalentTo(new[] { HeroFileKey.Compose("Veteran", hero.Id), "account" }), "the bare-id file is gone");
+        }
+
+        [Test]
+        public void TwoFilesOfOneId_AreOneHero_TheNewerOne()
+        {
+            var saves = NewSetup().Saves;
+            var hero = saves.Create("Before");
+            store.TryRead(HeroFileKey.Compose("Before", hero.Id), out var older);
+            now = now.AddMinutes(5);
+            _ = saves.Rename(hero.Id, "After");
+            store.Write(HeroFileKey.Compose("Before", hero.Id), older);
+
+            var listed = saves.List();
+
+            Assert.That(listed.Count, Is.EqualTo(1));
+            Assert.That(listed[0].Name, Is.EqualTo("After"));
+            Assert.That(saves.Delete(hero.Id), Is.True);
+            Assert.That(store.Keys(), Is.Empty, "a delete takes every file of the id");
         }
 
         [Test]
@@ -214,7 +297,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             first.SetLastSelected(hero.Id);
 
             Assert.That(NewSetup().Saves.LastSelectedHeroId, Is.EqualTo(hero.Id));
-            Assert.That(store.Keys(), Is.EquivalentTo(new[] { hero.Id, "account" }));
+            Assert.That(store.Keys(), Is.EquivalentTo(new[] { HeroFileKey.Compose("Chosen", hero.Id), "account" }));
         }
 
         [Test]

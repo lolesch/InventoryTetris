@@ -3,26 +3,38 @@ using Submodules.Utility.Services;
 using System;
 using System.Collections.Generic;
 using ToolSmiths.InventorySystem.Persistence;
+using ToolSmiths.InventorySystem.Runtime.Character;
 
 namespace ToolSmiths.InventorySystem.Services
 {
-    /// <summary>One saved hero as the hero list shows it. A hero whose file cannot be read has no name and level 0.</summary>
+    /// <summary>One saved hero as the hero list shows it. A hero whose file cannot be read has no name, no template and level 0.</summary>
     public readonly struct HeroSummary
     {
-        public HeroSummary(string id, string name, uint level, DateTime savedAtUtc, LoadStatus status)
+        public HeroSummary(string id, string name, uint level, DateTime savedAtUtc, LoadStatus status, HeroData template = null,
+            long createdAtTicks = 0L)
         {
             Id = id;
             Name = name;
             Level = level;
             SavedAtUtc = savedAtUtc;
             Status = status;
+            Template = template;
+            CreatedAtTicks = createdAtTicks;
         }
 
-        /// <summary>The generated id the file is named by. Never changes, so a rename never moves the file.</summary>
+        /// <summary>When the hero was created, in UTC ticks; 0 for a save written before there was a stamp
+        /// and for a file that cannot be read. Unlike <see cref="SavedAtUtc"/> a save does not move it, so
+        /// ordering by it keeps each hero where it was.</summary>
+        public long CreatedAtTicks { get; }
+
+        /// <summary>The generated id the file is named by (after the name). Never changes, so a rename keeps the identity.</summary>
         public string Id { get; }
 
-        /// <summary>Display only.</summary>
+        /// <summary>The hero's own name, as the player typed it. A rename changes it and moves the file to the new name.</summary>
         public string Name { get; }
+
+        /// <summary>The template the hero is built from: its <see cref="HeroData.Icon"/> and class name. <c>null</c> for an unreadable file.</summary>
+        public HeroData Template { get; }
 
         public uint Level { get; }
         public DateTime SavedAtUtc { get; }
@@ -55,20 +67,33 @@ namespace ToolSmiths.InventorySystem.Services
     /// <summary>
     /// The saved heroes and the Account (GLOSSARY.md "Account"): which heroes exist, which one was
     /// last used, and moving one into and out of the Session. One file per hero, named by its
-    /// generated id; the hero list is the files themselves, so there is no index to fall out of step.
+    /// generated id and its name (<see cref="HeroFileKey"/>); the hero list is the files themselves, so
+    /// there is no index to fall out of step.
     /// </summary>
     public interface IHeroSaveService : IService
     {
         /// <summary>Every saved hero, newest save first.</summary>
         IReadOnlyList<HeroSummary> List();
 
-        /// <summary>Writes a new hero called <paramref name="name"/>, built from the default template, under a new id. Does not load it.</summary>
-        HeroSummary Create(string name);
+        /// <summary>
+        /// Raised after the hero list or the active hero changed: a hero was created, deleted, renamed or
+        /// loaded, or an unreadable file was set aside. A view of the list refreshes from it instead of
+        /// every caller that changes a hero having to know the view exists. A handler that throws is logged
+        /// and does not undo the change.
+        /// </summary>
+        event Action HeroesChanged;
+
+        /// <summary>
+        /// Writes a new hero called <paramref name="name"/> under a new id, built from the template
+        /// <paramref name="templateId"/> (<see cref="HeroData.Id"/>), or from the default template when
+        /// it is <c>null</c>. Throws for an id no template has. Does not load it.
+        /// </summary>
+        HeroSummary Create(string name, string templateId = null);
 
         /// <summary>Removes the hero's file and its backup. <c>false</c> when there was none.</summary>
         bool Delete(string id);
 
-        /// <summary>Changes the display name. The file keeps its name. <c>false</c> when the hero cannot be read.</summary>
+        /// <summary>Changes the name, and the file's name with it; the id stays. <c>false</c> when the hero cannot be read.</summary>
         bool Rename(string id, string name);
 
         /// <summary>The hero last loaded or chosen, or <c>null</c> when there is none.</summary>

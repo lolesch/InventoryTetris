@@ -18,6 +18,20 @@ namespace ToolSmiths.InventorySystem.Persistence
         /// <summary>The display name; a rename never moves the file.</summary>
         public string name = string.Empty;
 
+        /// <summary>
+        /// The id of the <c>HeroData</c> the hero is built from (its icon, its class name). Empty in a save
+        /// written before there was one, and for a template that is no longer authored: both read as the
+        /// default template, so the field needs no schema migration.
+        /// </summary>
+        public string templateId = string.Empty;
+
+        /// <summary>
+        /// When the hero was created, in UTC ticks. 0 in a save written before there was one, so those read
+        /// as the oldest and need no schema migration. It gives the hero list a fixed order that a save,
+        /// which moves the saved-at stamp, does not change.
+        /// </summary>
+        public long createdAtTicks;
+
         public uint level = 1u;
 
         public float health;
