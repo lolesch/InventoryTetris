@@ -24,7 +24,7 @@ namespace ToolSmiths.InventorySystem.Items
     /// read only the interface and never touch this class; the authored fields are written
     /// once by the <c>UniquesMigration</c> editor script and thereafter by hand.
     /// </summary>
-    [CreateAssetMenu(fileName = "New Item Definition", menuName = "Inventory System/Item Definition")]
+    [CreateAssetMenu(fileName = "New Item Definition", menuName = AssetMenus.Root + "Item Definition")]
     public sealed class ItemDefinitionAsset : ScriptableObject, ItemDefinition
     {
         /// <summary>

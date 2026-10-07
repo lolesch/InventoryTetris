@@ -51,7 +51,7 @@ namespace ToolSmiths.InventorySystem.Data
             above.Add(row.Modifier);
 
             // Rounded to what is displayed, so a difference too small to print can never tint a row.
-            return new StatComparison((float)Math.Round(swapDifference(row.Stat, above, replaced) - withoutRow, 3));
+            return new StatComparison(NumberFormats.RoundStat(swapDifference(row.Stat, above, replaced) - withoutRow));
         }
 
         /// <summary>
@@ -70,12 +70,12 @@ namespace ToolSmiths.InventorySystem.Data
                 if (affix.Stat == row.Stat)
                     return null;
 
-            return new StatComparison((float)Math.Round(swapDifference(row.Stat, Array.Empty<StatModifier>(), new[] { row.Modifier }), 3));
+            return new StatComparison(NumberFormats.RoundStat(swapDifference(row.Stat, Array.Empty<StatModifier>(), new[] { row.Modifier })));
         }
 
         /// <summary>The signed difference.</summary>
         public string Format() =>
-            Delta == 0f ? "±0" : $"{Delta:+ #.###;- #.###}";
+            Delta == 0f ? "±0" : Delta.ToString(NumberFormats.StatSigned);
 
         /// <summary>Green when the swap raises the stat, red when it lowers it, neutral when it changes nothing.</summary>
         public ComparisonVerdict Verdict =>

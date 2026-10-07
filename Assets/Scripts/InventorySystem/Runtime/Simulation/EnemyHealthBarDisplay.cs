@@ -1,4 +1,5 @@
 using TMPro;
+using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.GUI.Displays;
 using ToolSmiths.InventorySystem.Items;
@@ -43,7 +44,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         public void SetRarityColor(ItemRarity rarity)
         {
             if (rarityBorder != null)
-                rarityBorder.color = ItemView.RarityColorOf(rarity);
+                rarityBorder.color = UiColors.Rarity(rarity);
         }
     }
 }

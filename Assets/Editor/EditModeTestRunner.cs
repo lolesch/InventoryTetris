@@ -23,7 +23,7 @@ namespace ToolSmiths.InventorySystem.EditorScripts
     {
         public const string ResultsPath = "Temp/editmode-results.txt";
 
-        private const string Menu = "ToolSmiths/Tests/Run EditMode Suite";
+        private const string Menu = EditorMenus.Tests + "Run EditMode Suite";
 
         [MenuItem(Menu)]
         private static void RunFromMenu() => Run();

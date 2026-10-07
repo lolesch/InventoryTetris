@@ -71,12 +71,12 @@ namespace ToolSmiths.InventorySystem.Data
             /// wording => how to consistantly translate the modifier types 
             // additional, additive, bonus, 
 
-            StatModifierType.Overwrite => $"={Value:#.###;- #.###;#.###}",
-            StatModifierType.FlatAdd => $"{Value:+ #.###;- #.###;#.###}",
-            StatModifierType.PercentAdd => $"{Value:+ #.###;- #.###;#.###}%",
-            StatModifierType.PercentMult => $"{Value:+ #.###;- #.###;#.###}*%",
+            StatModifierType.Overwrite => $"={Value.ToString(NumberFormats.StatNegativeOnly)}",
+            StatModifierType.FlatAdd => Value.ToString(NumberFormats.StatSigned),
+            StatModifierType.PercentAdd => $"{Value.ToString(NumberFormats.StatSigned)}%",
+            StatModifierType.PercentMult => $"{Value.ToString(NumberFormats.StatSigned)}*%",
 
-            _ => $"?? {Value:+ #.###;- #.###;#.###}",
+            _ => $"?? {Value.ToString(NumberFormats.StatSigned)}",
         };
         public bool Equals(StatModifier other) => Value == other.Value && Type == other.Type;
     }

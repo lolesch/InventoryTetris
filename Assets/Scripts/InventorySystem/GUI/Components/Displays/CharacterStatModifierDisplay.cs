@@ -46,18 +46,13 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
             {
                 statMod = characterStatModifier;
 
-                var comparisonColor = comparison?.Verdict switch
-                {
-                    ComparisonVerdict.Better => Color.green,
-                    ComparisonVerdict.Worse => Color.red,
-                    _ => Color.white,
-                };
+                var comparisonColor = comparison.HasValue ? UiColors.Of(comparison.Value.Verdict) : UiColors.Neutral;
 
                 // Alt trades the comparison for the roll range: the range only while it is held, the difference
                 // the rest of the time.
                 var altHeld = ModifierKeys.Alt;
                 var difference = altHeld ? string.Empty : comparison?.Format() ?? string.Empty;
-                var range = altHeld ? $" {statMod.Modifier.Range.ToString().Colored(Color.gray)}" : string.Empty;
+                var range = altHeld ? $" {statMod.Modifier.Range.ToString().Colored(UiColors.Muted)}" : string.Empty;
 
                 icon = ItemService.Instance.GetStatIcon(statMod.Stat);
                 displayText = $"{statMod.Modifier}{range}"

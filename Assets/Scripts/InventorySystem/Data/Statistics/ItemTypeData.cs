@@ -8,7 +8,7 @@ using UnityEngine.Serialization;
 namespace ToolSmiths.InventorySystem.Data
 {
     [Serializable]
-    [CreateAssetMenu(fileName = "Item Type Data", menuName = "Inventory System/ItemType Data")]
+    [CreateAssetMenu(fileName = "Item Type Data", menuName = AssetMenus.Root + "ItemType Data")]
     public sealed class ItemTypeData : ScriptableObject
     {
         [Serializable]

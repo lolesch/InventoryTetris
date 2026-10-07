@@ -4,6 +4,6 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.Data.Distributions
 {
     [System.Serializable]
-    [CreateAssetMenu(fileName = "Currency Type Distribution", menuName = "Inventory System/Probability Distributions/Currency Type")]
+    [CreateAssetMenu(fileName = "Currency Type Distribution", menuName = AssetMenus.Distributions + "Currency Type")]
     public sealed class CurrencyTypeDistribution : AbstractProbabilityDistribution<CurrencyType> { }
 }

@@ -59,9 +59,9 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Items
 
         [TestCase(ItemRarity.Common, 1f, 1f, 1f)]
         [TestCase(ItemRarity.Unique, 1f, 0.35f, 0f)]
-        public void RarityColorOf_KeepsTheColoursAbstractItemUsed(ItemRarity rarity, float r, float g, float b)
+        public void UiColorsRarity_KeepsTheColoursAbstractItemUsed(ItemRarity rarity, float r, float g, float b)
         {
-            var colour = ItemView.RarityColorOf(rarity);
+            var colour = UiColors.Rarity(rarity);
 
             Assert.That(colour.r, Is.EqualTo(r));
             Assert.That(colour.g, Is.EqualTo(g));

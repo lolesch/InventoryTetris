@@ -196,7 +196,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
                 /// tinted to; colour multiplication is component-wise and only lands on red
                 /// while the scrim happens to be white.
                 background.color = refused
-                    ? WithAlpha(Color.red, initialColor.a)
+                    ? WithAlpha(UiColors.Forbidden, initialColor.a)
                     : initialColor;
             }
         }
@@ -344,7 +344,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             /// dragged item lost its rarity for the length of the drag. The frame carries
             /// rarity here, exactly as it does in a slot.
             if (frame)
-                frame.color = WithAlpha(ItemView.RarityColorOf(package.Item.Rarity), frameAlpha);
+                frame.color = WithAlpha(UiColors.Rarity(package.Item.Rarity), frameAlpha);
 
             if (amount)
                 amount.text = 1 < package.Amount ? package.Amount.ToString() : string.Empty;

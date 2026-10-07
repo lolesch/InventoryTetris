@@ -442,6 +442,10 @@ namespace ToolSmiths.InventorySystem.Inventories
         private static Vector2Int SlotFootprint(EquipmentType equipmentType) =>
             IsTwoHandedWeapon(equipmentType) ? new Vector2Int(2, 1) : new Vector2Int(1, 1);
 
+        /// <summary>Slot index of the main hand; a two-handed weapon also claims <see cref="OffHandSlot"/>.</summary>
+        public const int MainHandSlot = 12;
+        public const int OffHandSlot = 13;
+
         public static Vector2Int[] GetTypeSpecificPositions(EquipmentType equipment) => equipment switch
         {
             EquipmentType.Amulet => new Vector2Int[1] { new(0, 0) },
@@ -457,13 +461,13 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             EquipmentType.Ring => new Vector2Int[2] { new(10, 0), new(11, 0) },
 
-            EquipmentType.Bow => new Vector2Int[1] { new(12, 0) },
+            EquipmentType.Bow => new Vector2Int[1] { new(MainHandSlot, 0) },
             // dualWield
-            > EquipmentType.ONEHANDEDWEAPONS and < EquipmentType.TWOHANDEDWEAPONS => new Vector2Int[2] { new(12, 0), new(13, 0) },
+            > EquipmentType.ONEHANDEDWEAPONS and < EquipmentType.TWOHANDEDWEAPONS => new Vector2Int[2] { new(MainHandSlot, 0), new(OffHandSlot, 0) },
 
-            > EquipmentType.TWOHANDEDWEAPONS and < EquipmentType.OFFHANDS => new Vector2Int[1] { new(12, 0) },
+            > EquipmentType.TWOHANDEDWEAPONS and < EquipmentType.OFFHANDS => new Vector2Int[1] { new(MainHandSlot, 0) },
 
-            > EquipmentType.OFFHANDS and < EquipmentType.JEWELRY => new Vector2Int[1] { new(13, 0) },
+            > EquipmentType.OFFHANDS and < EquipmentType.JEWELRY => new Vector2Int[1] { new(OffHandSlot, 0) },
 
             #region INVALID REQUESTS
             EquipmentType.NONE => new Vector2Int[1] { new(-1, -1) },
