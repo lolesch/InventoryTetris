@@ -63,14 +63,23 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _health.CurrentHasChanged += OnHealthChanged;
         }
 
+        /// <summary>
+        /// Stop listening but let the flash in flight finish: a dying view takes no more hits, yet the
+        /// killing blow's flash (raised before the defeat) should still play. Safe when unbound.
+        /// </summary>
+        public void Detach()
+        {
+            if (_health == null)
+                return;
+
+            _health.CurrentHasChanged -= OnHealthChanged;
+            _health = null;
+        }
+
         /// <summary>Stop listening and clear the tint: a pooled view must start un-tinted. Safe when unbound.</summary>
         public void Unbind()
         {
-            if (_health != null)
-            {
-                _health.CurrentHasChanged -= OnHealthChanged;
-                _health = null;
-            }
+            Detach();
 
             _ramp.Reset();
             Apply();
