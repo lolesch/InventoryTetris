@@ -25,10 +25,15 @@ namespace ToolSmiths.InventorySystem.Data
         /// two-hander replaces the weapon and the off-hand, so they come off at once. Empty for a free slot.</param>
         /// <param name="swapDifference">Stat, the modifiers going on, the worn modifiers coming off: the
         /// change in the hero's total.</param>
+        /// <param name="earlier">The hovered item's affixes drawn above this row. Rows that share a stat
+        /// split one swap between them: the first carries the worn modifiers coming off, each later one only
+        /// what it adds on top of the rows above, so the rows of a stat sum to the stat's whole change
+        /// instead of each taking the worn modifiers off again.</param>
         public static StatComparison Of(
             CharacterStatModifier row,
             IEnumerable<CharacterStatModifier> displaced,
-            Func<StatName, IReadOnlyList<StatModifier>, IReadOnlyList<StatModifier>, float> swapDifference)
+            Func<StatName, IReadOnlyList<StatModifier>, IReadOnlyList<StatModifier>, float> swapDifference,
+            IEnumerable<CharacterStatModifier> earlier = null)
         {
             var replaced = new List<StatModifier>();
 
@@ -36,8 +41,17 @@ namespace ToolSmiths.InventorySystem.Data
                 if (affix.Stat == row.Stat)
                     replaced.Add(affix.Modifier);
 
+            var above = new List<StatModifier>();
+
+            foreach (var affix in earlier ?? Array.Empty<CharacterStatModifier>())
+                if (affix.Stat == row.Stat)
+                    above.Add(affix.Modifier);
+
+            var withoutRow = above.Count == 0 ? 0f : swapDifference(row.Stat, above, replaced);
+            above.Add(row.Modifier);
+
             // Rounded to what is displayed, so a difference too small to print can never tint a row.
-            return new StatComparison((float)Math.Round(swapDifference(row.Stat, new[] { row.Modifier }, replaced), 3));
+            return new StatComparison((float)Math.Round(swapDifference(row.Stat, above, replaced) - withoutRow, 3));
         }
 
         /// <summary>
