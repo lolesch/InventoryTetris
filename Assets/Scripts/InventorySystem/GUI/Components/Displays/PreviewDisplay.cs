@@ -34,16 +34,17 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
         /// not equipment, which has nothing to compare. The worn item beside it is drawn with
         /// <see cref="RefreshWorn"/>.</param>
         public void Refresh(Package package, IReadOnlyList<Package> compareTo, float priceOverride = -1f) =>
-            Present(package, priceOverride, stat => compareTo == null ? new(stat) : new(stat, compareTo));
+            Present(package, priceOverride, (stat, earlier) => compareTo == null ? new(stat) : new(stat, compareTo, earlier));
 
         /// <summary>A worn item shown beside the hovered one. When the hovered item would displace it, the
         /// stats the hovered item lacks carry what the unequip alone costs; every other row stays plain.</summary>
         public void RefreshWorn(Package worn, Package hovered, bool displaced) =>
-            Present(worn, -1f, stat => displaced && hovered.IsValid ? new(stat, hovered.Item) : new(stat));
+            Present(worn, -1f, (stat, _) => displaced && hovered.IsValid ? new(stat, hovered.Item) : new(stat));
 
-        public void Refresh(Package package) => Present(package, -1f, stat => new(stat));
+        public void Refresh(Package package) => Present(package, -1f, (stat, _) => new(stat));
 
-        private void Present(Package package, float priceOverride, System.Func<CharacterStatModifier, CharacterStatModifierDisplay.CharacterStatModifierData> row)
+        private void Present(Package package, float priceOverride,
+            System.Func<CharacterStatModifier, IReadOnlyList<CharacterStatModifier>, CharacterStatModifierDisplay.CharacterStatModifierData> row)
         {
             if (!package.IsValid)
             {
@@ -88,15 +89,19 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 
             ItemStatPool.ReleaseAll();
 
+            var earlier = new List<CharacterStatModifier>();
+
             foreach (var stat in package.Item.Affixes)
             {
                 //TODO: extend prefabPool to support abstractDisplays that update the Display(newData) before activating the object
 
                 var itemStat = ItemStatPool.GetObject(false);
 
-                itemStat.Refresh(row(stat));
+                itemStat.Refresh(row(stat, earlier));
 
                 itemStat.gameObject.SetActive(true);
+
+                earlier.Add(stat);
             }
 
             Expand();

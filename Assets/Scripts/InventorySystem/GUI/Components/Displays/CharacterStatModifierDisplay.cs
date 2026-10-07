@@ -31,8 +31,11 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
             /// <param name="compareTo">The worn items an equip would displace, compared as a whole - a hovered
             /// two-hander is measured against its weapon and off-hand together. Empty: a free slot, so the row
             /// shows the full effect of equipping it.</param>
-            public CharacterStatModifierData(CharacterStatModifier characterStatModifier, IReadOnlyList<Package> compareTo)
-                : this(characterStatModifier, EquipEffect(characterStatModifier, compareTo)) { }
+            /// <param name="earlier">The hovered item's affixes drawn above this one, so rows that share a stat do not
+            /// each take the displaced modifiers off again.</param>
+            public CharacterStatModifierData(CharacterStatModifier characterStatModifier, IReadOnlyList<Package> compareTo,
+                IReadOnlyList<CharacterStatModifier> earlier = null)
+                : this(characterStatModifier, EquipEffect(characterStatModifier, compareTo, earlier)) { }
 
             /// <summary>A row of worn gear the hovered item displaces: only a stat the hovered item lacks gets a
             /// difference, the cost of the unequip alone.</summary>
@@ -62,7 +65,8 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                 displayFontSize = RollQualityFontSize(statMod.Modifier);
             }
 
-            private static StatComparison? EquipEffect(CharacterStatModifier row, IReadOnlyList<Package> compareTo)
+            private static StatComparison? EquipEffect(CharacterStatModifier row, IReadOnlyList<Package> compareTo,
+                IReadOnlyList<CharacterStatModifier> earlier)
             {
                 var worn = new List<CharacterStatModifier>();
 
@@ -70,7 +74,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                     if (package.IsValid)
                         worn.AddRange(package.Item.Affixes);
 
-                return StatComparison.Of(row, worn, Session.Instance.Hero.CompareStatModifiers);
+                return StatComparison.Of(row, worn, Session.Instance.Hero.CompareStatModifiers, earlier);
             }
 
             private static StatComparison? UnequipEffect(CharacterStatModifier row, ItemInstance displacedBy) =>

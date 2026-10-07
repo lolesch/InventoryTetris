@@ -48,6 +48,30 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Statistics
         }
 
         [Test]
+        public void TwoRowsOfOneStat_SplitOneSwap_AndSumToItsWholeChange()
+        {
+            var worn = new[] { Affix(StatName.PhysicalDamage, 12f) };
+            var first = Affix(StatName.PhysicalDamage, 10f);
+            var second = Affix(StatName.PhysicalDamage, 5f);
+
+            var one = StatComparison.Of(first, worn, Plain, new CharacterStatModifier[0]);
+            var two = StatComparison.Of(second, worn, Plain, new[] { first });
+
+            Assert.That(one.Delta, Is.EqualTo(-2f), "the first row carries the worn modifier coming off");
+            Assert.That(two.Delta, Is.EqualTo(5f), "the second only what it adds on top");
+            Assert.That(one.Delta + two.Delta, Is.EqualTo(3f), "10 + 5 - 12");
+        }
+
+        [Test]
+        public void ARowOfAnotherStat_IsNotSplit_ByTheRowsAboveIt()
+        {
+            var comparison = StatComparison.Of(Affix(StatName.AttackSpeed, 4f), new CharacterStatModifier[0], Plain,
+                new[] { Affix(StatName.PhysicalDamage, 10f) });
+
+            Assert.That(comparison.Delta, Is.EqualTo(4f));
+        }
+
+        [Test]
         public void AFreeSlot_ShowsTheFullEffectOfTheAffix()
         {
             IReadOnlyList<StatModifier> replaced = null;
