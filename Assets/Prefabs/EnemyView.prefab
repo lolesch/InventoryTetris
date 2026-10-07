@@ -192,6 +192,7 @@ GameObject:
   - component: {fileID: 5124569045075278012}
   - component: {fileID: 6712159802136032817}
   - component: {fileID: 4562817553787274349}
+  - component: {fileID: 7180180180180180180}
   m_Layer: 0
   m_Name: Sprite
   m_TagString: Untagged
@@ -303,11 +304,6 @@ CanvasRenderer:
   m_GameObject: {fileID: 6902718430215506101}
   m_CullTransparentMesh: 1
 --- !u!114 &6902718430215506104
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6902718430215506101}
   m_Enabled: 0
   m_EditorHideFlags: 0
@@ -332,6 +328,16 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &7180180180180180180
+  m_GameObject: {fileID: 5050152087035690949}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 32561fc48d5140f4cb11181a497b8b5d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.Runtime.Simulation.EnemyHitShake
+  amplitude: 6
+  frequency: 20
+  duration: 0.2
 --- !u!1 &8333965097217707184
 GameObject:
   m_ObjectHideFlags: 0
@@ -401,6 +407,7 @@ MonoBehaviour:
   health: {fileID: 4699527361248524366}
   visibility: {fileID: 7346023086139494097}
   hitFlash: {fileID: 2470478699507760566}
+  hitShake: {fileID: 7180180180180180180}
   highlight: {fileID: 6902718430215506104}
 --- !u!1001 &3527010079025441697
 PrefabInstance:
