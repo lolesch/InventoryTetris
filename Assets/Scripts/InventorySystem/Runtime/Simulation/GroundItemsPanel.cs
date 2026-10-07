@@ -13,7 +13,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// shrinking as Drops land and are picked up. The container's layout group and content size
     /// fitter do the sizing; this only keeps the rows in step with the list.
     ///
-    /// Bound the way <see cref="EnemyHealthBarPool"/> is, and for the same reason: the loot flow is
+    /// Bound the way <see cref="EnemyArena"/> is, and for the same reason: the loot flow is
     /// rebuilt on every Send and Relocate, and a hero load replaces the Run, so <see cref="Update"/>
     /// compares the current one to the one it holds, and everything else is the loot flow's
     /// <see cref="LootFlow.GroundChanged"/> event. The event names nothing - <see cref="ItemInstance"/>

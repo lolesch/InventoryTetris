@@ -198,5 +198,5 @@ structurally; do not reintroduce a registration.
 (role resolution re-runs), `CharacterStatPanel` and `BaseCharacter` (the Hero), `BehaviourSlidersPanel`
 (the Behaviour Profile), `RunPhasePanel` and `AbilityHotbar` (the Run), `VendorSlotDisplay` (the Wallet), and
 `DragProvider`, which drops what is on the cursor because it came out of the discarded pair. A view that
-reads a service on every `Update` (`BagFillImage`, `EncounterStatsPanel`, `EnemyHealthBarPool`) follows a
+reads a service on every `Update` (`BagFillImage`, `EncounterStatsPanel`, `EnemyArena`, formerly `EnemyHealthBarPool`) follows a
 swap with no code. Views subscribe through `Session.TrySubscribeHeroLoaded`, detach-before-attach.
