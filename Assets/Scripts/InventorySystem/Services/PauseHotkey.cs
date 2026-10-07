@@ -35,20 +35,25 @@ namespace ToolSmiths.InventorySystem.Services
         /// <summary>A <see cref="GameLoop"/> ticker; the delta is the loop's and goes unused.</summary>
         public void Tick(float deltaSeconds)
         {
-            if (pressed())
+            // A space typed into a text field is the field's, not the pause key's.
+            if (pressed() && !HoldsTextFocus(EventSystem.current))
                 simulation.SetPaused(!simulation.IsPaused);
 
             ReleaseUiSelection();
         }
+
+        /// <summary>Whether the selected element takes keyboard input of its own (a text field).</summary>
+        internal static bool HoldsTextFocus(EventSystem events) =>
+            events != null && events.currentSelectedGameObject != null
+            && events.currentSelectedGameObject.TryGetComponent<IUpdateSelectedHandler>(out _);
 
         // After the EventSystem has had its frame (GameLoop runs after every Update), so a Space pressed
         // next frame finds nothing selected to Submit.
         private static void ReleaseUiSelection()
         {
             var events = EventSystem.current;
-            var selected = events != null ? events.currentSelectedGameObject : null;
 
-            if (selected != null && !selected.TryGetComponent<IUpdateSelectedHandler>(out _))
+            if (events != null && events.currentSelectedGameObject != null && !HoldsTextFocus(events))
                 events.SetSelectedGameObject(null);
         }
     }

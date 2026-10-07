@@ -61,7 +61,14 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _simulation = null;
         }
 
-        private void Update() => RefreshInteractable();
+        private void Update()
+        {
+            RefreshInteractable();
+
+            // A hero load replaces the World, and IsPaused with it, without raising PausedChanged.
+            if (_simulation != null && IsOn != _simulation.IsPaused)
+                SyncToPaused(_simulation.IsPaused);
+        }
 
         private void SyncToPaused(bool paused) => SyncToggle(paused);
 

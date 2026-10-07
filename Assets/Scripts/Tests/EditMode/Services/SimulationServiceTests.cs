@@ -308,6 +308,42 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(service.IsPaused, Is.False);
         }
 
+        private sealed class TextFieldStub : MonoBehaviour, UnityEngine.EventSystems.IUpdateSelectedHandler
+        {
+            public void OnUpdateSelected(UnityEngine.EventSystems.BaseEventData eventData) { }
+        }
+
+        [Test]
+        public void ThePauseKey_IsLeftToATextFieldThatHasFocus()
+        {
+            var events = new GameObject("events").AddComponent<UnityEngine.EventSystems.EventSystem>();
+            var field = new GameObject("field", typeof(TextFieldStub));
+            var previous = UnityEngine.EventSystems.EventSystem.current;
+
+            try
+            {
+                UnityEngine.EventSystems.EventSystem.current = events;
+                events.SetSelectedGameObject(field);
+                service.Send(thornwood);
+
+                new PauseHotkey(service, () => true).Tick(0.1f);
+
+                Assert.That(service.IsPaused, Is.False, "the space went to the field");
+                Assert.That(events.currentSelectedGameObject, Is.SameAs(field), "and the field kept its focus");
+
+                events.SetSelectedGameObject(null);
+                new PauseHotkey(service, () => true).Tick(0.1f);
+
+                Assert.That(service.IsPaused, Is.True, "with no field focused the key pauses");
+            }
+            finally
+            {
+                UnityEngine.EventSystems.EventSystem.current = previous;
+                UnityEngine.Object.DestroyImmediate(events.gameObject);
+                UnityEngine.Object.DestroyImmediate(field);
+            }
+        }
+
         [Test]
         public void ThePauseKey_Toggles_OnlyWhileARunIsInTheField()
         {
