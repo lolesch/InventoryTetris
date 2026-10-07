@@ -54,6 +54,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private bool deathFade = true;
         [SerializeField, Min(0f), Tooltip("Sim seconds the fade takes; scales with sim speed and stops on pause.")]
         private float deathFadeSeconds = 0.5f;
+        [SerializeField, Min(0f), Tooltip("Canvas units beyond its ring a new figure appears at, before it walks in.")]
+        private float spawnMargin = 100f;
         [SerializeField, Tooltip("Feedback: the sprite flashes white on each hit. Independent of the others; off binds nothing.")]
         private bool hitFlash = true;
 
@@ -85,15 +87,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             Place();
             FadeDying(SimDelta());
-        }
-
-        /// <summary>The sim's clock for this frame: what <c>SimulationService.Tick</c> feeds the Run, 0 while paused.</summary>
-        private static float SimDelta()
-        {
-            if (SimulationService.Instance.IsPaused)
-                return 0f;
-
-            return Time.deltaTime * Mathf.Max(0f, Session.Instance.Hero.Behaviour.SimSpeed);
         }
 
         // Update never runs while disabled, so a disabled arena would hold a subscription no one
@@ -201,7 +194,20 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             Pool.ReleaseObject(view);
         }
 
-        /// <summary>Stands every view on its slot around the anchor as it is this frame; nothing with no anchor.</summary>
+        /// <summary>
+        /// The sim's delta for this frame, computed the way <c>SimulationService.Tick</c> does: wall delta times
+        /// the Hero's sim speed, and nothing while the Run is paused. Walking on it scales with the speed slider
+        /// and freezes with the sim.
+        /// </summary>
+        private static float SimDelta()
+        {
+            if (SimulationService.Instance.IsPaused)
+                return 0f;
+
+            return Time.deltaTime * Mathf.Max(0f, Session.Instance.Hero.Behaviour.SimSpeed);
+        }
+
+        /// <summary>Walks every view toward its slot around the anchor as it is this frame; nothing with no anchor.</summary>
         private void Place()
         {
             if (_views.Count == 0)
@@ -215,9 +221,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             var world = anchor.TransformPoint(anchor.rect.center);
             var center = (Vector2)root.InverseTransformPoint(world) - root.rect.center;
 
+            var simDelta = SimDelta();
             var moved = false;
             foreach (var view in _views.Values)
-                moved |= view.PlaceAround(center, facingDeadZone);
+                moved |= view.PlaceAround(center, facingDeadZone, simDelta, spawnMargin);
 
             if (moved)
                 SortByDepth();
