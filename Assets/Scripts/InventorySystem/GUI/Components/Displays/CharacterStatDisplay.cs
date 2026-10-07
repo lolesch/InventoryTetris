@@ -42,9 +42,9 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                 // TODO: implement statModifier source
                 var modDetailText = overwriteMods.Any()
                     ? $"overwritten by: implementStatModSource" //{overwriteMods.FirstOrDefault().Source}"
-                    : $"({baseValue:0.##} + {flatAddModValue:0.##}) * {percentAddModValue:0.##} {percentMultModString:0.##}";
+                    : $"({baseValue.ToString(NumberFormats.Stat)} + {flatAddModValue.ToString(NumberFormats.Stat)}) * {percentAddModValue.ToString(NumberFormats.Stat)} {percentMultModString}";
 
-                displayText = $"{stat.TotalValue:0.##}\t{modDetailText.Colored(Color.gray)}"; //{statName}
+                displayText = $"{stat.TotalValue.ToString(NumberFormats.Stat)}\t{modDetailText.Colored(Color.gray)}"; //{statName}
                 icon = ItemService.Instance.GetStatIcon(stat.Stat);
             }
         }

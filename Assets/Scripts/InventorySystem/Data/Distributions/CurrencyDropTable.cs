@@ -10,7 +10,7 @@ namespace ToolSmiths.InventorySystem.Data.Distributions
     /// probability distribution. Four explicit fields because the CurrencyType enum
     /// is frozen and there are exactly four coins.
     /// </summary>
-    [CreateAssetMenu(fileName = "Currency Drop Table", menuName = "Inventory System/Currency Drop Table")]
+    [CreateAssetMenu(fileName = "Currency Drop Table", menuName = AssetMenus.Root + "Currency Drop Table")]
     public sealed class CurrencyDropTable : ScriptableObject
     {
         [SerializeField] private Vector2Int iron = new(10, 30);

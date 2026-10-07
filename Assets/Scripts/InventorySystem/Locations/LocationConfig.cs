@@ -1,3 +1,4 @@
+using ToolSmiths.InventorySystem.Data;
 using System;
 using System.Text;
 using ToolSmiths.InventorySystem.Data.Distributions;
@@ -33,7 +34,7 @@ namespace ToolSmiths.InventorySystem.Locations
     /// (<see cref="Validate"/>). Town is <em>not</em> a <c>LocationConfig</c> — it is the
     /// <see cref="RunState"/>'s <c>InTown</c> phase.
     /// </summary>
-    [CreateAssetMenu(fileName = "New Location", menuName = "Inventory System/Location")]
+    [CreateAssetMenu(fileName = "New Location", menuName = AssetMenus.Root + "Location")]
     public sealed class LocationConfig : ScriptableObject
     {
         [Tooltip("Stable id a Run / Corpse references - a slug the author picks. Never the asset name, never the Unity asset GUID.")]

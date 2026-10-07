@@ -12,7 +12,7 @@ namespace ToolSmiths.InventorySystem.EditorScripts
     /// </summary>
     internal static class HeroSavesMenu
     {
-        private const string Root = "ToolSmiths/Hero Saves/";
+        private const string Root = EditorMenus.HeroSaves;
         private const string WipeMenu = Root + "Wipe All Hero Saves";
         private const string OpenMenu = Root + "Open Saves Folder";
         private const string FreshMenu = Root + "Start Fresh Each Play";

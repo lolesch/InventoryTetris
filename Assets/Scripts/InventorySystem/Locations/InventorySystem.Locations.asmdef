@@ -2,6 +2,7 @@
     "name": "InventorySystem.Locations",
     "rootNamespace": "",
     "references": [
+        "InventorySystem.Data",
         "InventorySystem.Simulation",
         "InventorySystem.Items",
         "InventorySystem.Distributions"

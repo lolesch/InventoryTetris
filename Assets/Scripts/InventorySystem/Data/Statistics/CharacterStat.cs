@@ -55,7 +55,7 @@ namespace ToolSmiths.InventorySystem.Data
                 isPercent = true;
             }
 
-            return $"{statName}: {TotalValue:0.###}{(isPercent ? "%" : "")}";
+            return $"{statName}: {TotalValue.ToString(NumberFormats.Stat)}{(isPercent ? "%" : "")}";
         }
 
         public void OnAfterDeserialize() { }
