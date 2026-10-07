@@ -1,7 +1,9 @@
-﻿using Submodules.Utility.Provider;
+﻿using System.Collections.Generic;
+using Submodules.Utility.Provider;
 using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
+using ToolSmiths.InventorySystem.GUI;
 using ToolSmiths.InventorySystem.GUI.Displays;
 using ToolSmiths.InventorySystem.GUI.InventoryDisplays;
 using ToolSmiths.InventorySystem.Inventories;
@@ -32,6 +34,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         private Canvas rootCanvas;
         private bool showLeft;
 
+        // What the tooltip last showed, so a Shift press or release while it is up can re-run it.
+        private Package lastPackage;
+        private AbstractSlotDisplay lastSlot;
+        private bool lastSecondSlot;
+        private bool lastAlt;
+
         private float OffsetX => showLeft ? +10 : -10;
 
         private void Awake()
@@ -46,7 +54,14 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         private void Update()
         {
             if (!hoveredItem.IsCollapsed)
+            {
                 MoveDisplay();
+
+                // The compare order depends on Shift, and the roll range and comparison trade places on Alt, but
+                // the tooltip is only built on hover.
+                if (lastPackage.IsValid && (Input.GetKey(KeyCode.LeftShift) != lastSecondSlot || ModifierKeys.Alt != lastAlt))
+                    RefreshPreviewDisplay(lastPackage, lastSlot);
+            }
 
             void MoveDisplay()
             {
@@ -66,34 +81,43 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             var mousePos = Input.mousePosition / rootCanvas.scaleFactor;
             hoveredItemTransform.anchoredPosition = new Vector2(mousePos.x + OffsetX, mousePos.y);
 
-            // CONTINUE HERE
-            // TODO: compare the hovered item against the first equipment
-            // TODO: if holding shift - compare the hovered item against the second equipment
+            lastPackage = package;
+            lastSlot = slot;
+            lastSecondSlot = Input.GetKey(KeyCode.LeftShift);
+            lastAlt = ModifierKeys.Alt;
 
             if (slot is EquipmentSlotDisplay)
                 hoveredItem.Refresh(package);
             else
             {
-                var equippedItems = new Package[2];
+                // Shift = the second slot, the same key that equips there (InventorySlotDisplay): its
+                // occupant leads the compare panels, and an equip there is what the hovered stats measure.
+                IReadOnlyList<Package> shown = System.Array.Empty<Package>();
+                IReadOnlyList<Package> against = null;
 
                 if (package.Item != null && ItemService.Instance.View(package.Item).Definition.Category == ItemCategory.Equipment)
-                {
-                    var equipmentPositions = CharacterEquipment.GetTypeSpecificPositions(ItemService.Instance.View(package.Item).Definition.EquipmentType);
+                    (shown, against) = Session.Instance.Hero.Equipment.CompareTargets(package.Item, lastSecondSlot);
 
-                    var equipped = Session.Instance.Hero.Equipment.StoredPackages;
-
-                    for (var i = 0; i < equipmentPositions.Length; i++)
-                        _ = equipped.TryGetValue(equipmentPositions[i], out equippedItems[i]);
-                }
-
-                var index = Input.GetKey(KeyCode.LeftControl) ? 1 : 0;
                 var priceOverride = slot is VendorSlotDisplay && package.Item != null
                     ? VendorTransaction.BuyPrice(package.Item, ItemService.Instance.Catalog) * package.Amount
                     : -1f;
 
-                hoveredItem.Refresh(package, equippedItems[index], priceOverride);
-                compareDisplay1.Refresh(equippedItems[0], package);
-                compareDisplay2.Refresh(equippedItems[1], package);
+                // Only the hovered item carries the difference; the worn items are shown as they are.
+                hoveredItem.Refresh(package, against, priceOverride);
+
+                // A worn item the equip would not displace (the bow beside a free off-hand) is only listed.
+                var displaced = against ?? System.Array.Empty<Package>();
+                compareDisplay1.RefreshWorn(0 < shown.Count ? shown[0] : default, package, 0 < shown.Count && IsDisplaced(shown[0]));
+                compareDisplay2.RefreshWorn(1 < shown.Count ? shown[1] : default, package, 1 < shown.Count && IsDisplaced(shown[1]));
+
+                bool IsDisplaced(Package worn)
+                {
+                    foreach (var other in displaced)
+                        if (other.Item == worn.Item)
+                            return true;
+
+                    return false;
+                }
 
                 (compareDisplay1.transform as RectTransform).pivot = showLeft ? Vector2.up : Vector2.one;
                 (compareDisplay2.transform as RectTransform).pivot = showLeft ? Vector2.up : Vector2.one;

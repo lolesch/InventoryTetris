@@ -33,41 +33,70 @@ namespace ToolSmiths.InventorySystem.Inventories
         public override bool TryAddToContainer(ref Package package) => TryAddToContainer(ref package, 0);
 
         /// <param name="preferredSlotIndex">Which of <see cref="GetTypeSpecificPositions"/>'s
-        /// slots to target first, for equipment types with more than one (rings, dual-wielded
-        /// 1H weapons) - a right-click modifier's way of choosing the second slot instead of
-        /// always landing on the first. Out-of-range values clamp to the last slot.</param>
+        /// slots to target, for equipment types with more than one (rings, dual-wielded 1H
+        /// weapons). 0 is the default: the first empty slot, else a force-swap. Above 0 is a
+        /// right-click modifier's explicit choice of that slot - it goes there, empty or
+        /// worn, and never falls back to another. It can only name a slot the item's type
+        /// may enter, so a bow or shield (one slot each) lands on its own slot whatever the
+        /// index. Out-of-range values clamp to the last slot.</param>
         public bool TryAddToContainer(ref Package package, int preferredSlotIndex)
         {
             if (!package.IsValid || !IsEquipment(package.Item))
                 return false;
 
-            _ = TryAddAtEmpty(ref package, preferredSlotIndex);
+            var equipmentType = EquipmentTypeOf(package.Item);
 
-            /// Force swap with current equipment
-            if (0 < package.Amount)
-            {
-                var equipmentType = EquipmentTypeOf(package.Item);
-
-                var equipmentPositions = GetTypeSpecificPositions(equipmentType);
-                var slotIndex = Math.Clamp(preferredSlotIndex, 0, equipmentPositions.Length - 1);
-
-                // TryGetValue, not the raw indexer (issue #12): a type-specific position is
-                // not always a live key - a 2H is keyed only at the weapon slot, so reading
-                // StoredPackages[(13,0)] for the off-hand threw KeyNotFoundException.
-                var preferedPosition = equipmentPositions.Where(x =>
-                    StoredPackages.TryGetValue(x, out var stored)
-                    && stored.Item != null
-                    && EquipmentTypeOf(stored.Item) != equipmentType);
-                var position = preferedPosition.Any() ? preferedPosition.First() : equipmentPositions[slotIndex];
-
-                package = AddAtPosition(position, package);
-            }
+            // AddAtPosition fills the slot if it is empty and force-swaps if it is not.
+            if (SwapTarget(equipmentType, preferredSlotIndex) is { } target)
+                package = AddAtPosition(target, package);
+            else
+                _ = TryAddAtEmpty(ref package, 0);
 
             InvokeRefresh();
 
             // A force-swap that gave up (issue #12) leaves the item unplaced; report that so
             // a re-home cascade routing through here can fail cleanly instead of losing it.
             return 0 == package.Amount;
+        }
+
+        /// <summary>
+        /// The one decision of where an equip goes, shared by the equip itself and by the tooltip that
+        /// previews it (<see cref="CompareTargets"/>), so the preview can never promise a swap the equip will
+        /// not do. <c>null</c>: the default equip (index 0) finds a free slot and displaces nothing. Otherwise
+        /// the slot it targets - an explicit choice (index above 0), or, with every slot full, the
+        /// <see cref="ForceSwapPosition"/> - and what is worn there is what goes.
+        /// </summary>
+        private Vector2Int? SwapTarget(EquipmentType equipmentType, int preferredSlotIndex)
+        {
+            var positions = GetTypeSpecificPositions(equipmentType);
+            var slotIndex = Math.Clamp(preferredSlotIndex, 0, positions.Length - 1);
+
+            if (0 < preferredSlotIndex)
+                return positions[slotIndex];
+
+            var footprint = SlotFootprint(equipmentType);
+
+            return positions.Any(position => IsEmptySpace(position, footprint, out _))
+                ? null
+                : ForceSwapPosition(equipmentType, positions, slotIndex);
+        }
+
+        /// <summary>
+        /// Where a default equip into full slots swaps: the first slot holding a different type of gear
+        /// (a bow in front of a shield is the one that goes), else the preferred one. The one rule shared
+        /// by the equip itself and by the tooltip that previews it.
+        /// </summary>
+        private Vector2Int ForceSwapPosition(EquipmentType equipmentType, Vector2Int[] equipmentPositions, int slotIndex)
+        {
+            // TryGetValue, not the raw indexer (issue #12): a type-specific position is
+            // not always a live key - a 2H is keyed only at the weapon slot, so reading
+            // StoredPackages[(13,0)] for the off-hand threw KeyNotFoundException.
+            var preferedPosition = equipmentPositions.Where(x =>
+                StoredPackages.TryGetValue(x, out var stored)
+                && stored.Item != null
+                && EquipmentTypeOf(stored.Item) != equipmentType);
+
+            return preferedPosition.Any() ? preferedPosition.First() : equipmentPositions[slotIndex];
         }
 
         protected override bool TryAddAtEmpty(ref Package package) => TryAddAtEmpty(ref package, 0);
@@ -289,6 +318,63 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             return GetTypeSpecificPositions(EquipmentTypeOf(item)).Contains(anchor)
                 && CanPlaceAt(anchor, SlotFootprintOf(item));
+        }
+
+        /// <summary>
+        /// What a hover tooltip compares <paramref name="item"/> against - the worn gear an equip
+        /// would displace. Looked up by the slot cells the item would fill, so a worn two-hander
+        /// (keyed only at the weapon slot) answers for the off-hand cell it covers too, and a
+        /// hovered two-hander meets both the weapon and the off-hand it would push out.
+        /// </summary>
+        /// <param name="secondSlot">Shift: the equip would target the second slot, so its
+        /// occupant leads and the display order flips wherever two slots are in play.</param>
+        /// <returns><c>Shown</c>: each distinct worn item once, in display order (at most two).
+        /// <c>Against</c>: the items an equip would actually displace and the hovered one's stat rows are
+        /// measured against - the targeted slot's occupant, for a two-hander everything it pushes out,
+        /// and nothing when the equip lands in a free slot.</returns>
+        public (IReadOnlyList<Package> Shown, IReadOnlyList<Package> Against) CompareTargets(ItemInstance item, bool secondSlot)
+        {
+            var shown = new List<Package>(2);
+            var against = new List<Package>(2);
+
+            if (!IsEquipment(item))
+                return (shown, against);
+
+            var equipmentType = EquipmentTypeOf(item);
+            var footprint = SlotFootprint(equipmentType);
+
+            // One entry per cell the item can land on, in slot order: sword 12 then 13, ring 10
+            // then 11, a two-hander 12 then the 13 it spills over, everything else a single cell.
+            var occupants = new List<Package>(2);
+            foreach (var anchor in GetTypeSpecificPositions(equipmentType))
+                for (var x = 0; x < footprint.x; x++)
+                    occupants.Add(OccupantOf(new Vector2Int(anchor.x + x, anchor.y)));
+
+            if (secondSlot)
+                occupants.Reverse();
+
+            foreach (var occupant in occupants)
+                if (occupant.IsValid && !shown.Exists(s => s.Item == occupant.Item))
+                    shown.Add(occupant);
+
+            // What an equip really displaces: whatever is worn where SwapTarget - the same decision the equip
+            // makes - sends it. A free slot displaces nothing at all. A two-hander pushes out everything its
+            // footprint covers, which is all of `shown`.
+            if (IsTwoHandedWeapon(equipmentType))
+                against.AddRange(shown);
+            else if (SwapTarget(equipmentType, secondSlot ? 1 : 0) is { } target && OccupantOf(target) is { IsValid: true } displaced)
+                against.Add(displaced);
+
+            return (shown, against);
+
+            Package OccupantOf(Vector2Int cell)
+            {
+                foreach (var stored in StoredPackages)
+                    if (stored.Value.Item != null && FootprintContains(stored.Key, SlotFootprintOf(stored.Value.Item), cell))
+                        return stored.Value;
+
+                return default;
+            }
         }
 
         public override List<Vector2Int> GetStoredItemsAt(Vector2Int position, Vector2Int dimension)

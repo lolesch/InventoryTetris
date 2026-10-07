@@ -93,7 +93,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         {
             //_ = transform.root.TryGetComponent(out rootCanvas);
 
-            itemDisplay.gameObject.SetActive(false);
+            itemDisplay?.gameObject.SetActive(false);
 
             /// Rarity rides on the frame, which keeps its authored alpha. The background stays
             /// the authored scrim - at alpha 0.2 a rarity tint there would say nothing, and the

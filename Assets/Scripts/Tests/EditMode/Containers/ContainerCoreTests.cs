@@ -28,6 +28,9 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         private const string HelmId = "test.helm";
         private const string RingId = "test.ring";
         private const string PlankId = "test.plank";
+        private const string BowId = "test.bow";
+        private const string ShieldId = "test.shield";
+        private const string GreatSwordId = "test.greatsword";
 
         private static IItemCatalog catalog;
 
@@ -37,7 +40,10 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             .With(new TestDefinition { Id = ArrowId, Category = ItemCategory.Consumable, ConsumableType = ConsumableType.Arrow, Footprint = ItemSize.OneByOne, BaseStackLimit = 10u })
             .With(new TestDefinition { Id = HelmId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Helm, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
             .With(new TestDefinition { Id = RingId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Ring, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
-            .With(new TestDefinition { Id = PlankId, Category = ItemCategory.Consumable, ConsumableType = ConsumableType.Arrow, Footprint = ItemSize.TwoByOne, BaseStackLimit = 1u });
+            .With(new TestDefinition { Id = PlankId, Category = ItemCategory.Consumable, ConsumableType = ConsumableType.Arrow, Footprint = ItemSize.TwoByOne, BaseStackLimit = 1u })
+            .With(new TestDefinition { Id = BowId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Bow, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
+            .With(new TestDefinition { Id = ShieldId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Shield, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
+            .With(new TestDefinition { Id = GreatSwordId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.GreatSword, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u });
 
         [TearDown]
         public void ClearCatalog() => catalog = null;
@@ -294,6 +300,207 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             // Stats: both helms applied on equip, the displaced one lifted.
             Assert.That(stats.Added.Count, Is.EqualTo(2));
             Assert.That(stats.Removed.Count, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void CharacterEquipment_ShiftEquippingA1H_WithBowAndShieldWorn_SwapsTheShieldNotTheBow()
+        {
+            var equipment = Equipment();
+            var sender = new CharacterInventory(new Vector2Int(4, 4), catalog);
+
+            var bow = new Package(sender, new ItemInstance(BowId, ItemRarity.Common, 1, null), 1u);
+            _ = equipment.TryAddToContainer(ref bow);
+            var shield = new Package(sender, new ItemInstance(ShieldId, ItemRarity.Common, 1, null), 1u);
+            _ = equipment.TryAddToContainer(ref shield);
+
+            var sword = new Package(sender, Sword(), 1u);
+            _ = equipment.TryAddToContainer(ref sword, 1); // shift = the second slot
+
+            Assert.That(equipment.StoredPackages[new Vector2Int(12, 0)].Item.DefinitionId, Is.EqualTo(BowId), "the bow stays");
+            Assert.That(equipment.StoredPackages[new Vector2Int(13, 0)].Item.DefinitionId, Is.EqualTo(SwordId), "the sword took the shield's slot");
+            Assert.That(sword.Item?.DefinitionId, Is.EqualTo(ShieldId), "the shield was handed back");
+        }
+
+        [Test]
+        public void CharacterEquipment_ShiftEquippingA1H_WithTheFirstSlotEmpty_StillTargetsTheSecondSlot()
+        {
+            var equipment = Equipment();
+            var sender = new CharacterInventory(new Vector2Int(4, 4), catalog);
+
+            var first = Sword();
+            var worn = new Package(sender, first, 1u);
+            _ = equipment.TryAddToContainer(ref worn, 1);   // second slot, empty -> lands there
+            Assert.That(equipment.StoredPackages.Keys, Is.EquivalentTo(new[] { new Vector2Int(13, 0) }));
+
+            var incoming = new Package(sender, Sword(), 1u);
+            _ = equipment.TryAddToContainer(ref incoming, 1); // 12 is empty, but shift still means 13
+
+            Assert.That(equipment.StoredPackages.Keys, Is.EquivalentTo(new[] { new Vector2Int(13, 0) }));
+            Assert.That(incoming.Item, Is.SameAs(first), "the displaced sword was handed back");
+        }
+
+        [Test]
+        public void CharacterEquipment_ShiftEquippingARing_WithBothSlotsWorn_SwapsTheSecondRing()
+        {
+            var equipment = Equipment();
+            var sender = new CharacterInventory(new Vector2Int(4, 4), catalog);
+
+            var ringA = new Package(sender, Ring(1f), 1u);
+            _ = equipment.TryAddToContainer(ref ringA);
+            var ringB = new Package(sender, Ring(2f), 1u);
+            _ = equipment.TryAddToContainer(ref ringB);
+
+            var incoming = new Package(sender, Ring(3f), 1u);
+            _ = equipment.TryAddToContainer(ref incoming, 1);
+
+            Assert.That(equipment.StoredPackages[new Vector2Int(10, 0)].Item.Affixes[0].Modifier.Value, Is.EqualTo(1f));
+            Assert.That(equipment.StoredPackages[new Vector2Int(11, 0)].Item.Affixes[0].Modifier.Value, Is.EqualTo(3f));
+            Assert.That(incoming.Item.Affixes[0].Modifier.Value, Is.EqualTo(2f), "the displaced ring was handed back");
+        }
+
+        [Test]
+        public void CharacterEquipment_ShiftEquippingASingleSlotType_LandsOnItsOwnSlot()
+        {
+            var equipment = Equipment();
+            var sender = new CharacterInventory(new Vector2Int(4, 4), catalog);
+
+            var bow = new Package(sender, new ItemInstance(BowId, ItemRarity.Common, 1, null), 1u);
+            _ = equipment.TryAddToContainer(ref bow, 1);
+            var shield = new Package(sender, new ItemInstance(ShieldId, ItemRarity.Common, 1, null), 1u);
+            _ = equipment.TryAddToContainer(ref shield, 1);
+
+            Assert.That(equipment.StoredPackages[new Vector2Int(12, 0)].Item.DefinitionId, Is.EqualTo(BowId), "a bow never enters 13");
+            Assert.That(equipment.StoredPackages[new Vector2Int(13, 0)].Item.DefinitionId, Is.EqualTo(ShieldId), "a shield never enters 12");
+        }
+
+        // ── Hover compare targets ────────────────────────────────────────────
+
+        private static ItemInstance Gear(string id) => new(id, ItemRarity.Common, 1, null);
+
+        private static CharacterEquipment Wearing(CharacterInventory sender, params string[] ids)
+        {
+            var equipment = Equipment();
+            foreach (var id in ids)
+            {
+                var package = new Package(sender, Gear(id), 1u);
+                _ = equipment.TryAddToContainer(ref package);
+            }
+            return equipment;
+        }
+
+        private static string[] Ids(System.Collections.Generic.IReadOnlyList<Package> packages) =>
+            packages.Select(p => p.Item.DefinitionId).ToArray();
+
+        [Test]
+        public void CompareTargets_A1HAgainstAWorn2H_SeesTheTwoHanderFromEitherSlot()
+        {
+            var sender = new CharacterInventory(new Vector2Int(4, 4), catalog);
+            var equipment = Wearing(sender, GreatSwordId);
+
+            foreach (var shift in new[] { false, true })
+            {
+                var (shown, against) = equipment.CompareTargets(Sword(), shift);
+
+                Assert.That(Ids(shown), Is.EqualTo(new[] { GreatSwordId }), $"shown once (shift {shift})");
+                Assert.That(Ids(against), Is.EqualTo(new[] { GreatSwordId }), $"the stats are measured against it (shift {shift})");
+            }
+        }
+
+        [Test]
+        public void CompareTargets_AShieldAgainstAWorn2H_SeesTheTwoHanderCoveringTheOffhandCell()
+        {
+            var sender = new CharacterInventory(new Vector2Int(4, 4), catalog);
+            var equipment = Wearing(sender, GreatSwordId);
+
+            var (shown, against) = equipment.CompareTargets(Gear(ShieldId), false);
+
+            Assert.That(Ids(shown), Is.EqualTo(new[] { GreatSwordId }));
+            Assert.That(Ids(against), Is.EqualTo(new[] { GreatSwordId }));
+        }
+
+        [Test]
+        public void CompareTargets_A2HAgainstWeaponAndOffhand_ShowsBothAndMeasuresAgainstBoth()
+        {
+            var sender = new CharacterInventory(new Vector2Int(4, 4), catalog);
+            var equipment = Wearing(sender, SwordId, ShieldId);
+
+            var (shown, against) = equipment.CompareTargets(Gear(GreatSwordId), false);
+            Assert.That(Ids(shown), Is.EqualTo(new[] { SwordId, ShieldId }));
+            Assert.That(Ids(against), Is.EqualTo(new[] { SwordId, ShieldId }));
+
+            (shown, against) = equipment.CompareTargets(Gear(GreatSwordId), true);
+            Assert.That(Ids(shown), Is.EqualTo(new[] { ShieldId, SwordId }), "shift flips the order");
+            Assert.That(Ids(against), Is.EquivalentTo(new[] { SwordId, ShieldId }), "but it still replaces both");
+        }
+
+        [Test]
+        public void CompareTargets_A1HAgainstBowAndShield_ShiftSwapsWhichSlotLeadsAndIsMeasured()
+        {
+            var sender = new CharacterInventory(new Vector2Int(4, 4), catalog);
+            var equipment = Wearing(sender, BowId, ShieldId);
+
+            var (shown, against) = equipment.CompareTargets(Sword(), false);
+            Assert.That(Ids(shown), Is.EqualTo(new[] { BowId, ShieldId }));
+            Assert.That(Ids(against), Is.EqualTo(new[] { BowId }));
+
+            (shown, against) = equipment.CompareTargets(Sword(), true);
+            Assert.That(Ids(shown), Is.EqualTo(new[] { ShieldId, BowId }));
+            Assert.That(Ids(against), Is.EqualTo(new[] { ShieldId }), "shift targets the second slot");
+        }
+
+        [Test]
+        public void CompareTargets_A1HWithABowAndAnEmptyOffhand_DisplacesNothing()
+        {
+            var sender = new CharacterInventory(new Vector2Int(4, 4), catalog);
+            var equipment = Wearing(sender, BowId);
+
+            // The default equip fills the free off-hand; the bow stays - so there is nothing to replace.
+            var (shown, against) = equipment.CompareTargets(Sword(), false);
+            Assert.That(Ids(shown), Is.EqualTo(new[] { BowId }), "the bow is still listed for reference");
+            Assert.That(against, Is.Empty, "but the sword does not replace it");
+
+            // Shift names the second slot, which is the same free off-hand.
+            (_, against) = equipment.CompareTargets(Sword(), true);
+            Assert.That(against, Is.Empty);
+        }
+
+        [Test]
+        public void CompareTargets_AShiftEquipOntoAFreeSecondSlot_IgnoresAWornFirstSlot()
+        {
+            var sender = new CharacterInventory(new Vector2Int(4, 4), catalog);
+            var equipment = Wearing(sender, SwordId);   // lands in the first slot
+
+            var (_, against) = equipment.CompareTargets(Sword(), true);
+            Assert.That(against, Is.Empty, "shift is the second slot, and it is free");
+
+            (_, against) = equipment.CompareTargets(Sword(), false);
+            Assert.That(against, Is.Empty, "the default equip also takes the free second slot");
+        }
+
+        [Test]
+        public void CompareTargets_ASingleSlotType_IgnoresShiftAndShowsOnlyItsOwnSlot()
+        {
+            var sender = new CharacterInventory(new Vector2Int(4, 4), catalog);
+            var equipment = Wearing(sender, BowId, ShieldId);
+
+            foreach (var shift in new[] { false, true })
+            {
+                var (shown, against) = equipment.CompareTargets(Gear(ShieldId), shift);
+
+                Assert.That(Ids(shown), Is.EqualTo(new[] { ShieldId }));
+                Assert.That(Ids(against), Is.EqualTo(new[] { ShieldId }));
+            }
+        }
+
+        [Test]
+        public void CompareTargets_WithNothingWornInTheSlots_ShowsNothing()
+        {
+            var equipment = Wearing(new CharacterInventory(new Vector2Int(4, 4), catalog));
+
+            var (shown, against) = equipment.CompareTargets(Sword(), true);
+
+            Assert.That(shown, Is.Empty);
+            Assert.That(against, Is.Empty);
         }
 
         [Test]

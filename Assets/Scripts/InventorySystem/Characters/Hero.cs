@@ -240,6 +240,32 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             //return currentStat.TotalValue - clonedStat.TotalValue;
         }
 
+        /// <summary>
+        /// What taking the worn <paramref name="replaced"/> modifiers off and putting the unworn
+        /// <paramref name="incoming"/> ones on would do to the stat's total, through every other modifier
+        /// the hero has: positive when the swap raises it. A two-hander replaces a weapon and an off-hand at
+        /// once, so <paramref name="replaced"/> may hold both; an empty slot replaces nothing, and the
+        /// result is then the full effect of what comes on. Zero when the template never authored the stat.
+        /// Works on a copy, like the single-modifier overload.
+        /// </summary>
+        public float CompareStatModifiers(StatName stat, IReadOnlyList<StatModifier> incoming, IReadOnlyList<StatModifier> replaced)
+        {
+            var currentStat = GetStat(stat);
+
+            if (currentStat == null)
+                return 0f;
+
+            var swapped = currentStat.GetDeepCopy();
+
+            foreach (var other in replaced)
+                _ = swapped.TryRemoveModifier(other);
+
+            foreach (var modifier in incoming)
+                swapped.AddModifier(modifier);
+
+            return swapped.TotalValue - currentStat.TotalValue;
+        }
+
         // --- regeneration and healing -------------------------------------------------------------
 
         /// <summary>

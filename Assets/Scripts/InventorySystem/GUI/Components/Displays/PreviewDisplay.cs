@@ -27,8 +27,23 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
         private PrefabPool<CharacterStatModifierDisplay> itemStatPool;
         private PrefabPool<CharacterStatModifierDisplay> ItemStatPool => itemStatPool ??= new(itemStatPrefab);
 
-        public void Refresh((Package package, Package compareTo) data) => Refresh(data.package, data.compareTo);
-        public void Refresh(Package package, Package compareTo, float priceOverride = -1f)
+        public void Refresh((Package package, Package compareTo) data) => Refresh(data.package, new[] { data.compareTo });
+
+        /// <param name="compareTo">The worn items equipping this one would displace, judged together; empty
+        /// for a free slot, where each row shows its full effect; null for an item that is
+        /// not equipment, which has nothing to compare. The worn item beside it is drawn with
+        /// <see cref="RefreshWorn"/>.</param>
+        public void Refresh(Package package, IReadOnlyList<Package> compareTo, float priceOverride = -1f) =>
+            Present(package, priceOverride, stat => compareTo == null ? new(stat) : new(stat, compareTo));
+
+        /// <summary>A worn item shown beside the hovered one. When the hovered item would displace it, the
+        /// stats the hovered item lacks carry what the unequip alone costs; every other row stays plain.</summary>
+        public void RefreshWorn(Package worn, Package hovered, bool displaced) =>
+            Present(worn, -1f, stat => displaced && hovered.IsValid ? new(stat, hovered.Item) : new(stat));
+
+        public void Refresh(Package package) => Present(package, -1f, stat => new(stat));
+
+        private void Present(Package package, float priceOverride, System.Func<CharacterStatModifier, CharacterStatModifierDisplay.CharacterStatModifierData> row)
         {
             if (!package.IsValid)
             {
@@ -79,59 +94,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 
                 var itemStat = ItemStatPool.GetObject(false);
 
-                itemStat.Refresh(new(stat, compareTo));
-
-                itemStat.gameObject.SetActive(true);
-            }
-
-            Expand();
-        }
-
-        public void Refresh(Package package)
-        {
-            if (!package.IsValid)
-            {
-                Collapse();
-                return;
-            }
-
-            var view = ItemService.Instance.View(package.Item);
-            var rarityColor = ItemView.RarityColorOf(package.Item.Rarity);
-
-            if (itemName)
-                itemName.text = view.DisplayName.Colored(rarityColor);
-
-            if (itemType)
-                itemType.text = view.DisplayName;
-
-            if (icon)
-                icon.sprite = view.Icon;
-
-            if (amount)
-                amount.text = 1 < package.Amount ? $"{package.Amount}/{view.StackLimit}" : string.Empty;
-
-            if (goldValue)
-                goldValue.Refresh(new Currency(view.SellValue)); //? $"{package.Item.GoldValue}" : string.Empty;
-
-            if (frame)
-                frame.color = rarityColor;
-
-            if (horizontalLines != null && 0 < horizontalLines.Count)
-                for (var i = 0; i < horizontalLines.Count; i++)
-                    horizontalLines[i].color = rarityColor;
-
-            if (background)
-                background.color = rarityColor * Color.gray * Color.gray;
-
-            ItemStatPool.ReleaseAll();
-
-            foreach (var stat in package.Item.Affixes)
-            {
-                //TODO: extend prefabPool to support abstractDisplays that update the Display(newData) before activating the object
-
-                var itemStat = ItemStatPool.GetObject(false);
-
-                itemStat.Refresh(new(stat));
+                itemStat.Refresh(row(stat));
 
                 itemStat.gameObject.SetActive(true);
             }

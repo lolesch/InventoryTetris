@@ -1,7 +1,9 @@
-﻿using TMPro;
+﻿using System.Collections.Generic;
+using TMPro;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Inventories;
+using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Services;
 using Submodules.Utility.Extensions;
 using Submodules.Utility.UI;
@@ -24,54 +26,55 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
             public Sprite icon;
 
             public CharacterStatModifierData(CharacterStatModifier characterStatModifier)
+                : this(characterStatModifier, (StatComparison?)null) { }
+
+            /// <param name="compareTo">The worn items an equip would displace, compared as a whole - a hovered
+            /// two-hander is measured against its weapon and off-hand together. Empty: a free slot, so the row
+            /// shows the full effect of equipping it.</param>
+            public CharacterStatModifierData(CharacterStatModifier characterStatModifier, IReadOnlyList<Package> compareTo)
+                : this(characterStatModifier, EquipEffect(characterStatModifier, compareTo)) { }
+
+            /// <summary>A row of worn gear the hovered item displaces: only a stat the hovered item lacks gets a
+            /// difference, the cost of the unequip alone.</summary>
+            public CharacterStatModifierData(CharacterStatModifier characterStatModifier, ItemInstance displacedBy)
+                : this(characterStatModifier, UnequipEffect(characterStatModifier, displacedBy)) { }
+
+            private CharacterStatModifierData(CharacterStatModifier characterStatModifier, StatComparison? comparison)
             {
                 statMod = characterStatModifier;
-                icon = ItemService.Instance.GetStatIcon(statMod.Stat);
-                displayText = $"{statMod.Modifier} {statMod.Modifier.Range.ToString().Colored(Color.gray)}";
-                displayFontSize = RollQualityFontSize(statMod.Modifier);
-            }
 
-            public CharacterStatModifierData(CharacterStatModifier characterStatModifier, Package compareTo)
-            {
-                statMod = characterStatModifier;
-
-                var comparison = CompareStatValues(statMod, compareTo, out var difference);
-                var comparisonColor = comparison == 0 ? Color.white : (comparison < 0 ? Color.red : Color.green);
-
-                var differenceString = statMod.Modifier.Type switch
+                var comparisonColor = comparison?.Verdict switch
                 {
-                    StatModifierType.Overwrite => $"={difference:+ #.###;- #.###;#.###}",
-                    StatModifierType.FlatAdd => $"{difference:+ #.###;- #.###;#.###}",
-                    StatModifierType.PercentAdd => $"{difference:+ #.###;- #.###;#.###}%",
-                    StatModifierType.PercentMult => $"*{difference:+ #.###;- #.###;#.###}%",
-
-                    _ => $"?? {difference:+ #.###;- #.###;#.###}",
+                    ComparisonVerdict.Better => Color.green,
+                    ComparisonVerdict.Worse => Color.red,
+                    _ => Color.white,
                 };
 
+                // Alt trades the comparison for the roll range: the range only while it is held, the difference
+                // the rest of the time.
+                var altHeld = ModifierKeys.Alt;
+                var difference = altHeld ? string.Empty : comparison?.Format() ?? string.Empty;
+                var range = altHeld ? $" {statMod.Modifier.Range.ToString().Colored(Color.gray)}" : string.Empty;
+
                 icon = ItemService.Instance.GetStatIcon(statMod.Stat);
-                displayText = $"{statMod.Modifier} {statMod.Modifier.Range.ToString().Colored(Color.gray)} {differenceString.Colored(comparisonColor)}";
+                displayText = $"{statMod.Modifier}{range}"
+                    + (difference.Length == 0 ? string.Empty : $" {difference.Colored(comparisonColor)}");
                 displayFontSize = RollQualityFontSize(statMod.Modifier);
-
-                static int CompareStatValues(CharacterStatModifier stat, Package compareTo, out float difference)
-                {
-                    difference = 0;
-                    var other = 0f;
-
-                    //if (stat.Modifier.Type == StatModifierType.Override) // => compare to total
-                    //    other = Character.Instance.GetStatValue(stat.Stat);
-                    //else 
-                    if (compareTo.IsValid)
-                        for (var i = 0; i < compareTo.Item.Affixes.Count; i++)   // foreach stat of the other item
-                            if (compareTo.Item.Affixes[i].Stat == stat.Stat)     // find a corresponding stat
-                                                                                 // if (compareTo.Item.Affixes[i].Modifier.Type == stat.Modifier.Type) // find a corresponding mod type
-                            {
-                                other = compareTo.Item.Affixes[i].Modifier.Value;
-                                difference = Session.Instance.Hero.CompareStatModifiers(stat, compareTo.Item.Affixes[i].Modifier);
-                            }
-
-                    return stat.Modifier.Value.CompareTo(other);
-                }
             }
+
+            private static StatComparison? EquipEffect(CharacterStatModifier row, IReadOnlyList<Package> compareTo)
+            {
+                var worn = new List<CharacterStatModifier>();
+
+                foreach (var package in compareTo)
+                    if (package.IsValid)
+                        worn.AddRange(package.Item.Affixes);
+
+                return StatComparison.Of(row, worn, Session.Instance.Hero.CompareStatModifiers);
+            }
+
+            private static StatComparison? UnequipEffect(CharacterStatModifier row, ItemInstance displacedBy) =>
+                displacedBy == null ? null : StatComparison.OfLoss(row, displacedBy.Affixes, Session.Instance.Hero.CompareStatModifiers);
 
             /// <summary>
             /// Font size scales with roll quality: an affix at the bottom of its range renders at
