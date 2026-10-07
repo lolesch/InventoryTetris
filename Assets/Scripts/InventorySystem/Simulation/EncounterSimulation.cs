@@ -132,6 +132,14 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         public int AliveEnemyCount => _enemies.Count;
 
+        /// <summary>
+        /// The enemy the hero's next Strike would hit, or null when none lives (issue #182). A pure peek at the
+        /// Strike's own selection - the lowest health, the earliest spawned on a tie - with no state of its own
+        /// and no event, so it cannot disagree with the Strike that follows. It can change between swings as
+        /// health changes. The Cast's targets are not this.
+        /// </summary>
+        public Enemy StrikeTarget => LowestHealth();
+
         /// <summary>1-based index of the Encounter currently building or being fought.</summary>
         public int CurrentEncounter { get; private set; }
 
