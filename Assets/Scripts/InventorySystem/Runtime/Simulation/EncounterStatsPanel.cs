@@ -42,6 +42,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             var groundDrops = simulation.LootFlow?.GroundDrops.Count ?? 0;
 
             combatStatsText.text =
+                (simulation.IsPaused ? "PAUSED - Space to resume\n" : string.Empty) +
                 (encounter.IsArriving
                     ? $"Arriving…   cleared {encounter.EncountersCleared}\n"
                     : $"Encounter {encounter.CurrentEncounter}   cleared {encounter.EncountersCleared}\n") +

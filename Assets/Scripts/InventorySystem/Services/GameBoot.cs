@@ -144,7 +144,11 @@ namespace ToolSmiths.InventorySystem.Services
 
             ServiceLocator.Install(registry);
             GameLoop.Install();
-            GameLoop.Add(registry.Get<ISimulationService>().Tick);
+
+            // The pause key ahead of the tick, so a press freezes the frame it lands on.
+            var simulation = registry.Get<ISimulationService>();
+            GameLoop.Add(new PauseHotkey(simulation).Tick);
+            GameLoop.Add(simulation.Tick);
         }
 
         private static InvalidOperationException MissingConfig() => new(

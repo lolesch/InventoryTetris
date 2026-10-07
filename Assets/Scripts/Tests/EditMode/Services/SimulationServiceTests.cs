@@ -227,6 +227,150 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(service.Run.Encounter, Is.Null);
         }
 
+        // ── pause ────────────────────────────────────────────────────────────
+
+        [Test]
+        public void Pause_InTown_IsRefused()
+        {
+            var raised = new List<bool>();
+            service.PausedChanged += raised.Add;
+
+            service.SetPaused(true);
+
+            Assert.That(service.IsPaused, Is.False);
+            Assert.That(raised, Is.Empty);
+        }
+
+        [Test]
+        public void ApausedRun_StandsStill_ThenResumesWhereItStopped()
+        {
+            service.Send(thornwood);
+            service.Tick(0.1f);
+            var resource = session.Hero.GetResource(StatName.Resource);
+            _ = resource.RemoveFromCurrent(resource.TotalValue);
+            var duration = service.Run.Encounter.Duration;
+
+            service.SetPaused(true);
+            service.Tick(0.1f);
+
+            Assert.That(service.IsPaused, Is.True);
+            Assert.That(service.Run.Encounter.Duration, Is.EqualTo(duration), "the Encounter's clock froze");
+            Assert.That(resource.CurrentValue, Is.EqualTo(0f), "so did the Hero's regeneration");
+
+            service.SetPaused(false);
+            service.Tick(0.1f);
+
+            Assert.That(service.Run.Encounter.Duration, Is.GreaterThan(duration));
+        }
+
+        [Test]
+        public void Pausing_RaisesPausedChanged_OncePerChange_AndLeavesTheSimSpeedAlone()
+        {
+            session.Hero.Behaviour.SimSpeed = 4f;
+            service.Send(thornwood);
+            var raised = new List<bool>();
+            service.PausedChanged += raised.Add;
+
+            service.SetPaused(true);
+            service.SetPaused(true);
+            service.SetPaused(false);
+
+            Assert.That(raised, Is.EqualTo(new[] { true, false }));
+            Assert.That(session.Hero.Behaviour.SimSpeed, Is.EqualTo(4f));
+        }
+
+        [Test]
+        public void TheRunsEnd_ClearsThePause()
+        {
+            service.Send(thornwood);
+            service.SetPaused(true);
+            var raised = new List<bool>();
+            service.PausedChanged += raised.Add;
+
+            _ = service.Recall();
+
+            Assert.That(service.IsPaused, Is.False);
+            Assert.That(raised, Is.EqualTo(new[] { false }));
+        }
+
+        [Test]
+        public void ANewRun_StartsMoving_EvenAfterAPauseThatNeverGotCleared()
+        {
+            service.Send(thornwood);
+            service.SetPaused(true);
+
+            // Mid-Run hero load: a fresh World has no Run in the Field, so the flag outlives its Run.
+            session.World.Run = null;
+            Assert.That(service.IsPaused, Is.False, "a flag left from another World freezes nothing");
+
+            service.Send(ashfen);
+
+            Assert.That(service.IsPaused, Is.False);
+        }
+
+        private sealed class TextFieldStub : MonoBehaviour, UnityEngine.EventSystems.IUpdateSelectedHandler
+        {
+            public void OnUpdateSelected(UnityEngine.EventSystems.BaseEventData eventData) { }
+        }
+
+        private static void SwitchEventSystem(UnityEngine.EventSystems.EventSystem events, string message) =>
+            typeof(UnityEngine.EventSystems.EventSystem)
+                .GetMethod(message, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                .Invoke(events, null);
+
+        [Test]
+        public void ThePauseKey_IsLeftToATextFieldThatHasFocus()
+        {
+            var events = new GameObject("events").AddComponent<UnityEngine.EventSystems.EventSystem>();
+            // Edit Mode never runs OnEnable, which is what makes an EventSystem the current one.
+            SwitchEventSystem(events, "OnEnable");
+            var field = new GameObject("field", typeof(TextFieldStub));
+
+            try
+            {
+                events.SetSelectedGameObject(field);
+                service.Send(thornwood);
+
+                new PauseHotkey(service, () => true).Tick(0.1f);
+
+                Assert.That(service.IsPaused, Is.False, "the space went to the field");
+                Assert.That(events.currentSelectedGameObject, Is.SameAs(field), "and the field kept its focus");
+
+                events.SetSelectedGameObject(null);
+                new PauseHotkey(service, () => true).Tick(0.1f);
+
+                Assert.That(service.IsPaused, Is.True, "with no field focused the key pauses");
+            }
+            finally
+            {
+                SwitchEventSystem(events, "OnDisable");
+                UnityEngine.Object.DestroyImmediate(events.gameObject);
+                UnityEngine.Object.DestroyImmediate(field);
+            }
+        }
+
+        [Test]
+        public void ThePauseKey_Toggles_OnlyWhileARunIsInTheField()
+        {
+            var down = false;
+            var hotkey = new PauseHotkey(service, () => down);
+
+            down = true;
+            hotkey.Tick(0.1f);
+            Assert.That(service.IsPaused, Is.False, "Town ignores the key");
+
+            service.Send(thornwood);
+            hotkey.Tick(0.1f);
+            Assert.That(service.IsPaused, Is.True);
+
+            hotkey.Tick(0.1f);
+            Assert.That(service.IsPaused, Is.False, "the same key resumes");
+
+            down = false;
+            hotkey.Tick(0.1f);
+            Assert.That(service.IsPaused, Is.False, "no press, no change");
+        }
+
         [Test]
         public void TheBehaviourProfile_IsTheHeros_AndLive()
         {

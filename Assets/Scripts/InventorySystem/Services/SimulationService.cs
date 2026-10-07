@@ -74,6 +74,9 @@ namespace ToolSmiths.InventorySystem.Services
             var profile = ProfileFor(location);
             Run.Send(profile);
 
+            // A new Run starts moving, whatever froze the last one.
+            SetPaused(false);
+
             // After the Run accepted it: a refused Send must not move the Location a Death is judged against.
             hero.SelectedLocation = location;
 
@@ -120,8 +123,33 @@ namespace ToolSmiths.InventorySystem.Services
             return true;
         }
 
+        // Transient, like the Run it freezes: never saved, and read through IsPaused so a flag left
+        // over from another World (a hero load mid-Run) cannot freeze a Run it does not belong to.
+        private bool paused;
+
+        public bool IsPaused => paused && Run.Phase == RunPhase.InField;
+
+        public event Action<bool> PausedChanged;
+
+        public void SetPaused(bool value)
+        {
+            // Pausing needs a Run in the Field; resuming never does, so a stale flag can always be cleared.
+            if (value && Run.Phase != RunPhase.InField)
+                return;
+
+            if (paused == value)
+                return;
+
+            paused = value;
+            PausedChanged?.Invoke(value);
+        }
+
         public void Tick(float deltaSeconds)
         {
+            // A frozen Run stands still whole: no regeneration, no Encounter, no auto-Recall.
+            if (IsPaused)
+                return;
+
             var hero = session.Hero;
             var dt = deltaSeconds * Mathf.Max(0f, hero.Behaviour.SimSpeed);
 
@@ -244,6 +272,9 @@ namespace ToolSmiths.InventorySystem.Services
             // GLOSSARY.md "Drop": a Drop still on the ground when the Run ends is gone, on Recall or
             // Death alike (issue #44).
             ReleaseLoot(world);
+
+            // Home is never paused, Recall and Death alike.
+            SetPaused(false);
 
             // Coming home by Recall brings the shops new stock; a Death does not.
             if (run.LastResult is { Outcome: RunOutcome.Recalled })
