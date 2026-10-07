@@ -30,6 +30,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private EnemyHitFlash hitFlash;
         [SerializeField, Tooltip("The damage number feedback (#181). Optional: the arena binds it behind its damageNumbers switch.")]
         private EnemyDamageNumbers damageNumbers;
+        [SerializeField, Tooltip("The hit shake feedback (#180), on the sprite child. Optional: the arena binds it behind its hitShake switch.")]
+        private EnemyHitShake hitShake;
+        [SerializeField, Tooltip("The target ring (#182), off until the arena marks this view. Optional: it is shown behind the arena's targetHighlight switch.")]
+        private Image highlight;
 
         private RectTransform _rect;
         private EnemyVisuals.Entry _entry;
@@ -64,6 +68,21 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// <summary>The damage number feedback, or null when the prefab has none.</summary>
         public EnemyDamageNumbers DamageNumbers => damageNumbers;
 
+        /// <summary>The hit shake feedback, or null when the prefab has none.</summary>
+        public EnemyHitShake HitShake => hitShake;
+        /// <summary>Whether the target ring is showing on this view. Reset in <see cref="Unbind"/>.</summary>
+        public bool IsHighlighted => highlight != null && highlight.enabled;
+
+        /// <summary>
+        /// Shows or hides the ring that marks the enemy the next Strike hits (#182). A view that is not bound to
+        /// a living enemy - pooled, or dying - is never marked, whatever the caller asks.
+        /// </summary>
+        public void SetHighlighted(bool on)
+        {
+            if (highlight != null)
+                highlight.enabled = on && Enemy != null && !IsDying;
+        }
+
         /// <summary>Stand for <paramref name="enemy"/> on the ring at <paramref name="slotAngle"/>, dressed as <paramref name="entry"/> says.</summary>
         public void Bind(Enemy enemy, EnemyVisuals.Entry entry, float slotAngle)
         {
@@ -86,6 +105,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         public void BeginDying(float duration)
         {
             Detach();
+            SetHighlighted(false);
             IsDying = true;
             _dyingElapsed = 0f;
             _dyingDuration = duration;
@@ -120,11 +140,14 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             // Likewise only the listening: the killing blow's number is flushed while the view fades.
             if (damageNumbers != null)
                 damageNumbers.Detach();
+            // Same for the shake: the killing blow's jolt settles on its own.
+            if (hitShake != null)
+                hitShake.Detach();
 
             Enemy = null;
         }
 
-        /// <summary>Let go of the enemy and clear every pooled state: position, facing, flash tint, visibility, the walk-in, dying.</summary>
+        /// <summary>Let go of the enemy and clear every pooled state: position, facing, flash tint, shake offset, target ring, visibility, the walk-in, dying.</summary>
         public void Unbind()
         {
             Detach();
@@ -136,6 +159,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             // Shows what a release without a fade still owes, then drops the rest: no pending damage is pooled.
             if (damageNumbers != null)
                 damageNumbers.Unbind();
+            // Sprite back at rest: a pooled view starts with zero shake offset.
+            if (hitShake != null)
+                hitShake.Unbind();
+            SetHighlighted(false);
 
             SlotAngle = 0f;
             IsDying = false;
