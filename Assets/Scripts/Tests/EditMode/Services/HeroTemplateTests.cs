@@ -202,6 +202,34 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(game.Hero.Template, Is.SameAs(config.DefaultHero));
         }
 
+        [Test]
+        public void ASaveWhoseTemplateWasRemoved_StillNamesItWhenSavedAgain()
+        {
+            _ = AddScout();
+            var hero = NewService().Create("Aria", "scout");
+            SetRoster();
+            var game = TestGame.Create(config);
+            var saves = game.SavesOver(config, store);
+            LogAssert.Expect(LogType.Warning, new Regex("scout.*no longer authored"));
+            _ = saves.Load(hero.Id);
+
+            Assert.That(saves.Save(), Is.True);
+
+            _ = AddScout();
+            Assert.That(NewService().List().Single().Template.Id, Is.EqualTo("scout"), "re-authoring the template gets the hero back");
+        }
+
+        [Test]
+        public void ATemplateThatDoesNotExist_CannotBeCreatedFrom_EvenWithNoDefaultHero()
+        {
+            var saves = NewService();
+            var so = new SerializedObject(config);
+            so.FindProperty("<DefaultHero>k__BackingField").objectReferenceValue = null;
+            _ = so.ApplyModifiedPropertiesWithoutUndo();
+
+            _ = Assert.Throws<ArgumentException>(() => saves.Create("Aria", "gone"));
+        }
+
         private void BlankTheTemplate(HeroSummary hero)
         {
             var key = store.Keys().Single(candidate => HeroFileKey.IdOf(candidate) == hero.Id);

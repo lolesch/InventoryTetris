@@ -35,6 +35,7 @@ namespace ToolSmiths.InventorySystem.Services
         private Hero activeHero;
         private string activeName;
         private long activeCreatedAtTicks;
+        private string activeTemplateId;
 
         /// <summary>Call sites at the Unity edge read the service as <c>HeroSaveService.Instance</c>.</summary>
         public static IHeroSaveService Instance => ServiceLocator.Get<IHeroSaveService>();
@@ -133,7 +134,7 @@ namespace ToolSmiths.InventorySystem.Services
 
             var template = string.IsNullOrEmpty(templateId) ? config.DefaultHero : config.FindHero(templateId);
 
-            if (!string.IsNullOrEmpty(templateId) && template.Id != templateId)
+            if (!string.IsNullOrEmpty(templateId) && template?.Id != templateId)
                 throw new ArgumentException($"There is no hero template '{templateId}'.", nameof(templateId));
 
             var id = Guid.NewGuid().ToString("N");
@@ -228,6 +229,7 @@ namespace ToolSmiths.InventorySystem.Services
             activeHero = session.Hero;
             activeName = result.Payload.name;
             activeCreatedAtTicks = result.Payload.createdAtTicks;
+            activeTemplateId = result.Payload.templateId;
             TrySetLastSelected(id);
 
             if (result.Status == LoadStatus.RestoredFromBackup)
@@ -284,6 +286,11 @@ namespace ToolSmiths.InventorySystem.Services
             {
                 var dto = HeroMapper.ToDto(session.Hero, ActiveHeroId, activeName, locations);
                 dto.createdAtTicks = activeCreatedAtTicks;
+
+                // The template the file names, not the one the hero was built from: a template that is no
+                // longer authored builds the default, and a save must not forget which it was.
+                if (!string.IsNullOrEmpty(activeTemplateId))
+                    dto.templateId = activeTemplateId;
 
                 _ = WriteHero(ActiveHeroId, dto);
                 return true;
