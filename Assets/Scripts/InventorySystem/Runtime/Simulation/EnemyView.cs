@@ -28,6 +28,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private CanvasGroup visibility;
         [SerializeField, Tooltip("The hit flash feedback (#179). Optional: the arena binds it behind its hitFlash switch.")]
         private EnemyHitFlash hitFlash;
+        [SerializeField, Tooltip("The target ring (#182), off until the arena marks this view. Optional: it is shown behind the arena's targetHighlight switch.")]
+        private Image highlight;
 
         private RectTransform _rect;
         private EnemyVisuals.Entry _entry;
@@ -59,6 +61,19 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// <summary>The hit flash feedback, or null when the prefab has none.</summary>
         public EnemyHitFlash HitFlash => hitFlash;
 
+        /// <summary>Whether the target ring is showing on this view. Reset in <see cref="Unbind"/>.</summary>
+        public bool IsHighlighted => highlight != null && highlight.enabled;
+
+        /// <summary>
+        /// Shows or hides the ring that marks the enemy the next Strike hits (#182). A view that is not bound to
+        /// a living enemy - pooled, or dying - is never marked, whatever the caller asks.
+        /// </summary>
+        public void SetHighlighted(bool on)
+        {
+            if (highlight != null)
+                highlight.enabled = on && Enemy != null && !IsDying;
+        }
+
         /// <summary>Stand for <paramref name="enemy"/> on the ring at <paramref name="slotAngle"/>, dressed as <paramref name="entry"/> says.</summary>
         public void Bind(Enemy enemy, EnemyVisuals.Entry entry, float slotAngle)
         {
@@ -81,6 +96,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         public void BeginDying(float duration)
         {
             Detach();
+            SetHighlighted(false);
             IsDying = true;
             _dyingElapsed = 0f;
             _dyingDuration = duration;
@@ -115,7 +131,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             Enemy = null;
         }
 
-        /// <summary>Let go of the enemy and clear every pooled state: position, facing, flash tint, visibility, the walk-in, dying.</summary>
+        /// <summary>Let go of the enemy and clear every pooled state: position, facing, flash tint, target ring, visibility, the walk-in, dying.</summary>
         public void Unbind()
         {
             Detach();
@@ -123,6 +139,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             // Clears the tint as well: a pooled view starts un-tinted.
             if (hitFlash != null)
                 hitFlash.Unbind();
+
+            SetHighlighted(false);
 
             SlotAngle = 0f;
             IsDying = false;
