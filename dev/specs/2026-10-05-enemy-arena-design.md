@@ -1,7 +1,7 @@
 # Enemy Arena
 
 Date: 2026-10-05
-Status: Draft — not yet sliced. Slice with `/to-tickets` (suggested cut in "Slicing").
+Status: Built — epic #174, slices #175–#182. Pruning the four feedbacks is #201.
 Depends on: `EnemyHealthBarPool` / `EnemyHealthBarDisplay` (#60, #94), `EncounterSimulation.EnemySpawned` / `EnemyDefeated`.
 
 ## Problem Statement
