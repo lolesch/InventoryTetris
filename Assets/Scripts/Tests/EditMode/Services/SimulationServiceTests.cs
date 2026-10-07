@@ -264,6 +264,19 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
+        public void SimDelta_ScalesRealTime_ByTheSimSpeed_AndIsZeroWhilePaused()
+        {
+            session.Hero.Behaviour.SimSpeed = 4f;
+            service.Send(thornwood);
+
+            Assert.That(service.SimDelta(0.1f), Is.EqualTo(0.4f).Within(1e-5f));
+
+            service.SetPaused(true);
+
+            Assert.That(service.SimDelta(0.1f), Is.EqualTo(0f));
+        }
+
+        [Test]
         public void Pausing_RaisesPausedChanged_OncePerChange_AndLeavesTheSimSpeedAlone()
         {
             session.Hero.Behaviour.SimSpeed = 4f;

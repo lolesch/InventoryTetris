@@ -85,6 +85,13 @@ namespace ToolSmiths.InventorySystem.Services
         void SetPaused(bool paused);
 
         /// <summary>
+        /// The sim seconds <paramref name="deltaSeconds"/> of real time is worth: 0 while <see cref="IsPaused"/>,
+        /// otherwise scaled by the Behaviour Profile's sim speed. What <see cref="Tick"/> advances by, for views
+        /// that animate on sim time (they scale with the speed slider and freeze with the Run).
+        /// </summary>
+        float SimDelta(float deltaSeconds);
+
+        /// <summary>
         /// One frame of the simulation, <paramref name="deltaSeconds"/> of real time: the Hero's
         /// regeneration (Town and Field alike), the Encounter while a Run is in the Field, and the
         /// Run's two ways home (a Death, or the Behaviour Profile's auto-Recall). Scaled by the

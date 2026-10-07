@@ -10,11 +10,11 @@ using UnityEngine.UI;
 namespace ToolSmiths.InventorySystem.Runtime.Simulation
 {
     /// <summary>
-    /// One pooled row in the combat panel's enemy HP bar list (issue #60), bound to one
+    /// The health bar of one enemy figure (issue #60, now a child of <see cref="EnemyView"/>), bound to one
     /// <see cref="Enemy"/> at a time (issue #94). It adds only what the enemy has and the hero's
     /// resource globes do not — the archetype name — and hands the rest to the same
     /// <see cref="ResourceDisplay"/> the hero's HUD uses, bound to <see cref="Enemy.HealthResource"/>.
-    /// <see cref="EnemyHealthBarPool"/> is the only intended caller of
+    /// <see cref="EnemyView"/> is the only intended caller of
     /// <see cref="Bind"/>/<see cref="Unbind"/>/<see cref="SetRarityColor"/>.
     /// </summary>
     [DisallowMultipleComponent]

@@ -9,8 +9,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
     /// <summary>
     /// The sim side of the enemy HP bar binding (issue #94): an <see cref="Enemy"/>'s health is a
     /// real <c>CharacterResource</c> the bar can subscribe to, and <see cref="EncounterSimulation"/>
-    /// announces each body as it arrives. The pool that consumes both lives in
-    /// <c>Assembly-CSharp</c> and has no test coverage — these pin everything it depends on.
+    /// announces each body as it arrives. The <c>EnemyArena</c> (formerly the HP bar pool, #176) that
+    /// consumes both lives in <c>Assembly-CSharp</c> and has no EditMode coverage — these pin everything it depends on.
     /// </summary>
     [TestFixture]
     public sealed class EnemyHealthBarSeamTests
