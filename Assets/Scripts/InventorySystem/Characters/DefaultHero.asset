@@ -12,6 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4926a1bdd0c7442f95144eba5d8ba475, type: 3}
   m_Name: DefaultHero
   m_EditorClassIdentifier: InventorySystem.Characters::ToolSmiths.InventorySystem.Runtime.Character.HeroData
+  id: default
+  displayName: Hero
+  icon: {fileID: -408795929, guid: 4918c5c15b375d245a0b8c242338ff73, type: 3}
   stats:
   - <Stat>k__BackingField: 1
     <BaseValue>k__BackingField: 0.658
@@ -46,4 +49,10 @@ MonoBehaviour:
     <BaseValue>k__BackingField: 0
   - <Stat>k__BackingField: -1
     <BaseValue>k__BackingField: 280
+  starterItems: []
+  starterCoins:
+    <Iron>k__BackingField: 0
+    <Copper>k__BackingField: 0
+    <Silver>k__BackingField: 0
+    <Gold>k__BackingField: 0
   <Level>k__BackingField: 1

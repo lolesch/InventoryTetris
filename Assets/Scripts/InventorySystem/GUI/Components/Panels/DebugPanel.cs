@@ -158,6 +158,40 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
                 Debug.LogWarning("A Run is in the Field: Recall before loading a hero.");
         }
 
+        /// <summary>A new saved hero from the default template, written at once and then played, so unlike
+        /// <see cref="LoadDefaultHero"/> every later save point writes it. Refused while a Run is in the Field.</summary>
+        public void NewHero() => CreateNew();
+
+        /// <summary>The one statement of the new saved hero, shared with the Editor menu.</summary>
+        public static void CreateNew()
+        {
+            if (HeroSaveService.Instance.CreateAndLoad().Entered)
+                Debug.Log("Created a new saved hero and loaded it.");
+            else
+                Debug.LogWarning("A Run is in the Field: Recall before loading a hero. The new hero was saved and is in the hero list.");
+        }
+
+        /// <summary>Deletes the loaded hero's save and moves on like a launch does: the newest hero that
+        /// reads, else a new "Hero". Shared with the Editor menu.</summary>
+        public static void DeleteLoaded()
+        {
+            var saves = HeroSaveService.Instance;
+            var id = saves.ActiveHeroId;
+
+            if (id == null)
+            {
+                Debug.LogWarning("The Session's hero is not a saved hero, so there is no save to delete.");
+                return;
+            }
+
+            _ = saves.Delete(id);
+
+            if (saves.LoadLastOrCreate().Entered)
+                Debug.Log("Deleted the loaded hero and loaded the next one.");
+            else
+                Debug.LogWarning("A Run is in the Field: the save is deleted, but its hero is still the Session's and is not saved. Recall before loading another.");
+        }
+
         // The Hero the dev log lines below are bound to: the death, depletion and damage reactions
         // the retired LocalPlayer logged. Let go on disable and swapped on a hero load (#114).
         private Hero _logged;

@@ -97,8 +97,11 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             return new Setup { Game = game, Saves = game.SavesOver(config, store, () => now) };
         }
 
+        // The file a hero is in: a hero is saved under its name and id, so a test finds it by the id.
+        private string KeyOf(string id) => inner.Keys().Single(key => HeroFileKey.IdOf(key) == id);
+
         private SaveSlot<HeroDto> HeroSlot(string id, int version = 1) =>
-            new(store, new JsonUtilitySerializer(), id, version);
+            new(store, new JsonUtilitySerializer(), KeyOf(id), version);
 
         private static void ExpectLog(LogType type, string pattern) =>
             LogAssert.Expect(type, new Regex(pattern));
@@ -110,7 +113,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         {
             var setup = NewSetup();
             var hero = setup.Saves.Create("Aria");
-            store.Write(hero.Id, "{ truncated");
+            store.Write(KeyOf(hero.Id), "{ truncated");
             ExpectLog(LogType.Warning, "was damaged; loaded its backup");
 
             var result = setup.Saves.Load(hero.Id);
@@ -125,7 +128,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         {
             var setup = NewSetup();
             var hero = setup.Saves.Create("Aria");
-            store.Write(hero.Id, "{ truncated");
+            store.Write(KeyOf(hero.Id), "{ truncated");
             ExpectLog(LogType.Warning, "was damaged; loaded its backup");
             _ = setup.Saves.Load(hero.Id);
 
@@ -177,7 +180,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             var setup = NewSetup();
             var hero = setup.Saves.Create("Aria");
             HeroSlot(hero.Id, version: 2).Save(new HeroDto { id = hero.Id, name = "FromTheFuture" });
-            inner.TryRead(hero.Id, out var before);
+            inner.TryRead(KeyOf(hero.Id), out var before);
             ExpectLog(LogType.Warning, "newer version");
 
             var result = setup.Saves.Load(hero.Id);
@@ -186,7 +189,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(result.Status, Is.EqualTo(LoadStatus.NewerVersion));
             Assert.That(setup.Saves.ActiveHeroId, Is.Null);
             Assert.That(setup.Saves.Save(), Is.False, "no active hero, so nothing can overwrite it");
-            inner.TryRead(hero.Id, out var after);
+            inner.TryRead(KeyOf(hero.Id), out var after);
             Assert.That(after, Is.EqualTo(before));
             Assert.That(inner.SetAsideValues, Is.Empty);
         }
@@ -198,7 +201,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             var future = seeding.Saves.Create("FromTheFuture");
             HeroSlot(future.Id, version: 2).Save(new HeroDto { id = future.Id, name = "FromTheFuture" });
             seeding.Saves.SetLastSelected(future.Id);
-            inner.TryRead(future.Id, out var before);
+            inner.TryRead(KeyOf(future.Id), out var before);
             var setup = NewSetup();
             ExpectLog(LogType.Warning, "newer version");
 
@@ -206,7 +209,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             Assert.That(result.Entered, Is.True);
             Assert.That(setup.Saves.ActiveHeroId, Is.Not.EqualTo(future.Id));
-            inner.TryRead(future.Id, out var after);
+            inner.TryRead(KeyOf(future.Id), out var after);
             Assert.That(after, Is.EqualTo(before));
         }
 
@@ -291,7 +294,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(setup.Saves.Save(), Is.True);
 
             Assert.That(inner.SideFiles[$"{id}.quarantine.json"], Is.EqualTo(sidecar));
-            Assert.That(inner.Keys(), Is.EquivalentTo(new[] { id, "account" }));
+            Assert.That(inner.Keys(), Is.EquivalentTo(new[] { HeroFileKey.Compose("Aria", id), "account" }));
             Assert.That(setup.Saves.List().Single().Id, Is.EqualTo(id));
 
             // The item is out of the hero for good: the saved hero no longer carries it.

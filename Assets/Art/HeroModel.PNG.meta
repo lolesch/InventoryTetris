@@ -46,7 +46,7 @@ TextureImporter:
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 1
+  spriteMode: 2
   spriteExtrude: 1
   spriteMeshType: 1
   alignment: 0
@@ -107,10 +107,10 @@ TextureImporter:
         serializedVersion: 2
         x: 24
         y: 0
-        width: 175
+        width: 208
         height: 256
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -119,6 +119,28 @@ TextureImporter:
       bones: []
       spriteID: 6608a601a20ffc4c0800000000000000
       internalID: -4264926258641862554
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HeroModel_1
+      rect:
+        serializedVersion: 2
+        x: 100
+        y: 192
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 32a71dfd2683cbe4b8a2aa6f505b8363
+      internalID: -408795929
       vertices: []
       indices: 
       edges: []
@@ -138,6 +160,7 @@ TextureImporter:
       entries: []
     nameFileIdTable:
       HeroModel_0: -4264926258641862554
+      HeroModel_1: -408795929
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

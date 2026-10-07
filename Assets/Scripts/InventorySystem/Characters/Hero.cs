@@ -51,7 +51,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
         /// <summary>A new hero from a template: every stat and resource at its base value, and full but for the XP.</summary>
         public Hero(HeroData data)
-            : this(BuildStats(data), BuildResources(data), data.Level) { }
+            : this(BuildStats(data), BuildResources(data), data.Level) => Template = data;
 
         /// <summary>
         /// A hero over stats that already exist - the legacy scene character whose stats are
@@ -85,6 +85,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         public IReadOnlyList<CharacterResource> Resources => _resourcesView;
 
         public uint Level { get; private set; }
+
+        /// <summary>The template this hero was built from: its icon and class name. <c>null</c> for the legacy hero over existing stats.</summary>
+        public HeroData Template { get; }
 
         public bool IsInvincible { get; set; }
         public bool IsBlocking { get; set; }

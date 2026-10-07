@@ -11,8 +11,8 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.Services
 {
     /// <summary>
-    /// The <see cref="IHeroSaveService"/> over a save store: one slot per hero, keyed by its generated
-    /// id, and one for the Account. The store is injected, so the persistent data path is chosen
+    /// The <see cref="IHeroSaveService"/> over a save store: one slot per hero, keyed by its name and its
+    /// generated id (<see cref="HeroFileKey"/>), and one for the Account. The store is injected, so the persistent data path is chosen
     /// once, at boot, and a test runs over an in-memory store.
     /// </summary>
     public sealed class HeroSaveService : IHeroSaveService
@@ -34,6 +34,8 @@ namespace ToolSmiths.InventorySystem.Services
 
         private Hero activeHero;
         private string activeName;
+        private long activeCreatedAtTicks;
+        private string activeTemplateId;
 
         /// <summary>Call sites at the Unity edge read the service as <c>HeroSaveService.Instance</c>.</summary>
         public static IHeroSaveService Instance => ServiceLocator.Get<IHeroSaveService>();
@@ -81,6 +83,21 @@ namespace ToolSmiths.InventorySystem.Services
 
         public string ActiveHeroId { get; private set; }
 
+        public event Action HeroesChanged;
+
+        // A view that throws must not undo or hide a change that is already made, so it is logged.
+        private void RaiseHeroesChanged()
+        {
+            try
+            {
+                HeroesChanged?.Invoke();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError($"A hero-list handler failed: {exception.Message}");
+            }
+        }
+
         public void AddBeforeSave(Action normaliser)
         {
             if (normaliser == null)
@@ -104,30 +121,43 @@ namespace ToolSmiths.InventorySystem.Services
         }
 
         public IReadOnlyList<HeroSummary> List() =>
-            store.Keys()
-                .Where(key => key != AccountKey)
-                .Select(SummaryOf)
+            KeysById()
+                .Select(entry => SummaryOf(entry.Key, entry.Value))
                 .OrderByDescending(hero => hero.SavedAtUtc)
                 .ThenBy(hero => hero.Id, StringComparer.Ordinal)
                 .ToArray();
 
-        public HeroSummary Create(string name)
+        public HeroSummary Create(string name, string templateId = null)
         {
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException("A hero needs a name.", nameof(name));
 
+            var template = string.IsNullOrEmpty(templateId) ? config.DefaultHero : config.FindHero(templateId);
+
+            if (!string.IsNullOrEmpty(templateId) && template?.Id != templateId)
+                throw new ArgumentException($"There is no hero template '{templateId}'.", nameof(templateId));
+
             var id = Guid.NewGuid().ToString("N");
 
             // A throwaway hero, built the way a new one is, so the file holds exactly what a load restores.
-            var hero = SessionBuilder.BuildHero(config, config.DefaultHero, items);
-            HeroSlot(id).Save(HeroMapper.ToDto(hero, id, name.Trim(), locations));
+            var hero = SessionBuilder.BuildHero(config, template, items);
+            var dto = HeroMapper.ToDto(hero, id, name.Trim(), locations);
+            dto.createdAtTicks = (utcNow?.Invoke() ?? DateTime.UtcNow).Ticks;
 
-            return SummaryOf(id);
+            var summary = SummaryOf(id, WriteHero(id, dto));
+
+            RaiseHeroesChanged();
+            return summary;
         }
 
         public bool Delete(string id)
         {
-            var deleted = store.Delete(Checked(id));
+            var target = Checked(id);
+            var deleted = false;
+
+            // Every file of the id: a rename that was interrupted can leave two.
+            foreach (var key in store.Keys().Where(key => key != AccountKey && HeroFileKey.IdOf(key) == target).ToArray())
+                deleted |= store.Delete(key);
 
             if (LastSelectedHeroId == id)
                 TrySetLastSelected(null);
@@ -138,6 +168,7 @@ namespace ToolSmiths.InventorySystem.Services
                 activeHero = null;
             }
 
+            RaiseHeroesChanged();
             return deleted;
         }
 
@@ -146,25 +177,26 @@ namespace ToolSmiths.InventorySystem.Services
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException("A hero needs a name.", nameof(name));
 
-            var slot = HeroSlot(Checked(id));
-            var result = slot.Load();
+            var key = KeyOf(Checked(id));
+            var result = key == null ? default : HeroSlot(key).Load();
 
             // A file that cannot be read is left alone: saving over it would destroy what a repair might recover.
             if (!result.HasPayload)
                 return false;
 
             result.Payload.name = name.Trim();
-            slot.Save(result.Payload);
+            _ = WriteHero(id, result.Payload);
 
             if (ActiveHeroId == id)
                 activeName = result.Payload.name;
 
+            RaiseHeroesChanged();
             return true;
         }
 
         public void SetLastSelected(string id)
         {
-            if (id != null && !store.TryRead(Checked(id), out _))
+            if (id != null && KeyOf(Checked(id)) == null)
                 throw new ArgumentException($"There is no saved hero '{id}'.", nameof(id));
 
             AccountSlot().Save(new AccountDto { lastSelectedHeroId = id ?? string.Empty });
@@ -172,11 +204,21 @@ namespace ToolSmiths.InventorySystem.Services
 
         public HeroLoadResult Load(string id)
         {
-            var result = HeroSlot(Checked(id)).Load();
+            var key = KeyOf(Checked(id));
+
+            if (key == null)
+                return new HeroLoadResult(LoadStatus.Missing, false, null);
+
+            var result = HeroSlot(key).Load();
 
             if (!result.HasPayload)
             {
-                NoteUnreadable(id, result);
+                NoteUnreadable(id, key, result);
+
+                // A corrupt file was set aside, so the list is not what it was.
+                if (result.Status == LoadStatus.Corrupt)
+                    RaiseHeroesChanged();
+
                 return new HeroLoadResult(result.Status, false, null);
             }
 
@@ -186,6 +228,8 @@ namespace ToolSmiths.InventorySystem.Services
             ActiveHeroId = id;
             activeHero = session.Hero;
             activeName = result.Payload.name;
+            activeCreatedAtTicks = result.Payload.createdAtTicks;
+            activeTemplateId = result.Payload.templateId;
             TrySetLastSelected(id);
 
             if (result.Status == LoadStatus.RestoredFromBackup)
@@ -197,6 +241,7 @@ namespace ToolSmiths.InventorySystem.Services
             if (Quarantine(id, report))
                 _ = Save();
 
+            RaiseHeroesChanged();
             return new HeroLoadResult(result.Status, true, report);
         }
 
@@ -239,7 +284,15 @@ namespace ToolSmiths.InventorySystem.Services
             // untouched; every save point writes the whole hero, so the next one is the retry.
             try
             {
-                HeroSlot(ActiveHeroId).Save(HeroMapper.ToDto(session.Hero, ActiveHeroId, activeName, locations));
+                var dto = HeroMapper.ToDto(session.Hero, ActiveHeroId, activeName, locations);
+                dto.createdAtTicks = activeCreatedAtTicks;
+
+                // The template the file names, not the one the hero was built from: a template that is no
+                // longer authored builds the default, and a save must not forget which it was.
+                if (!string.IsNullOrEmpty(activeTemplateId))
+                    dto.templateId = activeTemplateId;
+
+                _ = WriteHero(ActiveHeroId, dto);
                 return true;
             }
             catch (Exception exception)
@@ -294,12 +347,12 @@ namespace ToolSmiths.InventorySystem.Services
         // A file that cannot become a hero. Corrupt (the backup was tried already) is set aside, never
         // deleted, so what is in it can still be recovered by hand. A newer version is left exactly as it
         // is: this build must not read it as a hero, and must not overwrite it.
-        private void NoteUnreadable(string id, LoadResult<HeroDto> result)
+        private void NoteUnreadable(string id, string key, LoadResult<HeroDto> result)
         {
             switch (result.Status)
             {
                 case LoadStatus.Corrupt:
-                    _ = store.SetAside(id);
+                    _ = store.SetAside(key);
 
                     if (LastSelectedHeroId == id)
                         TrySetLastSelected(null);
@@ -336,17 +389,76 @@ namespace ToolSmiths.InventorySystem.Services
             return true;
         }
 
-        private HeroSummary SummaryOf(string id)
+        private HeroSummary SummaryOf(string id, string key)
         {
-            var result = HeroSlot(id).Load();
+            var result = HeroSlot(key).Load();
 
             return result.HasPayload
-                ? new HeroSummary(id, result.Payload.name, result.Payload.level, result.SavedAtUtc, result.Status)
+                ? new HeroSummary(id, result.Payload.name, result.Payload.level, result.SavedAtUtc, result.Status,
+                    config.FindHero(result.Payload.templateId), result.Payload.createdAtTicks)
                 : new HeroSummary(id, string.Empty, 0u, result.SavedAtUtc, result.Status);
         }
 
-        private ISaveSlot<HeroDto> HeroSlot(string id) =>
-            new SaveSlot<HeroDto>(store, serializer, id, HeroSchemaVersion, utcNow: utcNow);
+        // Writes the hero under the key its name and id make, then removes any other file of the id: the
+        // file it was under before a rename, or a bare-id file from before names were part of the key.
+        // The new file is down first, so a failure or a crash in between leaves the hero twice, never
+        // not at all; the newer of the two is the hero (KeysById), and the next write removes the other.
+        private string WriteHero(string id, HeroDto dto)
+        {
+            var key = HeroFileKey.Compose(dto.name, id);
+            var stale = store.Keys().Where(other => other != AccountKey && other != key && HeroFileKey.IdOf(other) == id).ToArray();
+
+            HeroSlot(key).Save(dto);
+
+            foreach (var other in stale)
+            {
+                try
+                {
+                    _ = store.Delete(other);
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogWarning($"Hero save '{other}' is an older copy of '{key}' and could not be removed: {exception.Message}");
+                }
+            }
+
+            return key;
+        }
+
+        // The file of the hero: the key a listing finds for its id, which a rename or an older build may have
+        // named differently from what the name now makes. null when there is none.
+        private string KeyOf(string id) => KeysById().TryGetValue(id, out var key) ? key : null;
+
+        // Every hero file by the id it carries. Two files of one id (an interrupted rename) are one hero: the
+        // one saved last, and the other is left for the next write to remove.
+        private Dictionary<string, string> KeysById()
+        {
+            var byId = new Dictionary<string, string>(StringComparer.Ordinal);
+
+            foreach (var key in store.Keys())
+            {
+                if (key == AccountKey)
+                    continue;
+
+                var id = HeroFileKey.IdOf(key);
+                byId[id] = byId.TryGetValue(id, out var other) ? Newer(other, key) : key;
+            }
+
+            return byId;
+        }
+
+        private string Newer(string first, string second)
+        {
+            var firstAt = HeroSlot(first).Load().SavedAtUtc;
+            var secondAt = HeroSlot(second).Load().SavedAtUtc;
+
+            return firstAt != secondAt
+                ? firstAt > secondAt ? first : second
+                : string.CompareOrdinal(first, second) <= 0 ? first : second;
+        }
+
+        private ISaveSlot<HeroDto> HeroSlot(string key) =>
+            new SaveSlot<HeroDto>(store, serializer, key, HeroSchemaVersion, utcNow: utcNow);
 
         private ISaveSlot<AccountDto> AccountSlot() =>
             new SaveSlot<AccountDto>(store, serializer, AccountKey, AccountSchemaVersion, utcNow: utcNow);
