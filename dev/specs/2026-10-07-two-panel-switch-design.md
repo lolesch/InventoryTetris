@@ -36,8 +36,9 @@ clicking either button flips the bool.
 The **peek** flips that bool while a key is held and sets it back on release. It is a real
 selection, not a view-only overlay: it goes through the group, so both tab buttons follow. On
 release it restores the state it captured only if nothing else has written the bool since the
-peek began. A click on a tab and a panel's reset on closing are both writes, and each cancels
-the restore. Holding the key, closing the panel, reopening on the Supply and releasing leaves
+peek began. A click on the home tab and a panel's reset on closing are both writes, and each
+cancels the restore (both leave the player home). A click on the tab being peeked at is refused
+because it is already on, writes nothing, and changes nothing: on release the player is home. Holding the key, closing the panel, reopening on the Supply and releasing leaves
 the panel on the Supply.
 
 The key is Alt. Shift moves items, Ctrl manipulates stacks, Alt shows more information about
@@ -53,8 +54,8 @@ the player's things.
    Town Stops feel alike.
 4. As a player, I want a peek from the Sold tab to show the Supply, so that the peek is the
    other tab in both directions.
-5. As a player, I want a click on a tab during a peek to keep that tab, so that a peek can
-   become a choice.
+5. As a player, I want a click on the tab I am peeking at to change nothing, and letting go to
+   bring me home, so that a peek is only ever a look and never becomes a choice.
 6. As a player, I want closing the panel while I hold Alt, then reopening it, to show the
    Supply and stay there when I let go, so that a panel always opens on the Supply.
 7. As a player, I want holding Alt before I open the panel to peek as soon as it opens, so
@@ -163,8 +164,8 @@ the player's things.
     driver's click while on is refused, another toggle in the group switches the driver off and
     is switched off by it, and a mirror with no driver or in another group is warned (a driver
     among other toggles is not);
-  - the peek - a hold flips and a release restores; hold, click the other tab, release leaves
-    the click; hold, close the panel, reopen, release leaves the Supply; a hold begun before
+  - the peek - a hold flips and a release restores; hold, click the home tab, release leaves
+    it; hold, click the peeked tab (refused), release returns home; hold, close the panel, reopen, release leaves the Supply; a hold begun before
     the panel opens peeks on open; a hold with the panel closed does nothing; losing focus
     releases;
   - the group's first-member rule - a reset returns the pair to the off state through the
@@ -222,7 +223,14 @@ driver altogether; the decision is the smaller change:
   sit among other toggles, and a reset to any first member but the driver switches it off. The
   panels of those other toggles must not share a `PanelGroup` with the driver's off panel: scene
   layout.
-- **Kept: no group, switch-off allowed, driver as first member, panel unset.**
+- **Kept: no group, switch-off allowed, driver as first member, panel unset.** Added by the
+  review: both slots holding the same panel, and a mirror and its driver both authored on.
+- **Ruled: a refused click is not a write.** Peeking from the Supply and clicking the Sold tab
+  (already on) does nothing, and release returns to the Supply; that is wanted, so story 5 no
+  longer promises that a peek can become a choice. Only a click on the home tab writes, and it
+  ends at home either way.
+- **Ruled: the reset-with-panel setting is not warned about.** A pair does not have to live in a
+  panel that closes; ticket 2's acceptance criteria turn it on for the two selling panels.
 - **Considered and not taken: a dedicated group type, or forbidding a `ToggleGroup` on the
   driver.** Membership is found by `GetComponent<ToggleGroup>()` on the parent, so a second group
   type would not stop the wrong one being parented, and it still could not cap its members.
