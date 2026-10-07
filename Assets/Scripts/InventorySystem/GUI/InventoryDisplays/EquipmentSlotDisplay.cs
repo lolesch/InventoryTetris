@@ -6,6 +6,7 @@ using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Runtime.Provider;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 {
@@ -81,18 +82,24 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             && Container is CharacterEquipment equipment
             && equipment.CanEquipAt(Position, package.Item);
 
+        [Tooltip("The slot's empty-state glyph (the off-hand's shield). Hidden while anything, a two-hander's ghost included, occupies the slot.")]
+        [SerializeField] private Image emptyIcon;
+
+        public override void RefreshSlotDisplay(Package package)
+        {
+            base.RefreshSlotDisplay(package);
+
+            if (emptyIcon)
+                emptyIcon.enabled = package.Amount < 1;
+        }
+
+        /// <summary>The off-hand slot under a two-hander: the weapon shown as a stand-in, faded.</summary>
         public void Refresh2HandSlotDisplay(Package package)
         {
             RefreshSlotDisplay(package);
 
-            if (icon)
-                icon.color = new Color(1, 1, 1, .3f);
-
-            if (frame)
-                frame.color *= new Color(1, 1, 1, .4f);
-
-            if (background)
-                background.color *= new Color(1, 1, 1, .4f);
+            if (itemGroup)
+                itemGroup.alpha = UiColors.GhostedAlpha;
         }
 
         protected override void MoveItem(PointerEventData eventData, Vector2 pointerPosition)

@@ -58,7 +58,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
              */
 
             var view = ItemService.Instance.View(package.Item);
-            var rarityColor = ItemView.RarityColorOf(package.Item.Rarity);
+            var rarityColor = UiColors.Rarity(package.Item.Rarity);
 
             if (itemName)
                 itemName.text = view.DisplayName.Colored(rarityColor);
@@ -85,7 +85,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                     horizontalLines[i].color = rarityColor;
 
             if (background)
-                background.color = rarityColor * Color.gray * Color.gray;
+                background.color = UiColors.SlotBackground(rarityColor);
 
             ItemStatPool.ReleaseAll();
 

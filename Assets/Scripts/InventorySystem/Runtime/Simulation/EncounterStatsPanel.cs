@@ -1,3 +1,4 @@
+using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Simulation;
 using TMPro;
@@ -49,7 +50,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 $"Enemies  alive {encounter.AliveEnemyCount}   defeated {encounter.EnemiesDefeated}\n" +
                 $"Hero HP {hero.HealthFraction * 100f:0}%   Resource {hero.ResourceFraction * 100f:0}%\n" +
                 $"XP gained {encounter.SettledXp}\n" +
-                $"Sim time {encounter.Duration:0.0}s\n" +
+                $"Sim time {encounter.Duration.ToString(NumberFormats.Seconds)}s\n" +
                 $"Ground drops {groundDrops}   coins banked {simulation.Run.CurrencyBanked:n0}";
         }
 

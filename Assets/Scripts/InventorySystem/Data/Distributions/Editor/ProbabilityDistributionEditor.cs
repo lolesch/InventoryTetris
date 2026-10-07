@@ -39,7 +39,7 @@ namespace ToolSmiths.InventorySystem.Data.Distributions.EditorScripts
             for (var i = 0; i < names.Count && i < probabilities.Count; i++)
             {
                 var rect = EditorGUILayout.GetControlRect();
-                EditorGUI.ProgressBar(rect, probabilities[i], $"{names[i]}   {probabilities[i] * 100f:0.0}%");
+                EditorGUI.ProgressBar(rect, probabilities[i], $"{names[i]}   {(probabilities[i] * 100f).ToString(NumberFormats.Percent)}%");
             }
         }
 

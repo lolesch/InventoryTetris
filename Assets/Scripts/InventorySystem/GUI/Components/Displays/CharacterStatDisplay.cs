@@ -44,7 +44,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                     ? $"overwritten by: implementStatModSource" //{overwriteMods.FirstOrDefault().Source}"
                     : $"({baseValue.ToString(NumberFormats.Stat)} + {flatAddModValue.ToString(NumberFormats.Stat)}) * {percentAddModValue.ToString(NumberFormats.Stat)} {percentMultModString}";
 
-                displayText = $"{stat.TotalValue.ToString(NumberFormats.Stat)}\t{modDetailText.Colored(Color.gray)}"; //{statName}
+                displayText = $"{stat.TotalValue.ToString(NumberFormats.Stat)}\t{modDetailText.Colored(UiColors.Muted)}"; //{statName}
                 icon = ItemService.Instance.GetStatIcon(stat.Stat);
             }
         }

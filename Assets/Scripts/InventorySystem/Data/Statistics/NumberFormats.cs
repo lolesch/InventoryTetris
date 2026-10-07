@@ -25,8 +25,14 @@ namespace ToolSmiths.InventorySystem.Data
         /// <summary>A resource pool's current/total and percent: one optional decimal.</summary>
         public const string Resource = "0.#";
 
-        /// <summary>A recovery rate per second: always one decimal.</summary>
-        public const string Rate = "F1";
+        /// <summary>A recovery rate per second: one optional decimal, so zero reads "0".</summary>
+        public const string Rate = "0.#";
+
+        /// <summary>A duration in seconds: one optional decimal.</summary>
+        public const string Seconds = "0.#";
+
+        /// <summary>A percentage figure in a tool or readout: one optional decimal.</summary>
+        public const string Percent = "0.#";
 
         /// <summary>Rounds to <see cref="StatDigits"/>, so a value too small to print is exactly zero.</summary>
         public static float RoundStat(float value) => (float)Math.Round(value, StatDigits);

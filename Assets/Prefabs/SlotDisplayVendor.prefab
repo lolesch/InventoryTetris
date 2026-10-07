@@ -90,6 +90,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.InventoryDisplays.VendorSlotDisplay
   <Position>k__BackingField: {x: 0, y: 0}
+  itemGroup: {fileID: 9202565477536786072}
   itemDisplay: {fileID: 5932253742044135395}
   icon: {fileID: 8493997926530545462}
   frame: {fileID: 3819857785089396353}
@@ -248,3 +249,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!225 &9202565477536786072 stripped
+CanvasGroup:
+  m_CorrespondingSourceObject: {fileID: 4678391763340856118, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
+  m_PrefabInstance: {fileID: 4565216322892459438}
+  m_PrefabAsset: {fileID: 0}

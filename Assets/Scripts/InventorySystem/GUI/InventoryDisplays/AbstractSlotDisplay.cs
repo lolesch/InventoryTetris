@@ -24,12 +24,12 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         [field: SerializeField, ReadOnly] public AbstractDimensionalContainer Container { get; private set; }
         [field: SerializeField, ReadOnly] public Vector2Int Position { get; private set; }
         [Space]
-        [SerializeField] protected RectTransform itemDisplay;
+        [Tooltip("The item display's CanvasGroup: its alpha fades the whole item (icon, frame, background) at once.")]
+        [SerializeField] protected CanvasGroup itemGroup;
         [SerializeField] protected Image icon;
         [SerializeField] protected Image frame;
         [SerializeField] protected Image background;
         [SerializeField] protected TextMeshProUGUI amount;
-        [SerializeField] protected Image slotBackground;
 
         [Space]
         [Tooltip("Pixels the item frame grows outward on every side while hovered.")]
@@ -382,7 +382,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
             IEnumerator FadeIn(Package toShow)
             {
-                yield return new WaitForSeconds(0.5f);
+                yield return new WaitForSeconds(HoverPreview.Delay);
 
                 fadeIn = null;
 
@@ -483,25 +483,27 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         public virtual void RefreshSlotDisplay(Package package)
         {
-            if (itemDisplay)
+            if (itemGroup)
             {
                 if (package.Amount < 1)
                 {
                     SetHighlighted(false);
-                    itemDisplay.gameObject.SetActive(false);
+                    itemGroup.gameObject.SetActive(false);
                     return;
                 }
 
                 SetDisplay(package);
 
-                itemDisplay.gameObject.SetActive(true);
+                // A stand-in (EquipmentSlotDisplay's two-hander ghost) fades the group; any real refresh restores it.
+                itemGroup.alpha = 1f;
+                itemGroup.gameObject.SetActive(true);
 
                 /// SetDisplay resets frame geometry; put the highlight back if we are still under the cursor.
                 SetHighlighted(isHighlighted);
 
                 void SetDisplay(Package package)
                 {
-                    SetDisplaySize(itemDisplay, package);
+                    SetDisplaySize((RectTransform)itemGroup.transform, package);
 
                     if (icon)
                     {
@@ -512,14 +514,14 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                     if (amount)
                         amount.text = 1 < package.Amount ? package.Amount.ToString() : string.Empty;
 
-                    var rarityColor = ItemView.RarityColorOf(package.Item.Rarity);
+                    var rarityColor = UiColors.Rarity(package.Item.Rarity);
 
                     if (frame)
                         frame.color = rarityColor;
 
                     if (background)
                     {
-                        baseBackgroundColor = rarityColor * Color.gray * Color.gray;
+                        baseBackgroundColor = UiColors.SlotBackground(rarityColor);
                         background.color = baseBackgroundColor;
                     }
                 }

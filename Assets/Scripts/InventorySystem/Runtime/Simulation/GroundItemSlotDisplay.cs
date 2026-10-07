@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using TMPro;
 using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Runtime.Provider;
 using ToolSmiths.InventorySystem.Services;
@@ -22,16 +23,13 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     [DisallowMultipleComponent]
     public sealed class GroundItemSlotDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
     {
-        // The delay AbstractSlotDisplay's hover waits before the preview fades in, so passing the
-        // cursor down the list does not flash a tooltip per row.
-        private const float PreviewDelay = 0.5f;
-
         [SerializeField] private Image icon;
         [SerializeField] private TextMeshProUGUI nameLabel;
         [SerializeField, Tooltip("Tinted to the item's rarity. Optional.")] private Image rarityBorder;
 
         private Action<ItemInstance> _onClick;
         private bool _previewShown;
+        private Coroutine _pendingPreview;
 
         /// <summary>The Drop this row shows, or <c>null</c> while it sits in the pool.</summary>
         public ItemInstance Item { get; private set; }
@@ -79,8 +77,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         public void OnPointerEnter(PointerEventData eventData)
         {
+            // An enter with no exit in between (a row re-activated under a resting cursor) must not
+            // leave the earlier wait running: HidePreview only knows the latest handle.
+            HidePreview();
+
             if (Item != null)
-                _ = StartCoroutine(ShowPreviewAfterDelay(Item));
+                _pendingPreview = StartCoroutine(ShowPreviewAfterDelay(Item));
         }
 
         public void OnPointerExit(PointerEventData eventData) => HidePreview();
@@ -100,9 +102,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         private IEnumerator ShowPreviewAfterDelay(ItemInstance item)
         {
-            var stamp = Time.time;
-            while (Time.time - stamp <= PreviewDelay)
-                yield return null;
+            yield return new WaitForSeconds(HoverPreview.Delay);
+
+            _pendingPreview = null;
 
             // No slot: the compare tooltip's equipment-slot and vendor-price branches are
             // keyed on the slot type, and a ground Drop is neither.
@@ -113,7 +115,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// <summary>Cancels a preview still waiting out its delay and takes down one already up.</summary>
         private void HidePreview()
         {
-            StopAllCoroutines();
+            if (_pendingPreview != null)
+                StopCoroutine(_pendingPreview);
+
+            _pendingPreview = null;
 
             if (!_previewShown)
                 return;

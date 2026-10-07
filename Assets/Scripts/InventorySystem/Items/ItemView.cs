@@ -65,7 +65,7 @@ namespace ToolSmiths.InventorySystem.Items
         public ItemRarity Rarity => instance.Rarity;
 
         /// <summary>The tint a display draws the item's name and border in.</summary>
-        public Color RarityColor => RarityColorOf(instance.Rarity);
+        public Color RarityColor => UiColors.Rarity(instance.Rarity);
 
         /// <summary>A human-readable label - rarity plus the category-specific type.</summary>
         public string DisplayName => NameOf(instance, definition);
@@ -104,18 +104,6 @@ namespace ToolSmiths.InventorySystem.Items
             ItemSize.TwoByFour => new Vector2Int(2, 4),
 
             _ => Vector2Int.zero,
-        };
-
-        /// <summary>The tint for a rarity tier. Was <c>AbstractItem.GetRarityColor</c> - same values.</summary>
-        public static Color RarityColorOf(ItemRarity rarity) => rarity switch
-        {
-            ItemRarity.Common => Color.white,
-            ItemRarity.Magic => new Color(0f, 0.75f, 1f, 1f),  // blue
-            ItemRarity.Rare => Color.yellow,
-            ItemRarity.Unique => new Color(1f, 0.35f, 0f, 1f), // orange
-
-            ItemRarity.NoDrop => Color.clear,
-            _ => Color.clear,
         };
 
         private static string NameOf(ItemInstance instance, ItemDefinition definition) => definition.Category switch
