@@ -313,16 +313,21 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             public void OnUpdateSelected(UnityEngine.EventSystems.BaseEventData eventData) { }
         }
 
+        private static void SwitchEventSystem(UnityEngine.EventSystems.EventSystem events, string message) =>
+            typeof(UnityEngine.EventSystems.EventSystem)
+                .GetMethod(message, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                .Invoke(events, null);
+
         [Test]
         public void ThePauseKey_IsLeftToATextFieldThatHasFocus()
         {
             var events = new GameObject("events").AddComponent<UnityEngine.EventSystems.EventSystem>();
+            // Edit Mode never runs OnEnable, which is what makes an EventSystem the current one.
+            SwitchEventSystem(events, "OnEnable");
             var field = new GameObject("field", typeof(TextFieldStub));
-            var previous = UnityEngine.EventSystems.EventSystem.current;
 
             try
             {
-                UnityEngine.EventSystems.EventSystem.current = events;
                 events.SetSelectedGameObject(field);
                 service.Send(thornwood);
 
@@ -338,7 +343,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             }
             finally
             {
-                UnityEngine.EventSystems.EventSystem.current = previous;
+                SwitchEventSystem(events, "OnDisable");
                 UnityEngine.Object.DestroyImmediate(events.gameObject);
                 UnityEngine.Object.DestroyImmediate(field);
             }
