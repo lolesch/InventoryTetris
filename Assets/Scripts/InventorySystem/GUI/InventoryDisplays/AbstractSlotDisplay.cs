@@ -37,7 +37,10 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         [Tooltip("How far the item background is lightened toward white while hovered. Equivalent to overlaying white at this alpha.")]
         [SerializeField, Range(0f, 1f)] protected float hoverLighten = 0.25f;
 
-        private bool hovering;
+        /// The pending hover fade-in. A handle rather than a flag: a flag shared by every fade-in
+        /// lets a superseded one resume after a newer one re-raised it, and show the item it
+        /// captured before a swap (hover, then equip within the fade delay).
+        private Coroutine fadeIn;
 
         /// The container display that owns this slot; needed to reach the slot an item
         /// actually renders on, which is its origin - not necessarily the hovered one.
@@ -367,7 +370,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         /// </summary>
         private void RefreshHoverPreview(bool clearStale)
         {
-            hovering = false;
+            CancelFadeIn();
 
             if (clearStale)
                 PreviewProvider.Instance.RefreshPreviewDisplay(new Package(Container, null, 0), this);
@@ -375,32 +378,29 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             var package = HoverPreview.Under(Container, Position);
 
             if (package.IsValid)
-                _ = StartCoroutine(FadeIn(package));
+                fadeIn = StartCoroutine(FadeIn(package));
 
             IEnumerator FadeIn(Package toShow)
             {
-                hovering = true;
+                yield return new WaitForSeconds(0.5f);
 
-                var timeStamp = Time.time;
+                fadeIn = null;
 
-                while (hovering)
-                {
-                    yield return null;
-
-                    var canFadeIn = 0.5f < Time.time - timeStamp;
-
-                    if (canFadeIn && hovering)
-                    {
-                        PreviewProvider.Instance.RefreshPreviewDisplay(toShow, this);
-                        hovering = false;
-                    }
-                }
+                PreviewProvider.Instance.RefreshPreviewDisplay(toShow, this);
             }
+        }
+
+        private void CancelFadeIn()
+        {
+            if (fadeIn != null)
+                StopCoroutine(fadeIn);
+
+            fadeIn = null;
         }
 
         protected void FadeOutPreview()
         {
-            hovering = false;
+            CancelFadeIn();
 
             PreviewProvider.Instance.RefreshPreviewDisplay(new Package(Container, null, 0), this);
         }

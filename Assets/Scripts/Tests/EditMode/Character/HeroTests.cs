@@ -749,5 +749,73 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Character
             Assert.That(hero.GetStatValue(StatName.Armor), Is.EqualTo(50f));
             Assert.That(hero.GetStat(StatName.Armor).StatModifiers, Has.Count.EqualTo(1));
         }
+
+        [Test]
+        public void CompareStatModifiers_ReplacingTwoWornItemsAtOnce_IsMeasuredAgainstBothTogether()
+        {
+            var hero = NewHero();
+            var weapon = Flat(30f);
+            var offhand = Flat(15f);
+            hero.AddItemStats(new[] { On(StatName.Armor, weapon), On(StatName.Armor, offhand) });
+
+            var difference = hero.CompareStatModifiers(StatName.Armor, new[] { Flat(40f) }, new[] { weapon, offhand });
+
+            Assert.That(difference, Is.EqualTo(-5f), "40 replaces 30 + 15");
+            Assert.That(hero.GetStat(StatName.Armor).StatModifiers, Has.Count.EqualTo(2), "the hero is untouched");
+        }
+
+        [Test]
+        public void CompareStatModifiers_RunsThroughTheHerosOtherModifiers()
+        {
+            var hero = NewHero();
+            var worn = Flat(6f);
+            hero.AddItemStats(new[]
+            {
+                On(StatName.Armor, worn),
+                On(StatName.Armor, new StatModifier(new Vector2Int(0, 1000), 100f, StatModifierType.PercentAdd)),
+            });
+
+            var difference = hero.CompareStatModifiers(StatName.Armor, new[] { Flat(7f) }, new[] { worn });
+
+            Assert.That(difference, Is.EqualTo(2f), "(20 + 7) * 2 - (20 + 6) * 2: a +100% bonus doubles the one point");
+        }
+
+        [Test]
+        public void CompareStatModifiers_IntoAFreeSlot_IsTheFullEffectOfWhatComesOn()
+        {
+            var hero = NewHero();
+
+            var difference = hero.CompareStatModifiers(StatName.Armor, new[] { Flat(18f) }, new StatModifier[0]);
+
+            Assert.That(difference, Is.EqualTo(18f));
+            Assert.That(hero.GetStat(StatName.Armor).StatModifiers, Is.Empty, "the hero is untouched");
+        }
+
+        [Test]
+        public void CompareStatModifiers_IntoAFreeSlot_StillRunsThroughTheHerosOtherModifiers()
+        {
+            // Base 20 with a worn +4% (20.8); a sword's +18 flat would make it (20 + 18) * 1.04.
+            var hero = NewHero();
+            hero.AddItemStats(new[] { On(StatName.Armor, new StatModifier(new Vector2Int(0, 1000), 4f, StatModifierType.PercentAdd)) });
+
+            var difference = hero.CompareStatModifiers(StatName.Armor, new[] { Flat(18f) }, new StatModifier[0]);
+
+            Assert.That(difference, Is.EqualTo(18.72f).Within(0.001f), "39.52 - 20.8");
+        }
+
+        [Test]
+        public void SwappingASwordForABow_IsTheBowsGain()
+        {
+            // Base 20, a worn sword with +4% (20.8) against a hovered bow with +18 flat (38).
+            var hero = NewHero();
+            var sword = new CharacterStatModifier(StatName.Armor, new StatModifier(new Vector2Int(0, 1000), 4f, StatModifierType.PercentAdd));
+            var bow = new CharacterStatModifier(StatName.Armor, Flat(18f));
+            hero.AddItemStats(new[] { sword });
+
+            var bowRow = StatComparison.Of(bow, new[] { sword }, hero.CompareStatModifiers);
+
+            Assert.That(bowRow.Delta, Is.EqualTo(17.2f).Within(0.001f), "38 - 20.8");
+            Assert.That(hero.GetStatValue(StatName.Armor), Is.EqualTo(20.8f).Within(0.001f), "the hero is untouched");
+        }
     }
 }

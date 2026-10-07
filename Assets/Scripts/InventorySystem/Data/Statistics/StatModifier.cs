@@ -71,7 +71,7 @@ namespace ToolSmiths.InventorySystem.Data
             /// wording => how to consistantly translate the modifier types 
             // additional, additive, bonus, 
 
-            StatModifierType.Overwrite => $"={Value:- #.###;#.###}",
+            StatModifierType.Overwrite => $"={Value:#.###;- #.###;#.###}",
             StatModifierType.FlatAdd => $"{Value:+ #.###;- #.###;#.###}",
             StatModifierType.PercentAdd => $"{Value:+ #.###;- #.###;#.###}%",
             StatModifierType.PercentMult => $"{Value:+ #.###;- #.###;#.###}*%",
