@@ -9,9 +9,16 @@
 #
 # Output is the compile errors (if any), the totals, and each failing test with the first lines of its
 # message. Exit status is 0 only when tests ran and none failed; Unity's own exit code is not the
-# verdict. Set UNITY_EXE to use another editor install. The Editor must not have this project open
-# (the run aborts on the project lock), so run it from a worktree or a shadow copy.
+# verdict. Set UNITY_EXE to use another editor install.
+#
+# The Editor holding this project aborts a run on the project lock. When the lock is held (or with
+# --shadow as the first argument) the run happens in a shadow copy instead: Assets, Packages and
+# ProjectSettings mirrored into $SHADOW_DIR (default: %TEMP%/<project>-shadow/<checkout name>), which
+# keeps its own Library, so only the first run pays the full asset import. The checkout is never touched.
 set -u
+
+force_shadow=0
+if [ "${1:-}" = "--shadow" ]; then force_shadow=1; shift; fi
 
 platform="${1:-EditMode}"
 filter="${2:-}"
@@ -19,7 +26,23 @@ unity="${UNITY_EXE:-C:/Program Files/Unity/Hub/Editor/6000.6.0f1/Editor/Unity.ex
 root="$(git rev-parse --show-toplevel)"
 out="$(cygpath -m "$(mktemp -d)")"
 
-args=(-batchmode -nographics -projectPath "$(cygpath -m "$root")"
+# Unity holds Temp/UnityLockfile open while the Editor has the project; an append to it then fails.
+locked=0
+if [ -e "$root/Temp/UnityLockfile" ] && ! ( : >> "$root/Temp/UnityLockfile" ) 2>/dev/null; then locked=1; fi
+
+project="$root"
+if [ "$force_shadow" = 1 ] || [ "$locked" = 1 ]; then
+  project="${SHADOW_DIR:-$(cygpath -u "${TEMP:-/tmp}")/$(basename "$root")-shadow/$(git rev-parse --abbrev-ref HEAD | tr '/' '-')}"
+  mkdir -p "$project"
+  # /MIR deletes what the checkout deleted. Exit codes below 8 are success. .git files are dead weight.
+  for dir in Assets Packages ProjectSettings; do
+    MSYS2_ARG_CONV_EXCL='*' robocopy "$(cygpath -w "$root/$dir")" "$(cygpath -w "$project/$dir")"       /MIR /XD .git /XF .git /NFL /NDL /NJH /NJS /NP >/dev/null
+    [ $? -ge 8 ] && { echo "Could not mirror $dir into the shadow copy at $project"; exit 1; }
+  done
+  echo "shadow copy: $project"
+fi
+
+args=(-batchmode -nographics -projectPath "$(cygpath -m "$project")"
       -runTests -testPlatform "$platform" -testResults "$out/results.xml" -logFile "$out/unity.log")
 
 [ -n "$filter" ] && args+=(-testFilter "$filter")
@@ -29,8 +52,8 @@ args=(-batchmode -nographics -projectPath "$(cygpath -m "$root")"
 
 "$unity" "${args[@]}" >/dev/null 2>&1
 
-# The run rewrites ProjectSettings; the change is never part of the work.
-git -C "$root" checkout -- ProjectSettings 2>/dev/null
+# The run rewrites ProjectSettings; the change is never part of the work. A shadow copy absorbed it.
+[ "$project" = "$root" ] && git -C "$root" checkout -- ProjectSettings 2>/dev/null
 
 python - "$out" <<'PY'
 import re
@@ -48,7 +71,7 @@ if errors:
     sys.exit(1)
 
 if "another Unity instance is running" in log:
-    print("The Editor has this project open (project lock). Close it, or run from a worktree or shadow copy.")
+    print("Another Unity instance holds this project (project lock). Close it, or re-run with --shadow.")
     sys.exit(1)
 
 try:

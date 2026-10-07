@@ -1,0 +1,22 @@
+name: pre-commit scan
+
+# Runs dev/hooks/pre-commit over the whole PR diff, so the checks that depend on every clone having
+# run `git config core.hooksPath dev/hooks` hold for a clone that never did.
+on:
+  pull_request:
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: true
+      - name: Stage the PR diff and scan it
+        run: |
+          git config user.email ci@example.invalid
+          git config user.name ci
+          # Rewinds HEAD to the merge base and keeps the tree, so the index holds the PR's whole diff.
+          git reset --soft "$(git merge-base "origin/${{ github.base_ref }}" HEAD)"
+          bash dev/hooks/pre-commit
