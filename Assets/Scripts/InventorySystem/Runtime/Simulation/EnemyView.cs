@@ -13,7 +13,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// because a flipped root would mirror the bar's fill direction and its text.
     /// </para>
     /// <para>
-    /// A pooled view is fully reset on <see cref="Unbind"/>: position, facing, visibility. A stale
+    /// A pooled view is fully reset on <see cref="Unbind"/>: position, facing, visibility, walk-in. A stale
     /// <c>scale.x = -1</c> on the next enemy is the bug that is designed against.
     /// </para>
     /// </summary>
@@ -30,6 +30,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private RectTransform _rect;
         private EnemyVisuals.Entry _entry;
         private int _sign = 1;
+        private ArenaWalk _walk;
 
         private RectTransform Rect => _rect ? _rect : _rect = (RectTransform)transform;
 
@@ -42,8 +43,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// <summary>The sprite's <c>scale.x</c> sign: +1 faces right, -1 faces left.</summary>
         public int FacingSign => _sign;
 
-        /// <summary>Whether the view has been put on the ring since it was bound.</summary>
-        public bool IsPlaced { get; private set; }
+        /// <summary>Whether the view has been put in the arena since it was bound: on the walk-in's start or beyond.</summary>
+        public bool IsPlaced => _walk.Started;
+
+        /// <summary>Whether the walk-in has reached the ring since the view was bound. Reset in <see cref="Unbind"/>.</summary>
+        public bool HasArrived => _walk.Arrived;
 
         /// <summary>Stand for <paramref name="enemy"/> on the ring at <paramref name="slotAngle"/>, dressed as <paramref name="entry"/> says.</summary>
         public void Bind(Enemy enemy, EnemyVisuals.Entry entry, float slotAngle)
@@ -58,7 +62,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             health.Bind(enemy);
         }
 
-        /// <summary>Let go of the enemy and clear every pooled state: position, facing, visibility.</summary>
+        /// <summary>Let go of the enemy and clear every pooled state: position, facing, visibility, the walk-in.</summary>
         public void Unbind()
         {
             if (health != null)
@@ -66,7 +70,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             Enemy = null;
             SlotAngle = 0f;
-            IsPlaced = false;
+            _walk = default;
             _sign = 1;
 
             if (sprite != null)
@@ -77,16 +81,26 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         }
 
         /// <summary>
-        /// Put the view on its slot around <paramref name="anchor"/> and turn it toward it.
+        /// Walk the view in toward <paramref name="anchor"/> and turn it toward it. A view not yet placed
+        /// starts <paramref name="spawnMargin"/> beyond its slot and shows itself; it then walks straight
+        /// at the anchor at its archetype's speed and stops on the ring, where it stays on its slot.
         /// </summary>
         /// <param name="anchor">The hero anchor in the arena's anchored space.</param>
         /// <param name="deadZone">Horizontal distance under which the facing is kept, so an enemy straight
         /// above or below the hero does not flicker.</param>
+        /// <param name="simDelta">The sim's delta for this frame (wall delta times sim speed; 0 while paused).</param>
+        /// <param name="spawnMargin">Canvas units beyond the ring a new view starts at.</param>
         /// <returns>Whether the view moved.</returns>
-        public bool PlaceAround(Vector2 anchor, float deadZone)
+        public bool PlaceAround(Vector2 anchor, float deadZone, float simDelta, float spawnMargin)
         {
-            var position = anchor + ArenaLayout.SlotPoint(SlotAngle, _entry.RingRadiusX, _entry.RingRadiusY);
-            var moved = !IsPlaced || (Rect.anchoredPosition - position).sqrMagnitude > 1e-6f;
+            var wasPlaced = IsPlaced;
+            if (!wasPlaced)
+                _walk = ArenaWalk.Begin(SlotAngle, _entry.RingRadiusX, _entry.RingRadiusY, spawnMargin);
+
+            _walk.Step(_entry.ApproachSpeed * Mathf.Max(0f, simDelta), SlotAngle, _entry.RingRadiusX, _entry.RingRadiusY);
+
+            var position = anchor + _walk.Offset;
+            var moved = !wasPlaced || (Rect.anchoredPosition - position).sqrMagnitude > 1e-6f;
             if (moved)
                 Rect.anchoredPosition = position;
 
@@ -94,7 +108,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (!Mathf.Approximately(sprite.localScale.x, _sign))
                 sprite.localScale = new Vector3(_sign, 1f, 1f);
 
-            IsPlaced = true;
             visibility.alpha = 1f;
 
             return moved;

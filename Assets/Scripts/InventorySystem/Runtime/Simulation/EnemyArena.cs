@@ -51,6 +51,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private float facingDeadZone = 12f;
         [SerializeField, Range(0f, 45f), Tooltip("Degrees a new figure may sit off the middle of the widest gap.")]
         private float slotJitterDegrees = 12f;
+        [SerializeField, Min(0f), Tooltip("Canvas units beyond its ring a new figure appears at, before it walks in.")]
+        private float spawnMargin = 100f;
 
         private readonly Dictionary<Enemy, EnemyView> _views = new();
         private readonly List<float> _angles = new();
@@ -152,7 +154,20 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             Pool.ReleaseObject(view);
         }
 
-        /// <summary>Stands every view on its slot around the anchor as it is this frame; nothing with no anchor.</summary>
+        /// <summary>
+        /// The sim's delta for this frame, computed the way <c>SimulationService.Tick</c> does: wall delta times
+        /// the Hero's sim speed, and nothing while the Run is paused. Walking on it scales with the speed slider
+        /// and freezes with the sim.
+        /// </summary>
+        private static float SimDelta()
+        {
+            if (SimulationService.Instance.IsPaused)
+                return 0f;
+
+            return Time.deltaTime * Mathf.Max(0f, Session.Instance.Hero.Behaviour.SimSpeed);
+        }
+
+        /// <summary>Walks every view toward its slot around the anchor as it is this frame; nothing with no anchor.</summary>
         private void Place()
         {
             if (_views.Count == 0)
@@ -166,9 +181,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             var world = anchor.TransformPoint(anchor.rect.center);
             var center = (Vector2)root.InverseTransformPoint(world) - root.rect.center;
 
+            var simDelta = SimDelta();
             var moved = false;
             foreach (var view in _views.Values)
-                moved |= view.PlaceAround(center, facingDeadZone);
+                moved |= view.PlaceAround(center, facingDeadZone, simDelta, spawnMargin);
 
             if (moved)
                 SortByDepth();
