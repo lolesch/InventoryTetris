@@ -67,10 +67,29 @@ namespace ToolSmiths.InventorySystem.Services
         bool LeaveField();
 
         /// <summary>
+        /// Whether the live Run is frozen: <see cref="Tick"/> does nothing at all while it is true, so
+        /// the Encounter, the Hero's regeneration and both ways home stand still. Only a Run in the
+        /// Field can be paused, and the Run's end (Recall or Death) or the next <see cref="Send"/>
+        /// clears it, so it is never true in Town.
+        /// </summary>
+        bool IsPaused { get; }
+
+        /// <summary>Raised with the new state whenever <see cref="IsPaused"/> changes.</summary>
+        event Action<bool> PausedChanged;
+
+        /// <summary>
+        /// Freezes (<c>true</c>) or resumes (<c>false</c>) the live Run. Pausing is refused - nothing
+        /// happens - unless a Run is in the Field; resuming is always allowed. Separate from the Behaviour
+        /// Profile's sim speed, which is the hero's persisted setting and is left as the player set it.
+        /// </summary>
+        void SetPaused(bool paused);
+
+        /// <summary>
         /// One frame of the simulation, <paramref name="deltaSeconds"/> of real time: the Hero's
         /// regeneration (Town and Field alike), the Encounter while a Run is in the Field, and the
         /// Run's two ways home (a Death, or the Behaviour Profile's auto-Recall). Scaled by the
         /// Behaviour Profile's sim speed here, never through <c>Time.timeScale</c> (ADR-0008).
+        /// Does nothing while <see cref="IsPaused"/>.
         /// </summary>
         void Tick(float deltaSeconds);
     }
