@@ -28,6 +28,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private CanvasGroup visibility;
         [SerializeField, Tooltip("The hit flash feedback (#179). Optional: the arena binds it behind its hitFlash switch.")]
         private EnemyHitFlash hitFlash;
+        [SerializeField, Tooltip("The damage number feedback (#181). Optional: the arena binds it behind its damageNumbers switch.")]
+        private EnemyDamageNumbers damageNumbers;
         [SerializeField, Tooltip("The hit shake feedback (#180), on the sprite child. Optional: the arena binds it behind its hitShake switch.")]
         private EnemyHitShake hitShake;
         [SerializeField, Tooltip("The target ring (#182), off until the arena marks this view. Optional: it is shown behind the arena's targetHighlight switch.")]
@@ -62,6 +64,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         /// <summary>The hit flash feedback, or null when the prefab has none.</summary>
         public EnemyHitFlash HitFlash => hitFlash;
+
+        /// <summary>The damage number feedback, or null when the prefab has none.</summary>
+        public EnemyDamageNumbers DamageNumbers => damageNumbers;
 
         /// <summary>The hit shake feedback, or null when the prefab has none.</summary>
         public EnemyHitShake HitShake => hitShake;
@@ -132,6 +137,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (hitFlash != null)
                 hitFlash.Detach();
 
+            // Likewise only the listening: the killing blow's number is flushed while the view fades.
+            if (damageNumbers != null)
+                damageNumbers.Detach();
             // Same for the shake: the killing blow's jolt settles on its own.
             if (hitShake != null)
                 hitShake.Detach();
@@ -148,6 +156,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (hitFlash != null)
                 hitFlash.Unbind();
 
+            // Shows what a release without a fade still owes, then drops the rest: no pending damage is pooled.
+            if (damageNumbers != null)
+                damageNumbers.Unbind();
             // Sprite back at rest: a pooled view starts with zero shake offset.
             if (hitShake != null)
                 hitShake.Unbind();

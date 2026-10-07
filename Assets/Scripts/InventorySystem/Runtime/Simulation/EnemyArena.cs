@@ -58,6 +58,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private float spawnMargin = 100f;
         [SerializeField, Tooltip("Feedback: the sprite flashes white on each hit. Independent of the others; off binds nothing.")]
         private bool hitFlash = true;
+        [SerializeField, Tooltip("Feedback: a number rises from the enemy on each hit, one per enemy per frame. Independent of the others; off binds nothing.")]
+        private bool damageNumbers = true;
         [SerializeField, Tooltip("Feedback: the sprite shakes on each hit. Independent of the others; off binds nothing.")]
         private bool hitShake = true;
         [SerializeField, Tooltip("Feedback: a ring marks the enemy the hero's next Strike hits. Independent of the others.")]
@@ -168,6 +170,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             view.Bind(enemy, entry, angle);
             if (hitFlash && view.HitFlash != null)
                 view.HitFlash.Bind(enemy, entry.Sprite);
+            if (damageNumbers && view.DamageNumbers != null)
+                view.DamageNumbers.Bind(enemy);
             if (hitShake && view.HitShake != null)
                 view.HitShake.Bind(enemy);
             _views.Add(enemy, view);
