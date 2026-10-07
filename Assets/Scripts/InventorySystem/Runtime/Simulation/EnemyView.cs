@@ -28,6 +28,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private CanvasGroup visibility;
         [SerializeField, Tooltip("The hit flash feedback (#179). Optional: the arena binds it behind its hitFlash switch.")]
         private EnemyHitFlash hitFlash;
+        [SerializeField, Tooltip("The hit shake feedback (#180), on the sprite child. Optional: the arena binds it behind its hitShake switch.")]
+        private EnemyHitShake hitShake;
 
         private RectTransform _rect;
         private EnemyVisuals.Entry _entry;
@@ -58,6 +60,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         /// <summary>The hit flash feedback, or null when the prefab has none.</summary>
         public EnemyHitFlash HitFlash => hitFlash;
+
+        /// <summary>The hit shake feedback, or null when the prefab has none.</summary>
+        public EnemyHitShake HitShake => hitShake;
 
         /// <summary>Stand for <paramref name="enemy"/> on the ring at <paramref name="slotAngle"/>, dressed as <paramref name="entry"/> says.</summary>
         public void Bind(Enemy enemy, EnemyVisuals.Entry entry, float slotAngle)
@@ -112,10 +117,14 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (hitFlash != null)
                 hitFlash.Detach();
 
+            // Same for the shake: the killing blow's jolt settles on its own.
+            if (hitShake != null)
+                hitShake.Detach();
+
             Enemy = null;
         }
 
-        /// <summary>Let go of the enemy and clear every pooled state: position, facing, flash tint, visibility, the walk-in, dying.</summary>
+        /// <summary>Let go of the enemy and clear every pooled state: position, facing, flash tint, shake offset, visibility, the walk-in, dying.</summary>
         public void Unbind()
         {
             Detach();
@@ -123,6 +132,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             // Clears the tint as well: a pooled view starts un-tinted.
             if (hitFlash != null)
                 hitFlash.Unbind();
+
+            // Sprite back at rest: a pooled view starts with zero shake offset.
+            if (hitShake != null)
+                hitShake.Unbind();
 
             SlotAngle = 0f;
             IsDying = false;

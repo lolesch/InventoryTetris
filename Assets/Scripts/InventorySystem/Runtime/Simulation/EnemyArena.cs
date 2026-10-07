@@ -58,6 +58,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private float spawnMargin = 100f;
         [SerializeField, Tooltip("Feedback: the sprite flashes white on each hit. Independent of the others; off binds nothing.")]
         private bool hitFlash = true;
+        [SerializeField, Tooltip("Feedback: the sprite shakes on each hit. Independent of the others; off binds nothing.")]
+        private bool hitShake = true;
 
         private readonly Dictionary<Enemy, EnemyView> _views = new();
         // Views whose enemy fell and that are fading out. Not in _views: no slot, no events, no highlight.
@@ -161,6 +163,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             view.Bind(enemy, entry, angle);
             if (hitFlash && view.HitFlash != null)
                 view.HitFlash.Bind(enemy, entry.Sprite);
+            if (hitShake && view.HitShake != null)
+                view.HitShake.Bind(enemy);
             _views.Add(enemy, view);
         }
 
