@@ -94,7 +94,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             Place();
             MarkTarget();
-            FadeDying(SimDelta());
+            FadeDying(SimulationService.Instance.SimDelta(Time.deltaTime));
         }
 
         // Update never runs while disabled, so a disabled arena would hold a subscription no one
@@ -239,19 +239,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 _marked.SetHighlighted(true);
         }
 
-        /// <summary>
-        /// The sim's delta for this frame, computed the way <c>SimulationService.Tick</c> does: wall delta times
-        /// the Hero's sim speed, and nothing while the Run is paused. Walking on it scales with the speed slider
-        /// and freezes with the sim.
-        /// </summary>
-        private static float SimDelta()
-        {
-            if (SimulationService.Instance.IsPaused)
-                return 0f;
-
-            return Time.deltaTime * Mathf.Max(0f, Session.Instance.Hero.Behaviour.SimSpeed);
-        }
-
         /// <summary>Walks every view toward its slot around the anchor as it is this frame; nothing with no anchor.</summary>
         private void Place()
         {
@@ -266,7 +253,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             var world = anchor.TransformPoint(anchor.rect.center);
             var center = (Vector2)root.InverseTransformPoint(world) - root.rect.center;
 
-            var simDelta = SimDelta();
+            var simDelta = SimulationService.Instance.SimDelta(Time.deltaTime);
             var moved = false;
             foreach (var view in _views.Values)
                 moved |= view.PlaceAround(center, facingDeadZone, simDelta, spawnMargin);

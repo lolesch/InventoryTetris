@@ -96,17 +96,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (!_shake.IsActive)
                 return;
 
-            _shake.Advance(SimDelta(), duration);
+            _shake.Advance(SimulationService.Instance.SimDelta(Time.deltaTime), duration);
             Apply();
-        }
-
-        /// <summary>The seconds the sim moved this frame, as <c>SimulationService.Tick</c> feeds it: 0 while paused.</summary>
-        private static float SimDelta()
-        {
-            if (SimulationService.Instance.IsPaused)
-                return 0f;
-
-            return Time.deltaTime * Mathf.Max(0f, Session.Instance.Hero.Behaviour.SimSpeed);
         }
 
         // The rest position is the prefab's own, read before the first offset is ever written.

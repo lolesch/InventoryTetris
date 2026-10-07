@@ -28,7 +28,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             public float RingRadiusX;
             [Min(1f), Tooltip("Ring half-height in canvas units.")]
             public float RingRadiusY;
-            [Min(0f), Tooltip("Canvas units per sim second, walking in from outside the ring.")]
+            [Min(1f), Tooltip("Canvas units per sim second, walking in from outside the ring. At least 1: a 0 never arrives.")]
             public float ApproachSpeed;
         }
 
