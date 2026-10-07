@@ -79,8 +79,6 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 
             if (currentText)
                 currentText.text = string.Empty;
-            if (recoveryText)
-                recoveryText.text = string.Empty;
             
             Acquire();
         }
