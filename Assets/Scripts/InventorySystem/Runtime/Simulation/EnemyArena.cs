@@ -51,6 +51,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private float facingDeadZone = 12f;
         [SerializeField, Range(0f, 45f), Tooltip("Degrees a new figure may sit off the middle of the widest gap.")]
         private float slotJitterDegrees = 12f;
+        [SerializeField, Tooltip("Feedback: the sprite flashes white on each hit. Independent of the others; off binds nothing.")]
+        private bool hitFlash = true;
 
         private readonly Dictionary<Enemy, EnemyView> _views = new();
         private readonly List<float> _angles = new();
@@ -131,6 +133,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             var view = Pool.GetObject();
             view.Bind(enemy, entry, angle);
+            if (hitFlash && view.HitFlash != null)
+                view.HitFlash.Bind(enemy, entry.Sprite);
             _views.Add(enemy, view);
         }
 
