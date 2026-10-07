@@ -9,6 +9,8 @@ and the 2026-10-05 spec amendment).
 Amends: `dev/specs/2026-10-02-sold-tab-design.md` - its "Tabs are `PanelToggle`s in a group of
 their own" decision (the tab pair becomes a two-panel switch) and its Out of Scope line about
 switching to the Sold tab (a held key now shows it; a sale still never does).
+Amended 2026-10-07 after the review of the Utility PR for ticket 1: the off-state button is a
+mirror toggle that names the driver, and the pair may share its group; see "Amendment" at the end.
 
 ## Problem Statement
 
@@ -27,8 +29,9 @@ The group can hold any number of tabs, so "the other one" is not something it ca
 
 A tab pair is a **two-panel switch**: one **driver toggle** owns a single bool, and exactly
 two panels follow it - one while the toggle is off, the other while it is on. The two tab
-buttons the player sees stay as they are: the driver is one of them, and the other is an inert
-toggle in the same group, which forbids switch-off, so clicking either button flips the bool.
+buttons the player sees stay as they are: the driver is one of them, and the other is a
+**mirror toggle** that names the driver, in the same group, which forbids switch-off, so
+clicking either button flips the bool.
 
 The **peek** flips that bool while a key is held and sets it back on release. It is a real
 selection, not a view-only overlay: it goes through the group, so both tab buttons follow. On
@@ -72,8 +75,8 @@ the player's things.
     the tabs has to be relearned.
 15. As a player, I want the Alt tooltip detail and the peek to coexist on a hover, so that Alt
     stays "show me more".
-16. As a developer, I want a tab pair's exclusivity to be a bool, so that a third tab, no
-    active tab, or both panels showing cannot be authored.
+16. As a developer, I want a tab pair's exclusivity to be a bool, so that both panels showing,
+    or neither, cannot be authored, whatever else shares the group.
 17. As a developer, I want the peek to name its driver by a serialized reference, so that
     renaming a scene object cannot silently disable it.
 18. As a developer, I want the peek's restore to be one rule - nothing else wrote the bool -
@@ -82,9 +85,9 @@ the player's things.
     as a click, so that the peek needs no knowledge of resets.
 20. As a developer, I want the peek's "key held" and "panel open" answers injectable, so that
     a test drives it without a keyboard or a canvas.
-21. As a developer, I want a warning when a tab pair is authored wrongly (no inert partner, a
-    group that lets the user switch off, the first member not the off-state toggle), so that a
-    wiring slip is loud.
+21. As a developer, I want a warning when a tab pair is authored wrongly (no group, a group
+    that lets the user switch off, the driver itself the group's first member, a mirror whose
+    driver is unset or in another group), so that a wiring slip is loud.
 22. As a developer, I want the Map's InTown and InFields faces to be able to use the same
     switch later, so that the two-panel shape is not invented twice.
 23. As a developer, I want the prototype and its debug checkbox deleted when the peek is
@@ -95,11 +98,17 @@ the player's things.
 - **The Sold tab is a two-state switch.** One toggle owns a bool, and exactly two panels follow
   it: the Supply panel while the bool is off, the Sold panel while it is on. The toggle is the
   driver; panels follow, never the other way round.
-- **The tab buttons stay two.** The driver is the Sold button. The other is an inert toggle
-  with no panel, in the same `ToggleGroup`, which forbids switch-off. Clicking the inert one
-  switches the driver off through the group; clicking the driver while it is on is refused.
-  The group is the one mirror of the bool, as it already is for any two toggles; no second
-  piece of state is added.
+- **The tab buttons stay two.** The driver is the Sold button. The other is a mirror toggle
+  with no panel that names the driver by a serialized reference, in the same `ToggleGroup`,
+  which forbids switch-off. Clicking the mirror switches the driver off through the group;
+  clicking the driver while it is on is refused. The mirror has no behaviour of its own: the
+  group does the switching off, in both directions. The group is the one mirror of the bool, as
+  it already is for any two toggles; no second piece of state is added.
+- **The pair may share its group.** The driver is an ordinary member: any other toggle in the
+  group switching on switches the driver off, and the driver switching on switches it off.
+  Nothing counts the group's members. What keeps the off panel from clashing with another
+  toggle's panel is scene layout - the panels sit in different `PanelGroup`s - not a rule of the
+  component.
 - **The driver is a tab toggle, not a Side Panel toggle.** It never requests an Inventory
   Context: it chooses a view inside a panel that is already open. This carries over the spec
   2026-10-02 decision unchanged.
@@ -113,15 +122,16 @@ the player's things.
   group's reset on closing and any future driver of the bool (a Run phase) are all writes and
   cancel the restore without a case each.
 - **A reset is a write through the same path.** The group resets to its first member when the
-  panel finishes closing (the 2026-10-05 amendment, already built); the first member must be
-  the off-state (Supply) toggle. That write reaches the driver's own toggle callback exactly
-  as a click does.
+  panel finishes closing (the 2026-10-05 amendment, already built); the first member must not
+  be the driver, so the reset switches it off - in the Vendor and the Healer it is the Supply
+  (mirror) toggle. That write reaches the driver's own toggle callback exactly as a click does.
 - **Where a peek is not allowed to reach.** The peek touches the bool and nothing else: not a
   sale, not a drag, not a purchase, not the Inventory Context. A held purchase dropped on the
   Sold tab returns to its origin free, as spec 2026-10-02 already says.
 - **Authoring is checked in the editor.** A warning, in the style of the `LocationToggle`
   warning, when: the driver has no group; the group allows switch-off; the group's first
-  member is not the off-state toggle; or the driver's panels are not both set.
+  member is the driver itself, or there is none; the driver's panels are not both set; or a
+  mirror's driver is unset or sits in another group than the mirror.
 - **The key is Alt.** It stays Alt for now, decided by feel; the tooltip's roll-range modifier
   fires with it on a hover, which is accepted. The key is read through the existing held-key
   helper so the tooltip and the peek agree on what Alt is.
@@ -145,18 +155,20 @@ the player's things.
   Tests assert on which panel is showing, which toggle is on and the bool - never on tweens,
   sprites or event counts. The peek's two injected answers make it testable at the same seam.
 - **What makes a good test here.** A test names the rule it protects: the bool has exactly two
-  states; the inert toggle follows the driver; a peek restores unless something else wrote the
+  states; the mirror follows the driver; a peek restores unless something else wrote the
   bool; a reset on closing cancels a pending restore; a peek does nothing with its panel
   closed.
 - **Modules tested:**
   - the two-panel switch - off shows A, on shows B, a click on either button flips both, the
-    driver's click while on is refused, and a third toggle or a missing partner is warned;
+    driver's click while on is refused, another toggle in the group switches the driver off and
+    is switched off by it, and a mirror with no driver or in another group is warned (a driver
+    among other toggles is not);
   - the peek - a hold flips and a release restores; hold, click the other tab, release leaves
     the click; hold, close the panel, reopen, release leaves the Supply; a hold begun before
     the panel opens peeks on open; a hold with the panel closed does nothing; losing focus
     releases;
   - the group's first-member rule - a reset returns the pair to the off state through the
-    driver.
+    driver, whichever member other than the driver is first.
 - **Prior art.** `PanelToggleTests` and `ToggleGroupTests` for the toggle-and-group fixtures;
   `PanelGroupTests` for panels reacting to a state; the pause hotkey's tests for an injected
   key predicate.
@@ -169,7 +181,8 @@ the player's things.
   driven by the Run phase, Death and Recall, and InFields is deliberately not phase-driven
   (Go Venture previews it). Migrating them is its own decision; a peek there would Recall and is
   not wanted.
-- A peek on groups of more than two tabs. A bool has two states by design.
+- A peek on groups of more than two tabs. A bool has two states by design: the peek flips the
+  driver's bool and nothing else, whatever else shares the group.
 - Rebinding the peek key, or a per-panel key. One key, Alt.
 - Switching to the Sold tab on a sale, an undo-last-sale button, and selling from the Stash
   (all still out of scope from spec 2026-10-02).
@@ -190,3 +203,29 @@ the player's things.
   accepted.
 - **Before Unity compile verification, asmdef changes or scripted multi-file edits,** read
   `docs/agents/codebase-notes.md`.
+
+## Amendment 2026-10-07: the mirror, and a group that may be shared
+
+The Utility PR for ticket 1 paired the driver with any inert toggle and guarded the pair with
+five editor warnings, three of them about the group (exactly two members, switch-off allowed,
+first member wrong). Those warnings were the same evidence this spec cites against the old tab
+group: a shape that cannot refuse its own misuse. The review proposed removing the group from the
+driver altogether; the decision is the smaller change:
+
+- **Kept: the group.** It already supplies the exclusion, the refusal of a click on the button
+  that is on, and the reset on the panel closing (`ResetWithParentPanel`). Re-supplying those on
+  an ungrouped driver would copy `AbstractGroup` and add a change event to `AbstractToggle`.
+- **Changed: the partner is a `TwoPanelMirrorToggle`** that names the driver. It carries no
+  behaviour; it is the reference, and the home of the warnings that need the driver (unset, other
+  group).
+- **Dropped: the member count and "the first member is the off-state toggle".** The driver may
+  sit among other toggles, and a reset to any first member but the driver switches it off. The
+  panels of those other toggles must not share a `PanelGroup` with the driver's off panel: scene
+  layout.
+- **Kept: no group, switch-off allowed, driver as first member, panel unset.**
+- **Considered and not taken: a dedicated group type, or forbidding a `ToggleGroup` on the
+  driver.** Membership is found by `GetComponent<ToggleGroup>()` on the parent, so a second group
+  type would not stop the wrong one being parented, and it still could not cap its members.
+
+Tickets 2 and 3 name "the inert partner" and "the group"; ticket 2's wiring now sets the mirror's
+`driver`. Run `/drift-review` over the ticket slice before ticket 2 is implemented.
