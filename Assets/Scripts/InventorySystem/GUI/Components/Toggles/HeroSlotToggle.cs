@@ -27,7 +27,6 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
     /// Mode only: <c>Selectable</c> is <c>[ExecuteAlways]</c>, so an enable in the Editor must not
     /// rewrite the authored toggles.</para>
     /// </summary>
-    [DisallowMultipleComponent]
     public sealed class HeroSlotToggle : AbstractToggle
     {
         private static readonly List<HeroSlotToggle> Shown = new();
@@ -36,6 +35,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         private static IReadOnlyList<HeroSummary> snapshot;
         private static int snapshotFrame = -1;
 
+        [Space]
         [Tooltip("The Image the hero's template icon is shown on: a child, not the toggle's own background.")]
         [SerializeField] private Image icon;
 

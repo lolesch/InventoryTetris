@@ -47,9 +47,9 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
     /// (<see cref="SidePanel.RequestContext"/>), not straight to the inventory service - the toggle still
     /// carries no context of its own, only which panel to ask.</para>
     /// </summary>
-    [DisallowMultipleComponent]
     public sealed class SidePanelToggle : AbstractToggle
     {
+        [Space]
         [Tooltip("The SidePanel this toggle drives: requested on click/hotkey, and the panel " +
                  "whose own visibility answer this toggle's pressed visual resyncs from. The " +
                  "type is the field's contract - a toggle wired to anything else cannot be " +
