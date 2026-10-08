@@ -23,7 +23,8 @@ namespace ToolSmiths.InventorySystem.Services
     /// handed, binding the hero adapter, the roll source and the Behaviour Profile, and wires the
     /// per-kill loot flow (issue #24) and XP (issue #44) over it. The ADR-0009 Death penalty and the
     /// corpse-recovery rules are <see cref="RunSettlement"/>'s; this binds its ports to the Hero.
-    /// The tuning (cast cost, penalty fractions) comes from <see cref="GameConfig"/>.
+    /// The tuning (cast cost, penalty fractions, and the ground, Cast and damage spread an Encounter plays on)
+    /// comes from <see cref="GameConfig"/>.
     /// </summary>
     public sealed class SimulationService : ISimulationService
     {
@@ -218,13 +219,7 @@ namespace ToolSmiths.InventorySystem.Services
             // read off it inside the tick (issue #23). The hero arrives to a quiet Location - the
             // first bodies wait one spawn delay.
             var encounter = new EncounterSimulation(combatant, profile, rolls, hero.Behaviour,
-                new EncounterTuning
-                {
-                    DelayFirstSpawn = true,
-                    Ground = GroundTuning.Standard(),
-                    Cast = CastDefinition.Standard(),
-                    DamageSpread = EncounterTuning.StandardDamageSpread,
-                },
+                TuningFor(config),
                 new ContainerBagGauge(hero.Inventory), movementRolls, hitRolls);
 
             // XP is delivered per kill, independent of the loot flow (issue #44). GainExperience's
@@ -247,6 +242,34 @@ namespace ToolSmiths.InventorySystem.Services
             world.LootFlow = lootFlow;
             return encounter;
         }
+
+        /// <summary>
+        /// The tuning a real Encounter plays on: the placeholder ground, Cast and damage spread authored on
+        /// <paramref name="config"/>. A value outside what the sim accepts is pulled back into range, so a
+        /// hand-edited asset cannot make a Send throw. The weapon-type Strike Range table stays in
+        /// <see cref="WeaponTypes"/>.
+        /// </summary>
+        private static EncounterTuning TuningFor(GameConfig config) => new()
+        {
+            DelayFirstSpawn = true,
+            Ground = new GroundTuning
+            {
+                Radius = Mathf.Max(0f, config.GroundRadius),
+                SpawnMargin = Mathf.Max(0f, config.SpawnMargin),
+                StopJitter = Mathf.Clamp(config.StopJitter, 0f, 0.99f),
+                BearingJitter = Mathf.Clamp01(config.BearingJitter),
+                HeroStrikeRange = Mathf.Max(0f, config.UnarmedStrikeRange),
+                MovementSpeedScale = Mathf.Max(0f, config.MovementSpeedScale),
+            },
+            Cast = new CastDefinition
+            {
+                Range = Mathf.Max(0f, config.CastRange),
+                Shape = config.CastShape,
+                Size = Mathf.Max(0.01f, config.CastSize),
+                Anchor = config.CastAnchor,
+            },
+            DamageSpread = Mathf.Clamp01(config.DamageSpread),
+        };
 
         /// <summary>
         /// Close a Run whose hero has been downed - <see cref="RunPhase.InField"/> to
