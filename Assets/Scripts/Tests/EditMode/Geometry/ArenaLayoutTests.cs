@@ -3,7 +3,7 @@ using ToolSmiths.InventorySystem.Geometry;
 
 namespace ToolSmiths.InventorySystem.Tests.EditMode.Geometry
 {
-    /// <summary>Locks in the arena's figure maths: facing, the dying fade and damage accumulation.</summary>
+    /// <summary>Locks in the arena's figure maths: facing and the dying fade.</summary>
     [TestFixture]
     public sealed class ArenaLayoutTests
     {
@@ -56,53 +56,6 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Geometry
         {
             Assert.That(ArenaLayout.DyingAlpha(0f, 0f), Is.EqualTo(0f));
             Assert.That(ArenaLayout.DyingAlpha(0f, -1f), Is.EqualTo(0f));
-        }
-
-        [Test]
-        public void DamageAccumulator_SumsPerEnemyAndFlushesOnce()
-        {
-            var accumulator = new DamageAccumulator<string>();
-            accumulator.Add("a", 3f);
-            accumulator.Add("b", 1f);
-            accumulator.Add("a", 4f);
-
-            var flushed = new System.Collections.Generic.Dictionary<string, float>();
-            accumulator.Flush((key, total) => flushed.Add(key, total));
-
-            Assert.That(flushed, Has.Count.EqualTo(2));
-            Assert.That(flushed["a"], Is.EqualTo(7f));
-            Assert.That(flushed["b"], Is.EqualTo(1f));
-        }
-
-        [Test]
-        public void DamageAccumulator_ResetsAfterFlush()
-        {
-            var accumulator = new DamageAccumulator<string>();
-            accumulator.Add("a", 3f);
-            accumulator.Flush((_, _) => { });
-
-            var calls = 0;
-            accumulator.Flush((_, _) => calls++);
-            Assert.That(calls, Is.EqualTo(0));
-
-            accumulator.Add("a", 2f);
-            var total = 0f;
-            accumulator.Flush((_, t) => total = t);
-            Assert.That(total, Is.EqualTo(2f), "the next frame starts from zero, not from the flushed 3");
-        }
-
-        [Test]
-        public void DamageAccumulator_FlushesOnlyKeysThatTookDamage()
-        {
-            var accumulator = new DamageAccumulator<string>();
-            accumulator.Add("a", 1f);
-            accumulator.Flush((_, _) => { });
-            accumulator.Add("b", 1f);
-
-            var keys = new System.Collections.Generic.List<string>();
-            accumulator.Flush((key, _) => keys.Add(key));
-
-            Assert.That(keys, Is.EqualTo(new[] { "b" }));
         }
     }
 }

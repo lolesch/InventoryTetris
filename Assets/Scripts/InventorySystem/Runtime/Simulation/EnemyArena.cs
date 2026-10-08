@@ -43,7 +43,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// is a separate element.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class EnemyArena : MonoBehaviour
+    public sealed class EnemyArena : MonoBehaviour, IDamageNumberOrigins
     {
         [SerializeField] private EnemyView prefab;
         [SerializeField, Tooltip("Where the views live. Empty: this object's own RectTransform.")]
@@ -65,8 +65,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private float deathFadeSeconds = 0.5f;
         [SerializeField, Tooltip("Feedback: the sprite flashes white on each hit. Independent of the others; off binds nothing.")]
         private bool hitFlash = true;
-        [SerializeField, Tooltip("Feedback: a number rises from the enemy on each hit, one per enemy per frame. Independent of the others; off binds nothing.")]
+        [SerializeField, Tooltip("Feedback: a number rises from whoever is hit - an enemy, or the hero figure - one per target and damage type per frame. Independent of the others; off binds nothing.")]
         private bool damageNumbers = true;
+        [SerializeField, Tooltip("The damage numbers' listener and pool. Optional: without it there are no numbers.")]
+        private ArenaDamageNumbers numbers;
         [SerializeField, Tooltip("Feedback: the sprite shakes on each hit. Independent of the others; off binds nothing.")]
         private bool hitShake = true;
         [SerializeField, Tooltip("Feedback: a ring marks the enemy the hero's next Strike hits. Independent of the others.")]
@@ -81,6 +83,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private EncounterSimulation _bound;
         private AbstractToggle _anchorOwner;
         private RectTransform _anchor;
+        // Where the ground was last drawn (set by Place), so a number can be projected without a view to read.
+        private Vector2 _center;
+        private ArenaProjection _projection;
+        private bool _hasCenter;
 
         // One drawn figure's place in the depth sort. The tie keeps the order it already has, so equal depth never flickers.
         private readonly struct DepthEntry
@@ -113,6 +119,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                     Bind(encounter);
             }
 
+            SyncDamageNumbers();
             Place();
             MarkTarget();
             FadeDying(SimulationService.Instance.SimDelta(Time.deltaTime));
@@ -150,9 +157,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _views.Clear();
             _marked = null;
 
-            // No Run, no hero on the ground.
+            // No Run, no hero on the ground, and no number left listening to the sim that ended.
             if (heroFigure != null)
                 heroFigure.Hide();
+            if (numbers != null)
+                numbers.Unbind();
+            _hasCenter = false;
 
             // The Run ended, so no fade lingers: dying views go back at once too.
             foreach (var view in _dying)
@@ -177,6 +187,44 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             }
         }
 
+        /// <summary>
+        /// Keeps the damage numbers listening exactly while the switch is on and an Encounter is bound - checked every
+        /// frame, so the switch turns the feature off (and back on) mid-Run and a disabled arena leaves nothing subscribed.
+        /// </summary>
+        private void SyncDamageNumbers()
+        {
+            if (numbers == null)
+                return;
+
+            var wanted = damageNumbers && _bound != null;
+            if (wanted && !numbers.IsBound)
+                numbers.Bind(_bound, this, Root);
+            else if (!wanted && numbers.IsBound)
+                numbers.Unbind();
+        }
+
+        /// <inheritdoc/>
+        public bool TryGetNumberOrigin(ICombatant target, out Vector2 origin)
+        {
+            origin = default;
+            if (_bound == null || !_hasCenter)
+                return false;
+
+            if (target is Enemy enemy)
+            {
+                origin = _center + _projection.ToCanvas(enemy.Position, _bound.Ground.Origin);
+                return true;
+            }
+
+            if (!ReferenceEquals(target, _bound.Hero))
+                return false;
+
+            origin = heroFigure != null && heroFigure.IsShown
+                ? heroFigure.CanvasPosition
+                : _center + _projection.ToCanvas(_bound.HeroPosition, _bound.Ground.Origin);
+            return true;
+        }
+
         /// <summary>Takes a pooled view for <paramref name="enemy"/>. It stays hidden until <see cref="Place"/> puts it where the sim has the enemy.</summary>
         private void SpawnView(Enemy enemy)
         {
@@ -189,8 +237,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             view.Bind(enemy, entry);
             if (hitFlash && view.HitFlash != null)
                 view.HitFlash.Bind(enemy, entry.Sprite);
-            if (damageNumbers && view.DamageNumbers != null)
-                view.DamageNumbers.Bind(enemy);
             if (hitShake && view.HitShake != null)
                 view.HitShake.Bind(enemy);
             _views.Add(enemy, view);
@@ -268,6 +314,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 return;
 
             var anchor = ResolveAnchor();
+            _hasCenter = anchor != null;
             if (anchor == null)
                 return;
 
@@ -275,7 +322,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             var world = anchor.TransformPoint(anchor.rect.center);
             var center = (Vector2)root.InverseTransformPoint(world) - root.rect.center;
 
-            var projection = new ArenaProjection(groundScale, tilt);
+            _center = center;
+            _projection = new ArenaProjection(groundScale, tilt);
+            var projection = _projection;
             var origin = _bound.Ground.Origin;
             var hero = _bound.HeroPosition;
 

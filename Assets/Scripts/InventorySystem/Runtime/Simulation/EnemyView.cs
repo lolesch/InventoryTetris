@@ -35,7 +35,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         // Hides a view that has no position yet, so a fresh one never flashes at the arena's origin.
         private CanvasGroup _visibility;
         private EnemyHitFlash _hitFlash;
-        private EnemyDamageNumbers _damageNumbers;
         private EnemyHitShake _hitShake;
 
         private RectTransform _rect;
@@ -52,7 +51,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _sprite = spriteImage.rectTransform;
             _health = GetComponentInChildren<EnemyHealthBarDisplay>(true);
             _visibility = GetComponent<CanvasGroup>();
-            _damageNumbers = GetComponent<EnemyDamageNumbers>();
             _hitFlash = GetComponentInChildren<EnemyHitFlash>(true);
             _hitShake = GetComponentInChildren<EnemyHitShake>(true);
         }
@@ -77,9 +75,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         /// <summary>The hit flash feedback, or null when the prefab has none.</summary>
         public EnemyHitFlash HitFlash => _hitFlash;
-
-        /// <summary>The damage number feedback, or null when the prefab has none.</summary>
-        public EnemyDamageNumbers DamageNumbers => _damageNumbers;
 
         /// <summary>The hit shake feedback, or null when the prefab has none.</summary>
         public EnemyHitShake HitShake => _hitShake;
@@ -114,7 +109,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         /// <summary>
         /// The enemy fell: let go of it and fade out over <paramref name="duration"/> sim seconds, in
-        /// place. Whatever the enemy's last hit queued (flash, number) may still play, because only the
+        /// place. Whatever the enemy's last hit queued (flash, shake) may still play, because only the
         /// link to the enemy is cut, not the view's own state. The arena drives <see cref="AdvanceDying"/>
         /// and releases the view when that reports it finished.
         /// </summary>
@@ -152,9 +147,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (_hitFlash != null)
                 _hitFlash.Detach();
 
-            // Likewise only the listening: the killing blow's number is flushed while the view fades.
-            if (_damageNumbers != null)
-                _damageNumbers.Detach();
             // Same for the shake: the killing blow's jolt settles on its own.
             if (_hitShake != null)
                 _hitShake.Detach();
@@ -171,9 +163,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (_hitFlash != null)
                 _hitFlash.Unbind();
 
-            // Shows what a release without a fade still owes, then drops the rest: no pending damage is pooled.
-            if (_damageNumbers != null)
-                _damageNumbers.Unbind();
             // Sprite back at rest: a pooled view starts with zero shake offset.
             if (_hitShake != null)
                 _hitShake.Unbind();
