@@ -5152,7 +5152,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ae690ccf9f1fd33409d08f025a7b1217, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Utility.UI::Submodules.Utility.UI.TwoPanelToggle
+  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Components.Toggles.AltPanelPeekToggle
   m_Navigation:
     m_Mode: 3
     m_WrapAround: 0
@@ -5192,6 +5192,7 @@ MonoBehaviour:
   toggledOnSprite: {fileID: 0}
   panelWhenOff: {fileID: 1023377236}
   panelWhenOn: {fileID: 1909361633}
+  peekTarget: {fileID: 2074416251}
 --- !u!224 &395591177 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 7022399922254581285, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
@@ -8367,7 +8368,6 @@ GameObject:
   - component: {fileID: 630857818}
   - component: {fileID: 630857817}
   - component: {fileID: 630857816}
-  - component: {fileID: 630857899}
   m_Layer: 5
   m_Name: VendorPanel
   m_TagString: Untagged
@@ -8531,19 +8531,6 @@ MonoBehaviour:
   scaleFrom: 1
   moveFrom: {x: -640, y: 0}
   inventoryContext: 3
---- !u!114 &630857899
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 630857814}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c555d0b763944120aa973aef12658b2e, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Components.Panels.SellingPanelPeek
-  driver: {fileID: 7022399921479454649}
 --- !u!1 &647175469
 GameObject:
   m_ObjectHideFlags: 0
@@ -24851,7 +24838,6 @@ GameObject:
   - component: {fileID: 2069960136}
   - component: {fileID: 2069960135}
   - component: {fileID: 2069960134}
-  - component: {fileID: 2069960199}
   m_Layer: 5
   m_Name: HealerPanel
   m_TagString: Untagged
@@ -25015,19 +25001,6 @@ MonoBehaviour:
   scaleFrom: 1
   moveFrom: {x: -640, y: 0}
   inventoryContext: 4
---- !u!114 &2069960199
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2069960131}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c555d0b763944120aa973aef12658b2e, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Components.Panels.SellingPanelPeek
-  driver: {fileID: 394682331}
 --- !u!1001 &2072412853
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -25410,9 +25383,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 2074416245}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 563dd12f0d45dd14caac2afcf611cc7f, type: 3}
+  m_Script: {fileID: 11500000, guid: ca38d5aaa90a4b8ebe82475cfcdcbfaf, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Utility.UI::Submodules.Utility.UI.TwoPanelMirrorToggle
+  m_EditorClassIdentifier: Utility.UI::Submodules.Utility.UI.TestToggle
   m_Navigation:
     m_Mode: 3
     m_WrapAround: 0
@@ -25450,7 +25423,6 @@ MonoBehaviour:
   <RadioGroup>k__BackingField: {fileID: 963343017}
   toggledOffSprite: {fileID: 0}
   toggledOnSprite: {fileID: 0}
-  driver: {fileID: 394682331}
 --- !u!1 &2088577174
 GameObject:
   m_ObjectHideFlags: 0
@@ -29538,7 +29510,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ae690ccf9f1fd33409d08f025a7b1217, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Utility.UI::Submodules.Utility.UI.TwoPanelToggle
+  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Components.Toggles.AltPanelPeekToggle
   m_Navigation:
     m_Mode: 3
     m_WrapAround: 0
@@ -29578,6 +29550,7 @@ MonoBehaviour:
   toggledOnSprite: {fileID: 0}
   panelWhenOff: {fileID: 1967687300}
   panelWhenOn: {fileID: 1970015442}
+  peekTarget: {fileID: 7022399922190057106}
 --- !u!114 &7022399922190057097
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -29707,9 +29680,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 7022399922190057102}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 563dd12f0d45dd14caac2afcf611cc7f, type: 3}
+  m_Script: {fileID: 11500000, guid: ca38d5aaa90a4b8ebe82475cfcdcbfaf, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Utility.UI::Submodules.Utility.UI.TwoPanelMirrorToggle
+  m_EditorClassIdentifier: Utility.UI::Submodules.Utility.UI.TestToggle
   m_Navigation:
     m_Mode: 3
     m_WrapAround: 0
@@ -29747,7 +29720,6 @@ MonoBehaviour:
   <RadioGroup>k__BackingField: {fileID: 1738999152}
   toggledOffSprite: {fileID: 0}
   toggledOnSprite: {fileID: 0}
-  driver: {fileID: 7022399921479454649}
 --- !u!1 &7302434348457408074
 GameObject:
   m_ObjectHideFlags: 0

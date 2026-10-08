@@ -264,3 +264,34 @@ the resets it runs on its panel closing, the driver exposes the count, and the p
 only if neither the write count nor the reset count changed. The panel-open answer now gates only
 the beginning of a peek. A hold also peeks once across a disable and enable of the selling
 panel's peek component, and an unset or wrong driver on it is warned about.
+
+## Amendment 2026-10-08: one peek toggle, no mirror, no counters
+
+Supersedes the mirror, the separate peek component and the restore bookkeeping above. A review of the
+prototype's replacement found the shape still carried a mirror class, a driver interface, a peek
+component and a reset counter to say what a group already says.
+
+- **One component: `PanelPeekToggle`** (Utility, abstract). It owns the bool and the two panels, and a
+  serialized `peekTarget`: the other tab button, in the same `ToggleGroup`. The key is
+  `protected abstract bool PeekKeyHeld`; the game's `AltPanelPeekToggle` returns `ModifierKeys.Alt`, so the
+  tooltip and the peek agree on Alt. A test subclass holds the key as a field.
+- **The pair is scene layout.** A group that can never be empty holds the toggle and its other button; their
+  panels sit in a `PanelGroup` of their own. `TwoPanelMirrorToggle`, `ITwoPanelDriver`, `TwoPanelPeek` and
+  `ITwoPanelPeek` are deleted, and so is `AbstractGroup.ActivateAnother`: a peek from the on state calls
+  `peekTarget.SetToggle(true)`, from the off state `SetToggle(true)` on itself.
+- **One restore rule, no counters.** A peek remembers the member it left and the one it switched on, and on
+  release switches the former back on only if the latter is still on. A click on the home tab, or on a
+  third toggle, has moved the group and so cancels it; a refused click on the peeked tab does not. The
+  group's `Resets` counter, added only for the old peek, is removed.
+- **Edges of "held and reachable".** The key counts only while `IsInteractable()` holds (a closed or hidden
+  `SimplePanel` takes its contents out of reach through its `CanvasGroup`). A peek begins and ends on the
+  edges of that, once per hold: a refused begin is not retried. A panel closing ends the peek in
+  `OnCanvasGroupChanged`, before its group's reset, so the reset has the last word; disabling the toggle
+  ends it too. Alt+Tab needs no case: the next frame reads the key as up.
+- **Order of the two panels.** The incoming panel is switched on first, and the outgoing one is left alone
+  when both share a `PanelGroup`, so the group is never asked to collapse its active panel.
+- **Authoring** is warned in `OnValidate`: an unset or equal panel, no group, a group that allows
+  switch-off, an unset `peekTarget` or one outside the group.
+- **Scene.** Both tab pairs' Sold toggles became `AltPanelPeekToggle` (it keeps the old
+  `TwoPanelToggle` script GUID) with `peekTarget` set; the mirrors are `TestToggle`s; the
+  `SellingPanelPeek` components are gone.
