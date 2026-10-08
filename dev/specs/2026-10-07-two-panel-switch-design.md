@@ -237,3 +237,21 @@ driver altogether; the decision is the smaller change:
 
 Tickets 2 and 3 name "the inert partner" and "the group"; ticket 2's wiring now sets the mirror's
 `driver`. Run `/drift-review` over the ticket slice before ticket 2 is implemented.
+
+## Amendment 2026-10-08: the driver may be the first member; a close ends a peek
+
+The Vendor and the Healer author the orientation the other way round: the driver is the Supply
+toggle (on shows Supply, off shows Sold) and the group's first member, and the Sold button is the
+mirror. That works, so the spec's "the first member must not be the driver" is dropped:
+
+- **Changed: either button may be home.** A reset to the driver switches it on, a write like any
+  other. The editor warning "driver is the first member" is replaced by two: the group has no first
+  member, and the driver is the first member but no `TwoPanelMirrorToggle` in the group names it
+  (nothing could switch it off, so a click is refused and a peek cannot flip it).
+- **Changed: a peek ends when it sees its panel closed.** The count rule missed one case: a peek
+  that landed on the first member (Sold, hold Alt, peek to Supply, close the panel) leaves the
+  reset nothing to write, so a release after the reopen restored the Sold tab the player had left.
+  The peek now drops its pending restore the first frame the panel is closed during the hold. The
+  other peek rules stand, including a hold begun while closed peeking once it opens and the same
+  hold not peeking twice. The "close-and-reopen within a fade" note above changes with it: a
+  reopen inside the fade now keeps the peeked tab instead of restoring.
