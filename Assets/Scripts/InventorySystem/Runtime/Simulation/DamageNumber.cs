@@ -1,5 +1,6 @@
 using System;
 using TMPro;
+using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Geometry;
 using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Simulation;
@@ -8,13 +9,14 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.Runtime.Simulation
 {
     /// <summary>
-    /// One rising damage figure (issue #181), pooled by <see cref="EnemyDamageNumbers"/>. It is not a child
+    /// One rising damage figure (issue #181), pooled by <see cref="ArenaDamageNumbers"/>. It is not a child
     /// of any <see cref="EnemyView"/>: a view fades with its death and is pooled with its enemy, and the
     /// number of the killing blow has to outlive both. It lives in the arena's space, drives itself on
     /// <i>sim</i> time (faster at x8, frozen on pause) and hands itself back when its life is over or when
     /// the Encounter it was born in is gone (Recall, hero death, Relocate: the Run ended, so nothing lingers).
     /// <para>
-    /// <see cref="Show"/> sets every field, so a pooled number carries nothing of its last use.
+    /// <see cref="Show"/> sets every field - text, font size, tint, position, timers - and <see cref="Reset"/>
+    /// clears them, so a pooled number carries nothing of its last use.
     /// </para>
     /// </summary>
     [DisallowMultipleComponent]
@@ -38,10 +40,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         /// <summary>
         /// Start rising from <paramref name="origin"/> (the arena's anchored space) showing
-        /// <paramref name="amount"/>. <paramref name="done"/> is called once, when the life ends or the
+        /// <paramref name="amount"/> at the size and tint <paramref name="style"/> gives. <paramref name="done"/> is called once, when the life ends or the
         /// <paramref name="encounter"/> is no longer the Run's.
         /// </summary>
-        public void Show(Vector2 origin, float amount, float duration, float height, float hold,
+        public void Show(Vector2 origin, float amount, DamageNumberStyle style, float duration, float height, float hold,
             EncounterSimulation encounter, Action<DamageNumber> done)
         {
             _origin = origin;
@@ -53,6 +55,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _done = done;
 
             label.text = DamageNumberMotion.Label(amount);
+            label.fontSize = style.FontSize;
+            label.color = style.Tint;
             Rect.SetAsLastSibling();
             Apply();
         }
@@ -60,14 +64,18 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// <summary>Clear the state a pooled number must not keep.</summary>
         public void Reset()
         {
+            _origin = default;
             _elapsed = 0f;
+            _duration = 0f;
+            _height = 0f;
+            _hold = 0f;
             _encounter = null;
             _done = null;
 
             if (label != null)
             {
                 label.text = string.Empty;
-                label.alpha = 0f;
+                label.color = Color.clear;
             }
         }
 

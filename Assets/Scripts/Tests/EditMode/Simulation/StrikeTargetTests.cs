@@ -7,9 +7,11 @@ using ToolSmiths.InventorySystem.Simulation;
 namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 {
     /// <summary>
-    /// <see cref="EncounterSimulation.StrikeTarget"/> (issue #182) is a read-only peek at the Strike's own
-    /// selection - the lowest-health living enemy, the earliest spawned on a tie - so the arena's target
-    /// highlight cannot disagree with the Strike that follows. It holds no state and raises nothing.
+    /// <see cref="EncounterSimulation.StrikeTarget"/> (issues #182, #209) is a read-only peek at the hero's
+    /// own choice - the sticky weighted-proximity target, the earliest spawned on a tie - so the arena's target
+    /// highlight cannot disagree with the Strike that follows. It holds no state and raises nothing. These
+    /// fights run on the collapsed ground, where every enemy stands on the hero and scores alike; where they
+    /// stand apart is <c>HeroTargetingTests</c>.
     /// </summary>
     [TestFixture]
     public sealed class StrikeTargetTests
@@ -50,7 +52,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             sim.Advance(0.1f); // one tick, one Strike
 
             Assert.That(target, Is.Not.Null);
-            Assert.That(before[target] - target.Health, Is.EqualTo(StrikeDamage).Within(0.001f),
+            Assert.That(before[target] - target.Health, Is.EqualTo(StrikeDamage * (1f - target.ArmorPercent * 0.01f)).Within(0.001f),
                 "the peeked enemy took the Strike");
             foreach (var other in sim.Enemies.Where(e => e != target))
                 Assert.That(other.Health, Is.EqualTo(before[other]).Within(0.001f),
@@ -58,14 +60,15 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
-        public void StrikeTarget_IsTheLowestHealthEnemy_AFragileSkirmisherOverABrute()
+        public void StrikeTarget_IsNotTheLowestHealthEnemy_AFragileSkirmisherDoesNotOutrankTheFirstSpawn()
         {
             var sim = NewSim(Striker());
 
             var target = sim.StrikeTarget;
 
-            Assert.That(target.Archetype, Is.EqualTo(EnemyArchetype.Skirmisher));
-            Assert.That(sim.Enemies.Min(e => e.Health), Is.EqualTo(target.Health));
+            Assert.That(sim.Enemies.Min(e => e.Health), Is.LessThan(sim.Enemies[0].Health), "premise: a weaker enemy is on the field");
+            Assert.That(target, Is.SameAs(sim.Enemies[0]));
+            Assert.That(target.Archetype, Is.EqualTo(EnemyArchetype.Brute));
         }
 
         [Test]
@@ -73,21 +76,21 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         {
             var sim = NewSim(Striker());
             var skirmishers = sim.Enemies.Where(e => e.Archetype == EnemyArchetype.Skirmisher).ToList();
-            Assert.That(skirmishers[0].Health, Is.EqualTo(skirmishers[1].Health), "premise: a tie");
+            Assert.That(skirmishers[0].Health, Is.EqualTo(skirmishers[1].Health), "premise: a tie on health");
 
-            Assert.That(sim.StrikeTarget, Is.SameAs(skirmishers[0]));
+            Assert.That(sim.StrikeTarget, Is.SameAs(sim.Enemies[0]), "every score ties on the collapsed ground");
         }
 
         [Test]
-        public void StrikeTarget_MovesWhenHealthChangesTheSelection()
+        public void StrikeTarget_IsStickyOnceChosen_AHurtBystanderDoesNotTakeIt()
         {
             var sim = NewSim(Striker());
-            var skirmishers = sim.Enemies.Where(e => e.Archetype == EnemyArchetype.Skirmisher).ToList();
-            Assert.That(sim.StrikeTarget, Is.SameAs(skirmishers[0]), "premise: the tie goes to the first");
+            var target = sim.StrikeTarget;
+            sim.Advance(0.1f);
 
-            skirmishers[1].ReceivePhysical(1f);
+            sim.Enemies.Last().ReceivePhysical(1f);
 
-            Assert.That(sim.StrikeTarget, Is.SameAs(skirmishers[1]), "the hurt one is now the lowest");
+            Assert.That(sim.StrikeTarget, Is.SameAs(target), "health no longer decides it");
         }
 
         [Test]

@@ -36,6 +36,19 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// </summary>
         float CastCost { get; }
 
+        /// <summary>
+        /// The <c>MovementSpeed</c> stat, in stat points: the sim walks the hero at
+        /// <c>MovementSpeed * GroundTuning.MovementSpeedScale</c> ground units per second. Zero stands him still.
+        /// </summary>
+        float MovementSpeed { get; }
+
+        /// <summary>
+        /// How far the wielded weapon's type reaches, in ground units, or <c>null</c> when unarmed (the sim then
+        /// uses <see cref="GroundTuning.HeroStrikeRange"/>). A base property of the weapon type, never a stat:
+        /// gear cannot roll range.
+        /// </summary>
+        float? WeaponStrikeRange { get; }
+
         /// <summary>Hero level — the <c>(SourceLevel - Level)</c> term that balances settled XP.</summary>
         int Level { get; }
 

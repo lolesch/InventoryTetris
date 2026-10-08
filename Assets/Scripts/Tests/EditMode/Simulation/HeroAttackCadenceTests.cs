@@ -59,7 +59,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
                 ResourceRegenPerSecond = 20f,
             };
             var sim = new EncounterSimulation(hero, Profiles.Solo(EnemyArchetype.Brute), new ConstantRollSource(0f), Behaviours.Engaging(5), FastCast());
-            var enemy = sim.Enemies[0];
+            var enemy = sim.Enemies[0].WithoutMagicResist(); // a cadence test: round numbers
 
             // 3.1 s → Casts affordable at t = 1, 2, 3.
             // Hero regen runs before the sim tick (issue #45 moved it to the driver).

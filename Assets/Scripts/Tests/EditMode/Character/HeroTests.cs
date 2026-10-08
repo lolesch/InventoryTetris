@@ -617,6 +617,48 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Character
         }
 
         [Test]
+        public void ReceiveDamage_ReturnsTheAmountLostAfterMitigation_PerDamageType()
+        {
+            var physical = NewHero().ReceiveDamage(DamageType.PhysicalDamage, 100f);
+            var magical = NewHero().ReceiveDamage(DamageType.MagicalDamage, 50f);
+
+            Assert.That(physical, Is.EqualTo(80f).Within(Tolerance), "100 * (1 - 20% armor)");
+            Assert.That(magical, Is.EqualTo(45f).Within(Tolerance), "50 * (1 - 10% magic resist)");
+        }
+
+        [Test]
+        public void ReceiveDamage_ReturnsWhatTheShieldAndTheHealthTogetherLost()
+        {
+            var hero = NewHero(shield: 30f);
+
+            var lost = hero.ReceiveDamage(DamageType.PhysicalDamage, 50f);
+
+            Assert.That(lost, Is.EqualTo(40f).Within(Tolerance), "50 * 80% = 40: 30 off the shield and 10 off the health");
+        }
+
+        [Test]
+        public void ReceiveDamage_ReturnsOnlyWhatTheHeroHadToLose()
+        {
+            var hero = NewHero();
+
+            var lost = hero.ReceiveDamage(DamageType.PhysicalDamage, 1000f);
+
+            Assert.That(lost, Is.EqualTo(100f).Within(Tolerance), "800 mitigated, but only 100 health to lose");
+        }
+
+        [Test]
+        public void ReceiveDamage_ReturnsZero_WhenInvincibleOrAlreadyDead()
+        {
+            var invincible = NewHero();
+            invincible.IsInvincible = true;
+            var dead = NewHero();
+            dead.GetResource(StatName.Health).DepleteCurrent();
+
+            Assert.That(invincible.ReceiveDamage(DamageType.PhysicalDamage, 100f), Is.Zero);
+            Assert.That(dead.ReceiveDamage(DamageType.PhysicalDamage, 100f), Is.Zero);
+        }
+
+        [Test]
         public void ReceiveDamage_WhenInvincible_TakesNothing()
         {
             var hero = NewHero();

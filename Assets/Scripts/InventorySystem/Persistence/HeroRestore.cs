@@ -69,6 +69,7 @@ namespace ToolSmiths.InventorySystem.Persistence
             behaviour.RetreatHealthFraction = saved.retreatHealthFraction;
             behaviour.RecallBagFillFraction = saved.recallBagFillFraction;
             behaviour.CastThreshold = saved.castThreshold;
+            behaviour.OriginWeight = saved.originWeight;
 
             if (Enum.TryParse<ItemRarity>(saved.lootFilterMinimum, out var filter))
                 behaviour.LootFilterMinimum = filter;

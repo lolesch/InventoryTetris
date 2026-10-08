@@ -5,8 +5,8 @@ using ToolSmiths.InventorySystem.Data.Enums;
 namespace ToolSmiths.InventorySystem.Simulation
 {
     /// <summary>
-    /// The six slider-fed values that steer the hero through a Run (issue #23; spec
-    /// <i>HeroBehaviour</i>), held in the Session save and written by the sliders on their
+    /// The seven slider-fed values that steer the hero through a Run (issue #23; spec
+    /// <i>HeroBehaviour</i>; <see cref="OriginWeight"/> joined for issue #209), held in the Session save and written by the sliders on their
     /// change event (issue #27) — read live here, never polled by value snapshot.
     ///
     /// <see cref="ShouldRecallForHealth"/> and <see cref="ShouldRecallForBagFull"/> are the pure
@@ -62,6 +62,16 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// passes <see cref="AdmitsCoin"/> banks either way.
         /// </summary>
         public bool AutoPickup { get; set; }
+
+        /// <summary>
+        /// How strongly home pulls against nearness when the hero picks a target, 0..1 (spatial-combat spec):
+        /// 0 takes the enemy nearest himself (a brawler who fights what is in front of him), 1 the one nearest the
+        /// ground's origin (a homebody who never wanders). Read live, each time he has no target.
+        /// </summary>
+        public float OriginWeight { get; set; } = DefaultOriginWeight;
+
+        /// <summary>The slider's starting position: home and nearness pull equally.</summary>
+        public const float DefaultOriginWeight = 0.5f;
 
         /// <summary>Sim speed multiplier, 1..~8 log-mapped — consumed as <c>clock.Advance(dt * SimSpeed)</c> (issue #26).</summary>
         public float SimSpeed { get; set; }

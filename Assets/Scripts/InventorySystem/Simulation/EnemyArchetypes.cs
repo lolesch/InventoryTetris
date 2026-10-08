@@ -1,4 +1,5 @@
 using System;
+using ToolSmiths.InventorySystem.Data.Enums;
 
 namespace ToolSmiths.InventorySystem.Simulation
 {
@@ -32,6 +33,13 @@ namespace ToolSmiths.InventorySystem.Simulation
         public readonly StatCurve Damage;
         /// <summary>Percent physical mitigation the enemy has against the hero's Strike.</summary>
         public readonly StatCurve ArmorPercent;
+        /// <summary>Percent magical mitigation the enemy has against the hero's Cast.</summary>
+        public readonly StatCurve MagicResistPercent;
+        /// <summary>
+        /// The damage type this archetype's Strike deals: Brute physical, Skirmisher magical. It picks the hero's
+        /// mitigation (Armor or Magic Resist) and which of the enemy's damage stats carries <see cref="Damage"/>.
+        /// </summary>
+        public readonly DamageType DamageType;
         /// <summary>Strikes per second — flat, not a curve.</summary>
         public readonly float AttackSpeed;
         /// <summary>XP this body is worth, before the <c>(SourceLevel - heroLevel)</c> balance term.</summary>
@@ -42,12 +50,24 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// drop counts is unfixed (spec "Loot flow").
         /// </summary>
         public readonly int LootRolls;
+        /// <summary>
+        /// How far from the hero this body can Strike, in ground units - flat, not a curve. Melee is short;
+        /// ranged is the same capability with a longer range, so it stands off (spatial-combat spec).
+        /// </summary>
+        public readonly float StrikeRange;
+        /// <summary>Ground units walked per second while chasing the hero - flat, not a curve.</summary>
+        public readonly float MovementSpeed;
 
-        public EnemyArchetypeStats(StatCurve health, StatCurve damage, StatCurve armorPercent, float attackSpeed, StatCurve xp, int lootRolls)
+        public EnemyArchetypeStats(StatCurve health, StatCurve damage, StatCurve armorPercent, StatCurve magicResistPercent, DamageType damageType, float attackSpeed, StatCurve xp, int lootRolls,
+            float strikeRange, float movementSpeed)
         {
+            StrikeRange = strikeRange;
+            MovementSpeed = movementSpeed;
             Health = health;
             Damage = damage;
             ArmorPercent = armorPercent;
+            MagicResistPercent = magicResistPercent;
+            DamageType = damageType;
             AttackSpeed = attackSpeed;
             Xp = xp;
             LootRolls = lootRolls;
@@ -66,17 +86,25 @@ namespace ToolSmiths.InventorySystem.Simulation
             health: new StatCurve(26f, 24f, 1.12f),
             damage: new StatCurve(1.0f, 0.82f, 1.0f),
             armorPercent: new StatCurve(3f, 0.9f, 1.0f),
+            magicResistPercent: new StatCurve(0f, 0.4f, 1.0f),
+            damageType: DamageType.PhysicalDamage,
             attackSpeed: 0.55f,
             xp: new StatCurve(5f, 3.5f, 1.0f),
-            lootRolls: 1);
+            lootRolls: 1,
+            strikeRange: 1.5f,
+            movementSpeed: 2f);
 
         public static readonly EnemyArchetypeStats Skirmisher = new(
             health: new StatCurve(10f, 9f, 1.06f),
             damage: new StatCurve(0.5f, 0.5f, 1.0f),
             armorPercent: new StatCurve(0f, 0f, 1.0f),
+            magicResistPercent: new StatCurve(0f, 0.8f, 1.0f),
+            damageType: DamageType.MagicalDamage,
             attackSpeed: 1.6f,
             xp: new StatCurve(13f, 8f, 1.0f),
-            lootRolls: 1);
+            lootRolls: 1,
+            strikeRange: 6f,
+            movementSpeed: 3.5f);
 
         public static EnemyArchetypeStats Of(EnemyArchetype archetype) =>
             archetype == EnemyArchetype.Brute ? Brute : Skirmisher;

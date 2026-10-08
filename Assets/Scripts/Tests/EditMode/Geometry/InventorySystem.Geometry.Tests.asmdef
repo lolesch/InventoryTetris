@@ -3,6 +3,7 @@
     "rootNamespace": "",
     "references": [
         "InventorySystem.Geometry",
+        "Utility",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

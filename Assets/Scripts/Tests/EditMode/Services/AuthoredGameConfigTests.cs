@@ -2,6 +2,7 @@ using NUnit.Framework;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Locations;
 using ToolSmiths.InventorySystem.Services;
+using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Tests.Services
@@ -72,9 +73,31 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(config.RetreatHealthFraction, Is.Zero);
             Assert.That(config.RecallBagFillFraction, Is.EqualTo(1f));
             Assert.That(config.CastThreshold, Is.Zero);
+            Assert.That(config.OriginWeight, Is.EqualTo(0.5f), "home and nearness pull equally");
             Assert.That(config.LootFilterMinimum, Is.EqualTo(ItemRarity.Common));
             Assert.That(config.XpLossFraction, Is.EqualTo(0.25f));
             Assert.That(config.CurrencyFeeFraction, Is.EqualTo(0.5f));
+        }
+
+        [Test]
+        public void TheGroundCastAndDamageTuning_DefaultToTheStandardPlaceholders()
+        {
+            var ground = GroundTuning.Standard();
+            var cast = CastDefinition.Standard();
+
+            Assert.That(config.GroundRadius, Is.EqualTo(ground.Radius));
+            Assert.That(config.SpawnMargin, Is.EqualTo(ground.SpawnMargin));
+            Assert.That(config.StopJitter, Is.EqualTo(ground.StopJitter));
+            Assert.That(config.BearingJitter, Is.EqualTo(ground.BearingJitter));
+            Assert.That(config.UnarmedStrikeRange, Is.EqualTo(ground.HeroStrikeRange));
+            Assert.That(config.MovementSpeedScale, Is.EqualTo(ground.MovementSpeedScale));
+            Assert.That(config.CastRange, Is.EqualTo(cast.Range));
+            Assert.That(config.CastShape.Kind, Is.EqualTo(cast.Shape.Kind));
+            Assert.That(config.CastShape.Radius, Is.EqualTo(cast.Shape.Radius));
+            Assert.That(config.CastShape.InnerRadius, Is.EqualTo(cast.Shape.InnerRadius));
+            Assert.That(config.CastSize, Is.EqualTo(cast.Size));
+            Assert.That(config.CastAnchor, Is.EqualTo(cast.Anchor));
+            Assert.That(config.DamageSpread, Is.EqualTo(EncounterTuning.StandardDamageSpread));
         }
 
         [Test]
