@@ -531,7 +531,7 @@ Holding Alt on an open selling panel (the Vendor, the Healer) shows the other ta
 **Two-panel switch**; letting go lands back where the player was. A real selection through the group, not a view-only
 overlay, so both buttons follow. On release it restores only if nothing else wrote the driver's
 bool since the peek began: a click on the home tab and the panel's reset on closing each cancel
-the restore, and so does the panel being seen closed during the hold. A click on the tab being
+the restore, whether or not the reset moved anything. A click on the tab being
 peeked at is refused, writes nothing and changes nothing. A peek touches the bool and nothing
 else: not a sale, a drag, a purchase or the **Inventory Context**. A sale never switches the
 tab.

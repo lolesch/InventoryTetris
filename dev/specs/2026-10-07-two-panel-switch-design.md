@@ -9,8 +9,9 @@ and the 2026-10-05 spec amendment).
 Amends: `dev/specs/2026-10-02-sold-tab-design.md` - its "Tabs are `PanelToggle`s in a group of
 their own" decision (the tab pair becomes a two-panel switch) and its Out of Scope line about
 switching to the Sold tab (a held key now shows it; a sale still never does).
-Amended 2026-10-07 (the mirror toggle, a shareable group) and 2026-10-08 (either button may be
-home, a close ends a peek). The body below states the built shape; the amendments at the end are
+Amended 2026-10-07 (the mirror toggle, a shareable group), 2026-10-08 (either button may be
+home, a close ends a peek) and 2026-10-08 again (the group drives the mirror, the reset is what
+ends a peek). The body below states the built shape; the amendments at the end are
 dated history.
 
 ## Problem Statement
@@ -37,8 +38,8 @@ clicking either button flips the bool.
 The **peek** flips that bool while a key is held and sets it back on release. It is a real
 selection, not a view-only overlay: it goes through the group, so both tab buttons follow. On
 release it restores the state it captured only if nothing else has written the bool since the
-peek began. A click on the home tab is a write and cancels the restore, and so does the panel
-closing (the peek ends when it sees its panel closed). A click on the tab being peeked at is
+peek began. A click on the home tab is a write and cancels the restore, and so does the panel's
+group resetting on its closing (counted, whether it moved anything or not). A click on the tab being peeked at is
 refused because it is already on, writes nothing, and changes nothing: on release the player is
 home. Holding the key, closing the panel, reopening on the Supply and releasing leaves the panel
 on the Supply.
@@ -89,9 +90,8 @@ the player's things.
 20. As a developer, I want the peek's "key held" and "panel open" answers injectable, so that
     a test drives it without a keyboard or a canvas.
 21. As a developer, I want a warning when a tab pair is authored wrongly (no group, a group
-    that lets the user switch off, a group with no first member, a driver that is the group's
-    first member with no mirror naming it, a mirror whose driver is unset or in another
-    group), so that a wiring slip is loud.
+    that lets the user switch off, a group with no first member, a mirror whose driver is
+    unset or in another group), so that a wiring slip is loud.
 22. As a developer, I want the Map's InTown and InFields faces to be able to use the same
     switch later, so that the two-panel shape is not invented twice.
 23. As a developer, I want the prototype and its debug checkbox deleted when the peek is
@@ -112,7 +112,8 @@ the player's things.
   directions. The group is the one mirror of the bool, as it already is for any two toggles; no
   second piece of state is added. The driver may be the group's first member (as built) when a
   mirror names it: the mirror is then the only way to switch the driver off, including from the
-  group's side, which is what a peek does.
+  group's side, which is what a peek does: the driver asks the group to switch to another of its
+  members and never looks for the mirror, which is driven by the group alone.
 - **The pair may share its group.** The driver is an ordinary member: any other toggle in the
   group switching on switches the driver off, and the driver switching on switches it off.
   Nothing counts the group's members. What keeps the off panel from clashing with another
@@ -130,9 +131,11 @@ the player's things.
   remembers the count after its own write and restores only if the count is unchanged on release.
   A click and any future driver of the bool (a Run phase) are writes and cancel the restore
   without a case each. The panel closing is the one exception to counting: the group's reset is
-  no write when the peek already landed on the first member, so the peek drops its pending
-  restore itself the first frame it sees its panel closed during the hold. A close during a peek
-  therefore abandons the restore, and a close-and-reopen inside the fade keeps the peeked tab.
+  no write when the peek already landed on the first member. The group therefore counts the
+  resets it runs on its panel closing, moved or not, the driver exposes that count, and the peek
+  restores only if neither count changed. A frame where the panel is merely not open (an ancestor
+  fading, another screen over it) without a reset abandons nothing. A close and reset during a
+  peek abandons the restore; a close-and-reopen inside the fade, before the reset, does not.
 - **A reset is a write through the same path.** The group resets to its first member when the
   panel finishes closing (the 2026-10-05 amendment, already built). In the Vendor and the
   Healer the first member is the driver (the Supply toggle), so the reset switches the driver
@@ -211,15 +214,15 @@ the player's things.
 
 - **Defaults this spec chose without settling them with the user:** the two-state toggle in the
   Utility submodule and the peek in the game's GUI (a submodule change needs its own commit and
-  a bump here), the first-member warning, and the peek only reacting while its panel is
+  a bump here), the first-member warning, and the peek only beginning while its panel is
   reachable. Change them here before `/to-tickets` if any is wrong.
 - **Suggested slicing, from the drift review.** Expand: the two-panel switch and its reset test
   beside the old tab pair. Migrate: both panels' scene wiring and the peek. Contract: delete
   the prototype and its debug checkbox. The seven findings of the high-effort review of the
   prototype are not fixed on the prototype: the peek replaces the code they are about.
 - **Close-and-reopen within a fade.** The reset runs when the panel has finished collapsing, so
-  a reopen inside the 0.2 s fade keeps the tab. During a peek the close has already abandoned
-  the restore, so the reopen keeps the peeked tab and a release does not put the player back.
+  a reopen inside the 0.2 s fade keeps the tab. During a peek the reset has not run either, so
+  the reopen keeps the peeked tab until the key is let go, and a release puts the player back.
   This is accepted.
 - **Before Unity compile verification, asmdef changes or scripted multi-file edits,** read
   `docs/agents/codebase-notes.md`.
@@ -248,3 +251,16 @@ peek case the write count missed - a peek that landed on the first member, then 
 reset nothing to write, so a release after the reopen restored the tab the player had left - is
 closed by the peek abandoning its restore when it sees its panel closed. The body states the
 result; the glossary entries **two-panel switch**, **mirror toggle** and **peek** describe it.
+
+## Amendment 2026-10-08 (later): the group drives the mirror; the reset ends a peek
+
+History, after the review of the merged switch. Two decisions. The mirror toggle is driven only
+by the group: nothing scans for it. A peek that must switch a first-member driver off asks the
+group for another member (`ActivateAnother`), and the "a driver that is first needs a mirror
+naming it" warning goes with the scan (the mirror still warns for an unset driver or another
+group). And a peek no longer abandons its restore on any frame its panel is not open, which
+stranded the player on the peeked tab after a transient non-interactive frame: the group counts
+the resets it runs on its panel closing, the driver exposes the count, and the peek restores
+only if neither the write count nor the reset count changed. The panel-open answer now gates only
+the beginning of a peek. A hold also peeks once across a disable and enable of the selling
+panel's peek component, and an unset or wrong driver on it is warned about.
