@@ -414,6 +414,21 @@ at once, paced by how fast `Resource` regenerates against the cast cost. The are
 of the kit.
 _Avoid_: spell, nuke, ability, skill
 
+**Hit event**:
+What the simulation announces for every hit that lands - the hero's Strike, each target of his
+Cast, and every enemy Strike: who dealt it, who took it, the **damage type**, the **raw amount**
+(before mitigation, the **damage spread** applied) and the **lost amount** (what the target
+actually lost after its Armor or Magic Resist, and no more than it had). A hit the target fully
+mitigates still lands, with nothing lost. The damage numbers and, later, effects read from it.
+_Avoid_: damage event, hit callback, damage tick
+
+**Damage spread**:
+A tuning fraction that varies each hit around its base damage: a hit rolls a factor between
+`1 - spread` and `1 + spread`, from its own random stream apart from the Encounter's, movement
+and loot streams. Zero means every hit is its base damage. A stand-in until weapons carry a
+real minimum and maximum.
+_Avoid_: variance, crit range, damage roll
+
 **Engagement**:
 The player-set count of enemies an Encounter tries to keep on the hero at once. A soft
 target the fight refills toward as enemies fall — not a ceiling, because a Pack
