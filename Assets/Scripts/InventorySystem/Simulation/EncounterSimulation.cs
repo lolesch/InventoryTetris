@@ -11,8 +11,8 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// <summary>
     /// The pure Encounter simulation (ADR-0010) — a watchable auto-fight the player only tunes.
     /// A <see cref="CombatClock"/> drives it at a fixed tick; each tick the hero resolves its
-    /// two concurrent attacks (a physical <b>Strike</b> on <c>1 / AttackSpeed</c> at the single
-    /// lowest-HP enemy, a magical area <b>Cast</b> paced by Resource at the highest-HP enemies),
+    /// two concurrent attacks (a physical <b>Strike</b> on <c>1 / AttackSpeed</c> at the one
+    /// sticky target he walks to, a magical area <b>Cast</b> paced by Resource at the highest-HP enemies),
     /// the enemies Strike back on their own cadences, a per-Location <b>Roster</b> spawns in
     /// (the packed archetype in <b>Packs</b>, the other singly) up to the soft
     /// <see cref="EngagementTarget"/>, and every combatant regenerates once.
@@ -39,10 +39,12 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// order. The arrival-jitter roll is only drawn with <see cref="EncounterTuning.DelayFirstSpawn"/>.
     /// It never references the hero.
     ///
-    /// The sim owns position (spatial-combat spec): the hero stands at the <see cref="Ground"/>'s origin and each
+    /// The sim owns position (spatial-combat spec): the hero starts at the <see cref="Ground"/>'s origin and each
     /// enemy spawns on its edge, walks in on sim time and Strikes only once the hero is within its Strike Range;
-    /// the hero's Strike likewise needs its target within <see cref="HeroStrikeRange"/>. The spawn bearing and
-    /// stop jitter come from a separate movement stream, so they never shift a seeded outcome above.
+    /// the hero's Strike likewise needs its target within <see cref="HeroStrikeRange"/>. Each tick, in order, the
+    /// hero chooses his target (<see cref="HeroTargeting"/>), the hero moves, the enemies move, and attacks resolve
+    /// against the new positions. The spawn bearing and stop jitter come from a separate movement stream, so they
+    /// never shift a seeded outcome above.
     /// </summary>
     public sealed class EncounterSimulation
     {
@@ -64,6 +66,8 @@ namespace ToolSmiths.InventorySystem.Simulation
         private int _spawnedBrute;
         private int _spawnedSkirmisher;
         private int _nextSpawnIndex;
+
+        private Enemy _heroTarget; // the sticky target the last tick chose; may have fallen since
 
         private float _spawnTimer;
         private float _strikeTimer;
@@ -106,6 +110,7 @@ namespace ToolSmiths.InventorySystem.Simulation
             _tuning = tuning ?? new EncounterTuning();
             _tuning.Validate();
             _ground = _tuning.Ground;
+            HeroPosition = _ground.Origin;
 
             _clock = new CombatClock(_tuning.Tick, _tuning.MaxTicksPerAdvance);
             _clock.OnTick += Step;
@@ -152,20 +157,26 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <summary>The ground the fight takes place on - its origin, radius and the unarmed Strike Range.</summary>
         public GroundTuning Ground => _ground;
 
-        /// <summary>Where the hero stands on the ground: the origin.</summary>
-        public Coordinate HeroPosition => _ground.Origin;
-
-        /// <summary>How far from <see cref="HeroPosition"/> the hero's Strike reaches.</summary>
-        public float HeroStrikeRange => _ground.HeroStrikeRange;
+        /// <summary>
+        /// Where the hero stands on the ground. He starts at the origin, walks to his target on sim time and walks
+        /// back when nothing lives; the arena only reads it.
+        /// </summary>
+        public Coordinate HeroPosition { get; private set; }
 
         /// <summary>
-        /// The enemy the hero's next Strike would hit, or null when none is within his Strike Range (issue #182).
-        /// A pure peek at the Strike's own selection - the lowest health among the enemies in reach, the earliest
-        /// spawned on a tie - with no state of its own and no event, so it cannot disagree with the Strike that
-        /// follows. An enemy still walking in is not in reach. It can change between swings as health and
-        /// positions change. The Cast's targets are not this.
+        /// How far from <see cref="HeroPosition"/> the hero's Strike reaches: his weapon type's range, or the
+        /// ground's unarmed range while he wields none. Read live, so re-gearing changes it on the spot.
         /// </summary>
-        public Enemy StrikeTarget => LowestHealthInReach();
+        public float HeroStrikeRange => _hero.WeaponStrikeRange ?? _ground.HeroStrikeRange;
+
+        /// <summary>
+        /// The enemy the hero is fighting - the one he walks to and Strikes - or null when none lives (issues #182,
+        /// #209). It is the sticky target: he keeps it until it falls, unless it stands outside his Strike Range
+        /// while another enemy stands inside it. It may be out of reach: the hero is then walking to it. A pure peek
+        /// at the choice the next tick will make, with no state of its own and no event, so it cannot disagree
+        /// with the Strike that follows. The Cast's targets are not this.
+        /// </summary>
+        public Enemy StrikeTarget => ChooseHeroTarget();
 
         /// <summary>1-based index of the Encounter currently building or being fought.</summary>
         public int CurrentEncounter { get; private set; }
@@ -271,6 +282,10 @@ namespace ToolSmiths.InventorySystem.Simulation
 
             if (Phase == SimulationPhase.Beat)
             {
+                // Nothing lives: he walks home through the quiet.
+                _heroTarget = null;
+                MoveHero(dt);
+
                 if (_clock.ElapsedTime >= _beatEndsAt)
                     BeginEncounter();
                 return;
@@ -282,7 +297,10 @@ namespace ToolSmiths.InventorySystem.Simulation
                 _enemies[i].Regenerate(dt);
 
             // Positions advance here and nowhere else, on the tick, so they scale with sim speed and freeze at
-            // zero. Everyone moves before anyone attacks: attacks resolve against this tick's positions.
+            // zero. In a fixed order: the hero chooses his target, the hero moves, the enemies move, and only then
+            // does anyone attack, against this tick's positions.
+            _heroTarget = ChooseHeroTarget();
+            MoveHero(dt);
             MoveEnemies(dt);
 
             ResolveStrike(dt);
@@ -329,6 +347,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         {
             CurrentEncounter++;
             _enemies.Clear();
+            _heroTarget = null;
             _spawnedBrute = 0;
             _spawnedSkirmisher = 0;
             _spawnTimer = _profile.SpawnInterval;
@@ -457,6 +476,27 @@ namespace ToolSmiths.InventorySystem.Simulation
             }
         }
 
+        /// <summary>
+        /// Walk the hero toward his target until it is within his Strike Range, never past it; with no target, walk
+        /// him home. A hero with no movement speed stands where he is.
+        /// </summary>
+        private void MoveHero(float dt)
+        {
+            var step = Math.Max(0f, _hero.MovementSpeed) * _ground.MovementSpeedScale * dt;
+            if (step <= 0f) return;
+
+            if (_heroTarget == null)
+            {
+                HeroPosition = Coordinate.MoveTowards(HeroPosition, _ground.Origin, step);
+                return;
+            }
+
+            var excess = Coordinate.Distance(HeroPosition, _heroTarget.Position) - HeroStrikeRange;
+            if (excess <= 0f) return;
+
+            HeroPosition = Coordinate.MoveTowards(HeroPosition, _heroTarget.Position, Math.Min(step, excess));
+        }
+
         private sealed class NeutralRolls : IRollSource
         {
             public float Next() => 0.5f;
@@ -470,11 +510,13 @@ namespace ToolSmiths.InventorySystem.Simulation
             var interval = 1f / _hero.AttackSpeed;
             if (_strikeTimer < interval || _enemies.Count == 0) return;
 
-            var target = LowestHealthInReach();
+            var target = _heroTarget != null && !_heroTarget.IsDown && InReach(HeroPosition, _heroTarget.Position, HeroStrikeRange)
+                ? _heroTarget
+                : null;
             if (target == null)
             {
-                // Everyone is still walking in: the swing is ready and waits, but nothing banks beyond it, so
-                // arrival is one Strike, not a burst.
+                // His target is still out of reach (he is walking to it, or it is walking in): the swing is ready
+                // and waits, but nothing banks beyond it, so arrival is one Strike, not a burst.
                 _strikeTimer = interval;
                 return;
             }
@@ -562,15 +604,56 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         // ─── deterministic targeting ─────────────────────────────────────────
 
-        private Enemy LowestHealthInReach()
+        /// <summary>
+        /// The enemy the hero fights, by the pattern <see cref="EncounterTuning.HeroTargeting"/> names. Reads
+        /// state and changes none: the tick stores the answer, <see cref="StrikeTarget"/> only peeks at it.
+        /// </summary>
+        private Enemy ChooseHeroTarget() => _tuning.HeroTargeting switch
         {
+            HeroTargeting.WeightedProximity => WeightedProximityTarget(),
+            _ => throw new InvalidOperationException($"Unknown hero targeting {_tuning.HeroTargeting}."),
+        };
+
+        /// <summary>
+        /// Keep the target until it falls. With none, the best-scoring living enemy anywhere. A target out of
+        /// Strike Range gives way to the best-scoring enemy that is inside it, if any is; otherwise he keeps it
+        /// and walks.
+        /// </summary>
+        private Enemy WeightedProximityTarget()
+        {
+            var current = _heroTarget != null && !_heroTarget.IsDown ? _heroTarget : null;
+            if (current == null)
+                return BestScoring(inReachOnly: false);
+
+            if (InReach(HeroPosition, current.Position, HeroStrikeRange))
+                return current;
+
+            return BestScoring(inReachOnly: true) ?? current;
+        }
+
+        /// <summary>
+        /// The living enemy with the lowest <c>w * distance from the origin + (1 - w) * distance from the hero</c>,
+        /// <c>w</c> being <see cref="HeroBehaviour.OriginWeight"/> read live; the earliest spawned on a tie.
+        /// </summary>
+        private Enemy BestScoring(bool inReachOnly)
+        {
+            var weight = Math.Clamp(_behaviour.OriginWeight, 0f, 1f);
+            var range = HeroStrikeRange;
+
             Enemy best = null;
+            var bestScore = 0f;
             for (var i = 0; i < _enemies.Count; i++)
             {
                 var e = _enemies[i];
-                if (e.IsDown || !InReach(HeroPosition, e.Position, HeroStrikeRange)) continue;
-                if (best == null || e.Health < best.Health)
+                if (e.IsDown || (inReachOnly && !InReach(HeroPosition, e.Position, range))) continue;
+
+                var score = weight * Coordinate.Distance(e.Position, _ground.Origin)
+                    + (1f - weight) * Coordinate.Distance(e.Position, HeroPosition);
+                if (best == null || score < bestScore) // strict: the earlier spawn keeps a tie
+                {
                     best = e;
+                    bestScore = score;
+                }
             }
             return best;
         }

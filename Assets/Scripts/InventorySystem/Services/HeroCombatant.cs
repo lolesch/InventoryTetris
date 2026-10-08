@@ -55,6 +55,9 @@ namespace ToolSmiths.InventorySystem.Services
         public float MagicalDamage => _character.GetStatValue(StatName.MagicalDamage);
         public float CastCost => _castCost;
 
+        public float MovementSpeed => _character.GetStatValue(StatName.MovementSpeed);
+        public float? WeaponStrikeRange => _character.IsOutfitted ? WeaponTypes.StrikeRange(_character.Equipment.MainHandType) : null;
+
         public int Level => (int)_character.Level;
 
         public float MagicFind => _character.GetStatValue(StatName.IncreasedItemRarity);

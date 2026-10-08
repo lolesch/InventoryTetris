@@ -10,7 +10,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 {
     /// <summary>
     /// Strikes need reach (issue #207): an enemy hits the hero only while he is within its Strike Range, and
-    /// walking in banks no burst; the hero's Strike only finds a target within his own range. Each test pairs
+    /// walking in banks no burst; the hero's Strike only lands on a target within his own range. Each test pairs
     /// the standard ground with the collapsed default, where the same fight starts at once - the negative
     /// control that shows the range is what holds the Strike back.
     /// </summary>
@@ -156,21 +156,21 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
-        public void StrikeTarget_IsTheLowestHealthEnemyInReach_NotOneStandingOff()
+        public void StrikeTarget_GivesWayToAnEnemyInReach_WhenTheTargetStandsOff()
         {
             var profile = new EncounterProfile(
-                sourceLevel: 5, packed: EnemyArchetype.Brute, rosterBrute: new IntRange(1), rosterSkirmisher: new IntRange(1),
+                sourceLevel: 5, packed: EnemyArchetype.Skirmisher, rosterBrute: new IntRange(1), rosterSkirmisher: new IntRange(1),
                 packBatch: new IntRange(1), packedSpawnWeight: 1f, spawnInterval: 100f,
                 table: FakeLootTable.ForCategory(ItemCategory.Equipment), spawnJitter: 0f, initialSpawn: 2);
             var sim = Sim(Passive(), profile, OnTheGround());
             var brute = sim.Enemies.Single(e => e.Archetype == EnemyArchetype.Brute);
             var skirmisher = sim.Enemies.Single(e => e.Archetype == EnemyArchetype.Skirmisher);
-            Assert.That(sim.StrikeTarget, Is.Null, "premise: both are still walking in");
+            Assert.That(sim.StrikeTarget, Is.SameAs(skirmisher), "premise: both walk in, and the earlier spawn is his target");
 
             for (var i = 0; i < 150; i++) sim.Advance(Tick);
 
-            Assert.That(skirmisher.Health, Is.LessThan(brute.Health), "premise: the skirmisher is the weaker");
-            Assert.That(sim.StrikeTarget, Is.SameAs(brute), "the skirmisher stands outside his reach");
+            Assert.That(Distance(sim, skirmisher), Is.GreaterThan(sim.HeroStrikeRange), "premise: the skirmisher stands outside his reach");
+            Assert.That(sim.StrikeTarget, Is.SameAs(brute), "the Brute is the one inside it");
         }
 
         [Test]

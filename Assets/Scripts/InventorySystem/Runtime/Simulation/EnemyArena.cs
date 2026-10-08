@@ -233,8 +233,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         }
 
         /// <summary>
-        /// Moves the target ring to the view of <see cref="EncounterSimulation.StrikeTarget"/>, which changes as
-        /// health does, after a kill, and is null with no living enemy. Read from <c>_views</c> only: a dying
+        /// Moves the target ring to the view of <see cref="EncounterSimulation.StrikeTarget"/>, the hero's sticky
+        /// target: it stays on one enemy until it falls (or one comes within reach of a hero whose own is not), and is
+        /// null with no living enemy. Read from <c>_views</c> only: a dying
         /// enemy has left it, so it is never marked. Nothing is marked with the switch off or no Encounter.
         /// </summary>
         private void MarkTarget()

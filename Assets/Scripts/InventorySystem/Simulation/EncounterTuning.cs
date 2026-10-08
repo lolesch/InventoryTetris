@@ -40,6 +40,9 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// </summary>
         public GroundTuning Ground { get; set; } = new();
 
+        /// <summary>How the hero picks the enemy he fights. A tuning value until skills can supply it.</summary>
+        public HeroTargeting HeroTargeting { get; set; } = HeroTargeting.WeightedProximity;
+
         /// <summary>Spiral-of-death clamp handed to the <see cref="CombatClock"/>.</summary>
         public int MaxTicksPerAdvance { get; set; } = 8;
 

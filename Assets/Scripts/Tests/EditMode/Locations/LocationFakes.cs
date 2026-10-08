@@ -63,6 +63,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Locations
             public int Level { get; set; } = 1;
             public float MagicFind { get; set; }
             public float IncreasedItemQuantity { get; set; }
+            public float MovementSpeed { get; set; }
+            public float? WeaponStrikeRange { get; set; }
 
             public float HealthFraction => MaxHealth <= 0f ? 0f : Clamp01(Health / MaxHealth);
             public float ResourceFraction => MaxResource <= 0f ? 0f : Clamp01(Resource / MaxResource);

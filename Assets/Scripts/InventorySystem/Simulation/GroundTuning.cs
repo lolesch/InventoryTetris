@@ -40,6 +40,13 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// </summary>
         public float HeroStrikeRange { get; set; } = 1.5f;
 
+        /// <summary>
+        /// Ground units per second the hero walks for each point of his <c>MovementSpeed</c> stat. The stat is
+        /// authored on a scale of hundreds (the default hero has 325), the ground on a scale of tens, so this
+        /// converts: 325 at 0.01 is 3.25 units per second, between a Brute (2) and a Skirmisher (3.5).
+        /// </summary>
+        public float MovementSpeedScale { get; set; } = 0.01f;
+
         /// <summary>The ground the game plays on: radius 10, spawn margin 2.</summary>
         public static GroundTuning Standard() => new() { Radius = 10f, SpawnMargin = 2f };
 
@@ -53,6 +60,8 @@ namespace ToolSmiths.InventorySystem.Simulation
                 throw new System.ArgumentOutOfRangeException(nameof(StopJitter), StopJitter, "Stop jitter is a fraction below 1.");
             if (BearingJitter < 0f || BearingJitter > 1f)
                 throw new System.ArgumentOutOfRangeException(nameof(BearingJitter), BearingJitter, "Bearing jitter is a fraction of 0..1.");
+            if (MovementSpeedScale < 0f)
+                throw new System.ArgumentOutOfRangeException(nameof(MovementSpeedScale), MovementSpeedScale, "Movement speed scale cannot be negative.");
             if (HeroStrikeRange < 0f)
                 throw new System.ArgumentOutOfRangeException(nameof(HeroStrikeRange), HeroStrikeRange, "Strike Range cannot be negative.");
         }
