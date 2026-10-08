@@ -5,9 +5,9 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// targeting and cadence timing; a combatant owns its own health and mitigates its own
     /// incoming damage, so the sim never needs a defender's Armor / resist numbers.
     ///
-    /// Health is exposed in absolute terms because targeting is by absolute HP (the Strike
-    /// picks the single lowest-HP enemy, the Cast the highest-HP — ADR-0010), not by
-    /// fraction: a 60-HP Skirmisher at 90 % outranks a 172-HP Brute at 50 %.
+    /// Health is exposed in absolute terms because the Strike targets by absolute HP (the
+    /// single lowest-HP enemy in reach — ADR-0010), not by fraction: a 60-HP Skirmisher at
+    /// 90 % outranks a 172-HP Brute at 50 %. The Cast aims by position, not health.
     /// </summary>
     public interface ICombatant
     {
