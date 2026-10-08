@@ -17,6 +17,20 @@
 # keeps its own Library, so only the first run pays the full asset import. The checkout is never touched.
 set -u
 
+# Re-run this script under a hidden console. Started without one, every console program below (robocopy,
+# git, python) opens its own window and takes keyboard focus; hidden-run.pyw gives them one to inherit.
+# Output is replayed when the run ends. RUN_TESTS_VISIBLE=1 skips this.
+if [ -z "${RUN_TESTS_HIDDEN:-}" ] && [ -z "${RUN_TESTS_VISIBLE:-}" ] && command -v pythonw >/dev/null 2>&1; then
+  hidden_tmp="$(mktemp -d)"
+  RUN_TESTS_HIDDEN=1 pythonw "$(cygpath -m "$(dirname "$0")/hidden-run.pyw")" \
+    "$(cygpath -m "$hidden_tmp/output.txt")" "$(cygpath -m "$hidden_tmp/status.txt")" \
+    "$(cygpath -m "$BASH")" "$(cygpath -m "$0")" "$@"
+  cat "$hidden_tmp/output.txt" 2>/dev/null
+  status="$(cat "$hidden_tmp/status.txt" 2>/dev/null || echo 1)"
+  rm -rf "$hidden_tmp"
+  exit "$status"
+fi
+
 force_shadow=0
 if [ "${1:-}" = "--shadow" ]; then force_shadow=1; shift; fi
 

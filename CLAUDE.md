@@ -15,6 +15,13 @@ time -> `/code-review`.
 - Execute inline by default. Starting subagents needs the user's decision each time, including
   `/implement-spec`, which runs implementer and merger subagents: ask before spawning, state what
   would run, and wait for a clear yes. One approval covers that one run, never later ones.
+- Subagent model: set `model` on every `Agent` call, sized to the task. Only `haiku` or `sonnet`; never
+  `opus` or `fable`, whatever the task. `haiku` for work with no judgment in it: exploration and search,
+  a merger with no conflicts, running a test or build and reporting the result, a mechanical rename or
+  doc edit. `sonnet` for everything that writes code: an implementer, a ticket that designs a seam or
+  refactors across files, the code-review fix agent, a merger resolving conflicts. When unsure, `sonnet`.
+- Search with `Grep` (`head_limit`, `files_with_matches` first) and read with `Read` `offset`/`limit`.
+  A Bash `grep`, `cat` or `sed -n` result stays in context for every later turn of the run.
 - Before `/implement #N`, run `python dev/frontier.py`. `ready-for-agent` means the spec is
   written, not that the dependencies are closed. If `#N` isn't the frontier, surface that and stop.
   The frontier is derived from each issue's **Blocked by**, so a PR carries no tracker commit.
@@ -48,10 +55,13 @@ Read before writing a script, or during `/code-review`/`/simplify`.
 
 ### Unity verification
 
-`docs/agents/unity-verification.md` — read before a test run, a `Unity_RunCommand`, a compile check, or
-scene authoring on a worktree. `dotnet build` lies; `dev/run-tests.sh [EditMode|PlayMode] [filter]` is
-the verdict and shadows the project by itself while the Editor is open. A bridge run waits on
-`dev/wait-editmode.sh` (a bare `sleep` is rejected). It also covers the scene-save modal.
+`docs/agents/unity-verification.md` — read before a test run, a compile check, or scene authoring on a
+worktree. `dotnet build` lies; `dev/run-tests.sh [EditMode|PlayMode] [filter]` is the verdict and shadows
+the project by itself while the Editor is open.
+
+`docs/agents/unity-bridge.md` — read only before a `Unity_*` bridge call (`Unity_RunCommand`, Play Mode by
+hand). A bridge run waits on `dev/wait-editmode.sh` (a bare `sleep` is rejected). It also covers the
+scene-save modal.
 
 ### Codebase notes
 
