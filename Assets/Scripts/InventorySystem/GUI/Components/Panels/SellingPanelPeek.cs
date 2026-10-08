@@ -6,16 +6,14 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.GUI.Components.Panels
 {
     /// <summary>
-    /// Hold Alt on an open selling panel (the Vendor, the Healer) to see its other tab; let go to land back
-    /// where the player was. One per panel, on the panel's own object, naming the driver of the panel's
-    /// two-panel switch by a serialized reference. The peek itself is <see cref="TwoPanelPeek"/>: this
-    /// component only answers its two questions - is Alt held (<see cref="ModifierKeys.Alt"/>, the helper the
-    /// tooltip's roll-range modifier reads, so both agree on what Alt is) and is the panel open - and hands
-    /// the app losing focus on, because an Alt+Tab never sends the key up.
+    /// The selling panels' (the Vendor, the Healer) Alt key for their <see cref="TwoPanelPeek"/>. One per
+    /// panel, on the panel's own object, naming the driver of the panel's two-panel switch by a serialized
+    /// reference. It answers the peek's two questions - is Alt held (<see cref="ModifierKeys.Alt"/>, the
+    /// helper the tooltip's roll-range modifier reads, so both agree on what Alt is) and is the panel open -
+    /// and hands the app losing focus on, because an Alt+Tab never sends the key up.
     ///
     /// <para>Alt stays "show me more": the tooltip's roll-range modifier fires with it on a hover, which is
-    /// accepted. A peek touches the driver's bool and nothing else - not a sale, a drag, a purchase or the
-    /// Inventory Context.</para>
+    /// accepted.</para>
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class SellingPanelPeek : MonoBehaviour
@@ -23,9 +21,9 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
         [SerializeField, RequireInterface(typeof(ITwoPanelDriver))]
         private Object driver;
 
-        private static readonly List<SimplePanel> Ancestry = new();
+        private ITwoPanelPeek peek;
 
-        private TwoPanelPeek peek;
+        private static readonly List<SimplePanel> Ancestry = new();
 
         // Subscribed in OnEnable, not Awake: with domain reload off a scene object survives Play and Awake
         // does not run again.
