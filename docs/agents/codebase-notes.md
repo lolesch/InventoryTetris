@@ -1,6 +1,6 @@
 # Codebase Notes
 
-Durable, hard-won facts about how *this* repo behaves that you can't get from the code, git history, or CLAUDE.md. Read before touching assembly definitions or scripting a multi-file edit, and when a build error doesn't match your diff. Compile and test verification (headless runs, the `unity-mcp` bridge, worktree batch mode, Play Mode driving) is in `unity-verification.md`.
+Durable, hard-won facts about how *this* repo behaves that you can't get from the code, git history, or CLAUDE.md. Read before touching assembly definitions or scripting a multi-file edit, and when a build error doesn't match your diff. Compile and test verification is in `unity-verification.md` (headless runs, worktree batch mode, batch Play Mode) and `unity-bridge.md` (the `unity-mcp` bridge, Play Mode by hand).
 
 This file is the shared channel for that knowledge across machines — an agent's private memory does not travel between devices, this does. Keep it current; prune what stops being true.
 

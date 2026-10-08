@@ -15,6 +15,11 @@ time -> `/code-review`.
 - Execute inline by default. Starting subagents needs the user's decision each time, including
   `/implement-spec`, which runs implementer and merger subagents: ask before spawning, state what
   would run, and wait for a clear yes. One approval covers that one run, never later ones.
+- Subagent model: set `model` on every `Agent` call. `sonnet` for an implementer of a well-specified
+  ticket, a merger and an exploration subagent; the session's model for a ticket that designs a new
+  seam or refactors across files, and for the code-review fix agent.
+- Search with `Grep` (`head_limit`, `files_with_matches` first) and read with `Read` `offset`/`limit`.
+  A Bash `grep`, `cat` or `sed -n` result stays in context for every later turn of the run.
 - Before `/implement #N`, run `python dev/frontier.py`. `ready-for-agent` means the spec is
   written, not that the dependencies are closed. If `#N` isn't the frontier, surface that and stop.
   The frontier is derived from each issue's **Blocked by**, so a PR carries no tracker commit.
@@ -48,10 +53,13 @@ Read before writing a script, or during `/code-review`/`/simplify`.
 
 ### Unity verification
 
-`docs/agents/unity-verification.md` — read before a test run, a `Unity_RunCommand`, a compile check, or
-scene authoring on a worktree. `dotnet build` lies; `dev/run-tests.sh [EditMode|PlayMode] [filter]` is
-the verdict and shadows the project by itself while the Editor is open. A bridge run waits on
-`dev/wait-editmode.sh` (a bare `sleep` is rejected). It also covers the scene-save modal.
+`docs/agents/unity-verification.md` — read before a test run, a compile check, or scene authoring on a
+worktree. `dotnet build` lies; `dev/run-tests.sh [EditMode|PlayMode] [filter]` is the verdict and shadows
+the project by itself while the Editor is open.
+
+`docs/agents/unity-bridge.md` — read only before a `Unity_*` bridge call (`Unity_RunCommand`, Play Mode by
+hand). A bridge run waits on `dev/wait-editmode.sh` (a bare `sleep` is rejected). It also covers the
+scene-save modal.
 
 ### Codebase notes
 
