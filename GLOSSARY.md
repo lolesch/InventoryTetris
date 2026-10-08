@@ -382,8 +382,8 @@ prototype starting points but are not frozen.
 
 **Strike**:
 The hero's physical attack — one weapon hit on a `1 / AttackSpeed` cadence against the
-lowest-HP enemy within the hero's **Strike Range** - an enemy still walking in cannot be
-struck. Always available; gear only scales it. Enemies Strike too, once the hero is within their
+hero's one **Sticky Target**, walked to until it is within his **Strike Range** - an enemy
+still walking in cannot be struck. Always available; gear only scales it. Enemies Strike too, once the hero is within their
 own Strike Range, and each archetype declares its Strike's **damage type**: a Brute's is
 physical (mitigated by the hero's Armor), a Skirmisher's magical (by his Magic Resist). Enemies
 have a Magic Resist of their own, so the hero's Cast is mitigated like his Strike.
@@ -480,8 +480,8 @@ _Avoid_: tank, heavy, bruiser, ogre, elite
 
 **Skirmisher**:
 The fragile enemy archetype — low health, fast light hits (magical damage type), no Armor but
-some Magic Resist, high XP. Like every enemy it is built from modifiable stats. The
-**Strike** (lowest-HP targeting) tends to pick off Skirmishers; a swarm of them is what
+some Magic Resist, high XP. Like every enemy it is built from modifiable stats.
+A swarm of them is a clump for the **Cast** to catch; it is what
 an area magical build clears best, and what a single-target build gets overwhelmed by.
 Parametric off the Location's source level.
 _Avoid_: minion, add, runner, rusher, trash

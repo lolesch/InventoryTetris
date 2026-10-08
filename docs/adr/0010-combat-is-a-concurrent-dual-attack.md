@@ -1,5 +1,5 @@
 ---
-status: accepted — the /prototype (issue #18) has run twice; see "Prototype outcome" (pass 1) and "Second amendment" (pass 2)
+status: accepted — the /prototype (issue #18) has run twice; see "Prototype outcome" (pass 1) and "Second amendment" (pass 2); targeting superseded by "Fifth amendment"
 ---
 
 # Combat is a concurrent dual attack, one half geared for each damage type
@@ -14,9 +14,12 @@ The hero runs **two concurrent auto-attacks** on independent timers, one action
 resolved per tick:
 
 - **Strike** — physical. Flat `PhysicalDamage`, cadence `1 / AttackSpeed`, hits the
-  single lowest-HP engaged enemy.
-- **Cast** — magical, area. Flat `MagicalDamage` to each of the 3 highest-HP engaged
-  enemies, cadence `castCost / ResourceRegeneration` in the steady state.
+  hero's one sticky target, walked to within Strike Range *(originally the single
+  lowest-HP engaged enemy — see "Fifth amendment")*.
+- **Cast** — magical, area. Flat `MagicalDamage` to every enemy inside an area aimed at
+  the densest cluster within Cast Range, cadence `castCost / ResourceRegeneration` in
+  the steady state *(originally each of the 3 highest-HP engaged enemies — see "Fifth
+  amendment")*.
 
 Both are innate — gear only moves the numbers. A physical build stacks `PhysicalDamage`
 and `AttackSpeed`; a magical build stacks `MagicalDamage`, `Resource` and
@@ -50,8 +53,9 @@ build keeps Engagement low to cut incoming hits it cannot out-clear anyway.
 ## Consequences
 
 - This reverses two lines in the spec's Out of Scope on purpose. **Targeting** now
-  exists — but minimal and deterministic (lowest-HP for the Strike, the 3 highest-HP
-  for the Cast, no RNG). A **cast rhythm** now exists — but as a resource economy, not a
+  exists — but minimal and deterministic (originally lowest-HP for the Strike, the 3
+  highest-HP for the Cast, no RNG; now the sticky target and the densest cluster, see
+  "Fifth amendment"). A **cast rhythm** now exists — but as a resource economy, not a
   cooldown. "No spatial Field" still holds: Engagement and Packs are counts, never
   positions.
 - `CalculateDamageOutput` (`BaseCharacterExtensions.cs:30`) splits. The Strike drops
@@ -142,7 +146,8 @@ balance outcome.
 
 ### Constants (starting points — the prototype file is the tuning surface)
 
-- Cast: `castCost` **16** flat, `castTargets` **3**, `castCadence` **0.35 s** (the burst
+- Cast: `castCost` **16** flat, ~~`castTargets` **3**~~ *(gone: the Cast hits whoever is
+  in its area, see "Fifth amendment")*, `castCadence` **0.35 s** (the burst
   ceiling — must stay well under the emergent steady cadence `castCost /
   ResourceRegeneration` or there is no burst headroom at all).
 - Clock: `tick` **0.1 s** (10 Hz), inter-Encounter `beat` **1 s**.
@@ -187,6 +192,9 @@ player-observable consequence**. It was a spawn-batching detail. Pass 2 of the
 | targeted by | the **Cast** (highest-HP) | the **Strike** (lowest-HP) |
 | curve @ S5 | HP ≈ 172, ≈ 2.8 DPS/body, ≈ 8 % Armor | HP ≈ 60, ≈ 4.8 DPS/body, 0 % Armor |
 
+*(The "targeted by" row is superseded: the Cast aims at the densest cluster, the Strike
+at the sticky target — "Fifth amendment".)*
+
 Both use `stat = base + perLevel · SourceLevel^exp`, one shared constant set for the
 whole MVP (curves tabled in the prototype's `FINDINGS.md`). A Location **Packs** one
 archetype — it arrives in `packBatch`-sized groups — and trickles the other in one at a
@@ -230,7 +238,8 @@ Encounter boundary's teeth, and is what justifies keeping "Encounter" as a term.
   kill" **splits**: XP on clear, Drops (items *and* coins) per kill. Spec story 38
   splits to match; spec story 12 ("XP bar fills as Encounters are cleared") is kept and
   is now literally how XP arrives.
-- **This defuses the auto-focus worry.** The lowest-HP Strike still eats Skirmishers
+- **This defuses the auto-focus worry.** The lowest-HP Strike *(since replaced by the
+  sticky target, see "Fifth amendment")* still ate Skirmishers
   first (time-to-kill ≈ 1–3 s vs Brutes' 4–9 s), but with no per-kill XP that is just
   sensible threat triage — kill the fast, numerous bodies to cut incoming — not an
   exploit. There is no "focus the high-XP target for early XP" play.
@@ -261,7 +270,7 @@ magical, and gear opens it on a sharp cliff (physical crosses "dies at Encounter
   Encounter boundary's only observable effect. Two Strike-only archetypes from the shared
   curves.
 - **Constants** (starting points; the prototype file is the tuning surface): `castCost`
-  16, `castTargets` 3, `castCadence` 0.35 s, `tick` 0.1 s, `beat` 1 s. Build defence is a
+  16, ~~`castTargets` 3~~ *(gone, see "Fifth amendment")*, `castCadence` 0.35 s, `tick` 0.1 s, `beat` 1 s. Build defence is a
   shared budget (Health 442 / Armor 27; hybrid spends its leftover damage on 476 / 30);
   damage shape is the differentiator. Full tables in the prototype's `FINDINGS.md`.
 
@@ -303,5 +312,21 @@ regeneration.
   and no more than it had to lose (for the hero, the Shield's absorption plus the Health lost). Only the combatant
   knows both its resist and its remaining pool, so `ICombatant.ReceivePhysical` / `ReceiveMagical` return it; the
   sim's typed hit events carry it beside the raw amount.
-- The "Cast hits the highest-HP enemies, Strike the lowest-HP" targeting lines above are superseded separately by
-  the spatial-combat spec's sticky Strike target and area Cast.
+- The "Cast hits the highest-HP enemies, Strike the lowest-HP" targeting lines above are superseded by the Fifth
+  amendment below.
+
+## Fifth amendment - sticky Strike target and area Cast (2026-10-08, spatial-combat spec)
+
+Supersedes the original targeting: the Strike is no longer "the single lowest-HP engaged enemy" and the Cast no
+longer hits "the 3 highest-HP engaged enemies" (`castTargets` is gone). Enemies now have positions, so targeting is
+spatial (spec `dev/specs/2026-10-08-spatial-combat-design.md`).
+
+- **Strike** - the hero's one **Sticky Target**, chosen by weighted proximity (Origin Weight) and kept until it
+  falls; he walks until it is within his Strike Range, so an enemy still walking in cannot be struck.
+- **Cast** - an area aimed at the **densest cluster** of enemies within Cast Range (a tie goes to the one nearest
+  the hero, then the earliest spawned), hitting every enemy inside the shape. A shape that would catch nobody does
+  not fire and spends nothing.
+
+The "Brute is targeted by the Cast / Skirmisher by the Strike" table row and the auto-focus reasoning in the second
+amendment are history: a Skirmisher swarm is now a clump for the area Cast to catch, not a lowest-HP queue for the
+Strike. Cadence, cost and the `CastThreshold` latch are unchanged.
