@@ -170,7 +170,9 @@ cannot be picked up from any shelf at all.
   up. A half-stack pick-up with Ctrl is priced for the half. The drop's existing gate stays as
   the transaction-level guarantee. Shift-click and right-click already refuse silently and are
   unchanged.
-- **Tabs are `PanelToggle`s in a group of their own.** Each selling panel has a Supply toggle
+- **Tabs are `PanelToggle`s in a group of their own.** (Amended 2026-10-07: the tab pair is a
+  two-panel switch, not two `PanelToggle`s, see `dev/specs/2026-10-07-two-panel-switch-design.md`;
+  the rest of this decision stands.) Each selling panel has a Supply toggle
   and a Sold toggle in a `ToggleGroup` that forbids switch-off, so one tab is always showing. A
   tab toggle never requests an Inventory Context: it chooses a view inside a panel that is
   already open, and must not be a `SidePanelToggle`. A panel returns to its Supply tab when it
@@ -236,7 +238,9 @@ cannot be picked up from any shelf at all.
 - Tuning the rebuy price. It is the Supply price, exactly; a separate buy-back markup is later.
 - Feedback for a refused shift-click. A refused sale or buy is a silent no-op, as an
   unaffordable buy already is.
-- Switching to the Sold tab on a sale, an undo-last-sale button, and selling from the Stash.
+- Switching to the Sold tab on a sale, an undo-last-sale button, and selling from the Stash. (A
+  held key now shows the Sold tab, see the 2026-10-07 two-panel switch spec; a sale still never
+  does.)
 - Persisting the Sold tab. It is not saved, like Supply stock; the save work owns the decision.
 - A Restock cadence. Today a Restock fires from `Awake` and scene buttons; when it fires in play
   is a separate question.
