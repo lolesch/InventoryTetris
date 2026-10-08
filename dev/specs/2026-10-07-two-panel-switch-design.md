@@ -33,12 +33,12 @@ buttons the player sees stay as they are: the driver is one of them, and the oth
 **mirror toggle** that names the driver, in the same group, which forbids switch-off, so
 clicking either button flips the bool.
 
-The **peek** flips that bool while a key is held and sets it back on release. It is a real
-selection, not a view-only overlay: it goes through the group, so both tab buttons follow. On
-release it restores the state it captured only if nothing else has written the bool since the
-peek began. A click on the home tab and a panel's reset on closing are both writes, and each
-cancels the restore (both leave the player home). A click on the tab being peeked at is refused
-because it is already on, writes nothing, and changes nothing: on release the player is home. Holding the key, closing the panel, reopening on the Supply and releasing leaves
+The **peek** switches the pair to its other button while a key is held and back on release. It
+is a real selection, not a view-only overlay: it is a click made through the group, so both tab
+buttons follow. On release it switches back only if the pair is still where the peek put it. A
+click on the home tab moves the pair on, and the group's reset on closing stands the peek down;
+each leaves the player where they are. A click on the tab being peeked at is refused because it
+is already on and changes nothing: on release the player is home. Holding the key, closing the panel, reopening on the Supply and releasing leaves
 the panel on the Supply.
 
 The key is Alt. Shift moves items, Ctrl manipulates stacks, Alt shows more information about
@@ -80,14 +80,14 @@ the player's things.
     or neither, cannot be authored, whatever else shares the group.
 17. As a developer, I want the peek to name its driver by a serialized reference, so that
     renaming a scene object cannot silently disable it.
-18. As a developer, I want the peek's restore to be one rule - nothing else wrote the bool -
-    so that a click, a reset or a Run phase change cancels it without a case of its own.
-19. As a developer, I want the group's reset on closing to write the bool through the same path
-    as a click, so that the peek needs no knowledge of resets.
+18. As a developer, I want the peek's restore to be one rule - the pair is still where the peek
+    put it, and the group has not reset - so that a click cancels it without a case of its own.
+19. As a developer, I want the group to announce its reset on closing, so that the peek can
+    stand down even where the reset found the pair already home.
 20. As a developer, I want the peek's "key held" and "panel open" answers injectable, so that
     a test drives it without a keyboard or a canvas.
 21. As a developer, I want a warning when a tab pair is authored wrongly (no group, a group
-    that lets the user switch off, the driver itself the group's first member, a mirror whose
+    that lets the user switch off, no first member, a mirror whose
     driver is unset or in another group), so that a wiring slip is loud.
 22. As a developer, I want the Map's InTown and InFields faces to be able to use the same
     switch later, so that the two-panel shape is not invented twice.
@@ -114,18 +114,19 @@ the player's things.
   Context: it chooses a view inside a panel that is already open. This carries over the spec
   2026-10-02 decision unchanged.
 - **The peek is its own component on the selling panel,** one per panel, with a serialized
-  reference to the driver. It does nothing unless its panel is open, evaluated every frame as
-  "key held and panel open", not on the key's down edge. While that holds and the bool is at
-  its captured value, it sets the bool to the other state through the group; when it stops
-  holding, it restores.
-- **One restore rule.** The driver counts every write to its bool. The peek remembers the count
-  after its own write and restores only if the count is unchanged on release. A click, the
-  group's reset on closing and any future driver of the bool (a Run phase) are all writes and
-  cancel the restore without a case each.
-- **A reset is a write through the same path.** The group resets to its first member when the
-  panel finishes closing (the 2026-10-05 amendment, already built); the first member must not
-  be the driver, so the reset switches it off - in the Vendor and the Healer it is the Supply
-  (mirror) toggle. That write reaches the driver's own toggle callback exactly as a click does.
+  reference to the driver and its mirror. It does nothing unless its panel is open, evaluated
+  every frame as "key held and panel open", not on the key's down edge. When that first holds,
+  it switches on whichever of the pair is off, through the group; when the key is let go, it
+  switches the former one back on.
+- **One restore rule.** The peek restores only while the group's active member is still the one
+  it switched on, and only if the group has not reset. A click on the home tab changes the
+  active member and so cancels; the group's reset on closing raises an event the peek listens
+  to, because a reset that finds the pair already home changes nothing to see. No counters.
+- **Either button may be home.** The group resets to its first member when the panel finishes
+  closing (the 2026-10-05 amendment, already built), and the author says which button that is
+  by switching it on in the group - in the Vendor and the Healer the driver is the Supply tab
+  and the first member. The reset reaches the driver's own toggle callback exactly as a click
+  does, so the driver needs no case for it.
 - **Where a peek is not allowed to reach.** The peek touches the bool and nothing else: not a
   sale, not a drag, not a purchase, not the Inventory Context. A held purchase dropped on the
   Sold tab returns to its origin free, as spec 2026-10-02 already says.
@@ -156,8 +157,7 @@ the player's things.
   Tests assert on which panel is showing, which toggle is on and the bool - never on tweens,
   sprites or event counts. The peek's two injected answers make it testable at the same seam.
 - **What makes a good test here.** A test names the rule it protects: the bool has exactly two
-  states; the mirror follows the driver; a peek restores unless something else wrote the
-  bool; a reset on closing cancels a pending restore; a peek does nothing with its panel
+  states; the mirror follows the driver; a peek restores unless the pair has moved on; a reset on closing cancels a pending restore; a peek does nothing with its panel
   closed.
 - **Modules tested:**
   - the two-panel switch - off shows A, on shows B, a click on either button flips both, the
@@ -168,8 +168,9 @@ the player's things.
     it; hold, click the peeked tab (refused), release returns home; hold, close the panel, reopen, release leaves the Supply; a hold begun before
     the panel opens peeks on open; a hold with the panel closed does nothing; losing focus
     releases;
-  - the group's first-member rule - a reset returns the pair to the off state through the
-    driver, whichever member other than the driver is first.
+  - the group's first-member rule - a reset returns the pair to its first member through the
+    driver's own toggle callback, whichever of the pair that is, and raises the group's event
+    even where the pair is already home.
 - **Prior art.** `PanelToggleTests` and `ToggleGroupTests` for the toggle-and-group fixtures;
   `PanelGroupTests` for panels reacting to a state; the pause hotkey's tests for an injected
   key predicate.
