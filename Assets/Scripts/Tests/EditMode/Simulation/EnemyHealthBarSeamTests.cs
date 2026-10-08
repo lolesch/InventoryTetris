@@ -65,19 +65,21 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
-        public void ReceiveMagical_IgnoresArmor()
+        public void ReceiveMagical_AppliesMagicResistNotArmor()
         {
             var brute = new Enemy(EnemyArchetype.Brute, sourceLevel: 5);
+            var expected = 10f * (1f - brute.MagicResistPercent * 0.01f);
 
             brute.ReceiveMagical(10f);
 
-            Assert.That(brute.Health, Is.EqualTo(brute.MaxHealth - 10f).Within(1e-3f));
+            Assert.That(brute.MagicResistPercent, Is.LessThan(brute.ArmorPercent), "the test needs a body whose two resists differ");
+            Assert.That(brute.Health, Is.EqualTo(brute.MaxHealth - expected).Within(1e-3f));
         }
 
         [Test]
         public void HealthFraction_TracksTheResource()
         {
-            var skirmisher = new Enemy(EnemyArchetype.Skirmisher, sourceLevel: 5);
+            var skirmisher = new Enemy(EnemyArchetype.Skirmisher, sourceLevel: 5).WithoutMagicResist();
 
             skirmisher.ReceiveMagical(skirmisher.MaxHealth / 4f);
 
@@ -87,7 +89,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         [Test]
         public void Damage_RaisesCurrentHasChanged_WithPreviousNewAndTotal()
         {
-            var skirmisher = new Enemy(EnemyArchetype.Skirmisher, sourceLevel: 5);
+            var skirmisher = new Enemy(EnemyArchetype.Skirmisher, sourceLevel: 5).WithoutMagicResist();
             var seen = new List<(float previous, float current, float total)>();
             skirmisher.HealthResource.CurrentHasChanged += (p, c, t) => seen.Add((p, c, t));
 
@@ -102,7 +104,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         [Test]
         public void NonPositiveDamage_ChangesNothingAndRaisesNothing()
         {
-            var skirmisher = new Enemy(EnemyArchetype.Skirmisher, sourceLevel: 5);
+            var skirmisher = new Enemy(EnemyArchetype.Skirmisher, sourceLevel: 5).WithoutMagicResist();
             var raised = 0;
             skirmisher.HealthResource.CurrentHasChanged += (_, _, _) => raised++;
 
@@ -116,7 +118,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         [Test]
         public void Overkill_ClampsToZero_AndDepletesOnce()
         {
-            var skirmisher = new Enemy(EnemyArchetype.Skirmisher, sourceLevel: 5);
+            var skirmisher = new Enemy(EnemyArchetype.Skirmisher, sourceLevel: 5).WithoutMagicResist();
             var depleted = 0;
             skirmisher.HealthResource.CurrentHasDepleted += () => depleted++;
 
@@ -132,7 +134,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         [Test]
         public void TheResourceCarriesItsWholeSurface_ChangeDepletedAndRecharged()
         {
-            var skirmisher = new Enemy(EnemyArchetype.Skirmisher, sourceLevel: 5);
+            var skirmisher = new Enemy(EnemyArchetype.Skirmisher, sourceLevel: 5).WithoutMagicResist();
             var log = new List<string>();
             var resource = skirmisher.HealthResource;
             resource.CurrentHasChanged += (_, _, _) => log.Add("changed");

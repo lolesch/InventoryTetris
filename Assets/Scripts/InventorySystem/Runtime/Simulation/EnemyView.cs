@@ -1,3 +1,4 @@
+using Submodules.Utility.Extensions;
 using ToolSmiths.InventorySystem.Geometry;
 using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
@@ -9,11 +10,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// One enemy figure in the arena (issue #176): a sprite and the existing health bar, bound to one
     /// <see cref="Enemy"/> at a time and pooled by <see cref="EnemyArena"/>, the only intended caller.
     /// <para>
-    /// The root is moved by the arena and never flipped. The sprite child is the only thing that is,
+    /// The root is moved by the arena - to where the sim says the enemy stands, projected, never walked by
+    /// the view itself (ADR-0018) - and never flipped. The sprite child is the only thing that is,
     /// because a flipped root would mirror the bar's fill direction and its text.
     /// </para>
     /// <para>
-    /// A pooled view is fully reset on <see cref="Unbind"/>: position, facing, visibility, walk-in. A stale
+    /// A pooled view is fully reset on <see cref="Unbind"/>: position, facing, visibility. A stale
     /// <c>scale.x = -1</c> on the next enemy is the bug that is designed against.
     /// </para>
     /// </summary>
@@ -33,15 +35,13 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         // Hides a view that has no position yet, so a fresh one never flashes at the arena's origin.
         private CanvasGroup _visibility;
         private EnemyHitFlash _hitFlash;
-        private EnemyDamageNumbers _damageNumbers;
         private EnemyHitShake _hitShake;
 
         private RectTransform _rect;
-        private EnemyVisuals.Entry _entry;
         private int _sign = 1;
         private float _dyingElapsed;
         private float _dyingDuration;
-        private ArenaWalk _walk;
+        private bool _placed;
 
         private RectTransform Rect => _rect ? _rect : _rect = (RectTransform)transform;
 
@@ -51,7 +51,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _sprite = spriteImage.rectTransform;
             _health = GetComponentInChildren<EnemyHealthBarDisplay>(true);
             _visibility = GetComponent<CanvasGroup>();
-            _damageNumbers = GetComponent<EnemyDamageNumbers>();
             _hitFlash = GetComponentInChildren<EnemyHitFlash>(true);
             _hitShake = GetComponentInChildren<EnemyHitShake>(true);
         }
@@ -59,8 +58,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// <summary>The enemy this view stands for; null while pooled.</summary>
         public Enemy Enemy { get; private set; }
 
-        /// <summary>Where on the ring this view stands, radians. Picked once at spawn and kept until it falls.</summary>
-        public float SlotAngle { get; private set; }
+        /// <summary>
+        /// Where the enemy stood on the ground when the view was last placed. A dying view keeps it: only the
+        /// link to the enemy is cut, so the figure fades out where it fell, and the depth sort still reads it.
+        /// </summary>
+        public Coordinate GroundPosition { get; private set; }
 
         /// <summary>The sprite's <c>scale.x</c> sign: +1 faces right, -1 faces left.</summary>
         public int FacingSign => _sign;
@@ -68,17 +70,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// <summary>Whether the enemy fell and the view is fading out. Never a target for the highlight.</summary>
         public bool IsDying { get; private set; }
 
-        /// <summary>Whether the view has been put in the arena since it was bound: on the walk-in's start or beyond.</summary>
-        public bool IsPlaced => _walk.Started;
-
-        /// <summary>Whether the walk-in has reached the ring since the view was bound. Reset in <see cref="Unbind"/>.</summary>
-        public bool HasArrived => _walk.Arrived;
+        /// <summary>Whether the view has been put in the arena since it was bound. Reset in <see cref="Unbind"/>.</summary>
+        public bool IsPlaced => _placed;
 
         /// <summary>The hit flash feedback, or null when the prefab has none.</summary>
         public EnemyHitFlash HitFlash => _hitFlash;
-
-        /// <summary>The damage number feedback, or null when the prefab has none.</summary>
-        public EnemyDamageNumbers DamageNumbers => _damageNumbers;
 
         /// <summary>The hit shake feedback, or null when the prefab has none.</summary>
         public EnemyHitShake HitShake => _hitShake;
@@ -96,12 +92,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 highlight.enabled = on && Enemy != null && !IsDying;
         }
 
-        /// <summary>Stand for <paramref name="enemy"/> on the ring at <paramref name="slotAngle"/>, dressed as <paramref name="entry"/> says.</summary>
-        public void Bind(Enemy enemy, EnemyVisuals.Entry entry, float slotAngle)
+        /// <summary>Stand for <paramref name="enemy"/>, dressed as <paramref name="entry"/> says. Hidden until it is first placed.</summary>
+        public void Bind(Enemy enemy, EnemyVisuals.Entry entry)
         {
             Enemy = enemy;
-            _entry = entry;
-            SlotAngle = slotAngle;
 
             spriteImage.sprite = entry.Sprite;
             spriteImage.enabled = entry.Sprite != null;
@@ -115,7 +109,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         /// <summary>
         /// The enemy fell: let go of it and fade out over <paramref name="duration"/> sim seconds, in
-        /// place. Whatever the enemy's last hit queued (flash, number) may still play, because only the
+        /// place. Whatever the enemy's last hit queued (flash, shake) may still play, because only the
         /// link to the enemy is cut, not the view's own state. The arena drives <see cref="AdvanceDying"/>
         /// and releases the view when that reports it finished.
         /// </summary>
@@ -136,7 +130,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             _dyingElapsed += simDelta;
 
-            // A view that died before it was ever put on the ring is still invisible; leave it so.
+            // A view that died before it was ever put in the arena is still invisible; leave it so.
             if (IsPlaced)
                 _visibility.alpha = ArenaLayout.DyingAlpha(_dyingElapsed, _dyingDuration);
 
@@ -153,9 +147,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (_hitFlash != null)
                 _hitFlash.Detach();
 
-            // Likewise only the listening: the killing blow's number is flushed while the view fades.
-            if (_damageNumbers != null)
-                _damageNumbers.Detach();
             // Same for the shake: the killing blow's jolt settles on its own.
             if (_hitShake != null)
                 _hitShake.Detach();
@@ -163,7 +154,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             Enemy = null;
         }
 
-        /// <summary>Let go of the enemy and clear every pooled state: position, facing, flash tint, shake offset, target ring, visibility, the walk-in, dying.</summary>
+        /// <summary>Let go of the enemy and clear every pooled state: position, facing, flash tint, shake offset, target ring, visibility, dying.</summary>
         public void Unbind()
         {
             Detach();
@@ -172,19 +163,16 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (_hitFlash != null)
                 _hitFlash.Unbind();
 
-            // Shows what a release without a fade still owes, then drops the rest: no pending damage is pooled.
-            if (_damageNumbers != null)
-                _damageNumbers.Unbind();
             // Sprite back at rest: a pooled view starts with zero shake offset.
             if (_hitShake != null)
                 _hitShake.Unbind();
             SetHighlighted(false);
 
-            SlotAngle = 0f;
+            GroundPosition = default;
             IsDying = false;
             _dyingElapsed = 0f;
             _dyingDuration = 0f;
-            _walk = default;
+            _placed = false;
             _sign = 1;
 
             _sprite.localScale = Vector3.one;
@@ -194,33 +182,26 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         }
 
         /// <summary>
-        /// Walk the view in toward <paramref name="anchor"/> and turn it toward it. A view not yet placed
-        /// starts <paramref name="spawnMargin"/> beyond its slot and shows itself; it then walks straight
-        /// at the anchor at its archetype's speed and stops on the ring, where it stays on its slot.
+        /// Stand at <paramref name="canvasPosition"/> and face <paramref name="facingSign"/>, and show the view if
+        /// this is its first placement. The arena works both out from the sim's ground (ADR-0018); the view
+        /// only keeps them.
         /// </summary>
-        /// <param name="anchor">The hero anchor in the arena's anchored space.</param>
-        /// <param name="deadZone">Horizontal distance under which the facing is kept, so an enemy straight
-        /// above or below the hero does not flicker.</param>
-        /// <param name="simDelta">The sim's delta for this frame (wall delta times sim speed; 0 while paused).</param>
-        /// <param name="spawnMargin">Canvas units beyond the ring a new view starts at.</param>
+        /// <param name="canvasPosition">The projected position in the arena's anchored space.</param>
+        /// <param name="groundPosition">Where the enemy stands on the sim's ground; the depth sort reads it.</param>
+        /// <param name="facingSign">+1 faces right, -1 faces left.</param>
         /// <returns>Whether the view moved.</returns>
-        public bool PlaceAround(Vector2 anchor, float deadZone, float simDelta, float spawnMargin)
+        public bool Place(Vector2 canvasPosition, Coordinate groundPosition, int facingSign)
         {
-            var wasPlaced = IsPlaced;
-            if (!wasPlaced)
-                _walk = ArenaWalk.Begin(SlotAngle, _entry.RingRadiusX, _entry.RingRadiusY, spawnMargin);
-
-            _walk.Step(_entry.ApproachSpeed * Mathf.Max(0f, simDelta), SlotAngle, _entry.RingRadiusX, _entry.RingRadiusY);
-
-            var position = anchor + _walk.Offset;
-            var moved = !wasPlaced || (Rect.anchoredPosition - position).sqrMagnitude > 1e-6f;
+            var moved = !_placed || (Rect.anchoredPosition - canvasPosition).sqrMagnitude > 1e-6f;
             if (moved)
-                Rect.anchoredPosition = position;
+                Rect.anchoredPosition = canvasPosition;
+            GroundPosition = groundPosition;
 
-            _sign = ArenaLayout.FacingSign(position.x, anchor.x, _sign, deadZone);
+            _sign = facingSign;
             if (!Mathf.Approximately(_sprite.localScale.x, _sign))
                 _sprite.localScale = new Vector3(_sign, 1f, 1f);
 
+            _placed = true;
             _visibility.alpha = 1f;
 
             return moved;

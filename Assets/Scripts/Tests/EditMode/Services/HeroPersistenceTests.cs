@@ -92,6 +92,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             hero.Behaviour.RetreatHealthFraction = 0.25f;
             hero.Behaviour.RecallBagFillFraction = 0.75f;
             hero.Behaviour.CastThreshold = 0.6f;
+            hero.Behaviour.OriginWeight = 0.8f;
             hero.Behaviour.LootFilterMinimum = ItemRarity.Rare;
 
             hero.SelectedLocation = thornwood;
@@ -147,6 +148,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(now.Behaviour.RetreatHealthFraction, Is.EqualTo(0.25f));
             Assert.That(now.Behaviour.RecallBagFillFraction, Is.EqualTo(0.75f));
             Assert.That(now.Behaviour.CastThreshold, Is.EqualTo(0.6f));
+            Assert.That(now.Behaviour.OriginWeight, Is.EqualTo(0.8f));
             Assert.That(now.Behaviour.LootFilterMinimum, Is.EqualTo(ItemRarity.Rare));
 
             Assert.That(now.SelectedLocation, Is.SameAs(thornwood));
@@ -316,6 +318,15 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(ok, Is.True);
             Assert.That(report.Skipped.Single().Reason, Is.EqualTo(SkipReason.Unreadable));
             Assert.That(after.Hero.Level, Is.GreaterThan(1u), "the rest of the hero loaded");
+        }
+
+        [Test]
+        public void ASaveFromBeforeTheOriginWeightSlider_LoadsItAtItsDefault_NotAtZero()
+        {
+            var saved = JsonUtility.FromJson<BehaviourDto>("{\"engagement\":4}");
+
+            Assert.That(saved.originWeight, Is.EqualTo(HeroBehaviour.DefaultOriginWeight), "a missing field is not a weight of 0");
+            Assert.That(JsonUtility.FromJson<BehaviourDto>("{\"originWeight\":0}").originWeight, Is.Zero, "negative control: a written 0 is read");
         }
     }
 }

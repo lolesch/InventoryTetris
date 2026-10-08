@@ -389,12 +389,16 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         /// Health. The Encounter sim's enemies are not heroes, so the hero adapter (issue #43)
         /// routes their Strikes straight here.
         /// </summary>
-        public void ReceiveDamage(DamageType damageType, float incomingDamage)
+        /// <returns>
+        /// The amount actually lost, after mitigation: what the Shield absorbed plus what left the
+        /// Health, so never more than the hero had. 0 for a hero already down or invincible.
+        /// </returns>
+        public float ReceiveDamage(DamageType damageType, float incomingDamage)
         {
             var health = GetResource(StatName.Health);
 
             if (health.IsDepleted)
-                return;
+                return 0f;
 
             var mitigatedDamage = CalculateReceivingDamage(damageType, incomingDamage);
 
@@ -407,9 +411,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
                 Mathf.Min(mitigatedDamage - unshieldedDamage, shield.TotalValue),
                 Mathf.Min(unshieldedDamage, health.TotalValue));
 
+            var healthBefore = health.CurrentValue;
             health.RemoveFromCurrent(unshieldedDamage);
 
             //AddReceivedDPS(healthDamage);
+
+            return mitigatedDamage - unshieldedDamage + (healthBefore - health.CurrentValue);
         }
 
         public float CalculateRequiredResource(DamageType damageType)

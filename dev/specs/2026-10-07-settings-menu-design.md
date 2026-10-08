@@ -13,7 +13,7 @@ defaults and bounds, but nothing in the UI reads or writes them.
 | --- | --- | --- |
 | Hover delay (0 - 1.5 s, default 0.3) | `UserSettings.HoverDelay`, read by `HoverPreview.Delay` | Stored and used; no UI |
 | Ground item fade delay (5 - 600 s, default 60) | `UserSettings.GroundItemFadeDelay` | Stored; **nothing reads it, the ground has no fade-out** |
-| Sold-tab peek while Alt is held | `SoldTabPrototype` `PeekPref`, raw `PlayerPrefs` | Prototype branch only |
+| Sold-tab peek while Alt is held | `SellingPanelPeek`, always on | Built (two-panel switch epic #195); the prototype's checkbox and `PlayerPrefs` key are gone, so there is no setting |
 
 Storage is `PlayerPrefs`, per machine: a setting follows the player, not the hero, so it does not belong
 in a hero save or the Account file (ADR-0017 keeps the save format out of Utility; settings are not part

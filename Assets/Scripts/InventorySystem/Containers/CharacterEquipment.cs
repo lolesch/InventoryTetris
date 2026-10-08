@@ -446,6 +446,15 @@ namespace ToolSmiths.InventorySystem.Inventories
         public const int MainHandSlot = 12;
         public const int OffHandSlot = 13;
 
+        /// <summary>
+        /// The slot type of what is in the main hand - the weapon the hero strikes with, a two-hander anchored
+        /// there included - or <see cref="EquipmentType.NONE"/> while it is empty.
+        /// </summary>
+        public EquipmentType MainHandType =>
+            StoredPackages.TryGetValue(new Vector2Int(MainHandSlot, 0), out var worn) && worn.Item != null
+                ? EquipmentTypeOf(worn.Item)
+                : EquipmentType.NONE;
+
         public static Vector2Int[] GetTypeSpecificPositions(EquipmentType equipment) => equipment switch
         {
             EquipmentType.Amulet => new Vector2Int[1] { new(0, 0) },

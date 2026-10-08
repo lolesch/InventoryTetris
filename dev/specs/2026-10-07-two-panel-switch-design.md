@@ -9,8 +9,9 @@ and the 2026-10-05 spec amendment).
 Amends: `dev/specs/2026-10-02-sold-tab-design.md` - its "Tabs are `PanelToggle`s in a group of
 their own" decision (the tab pair becomes a two-panel switch) and its Out of Scope line about
 switching to the Sold tab (a held key now shows it; a sale still never does).
-Amended 2026-10-07 after the review of the Utility PR for ticket 1: the off-state button is a
-mirror toggle that names the driver, and the pair may share its group; see "Amendment" at the end.
+Amended 2026-10-07 (the mirror toggle, a shareable group) and 2026-10-08 (either button may be
+home, a close ends a peek). The body below states the built shape; the amendments at the end are
+dated history.
 
 ## Problem Statement
 
@@ -38,8 +39,8 @@ is a real selection, not a view-only overlay: it is a click made through the gro
 buttons follow. On release it switches back only if the pair is still where the peek put it. A
 click on the home tab moves the pair on, and the group's reset on closing stands the peek down;
 each leaves the player where they are. A click on the tab being peeked at is refused because it
-is already on and changes nothing: on release the player is home. Holding the key, closing the panel, reopening on the Supply and releasing leaves
-the panel on the Supply.
+is already on and changes nothing: on release the player is home. Holding the key, closing the
+panel, reopening on the Supply and releasing leaves the panel on the Supply.
 
 The key is Alt. Shift moves items, Ctrl manipulates stacks, Alt shows more information about
 the player's things.
@@ -96,15 +97,20 @@ the player's things.
 
 ## Implementation Decisions
 
-- **The Sold tab is a two-state switch.** One toggle owns a bool, and exactly two panels follow
-  it: the Supply panel while the bool is off, the Sold panel while it is on. The toggle is the
-  driver; panels follow, never the other way round.
-- **The tab buttons stay two.** The driver is the Sold button. The other is a mirror toggle
-  with no panel that names the driver by a serialized reference, in the same `ToggleGroup`,
-  which forbids switch-off. Clicking the mirror switches the driver off through the group;
-  clicking the driver while it is on is refused. The mirror has no behaviour of its own: the
-  group does the switching off, in both directions. The group is the one mirror of the bool, as
-  it already is for any two toggles; no second piece of state is added.
+- **The tab pair is a two-state switch.** One toggle owns a bool, and exactly two panels follow
+  it. The toggle is the driver; panels follow, never the other way round. In the Vendor and the
+  Healer the driver is the Supply toggle: on shows the Supply panel, off shows the Sold panel.
+  The component does not care which way round a pair is authored (a driver may rest on or off),
+  so a pair whose driver is the Sold toggle is just as valid: on shows Sold, off shows Supply.
+- **The tab buttons stay two.** The driver is one button; the other is a mirror toggle with no
+  panel that names the driver by a serialized reference, in the same `ToggleGroup`, which
+  forbids switch-off. In the Vendor and the Healer the Sold toggle is the mirror. Clicking the
+  mirror switches the driver off through the group; clicking the driver while it is on is
+  refused. The mirror has no behaviour of its own: the group does the switching off, in both
+  directions. The group is the one mirror of the bool, as it already is for any two toggles; no
+  second piece of state is added. The driver may be the group's first member (as built) when a
+  mirror names it: the mirror is then the only way to switch the driver off, including from the
+  group's side, which is what a peek does.
 - **The pair may share its group.** The driver is an ordinary member: any other toggle in the
   group switching on switches the driver off, and the driver switching on switches it off.
   Nothing counts the group's members. What keeps the off panel from clashing with another
@@ -121,7 +127,9 @@ the player's things.
 - **One restore rule.** The peek restores only while the group's active member is still the one
   it switched on, and only if the group has not reset. A click on the home tab changes the
   active member and so cancels; the group's reset on closing raises an event the peek listens
-  to, because a reset that finds the pair already home changes nothing to see. No counters.
+  to, because a reset that finds the pair already home changes nothing to see. No counters. A
+  close during a peek therefore abandons the restore, and a close-and-reopen inside the fade
+  keeps the peeked tab.
 - **Either button may be home.** The group resets to its first member when the panel finishes
   closing (the 2026-10-05 amendment, already built), and the author says which button that is
   by switching it on in the group - in the Vendor and the Healer the driver is the Supply tab
@@ -131,9 +139,10 @@ the player's things.
   sale, not a drag, not a purchase, not the Inventory Context. A held purchase dropped on the
   Sold tab returns to its origin free, as spec 2026-10-02 already says.
 - **Authoring is checked in the editor.** A warning, in the style of the `LocationToggle`
-  warning, when: the driver has no group; the group allows switch-off; the group's first
-  member is the driver itself, or there is none; the driver's panels are not both set; or a
-  mirror's driver is unset or sits in another group than the mirror.
+  warning, when: the driver has no group; the group allows switch-off; the group has no first
+  member; the driver's panels are not
+  both set or are the same panel; or a mirror's driver is unset, sits in another group than the
+  mirror, or is authored on together with the mirror.
 - **The key is Alt.** It stays Alt for now, decided by feel; the tooltip's roll-range modifier
   fires with it on a hover, which is accepted. The key is read through the existing held-key
   helper so the tooltip and the peek agree on what Alt is.
@@ -144,8 +153,8 @@ the player's things.
   predicate.
 - **Deleted at the end:** the prototype component, its self-installing hook and its debug
   checkbox. No `PlayerPrefs` keys outlive them.
-- **Scene migration.** Both selling panels' tab pairs change component on their Sold toggle and
-  gain the peek. No scene or prefab may be left holding a missing-script reference or an
+- **Scene migration.** Both selling panels' tab pairs change component on their Supply toggle
+  (the driver), make the Sold toggle its mirror, and gain the peek. No scene or prefab may be left holding a missing-script reference or an
   orphaned serialized panel field.
 - **Documentation.** `CONTEXT.md` / `GLOSSARY.md` gain **two-panel switch** and **peek**; spec
   2026-10-02's Sold tab decision is amended, as listed under Amends.
@@ -165,12 +174,13 @@ the player's things.
     is switched off by it, and a mirror with no driver or in another group is warned (a driver
     among other toggles is not);
   - the peek - a hold flips and a release restores; hold, click the home tab, release leaves
-    it; hold, click the peeked tab (refused), release returns home; hold, close the panel, reopen, release leaves the Supply; a hold begun before
-    the panel opens peeks on open; a hold with the panel closed does nothing; losing focus
-    releases;
+    it; hold, click the peeked tab (refused), release returns home; hold, close the panel,
+    reopen, release leaves the Supply, also when the peek began from the Sold tab; a hold begun
+    before the panel opens peeks on open; a hold with the panel closed does nothing; losing
+    focus releases; all of it for both orientations of the pair;
   - the group's first-member rule - a reset returns the pair to its first member through the
     driver's own toggle callback, whichever of the pair that is, and raises the group's event
-    even where the pair is already home.
+    even where the pair is already home; a group without reset-with-panel is not warned.
 - **Prior art.** `PanelToggleTests` and `ToggleGroupTests` for the toggle-and-group fixtures;
   `PanelGroupTests` for panels reacting to a state; the pause hotkey's tests for an injected
   key predicate.
@@ -201,40 +211,33 @@ the player's things.
   the prototype and its debug checkbox. The seven findings of the high-effort review of the
   prototype are not fixed on the prototype: the peek replaces the code they are about.
 - **Close-and-reopen within a fade.** The reset runs when the panel has finished collapsing, so
-  a reopen inside the 0.2 s fade keeps the tab and a pending restore still applies. This is
-  accepted.
+  a reopen inside the 0.2 s fade keeps the tab. During a peek the close has already abandoned
+  the restore, so the reopen keeps the peeked tab and a release does not put the player back.
+  This is accepted.
 - **Before Unity compile verification, asmdef changes or scripted multi-file edits,** read
   `docs/agents/codebase-notes.md`.
 
 ## Amendment 2026-10-07: the mirror, and a group that may be shared
 
-The Utility PR for ticket 1 paired the driver with any inert toggle and guarded the pair with
-five editor warnings, three of them about the group (exactly two members, switch-off allowed,
-first member wrong). Those warnings were the same evidence this spec cites against the old tab
-group: a shape that cannot refuse its own misuse. The review proposed removing the group from the
-driver altogether; the decision is the smaller change:
+History, after the review of the Utility PR for ticket 1. That PR paired the driver with any
+inert toggle and guarded the pair with five editor warnings, three of them about the group; the
+review proposed removing the group from the driver. The decision was the smaller change: keep the
+group (it already supplies the exclusion, the refusal of a click on the button that is on, and
+the reset on closing) and make the partner a `TwoPanelMirrorToggle` that names the driver, so a
+pair may share its group and the member-count and first-member warnings go. The body states the
+result. Also ruled then: a refused click is not a write (story 5), and the reset-with-panel
+setting is not warned about (a pair need not live in a closing panel; ticket 2 turns it on for the
+selling panels). Not taken: a dedicated group type, or forbidding a `ToggleGroup` on the driver -
+membership is found by `GetComponent<ToggleGroup>()` on the parent, so neither stops the wrong
+group being parented. Tickets 2 and 3's "inert partner" reads as the mirror.
 
-- **Kept: the group.** It already supplies the exclusion, the refusal of a click on the button
-  that is on, and the reset on the panel closing (`ResetWithParentPanel`). Re-supplying those on
-  an ungrouped driver would copy `AbstractGroup` and add a change event to `AbstractToggle`.
-- **Changed: the partner is a `TwoPanelMirrorToggle`** that names the driver. It carries no
-  behaviour; it is the reference, and the home of the warnings that need the driver (unset, other
-  group).
-- **Dropped: the member count and "the first member is the off-state toggle".** The driver may
-  sit among other toggles, and a reset to any first member but the driver switches it off. The
-  panels of those other toggles must not share a `PanelGroup` with the driver's off panel: scene
-  layout.
-- **Kept: no group, switch-off allowed, driver as first member, panel unset.** Added by the
-  review: both slots holding the same panel, and a mirror and its driver both authored on.
-- **Ruled: a refused click is not a write.** Peeking from the Supply and clicking the Sold tab
-  (already on) does nothing, and release returns to the Supply; that is wanted, so story 5 no
-  longer promises that a peek can become a choice. Only a click on the home tab writes, and it
-  ends at home either way.
-- **Ruled: the reset-with-panel setting is not warned about.** A pair does not have to live in a
-  panel that closes; ticket 2's acceptance criteria turn it on for the two selling panels.
-- **Considered and not taken: a dedicated group type, or forbidding a `ToggleGroup` on the
-  driver.** Membership is found by `GetComponent<ToggleGroup>()` on the parent, so a second group
-  type would not stop the wrong one being parented, and it still could not cap its members.
+## Amendment 2026-10-08: the driver may be the first member; a close ends a peek
 
-Tickets 2 and 3 name "the inert partner" and "the group"; ticket 2's wiring now sets the mirror's
-`driver`. Run `/drift-review` over the ticket slice before ticket 2 is implemented.
+History, decided on the scene wiring. The Vendor and the Healer author the pair the other way
+round from the first draft: the driver is the Supply toggle and the group's first member, the Sold
+toggle is the mirror. That works, so "the first member must not be the driver" was dropped and its
+warning replaced by two (no first member; a driver that is first with no mirror naming it). One
+peek case the write count missed - a peek that landed on the first member, then a close, leaves the
+reset nothing to write, so a release after the reopen restored the tab the player had left - is
+closed by the peek abandoning its restore when it sees its panel closed. The body states the
+result; the glossary entries **two-panel switch**, **mirror toggle** and **peek** describe it.

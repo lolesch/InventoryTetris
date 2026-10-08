@@ -4,7 +4,7 @@ namespace ToolSmiths.InventorySystem.Simulation
 {
     /// <summary>
     /// The combat-wide constants that are <em>not</em> authored per Location — the tick rate,
-    /// the inter-Encounter beat, and the Cast's burst ceiling and target count (ADR-0010;
+    /// the inter-Encounter beat, and the Cast's burst ceiling and definition (ADR-0010;
     /// starting points from the issue-#18 <c>/prototype</c>). Defaults match the prototype's
     /// tuning surface; a test overrides them to make a cadence land on round numbers.
     /// </summary>
@@ -30,8 +30,34 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// </summary>
         public float CastCadence { get; set; } = 0.35f;
 
-        /// <summary>How many of the highest-HP enemies one Cast hits.</summary>
-        public int CastTargets { get; set; } = 3;
+        /// <summary>
+        /// The Cast's range, targeting, shape, size and anchor (issue #212). Defaults to
+        /// <see cref="CastDefinition.Standard"/>; on the collapsed default <see cref="Ground"/> every enemy stands
+        /// on the hero, so it catches them all. The <c>SimulationService</c> sets the standard one explicitly, so a
+        /// change to this default can never move the game.
+        /// </summary>
+        public CastDefinition Cast { get; set; } = CastDefinition.Standard();
+
+        /// <summary>
+        /// The ground the fight takes place on. Collapsed by default - every enemy spawns on the hero, so a
+        /// test sees the fight at once, as with <see cref="DelayFirstSpawn"/>; the <c>SimulationService</c>
+        /// plays on <see cref="GroundTuning.Standard"/>.
+        /// </summary>
+        public GroundTuning Ground { get; set; } = new();
+
+        /// <summary>How the hero picks the enemy he fights. A tuning value until skills can supply it.</summary>
+        public HeroTargeting HeroTargeting { get; set; } = HeroTargeting.WeightedProximity;
+
+        /// <summary>
+        /// How far one hit's damage strays from its base, as a symmetric fraction of it (issue #211): each hit
+        /// rolls a factor of <c>1 + (2 * roll - 1) * DamageSpread</c> from the hit stream, so 0.2 is +-20 %.
+        /// Zero by default - every figure is its base damage, as for a test; the <c>SimulationService</c> plays on
+        /// <see cref="StandardDamageSpread"/>. Weapons will carry real minimum and maximum damage later.
+        /// </summary>
+        public float DamageSpread { get; set; }
+
+        /// <summary>The spread the game plays on: +-20 %. A placeholder, an untested starting point.</summary>
+        public const float StandardDamageSpread = 0.2f;
 
         /// <summary>Spiral-of-death clamp handed to the <see cref="CombatClock"/>.</summary>
         public int MaxTicksPerAdvance { get; set; } = 8;
@@ -44,10 +70,16 @@ namespace ToolSmiths.InventorySystem.Simulation
                 throw new ArgumentOutOfRangeException(nameof(Beat), Beat, "Beat cannot be negative.");
             if (CastCadence <= 0f)
                 throw new ArgumentOutOfRangeException(nameof(CastCadence), CastCadence, "Cast cadence must be positive.");
-            if (CastTargets < 1)
-                throw new ArgumentOutOfRangeException(nameof(CastTargets), CastTargets, "Cast must hit at least one target.");
+            if (Cast == null)
+                throw new ArgumentNullException(nameof(Cast));
+            Cast.Validate();
+            if (DamageSpread < 0f || DamageSpread > 1f)
+                throw new ArgumentOutOfRangeException(nameof(DamageSpread), DamageSpread, "Damage spread is a fraction of 0..1.");
             if (MaxTicksPerAdvance < 1)
                 throw new ArgumentOutOfRangeException(nameof(MaxTicksPerAdvance), MaxTicksPerAdvance, "Max ticks per advance must be at least 1.");
+            if (Ground == null)
+                throw new ArgumentNullException(nameof(Ground));
+            Ground.Validate();
         }
     }
 }

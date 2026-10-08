@@ -7,10 +7,11 @@ using ToolSmiths.InventorySystem.Simulation;
 namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 {
     /// <summary>
-    /// Targeting is minimal and deterministic (ADR-0010): the Strike hits the single lowest-HP
-    /// enemy, the Cast each of the <c>CastTargets</c> highest-HP enemies, no RNG. With Brutes
-    /// (bulky) and Skirmishers (fragile) in the same fight this means the Strike picks off
-    /// Skirmishers and the Cast grinds the Brute pack.
+    /// Targeting is minimal and deterministic (ADR-0010, issues #209 and #212): the Strike hits the hero's one
+    /// sticky weighted-proximity target (on the collapsed ground every enemy scores alike, so the first spawn),
+    /// the Cast every enemy in its area (who it aims at is <c>CastAreaTests</c>), no RNG. Health no longer steers
+    /// the Strike; where the enemies stand does (<c>HeroTargetingTests</c>). On the collapsed default ground all
+    /// four stand on the hero, so the Cast catches the whole mixed quad.
     /// </summary>
     [TestFixture]
     public sealed class TargetSelectionTests
@@ -28,9 +29,14 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             spawnJitter: 0f,
             initialSpawn: 4);
 
-        private static EncounterSimulation NewSim(FakeHero hero) => new(
-            hero, MixedQuad(), new ConstantRollSource(0f), Behaviours.Engaging(10),
-            new EncounterTuning { CastCadence = 0.05f });
+        // Magic resist stripped: these tests are about who the Cast hits, in round numbers.
+        private static EncounterSimulation NewSim(FakeHero hero)
+        {
+            var sim = new EncounterSimulation(hero, MixedQuad(), new ConstantRollSource(0f), Behaviours.Engaging(10),
+                new EncounterTuning { CastCadence = 0.05f });
+            foreach (var enemy in sim.Enemies) enemy.WithoutMagicResist();
+            return sim;
+        }
 
         private static FakeHero StrikerCaster() => new()
         {
@@ -43,39 +49,48 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         };
 
         [Test]
-        public void Strike_HitsTheLowestHealthEnemy_ASkirmisher()
+        public void Strike_HitsTheStickyTarget_NotTheLowestHealthEnemy()
         {
             var sim = NewSim(StrikerCaster());
+            var firstSpawn = sim.Enemies[0];
             var skirmishers = sim.Enemies.Where(e => e.Archetype == EnemyArchetype.Skirmisher).ToList();
+            Assert.That(firstSpawn.Archetype, Is.EqualTo(EnemyArchetype.Brute), "premise: a Brute is the first spawn");
 
             sim.Advance(0.1f); // one tick
 
-            // One Skirmisher is the Strike target; the other is the Cast's 3rd target
-            // (the Strike ran first, dropping its target below the other Skirmisher).
-            var losses = skirmishers.Select(e => e.MaxHealth - e.Health).OrderBy(x => x).ToList();
-            Assert.That(losses[0], Is.EqualTo(3f).Within(0.001f), "Cast's 3rd target — MagicalDamage");
-            Assert.That(losses[1], Is.EqualTo(5f).Within(0.001f), "Strike target — PhysicalDamage");
+            // The Brute takes the Strike (mitigated by its Armor) and a Cast; no Skirmisher takes a Strike -
+            // each takes the Cast alone, which catches all four.
+            var strike = 5f * (1f - firstSpawn.ArmorPercent * 0.01f);
+            Assert.That(firstSpawn.MaxHealth - firstSpawn.Health, Is.EqualTo(strike + 3f).Within(0.001f));
+            foreach (var skirmisher in skirmishers)
+                Assert.That(skirmisher.MaxHealth - skirmisher.Health, Is.EqualTo(3f).Within(0.001f),
+                    "the Cast's MagicalDamage, not a Strike");
         }
 
         [Test]
-        public void Cast_HitsTheThreeHighestHealthEnemies_BothBrutesAndOneSkirmisher()
+        public void Cast_HitsEveryEnemyInItsArea_NoLongerJustTheThreeHighestHealth()
         {
             var sim = NewSim(StrikerCaster());
             var brutes = sim.Enemies.Where(e => e.Archetype == EnemyArchetype.Brute).ToList();
+            var struck = sim.StrikeTarget;
+            var strike = 5f * (1f - struck.ArmorPercent * 0.01f);
+            var skirmishers = sim.Enemies.Where(e => e.Archetype == EnemyArchetype.Skirmisher).ToList();
 
             sim.Advance(0.1f);
 
             foreach (var brute in brutes)
-                Assert.That(brute.MaxHealth - brute.Health, Is.EqualTo(3f).Within(0.001f),
-                    "each Brute took exactly one Cast, no Strike");
+                Assert.That(brute.MaxHealth - brute.Health - (brute == struck ? strike : 0f), Is.EqualTo(3f).Within(0.001f),
+                    "each Brute took exactly one Cast, and the sticky target also the Strike");
+            Assert.That(skirmishers.Select(e => e.MaxHealth - e.Health), Has.All.GreaterThanOrEqualTo(3f),
+                "and so did both Skirmishers - the old rule left one out");
         }
 
         [Test]
-        public void Strike_ClearsEverySkirmisherBeforeAnyBrute()
+        public void Strike_FinishesTheFirstSpawnBeforeTurningToAFragileSkirmisher()
         {
             var hero = StrikerCaster();
             hero.PhysicalDamage = 20f; // burst the Strike target
-            hero.MagicalDamage = 1f;   // barely erode the Brutes
+            hero.MagicalDamage = 1f;   // barely erode the rest
             var sim = new EncounterSimulation(hero, MixedQuad(), new ConstantRollSource(0f), Behaviours.Engaging(10),
                 new EncounterTuning { CastCadence = 0.05f });
 
@@ -85,9 +100,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             for (var i = 0; i < 2000 && sim.Phase != SimulationPhase.Ended && sim.EncountersCleared == 0; i++)
                 sim.Advance(0.1f);
 
-            var firstBrute = order.IndexOf(EnemyArchetype.Brute);
-            var lastSkirmisher = order.LastIndexOf(EnemyArchetype.Skirmisher);
-            Assert.That(lastSkirmisher, Is.LessThan(firstBrute), "every Skirmisher fell before the first Brute");
+            Assert.That(order, Has.Count.EqualTo(4), "premise: the whole quad fell");
+            Assert.That(order[0], Is.EqualTo(EnemyArchetype.Brute), "the Brute he started on fell first, though a Skirmisher was frailer");
         }
 
         [Test]

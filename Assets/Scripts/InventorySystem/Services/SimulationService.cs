@@ -23,7 +23,8 @@ namespace ToolSmiths.InventorySystem.Services
     /// handed, binding the hero adapter, the roll source and the Behaviour Profile, and wires the
     /// per-kill loot flow (issue #24) and XP (issue #44) over it. The ADR-0009 Death penalty and the
     /// corpse-recovery rules are <see cref="RunSettlement"/>'s; this binds its ports to the Hero.
-    /// The tuning (cast cost, penalty fractions) comes from <see cref="GameConfig"/>.
+    /// The tuning (cast cost, penalty fractions, and the ground, Cast and damage spread an Encounter plays on)
+    /// comes from <see cref="GameConfig"/>.
     /// </summary>
     public sealed class SimulationService : ISimulationService
     {
@@ -32,6 +33,8 @@ namespace ToolSmiths.InventorySystem.Services
         private readonly IInventoryService inventory;
         private readonly GameConfig config;
         private readonly IRollSource rolls;
+        private readonly IRollSource movementRolls;
+        private readonly IRollSource hitRolls;
         private readonly ItemGenerator generator;
         private readonly LocationRegistry locations;
 
@@ -39,13 +42,17 @@ namespace ToolSmiths.InventorySystem.Services
         public static ISimulationService Instance => ServiceLocator.Get<ISimulationService>();
 
         public SimulationService(ISession session, IItemService items, IInventoryService inventory,
-            GameConfig config, IRollSource rolls)
+            GameConfig config, IRollSource rolls, IRollSource movementRolls = null, IRollSource hitRolls = null)
         {
             this.session = session ?? throw new ArgumentNullException(nameof(session));
             this.items = items ?? throw new ArgumentNullException(nameof(items));
             this.inventory = inventory ?? throw new ArgumentNullException(nameof(inventory));
             this.config = config ?? throw new ArgumentNullException(nameof(config));
             this.rolls = rolls ?? throw new ArgumentNullException(nameof(rolls));
+            // Its own stream, so spawn bearings and stop jitter never reorder a loot or spawn roll.
+            this.movementRolls = movementRolls ?? new UnityRollSource();
+            // Likewise the damage spread: its own stream, so a hit never reorders a loot, spawn or movement roll.
+            this.hitRolls = hitRolls ?? new UnityRollSource();
 
             generator = new ItemGenerator(items.Catalog, rolls);
             locations = new LocationRegistry(config.Locations);
@@ -212,7 +219,8 @@ namespace ToolSmiths.InventorySystem.Services
             // read off it inside the tick (issue #23). The hero arrives to a quiet Location - the
             // first bodies wait one spawn delay.
             var encounter = new EncounterSimulation(combatant, profile, rolls, hero.Behaviour,
-                new EncounterTuning { DelayFirstSpawn = true }, new ContainerBagGauge(hero.Inventory));
+                TuningFor(config),
+                new ContainerBagGauge(hero.Inventory), movementRolls, hitRolls);
 
             // XP is delivered per kill, independent of the loot flow (issue #44). GainExperience's
             // monsterLevel is the hero's own current level so its balancing term is neutral - the
@@ -234,6 +242,34 @@ namespace ToolSmiths.InventorySystem.Services
             world.LootFlow = lootFlow;
             return encounter;
         }
+
+        /// <summary>
+        /// The tuning a real Encounter plays on: the placeholder ground, Cast and damage spread authored on
+        /// <paramref name="config"/>. A value outside what the sim accepts is pulled back into range, so a
+        /// hand-edited asset cannot make a Send throw. The weapon-type Strike Range table stays in
+        /// <see cref="WeaponTypes"/>.
+        /// </summary>
+        private static EncounterTuning TuningFor(GameConfig config) => new()
+        {
+            DelayFirstSpawn = true,
+            Ground = new GroundTuning
+            {
+                Radius = Mathf.Max(0f, config.GroundRadius),
+                SpawnMargin = Mathf.Max(0f, config.SpawnMargin),
+                StopJitter = Mathf.Clamp(config.StopJitter, 0f, 0.99f),
+                BearingJitter = Mathf.Clamp01(config.BearingJitter),
+                HeroStrikeRange = Mathf.Max(0f, config.UnarmedStrikeRange),
+                MovementSpeedScale = Mathf.Max(0f, config.MovementSpeedScale),
+            },
+            Cast = new CastDefinition
+            {
+                Range = Mathf.Max(0f, config.CastRange),
+                Shape = config.CastShape,
+                Size = Mathf.Max(0.01f, config.CastSize),
+                Anchor = config.CastAnchor,
+            },
+            DamageSpread = Mathf.Clamp01(config.DamageSpread),
+        };
 
         /// <summary>
         /// Close a Run whose hero has been downed - <see cref="RunPhase.InField"/> to

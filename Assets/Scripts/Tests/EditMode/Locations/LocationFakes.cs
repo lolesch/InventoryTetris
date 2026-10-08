@@ -63,21 +63,26 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Locations
             public int Level { get; set; } = 1;
             public float MagicFind { get; set; }
             public float IncreasedItemQuantity { get; set; }
+            public float MovementSpeed { get; set; }
+            public float? WeaponStrikeRange { get; set; }
 
             public float HealthFraction => MaxHealth <= 0f ? 0f : Clamp01(Health / MaxHealth);
             public float ResourceFraction => MaxResource <= 0f ? 0f : Clamp01(Resource / MaxResource);
             public bool IsDown => Health <= 0f;
 
-            public void ReceivePhysical(float rawDamage)
+            public float ReceivePhysical(float rawDamage)
             {
-                if (rawDamage <= 0f) return;
-                Health = Math.Max(0f, Health - rawDamage * (1f - ArmorPercent * 0.01f));
+                if (rawDamage <= 0f) return 0f;
+                var dealt = rawDamage * (1f - ArmorPercent * 0.01f);
+                Health = Math.Max(0f, Health - dealt);
+                return dealt;
             }
 
-            public void ReceiveMagical(float rawDamage)
+            public float ReceiveMagical(float rawDamage)
             {
-                if (rawDamage <= 0f) return;
+                if (rawDamage <= 0f) return 0f;
                 Health = Math.Max(0f, Health - rawDamage);
+                return rawDamage;
             }
 
             public void SpendResource(float amount) => Resource = Math.Max(0f, Resource - amount);
