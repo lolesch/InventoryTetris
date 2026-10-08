@@ -383,7 +383,10 @@ prototype starting points but are not frozen.
 **Strike**:
 The hero's physical attack — one weapon hit on a `1 / AttackSpeed` cadence against the
 lowest-HP enemy within the hero's **Strike Range** - an enemy still walking in cannot be
-struck. Always available; gear only scales it.
+struck. Always available; gear only scales it. Enemies Strike too, once the hero is within their
+own Strike Range, and each archetype declares its Strike's **damage type**: a Brute's is
+physical (mitigated by the hero's Armor), a Skirmisher's magical (by his Magic Resist). Enemies
+have a Magic Resist of their own, so the hero's Cast is mitigated like his Strike.
 _Avoid_: swing, attack (a Cast attacks too), auto-attack, basic attack
 
 **Ground**:
@@ -411,6 +414,21 @@ at once, paced by how fast `Resource` regenerates against the cast cost. The are
 of the kit.
 _Avoid_: spell, nuke, ability, skill
 
+**Hit event**:
+What the simulation announces for every hit that lands - the hero's Strike, each target of his
+Cast, and every enemy Strike: who dealt it, who took it, the **damage type**, the **raw amount**
+(before mitigation, the **damage spread** applied) and the **lost amount** (what the target
+actually lost after its Armor or Magic Resist, and no more than it had). A hit the target fully
+mitigates still lands, with nothing lost. The damage numbers and, later, effects read from it.
+_Avoid_: damage event, hit callback, damage tick
+
+**Damage spread**:
+A tuning fraction that varies each hit around its base damage: a hit rolls a factor between
+`1 - spread` and `1 + spread`, from its own random stream apart from the Encounter's, movement
+and loot streams. Zero means every hit is its base damage. A stand-in until weapons carry a
+real minimum and maximum.
+_Avoid_: variance, crit range, damage roll
+
 **Engagement**:
 The player-set count of enemies an Encounter tries to keep on the hero at once. A soft
 target the fight refills toward as enemies fall — not a ceiling, because a Pack
@@ -425,14 +443,16 @@ singly.
 _Avoid_: wave, swarm, group (that is the Encounter's whole cast), ambush
 
 **Brute**:
-The bulky enemy archetype — high health, slow hard hits, some Armor, low XP. The **Cast**
+The bulky enemy archetype — high health, slow hard hits (physical damage type), some Armor and a
+little Magic Resist, low XP. Like every enemy it is built from modifiable stats. The **Cast**
 (highest-HP targeting) tends to land on Brutes; a Pack of them is what a single-target
 physical build clears best, and what an area build grinds against. Parametric off the
 Location's source level.
 _Avoid_: tank, heavy, bruiser, ogre, elite
 
 **Skirmisher**:
-The fragile enemy archetype — low health, fast light hits, no Armor, high XP. The
+The fragile enemy archetype — low health, fast light hits (magical damage type), no Armor but
+some Magic Resist, high XP. Like every enemy it is built from modifiable stats. The
 **Strike** (lowest-HP targeting) tends to pick off Skirmishers; a swarm of them is what
 an area magical build clears best, and what a single-target build gets overwhelmed by.
 Parametric off the Location's source level.

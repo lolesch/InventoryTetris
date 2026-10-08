@@ -43,6 +43,17 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <summary>How the hero picks the enemy he fights. A tuning value until skills can supply it.</summary>
         public HeroTargeting HeroTargeting { get; set; } = HeroTargeting.WeightedProximity;
 
+        /// <summary>
+        /// How far one hit's damage strays from its base, as a symmetric fraction of it (issue #211): each hit
+        /// rolls a factor of <c>1 + (2 * roll - 1) * DamageSpread</c> from the hit stream, so 0.2 is +-20 %.
+        /// Zero by default - every figure is its base damage, as for a test; the <c>SimulationService</c> plays on
+        /// <see cref="StandardDamageSpread"/>. Weapons will carry real minimum and maximum damage later.
+        /// </summary>
+        public float DamageSpread { get; set; }
+
+        /// <summary>The spread the game plays on: +-20 %. A placeholder, an untested starting point.</summary>
+        public const float StandardDamageSpread = 0.2f;
+
         /// <summary>Spiral-of-death clamp handed to the <see cref="CombatClock"/>.</summary>
         public int MaxTicksPerAdvance { get; set; } = 8;
 
@@ -56,6 +67,8 @@ namespace ToolSmiths.InventorySystem.Simulation
                 throw new ArgumentOutOfRangeException(nameof(CastCadence), CastCadence, "Cast cadence must be positive.");
             if (CastTargets < 1)
                 throw new ArgumentOutOfRangeException(nameof(CastTargets), CastTargets, "Cast must hit at least one target.");
+            if (DamageSpread < 0f || DamageSpread > 1f)
+                throw new ArgumentOutOfRangeException(nameof(DamageSpread), DamageSpread, "Damage spread is a fraction of 0..1.");
             if (MaxTicksPerAdvance < 1)
                 throw new ArgumentOutOfRangeException(nameof(MaxTicksPerAdvance), MaxTicksPerAdvance, "Max ticks per advance must be at least 1.");
             if (Ground == null)

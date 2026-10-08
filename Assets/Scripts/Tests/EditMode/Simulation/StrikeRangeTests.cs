@@ -104,7 +104,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             for (var i = 0; i < 150; i++) sim.Advance(Tick);
 
             Assert.That(Distance(sim, skirmisher), Is.GreaterThan(sim.HeroStrikeRange), "premise: it stands off");
-            Assert.That(hero.PhysicalDamageTaken, Is.GreaterThan(0f), "it hits him from there");
+            Assert.That(hero.MagicalDamageTaken, Is.GreaterThan(0f), "it hits him from there");
             Assert.That(skirmisher.Health, Is.EqualTo(skirmisher.MaxHealth), "he cannot reach it");
         }
 

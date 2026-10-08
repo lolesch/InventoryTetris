@@ -33,6 +33,7 @@ namespace ToolSmiths.InventorySystem.Services
         private readonly GameConfig config;
         private readonly IRollSource rolls;
         private readonly IRollSource movementRolls;
+        private readonly IRollSource hitRolls;
         private readonly ItemGenerator generator;
         private readonly LocationRegistry locations;
 
@@ -40,7 +41,7 @@ namespace ToolSmiths.InventorySystem.Services
         public static ISimulationService Instance => ServiceLocator.Get<ISimulationService>();
 
         public SimulationService(ISession session, IItemService items, IInventoryService inventory,
-            GameConfig config, IRollSource rolls, IRollSource movementRolls = null)
+            GameConfig config, IRollSource rolls, IRollSource movementRolls = null, IRollSource hitRolls = null)
         {
             this.session = session ?? throw new ArgumentNullException(nameof(session));
             this.items = items ?? throw new ArgumentNullException(nameof(items));
@@ -49,6 +50,8 @@ namespace ToolSmiths.InventorySystem.Services
             this.rolls = rolls ?? throw new ArgumentNullException(nameof(rolls));
             // Its own stream, so spawn bearings and stop jitter never reorder a loot or spawn roll.
             this.movementRolls = movementRolls ?? new UnityRollSource();
+            // Likewise the damage spread: its own stream, so a hit never reorders a loot, spawn or movement roll.
+            this.hitRolls = hitRolls ?? new UnityRollSource();
 
             generator = new ItemGenerator(items.Catalog, rolls);
             locations = new LocationRegistry(config.Locations);
@@ -215,8 +218,13 @@ namespace ToolSmiths.InventorySystem.Services
             // read off it inside the tick (issue #23). The hero arrives to a quiet Location - the
             // first bodies wait one spawn delay.
             var encounter = new EncounterSimulation(combatant, profile, rolls, hero.Behaviour,
-                new EncounterTuning { DelayFirstSpawn = true, Ground = GroundTuning.Standard() },
-                new ContainerBagGauge(hero.Inventory), movementRolls);
+                new EncounterTuning
+                {
+                    DelayFirstSpawn = true,
+                    Ground = GroundTuning.Standard(),
+                    DamageSpread = EncounterTuning.StandardDamageSpread,
+                },
+                new ContainerBagGauge(hero.Inventory), movementRolls, hitRolls);
 
             // XP is delivered per kill, independent of the loot flow (issue #44). GainExperience's
             // monsterLevel is the hero's own current level so its balancing term is neutral - the

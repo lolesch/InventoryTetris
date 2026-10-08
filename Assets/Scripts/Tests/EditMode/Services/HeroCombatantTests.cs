@@ -1,81 +1,62 @@
-using System.Collections.Generic;
-using System.Linq;
 using NUnit.Framework;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
-using ToolSmiths.InventorySystem.Inventories;
-using ToolSmiths.InventorySystem.Items;
+using ToolSmiths.InventorySystem.Runtime.Character;
 using ToolSmiths.InventorySystem.Services;
-using ToolSmiths.InventorySystem.Simulation;
 
 namespace ToolSmiths.InventorySystem.Tests.Services
 {
     /// <summary>
-    /// What the sim reads of the hero to walk him (issue #209): his <c>MovementSpeed</c> stat, live, and the
-    /// Strike Range of the weapon in his main hand - nothing while he is unarmed.
+    /// The hero's side of the Encounter sim reports what each hit cost him (issue #210): the amount he
+    /// actually lost after his own Armor or Magic Resist, which is what the sim's typed hit events carry.
     /// </summary>
     [TestFixture]
     public sealed class HeroCombatantTests
     {
-        private readonly List<UnityEngine.Object> created = new();
-        private TestGame game;
-        private HeroCombatant combatant;
+        // Armor 20 mitigates 20% of a physical hit; MagicResist 10 mitigates 10% of a magical one.
+        private static HeroCombatant NewCombatant() => new(new Hero(
+            new[]
+            {
+                new CharacterStat(StatName.Armor, 20f),
+                new CharacterStat(StatName.MagicResist, 10f),
+            },
+            new[]
+            {
+                new CharacterResource(StatName.Health, 100f),
+                new CharacterResource(StatName.Resource, 100f),
+                new CharacterResource(StatName.Shield, 0f),
+                new CharacterResource(StatName.Experience, 280f),
+            }));
 
-        [SetUp]
-        public void SetUp()
+        [Test]
+        public void ReceivePhysical_ReturnsTheAmountLostAfterArmor_NotTheMagicResist()
         {
-            var config = TestGameConfig.Create(created);
-            game = TestGame.Create(config);
-            combatant = new HeroCombatant(game.Hero);
-        }
+            var hero = NewCombatant();
 
-        [TearDown]
-        public void TearDown()
-        {
-            foreach (var asset in created)
-                UnityEngine.Object.DestroyImmediate(asset);
+            var lost = hero.ReceivePhysical(50f);
 
-            created.Clear();
-        }
-
-        private void Wield(EquipmentType type)
-        {
-            var definition = game.Items.Catalog.OfCategory(ItemCategory.Equipment).First(d => d.EquipmentType == type);
-            // The equip itself, not a pick-up: a pick-up only fills an empty slot, and this swaps a worn weapon out.
-            var package = new Package(game.Hero.Equipment, new ItemInstance(definition.Id, ItemRarity.Common, 1, null), 1u);
-            Assert.That(game.Hero.Equipment.TryAddToContainer(ref package), Is.True);
+            Assert.That(lost, Is.EqualTo(40f).Within(0.001f), "50 * (1 - 20%)");
+            Assert.That(hero.Health, Is.EqualTo(60f).Within(0.001f), "and that is what left his health");
         }
 
         [Test]
-        public void MovementSpeed_IsTheHerosStat_AndTheDefaultHeroHasOne()
+        public void ReceiveMagical_ReturnsTheAmountLostAfterMagicResist_NotTheArmor()
         {
-            Assert.That(combatant.MovementSpeed, Is.EqualTo(game.Hero.GetStatValue(StatName.MovementSpeed)));
-            Assert.That(combatant.MovementSpeed, Is.GreaterThan(0f), "a zero-speed hero would never close on a ranged enemy");
+            var hero = NewCombatant();
+
+            var lost = hero.ReceiveMagical(50f);
+
+            Assert.That(lost, Is.EqualTo(45f).Within(0.001f), "50 * (1 - 10%)");
         }
 
         [Test]
-        public void AnUnarmedHero_HasNoWeaponStrikeRange()
+        public void ANonPositiveHit_LosesNothing()
         {
-            Assert.That(combatant.WeaponStrikeRange, Is.Null);
-        }
+            var hero = NewCombatant();
 
-        [TestCase(EquipmentType.Sword)]
-        [TestCase(EquipmentType.Bow)]
-        public void TheWieldedWeaponsType_SetsTheStrikeRange_ReadLiveFromAnUnchangedCombatant(EquipmentType weapon)
-        {
-            Assert.That(combatant.WeaponStrikeRange, Is.Null, "premise: unarmed, read before the equip");
-
-            Wield(weapon);
-
-            Assert.That(combatant.WeaponStrikeRange, Is.EqualTo(WeaponTypes.StrikeRange(weapon)));
-        }
-
-        [Test]
-        public void AnEquippedArmourPiece_IsNotAWeapon()
-        {
-            Wield(EquipmentType.Helm);
-
-            Assert.That(combatant.WeaponStrikeRange, Is.Null);
+            Assert.That(hero.ReceivePhysical(0f), Is.Zero);
+            Assert.That(hero.ReceiveMagical(-5f), Is.Zero);
+            Assert.That(hero.Health, Is.EqualTo(100f));
         }
     }
 }

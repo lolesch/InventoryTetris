@@ -7,10 +7,10 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// </summary>
     public enum EnemyArchetype
     {
-        /// <summary>Bulky, slow, armored, low XP. The Cast (highest-HP targeting) lands on it.</summary>
+        /// <summary>Bulky, slow, armored, low XP. Its Strike is physical. The Cast (highest-HP targeting) lands on it.</summary>
         Brute,
 
-        /// <summary>Fragile, fast, no armor, high XP. The Strike (lowest-HP targeting) picks it off.</summary>
+        /// <summary>Fragile, fast, no armor, high XP. Its Strike is magical. The Strike (lowest-HP targeting) picks it off.</summary>
         Skirmisher,
     }
 }

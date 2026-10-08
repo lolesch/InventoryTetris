@@ -517,6 +517,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             MagicalDamage = 0f,
             AttackSpeed = 0.01f,
             ArmorPercent = 100f,
+            MagicResistPercent = 100f, // a Skirmisher Strikes magically
             Resource = 0f,
             Level = 5,
         };

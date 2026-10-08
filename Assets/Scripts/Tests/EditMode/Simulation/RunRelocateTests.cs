@@ -207,7 +207,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var hero = new FakeHero
             {
                 MaxHealth = 100f, Health = 25f, PhysicalDamage = 0f, MagicalDamage = 0f,
-                AttackSpeed = 0.01f, ArmorPercent = 100f, Resource = 0f, Level = 5,
+                AttackSpeed = 0.01f, ArmorPercent = 100f, MagicResistPercent = 100f, Resource = 0f, Level = 5,
             };
             var run = NewRun(hero, behaviour: behaviour);
             run.Send(Skirmishers(3));
