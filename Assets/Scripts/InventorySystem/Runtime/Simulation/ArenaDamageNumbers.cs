@@ -19,7 +19,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// <see cref="DamageAccumulator{TKey}"/> keyed by target <i>and</i> damage type and flushed once per frame: a
     /// Strike and a Cast on one enemy give two numbers, and so do two enemies. The number shows the amount lost
     /// (a hit the target mitigates fully shows nothing); its size and tint come from <see cref="DamageNumberStyle"/>,
-    /// the raw amount read against <see cref="DamageReference"/> - the best the dealer could do with that type.
+    /// the raw amount of <i>one</i> hit (the frame's mean, so a coarse frame does not saturate it) read against
+    /// <see cref="DamageReference"/> - the best the dealer could do with that type.
     /// </para>
     /// <para>
     /// The killing blow: <see cref="EncounterSimulation.HitLanded"/> raises before the enemy is removed, and a
@@ -99,7 +100,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (_encounter != null)
                 _encounter.HitLanded -= OnHitLanded;
 
-            _hits.Flush(static (_, _, _) => { });
+            _hits.Flush(static (_, _, _, _) => { });
             _hasPending = false;
             _origins = null;
             _encounter = null;
@@ -128,7 +129,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _hits.Flush(ShowNumber);
         }
 
-        private void ShowNumber((ICombatant Target, DamageType Type) key, float lost, float raw)
+        private void ShowNumber((ICombatant Target, DamageType Type) key, float lost, float rawSum, int hits)
         {
             // The Run ended (Recall, hero death, Relocate) or the arena is going down: nothing is shown.
             if (!isActiveAndEnabled || _encounter == null || _run == null || _run.Encounter != _encounter)
@@ -137,6 +138,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (!_origins.TryGetNumberOrigin(key.Target, out var origin))
                 return;
 
+            // The size reads one hit (the frame's mean), not the sum: the reference is the best single hit, so at
+            // high sim speed several ordinary hits summed would saturate it. The label still shows the summed loss.
+            var raw = rawSum / Mathf.Max(1, hits);
             var style = DamageNumberStyle.Of(raw, ReferenceFor(key.Target, key.Type), key.Type,
                 minFontSize, maxFontSize, physicalTint, magicalTint);
 

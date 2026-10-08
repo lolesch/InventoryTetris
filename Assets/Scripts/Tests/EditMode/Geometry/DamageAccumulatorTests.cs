@@ -16,10 +16,10 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Geometry
         private const int Physical = 0;
         private const int Magical = 1;
 
-        private static Dictionary<(string, int), (float Lost, float Raw)> Flushed(DamageAccumulator<(string, int)> accumulator)
+        private static Dictionary<(string, int), (float Lost, float Raw, int Hits)> Flushed(DamageAccumulator<(string, int)> accumulator)
         {
-            var flushed = new Dictionary<(string, int), (float, float)>();
-            accumulator.Flush((key, lost, raw) => flushed.Add(key, (lost, raw)));
+            var flushed = new Dictionary<(string, int), (float, float, int)>();
+            accumulator.Flush((key, lost, raw, hits) => flushed.Add(key, (lost, raw, hits)));
             return flushed;
         }
 
@@ -76,6 +76,37 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Geometry
         }
 
         [Test]
+        public void EachHitIsCounted_SoASizeCanBeReadFromOneOfThem()
+        {
+            // Several ordinary hits in one coarse frame sum to a raw amount far above any one hit: the sink
+            // divides by the count to read the size from a single hit, while the label keeps the summed loss.
+            var accumulator = new DamageAccumulator<(string, int)>();
+            accumulator.Add(("goblin", Physical), 4f, 5f);
+            accumulator.Add(("goblin", Physical), 4f, 5f);
+            accumulator.Add(("goblin", Physical), 4f, 5f);
+            accumulator.Add(("orc", Physical), 2f, 2f);
+
+            var flushed = Flushed(accumulator);
+
+            Assert.That(flushed[("goblin", Physical)].Hits, Is.EqualTo(3));
+            Assert.That(flushed[("goblin", Physical)].Raw / flushed[("goblin", Physical)].Hits, Is.EqualTo(5f));
+            Assert.That(flushed[("goblin", Physical)].Lost, Is.EqualTo(12f), "the label still shows the summed loss");
+            Assert.That(flushed[("orc", Physical)].Hits, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void TheHitCountResetsAfterFlush()
+        {
+            var accumulator = new DamageAccumulator<(string, int)>();
+            accumulator.Add(("a", Physical), 1f, 1f);
+            accumulator.Add(("a", Physical), 1f, 1f);
+            Flushed(accumulator);
+            accumulator.Add(("a", Physical), 1f, 1f);
+
+            Assert.That(Flushed(accumulator)[("a", Physical)].Hits, Is.EqualTo(1));
+        }
+
+        [Test]
         public void ResetsAfterFlush()
         {
             var accumulator = new DamageAccumulator<(string, int)>();
@@ -107,7 +138,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Geometry
 
             // A number that cannot be placed yet puts its amount back; it must not loop in this flush.
             var calls = 0;
-            accumulator.Flush((key, lost, raw) =>
+            accumulator.Flush((key, lost, raw, _) =>
             {
                 calls++;
                 accumulator.Add(key, lost, raw);
