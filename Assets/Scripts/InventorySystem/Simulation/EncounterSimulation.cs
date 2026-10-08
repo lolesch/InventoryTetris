@@ -494,12 +494,19 @@ namespace ToolSmiths.InventorySystem.Simulation
             for (var i = 0; i < _enemies.Count; i++)
             {
                 var enemy = _enemies[i];
+                var step = WalkingSpeed(enemy.MovementSpeed) * dt;
                 var excess = Coordinate.Distance(enemy.Position, hero) - enemy.StopDistance;
-                if (excess <= 0f) continue;
+                if (excess <= 0f || step <= 0f) continue;
 
-                enemy.Position = Coordinate.MoveTowards(enemy.Position, hero, Math.Min(enemy.MovementSpeed * dt, excess));
+                enemy.Position = Coordinate.MoveTowards(enemy.Position, hero, Math.Min(step, excess));
             }
         }
+
+        /// <summary>
+        /// A movement speed the sim can walk at: a stat modified below zero stands still instead of walking
+        /// backwards, and a NaN one (which every comparison refuses) stands still instead of poisoning a position.
+        /// </summary>
+        private static float WalkingSpeed(float speed) => speed > 0f ? speed : 0f;
 
         /// <summary>
         /// Walk the hero toward his target until it is within his Strike Range, never past it; with no target, walk
@@ -507,7 +514,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// </summary>
         private void MoveHero(float dt)
         {
-            var step = Math.Max(0f, _hero.MovementSpeed) * _ground.MovementSpeedScale * dt;
+            var step = WalkingSpeed(_hero.MovementSpeed) * _ground.MovementSpeedScale * dt;
             if (step <= 0f) return;
 
             if (_heroTarget == null)

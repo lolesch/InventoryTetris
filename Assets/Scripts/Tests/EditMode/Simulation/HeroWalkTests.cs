@@ -92,6 +92,17 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             Assert.That(skirmisher.Health, Is.EqualTo(skirmisher.MaxHealth), "he cannot reach it");
         }
 
+        [TestCase(-300f)]
+        [TestCase(float.NaN)]
+        public void AHeroWithANegativeOrNaNMovementSpeed_StandsWhereHeIs_WithAFinitePosition(float speed)
+        {
+            var sim = SoloSkirmisher(Walker(speed: speed));
+
+            Run(sim, 50);
+
+            Assert.That(sim.HeroPosition, Is.EqualTo(sim.Ground.Origin));
+        }
+
         [Test]
         public void TheHeroWalks_MovementSpeedTimesTheGroundsScale_UnitsPerSecond()
         {

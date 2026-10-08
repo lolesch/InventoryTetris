@@ -2,9 +2,11 @@ using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using Submodules.Utility.Extensions;
+using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Simulation;
+using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 {
@@ -161,6 +163,51 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             Assert.That(DistanceToHero(sim, enemy), Is.EqualTo(expectedStop).Within(0.002f));
             Assert.That(closest, Is.GreaterThanOrEqualTo(expectedStop - 0.002f), "it never walked past its stop");
             Assert.That(DistanceToHero(sim, enemy), Is.LessThanOrEqualTo(enemy.StrikeRange));
+        }
+
+        private static StatModifier SpeedSetTo(float value) =>
+            new(new Vector2Int(-1000, 1000), value, StatModifierType.Overwrite);
+
+        private static bool IsFinite(Coordinate position) => float.IsFinite(position.x) && float.IsFinite(position.z);
+
+        [Test]
+        public void AnEnemyWithANegativeMovementSpeed_DoesNotWalkBackwards()
+        {
+            var sim = Sim(Profiles.Solo(EnemyArchetype.Brute), new ConstantRollSource(0.5f));
+            var enemy = sim.Enemies.Single();
+            enemy.Stat(StatName.MovementSpeed).AddModifier(SpeedSetTo(-3f));
+            var spawned = enemy.Position;
+
+            for (var i = 0; i < 20; i++) sim.Advance(Tick);
+
+            Assert.That(enemy.MovementSpeed, Is.LessThan(0f), "premise: the modifier took the speed below zero");
+            Assert.That(enemy.Position, Is.EqualTo(spawned), "it stands where it spawned, neither in nor out");
+        }
+
+        [Test]
+        public void AnEnemyWithANaNMovementSpeed_KeepsAFinitePosition()
+        {
+            var sim = Sim(Profiles.Solo(EnemyArchetype.Brute), new ConstantRollSource(0.5f));
+            var enemy = sim.Enemies.Single();
+            enemy.Stat(StatName.MovementSpeed).AddModifier(SpeedSetTo(float.NaN));
+            var spawned = enemy.Position;
+
+            for (var i = 0; i < 20; i++) sim.Advance(Tick);
+
+            Assert.That(float.IsNaN(enemy.MovementSpeed), Is.True, "premise: the modifier made the speed NaN");
+            Assert.That(IsFinite(enemy.Position), Is.True, "NaN never reaches the position");
+            Assert.That(enemy.Position, Is.EqualTo(spawned));
+        }
+
+        [Test]
+        public void AnEnemyWithAPositiveSpeed_StillWalksIn_NegativeControlForTheSpeedGuard()
+        {
+            var sim = Sim(Profiles.Solo(EnemyArchetype.Brute), new ConstantRollSource(0.5f));
+            var enemy = sim.Enemies.Single();
+
+            for (var i = 0; i < 20; i++) sim.Advance(Tick);
+
+            Assert.That(DistanceToHero(sim, enemy), Is.LessThan(SpawnDistance));
         }
 
         [Test]
