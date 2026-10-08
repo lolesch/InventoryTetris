@@ -23448,7 +23448,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3b055d5d6ac958945871ca8b8b28d435, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.Runtime.Simulation.AutoPickupToggle
+  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.Runtime.Simulation.EventToggle
   m_Navigation:
     m_Mode: 3
     m_WrapAround: 0

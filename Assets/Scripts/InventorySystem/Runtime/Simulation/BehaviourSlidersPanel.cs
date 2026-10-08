@@ -2,6 +2,7 @@ using Submodules.Utility.UI;
 using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace ToolSmiths.InventorySystem.Runtime.Simulation
 {
@@ -40,8 +41,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private ValueSlider originWeightSlider;
         [SerializeField] private RarityFilterSlider lootFilterSlider;
         [SerializeField] private SimSpeedSlider simSpeedSlider;
-        [SerializeField, Tooltip("Debug (issue #63): on picks up what the filter admits, off leaves every item on the ground.")]
-        private AutoPickupToggle autoPickupToggle;
+        [FormerlySerializedAs("autoPickupToggle")] [SerializeField, Tooltip("Debug (issue #63): on picks up what the filter admits, off leaves every item on the ground.")]
+        private EventToggle eventToggle;
 
         private HeroBehaviour _behaviour;
 
@@ -79,10 +80,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             Wire(lootFilterSlider, OnLootFilterChanged, add);
             Wire(simSpeedSlider, OnSimSpeedChanged, add);
 
-            if (autoPickupToggle != null)
+            if (eventToggle != null)
             {
-                autoPickupToggle.Toggled -= OnAutoPickupToggled;
-                if (add) autoPickupToggle.Toggled += OnAutoPickupToggled;
+                eventToggle.Toggled -= OnToggled;
+                if (add) eventToggle.Toggled += OnToggled;
             }
 
             static void Wire(AbstractSlider slider, System.Action<float> handler, bool add)
@@ -113,7 +114,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (originWeightSlider != null) originWeightSlider.SetValueWithoutNotify(_behaviour.OriginWeight);
             if (lootFilterSlider != null) lootFilterSlider.SetStepIndexWithoutNotify(HeroBehaviour.RarityIndex(_behaviour.LootFilterMinimum));
             if (simSpeedSlider != null) simSpeedSlider.SetSimSpeedWithoutNotify(_behaviour.SimSpeed);
-            if (autoPickupToggle != null) autoPickupToggle.SyncToggle(_behaviour.AutoPickup);
+            if (eventToggle != null) eventToggle.SyncToggle(_behaviour.AutoPickup);
         }
 
         private void OnRetreatHealthChanged(float value)
@@ -141,7 +142,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (_behaviour != null) _behaviour.LootFilterMinimum = lootFilterSlider.Selected;
         }
 
-        private void OnAutoPickupToggled(bool on)
+        private void OnToggled(bool on)
         {
             if (_behaviour != null) _behaviour.AutoPickup = on;
         }
