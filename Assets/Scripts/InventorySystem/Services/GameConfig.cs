@@ -5,6 +5,7 @@ using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Locations;
 using ToolSmiths.InventorySystem.Runtime.Character;
+using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Services
@@ -113,6 +114,8 @@ namespace ToolSmiths.InventorySystem.Services
         [field: SerializeField, Range(0f, 1f)] public float RetreatHealthFraction { get; private set; }
         [field: SerializeField, Range(0f, 1f)] public float RecallBagFillFraction { get; private set; } = 1f;
         [field: SerializeField, Range(0f, 1f)] public float CastThreshold { get; private set; }
+        [field: SerializeField, Range(0f, 1f), Tooltip("How strongly home pulls against nearness when the hero picks a target: 0 fights what is nearest him, 1 what is nearest the origin.")]
+        public float OriginWeight { get; private set; } = HeroBehaviour.DefaultOriginWeight;
         [field: SerializeField] public ItemRarity LootFilterMinimum { get; private set; } = ItemRarity.Common;
 
         [field: Header("Simulation: tuning")]
