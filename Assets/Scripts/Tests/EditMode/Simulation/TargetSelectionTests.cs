@@ -28,9 +28,14 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             spawnJitter: 0f,
             initialSpawn: 4);
 
-        private static EncounterSimulation NewSim(FakeHero hero) => new(
-            hero, MixedQuad(), new ConstantRollSource(0f), Behaviours.Engaging(10),
-            new EncounterTuning { CastCadence = 0.05f });
+        // Magic resist stripped: these tests are about who the Cast hits, in round numbers.
+        private static EncounterSimulation NewSim(FakeHero hero)
+        {
+            var sim = new EncounterSimulation(hero, MixedQuad(), new ConstantRollSource(0f), Behaviours.Engaging(10),
+                new EncounterTuning { CastCadence = 0.05f });
+            foreach (var enemy in sim.Enemies) enemy.WithoutMagicResist();
+            return sim;
+        }
 
         private static FakeHero StrikerCaster() => new()
         {

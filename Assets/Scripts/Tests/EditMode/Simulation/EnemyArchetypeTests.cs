@@ -63,7 +63,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
-        public void Enemy_MitigatesTheStrikeByItsArmor_ButNotTheCast()
+        public void Enemy_MitigatesTheStrikeByItsArmor_AndTheCastByItsMagicResist()
         {
             var armor = new Enemy(EnemyArchetype.Brute, sourceLevel: 5).ArmorPercent;
 
@@ -73,7 +73,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
             var cast = new Enemy(EnemyArchetype.Brute, sourceLevel: 5);
             cast.ReceiveMagical(20f);
-            Assert.That(cast.MaxHealth - cast.Health, Is.EqualTo(20f).Within(0.001f), "no magic resist");
+            Assert.That(cast.MaxHealth - cast.Health, Is.EqualTo(19.6f).Within(0.001f), "Brute magic resist @ S5 is 2 percent, not its armor");
         }
     }
 }

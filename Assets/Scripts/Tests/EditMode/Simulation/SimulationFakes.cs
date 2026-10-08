@@ -66,6 +66,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         public float HealthRegenPerSecond { get; set; }
         public float ResourceRegenPerSecond { get; set; }
         public float ArmorPercent { get; set; }
+        public float MagicResistPercent { get; set; }
 
         public float PhysicalDamage { get; set; } = 10f;
         public float AttackSpeed { get; set; } = 1f;
@@ -76,23 +77,28 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         public float IncreasedItemQuantity { get; set; }
 
         public float PhysicalDamageTaken { get; private set; }
+        public float MagicalDamageTaken { get; private set; }
 
         public float HealthFraction => MaxHealth <= 0f ? 0f : Clamp01(Health / MaxHealth);
         public float ResourceFraction => MaxResource <= 0f ? 0f : Clamp01(Resource / MaxResource);
         public bool IsDown => Health <= 0f;
 
-        public void ReceivePhysical(float rawDamage)
+        public float ReceivePhysical(float rawDamage)
         {
-            if (rawDamage <= 0f) return;
+            if (rawDamage <= 0f) return 0f;
             var dealt = rawDamage * (1f - ArmorPercent * 0.01f);
             PhysicalDamageTaken += dealt;
             Health = Math.Max(0f, Health - dealt);
+            return dealt;
         }
 
-        public void ReceiveMagical(float rawDamage)
+        public float ReceiveMagical(float rawDamage)
         {
-            if (rawDamage <= 0f) return;
-            Health = Math.Max(0f, Health - rawDamage);
+            if (rawDamage <= 0f) return 0f;
+            var dealt = rawDamage * (1f - MagicResistPercent * 0.01f);
+            MagicalDamageTaken += dealt;
+            Health = Math.Max(0f, Health - dealt);
+            return dealt;
         }
 
         public void SpendResource(float amount) => Resource = Math.Max(0f, Resource - amount);
@@ -105,6 +111,21 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         private static float Clamp01(float v) => v < 0f ? 0f : v > 1f ? 1f : v;
+    }
+
+    internal static class EnemyTestExtensions
+    {
+        /// <summary>
+        /// Strips the enemy's magic resist, so a test about who a Cast hits or how a health bar reacts can assert
+        /// round numbers without caring what the archetype curve gives (the resist itself is covered by
+        /// <c>EnemyStatsTests</c>).
+        /// </summary>
+        public static Enemy WithoutMagicResist(this Enemy enemy)
+        {
+            enemy.Stat(StatName.MagicResist).AddModifier(
+                new StatModifier(new UnityEngine.Vector2Int(0, 100), 0f, StatModifierType.Overwrite));
+            return enemy;
+        }
     }
 
     /// <summary>
