@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using Submodules.Utility.Extensions;
 using ToolSmiths.InventorySystem.Items;
 
 [assembly: InternalsVisibleTo("InventorySystem.Simulation.Tests")]
@@ -37,6 +38,11 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// size, jitter, spawn desync) is drawn from the injected <see cref="IRollSource"/>, in that
     /// order. The arrival-jitter roll is only drawn with <see cref="EncounterTuning.DelayFirstSpawn"/>.
     /// It never references the hero.
+    ///
+    /// The sim owns position (spatial-combat spec): the hero stands at the <see cref="Ground"/>'s origin and each
+    /// enemy spawns on its edge, walks in on sim time and Strikes only once the hero is within its Strike Range;
+    /// the hero's Strike likewise needs its target within <see cref="HeroStrikeRange"/>. The spawn bearing and
+    /// stop jitter come from a separate movement stream, so they never shift a seeded outcome above.
     /// </summary>
     public sealed class EncounterSimulation
     {
@@ -46,7 +52,10 @@ namespace ToolSmiths.InventorySystem.Simulation
         private readonly HeroBehaviour _behaviour;
         private readonly IBagGauge _bag;
         private readonly EncounterTuning _tuning;
+        private readonly GroundTuning _ground;
+        private readonly IRollSource _movementRolls;
         private readonly CombatClock _clock;
+        private readonly List<float> _bearings = new(); // reused buffer - a spawn sorts the living bearings
         private readonly List<Enemy> _enemies = new();
         private readonly List<Enemy> _castTargets = new(); // reused buffer — the Cast runs on a cadence
 
@@ -73,22 +82,30 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// Optional — an Encounter built without one never fires the bag-full auto-Recall, which
         /// is what a fight with no storage wired to it should do.
         /// </param>
+        /// <param name="movementRolls">
+        /// The movement stream - spawn bearing and stop jitter - kept apart from <paramref name="rolls"/> so
+        /// adding or changing a movement roll can never reorder a seeded loot, roster or spawn outcome. Optional:
+        /// without one every movement roll reads 0.5 (no bearing jitter, a stop pulled in by half the jitter).
+        /// </param>
         public EncounterSimulation(
             IHeroCombatant hero,
             EncounterProfile profile,
             IRollSource rolls,
             HeroBehaviour behaviour,
             EncounterTuning tuning = null,
-            IBagGauge bag = null)
+            IBagGauge bag = null,
+            IRollSource movementRolls = null)
         {
             _hero = hero ?? throw new ArgumentNullException(nameof(hero));
             _profile = profile ?? throw new ArgumentNullException(nameof(profile));
             _rolls = rolls ?? throw new ArgumentNullException(nameof(rolls));
             _behaviour = behaviour ?? throw new ArgumentNullException(nameof(behaviour));
             _bag = bag;
+            _movementRolls = movementRolls ?? new NeutralRolls();
 
             _tuning = tuning ?? new EncounterTuning();
             _tuning.Validate();
+            _ground = _tuning.Ground;
 
             _clock = new CombatClock(_tuning.Tick, _tuning.MaxTicksPerAdvance);
             _clock.OnTick += Step;
@@ -132,13 +149,23 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         public int AliveEnemyCount => _enemies.Count;
 
+        /// <summary>The ground the fight takes place on - its origin, radius and the unarmed Strike Range.</summary>
+        public GroundTuning Ground => _ground;
+
+        /// <summary>Where the hero stands on the ground: the origin.</summary>
+        public Coordinate HeroPosition => _ground.Origin;
+
+        /// <summary>How far from <see cref="HeroPosition"/> the hero's Strike reaches.</summary>
+        public float HeroStrikeRange => _ground.HeroStrikeRange;
+
         /// <summary>
-        /// The enemy the hero's next Strike would hit, or null when none lives (issue #182). A pure peek at the
-        /// Strike's own selection - the lowest health, the earliest spawned on a tie - with no state of its own
-        /// and no event, so it cannot disagree with the Strike that follows. It can change between swings as
-        /// health changes. The Cast's targets are not this.
+        /// The enemy the hero's next Strike would hit, or null when none is within his Strike Range (issue #182).
+        /// A pure peek at the Strike's own selection - the lowest health among the enemies in reach, the earliest
+        /// spawned on a tie - with no state of its own and no event, so it cannot disagree with the Strike that
+        /// follows. An enemy still walking in is not in reach. It can change between swings as health and
+        /// positions change. The Cast's targets are not this.
         /// </summary>
-        public Enemy StrikeTarget => LowestHealth();
+        public Enemy StrikeTarget => LowestHealthInReach();
 
         /// <summary>1-based index of the Encounter currently building or being fought.</summary>
         public int CurrentEncounter { get; private set; }
@@ -254,6 +281,10 @@ namespace ToolSmiths.InventorySystem.Simulation
             for (var i = 0; i < _enemies.Count; i++)
                 _enemies[i].Regenerate(dt);
 
+            // Positions advance here and nowhere else, on the tick, so they scale with sim speed and freeze at
+            // zero. Everyone moves before anyone attacks: attacks resolve against this tick's positions.
+            MoveEnemies(dt);
+
             ResolveStrike(dt);
             ResolveCast(dt);
             ResolveEnemyStrikes(dt);
@@ -353,12 +384,82 @@ namespace ToolSmiths.InventorySystem.Simulation
                 // desync so a Pack does not strike in lockstep
                 StrikeTimer = (float)_rolls.Next() * (1f / EnemyArchetypes.Of(archetype).AttackSpeed),
             };
+            PlaceOnTheGround(enemy);
             _enemies.Add(enemy);
 
             if (archetype == EnemyArchetype.Brute) _spawnedBrute++;
             else _spawnedSkirmisher++;
 
             EnemySpawned?.Invoke(enemy);
+        }
+
+        // ─── the ground ──────────────────────────────────────────────────────
+
+        // Slack on every range test: an enemy that stops exactly at its range lands on it within float error.
+        private const float RangeSlack = 0.001f;
+
+        private bool InReach(Coordinate from, Coordinate to, float range) =>
+            Coordinate.Distance(from, to) <= range + RangeSlack;
+
+        /// <summary>
+        /// Stand a fresh enemy on the spawn ring at a bearing of the sim's choosing, and fix how close it will
+        /// walk in. Both rolls come from the movement stream, bearing first.
+        /// </summary>
+        private void PlaceOnTheGround(Enemy enemy)
+        {
+            var bearing = PickSpawnBearing((float)_movementRolls.Next());
+            var stopRoll = (float)_movementRolls.Next();
+
+            enemy.Bearing = bearing;
+            enemy.Position = _ground.Origin
+                + Coordinate.Rotate(new Coordinate(1f, 0f), bearing) * (_ground.Radius + _ground.SpawnMargin);
+            enemy.StopDistance = enemy.StrikeRange * (1f - _ground.StopJitter * stopRoll);
+        }
+
+        /// <summary>
+        /// The middle of the widest gap between the living enemies' bearings, strayed by the jitter; the first
+        /// such gap on a tie, and the whole circle when nobody lives. A Pack spreads out because each arrival
+        /// bisects what the last one left.
+        /// </summary>
+        private float PickSpawnBearing(float roll)
+        {
+            _bearings.Clear();
+            for (var i = 0; i < _enemies.Count; i++)
+                if (!_enemies[i].IsDown)
+                    _bearings.Add(_enemies[i].Bearing);
+            _bearings.Sort();
+
+            var start = 0f;
+            var width = 360f;
+            for (var i = 0; i < _bearings.Count; i++)
+            {
+                var end = i + 1 < _bearings.Count ? _bearings[i + 1] : _bearings[0] + 360f;
+                if (i == 0 || end - _bearings[i] > width)
+                {
+                    start = _bearings[i];
+                    width = end - _bearings[i];
+                }
+            }
+
+            return (start + width * (0.5f + (roll - 0.5f) * _ground.BearingJitter)) % 360f;
+        }
+
+        private void MoveEnemies(float dt)
+        {
+            var hero = HeroPosition;
+            for (var i = 0; i < _enemies.Count; i++)
+            {
+                var enemy = _enemies[i];
+                var excess = Coordinate.Distance(enemy.Position, hero) - enemy.StopDistance;
+                if (excess <= 0f) continue;
+
+                enemy.Position = Coordinate.MoveTowards(enemy.Position, hero, Math.Min(enemy.MovementSpeed * dt, excess));
+            }
+        }
+
+        private sealed class NeutralRolls : IRollSource
+        {
+            public float Next() => 0.5f;
         }
 
         // ─── the hero's two attacks ──────────────────────────────────────────
@@ -369,10 +470,16 @@ namespace ToolSmiths.InventorySystem.Simulation
             var interval = 1f / _hero.AttackSpeed;
             if (_strikeTimer < interval || _enemies.Count == 0) return;
 
-            _strikeTimer = Math.Min(_strikeTimer - interval, interval); // at most one Strike per tick
+            var target = LowestHealthInReach();
+            if (target == null)
+            {
+                // Everyone is still walking in: the swing is ready and waits, but nothing banks beyond it, so
+                // arrival is one Strike, not a burst.
+                _strikeTimer = interval;
+                return;
+            }
 
-            var target = LowestHealth();
-            if (target == null) return;
+            _strikeTimer = Math.Min(_strikeTimer - interval, interval); // at most one Strike per tick
 
             target.ReceivePhysical(_hero.PhysicalDamage);
             HeroStriked?.Invoke();
@@ -413,6 +520,13 @@ namespace ToolSmiths.InventorySystem.Simulation
                 enemy.StrikeTimer += dt;
                 if (enemy.StrikeTimer < interval) continue;
 
+                if (!InReach(enemy.Position, HeroPosition, enemy.StrikeRange))
+                {
+                    // Still walking in (or the hero stepped away): ready, but walking banks no burst.
+                    enemy.StrikeTimer = interval;
+                    continue;
+                }
+
                 enemy.StrikeTimer = Math.Min(enemy.StrikeTimer - interval, interval);
                 _hero.ReceivePhysical(enemy.StrikeDamage);
             }
@@ -448,13 +562,13 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         // ─── deterministic targeting ─────────────────────────────────────────
 
-        private Enemy LowestHealth()
+        private Enemy LowestHealthInReach()
         {
             Enemy best = null;
             for (var i = 0; i < _enemies.Count; i++)
             {
                 var e = _enemies[i];
-                if (e.IsDown) continue;
+                if (e.IsDown || !InReach(HeroPosition, e.Position, HeroStrikeRange)) continue;
                 if (best == null || e.Health < best.Health)
                     best = e;
             }

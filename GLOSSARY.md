@@ -382,8 +382,21 @@ prototype starting points but are not frozen.
 
 **Strike**:
 The hero's physical attack — one weapon hit on a `1 / AttackSpeed` cadence against the
-single lowest-HP enemy in the fight. Always available; gear only scales it.
+lowest-HP enemy within the hero's **Strike Range** - an enemy still walking in cannot be
+struck. Always available; gear only scales it.
 _Avoid_: swing, attack (a Cast attacks too), auto-attack, basic attack
+
+**Ground**:
+The flat disk the fight takes place on, owned by the simulation (spatial-combat spec). The
+hero stands at its **Origin**; enemies spawn a margin beyond its edge, on a bearing the sim
+chooses, and walk in. The arena draws positions the sim owns; it never moves anyone.
+_Avoid_: map, arena (that is the view), field, board
+
+**Strike Range**:
+How far from the hero a Strike reaches, in ground units. An enemy Strikes only while the hero
+is within its Strike Range, so a melee enemy closes in and a ranged one - the same capability
+with a longer range - stands off. The unarmed hero has a short one; gear never rolls range.
+_Avoid_: reach, melee range, weapon range
 
 **Cast**:
 The hero's magical attack — flat `MagicalDamage` to each of the three highest-HP enemies

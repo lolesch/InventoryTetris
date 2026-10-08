@@ -33,6 +33,13 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <summary>How many of the highest-HP enemies one Cast hits.</summary>
         public int CastTargets { get; set; } = 3;
 
+        /// <summary>
+        /// The ground the fight takes place on. Collapsed by default - every enemy spawns on the hero, so a
+        /// test sees the fight at once, as with <see cref="DelayFirstSpawn"/>; the <c>SimulationService</c>
+        /// plays on <see cref="GroundTuning.Standard"/>.
+        /// </summary>
+        public GroundTuning Ground { get; set; } = new();
+
         /// <summary>Spiral-of-death clamp handed to the <see cref="CombatClock"/>.</summary>
         public int MaxTicksPerAdvance { get; set; } = 8;
 
@@ -48,6 +55,9 @@ namespace ToolSmiths.InventorySystem.Simulation
                 throw new ArgumentOutOfRangeException(nameof(CastTargets), CastTargets, "Cast must hit at least one target.");
             if (MaxTicksPerAdvance < 1)
                 throw new ArgumentOutOfRangeException(nameof(MaxTicksPerAdvance), MaxTicksPerAdvance, "Max ticks per advance must be at least 1.");
+            if (Ground == null)
+                throw new ArgumentNullException(nameof(Ground));
+            Ground.Validate();
         }
     }
 }

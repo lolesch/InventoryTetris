@@ -42,9 +42,19 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// drop counts is unfixed (spec "Loot flow").
         /// </summary>
         public readonly int LootRolls;
+        /// <summary>
+        /// How far from the hero this body can Strike, in ground units - flat, not a curve. Melee is short;
+        /// ranged is the same capability with a longer range, so it stands off (spatial-combat spec).
+        /// </summary>
+        public readonly float StrikeRange;
+        /// <summary>Ground units walked per second while chasing the hero - flat, not a curve.</summary>
+        public readonly float MovementSpeed;
 
-        public EnemyArchetypeStats(StatCurve health, StatCurve damage, StatCurve armorPercent, float attackSpeed, StatCurve xp, int lootRolls)
+        public EnemyArchetypeStats(StatCurve health, StatCurve damage, StatCurve armorPercent, float attackSpeed, StatCurve xp, int lootRolls,
+            float strikeRange, float movementSpeed)
         {
+            StrikeRange = strikeRange;
+            MovementSpeed = movementSpeed;
             Health = health;
             Damage = damage;
             ArmorPercent = armorPercent;
@@ -68,7 +78,9 @@ namespace ToolSmiths.InventorySystem.Simulation
             armorPercent: new StatCurve(3f, 0.9f, 1.0f),
             attackSpeed: 0.55f,
             xp: new StatCurve(5f, 3.5f, 1.0f),
-            lootRolls: 1);
+            lootRolls: 1,
+            strikeRange: 1.5f,
+            movementSpeed: 2f);
 
         public static readonly EnemyArchetypeStats Skirmisher = new(
             health: new StatCurve(10f, 9f, 1.06f),
@@ -76,7 +88,9 @@ namespace ToolSmiths.InventorySystem.Simulation
             armorPercent: new StatCurve(0f, 0f, 1.0f),
             attackSpeed: 1.6f,
             xp: new StatCurve(13f, 8f, 1.0f),
-            lootRolls: 1);
+            lootRolls: 1,
+            strikeRange: 6f,
+            movementSpeed: 3.5f);
 
         public static EnemyArchetypeStats Of(EnemyArchetype archetype) =>
             archetype == EnemyArchetype.Brute ? Brute : Skirmisher;

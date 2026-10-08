@@ -1,4 +1,5 @@
 using System;
+using Submodules.Utility.Extensions;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 
@@ -20,6 +21,8 @@ namespace ToolSmiths.InventorySystem.Simulation
             ArmorPercent = stats.ArmorPercent.At(sourceLevel);
             StrikeDamage = stats.Damage.At(sourceLevel);
             AttackSpeed = stats.AttackSpeed;
+            StrikeRange = stats.StrikeRange;
+            MovementSpeed = stats.MovementSpeed;
             Xp = stats.Xp.At(sourceLevel);
         }
 
@@ -36,6 +39,30 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         /// <summary>XP this body adds to the Encounter pot when it falls, before the balance term.</summary>
         public float Xp { get; }
+
+        /// <summary>How far from the hero this enemy can Strike, in ground units.</summary>
+        public float StrikeRange { get; }
+
+        /// <summary>Ground units this enemy walks per second while chasing the hero.</summary>
+        public float MovementSpeed { get; }
+
+        /// <summary>
+        /// Where this enemy stands on the ground. The Encounter owns it and moves it on sim time; the arena
+        /// only reads it. Starts on the spawn ring.
+        /// </summary>
+        public Coordinate Position { get; internal set; }
+
+        /// <summary>
+        /// The bearing, in degrees in 0..360 (positive from +x toward +z), this enemy spawned on - seen from the
+        /// ground's origin. Kept until it falls.
+        /// </summary>
+        public float Bearing { get; internal set; }
+
+        /// <summary>
+        /// How far from the hero this enemy stops walking: its Strike Range pulled in by a seeded jitter drawn
+        /// once at spawn, so it always ends up within range.
+        /// </summary>
+        internal float StopDistance { get; set; }
 
         /// <summary>Seconds banked toward this enemy's next Strike. The Encounter advances it.</summary>
         internal float StrikeTimer { get; set; }
