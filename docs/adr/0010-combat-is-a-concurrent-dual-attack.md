@@ -280,3 +280,28 @@ boundary keeps its other jobs — the Roster, the beat, the pacing unit — it j
   `SimulationProvider` sets; it defaults off so the sim's unit tests still start with bodies.
 - **Relocate.** `RunState.Relocate` swaps the live Encounter for one at another Location without
   a Recall — see CONTEXT.md *Relocate*. Run totals carry across it.
+
+## Fourth amendment - archetype damage types and enemy magic resist (2026-10-08, spatial-combat spec)
+
+Amends the second amendment's "Strike only ... resists/penetration still deferred" and the Consequences line
+"Resists and penetration stay deferred". Strike-only is unchanged: enemies still never Cast, have no mana and no
+regeneration.
+
+- **Each archetype declares the damage type of its Strike**: Brute physical, Skirmisher magical
+  (`EnemyArchetypeStats.DamageType`, reusing the shared `DamageType` enum). A Strike deals the enemy's physical or
+  magical damage stat, so the hero mitigates a Brute with Armor and a Skirmisher with Magic Resist. The
+  Skirmisher's "fast light hits" now ignore Armor, which is what makes the hero's Magic Resist matter at last.
+- **Enemies have a magic resist** of their own, off an archetype curve like Armor (Brute 0.4 per source level,
+  Skirmisher 0.8; placeholders, the point is that it exists), so the hero's Cast is mitigated like the Strike has
+  always been. Each resist mitigates only its own type, clamped to 0..100 percent so a hit never heals.
+- **Enemies are stat-backed.** Each carries a modifiable `CharacterStat` for every stat its archetype defines -
+  Health, Armor, MagicResist, the damage stat of its type, AttackSpeed, MovementSpeed - with bases off the
+  archetype curves at the Location's source level, and the sim reads them live, so effects and gear can modify
+  them later. Strike Range stays a base archetype property, as it does for the hero. There is no regeneration or
+  Resource stat.
+- **A combatant reports the amount it actually lost** from a physical or magical hit: after its own mitigation
+  and no more than it had to lose (for the hero, the Shield's absorption plus the Health lost). Only the combatant
+  knows both its resist and its remaining pool, so `ICombatant.ReceivePhysical` / `ReceiveMagical` return it; the
+  sim's typed hit events carry it beside the raw amount.
+- The "Cast hits the highest-HP enemies, Strike the lowest-HP" targeting lines above are superseded separately by
+  the spatial-combat spec's sticky Strike target and area Cast.

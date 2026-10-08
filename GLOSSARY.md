@@ -383,7 +383,10 @@ prototype starting points but are not frozen.
 **Strike**:
 The hero's physical attack — one weapon hit on a `1 / AttackSpeed` cadence against the
 lowest-HP enemy within the hero's **Strike Range** - an enemy still walking in cannot be
-struck. Always available; gear only scales it.
+struck. Always available; gear only scales it. Enemies Strike too, once the hero is within their
+own Strike Range, and each archetype declares its Strike's **damage type**: a Brute's is
+physical (mitigated by the hero's Armor), a Skirmisher's magical (by his Magic Resist). Enemies
+have a Magic Resist of their own, so the hero's Cast is mitigated like his Strike.
 _Avoid_: swing, attack (a Cast attacks too), auto-attack, basic attack
 
 **Ground**:
@@ -418,14 +421,16 @@ singly.
 _Avoid_: wave, swarm, group (that is the Encounter's whole cast), ambush
 
 **Brute**:
-The bulky enemy archetype — high health, slow hard hits, some Armor, low XP. The **Cast**
+The bulky enemy archetype — high health, slow hard hits (physical damage type), some Armor and a
+little Magic Resist, low XP. Like every enemy it is built from modifiable stats. The **Cast**
 (highest-HP targeting) tends to land on Brutes; a Pack of them is what a single-target
 physical build clears best, and what an area build grinds against. Parametric off the
 Location's source level.
 _Avoid_: tank, heavy, bruiser, ogre, elite
 
 **Skirmisher**:
-The fragile enemy archetype — low health, fast light hits, no Armor, high XP. The
+The fragile enemy archetype — low health, fast light hits (magical damage type), no Armor but
+some Magic Resist, high XP. Like every enemy it is built from modifiable stats. The
 **Strike** (lowest-HP targeting) tends to pick off Skirmishers; a swarm of them is what
 an area magical build clears best, and what a single-target build gets overwhelmed by.
 Parametric off the Location's source level.
