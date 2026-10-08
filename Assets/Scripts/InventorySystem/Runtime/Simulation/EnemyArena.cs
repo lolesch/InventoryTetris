@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Submodules.Utility.Extensions;
 using Submodules.Utility.Tools;
 using Submodules.Utility.UI;
 using ToolSmiths.InventorySystem.Geometry;
@@ -9,9 +10,15 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.Runtime.Simulation
 {
     /// <summary>
-    /// Owns the pooled <see cref="EnemyView"/> figures standing on an ellipse around the Hero icon and
-    /// keeps one per living enemy of the live Encounter (issues #94, #176). It replaces the combat
-    /// panel's enemy HP bar list: the pooling and the binding are what <c>EnemyHealthBarPool</c> had.
+    /// Owns the pooled <see cref="EnemyView"/> figures and the <see cref="HeroFigure"/> standing on the sim's
+    /// ground, drawn around the Hero icon, and keeps one view per living enemy of the live Encounter (issues #94,
+    /// #176, #208). It replaces the combat panel's enemy HP bar list: the pooling and the binding are what
+    /// <c>EnemyHealthBarPool</c> had.
+    ///
+    /// The simulation owns position (ADR-0018): this only projects it. Each frame every figure is placed at
+    /// <see cref="Enemy.Position"/> (the hero at <see cref="EncounterSimulation.HeroPosition"/>) through an
+    /// <see cref="ArenaProjection"/> of <c>groundScale</c> and <c>tilt</c>, relative to the ground's
+    /// <see cref="GroundTuning.Origin"/>, which is drawn at the anchor. Nothing here walks, rolls or steers.
     ///
     /// Only the <i>binding</i> is polled - <see cref="Update"/> compares the Run's current
     /// <see cref="EncounterSimulation"/> to the one it holds, once a frame. The sim is rebuilt on
@@ -32,10 +39,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// the group resets, and whether the group's <c>ActiveMember</c> is already set when the Run is sent is
     /// not guaranteed, so nothing is resolved at bind time. A null anchor holds the views where they are
     /// and shows nothing new. Positions are in the arena root's space, so this object must sit outside any
-    /// face that fades or clips (the minimap's InFields).
-    ///
-    /// The view's randomness (the slot jitter) is <see cref="Random"/>, never the sim's roll source:
-    /// drawing from that would shift every seeded outcome.
+    /// face that fades or clips (the minimap's InFields). The checkmark itself is never moved; the hero figure
+    /// is a separate element.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class EnemyArena : MonoBehaviour
@@ -46,16 +51,18 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         [SerializeField, Tooltip("The Locations' toggle group; its active member's Hero icon is the anchor.")]
         private ToggleGroup locations;
         [SerializeField] private EnemyVisuals visuals;
-        [SerializeField, Min(0f), Tooltip("Canvas units of horizontal offset under which a figure keeps the way it faces.")]
-        private float facingDeadZone = 12f;
-        [SerializeField, Range(0f, 45f), Tooltip("Degrees a new figure may sit off the middle of the widest gap.")]
-        private float slotJitterDegrees = 12f;
+        [SerializeField, Tooltip("The hero as a figure on the ground: a separate element, so the Hero icon (the ground's origin) stays put. Optional.")]
+        private HeroFigure heroFigure;
+        [SerializeField, Min(0.01f), Tooltip("Canvas units one ground unit spans along the horizontal axis.")]
+        private float groundScale = 16f;
+        [SerializeField, Range(0f, 1f), Tooltip("The depth axis against the horizontal one: 1 draws the ground top-down, less flattens it. Drawing only; the rules use ground distances.")]
+        private float tilt = 0.65f;
+        [SerializeField, Min(0f), Tooltip("Ground units of horizontal offset from the hero under which a figure keeps the way it faces.")]
+        private float facingDeadZoneUnits = 0.75f;
         [SerializeField, Tooltip("A defeated enemy fades out before it is pooled. Off: it is released at once.")]
         private bool deathFade = true;
         [SerializeField, Min(0f), Tooltip("Sim seconds the fade takes; scales with sim speed and stops on pause.")]
         private float deathFadeSeconds = 0.5f;
-        [SerializeField, Min(0f), Tooltip("Canvas units beyond its ring a new figure appears at, before it walks in.")]
-        private float spawnMargin = 100f;
         [SerializeField, Tooltip("Feedback: the sprite flashes white on each hit. Independent of the others; off binds nothing.")]
         private bool hitFlash = true;
         [SerializeField, Tooltip("Feedback: a number rises from the enemy on each hit, one per enemy per frame. Independent of the others; off binds nothing.")]
@@ -68,13 +75,27 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private readonly Dictionary<Enemy, EnemyView> _views = new();
         // Views whose enemy fell and that are fading out. Not in _views: no slot, no events, no highlight.
         private readonly List<EnemyView> _dying = new();
-        private readonly List<float> _angles = new();
-        private readonly List<EnemyView> _ordered = new();
+        private readonly List<DepthEntry> _ordered = new();
         private EnemyView _marked;
         private PrefabPool<EnemyView> _pool;
         private EncounterSimulation _bound;
         private AbstractToggle _anchorOwner;
         private RectTransform _anchor;
+
+        // One drawn figure's place in the depth sort. The tie keeps the order it already has, so equal depth never flickers.
+        private readonly struct DepthEntry
+        {
+            public readonly Transform Transform;
+            public readonly Coordinate Ground;
+            public readonly int Tie;
+
+            public DepthEntry(Transform transform, Coordinate ground)
+            {
+                Transform = transform;
+                Ground = ground;
+                Tie = transform.GetSiblingIndex();
+            }
+        }
 
         private RectTransform Root => container != null ? container : (RectTransform)transform;
 
@@ -109,7 +130,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             // The first Encounter's initial batch spawns inside the sim's constructor, before this
             // could listen - and a Send can land between frames with enemies already in. Seeding
-            // oldest-first matches what the events would have built, each pick seeing the ones placed.
+            // oldest-first matches what the events would have built.
             for (var i = 0; i < encounter.Enemies.Count; i++)
                 SpawnView(encounter.Enemies[i]);
         }
@@ -128,6 +149,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 Release(view);
             _views.Clear();
             _marked = null;
+
+            // No Run, no hero on the ground.
+            if (heroFigure != null)
+                heroFigure.Hide();
 
             // The Run ended, so no fade lingers: dying views go back at once too.
             foreach (var view in _dying)
@@ -152,22 +177,16 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             }
         }
 
-        /// <summary>Takes a pooled view for <paramref name="enemy"/> and gives it the emptiest slot of the ring.</summary>
+        /// <summary>Takes a pooled view for <paramref name="enemy"/>. It stays hidden until <see cref="Place"/> puts it where the sim has the enemy.</summary>
         private void SpawnView(Enemy enemy)
         {
             if (_views.ContainsKey(enemy))
                 return;
 
-            _angles.Clear();
-            foreach (var standing in _views.Values)
-                _angles.Add(standing.SlotAngle);
-
-            var jitter = Random.Range(-slotJitterDegrees, slotJitterDegrees) * Mathf.Deg2Rad;
-            var angle = ArenaLayout.PickSlotAngle(_angles, jitter);
             var entry = visuals != null ? visuals.For(enemy.Archetype) : EnemyVisuals.Fallback;
 
             var view = Pool.GetObject();
-            view.Bind(enemy, entry, angle);
+            view.Bind(enemy, entry);
             if (hitFlash && view.HitFlash != null)
                 view.HitFlash.Bind(enemy, entry.Sprite);
             if (damageNumbers && view.DamageNumbers != null)
@@ -239,10 +258,13 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 _marked.SetHighlighted(true);
         }
 
-        /// <summary>Walks every view toward its slot around the anchor as it is this frame; nothing with no anchor.</summary>
+        /// <summary>
+        /// Puts every figure where the sim has it, projected from the ground's origin at the anchor, and turns it
+        /// toward the hero (the hero toward his Strike target). Nothing with no Encounter or no anchor.
+        /// </summary>
         private void Place()
         {
-            if (_views.Count == 0)
+            if (_bound == null)
                 return;
 
             var anchor = ResolveAnchor();
@@ -253,10 +275,25 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             var world = anchor.TransformPoint(anchor.rect.center);
             var center = (Vector2)root.InverseTransformPoint(world) - root.rect.center;
 
-            var simDelta = SimulationService.Instance.SimDelta(Time.deltaTime);
+            var projection = new ArenaProjection(groundScale, tilt);
+            var origin = _bound.Ground.Origin;
+            var hero = _bound.HeroPosition;
+
             var moved = false;
-            foreach (var view in _views.Values)
-                moved |= view.PlaceAround(center, facingDeadZone, simDelta, spawnMargin);
+            foreach (var (enemy, view) in _views)
+            {
+                var sign = ArenaLayout.FacingSign(enemy.Position.x, hero.x, view.FacingSign, facingDeadZoneUnits);
+                moved |= view.Place(center + projection.ToCanvas(enemy.Position, origin), enemy.Position, sign);
+            }
+
+            if (heroFigure != null)
+            {
+                var target = _bound.StrikeTarget;
+                var sign = target != null
+                    ? ArenaLayout.FacingSign(hero.x, target.Position.x, heroFigure.FacingSign, facingDeadZoneUnits)
+                    : heroFigure.FacingSign;
+                moved |= heroFigure.Place(center + projection.ToCanvas(hero, origin), hero, sign);
+            }
 
             if (moved)
                 SortByDepth();
@@ -283,17 +320,31 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             return _anchor;
         }
 
-        /// <summary>Lower on screen draws in front: sibling order by Y, highest first.</summary>
+        /// <summary>
+        /// Nearer draws in front: sibling order by ground depth, the far side first. It reads the ground and not
+        /// the canvas, so a tilt of zero still orders the figures.
+        /// </summary>
         private void SortByDepth()
         {
             _ordered.Clear();
-            _ordered.AddRange(_views.Values);
-            _ordered.AddRange(_dying);
-            _ordered.Sort((a, b) => ((RectTransform)b.transform).anchoredPosition.y
-                .CompareTo(((RectTransform)a.transform).anchoredPosition.y));
+            foreach (var view in _views.Values)
+                _ordered.Add(new DepthEntry(view.transform, view.GroundPosition));
+            foreach (var view in _dying)
+                if (view != null)
+                    _ordered.Add(new DepthEntry(view.transform, view.GroundPosition));
+            if (heroFigure != null && heroFigure.IsShown)
+                _ordered.Add(new DepthEntry(heroFigure.transform, heroFigure.GroundPosition));
+
+            _ordered.Sort(CompareDepth);
 
             for (var i = 0; i < _ordered.Count; i++)
-                _ordered[i].transform.SetSiblingIndex(i);
+                _ordered[i].Transform.SetSiblingIndex(i);
+        }
+
+        private static int CompareDepth(DepthEntry a, DepthEntry b)
+        {
+            var byDepth = ArenaProjection.DepthOrder(a.Ground, b.Ground);
+            return byDepth != 0 ? byDepth : a.Tie.CompareTo(b.Tie);
         }
     }
 }
