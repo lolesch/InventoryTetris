@@ -720,7 +720,7 @@ namespace ToolSmiths.InventorySystem.Simulation
                 var candidate = _enemies[i];
                 if (candidate.IsDown || !InReach(HeroPosition, candidate.Position, _tuning.Cast.Range)) continue;
 
-                var count = InShape(shape, candidate).Count;
+                var count = CountInShape(shape, candidate);
                 var distance = Coordinate.Distance(HeroPosition, candidate.Position);
                 if (count > bestCount || (count == bestCount && count > 0 && distance < bestDistance))
                 {
@@ -732,15 +732,27 @@ namespace ToolSmiths.InventorySystem.Simulation
             return best;
         }
 
+        /// <summary>How many living enemies <see cref="InShape"/> would list, counted without building the list.</summary>
+        private int CountInShape(AreaShape shape, Enemy aim)
+        {
+            var count = 0;
+            for (var i = 0; i < _enemies.Count; i++)
+                if (Catches(shape, aim, _enemies[i]))
+                    count++;
+            return count;
+        }
+
         /// <summary>The living enemies inside <paramref name="shape"/> placed for a Cast aimed at <paramref name="aim"/>, in spawn order.</summary>
         private List<Enemy> InShape(AreaShape shape, Enemy aim)
         {
             _castTargets.Clear();
             for (var i = 0; i < _enemies.Count; i++)
-                if (!_enemies[i].IsDown
-                    && shape.Contains(_enemies[i].Position, _tuning.Cast.Anchor, HeroPosition, aim.Position))
+                if (Catches(shape, aim, _enemies[i]))
                     _castTargets.Add(_enemies[i]);
             return _castTargets;
         }
+
+        private bool Catches(AreaShape shape, Enemy aim, Enemy enemy) =>
+            !enemy.IsDown && shape.Contains(enemy.Position, _tuning.Cast.Anchor, HeroPosition, aim.Position);
     }
 }
