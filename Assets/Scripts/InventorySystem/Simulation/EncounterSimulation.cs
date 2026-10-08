@@ -44,6 +44,9 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// enemy spawns on its edge, walks in on sim time and Strikes only once the hero is within its Strike Range;
     /// the hero's Strike likewise needs its target within <see cref="HeroStrikeRange"/>. The spawn bearing and
     /// stop jitter come from a separate movement stream, so they never shift a seeded outcome above.
+    ///
+    /// Every hit that lands (the hero's Strike and Cast, each enemy Strike) rolls its damage spread from a third
+    /// stream and is announced by <see cref="HitLanded"/> with the amount the target actually lost (issue #211).
     /// </summary>
     public sealed class EncounterSimulation
     {
@@ -55,6 +58,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         private readonly EncounterTuning _tuning;
         private readonly GroundTuning _ground;
         private readonly IRollSource _movementRolls;
+        private readonly IRollSource _hitRolls;
         private readonly CombatClock _clock;
         private readonly List<float> _bearings = new(); // reused buffer - a spawn sorts the living bearings
         private readonly List<Enemy> _enemies = new();
@@ -88,6 +92,11 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// adding or changing a movement roll can never reorder a seeded loot, roster or spawn outcome. Optional:
         /// without one every movement roll reads 0.5 (no bearing jitter, a stop pulled in by half the jitter).
         /// </param>
+        /// <param name="hitRolls">
+        /// The hit stream - one roll per hit, for the <see cref="EncounterTuning.DamageSpread"/> - kept apart from
+        /// <paramref name="rolls"/> and <paramref name="movementRolls"/> so a hit can never reorder a seeded outcome.
+        /// Optional: without one every hit rolls 0.5, the middle of the spread, so a hit is its base damage.
+        /// </param>
         public EncounterSimulation(
             IHeroCombatant hero,
             EncounterProfile profile,
@@ -95,7 +104,8 @@ namespace ToolSmiths.InventorySystem.Simulation
             HeroBehaviour behaviour,
             EncounterTuning tuning = null,
             IBagGauge bag = null,
-            IRollSource movementRolls = null)
+            IRollSource movementRolls = null,
+            IRollSource hitRolls = null)
         {
             _hero = hero ?? throw new ArgumentNullException(nameof(hero));
             _profile = profile ?? throw new ArgumentNullException(nameof(profile));
@@ -103,6 +113,7 @@ namespace ToolSmiths.InventorySystem.Simulation
             _behaviour = behaviour ?? throw new ArgumentNullException(nameof(behaviour));
             _bag = bag;
             _movementRolls = movementRolls ?? new NeutralRolls();
+            _hitRolls = hitRolls ?? new NeutralRolls();
 
             _tuning = tuning ?? new EncounterTuning();
             _tuning.Validate();
@@ -229,6 +240,13 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         /// <summary>Raised each tick the hero commits a magical Cast — the Ability hotbar's flash (issue #62).</summary>
         public event Action HeroCast;
+
+        /// <summary>
+        /// Raised for every hit that lands - the hero's Strike and Cast and each enemy Strike (issue #211) - with its
+        /// dealer, target, damage type, raw amount and the amount actually lost. Raised before the Strike/Cast
+        /// flash events and before a kill is processed, so the target is still in <see cref="Enemies"/>.
+        /// </summary>
+        public event Action<HitEvent> HitLanded;
 
         /// <summary>
         /// Bank <paramref name="deltaSeconds"/> of real time and run every whole tick now due
@@ -482,7 +500,7 @@ namespace ToolSmiths.InventorySystem.Simulation
 
             _strikeTimer = Math.Min(_strikeTimer - interval, interval); // at most one Strike per tick
 
-            target.ReceivePhysical(_hero.PhysicalDamage);
+            Land(_hero, target, DamageType.PhysicalDamage, _hero.PhysicalDamage);
             HeroStriked?.Invoke();
             if (target.IsDown) Defeat(target);
         }
@@ -507,9 +525,24 @@ namespace ToolSmiths.InventorySystem.Simulation
             var targets = HighestHealth(_tuning.CastTargets);
             for (var i = 0; i < targets.Count; i++)
             {
-                targets[i].ReceiveMagical(_hero.MagicalDamage);
+                Land(_hero, targets[i], DamageType.MagicalDamage, _hero.MagicalDamage);
                 if (targets[i].IsDown) Defeat(targets[i]);
             }
+        }
+
+        /// <summary>
+        /// Deal one hit and announce it: the base damage takes its spread (one roll from the hit stream, drawn for
+        /// every hit so the stream's position never depends on the tuning), the target mitigates it by
+        /// <paramref name="type"/> and reports what it lost. Not announced when the target was already down -
+        /// nothing landed.
+        /// </summary>
+        private void Land(ICombatant dealer, ICombatant target, DamageType type, float baseDamage)
+        {
+            var rawAmount = baseDamage * (1f + ((float)_hitRolls.Next() * 2f - 1f) * _tuning.DamageSpread);
+            var wasDown = target.IsDown;
+            var lost = type == DamageType.MagicalDamage ? target.ReceiveMagical(rawAmount) : target.ReceivePhysical(rawAmount);
+            if (!wasDown)
+                HitLanded?.Invoke(new HitEvent(dealer, target, type, rawAmount, lost));
         }
 
         private void ResolveEnemyStrikes(float dt)
@@ -529,10 +562,7 @@ namespace ToolSmiths.InventorySystem.Simulation
                 }
 
                 enemy.StrikeTimer = Math.Min(enemy.StrikeTimer - interval, interval);
-                if (enemy.StrikeDamageType == DamageType.MagicalDamage)
-                    _hero.ReceiveMagical(enemy.StrikeDamage);
-                else
-                    _hero.ReceivePhysical(enemy.StrikeDamage);
+                Land(enemy, _hero, enemy.StrikeDamageType, enemy.StrikeDamage);
             }
         }
 
