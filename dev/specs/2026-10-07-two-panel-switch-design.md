@@ -255,3 +255,11 @@ mirror. That works, so the spec's "the first member must not be the driver" is d
   other peek rules stand, including a hold begun while closed peeking once it opens and the same
   hold not peeking twice. The "close-and-reopen within a fade" note above changes with it: a
   reopen inside the fade now keeps the peeked tab instead of restoring.
+- **Changed: the driver is the Supply toggle in the built Vendor and Healer** (decided 2026-10-08 on
+  the scene wiring). The driver is on while the Supply shows and off while the Sold tab shows, and the
+  Sold button is the `TwoPanelMirrorToggle` that names it; the driver is also the group's first member,
+  so a close resets to the Supply by switching the driver on. Read the body's "the driver is the Sold
+  button", "the Supply panel while the bool is off" and "the reset switches it off" the other way
+  round. The component does not care which way: a driver may rest on or off, and the mirror names the
+  driver, never the other way round. The glossary entries **two-panel switch**, **mirror toggle** and
+  **peek** describe this built shape.
