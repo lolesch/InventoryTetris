@@ -5,9 +5,9 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// targeting and cadence timing; a combatant owns its own health and mitigates its own
     /// incoming damage, so the sim never needs a defender's Armor / resist numbers.
     ///
-    /// Health is exposed in absolute terms because targeting is by absolute HP (the Strike
-    /// picks the single lowest-HP enemy, the Cast the highest-HP — ADR-0010), not by
-    /// fraction: a 60-HP Skirmisher at 90 % outranks a 172-HP Brute at 50 %.
+    /// Health is exposed in absolute terms, not by fraction. Targeting is by position, not
+    /// health: the Strike walks to the hero's one sticky target and the Cast aims at the
+    /// densest cluster in range (ADR-0010 fifth amendment).
     /// </summary>
     public interface ICombatant
     {
@@ -28,13 +28,19 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// applies its own Armor. The hero adapter routes this through the
         /// live <c>Hero.ReceiveDamage</c> path.
         /// </summary>
-        void ReceivePhysical(float rawDamage);
+        /// <returns>
+        /// The amount the combatant actually lost, after its own mitigation and no more than it had
+        /// to lose - only the combatant knows both. 0 for a non-positive hit or one on a combatant
+        /// already down.
+        /// </returns>
+        float ReceivePhysical(float rawDamage);
 
         /// <summary>
         /// Take a magical hit. <paramref name="rawDamage"/> is pre-mitigation; the combatant
-        /// applies its own magic resist (enemies have none — ADR-0010).
+        /// applies its own magic resist (enemies have one too - ADR-0010, fourth amendment).
         /// </summary>
-        void ReceiveMagical(float rawDamage);
+        /// <returns>The amount actually lost, as for <see cref="ReceivePhysical"/>.</returns>
+        float ReceiveMagical(float rawDamage);
 
         /// <summary>
         /// Advance this combatant's own regeneration by one tick. The sim calls it once per

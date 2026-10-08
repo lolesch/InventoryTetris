@@ -239,7 +239,7 @@ shared across heroes would be Account state; none is yet (ADR-0014 leaves it ope
 _Avoid_: profile, save file, user
 
 **Behaviour Profile**:
-The six sliders the player sets on the **Hero** — how it fights and when it Auto-Recalls.
+The seven sliders the player sets on the **Hero** — how it fights, whom it picks and when it Auto-Recalls.
 Held by the Hero and saved with it, so a hero keeps its tuning between Sessions. Live
 during a Run: the player adjusts it, the hero never decides it.
 _Avoid_: settings, preset, loadout; "config" (that is the authored `GameConfig`)
@@ -382,14 +382,80 @@ prototype starting points but are not frozen.
 
 **Strike**:
 The hero's physical attack — one weapon hit on a `1 / AttackSpeed` cadence against the
-single lowest-HP enemy in the fight. Always available; gear only scales it.
+hero's one **Sticky Target**, walked to until it is within his **Strike Range** - an enemy
+still walking in cannot be struck. Always available; gear only scales it. Enemies Strike too, once the hero is within their
+own Strike Range, and each archetype declares its Strike's **damage type**: a Brute's is
+physical (mitigated by the hero's Armor), a Skirmisher's magical (by his Magic Resist). Enemies
+have a Magic Resist of their own, so the hero's Cast is mitigated like his Strike.
 _Avoid_: swing, attack (a Cast attacks too), auto-attack, basic attack
 
+**Ground**:
+The flat disk the fight takes place on, owned by the simulation (spatial-combat spec). The
+hero stands at its **Origin**; enemies spawn a margin beyond its edge, on a bearing the sim
+chooses, and walk in. The arena draws positions the sim owns; it never moves anyone.
+_Avoid_: map, arena (that is the view), field, board
+
+**Origin**:
+The centre of the **Ground**, where the hero calls home and stands until he walks. In the
+arena it is drawn at the selected Location's Hero icon; the icon stays the Location's marker
+and does not move, while the hero **figure** that stands on the ground is a separate element.
+The arena maps ground distance to canvas distance with one adjustable tilt (ADR-0018).
+_Avoid_: spawn point, anchor (that is the Hero icon's rect, the view's side of it), centre
+
+**Strike Range**:
+How far from the hero a Strike reaches, in ground units. An enemy Strikes only while the hero
+is within its Strike Range, so a melee enemy closes in and a ranged one - the same capability
+with a longer range - stands off. The unarmed hero has a short one; gear never rolls range.
+_Avoid_: reach, melee range, weapon range
+
 **Cast**:
-The hero's magical attack — flat `MagicalDamage` to each of the three highest-HP enemies
-at once, paced by how fast `Resource` regenerates against the cast cost. The area half
+The hero's magical attack — an instant area, paced by how fast `Resource` regenerates against
+the cast cost. Of the enemies within **Cast Range** he aims at the one whose shape would catch
+the most enemies (the **densest cluster**; a tie goes to the one nearest him, then the earliest
+spawned), then deals flat `MagicalDamage`, mitigated by each one's Magic Resist, to every enemy
+inside the shape. Enemies only: the hero is never hit. With no enemy in range, or a shape that
+would catch nobody, the Cast does not fire and spends nothing. Its cadence and the
+`CastThreshold` latch are unchanged, and the hero keeps walking while it fires. The area half
 of the kit.
 _Avoid_: spell, nuke, ability, skill
+
+**Cast Range**:
+How far from the hero an enemy may stand to be aimed at by the **Cast**, in ground units,
+read from the **Cast definition**. It limits who the hero aims at, not what the shape hits: an
+enemy beyond it is still caught when it stands inside a shape aimed at one within range.
+_Avoid_: spell range, reach, aggro range
+
+**Cast definition**:
+What a **Cast** is: its **Cast Range**, targeting pattern (an enum with one member, densest
+cluster), shape (disk, sector or rectangle), size (an area multiplier on the shape) and anchor
+(the shape starts on the aimed-at enemy, or on the hero pointing at it). A tuning value of the
+Encounter now, a skill's data once skills exist. Its cost stays the hero's cast cost.
+_Avoid_: spell data, skill, ability definition
+
+**Hit event**:
+What the simulation announces for every hit that lands - the hero's Strike, each target of his
+Cast, and every enemy Strike: who dealt it, who took it, the **damage type**, the **raw amount**
+(before mitigation, the **damage spread** applied) and the **lost amount** (what the target
+actually lost after its Armor or Magic Resist, and no more than it had). A hit the target fully
+mitigates still lands, with nothing lost. The damage numbers and, later, effects read from it.
+_Avoid_: damage event, hit callback, damage tick
+
+**Damage number**:
+The figure that rises from whoever a hit lands on - an enemy, or the hero figure - showing the
+amount lost. Its size shows how big the hit was: the raw amount against the **reference
+maximum**, the dealer's best hit of that damage type (the hero's damage stat with the spread
+applied; for hits on the hero, the strongest of that type among the archetypes the Location can
+field), from a minimum to a maximum size. Magical numbers are tinted dark blue-purple, physical
+keep the gold. One number per target and damage type per frame, so a Strike and a Cast on one
+enemy are two.
+_Avoid_: floating text, damage popup, hit marker
+
+**Damage spread**:
+A tuning fraction that varies each hit around its base damage: a hit rolls a factor between
+`1 - spread` and `1 + spread`, from its own random stream apart from the Encounter's, movement
+and loot streams. Zero means every hit is its base damage. A stand-in until weapons carry a
+real minimum and maximum.
+_Avoid_: variance, crit range, damage roll
 
 **Engagement**:
 The player-set count of enemies an Encounter tries to keep on the hero at once. A soft
@@ -405,18 +471,36 @@ singly.
 _Avoid_: wave, swarm, group (that is the Encounter's whole cast), ambush
 
 **Brute**:
-The bulky enemy archetype — high health, slow hard hits, some Armor, low XP. The **Cast**
-(highest-HP targeting) tends to land on Brutes; a Pack of them is what a single-target
+The bulky enemy archetype — high health, slow hard hits (physical damage type), some Armor and a
+little Magic Resist, low XP. Like every enemy it is built from modifiable stats. A Pack of
+them is a clump for the **Cast** to catch; it is what a single-target
 physical build clears best, and what an area build grinds against. Parametric off the
 Location's source level.
 _Avoid_: tank, heavy, bruiser, ogre, elite
 
 **Skirmisher**:
-The fragile enemy archetype — low health, fast light hits, no Armor, high XP. The
-**Strike** (lowest-HP targeting) tends to pick off Skirmishers; a swarm of them is what
+The fragile enemy archetype — low health, fast light hits (magical damage type), no Armor but
+some Magic Resist, high XP. Like every enemy it is built from modifiable stats.
+A swarm of them is a clump for the **Cast** to catch; it is what
 an area magical build clears best, and what a single-target build gets overwhelmed by.
 Parametric off the Location's source level.
 _Avoid_: minion, add, runner, rusher, trash
+
+**Origin Weight**:
+The Behaviour Profile slider (0..1, default 0.5) that sets how strongly home pulls against nearness when the
+hero picks a target. Each living enemy scores `weight × its distance from the Origin + (1 − weight) × its
+distance from the hero`, and the lowest score is taken. 0 is a brawler who fights what is nearest him; 1 is a
+homebody who never wanders after a straggler. It replaces any leash: nothing caps how far he walks. It only
+steers a *new* choice - see **Sticky Target**.
+_Avoid_: leash, aggro range, home pull
+
+**Sticky Target**:
+The one enemy the hero is fighting. He keeps it until it falls, so a fresh spawn never turns him round mid-run,
+and walks until it is within his **Strike Range**, without overshooting. The exception is a target still out of
+reach while another enemy stands inside it: he then switches to the best-scoring enemy inside (**Origin
+Weight**), so he is never hit for free. With no enemy alive he walks back to the **Origin**. The arena rings this
+enemy. His movement speed is the `MovementSpeed` stat; his **Strike Range** is his weapon type's, not a stat.
+_Avoid_: lock-on, focus target, aggro target, current target
 
 **Cast Threshold**:
 The `Resource` fraction the hero charges up to before it will start a run of Casts,

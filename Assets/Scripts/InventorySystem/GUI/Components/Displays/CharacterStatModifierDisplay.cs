@@ -57,7 +57,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                 icon = ItemService.Instance.GetStatIcon(statMod.Stat);
                 displayText = $"{statMod.Modifier}{range}"
                     + (difference.Length == 0 ? string.Empty : $" {difference.Colored(comparisonColor)}");
-                displayFontSize = RollQualityFontSize(statMod.Modifier);
+                displayFontSize = RollQuality.FontSize(statMod.Modifier, MinFontSize, MaxFontSize);
             }
 
             private static StatComparison? EquipEffect(CharacterStatModifier row, IReadOnlyList<Package> compareTo,
@@ -74,18 +74,6 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 
             private static StatComparison? UnequipEffect(CharacterStatModifier row, ItemInstance displacedBy) =>
                 displacedBy == null ? null : StatComparison.OfLoss(row, displacedBy.Affixes, Session.Instance.Hero.CompareStatModifiers);
-
-            /// <summary>
-            /// Font size scales with roll quality: an affix at the bottom of its range renders at
-            /// <see cref="MinFontSize"/>, one at the top at <see cref="MaxFontSize"/>. The
-            /// <see cref="Mathf.Clamp01"/> keeps a value outside its range — or a degenerate
-            /// (zero-width) range — from extrapolating past those bounds and blowing the text up.
-            /// </summary>
-            private static float RollQualityFontSize(StatModifier modifier)
-            {
-                var rollQuality = Mathf.Clamp01(modifier.Value.MapTo01(modifier.Range.x, modifier.Range.y));
-                return rollQuality.MapFrom01(MinFontSize, MaxFontSize);
-            }
         }
 
         [SerializeField] private Image icon;

@@ -111,6 +111,7 @@ namespace ToolSmiths.InventorySystem.Services
             RetreatHealthFraction = Mathf.Clamp01(config.RetreatHealthFraction),
             RecallBagFillFraction = Mathf.Clamp01(config.RecallBagFillFraction),
             CastThreshold = Mathf.Clamp01(config.CastThreshold),
+            OriginWeight = Mathf.Clamp01(config.OriginWeight),
             LootFilterMinimum = config.LootFilterMinimum,
         };
     }

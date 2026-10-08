@@ -55,22 +55,19 @@ namespace ToolSmiths.InventorySystem.Services
         public float MagicalDamage => _character.GetStatValue(StatName.MagicalDamage);
         public float CastCost => _castCost;
 
+        public float MovementSpeed => _character.GetStatValue(StatName.MovementSpeed);
+        public float? WeaponStrikeRange => _character.IsOutfitted ? WeaponTypes.StrikeRange(_character.Equipment.MainHandType) : null;
+
         public int Level => (int)_character.Level;
 
         public float MagicFind => _character.GetStatValue(StatName.IncreasedItemRarity);
         public float IncreasedItemQuantity => _character.GetStatValue(StatName.IncreasedItemQuantity);
 
-        public void ReceivePhysical(float rawDamage)
-        {
-            if (rawDamage > 0f)
-                _character.ReceiveDamage(DamageType.PhysicalDamage, rawDamage);
-        }
+        public float ReceivePhysical(float rawDamage) =>
+            rawDamage > 0f ? _character.ReceiveDamage(DamageType.PhysicalDamage, rawDamage) : 0f;
 
-        public void ReceiveMagical(float rawDamage)
-        {
-            if (rawDamage > 0f)
-                _character.ReceiveDamage(DamageType.MagicalDamage, rawDamage);
-        }
+        public float ReceiveMagical(float rawDamage) =>
+            rawDamage > 0f ? _character.ReceiveDamage(DamageType.MagicalDamage, rawDamage) : 0f;
 
         public void SpendResource(float amount)
         {

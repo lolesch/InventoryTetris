@@ -40,6 +40,7 @@ namespace ToolSmiths.InventorySystem.Persistence
                     retreatHealthFraction = behaviour.RetreatHealthFraction,
                     recallBagFillFraction = behaviour.RecallBagFillFraction,
                     castThreshold = behaviour.CastThreshold,
+                    originWeight = behaviour.OriginWeight,
                     lootFilterMinimum = behaviour.LootFilterMinimum.ToString(),
                 },
 

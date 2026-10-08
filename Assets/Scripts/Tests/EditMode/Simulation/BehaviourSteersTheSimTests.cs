@@ -26,6 +26,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             AttackSpeed = 0.01f,
             Resource = 0f,
             ArmorPercent = 100f,
+            MagicResistPercent = 100f, // a Skirmisher Strikes magically
         };
 
         private static EncounterTuning FastCast() => new() { CastCadence = 0.05f };

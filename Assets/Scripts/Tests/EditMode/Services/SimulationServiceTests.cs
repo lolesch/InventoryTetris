@@ -101,6 +101,75 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(other.Hero.Corpse, Is.Not.SameAs(session.Hero.Corpse));
         }
 
+        // ── the Encounter's tuning comes from the config ─────────────────────
+
+        private void SetConfig(string property, float value)
+        {
+            var so = new SerializedObject(config);
+            so.FindProperty($"<{property}>k__BackingField").floatValue = value;
+            _ = so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        [Test]
+        public void Send_PlaysOnTheStandardTuning_WhenTheConfigIsLeftAtItsDefaults()
+        {
+            service.Send(thornwood);
+
+            var sim = service.Run.Encounter;
+            var ground = GroundTuning.Standard();
+            var cast = CastDefinition.Standard();
+
+            Assert.That(sim.Ground.Radius, Is.EqualTo(ground.Radius));
+            Assert.That(sim.Ground.SpawnMargin, Is.EqualTo(ground.SpawnMargin));
+            Assert.That(sim.Ground.StopJitter, Is.EqualTo(ground.StopJitter));
+            Assert.That(sim.Ground.BearingJitter, Is.EqualTo(ground.BearingJitter));
+            Assert.That(sim.Ground.HeroStrikeRange, Is.EqualTo(ground.HeroStrikeRange));
+            Assert.That(sim.Ground.MovementSpeedScale, Is.EqualTo(ground.MovementSpeedScale));
+            Assert.That(sim.CastRange, Is.EqualTo(cast.Range));
+            Assert.That(sim.DamageSpread, Is.EqualTo(EncounterTuning.StandardDamageSpread));
+        }
+
+        [Test]
+        public void Send_BuildsTheGroundCastAndDamageSpreadFromTheConfig()
+        {
+            SetConfig("GroundRadius", 25f);
+            SetConfig("SpawnMargin", 4f);
+            SetConfig("StopJitter", 0.3f);
+            SetConfig("BearingJitter", 0.75f);
+            SetConfig("UnarmedStrikeRange", 2.5f);
+            SetConfig("MovementSpeedScale", 0.02f);
+            SetConfig("CastRange", 9f);
+            SetConfig("DamageSpread", 0.5f);
+
+            service.Send(thornwood);
+
+            var sim = service.Run.Encounter;
+            Assert.That(sim.Ground.Radius, Is.EqualTo(25f));
+            Assert.That(sim.Ground.SpawnMargin, Is.EqualTo(4f));
+            Assert.That(sim.Ground.StopJitter, Is.EqualTo(0.3f));
+            Assert.That(sim.Ground.BearingJitter, Is.EqualTo(0.75f));
+            Assert.That(sim.Ground.HeroStrikeRange, Is.EqualTo(2.5f));
+            Assert.That(sim.Ground.MovementSpeedScale, Is.EqualTo(0.02f));
+            Assert.That(sim.CastRange, Is.EqualTo(9f));
+            Assert.That(sim.DamageSpread, Is.EqualTo(0.5f));
+        }
+
+        [Test]
+        public void Send_WithAnOutOfRangeTuningValue_PullsItBackInsteadOfThrowing()
+        {
+            SetConfig("GroundRadius", -5f);
+            SetConfig("StopJitter", 1f);
+            SetConfig("CastSize", 0f);
+            SetConfig("DamageSpread", 3f);
+
+            Assert.DoesNotThrow(() => service.Send(thornwood));
+
+            var sim = service.Run.Encounter;
+            Assert.That(sim.Ground.Radius, Is.Zero);
+            Assert.That(sim.Ground.StopJitter, Is.LessThan(1f));
+            Assert.That(sim.DamageSpread, Is.EqualTo(1f));
+        }
+
         // ── Send / Recall ────────────────────────────────────────────────────
 
         [Test]
@@ -203,6 +272,25 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             service.Tick(0.1f);
 
             Assert.That(service.Run.Encounter.Duration, Is.EqualTo(0.4f).Within(0.11f), "4x the 0.1s of real time");
+        }
+
+        [Test]
+        public void ASentRun_FightsOnTheStandardGround_WithItsEnemiesSpawnedAtTheEdge()
+        {
+            service = new SimulationService(session, items, inventory, config, new SessionBuilderTests.FixedRolls(0.5f),
+                new SessionBuilderTests.FixedRolls(0.5f));
+            service.Send(thornwood);
+            var encounter = service.Run.Encounter;
+
+            // The first bodies wait one spawn delay; the combat clock caps its ticks per advance, so step small.
+            for (var i = 0; i < 400 && encounter.Enemies.Count == 0; i++)
+                service.Tick(0.1f);
+
+            Assert.That(encounter.Enemies, Is.Not.Empty, "premise: something spawned");
+            var ground = GroundTuning.Standard();
+            foreach (var enemy in encounter.Enemies)
+                Assert.That(Submodules.Utility.Extensions.Coordinate.Distance(enemy.Position, encounter.HeroPosition),
+                    Is.GreaterThan(ground.Radius - 1f), "none starts on top of the hero");
         }
 
         [Test]
