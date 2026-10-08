@@ -6,6 +6,6 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
     /// "show me more", through the same helper, so the two agree on what Alt is.</summary>
     public sealed class AltPanelPeekToggle : PanelPeekToggle
     {
-        protected override bool PeekKeyHeld => ModifierKeys.Alt;
+        protected override bool PeekKeyPressed => ModifierKeys.Alt;
     }
 }

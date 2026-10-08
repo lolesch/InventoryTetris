@@ -593,7 +593,8 @@ A collection of mutually exclusive Toggles or Panels of which at most one is act
 **Two-panel switch**:
 A pair of tab buttons that show one of exactly two panels. One toggle, the **peek toggle**, owns a
 single bool and the panels follow it: one shows while the bool is on, the other while it is off.
-The other button is any toggle in the same `ToggleGroup`, named by the peek toggle's `peekTarget`.
+The other button is its companion, named by the peek toggle's `companionToggle`: the one other toggle
+in the same `ToggleGroup`. The group holds exactly the pair; a third member is not supported.
 The group forbids switch-off, so a click on either button flips the bool and the group does the
 switching; the pair is scene layout, with the two panels in a `PanelGroup` of their own. The Vendor
 and the Healer use it for their Supply and Sold tabs, and the group's first member is the tab a
@@ -607,9 +608,9 @@ Holding Alt on an open selling panel (the Vendor, the Healer) shows the other ta
 not a view-only overlay, so both buttons follow. It is the **peek toggle**'s own behaviour: a subclass
 names the key (`AltPanelPeekToggle` reads Alt through the same helper as the tooltip), and the
 peek counts only while the toggle is reachable, so a closed or hidden panel never peeks. It begins
-and ends once per hold. On release it switches the tab it left back on only if the tab it peeked to is
-still on: a click on the home tab cancels the restore. A click on the tab being peeked at is refused
-and changes nothing. A panel closing during a hold gives the peek back at once, before its group
+and ends once per hold. A press remembers whether the peek toggle was on; on release the peek is given
+back only if that has changed, so a click on either tab during the hold leaves the player where they
+clicked. A click on the tab being peeked at is refused and changes nothing. A panel closing during a hold gives the peek back at once, before its group
 resets. A peek touches the bool and nothing else: not a sale, a drag, a purchase or the **Inventory
 Context**. A sale never switches the tab.
 _Avoid_: preview, hover tab, tab flip

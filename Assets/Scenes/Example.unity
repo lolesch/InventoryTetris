@@ -5192,7 +5192,7 @@ MonoBehaviour:
   toggledOnSprite: {fileID: 0}
   panelWhenOff: {fileID: 1023377236}
   panelWhenOn: {fileID: 1909361633}
-  peekTarget: {fileID: 2074416251}
+  companionToggle: {fileID: 2074416251}
 --- !u!224 &395591177 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 7022399922254581285, guid: b73123d53e2adad499a9fe2677c4ad73, type: 3}
@@ -29550,7 +29550,7 @@ MonoBehaviour:
   toggledOnSprite: {fileID: 0}
   panelWhenOff: {fileID: 1967687300}
   panelWhenOn: {fileID: 1970015442}
-  peekTarget: {fileID: 7022399922190057106}
+  companionToggle: {fileID: 7022399922190057106}
 --- !u!114 &7022399922190057097
 MonoBehaviour:
   m_ObjectHideFlags: 0
