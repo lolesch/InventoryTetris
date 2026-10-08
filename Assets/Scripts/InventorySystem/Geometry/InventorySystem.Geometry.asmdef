@@ -1,7 +1,9 @@
 {
     "name": "InventorySystem.Geometry",
     "rootNamespace": "",
-    "references": [],
+    "references": [
+        "Utility"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

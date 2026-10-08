@@ -24,6 +24,12 @@ numbers, target highlight) behind independent switches so they can be compared i
 
 ### 1. Cosmetic only
 
+> **Superseded.** The simulation now owns position and this view only projects it: see
+> `2026-10-08-spatial-combat-design.md` and ADR-0018. The ring, the walk-in and the view's own
+> jitter described here, and in sections 3 and 4, were deleted by #208; what remains of this
+> spec is the pooling and binding, the death fade, the four feedbacks and the facing dead zone.
+> The text below is the original decision, kept as history.
+
 Movement is **view-only**. The sim keeps spawning an enemy straight into `Enemies`, its
 `StrikeTimer` keeps its random offset, and the hero may strike an enemy that is still walking in.
 That is accepted: the walk is short (spawn just outside the ring, fast approach) so the mismatch

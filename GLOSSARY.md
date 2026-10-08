@@ -395,6 +395,13 @@ hero stands at its **Origin**; enemies spawn a margin beyond its edge, on a bear
 chooses, and walk in. The arena draws positions the sim owns; it never moves anyone.
 _Avoid_: map, arena (that is the view), field, board
 
+**Origin**:
+The centre of the **Ground**, where the hero calls home and stands until he walks. In the
+arena it is drawn at the selected Location's Hero icon; the icon stays the Location's marker
+and does not move, while the hero **figure** that stands on the ground is a separate element.
+The arena maps ground distance to canvas distance with one adjustable tilt (ADR-0018).
+_Avoid_: spawn point, anchor (that is the Hero icon's rect, the view's side of it), centre
+
 **Strike Range**:
 How far from the hero a Strike reaches, in ground units. An enemy Strikes only while the hero
 is within its Strike Range, so a melee enemy closes in and a ranged one - the same capability

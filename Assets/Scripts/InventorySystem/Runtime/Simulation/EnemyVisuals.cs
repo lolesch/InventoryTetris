@@ -5,13 +5,9 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.Runtime.Simulation
 {
     /// <summary>
-    /// What each <see cref="EnemyArchetype"/> looks like in the arena (issue #176): its sprite and size,
-    /// and where it stands - the ring radii around the hero anchor and how fast it walks to them. Both
-    /// archetypes are strike-only in the sim, so a different stop distance and speed is the only identity a
-    /// Skirmisher has against a Brute.
-    /// <para>
-    /// Radii are canvas units, not derived from the anchor's rect: the anchor is a small map icon.
-    /// </para>
+    /// What each <see cref="EnemyArchetype"/> looks like in the arena (issue #176): its sprite and size.
+    /// Where it stands and how fast it gets there are the sim's (spatial-combat spec, ADR-0018): an archetype's
+    /// Strike Range and movement speed live on <see cref="Enemy"/>, and the arena only projects them.
     /// </summary>
     [CreateAssetMenu(fileName = "EnemyVisuals", menuName = "Inventory System/Enemy Visuals")]
     public sealed class EnemyVisuals : ScriptableObject
@@ -24,21 +20,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             public Sprite Sprite;
             [Tooltip("Canvas units; the view's root takes this size and the health bar sits above it.")]
             public Vector2 Size;
-            [Min(1f), Tooltip("Ring half-width in canvas units.")]
-            public float RingRadiusX;
-            [Min(1f), Tooltip("Ring half-height in canvas units.")]
-            public float RingRadiusY;
-            [Min(1f), Tooltip("Canvas units per sim second, walking in from outside the ring. At least 1: a 0 never arrives.")]
-            public float ApproachSpeed;
         }
 
         /// <summary>What an archetype without an entry gets, so a missing row shows a plain box, not nothing.</summary>
         public static readonly Entry Fallback = new()
         {
             Size = new Vector2(96f, 96f),
-            RingRadiusX = 150f,
-            RingRadiusY = 90f,
-            ApproachSpeed = 200f,
         };
 
         [SerializeField] private Entry[] entries = Array.Empty<Entry>();

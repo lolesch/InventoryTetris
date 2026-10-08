@@ -10,7 +10,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// The hit shake feedback (issue #180): the enemy's sprite jolts each time its health drops and settles
     /// over a short stretch of <i>sim</i> time. It sits on the <c>Sprite</c> child of the view and moves
     /// that child's own anchored position by a local offset, never the view's root: the health bar stays
-    /// still, the arena's walk-in (<see cref="EnemyView.PlaceAround"/>) keeps owning the root, and the
+    /// still, the arena's placement (<see cref="EnemyView.Place"/>) keeps owning the root, and the
     /// facing flip (a <c>localScale</c> on the same child) does not touch an anchored position, so the
     /// two compose without fighting.
     /// <para>

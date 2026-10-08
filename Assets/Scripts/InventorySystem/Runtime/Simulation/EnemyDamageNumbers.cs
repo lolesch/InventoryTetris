@@ -131,7 +131,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (!_hasPending)
                 return;
 
-            // The view starts at the arena's origin and hidden: a number now would rise from the wrong place.
+            // The view starts at the canvas origin and hidden: a number now would rise from the wrong place.
             if (!View.IsPlaced)
                 return;
 
