@@ -15,9 +15,11 @@ time -> `/code-review`.
 - Execute inline by default. Starting subagents needs the user's decision each time, including
   `/implement-spec`, which runs implementer and merger subagents: ask before spawning, state what
   would run, and wait for a clear yes. One approval covers that one run, never later ones.
-- Subagent model: set `model` on every `Agent` call. `sonnet` for an implementer of a well-specified
-  ticket, a merger and an exploration subagent; the session's model for a ticket that designs a new
-  seam or refactors across files, and for the code-review fix agent.
+- Subagent model: set `model` on every `Agent` call, sized to the task. Only `haiku` or `sonnet`; never
+  `opus` or `fable`, whatever the task. `haiku` for work with no judgment in it: exploration and search,
+  a merger with no conflicts, running a test or build and reporting the result, a mechanical rename or
+  doc edit. `sonnet` for everything that writes code: an implementer, a ticket that designs a seam or
+  refactors across files, the code-review fix agent, a merger resolving conflicts. When unsure, `sonnet`.
 - Search with `Grep` (`head_limit`, `files_with_matches` first) and read with `Read` `offset`/`limit`.
   A Bash `grep`, `cat` or `sed -n` result stays in context for every later turn of the run.
 - Before `/implement #N`, run `python dev/frontier.py`. `ready-for-agent` means the spec is
