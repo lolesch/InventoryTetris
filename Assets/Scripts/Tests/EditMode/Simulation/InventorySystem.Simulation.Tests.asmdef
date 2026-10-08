@@ -2,6 +2,7 @@
     "name": "InventorySystem.Simulation.Tests",
     "rootNamespace": "",
     "references": [
+        "Utility",
         "InventorySystem.Simulation",
         "InventorySystem.Data",
         "InventorySystem.Items",

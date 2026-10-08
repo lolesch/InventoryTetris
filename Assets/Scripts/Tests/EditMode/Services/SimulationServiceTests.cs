@@ -206,6 +206,25 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
+        public void ASentRun_FightsOnTheStandardGround_WithItsEnemiesSpawnedAtTheEdge()
+        {
+            service = new SimulationService(session, items, inventory, config, new SessionBuilderTests.FixedRolls(0.5f),
+                new SessionBuilderTests.FixedRolls(0.5f));
+            service.Send(thornwood);
+            var encounter = service.Run.Encounter;
+
+            // The first bodies wait one spawn delay; the combat clock caps its ticks per advance, so step small.
+            for (var i = 0; i < 400 && encounter.Enemies.Count == 0; i++)
+                service.Tick(0.1f);
+
+            Assert.That(encounter.Enemies, Is.Not.Empty, "premise: something spawned");
+            var ground = GroundTuning.Standard();
+            foreach (var enemy in encounter.Enemies)
+                Assert.That(Submodules.Utility.Extensions.Coordinate.Distance(enemy.Position, encounter.HeroPosition),
+                    Is.GreaterThan(ground.Radius - 1f), "none starts on top of the hero");
+        }
+
+        [Test]
         public void Tick_AutoRecalls_WhenTheBehaviourProfileSaysRetreat_AndRestocks()
         {
             session.World.VendorSupply.RemoveAll();
