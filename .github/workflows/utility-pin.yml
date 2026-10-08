@@ -1,0 +1,17 @@
+name: utility pin
+
+# A PR that moves the Utility submodule pin must pin a commit that is on Utility's main.
+# dev/check-utility-pin.sh holds the check, so it also runs locally.
+on:
+  pull_request:
+
+jobs:
+  pin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: true
+      - name: Check the Utility pin
+        run: bash dev/check-utility-pin.sh "origin/${{ github.base_ref }}"
