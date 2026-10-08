@@ -16,9 +16,9 @@ namespace ToolSmiths.InventorySystem.EditorScripts
     /// </summary>
     internal static class LoadHeroMenu
     {
-        private const string Menu = "ToolSmiths/Hero/Load Default Hero";
-        private const string NewMenu = "ToolSmiths/Hero/New Saved Hero";
-        private const string DeleteMenu = "ToolSmiths/Hero/Delete Loaded Hero";
+        private const string Menu = EditorMenus.Hero + "Load Default Hero";
+        private const string NewMenu = EditorMenus.Hero + "New Saved Hero";
+        private const string DeleteMenu = EditorMenus.Hero + "Delete Loaded Hero";
 
         [MenuItem(Menu)]
         private static void LoadDefaultHero() => DebugPanel.LoadDefault();

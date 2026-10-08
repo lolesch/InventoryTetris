@@ -13,6 +13,12 @@ namespace ToolSmiths.InventorySystem.Inventories
     public static class HoverPreview
     {
         /// <summary>
+        /// Seconds the cursor rests on an item before its preview shows, so passing over a row of
+        /// items does not flash a tooltip per slot. The player's own setting.
+        /// </summary>
+        public static float Delay => UserSettings.HoverDelay;
+
+        /// <summary>
         /// The package stored under <paramref name="position"/> of
         /// <paramref name="container"/>, walked back to the item's origin cell so any cell a
         /// multi-cell item covers describes that item. An invalid <see cref="Package"/> when

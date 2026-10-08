@@ -46,12 +46,19 @@ Single-context: one `GLOSSARY.md` at the repo root plus `docs/adr/`, both create
 Read before writing a script, or during `/code-review`/`/simplify`.
 `docs/agents/coding-conventions.md`.
 
+### Unity verification
+
+`docs/agents/unity-verification.md` — read before a test run, a `Unity_RunCommand`, a compile check, or
+scene authoring on a worktree. `dotnet build` lies; `dev/run-tests.sh [EditMode|PlayMode] [filter]` is
+the verdict and shadows the project by itself while the Editor is open. A bridge run waits on
+`dev/wait-editmode.sh` (a bare `sleep` is rejected). It also covers the scene-save modal.
+
 ### Codebase notes
 
-`docs/agents/codebase-notes.md` — read before Unity compile or test verification (`dotnet build`
-lies; run `dev/run-tests.sh`, or drive the `unity-mcp` bridge with the Editor open), an asmdef change, or a scripted multi-file edit (`perl -pi`
-mojibakes the UTF-8 source), and to enable the pre-commit hook (`git config core.hooksPath dev/hooks`). It also covers broken `.cs.meta` files, the scene-save
-modal and the `Utility` submodule.
+`docs/agents/codebase-notes.md` — read before editing through a shell or python script (`Edit` keeps
+CRLF + UTF-8; `perl -pi` mojibakes it), changing an asmdef, hitting a Play Mode reload surprise or a
+`.cs.meta` error, and committing in the `Utility` submodule (`dev/bump-utility.sh` pushes it, then
+pins it). To enable the pre-commit hook: `git config core.hooksPath dev/hooks`.
 
 ## GitHub Pages: keep `docs/agents/` and `docs/adr/` out of `GitPage`
 

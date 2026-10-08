@@ -14,7 +14,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
     /// because with domain reload disabled a runtime write to a <see cref="ScriptableObject"/>
     /// survives Stop.
     /// </summary>
-    [CreateAssetMenu(menuName = "InventorySystem/Hero/Hero Data")]
+    [CreateAssetMenu(menuName = AssetMenus.Hero + "Hero Data")]
     public sealed class HeroData : ScriptableObject
     {
         /// <summary>One stat or resource and the value it starts from, before any modifier.</summary>

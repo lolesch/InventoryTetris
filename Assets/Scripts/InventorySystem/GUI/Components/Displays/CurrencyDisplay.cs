@@ -15,7 +15,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
         public void Refresh(Currency newData)
         {
             if (totalText)
-                totalText.text = $"({newData.Total})".Colored(Color.gray);
+                totalText.text = $"({newData.Total})".Colored(UiColors.Muted);
 
             foreach (var coin in coinDisplays)
             { coin.gameObject.SetActive(true); }

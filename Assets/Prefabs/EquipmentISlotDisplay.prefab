@@ -53,6 +53,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   <Position>k__BackingField: {x: 0, y: 0}
+  itemGroup: {fileID: 1874565099760362992}
   itemDisplay: {fileID: 4027984796521102475}
   icon: {fileID: 1176954156055016542}
   frame: {fileID: 5816121734941003241}
@@ -61,6 +62,7 @@ MonoBehaviour:
   slotBackground: {fileID: 2604562765609723336}
   hoverExpand: 1
   hoverLighten: 0.25
+  emptyIcon: {fileID: 1060812048922288248}
 --- !u!222 &5651531814314307743
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -397,6 +399,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!225 &1874565099760362992 stripped
+CanvasGroup:
+  m_CorrespondingSourceObject: {fileID: 4678391763340856118, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
+  m_PrefabInstance: {fileID: 6552517019592568518}
+  m_PrefabAsset: {fileID: 0}
 --- !u!114 &1886041714288596962 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 4666757744575494436, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}

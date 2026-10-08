@@ -178,13 +178,13 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 
             if (currentText && _resource != null)
                 currentText.text = _altShown
-                    ? $"{resourceName}: {(0 < _total ? _current / _total * 100 : 0f):0.#}%"
-                    : $"{_current:0.#} / {_total:0.#}";
+                    ? $"{resourceName}: {(0 < _total ? _current / _total * 100 : 0f).ToString(NumberFormats.Resource)}%"
+                    : $"{_current.ToString(NumberFormats.Resource)} / {_total.ToString(NumberFormats.Resource)}";
 
             if (recoveryText && _recovery != null)
                 recoveryText.text = _altShown
-                    ? $"{recoveryName}: {_recoveryTotal:F1} / sec"
-                    : $"{_recoveryTotal:F1}";
+                    ? $"{recoveryName}: {_recoveryTotal.ToString(NumberFormats.Rate)} / sec"
+                    : _recoveryTotal.ToString(NumberFormats.Rate);
         }
 
         /// <summary>Clips the mask from the far edge, so what is left shows <see cref="_fraction"/> of the bar.</summary>

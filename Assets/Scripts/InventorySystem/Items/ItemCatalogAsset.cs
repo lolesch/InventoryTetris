@@ -1,3 +1,4 @@
+using ToolSmiths.InventorySystem.Data;
 using System.Collections.Generic;
 using ToolSmiths.InventorySystem.Data.Enums;
 using UnityEngine;
@@ -15,7 +16,7 @@ namespace ToolSmiths.InventorySystem.Items
     /// real seam. Both honour the same loud-failure contract: an unknown id throws
     /// <see cref="KeyNotFoundException"/>, never a silent null.
     /// </summary>
-    [CreateAssetMenu(fileName = "Item Catalog", menuName = "Inventory System/Item Catalog")]
+    [CreateAssetMenu(fileName = "Item Catalog", menuName = AssetMenus.Root + "Item Catalog")]
     public sealed class ItemCatalogAsset : ScriptableObject, IItemCatalog
     {
         [SerializeField] private List<ItemDefinitionAsset> definitions = new();

@@ -14,12 +14,6 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
     {
         private GridLayoutGroup gridLayout;
 
-        /// The same "forbidden" feedback the drag display gives an item that cannot be
-        /// placed (see DragProvider.HighlightOverlappingSlots): red is assigned rather
-        /// than multiplied in, so rarity cannot shift it, and it stays see-through so the
-        /// slot underneath still reads.
-        private static readonly Color UnaffordableBackground = new(1f, 0f, 0f, 0.2f);
-
         /// The displayed package's whole price in base units, or <c>null</c> for an empty slot.
         /// Taken once when the package changes, so a wallet change can re-tint without waiting
         /// for a container refresh and a repaint (hover, a wallet change, the un-highlight in
@@ -86,7 +80,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         protected override Color GetBackgroundColor() => CanAffordDisplayed()
             ? base.GetBackgroundColor()
-            : Lighten(UnaffordableBackground);
+            : Lighten(UiColors.Unaffordable);
 
         /// An empty slot has nothing to price, so it never reads as unaffordable - which
         /// also clears the tint for free on the slot an item was just bought out of.
