@@ -10,7 +10,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// <summary>
     /// A Location of the InFields face. It carries no phase subscription: its selection is cleared by
     /// its <see cref="AbstractToggle.RadioGroup"/>, which resets itself when the face it sits under
-    /// has finished fading out (<see cref="AbstractGroup{TMember}.ResetWithParentPanel"/>) - a
+    /// has finished fading out (<see cref="ToggleGroup.ResetWithParentPanel"/>) - a
     /// selection never outlives the panel that showed it. That ties the clear to the face rather
     /// than to the Run phase: on Death or Recall the highlight lasts one fade longer than the phase,
     /// and <see cref="RunPhasePanel"/> is what guarantees the face does go.
@@ -38,7 +38,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
 #if UNITY_EDITOR
         /// <summary>The group's reset is the only thing that clears a Location, so a group of them
-        /// without <see cref="AbstractGroup{TMember}.ResetWithParentPanel"/> keeps a stale selection
+        /// without <see cref="ToggleGroup.ResetWithParentPanel"/> keeps a stale selection
         /// after the Run ends - and nothing else would say so.</summary>
         protected override void OnValidate()
         {
