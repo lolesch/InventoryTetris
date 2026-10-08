@@ -239,7 +239,7 @@ shared across heroes would be Account state; none is yet (ADR-0014 leaves it ope
 _Avoid_: profile, save file, user
 
 **Behaviour Profile**:
-The six sliders the player sets on the **Hero** — how it fights and when it Auto-Recalls.
+The seven sliders the player sets on the **Hero** — how it fights, whom it picks and when it Auto-Recalls.
 Held by the Hero and saved with it, so a hero keeps its tuning between Sessions. Live
 during a Run: the player adjusts it, the hero never decides it.
 _Avoid_: settings, preset, loadout; "config" (that is the authored `GameConfig`)
@@ -437,6 +437,22 @@ The fragile enemy archetype — low health, fast light hits, no Armor, high XP. 
 an area magical build clears best, and what a single-target build gets overwhelmed by.
 Parametric off the Location's source level.
 _Avoid_: minion, add, runner, rusher, trash
+
+**Origin Weight**:
+The Behaviour Profile slider (0..1, default 0.5) that sets how strongly home pulls against nearness when the
+hero picks a target. Each living enemy scores `weight × its distance from the Origin + (1 − weight) × its
+distance from the hero`, and the lowest score is taken. 0 is a brawler who fights what is nearest him; 1 is a
+homebody who never wanders after a straggler. It replaces any leash: nothing caps how far he walks. It only
+steers a *new* choice - see **Sticky Target**.
+_Avoid_: leash, aggro range, home pull
+
+**Sticky Target**:
+The one enemy the hero is fighting. He keeps it until it falls, so a fresh spawn never turns him round mid-run,
+and walks until it is within his **Strike Range**, without overshooting. The exception is a target still out of
+reach while another enemy stands inside it: he then switches to the best-scoring enemy inside (**Origin
+Weight**), so he is never hit for free. With no enemy alive he walks back to the **Origin**. The arena rings this
+enemy. His movement speed is the `MovementSpeed` stat; his **Strike Range** is his weapon type's, not a stat.
+_Avoid_: lock-on, focus target, aggro target, current target
 
 **Cast Threshold**:
 The `Resource` fraction the hero charges up to before it will start a run of Casts,
