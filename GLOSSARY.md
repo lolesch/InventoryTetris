@@ -492,6 +492,36 @@ came from.
 _Avoid_: loot beam, drop list, world items
 
 
+## Changelog
+
+**Changelog**:
+The player-facing record of the game's progress, reached from the main menu. One document with
+three sections — **Patch Notes**, **Known Issues** and the **Roadmap** — written in player
+language, with no ticket numbers or internal terms. It is the only place those three lists
+live; the private idea backlog (the **Icebox**) is a separate thing the player never sees.
+_Avoid_: update notes, release notes, news
+
+**Patch Notes**:
+The Changelog section of what changed, one entry per released version (or per dated milestone
+for builds that predate version numbers), newest first. An entry is the only place a fixed
+**Known Issue** or a shipped **Roadmap** item goes to.
+_Avoid_: changelog (that is the whole document), release log
+
+**Known Issue**:
+A bug or shortcoming the player can hit today and that the game has not fixed. It leaves the
+list when fixed and is then recorded as a **Patch Notes** entry.
+_Avoid_: bug, TODO, defect
+
+**Roadmap**:
+The Changelog section of features the game intends to add. An item leaves it when it ships and
+is then recorded as a **Patch Notes** entry. An idea is not on the Roadmap until it has been
+reworded for players and moved out of the **Icebox**.
+_Avoid_: planned features, backlog, wishlist
+
+**Icebox**:
+The private backlog of ideas that are not committed to. Never shown to the player.
+_Avoid_: ideas list, backlog
+
 ## UI Components
 
 The Submodule provides basic components to reuse or derive from.
