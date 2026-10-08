@@ -440,6 +440,16 @@ actually lost after its Armor or Magic Resist, and no more than it had). A hit t
 mitigates still lands, with nothing lost. The damage numbers and, later, effects read from it.
 _Avoid_: damage event, hit callback, damage tick
 
+**Damage number**:
+The figure that rises from whoever a hit lands on - an enemy, or the hero figure - showing the
+amount lost. Its size shows how big the hit was: the raw amount against the **reference
+maximum**, the dealer's best hit of that damage type (the hero's damage stat with the spread
+applied; for hits on the hero, the strongest of that type among the archetypes the Location can
+field), from a minimum to a maximum size. Magical numbers are tinted dark blue-purple, physical
+keep the gold. One number per target and damage type per frame, so a Strike and a Cast on one
+enemy are two.
+_Avoid_: floating text, damage popup, hit marker
+
 **Damage spread**:
 A tuning fraction that varies each hit around its base damage: a hit rolls a factor between
 `1 - spread` and `1 + spread`, from its own random stream apart from the Encounter's, movement

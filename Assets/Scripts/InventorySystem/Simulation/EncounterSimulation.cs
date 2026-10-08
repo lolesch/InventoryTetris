@@ -156,6 +156,9 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <summary>The hero fighting this Encounter — its live magic find and item quantity (issue #24).</summary>
         public IHeroCombatant Hero => _hero;
 
+        /// <summary>The fraction a hit's damage may stray from its base (<see cref="EncounterTuning.DamageSpread"/>) - what a damage number's size reference reads (issue #213).</summary>
+        public float DamageSpread => _tuning.DamageSpread;
+
         public SimulationPhase Phase { get; private set; } = SimulationPhase.Fighting;
 
         /// <summary>Whether the first enemies are still on their way — the sim is <see cref="SimulationPhase.Arriving"/>.</summary>
