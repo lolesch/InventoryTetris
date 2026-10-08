@@ -8,6 +8,10 @@ live. Same shape as `2026-08-26-shop-currency-followups.md`: a list, not a desig
 Entries are quoted from the spec they came from, with the line range named, so a decision is
 read in the words it was made in rather than paraphrased. Nothing here is a ticket yet.
 
+Updated 2026-10-08: entries 4-7 were not harvested from a pruned spec. They record work parked by
+the design interview behind `2026-10-08-spatial-combat-design.md` and
+`2026-10-08-floor-loot-design.md`, so they are summaries of that interview, not quotes.
+
 ## 1. Calibrate the magic-find ladder
 
 Harvested from `2026-08-30-probability-distribution-rebuild-design.md:311-327`, which shipped
@@ -92,6 +96,81 @@ Each cheap once the three seams exist.
 - Larger 2H footprints and dimension-based value —
   `2026-08-31-item-value-open-questions.md` §2–3.
 - Split the `InventoryProvider` god object (`InventoryProvider.cs:14`).
+
+## 4. An effects system (spec C)
+
+Parked by the 2026-10-08 interview. One reusable system for anything that changes a stat or a
+resource over time, not a potion system: potions (a flat heal, or a short health-regen boost),
+books (experience, or a short stat boost), damage over time, and later slows, shields and
+immunity. Tier 3's "Consumable effects + potion belt" in entry 3 is the same work.
+
+- **Prior art:** AbilityCombat's `Pawns/Abilities/Effects/`: a command, an effect and a receiver
+  per kind (damage, DoT, stat modifier, shield, root, immunity, drain and fill resource).
+  Read it before designing; do not port it, it is built on scene objects.
+- **Prerequisites:** stat-backed enemies (#210), so an effect can target the hero and an enemy the
+  same way, and the typed hit event (#211).
+- **To decide:** the duration and tick model on the sim clock; stacking and refresh rules; what an
+  effect can target and who its source is; whether the player sees active effects; whether active
+  effects outlive a Run (mid-Run state is otherwise discarded on quit).
+
+## 5. Itemization and difficulty (spec D)
+
+Parked by the 2026-10-08 interview. The symptom is that the hero cannot die and his gear
+outscales the enemies within a few levels. Locations stay a difficulty ladder with no monster
+scaling; what scales is loot.
+
+- **D1, the numbers and the model:** hero starter stats; item level driving affix ranges or pools
+  (loot generation only); an affix design (the current ones are a prototype, with no thought for
+  where they appear or how high); and a level-scaling formula (the XP balance term in the
+  Encounter is the only one today). Tune from a headless run of the Unity-free sim that reports
+  time to kill and time to die across levels and builds. Entry 1 (magic-find calibration) belongs
+  to the same pass. Weapon range stays a base property, not an affix (spatial-combat spec).
+- **D2, consumables:** *identify* as a use for consumables (entry 3's "Identification"); potions
+  that are more frequent and actually heal; books that give XP or a short boost (potions and
+  books need entry 4); and *arrows*, which carry a stack limit but cannot stack because they
+  carry affixes, and have no slot. Arrows need a design decision, either an ammo slot or
+  dropping their affixes so they stack again.
+- **Order:** the numbers depend on the spatial combat epic (#204), because ranged enemies cost the
+  hero Strike time.
+
+## 6. Enemy loadouts (spec E)
+
+Parked by the 2026-10-08 interview. The idea: loot is generated when an enemy spawns, the enemy
+equips what it can, and it drops it on death. That makes enemies vary and ties their strength to
+the same affix tables as gear. It is a mechanism swap (loot rolls move from kill time to spawn
+time), so it follows CLAUDE.md's rule: `/rederive` before the spec, then `/drift-review` twice.
+
+It starts as a **prototype**: a headless run that rolls gear for enemies from the current affix
+tables scaled by source level, fights them against several hero builds, and answers whether the
+variety reads as variety (spread in time to kill and damage taken) or as noise, and whether it
+narrows the gap between hero and enemy strength. It needs item levels (entry 5) and stat-backed
+enemies (#210), and the prototype can fake the first.
+
+The six problems to settle before a spec:
+
+1. It inherits the affix design problem; enemies wearing today's affixes are as unbalanced as the gear.
+2. Magic find and item quantity apply at kill time today; with spawn-time rolls they would use
+   stale values if the hero swaps gear mid-fight.
+3. What drops: everything the enemy wore, or each item at a chance, which keeps the existing
+   drop-rate tuning.
+4. Archetype identity: the archetype owns range and damage type, gear only adjusts stat values.
+5. Equip rules: reuse the hero's slot types, not a second system.
+6. Regeneration: an enemy wearing a regeneration affix would regenerate, which contradicts
+   "enemies do not regenerate", so the enemy affix pool must exclude it or the rule changes.
+
+## 7. Parked from the 2026-10-08 specs
+
+Left out of the spatial-combat and floor-loot specs on purpose:
+
+- A Cast wind-up and telegraphs; enemy casts, enemy mana, friendly fire.
+- Separation steering between enemies, and a stamina cost for movement.
+- A visual marker for the Cast's area; annulus and arc as shapes of their own (they are the
+  inner radius on disk and sector).
+- Skills as such; the Cast definition is tuning until they exist.
+- The auto-pickup redesign: a pickup policy that reads `UserSettings` (a minimum coin
+  denomination, for example), and any rescue of evicted items beyond banking coins.
+- A timed decay for floor drops, on top of capacity.
+- Death taking equipped gear. ADR-0009 stands; a hardcore mode would make the Corpse obsolete.
 
 ## Not harvested, and why
 
