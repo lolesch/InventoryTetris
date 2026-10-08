@@ -409,10 +409,28 @@ with a longer range - stands off. The unarmed hero has a short one; gear never r
 _Avoid_: reach, melee range, weapon range
 
 **Cast**:
-The hero's magical attack — flat `MagicalDamage` to each of the three highest-HP enemies
-at once, paced by how fast `Resource` regenerates against the cast cost. The area half
+The hero's magical attack — an instant area, paced by how fast `Resource` regenerates against
+the cast cost. Of the enemies within **Cast Range** he aims at the one whose shape would catch
+the most enemies (the **densest cluster**; a tie goes to the one nearest him, then the earliest
+spawned), then deals flat `MagicalDamage`, mitigated by each one's Magic Resist, to every enemy
+inside the shape. Enemies only: the hero is never hit. With no enemy in range, or a shape that
+would catch nobody, the Cast does not fire and spends nothing. Its cadence and the
+`CastThreshold` latch are unchanged, and the hero keeps walking while it fires. The area half
 of the kit.
 _Avoid_: spell, nuke, ability, skill
+
+**Cast Range**:
+How far from the hero an enemy may stand to be aimed at by the **Cast**, in ground units,
+read from the **Cast definition**. It limits who the hero aims at, not what the shape hits: an
+enemy beyond it is still caught when it stands inside a shape aimed at one within range.
+_Avoid_: spell range, reach, aggro range
+
+**Cast definition**:
+What a **Cast** is: its **Cast Range**, targeting pattern (an enum with one member, densest
+cluster), shape (disk, sector or rectangle), size (an area multiplier on the shape) and anchor
+(the shape starts on the aimed-at enemy, or on the hero pointing at it). A tuning value of the
+Encounter now, a skill's data once skills exist. Its cost stays the hero's cast cost.
+_Avoid_: spell data, skill, ability definition
 
 **Hit event**:
 What the simulation announces for every hit that lands - the hero's Strike, each target of his
@@ -444,8 +462,8 @@ _Avoid_: wave, swarm, group (that is the Encounter's whole cast), ambush
 
 **Brute**:
 The bulky enemy archetype — high health, slow hard hits (physical damage type), some Armor and a
-little Magic Resist, low XP. Like every enemy it is built from modifiable stats. The **Cast**
-(highest-HP targeting) tends to land on Brutes; a Pack of them is what a single-target
+little Magic Resist, low XP. Like every enemy it is built from modifiable stats. A Pack of
+them is a clump for the **Cast** to catch; it is what a single-target
 physical build clears best, and what an area build grinds against. Parametric off the
 Location's source level.
 _Avoid_: tank, heavy, bruiser, ogre, elite
