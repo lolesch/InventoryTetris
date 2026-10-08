@@ -13,7 +13,7 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// The pure Encounter simulation (ADR-0010) — a watchable auto-fight the player only tunes.
     /// A <see cref="CombatClock"/> drives it at a fixed tick; each tick the hero resolves its
     /// two concurrent attacks (a physical <b>Strike</b> on <c>1 / AttackSpeed</c> at the one
-    /// sticky target he walks to, a magical area <b>Cast</b> paced by Resource at the highest-HP enemies),
+    /// sticky target he walks to, a magical area <b>Cast</b> paced by Resource at the densest cluster of enemies in Cast Range),
     /// the enemies Strike back on their own cadences, a per-Location <b>Roster</b> spawns in
     /// (the packed archetype in <b>Packs</b>, the other singly) up to the soft
     /// <see cref="EngagementTarget"/>, and every combatant regenerates once.
@@ -174,6 +174,9 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// back when nothing lives; the arena only reads it.
         /// </summary>
         public Coordinate HeroPosition { get; private set; }
+
+        /// <summary>How far from <see cref="HeroPosition"/> an enemy may stand to be aimed at by the Cast: the Cast definition's range.</summary>
+        public float CastRange => _tuning.Cast.Range;
 
         /// <summary>
         /// How far from <see cref="HeroPosition"/> the hero's Strike reaches: his weapon type's range, or the
@@ -559,12 +562,17 @@ namespace ToolSmiths.InventorySystem.Simulation
             // the pool on every beat, not only on the beats a Cast could actually land.
             var casting = _behaviour.ShouldCast(_hero.ResourceFraction);
 
-            if (!casting || _hero.Resource < _hero.CastCost || _enemies.Count == 0) return;
+            if (!casting || _hero.Resource < _hero.CastCost) return;
+
+            // No one to aim at, or a shape that would catch nobody: the Cast does not fire and spends nothing.
+            var shape = _tuning.Cast.Shape.Scaled(_tuning.Cast.Size);
+            var aim = DensestCluster(shape);
+            if (aim == null) return;
 
             _hero.SpendResource(_hero.CastCost);
             HeroCast?.Invoke();
 
-            var targets = HighestHealth(_tuning.CastTargets);
+            var targets = InShape(shape, aim);
             for (var i = 0; i < targets.Count; i++)
             {
                 Land(_hero, targets[i], DamageType.MagicalDamage, _hero.MagicalDamage);
@@ -692,25 +700,44 @@ namespace ToolSmiths.InventorySystem.Simulation
             return best;
         }
 
-        private List<Enemy> HighestHealth(int count)
+        /// <summary>
+        /// The enemy the Cast is aimed at: of those within Cast Range, the one whose <paramref name="shape"/> (placed
+        /// per the anchor) holds the most enemies; a tie goes to the one nearest the hero, then the earliest spawned
+        /// (the enemies are in spawn order, so the first found keeps a tie). Null when no candidate's shape holds
+        /// anyone.
+        /// </summary>
+        private Enemy DensestCluster(AreaShape shape)
+        {
+            Enemy best = null;
+            var bestCount = 0;
+            var bestDistance = 0f;
+
+            for (var i = 0; i < _enemies.Count; i++)
+            {
+                var candidate = _enemies[i];
+                if (candidate.IsDown || !InReach(HeroPosition, candidate.Position, _tuning.Cast.Range)) continue;
+
+                var count = InShape(shape, candidate).Count;
+                var distance = Coordinate.Distance(HeroPosition, candidate.Position);
+                if (count > bestCount || (count == bestCount && count > 0 && distance < bestDistance))
+                {
+                    best = candidate;
+                    bestCount = count;
+                    bestDistance = distance;
+                }
+            }
+            return best;
+        }
+
+        /// <summary>The living enemies inside <paramref name="shape"/> placed for a Cast aimed at <paramref name="aim"/>, in spawn order.</summary>
+        private List<Enemy> InShape(AreaShape shape, Enemy aim)
         {
             _castTargets.Clear();
             for (var i = 0; i < _enemies.Count; i++)
-                if (!_enemies[i].IsDown)
+                if (!_enemies[i].IsDown
+                    && shape.Contains(_enemies[i].Position, _tuning.Cast.Anchor, HeroPosition, aim.Position))
                     _castTargets.Add(_enemies[i]);
-
-            _castTargets.Sort(CompareForCast);
-
-            if (_castTargets.Count > count)
-                _castTargets.RemoveRange(count, _castTargets.Count - count);
             return _castTargets;
-        }
-
-        // Highest health first; spawn order breaks ties so the choice is total and deterministic.
-        private static int CompareForCast(Enemy a, Enemy b)
-        {
-            var byHealth = b.Health.CompareTo(a.Health);
-            return byHealth != 0 ? byHealth : a.SpawnIndex.CompareTo(b.SpawnIndex);
         }
     }
 }

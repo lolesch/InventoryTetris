@@ -7,10 +7,11 @@ using ToolSmiths.InventorySystem.Simulation;
 namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 {
     /// <summary>
-    /// Targeting is minimal and deterministic (ADR-0010, issue #209): the Strike hits the hero's one sticky
-    /// weighted-proximity target (on the collapsed ground every enemy scores alike, so the first spawn), the
-    /// Cast each of the <c>CastTargets</c> highest-HP enemies, no RNG. Health no longer steers the Strike;
-    /// where the enemies stand does (<c>HeroTargetingTests</c>).
+    /// Targeting is minimal and deterministic (ADR-0010, issues #209 and #212): the Strike hits the hero's one
+    /// sticky weighted-proximity target (on the collapsed ground every enemy scores alike, so the first spawn),
+    /// the Cast every enemy in its area (who it aims at is <c>CastAreaTests</c>), no RNG. Health no longer steers
+    /// the Strike; where the enemies stand does (<c>HeroTargetingTests</c>). On the collapsed default ground all
+    /// four stand on the hero, so the Cast catches the whole mixed quad.
     /// </summary>
     [TestFixture]
     public sealed class TargetSelectionTests
@@ -57,28 +58,31 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
             sim.Advance(0.1f); // one tick
 
-            // The Brute takes the Strike (mitigated by its Armor) and a Cast; no Skirmisher takes a Strike - only
-            // one of them is the Cast's 3rd target.
+            // The Brute takes the Strike (mitigated by its Armor) and a Cast; no Skirmisher takes a Strike -
+            // each takes the Cast alone, which catches all four.
             var strike = 5f * (1f - firstSpawn.ArmorPercent * 0.01f);
             Assert.That(firstSpawn.MaxHealth - firstSpawn.Health, Is.EqualTo(strike + 3f).Within(0.001f));
-            var losses = skirmishers.Select(e => e.MaxHealth - e.Health).OrderBy(x => x).ToList();
-            Assert.That(losses[0], Is.EqualTo(0f).Within(0.001f));
-            Assert.That(losses[1], Is.EqualTo(3f).Within(0.001f), "Cast's 3rd target - MagicalDamage, not a Strike");
+            foreach (var skirmisher in skirmishers)
+                Assert.That(skirmisher.MaxHealth - skirmisher.Health, Is.EqualTo(3f).Within(0.001f),
+                    "the Cast's MagicalDamage, not a Strike");
         }
 
         [Test]
-        public void Cast_HitsTheThreeHighestHealthEnemies_BothBrutesAndOneSkirmisher()
+        public void Cast_HitsEveryEnemyInItsArea_NoLongerJustTheThreeHighestHealth()
         {
             var sim = NewSim(StrikerCaster());
             var brutes = sim.Enemies.Where(e => e.Archetype == EnemyArchetype.Brute).ToList();
             var struck = sim.StrikeTarget;
             var strike = 5f * (1f - struck.ArmorPercent * 0.01f);
+            var skirmishers = sim.Enemies.Where(e => e.Archetype == EnemyArchetype.Skirmisher).ToList();
 
             sim.Advance(0.1f);
 
             foreach (var brute in brutes)
                 Assert.That(brute.MaxHealth - brute.Health - (brute == struck ? strike : 0f), Is.EqualTo(3f).Within(0.001f),
                     "each Brute took exactly one Cast, and the sticky target also the Strike");
+            Assert.That(skirmishers.Select(e => e.MaxHealth - e.Health), Has.All.GreaterThanOrEqualTo(3f),
+                "and so did both Skirmishers - the old rule left one out");
         }
 
         [Test]

@@ -222,6 +222,7 @@ namespace ToolSmiths.InventorySystem.Services
                 {
                     DelayFirstSpawn = true,
                     Ground = GroundTuning.Standard(),
+                    Cast = CastDefinition.Standard(),
                     DamageSpread = EncounterTuning.StandardDamageSpread,
                 },
                 new ContainerBagGauge(hero.Inventory), movementRolls, hitRolls);
