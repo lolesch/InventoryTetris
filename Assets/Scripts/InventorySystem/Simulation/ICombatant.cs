@@ -28,13 +28,19 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// applies its own Armor. The hero adapter routes this through the
         /// live <c>Hero.ReceiveDamage</c> path.
         /// </summary>
-        void ReceivePhysical(float rawDamage);
+        /// <returns>
+        /// The amount the combatant actually lost, after its own mitigation and no more than it had
+        /// to lose - only the combatant knows both. 0 for a non-positive hit or one on a combatant
+        /// already down.
+        /// </returns>
+        float ReceivePhysical(float rawDamage);
 
         /// <summary>
         /// Take a magical hit. <paramref name="rawDamage"/> is pre-mitigation; the combatant
-        /// applies its own magic resist (enemies have none — ADR-0010).
+        /// applies its own magic resist (enemies have one too - ADR-0010, fourth amendment).
         /// </summary>
-        void ReceiveMagical(float rawDamage);
+        /// <returns>The amount actually lost, as for <see cref="ReceivePhysical"/>.</returns>
+        float ReceiveMagical(float rawDamage);
 
         /// <summary>
         /// Advance this combatant's own regeneration by one tick. The sim calls it once per

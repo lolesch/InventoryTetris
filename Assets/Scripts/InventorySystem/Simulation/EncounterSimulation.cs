@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Submodules.Utility.Extensions;
+using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Items;
 
 [assembly: InternalsVisibleTo("InventorySystem.Simulation.Tests")]
@@ -528,7 +529,10 @@ namespace ToolSmiths.InventorySystem.Simulation
                 }
 
                 enemy.StrikeTimer = Math.Min(enemy.StrikeTimer - interval, interval);
-                _hero.ReceivePhysical(enemy.StrikeDamage);
+                if (enemy.StrikeDamageType == DamageType.MagicalDamage)
+                    _hero.ReceiveMagical(enemy.StrikeDamage);
+                else
+                    _hero.ReceivePhysical(enemy.StrikeDamage);
             }
         }
 

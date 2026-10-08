@@ -1,4 +1,5 @@
 using System;
+using ToolSmiths.InventorySystem.Data.Enums;
 
 namespace ToolSmiths.InventorySystem.Simulation
 {
@@ -32,6 +33,13 @@ namespace ToolSmiths.InventorySystem.Simulation
         public readonly StatCurve Damage;
         /// <summary>Percent physical mitigation the enemy has against the hero's Strike.</summary>
         public readonly StatCurve ArmorPercent;
+        /// <summary>Percent magical mitigation the enemy has against the hero's Cast.</summary>
+        public readonly StatCurve MagicResistPercent;
+        /// <summary>
+        /// The damage type this archetype's Strike deals: Brute physical, Skirmisher magical. It picks the hero's
+        /// mitigation (Armor or Magic Resist) and which of the enemy's damage stats carries <see cref="Damage"/>.
+        /// </summary>
+        public readonly DamageType DamageType;
         /// <summary>Strikes per second — flat, not a curve.</summary>
         public readonly float AttackSpeed;
         /// <summary>XP this body is worth, before the <c>(SourceLevel - heroLevel)</c> balance term.</summary>
@@ -50,7 +58,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <summary>Ground units walked per second while chasing the hero - flat, not a curve.</summary>
         public readonly float MovementSpeed;
 
-        public EnemyArchetypeStats(StatCurve health, StatCurve damage, StatCurve armorPercent, float attackSpeed, StatCurve xp, int lootRolls,
+        public EnemyArchetypeStats(StatCurve health, StatCurve damage, StatCurve armorPercent, StatCurve magicResistPercent, DamageType damageType, float attackSpeed, StatCurve xp, int lootRolls,
             float strikeRange, float movementSpeed)
         {
             StrikeRange = strikeRange;
@@ -58,6 +66,8 @@ namespace ToolSmiths.InventorySystem.Simulation
             Health = health;
             Damage = damage;
             ArmorPercent = armorPercent;
+            MagicResistPercent = magicResistPercent;
+            DamageType = damageType;
             AttackSpeed = attackSpeed;
             Xp = xp;
             LootRolls = lootRolls;
@@ -76,6 +86,8 @@ namespace ToolSmiths.InventorySystem.Simulation
             health: new StatCurve(26f, 24f, 1.12f),
             damage: new StatCurve(1.0f, 0.82f, 1.0f),
             armorPercent: new StatCurve(3f, 0.9f, 1.0f),
+            magicResistPercent: new StatCurve(0f, 0.4f, 1.0f),
+            damageType: DamageType.PhysicalDamage,
             attackSpeed: 0.55f,
             xp: new StatCurve(5f, 3.5f, 1.0f),
             lootRolls: 1,
@@ -86,6 +98,8 @@ namespace ToolSmiths.InventorySystem.Simulation
             health: new StatCurve(10f, 9f, 1.06f),
             damage: new StatCurve(0.5f, 0.5f, 1.0f),
             armorPercent: new StatCurve(0f, 0f, 1.0f),
+            magicResistPercent: new StatCurve(0f, 0.8f, 1.0f),
+            damageType: DamageType.MagicalDamage,
             attackSpeed: 1.6f,
             xp: new StatCurve(13f, 8f, 1.0f),
             lootRolls: 1,
