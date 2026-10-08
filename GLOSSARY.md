@@ -590,5 +590,36 @@ A panel is a parent component that groups content. It provides appearance option
 A collection of mutually exclusive Toggles or Panels of which at most one is active at a time. 
 "Activate" deactivates whichever sibling held the slot. 
 
+**Two-panel switch**:
+A pair of tab buttons that show one of exactly two panels. One toggle, the **driver**, owns a
+single bool and the panels follow it: one shows while the bool is on, the other while it is off.
+Either button may be the driver, and the driver may rest on or off. The Vendor and the Healer
+use it for their Supply and Sold tabs: the Supply toggle is the driver (on shows the Supply, off
+shows the Sold tab) and the group's first member, so a panel reopens on the Supply. The driver
+and its **mirror toggle** share a `ToggleGroup` that forbids switch-off, so a click on either
+button flips the bool and the group does the switching. A tab pair that is not a two-panel switch
+is a plain group of `PanelToggle`s, which can hold any number of tabs and cannot say "the other
+one".
+_Avoid_: tab group (for a pair), tab toggle pair
+
+**Mirror toggle**:
+The two-panel switch's other button: a toggle with no panel that names the **driver** by a
+serialized reference and sits in the driver's group. It carries no behaviour; the group switches
+it on when the driver goes off and off when the driver goes on. It exists so the pair is wired by
+a reference rather than found by hierarchy or object name, and so an editor warning can say when
+the driver is unset or in another group. In the Vendor and the Healer it is the Sold button.
+_Avoid_: inert partner, twin
+
+**Peek**:
+Holding Alt on an open selling panel (the Vendor, the Healer) shows the other tab of its
+**Two-panel switch**; letting go lands back where the player was. A real selection through the group, not a view-only
+overlay, so both buttons follow. On release it restores only if nothing else wrote the driver's
+bool since the peek began: a click on the home tab and the panel's reset on closing each cancel
+the restore, and so does the panel being seen closed during the hold. A click on the tab being
+peeked at is refused, writes nothing and changes nothing. A peek touches the bool and nothing
+else: not a sale, a drag, a purchase or the **Inventory Context**. A sale never switches the
+tab.
+_Avoid_: preview, hover tab, tab flip
+
 **Displays and Views**:
 A display is the visual representation of a data object. *IDisplay* provides a *Refresh()* call to update the display on data change. This differs from views, that show static data.
