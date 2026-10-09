@@ -184,6 +184,24 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
+        public void Changed_FiresOnABury_AndOnARecovery_ButNotOnARefusedRecovery()
+        {
+            var corpse = new Corpse();
+            var changes = 0;
+            corpse.Changed += () => changes++;
+
+            corpse.Bury(Thornwood(), new[] { Item("sword") });
+            Assert.That(changes, Is.EqualTo(1), "buried");
+
+            _ = corpse.TryRecover(Ashfen(), out _);
+            Assert.That(changes, Is.EqualTo(1), "a recovery elsewhere changed nothing");
+
+            var buried = corpse.Location;
+            _ = corpse.TryRecover(buried, out _);
+            Assert.That(changes, Is.EqualTo(2), "recovered");
+        }
+
+        [Test]
         public void TryRecover_WithNoCorpse_ProducesNoDrops()
         {
             var corpse = new Corpse();

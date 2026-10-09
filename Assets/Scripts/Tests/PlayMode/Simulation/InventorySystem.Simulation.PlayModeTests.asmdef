@@ -1,0 +1,29 @@
+{
+    "name": "InventorySystem.Simulation.PlayModeTests",
+    "rootNamespace": "",
+    "references": [
+        "InventorySystem.Services",
+        "InventorySystem.Data",
+        "InventorySystem.Items",
+        "InventorySystem.Containers",
+        "InventorySystem.Simulation",
+        "InventorySystem.Characters",
+        "InventorySystem.Locations",
+        "Utility",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

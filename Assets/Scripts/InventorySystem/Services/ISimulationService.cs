@@ -62,6 +62,9 @@ namespace ToolSmiths.InventorySystem.Services
         /// </summary>
         bool CorpseLiesAt(LocationConfig location);
 
+        /// <summary>Raised when the Hero's Corpse is buried, replaced or recovered.</summary>
+        event Action CorpseChanged;
+
         /// <summary>End the Run with everything kept. Refused once the hero is down - that ends in a Death.</summary>
         RunResult Recall();
 

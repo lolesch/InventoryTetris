@@ -115,6 +115,12 @@ namespace ToolSmiths.InventorySystem.Services
             return corpse.Exists && corpse.Location == ProfileFor(location);
         }
 
+        public event Action CorpseChanged
+        {
+            add => session.Hero.Corpse.Changed += value;
+            remove => session.Hero.Corpse.Changed -= value;
+        }
+
         public event Action<RunResult> RunSettled;
 
         public RunResult Recall()

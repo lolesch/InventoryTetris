@@ -45,7 +45,11 @@ namespace ToolSmiths.InventorySystem.Simulation
 
             Location = location;
             _items = bagContents != null && bagContents.Count > 0 ? bagContents.ToArray() : Array.Empty<ItemInstance>();
+            Changed?.Invoke();
         }
+
+        /// <summary>Raised after the Corpse was buried, replaced or recovered, so a marker repaints on change.</summary>
+        public event Action Changed;
 
         /// <summary>
         /// Re-entering <paramref name="location"/>: if it is the Corpse's own, lays its contents
@@ -66,6 +70,7 @@ namespace ToolSmiths.InventorySystem.Simulation
             drops = _items;
             Location = null;
             _items = Array.Empty<ItemInstance>();
+            Changed?.Invoke();
             return true;
         }
     }

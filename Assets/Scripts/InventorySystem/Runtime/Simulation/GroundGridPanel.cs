@@ -63,10 +63,15 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 if (!_entries.TryGetValue(cell, out var entry))
                     _entries[cell] = entry = Pool.GetObject();
 
-                var view = ItemService.Instance.View(package.Item);
-                entry.Bind(package.Item, package.Amount, view, OnEntryClicked);
+                // Only the rank-driven alpha changes for an entry whose package stayed put.
+                if (!ReferenceEquals(entry.Item, package.Item) || entry.Amount != package.Amount)
+                {
+                    var view = ItemService.Instance.View(package.Item);
+                    entry.Bind(package.Item, package.Amount, view, OnEntryClicked);
+                    Place((RectTransform)entry.transform, cell, view.Dimensions, size);
+                }
+
                 entry.Fade(GroundFade.Alpha(rank, cells.Count, oldestAlpha));
-                Place((RectTransform)entry.transform, cell, view.Dimensions, size);
             }
         }
 
