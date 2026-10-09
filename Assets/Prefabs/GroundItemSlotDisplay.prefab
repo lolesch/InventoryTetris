@@ -112,7 +112,6 @@ GameObject:
   - component: {fileID: 3103856457438490689}
   - component: {fileID: 2938690695903610728}
   - component: {fileID: 4998526235104821254}
-  - component: {fileID: 3320551812040911107}
   m_Layer: 5
   m_Name: GroundItemSlotDisplay
   m_TagString: Untagged
@@ -235,18 +234,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.ContentSizeFitter
   m_HorizontalFit: 2
   m_VerticalFit: 1
---- !u!225 &3320551812040911107
-CanvasGroup:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4519607809327140737}
-  m_Enabled: 1
-  m_Alpha: 1
-  m_Interactable: 1
-  m_BlocksRaycasts: 1
-  m_IgnoreParentGroups: 0
 --- !u!1 &7873183820259489680
 GameObject:
   m_ObjectHideFlags: 0

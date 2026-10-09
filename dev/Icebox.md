@@ -7,6 +7,10 @@
 
 # Ideas
 
+### Item Crafting
+
+#### Recover a bricked item as a rare mechanic. imagine a altar you can insert an item and have a soft recover/revert the bricking, that would allow for another high roll. The cost would still be the high roll itself.
+
 ### Location Discovery/Unlock
 the world map is reveled over time. Mechanism has to be designed. with some sort of random factor mimicking different map layouts and therefore different discovery timings...
 Same goes for the town hub. Should everything be available from the get go, or evolve over time? again think magiCraft here to open Meta options over time.

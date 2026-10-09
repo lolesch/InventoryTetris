@@ -22,7 +22,6 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
         private GameObject _host;
         private Component _entry;
-        private CanvasGroup _group;
         private Image _border;
         private ItemView _view;
         private ItemInstance _item;
@@ -31,7 +30,6 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         public void Build()
         {
             _host = new GameObject("entry");
-            _group = _host.AddComponent<CanvasGroup>();
             _border = _host.AddComponent<Image>();
             _entry = _host.AddComponent(Type.GetType(TypeName, throwOnError: true));
 
@@ -45,50 +43,43 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         [TearDown]
         public void Destroy() => UnityEngine.Object.DestroyImmediate(_host);
 
-        private void Bind(float alpha, Action<ItemInstance> onClick = null)
-        {
-            Call("Bind", _item, 3u, _view, onClick);
-            Call("Fade", alpha);
-        }
+        private void Bind(Action<ItemInstance> onClick = null) => Call("Bind", _item, 3u, _view, onClick);
 
         private object Call(string method, params object[] args) => _entry.GetType().GetMethod(method).Invoke(_entry, args);
 
         private object Read(string property) => _entry.GetType().GetProperty(property).GetValue(_entry);
 
         [Test]
-        public void ABoundEntry_ShowsItsDrop_AtItsFade()
+        public void ABoundEntry_ShowsItsDrop()
         {
-            Bind(alpha: 0.5f);
+            Bind();
 
             Assert.That(Read("Item"), Is.SameAs(_item));
             Assert.That(Read("Amount"), Is.EqualTo(3u));
-            Assert.That(_group.alpha, Is.EqualTo(0.5f));
             Assert.That(_border.color, Is.EqualTo(_view.RarityColor));
         }
 
         [Test]
         public void AnUnboundEntry_CarriesNothingOfItsLastDrop()
         {
-            Bind(alpha: 0.5f);
+            Bind();
 
             Call("Unbind");
 
             Assert.That(Read("Item"), Is.Null);
             Assert.That(Read("Amount"), Is.EqualTo(0u));
-            Assert.That(_group.alpha, Is.EqualTo(1f), "the next Drop starts opaque, not at the last one's fade");
             Assert.That(_border.color, Is.EqualTo(Color.white), "no rarity tint is left behind");
         }
 
         [Test]
         public void ARebindToTheSameDrop_AfterAnUnbind_IsDrawnAgain()
         {
-            Bind(alpha: 0.5f);
+            Bind();
             Call("Unbind");
 
-            Bind(alpha: 1f);
+            Bind();
 
             Assert.That(_border.color, Is.EqualTo(_view.RarityColor), "the early-out for an unchanged Drop must not skip a Drop that was let go");
-            Assert.That(_group.alpha, Is.EqualTo(1f));
         }
     }
 }

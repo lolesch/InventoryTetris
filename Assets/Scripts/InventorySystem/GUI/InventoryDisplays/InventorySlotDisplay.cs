@@ -15,7 +15,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 {
     [System.Serializable]
     [RequireComponent(typeof(RectTransform))]
-    internal sealed class InventorySlotDisplay : AbstractSlotDisplay
+    internal class InventorySlotDisplay : AbstractSlotDisplay
     {
         private GridLayoutGroup gridLayout;
 

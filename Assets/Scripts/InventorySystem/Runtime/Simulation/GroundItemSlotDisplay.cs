@@ -12,17 +12,15 @@ using UnityEngine.UI;
 namespace ToolSmiths.InventorySystem.Runtime.Simulation
 {
     /// <summary>
-    /// One pooled entry of the floor views (issues #63, #221), bound to one Drop at a time: its
-    /// icon, its name in the rarity colour (a list row; a grid cell has no label), a hover preview
+    /// One pooled row of the Ground Items List (issue #63), bound to one Drop at a time: its
+    /// icon, its name in the rarity colour, a hover preview
     /// through <see cref="PreviewProvider"/> and a click that reports the Drop back. Not an
     /// <c>AbstractSlotDisplay</c> - a ground slot has no container, no cell and nothing to drag - so
     /// it carries only the hover pattern, not the container machinery. <see cref="GroundItemsPanel"/>
-    /// and <see cref="GroundGridPanel"/> are the only intended callers of <see cref="Bind"/> and
-    /// <see cref="Unbind"/>, and own what a click does. A pooled entry is fully reset on
+    /// is the only intended caller of <see cref="Bind"/> and <see cref="Unbind"/>, and owns what a click does. A pooled entry is fully reset on
     /// <see cref="Unbind"/>: the next Drop finds nothing of the last one.
     /// </summary>
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(CanvasGroup))]
     public sealed class GroundItemSlotDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
     {
         [SerializeField] private Image icon;
@@ -32,10 +30,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private Action<ItemInstance> _onClick;
         private bool _previewShown;
         private Coroutine _pendingPreview;
-        private CanvasGroup _group;
-
-        private CanvasGroup Group => _group ? _group : _group = GetComponent<CanvasGroup>();
-
         /// <summary>The Drop this entry shows, or <c>null</c> while it sits in the pool.</summary>
         public ItemInstance Item { get; private set; }
 
@@ -75,8 +69,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         }
 
         /// <summary>How opaque the entry is drawn: the grid fades a Drop by its age rank (<see cref="GroundFade"/>).</summary>
-        public void Fade(float alpha) => Group.alpha = alpha;
-
         /// <summary>Let go of the Drop and everything drawn for it. Safe when nothing is bound.</summary>
         public void Unbind()
         {
@@ -84,7 +76,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             Item = null;
             Amount = 0u;
             _onClick = null;
-            Fade(1f);
 
             if (icon != null)
                 icon.sprite = null;

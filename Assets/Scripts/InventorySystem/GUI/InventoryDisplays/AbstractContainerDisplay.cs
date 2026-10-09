@@ -41,9 +41,12 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         private void OnDisable() => Session.UnsubscribeHeroLoaded(Register);
 
+        /// <summary>False for a display whose container is not a player container, so it is handed one through <see cref="SetupDisplay"/>.</summary>
+        protected virtual bool BindsByRole => true;
+
         private void Register()
         {
-            if (!ServiceLocator.IsArmed)
+            if (!BindsByRole || !ServiceLocator.IsArmed)
                 return;
 
             var container = InventoryService.Instance.ContainerFor(role);
@@ -60,7 +63,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         /// </summary>
         private void OnValidate()
         {
-            if (role == ContainerRole.Unassigned && !UnityEditor.PrefabUtility.IsPartOfPrefabAsset(this))
+            if (BindsByRole && role == ContainerRole.Unassigned && !UnityEditor.PrefabUtility.IsPartOfPrefabAsset(this))
                 Debug.LogWarning($"[{GetType().Name}] role is not wired - this display will never bind to a container.", this);
         }
 #endif

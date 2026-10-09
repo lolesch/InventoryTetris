@@ -8,7 +8,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
     [RequireComponent(typeof(GridLayoutGroup))]
 
     [System.Serializable]
-    internal sealed class InventoryContainerDisplay : AbstractContainerDisplay
+    internal class InventoryContainerDisplay : AbstractContainerDisplay
     {
         [SerializeField] private AbstractSlotDisplay slotDisplayPrefab;
 
