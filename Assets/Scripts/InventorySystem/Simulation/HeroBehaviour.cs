@@ -58,8 +58,8 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <summary>
         /// A debug switch (issue #63): on, a kill's item Drops that pass <see cref="AdmitsItem"/> are
         /// picked up on the hero's behalf, as before the Ground Items List; off - the default - every
-        /// item Drop lies on the ground until the player clicks it. Coins are not affected: a Pile that
-        /// passes <see cref="AdmitsCoin"/> banks either way.
+        /// item Drop lies on the ground until the player clicks it. A coin Pile follows the same rule
+        /// with <see cref="AdmitsCoin"/> as its filter (issue #218).
         /// </summary>
         public bool AutoPickup { get; set; }
 

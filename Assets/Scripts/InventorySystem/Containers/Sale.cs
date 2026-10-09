@@ -107,7 +107,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             if (0u == payout.Total || !wallet.CanDeposit(payout))
                 return false;
 
-            if (!sold.TryPlaceEvicting(package, out var landed, out var order))
+            if (!sold.TryPlaceEvicting(package, out var landed, out var order, out _))
                 return false;
 
             transaction.QueueEffect(() => wallet.Deposit(payout));

@@ -36,7 +36,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 
             public bool Land(ItemInstance item)
             {
-                if (!TryPlaceEvicting(new Package(this, item, 1u), out var landed, out var order))
+                if (!TryPlaceEvicting(new Package(this, item, 1u), out var landed, out var order, out _))
                     return false;
 
                 NoteLanded(order, landed);

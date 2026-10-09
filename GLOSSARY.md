@@ -174,7 +174,12 @@ until it does (one larger than the whole grid is refused). By default a Drop lie
 entry point (see **Quick Move**) — auto-equip into an empty slot, else the **Inventory**; with no
 room it stays on the ground. A debug switch on the Combat Panel, `AutoPickup`, hands that back to the hero: on, a
 Drop the hero's loot filter admits is picked up the same way as it falls, and only the rest
-stay down. A coin Pile the filter admits banks to the Wallet on the spot either way.
+stay down. A coin Pile follows the same rule: with `AutoPickup` on and the filter admitting its
+denomination the Wallet takes what it can, and the rest — or the whole Pile, with `AutoPickup`
+off — lies on the ground as a stack of that denomination's coin, merging with the stack already
+there up to the item's stack limit and making it the newest; denominations never consolidate on
+their own. A coin stack pushed out by newer loot banks to the Wallet first and only what the
+Wallet cannot take is lost; clicking one banks it, and what the Wallet cannot take stays.
 _Avoid_: pile (that is coins), ground loot, spill, cache
 
 **Corpse**:

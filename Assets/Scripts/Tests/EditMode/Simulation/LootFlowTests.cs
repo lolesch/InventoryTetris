@@ -15,7 +15,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
     /// <see cref="RollContext"/> built from the Location and the hero's live magic find; a Drop
     /// that passes <see cref="HeroBehaviour.AdmitsItem"/> <em>and</em> fits lands in the bag,
     /// everything else stays on the ground. A coin Pile banks to the wallet iff
-    /// <see cref="HeroBehaviour.AdmitsCoin"/> passes. <see cref="LootFlow.ClearGround"/> is the
+    /// auto-pickup is on and <see cref="HeroBehaviour.AdmitsCoin"/> passes; else it lies on the ground.<see cref="LootFlow.ClearGround"/> is the
     /// Run-end rule (GLOSSARY.md "Drop").
     ///
     /// Real <see cref="CharacterInventory"/> and <see cref="Wallet"/> throughout, per the
@@ -813,6 +813,237 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             sim.Advance(0.1f);
 
             Assert.That(raised, Is.False, "a Pile the filter rejects is never banked, so it never counts toward the Run take");
+        }
+
+        // ─── coins on the floor (epic #214, issue #218): a pile follows the item pick-up rule ──
+
+        private static LootTable NoItems() => new FakeLootTable
+        {
+            CategoryOdds = FakeLootTable.CategoryVector(ItemCategory.NONE), // the roll throws and drops nothing
+            RarityOdds = FakeLootTable.AuthoredRarityOdds(),
+        };
+
+        private static HeroBehaviour NotAutoPickingUp() => new() { LootFilterMinimum = ItemRarity.Common, AutoPickup = false };
+
+        /// <summary>One kill per pile, each shedding its pile and no items.</summary>
+        private LootFlow KillForPiles(HeroBehaviour behaviour, Wallet wallet, GroundContainer ground,
+            params (CurrencyType, uint)[] piles)
+        {
+            var location = Profiles.Group(EnemyArchetype.Skirmisher, piles.Length, table: NoItems());
+            var sim = NewEncounter(OneShotHero(), location);
+            var lootFlow = new LootFlow(sim, behaviour, new ItemGenerator(catalog, new ConstantRollSource(0f)),
+                new FakeCoinDropSource(piles), new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10), catalog)),
+                wallet, ground);
+
+            for (var tick = 0; tick < 50 && sim.EnemiesDefeated < piles.Length; tick++)
+                sim.Advance(0.1f);
+
+            Assert.That(sim.EnemiesDefeated, Is.EqualTo(piles.Length), "fixture: every kill happened");
+            return lootFlow;
+        }
+
+        private static (CurrencyType, uint)[] CoinsOnTheFloor(LootFlow lootFlow) =>
+            lootFlow.GroundDrops.Select(drop => (lootFlow.Ground.ViewOf(drop.Item).Definition.CurrencyType, drop.Amount)).ToArray();
+
+        private Wallet WalletHolding(uint iron, int width = 1, int height = 1)
+        {
+            var wallet = NewWallet(width, height);
+            wallet.Deposit(Currency.Of(CurrencyType.Iron, iron));
+            return wallet;
+        }
+
+        [Test]
+        public void WithAutoPickupOff_ACoinPile_LandsOnTheFloor_EvenWhenTheFilterAdmitsIt()
+        {
+            var wallet = NewWallet();
+
+            var lootFlow = KillForPiles(NotAutoPickingUp(), wallet, NewGround(), (CurrencyType.Iron, 7u));
+
+            Assert.That(CoinsOnTheFloor(lootFlow), Is.EqualTo(new[] { (CurrencyType.Iron, 7u) }));
+            Assert.That(wallet.Balance.Total, Is.Zero, "no coin banks by itself without auto-pickup");
+        }
+
+        [Test]
+        public void ACoinPile_ThatFailsTheFilter_LandsOnTheFloor()
+        {
+            var wallet = NewWallet();
+            var behaviour = new HeroBehaviour { LootFilterMinimum = ItemRarity.Unique, AutoPickup = true };
+
+            var lootFlow = KillForPiles(behaviour, wallet, NewGround(), (CurrencyType.Iron, 7u));
+
+            Assert.That(CoinsOnTheFloor(lootFlow), Is.EqualTo(new[] { (CurrencyType.Iron, 7u) }));
+            Assert.That(wallet.Balance.Total, Is.Zero);
+        }
+
+        [Test]
+        public void AnAdmittedPile_ThatTheWalletTakesInFull_LeavesTheFloorEmpty()
+        {
+            var wallet = NewWallet();
+
+            var lootFlow = KillForPiles(Admitting(ItemRarity.Common), wallet, NewGround(), (CurrencyType.Iron, 7u));
+
+            Assert.That(wallet.Balance.Iron, Is.EqualTo(7u));
+            Assert.That(lootFlow.GroundDrops, Is.Empty);
+        }
+
+        [Test]
+        public void AnAdmittedPile_ThatTheWalletTakesPartOf_BanksThatMuch_AndTheRestLandsOnTheFloor()
+        {
+            var wallet = WalletHolding(996u); // one cell, stack limit 999: room for 3
+            var lootFlow = NewIdleLootFlowFor(wallet, Admitting(ItemRarity.Common), (CurrencyType.Iron, 7u), out var sim);
+            long banked = 0;
+            lootFlow.CoinsBanked += amount => banked += amount;
+
+            sim.Advance(0.1f);
+
+            Assert.That(wallet.Balance.Iron, Is.EqualTo(999u));
+            Assert.That(CoinsOnTheFloor(lootFlow), Is.EqualTo(new[] { (CurrencyType.Iron, 4u) }));
+            Assert.That(banked, Is.EqualTo(3L), "only what the Wallet took counts as banked");
+        }
+
+        [Test]
+        public void AnAdmittedPile_ThatAFullWalletCannotTake_LandsOnTheFloorWhole()
+        {
+            var wallet = WalletHolding(999u);
+
+            var lootFlow = KillForPiles(Admitting(ItemRarity.Common), wallet, NewGround(), (CurrencyType.Iron, 7u));
+
+            Assert.That(wallet.Balance.Iron, Is.EqualTo(999u));
+            Assert.That(CoinsOnTheFloor(lootFlow), Is.EqualTo(new[] { (CurrencyType.Iron, 7u) }));
+        }
+
+        [Test]
+        public void CoinsOfOneDenomination_MergeIntoOneStack_AndTheMergeRefreshesItsAge()
+        {
+            var lootFlow = KillForPiles(NotAutoPickingUp(), NewWallet(), NewGround(),
+                (CurrencyType.Iron, 5u), (CurrencyType.Copper, 2u), (CurrencyType.Iron, 3u));
+
+            Assert.That(CoinsOnTheFloor(lootFlow), Is.EqualTo(new[] { (CurrencyType.Copper, 2u), (CurrencyType.Iron, 8u) }),
+                "iron stayed one stack, copper did not fold into it, and the merge made iron the newest");
+        }
+
+        [Test]
+        public void ACoinStack_AtItsLimit_StartsANewStack()
+        {
+            var lootFlow = KillForPiles(NotAutoPickingUp(), NewWallet(), NewGround(),
+                (CurrencyType.Iron, 999u), (CurrencyType.Iron, 5u));
+
+            Assert.That(CoinsOnTheFloor(lootFlow), Is.EqualTo(new[] { (CurrencyType.Iron, 999u), (CurrencyType.Iron, 5u) }));
+        }
+
+        [Test]
+        public void EvictingACoinStack_BanksItToTheWallet_FirstAndInFull()
+        {
+            var wallet = NewWallet();
+            var lootFlow = KillForPiles(NotAutoPickingUp(), wallet, NewGround(1, 1), (CurrencyType.Iron, 5u));
+            long banked = 0;
+            lootFlow.CoinsBanked += amount => banked += amount;
+            var sword = Sword();
+
+            _ = lootFlow.PlaceOnGround(Pack(sword));
+
+            Assert.That(wallet.Balance.Iron, Is.EqualTo(5u));
+            Assert.That(lootFlow.GroundDrops.Select(drop => drop.Item), Is.EqualTo(new[] { sword }));
+            Assert.That(banked, Is.EqualTo(5L));
+        }
+
+        [Test]
+        public void EvictingACoinStack_TheWalletCannotFullyTake_BanksWhatFits_AndDeletesTheRest()
+        {
+            var wallet = WalletHolding(996u);
+            var lootFlow = KillForPiles(NotAutoPickingUp(), wallet, NewGround(1, 1), (CurrencyType.Iron, 5u));
+            var sword = Sword();
+
+            _ = lootFlow.PlaceOnGround(Pack(sword));
+
+            Assert.That(wallet.Balance.Iron, Is.EqualTo(999u), "3 of the 5 fit");
+            Assert.That(lootFlow.GroundDrops.Select(drop => drop.Item), Is.EqualTo(new[] { sword }), "the other 2 are gone");
+        }
+
+        [Test]
+        public void EvictingAnItem_DeletesIt_AndTouchesNoWallet()
+        {
+            var wallet = NewWallet();
+            var lootFlow = NewIdleLootFlowFor(wallet, NotAutoPickingUp(), null, out _, NewGround(1, 1));
+            _ = lootFlow.PlaceOnGround(Pack(Sword(1)));
+            var newer = Sword(2);
+
+            _ = lootFlow.PlaceOnGround(Pack(newer));
+
+            Assert.That(lootFlow.GroundDrops.Select(drop => drop.Item), Is.EqualTo(new[] { newer }));
+            Assert.That(wallet.Balance.Total, Is.Zero);
+        }
+
+        [Test]
+        public void ARefusedPackage_DoesNotBankTheStackItWouldHaveEvicted()
+        {
+            var wallet = NewWallet();
+            var lootFlow = KillForPiles(NotAutoPickingUp(), wallet, NewGround(1, 1), (CurrencyType.Iron, 5u));
+
+            Assert.That(lootFlow.PlaceOnGround(Pack(new ItemInstance(HugeId, ItemRarity.Common, 1, null))), Is.False);
+
+            Assert.That(wallet.Balance.Total, Is.Zero, "the eviction was rolled back, so nothing was banked");
+            Assert.That(CoinsOnTheFloor(lootFlow), Is.EqualTo(new[] { (CurrencyType.Iron, 5u) }));
+        }
+
+        [Test]
+        public void ClickingACoinStack_BanksItToTheWallet()
+        {
+            var wallet = NewWallet();
+            var lootFlow = KillForPiles(NotAutoPickingUp(), wallet, NewGround(), (CurrencyType.Copper, 3u));
+            long banked = 0;
+            lootFlow.CoinsBanked += amount => banked += amount;
+            var changes = 0;
+            lootFlow.GroundChanged += () => changes++;
+
+            var picked = lootFlow.PickUpFromGround(lootFlow.GroundDrops[0].Item);
+
+            Assert.That(picked, Is.True);
+            Assert.That(wallet.Balance.Copper, Is.EqualTo(3u));
+            Assert.That(lootFlow.GroundDrops, Is.Empty);
+            Assert.That(banked, Is.EqualTo(15L), "3 copper at 5 iron each");
+            Assert.That(changes, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void ClickingACoinStack_TheWalletCannotFullyTake_LeavesTheRestWhereItLay()
+        {
+            var wallet = WalletHolding(996u);
+            var lootFlow = KillForPiles(NotAutoPickingUp(), wallet, NewGround(), (CurrencyType.Iron, 7u));
+            var cell = lootFlow.Ground.StoredPackages.Keys.Single();
+
+            var picked = lootFlow.PickUpFromGround(lootFlow.GroundDrops[0].Item);
+
+            Assert.That(picked, Is.True, "some of it was taken");
+            Assert.That(wallet.Balance.Iron, Is.EqualTo(999u));
+            Assert.That(CoinsOnTheFloor(lootFlow), Is.EqualTo(new[] { (CurrencyType.Iron, 4u) }));
+            Assert.That(lootFlow.Ground.StoredPackages.Keys.Single(), Is.EqualTo(cell));
+        }
+
+        [Test]
+        public void ClickingACoinStack_AFullWalletCannotTakeAnyOf_ChangesNothing()
+        {
+            var wallet = WalletHolding(999u);
+            var lootFlow = KillForPiles(NotAutoPickingUp(), wallet, NewGround(), (CurrencyType.Iron, 7u));
+            var changes = 0;
+            lootFlow.GroundChanged += () => changes++;
+
+            var picked = lootFlow.PickUpFromGround(lootFlow.GroundDrops[0].Item);
+
+            Assert.That(picked, Is.False);
+            Assert.That(CoinsOnTheFloor(lootFlow), Is.EqualTo(new[] { (CurrencyType.Iron, 7u) }));
+            Assert.That(changes, Is.Zero);
+        }
+
+        /// <summary>A flow whose one kill is still to come, for a test that wants the sim in hand.</summary>
+        private LootFlow NewIdleLootFlowFor(Wallet wallet, HeroBehaviour behaviour, (CurrencyType, uint)? pile,
+            out EncounterSimulation sim, GroundContainer ground = null)
+        {
+            sim = NewEncounter(OneShotHero(), Profiles.Solo(EnemyArchetype.Skirmisher, table: NoItems()));
+            var coins = pile is { } p ? new FakeCoinDropSource(p) : new FakeCoinDropSource();
+
+            return new LootFlow(sim, behaviour, new ItemGenerator(catalog, new ConstantRollSource(0f)), coins,
+                new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10), catalog)), wallet, ground ?? NewGround());
         }
 
         // ─── constructor guards ───────────────────────────────────────────────
