@@ -31,8 +31,10 @@ time -> `/code-review`.
   mechanism a sibling ticket is about to replace.
 - The issue is the unit of work; there is no per-phase implementation-plan document. An issue too
   big for one context window splits into more issues.
-- Closing an issue-epic surfaces implementation gaps against its spec, or deletes the epic if the
-  spec is fully covered.
+- Closing an issue-epic surfaces implementation gaps against its spec, or closes the epic if the
+  spec is fully covered. Never delete an issue: commits, specs and ADRs cite them by number.
+- After a PR merges successfully, clean up: delete its branch (local and remote), its worktree, and
+  the submodule branch if the PR bumped `Utility`. Skip any branch that isn't merged. Leave stashes alone.
 
 ## Agent skills
 
