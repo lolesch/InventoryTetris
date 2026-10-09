@@ -11,7 +11,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
     /// <summary>
     /// Strikes need reach (issue #207): an enemy hits the hero only while he is within its Strike Range, and
     /// walking in banks no burst; the hero's Strike only lands on a target within his own range. Each test pairs
-    /// the standard ground with the collapsed default, where the same fight starts at once - the negative
+    /// the standard arena with the collapsed default, where the same fight starts at once - the negative
     /// control that shows the range is what holds the Strike back.
     /// </summary>
     [TestFixture]
@@ -24,7 +24,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         // Strikes on every tick; no Resource, so the Cast never fires.
         private static FakeHero Striker() => new() { PhysicalDamage = 5f, MagicalDamage = 0f, Resource = 0f, AttackSpeed = 10f };
 
-        private static EncounterTuning OnTheGround() => new() { Ground = GroundTuning.Standard() };
+        private static EncounterTuning OnTheArena() => new() { Arena = ArenaTuning.Standard() };
 
         private static EncounterSimulation Sim(FakeHero hero, EncounterProfile profile, EncounterTuning tuning,
             IRollSource main = null, IRollSource movement = null) => new(hero, profile, main ?? new ConstantRollSource(0f),
@@ -51,7 +51,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         public void AnEnemy_StrikesOnlyOnceTheHeroIsWithinItsStrikeRange()
         {
             var hero = Passive();
-            var sim = Sim(hero, Profiles.Solo(EnemyArchetype.Brute), OnTheGround());
+            var sim = Sim(hero, Profiles.Solo(EnemyArchetype.Brute), OnTheArena());
             var brute = sim.Enemies.Single();
 
             var hits = new List<float>(); // the distance at each hit
@@ -69,7 +69,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
-        public void AnEnemy_StrikesFromTheStartOnACollapsedGround_ThatIsWhatTheRangeHoldsBack()
+        public void AnEnemy_StrikesFromTheStartOnACollapsedArena_ThatIsWhatTheRangeHoldsBack()
         {
             var hero = Passive();
             var sim = Sim(hero, Profiles.Solo(EnemyArchetype.Brute), new EncounterTuning());
@@ -83,7 +83,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         public void WalkingIn_DoesNotBankABurstOfStrikes()
         {
             var hero = Passive();
-            var sim = Sim(hero, Profiles.Solo(EnemyArchetype.Brute), OnTheGround());
+            var sim = Sim(hero, Profiles.Solo(EnemyArchetype.Brute), OnTheArena());
             var brute = sim.Enemies.Single();
 
             var hits = HitsOnTheHero(sim, hero, 150);
@@ -98,7 +98,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         public void ARangedEnemy_StrikesFromAStandOff_WhereTheHeroCannotReachIt()
         {
             var hero = Striker();
-            var sim = Sim(hero, Profiles.Solo(EnemyArchetype.Skirmisher), OnTheGround());
+            var sim = Sim(hero, Profiles.Solo(EnemyArchetype.Skirmisher), OnTheArena());
             var skirmisher = sim.Enemies.Single();
 
             for (var i = 0; i < 150; i++) sim.Advance(Tick);
@@ -111,7 +111,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         [Test]
         public void TheHero_CannotStrikeAnEnemyStillWalkingIn()
         {
-            var sim = Sim(Striker(), Profiles.Solo(EnemyArchetype.Brute), OnTheGround());
+            var sim = Sim(Striker(), Profiles.Solo(EnemyArchetype.Brute), OnTheArena());
             var brute = sim.Enemies.Single();
             var struckAt = new List<float>(); // the distance of each Strike
             var health = brute.Health;
@@ -132,7 +132,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         public void TheHero_WaitingForAnEnemyToArrive_BanksNoBurstOfStrikes()
         {
             var hero = new FakeHero { PhysicalDamage = 1f, MagicalDamage = 0f, Resource = 0f, AttackSpeed = 0.5f };
-            var sim = Sim(hero, Profiles.Solo(EnemyArchetype.Brute), OnTheGround());
+            var sim = Sim(hero, Profiles.Solo(EnemyArchetype.Brute), OnTheArena());
             var strikes = new List<int>();
             var tick = 0;
             sim.HeroStriked += () => strikes.Add(tick);
@@ -145,7 +145,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
-        public void TheHero_StrikesAtOnceOnACollapsedGround()
+        public void TheHero_StrikesAtOnceOnACollapsedArena()
         {
             var sim = Sim(Striker(), Profiles.Solo(EnemyArchetype.Brute), new EncounterTuning());
             var brute = sim.Enemies.Single();
@@ -162,7 +162,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
                 sourceLevel: 5, packed: EnemyArchetype.Skirmisher, rosterBrute: new IntRange(1), rosterSkirmisher: new IntRange(1),
                 packBatch: new IntRange(1), packedSpawnWeight: 1f, spawnInterval: 100f,
                 table: FakeLootTable.ForCategory(ItemCategory.Equipment), spawnJitter: 0f, initialSpawn: 2);
-            var sim = Sim(Passive(), profile, OnTheGround());
+            var sim = Sim(Passive(), profile, OnTheArena());
             var brute = sim.Enemies.Single(e => e.Archetype == EnemyArchetype.Brute);
             var skirmisher = sim.Enemies.Single(e => e.Archetype == EnemyArchetype.Skirmisher);
             Assert.That(sim.StrikeTarget, Is.SameAs(skirmisher), "premise: both walk in, and the earlier spawn is his target");
@@ -179,7 +179,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             List<Coordinate> Trace(int movementSeed)
             {
                 var profile = Profiles.Group(EnemyArchetype.Brute, 3);
-                var sim = Sim(Passive(), profile, OnTheGround(), new SeededRollSource(3), new SeededRollSource(movementSeed));
+                var sim = Sim(Passive(), profile, OnTheArena(), new SeededRollSource(3), new SeededRollSource(movementSeed));
                 var trace = new List<Coordinate>();
                 for (var i = 0; i < 60; i++)
                 {
@@ -198,7 +198,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         {
             float Walked(float delta)
             {
-                var sim = Sim(Passive(), Profiles.Solo(EnemyArchetype.Brute), OnTheGround());
+                var sim = Sim(Passive(), Profiles.Solo(EnemyArchetype.Brute), OnTheArena());
                 var brute = sim.Enemies.Single();
                 var before = Distance(sim, brute);
                 sim.Advance(delta);

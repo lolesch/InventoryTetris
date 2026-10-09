@@ -57,7 +57,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         /// <summary>
         /// One coin of <paramref name="type"/>, minted the way <see cref="Deposit"/> mints, for a pile
-        /// that lies somewhere else (the floor) before it banks. Null when the wallet cannot mint it.
+        /// that lies somewhere else (the ground) before it banks. Null when the wallet cannot mint it.
         /// </summary>
         public ItemInstance MintCoin(CurrencyType type) => minter?.MintCurrency(type);
 

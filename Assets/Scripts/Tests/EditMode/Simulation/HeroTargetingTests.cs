@@ -32,8 +32,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
         private static EncounterSimulation Sim(FakeHero hero, EncounterProfile profile, HeroBehaviour behaviour)
         {
-            var tuning = new EncounterTuning { Ground = GroundTuning.Standard(), Beat = 1000f };
-            tuning.Ground.HeroStrikeRange = UnarmedRange;
+            var tuning = new EncounterTuning { Arena = ArenaTuning.Standard(), Beat = 1000f };
+            tuning.Arena.HeroStrikeRange = UnarmedRange;
             return new EncounterSimulation(hero, profile, new ConstantRollSource(0f), behaviour, tuning, bag: null,
                 movementRolls: new ConstantRollSource(0.5f));
         }
@@ -60,7 +60,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
             for (var i = 0; i < 100 && sim.EnemiesDefeated == 0; i++) sim.Advance(Tick);
             Assert.That(sim.EnemiesDefeated, Is.EqualTo(1), "premise: the near one fell");
-            Assert.That(Coordinate.Distance(sim.HeroPosition, sim.Ground.Origin), Is.GreaterThan(3f), "premise: he stands off the origin");
+            Assert.That(Coordinate.Distance(sim.HeroPosition, sim.Arena.Origin), Is.GreaterThan(3f), "premise: he stands off the origin");
 
             return (sim, sim.Enemies[0], sim.Enemies[1]);
         }
@@ -74,7 +74,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var nearHome = sim.Enemies[1];
             Stand(nearMe, h + new Coordinate(0f, 4f));
             Stand(nearHome, -3f, 0f);
-            Assert.That(Coordinate.Distance(nearHome.Position, sim.Ground.Origin), Is.LessThan(Coordinate.Distance(nearMe.Position, sim.Ground.Origin)), "premise");
+            Assert.That(Coordinate.Distance(nearHome.Position, sim.Arena.Origin), Is.LessThan(Coordinate.Distance(nearMe.Position, sim.Arena.Origin)), "premise");
             Assert.That(Coordinate.Distance(nearMe.Position, h), Is.LessThan(Coordinate.Distance(nearHome.Position, h)), "premise");
 
             Assert.That(sim.StrikeTarget, Is.SameAs(nearHome));
@@ -108,7 +108,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             // At the midpoint weight only the sum of the two distances counts.
             Stand(a, h + new Coordinate(0f, 4f));
             Stand(b, -3f, 0f);
-            float Sum(Enemy e) => Coordinate.Distance(e.Position, sim.Ground.Origin) + Coordinate.Distance(e.Position, h);
+            float Sum(Enemy e) => Coordinate.Distance(e.Position, sim.Arena.Origin) + Coordinate.Distance(e.Position, h);
             var cheaper = Sum(a) < Sum(b) ? a : b;
 
             Assert.That(sim.StrikeTarget, Is.SameAs(cheaper));
@@ -142,7 +142,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             Assert.That(sim.StrikeTarget, Is.SameAs(target), "premise: it is his target");
 
             Stand(newcomer, 0f, 3f); // nearer home than the target ever was, still outside his reach
-            Assert.That(Coordinate.Distance(newcomer.Position, sim.Ground.Origin), Is.LessThan(Coordinate.Distance(target.Position, sim.Ground.Origin)), "premise");
+            Assert.That(Coordinate.Distance(newcomer.Position, sim.Arena.Origin), Is.LessThan(Coordinate.Distance(target.Position, sim.Arena.Origin)), "premise");
             Assert.That(Coordinate.Distance(newcomer.Position, sim.HeroPosition), Is.GreaterThan(UnarmedRange), "premise");
             Run(sim, 3);
             Assert.That(sim.StrikeTarget, Is.SameAs(target), "he keeps it");
@@ -168,7 +168,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var nearerHome = sim.Enemies[2];
             Stand(nearerHim, h + new Coordinate(0.9f, 0f));
             Stand(nearerHome, h + new Coordinate(-1.3f, 0f));
-            Assert.That(Coordinate.Distance(nearerHome.Position, sim.Ground.Origin), Is.LessThan(Coordinate.Distance(nearerHim.Position, sim.Ground.Origin)), "premise");
+            Assert.That(Coordinate.Distance(nearerHome.Position, sim.Arena.Origin), Is.LessThan(Coordinate.Distance(nearerHim.Position, sim.Arena.Origin)), "premise");
             Assert.That(Coordinate.Distance(nearerHome.Position, h), Is.LessThanOrEqualTo(UnarmedRange), "premise: both inside his reach");
             Assert.That(Coordinate.Distance(far.Position, h), Is.GreaterThan(UnarmedRange), "premise: his target is outside it");
 
@@ -220,12 +220,12 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             for (var i = 0; i < 200 && sim.EnemiesDefeated == 0; i++) sim.Advance(Tick);
             Assert.That(sim.EnemiesDefeated, Is.EqualTo(1), "premise: the first fell");
             Assert.That(sim.Phase, Is.EqualTo(SimulationPhase.Fighting), "premise: the second is still to spawn");
-            Assert.That(Coordinate.Distance(sim.HeroPosition, sim.Ground.Origin), Is.GreaterThan(1f), "premise: he is off the origin");
+            Assert.That(Coordinate.Distance(sim.HeroPosition, sim.Arena.Origin), Is.GreaterThan(1f), "premise: he is off the origin");
 
             Run(sim, 100);
 
             Assert.That(sim.AliveEnemyCount, Is.Zero);
-            Assert.That(sim.HeroPosition, Is.EqualTo(sim.Ground.Origin));
+            Assert.That(sim.HeroPosition, Is.EqualTo(sim.Arena.Origin));
         }
 
         [Test]
@@ -233,7 +233,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         {
             System.Collections.Generic.List<Coordinate> Path(int movementSeed)
             {
-                var tuning = new EncounterTuning { Ground = GroundTuning.Standard(), Beat = 1000f };
+                var tuning = new EncounterTuning { Arena = ArenaTuning.Standard(), Beat = 1000f };
                 var sim = new EncounterSimulation(Hero(speed: 300f, damage: 3f), Profiles.Group(EnemyArchetype.Skirmisher, 3),
                     new SeededRollSource(3), Weighted(0.5f), tuning, bag: null, movementRolls: new SeededRollSource(movementSeed));
                 var path = new System.Collections.Generic.List<Coordinate>();

@@ -14,11 +14,12 @@ namespace ToolSmiths.InventorySystem.Services
     public sealed class World
     {
         public World(CharacterInventory vendorSupply, CharacterInventory healerSupply, SoldContainer sold,
-            InventoryContextState context)
+            GroundContainer ground, InventoryContextState context)
         {
             VendorSupply = vendorSupply ?? throw new ArgumentNullException(nameof(vendorSupply));
             HealerSupply = healerSupply ?? throw new ArgumentNullException(nameof(healerSupply));
             Sold = sold ?? throw new ArgumentNullException(nameof(sold));
+            Ground = ground ?? throw new ArgumentNullException(nameof(ground));
             Context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
@@ -30,6 +31,10 @@ namespace ToolSmiths.InventorySystem.Services
 
         /// <summary>What the player sold, bought back like a Supply. Shown on each selling panel's Sold tab.</summary>
         public SoldContainer Sold { get; }
+
+        /// <summary>Where the Run's Drops lie. One for the World, so a display can bind it; the live loot flow
+        /// lays Drops on it and wipes it when the Run ends.</summary>
+        public GroundContainer Ground { get; }
 
         /// <summary>
         /// The Run FSM of this World. <c>null</c> on a fresh World: the simulation service builds it

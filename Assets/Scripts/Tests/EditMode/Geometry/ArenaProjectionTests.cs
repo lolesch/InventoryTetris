@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Tests.EditMode.Geometry
 {
-    /// <summary>The arena's ground-to-canvas projection and its depth order (spatial-combat spec, "The ground and positions").</summary>
+    /// <summary>The arena's arena-to-canvas projection and its depth order (spatial-combat spec, "The arena and positions").</summary>
     [TestFixture]
     public sealed class ArenaProjectionTests
     {
@@ -21,7 +21,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Geometry
         }
 
         [Test]
-        public void ToCanvas_ATiltOfOneDrawsTheGroundTopDown()
+        public void ToCanvas_ATiltOfOneDrawsTheArenaTopDown()
         {
             var projection = new ArenaProjection(10f, 1f);
 
@@ -54,7 +54,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Geometry
         }
 
         [Test]
-        public void ToCanvas_ATiltOfZeroCollapsesTheGroundOntoALine()
+        public void ToCanvas_ATiltOfZeroCollapsesTheArenaOntoALine()
         {
             var projection = new ArenaProjection(10f, 0f);
 
@@ -62,7 +62,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Geometry
         }
 
         [Test]
-        public void DepthOrder_TheFartherSideOfTheGroundDrawsFirst()
+        public void DepthOrder_TheFartherSideOfTheArenaDrawsFirst()
         {
             var behind = new Coordinate(0f, 5f);
             var inFront = new Coordinate(0f, -5f);
@@ -73,7 +73,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Geometry
         }
 
         [Test]
-        public void DepthOrder_FollowsTheGroundNotTheTilt()
+        public void DepthOrder_FollowsTheArenaNotTheTilt()
         {
             // At a tilt of zero both land on one canvas row, yet one still stands behind the other.
             var projection = new ArenaProjection(10f, 0f);

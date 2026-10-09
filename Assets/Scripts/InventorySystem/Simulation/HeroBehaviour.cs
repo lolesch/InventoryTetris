@@ -66,7 +66,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <summary>
         /// How strongly home pulls against nearness when the hero picks a target, 0..1 (spatial-combat spec):
         /// 0 takes the enemy nearest himself (a brawler who fights what is in front of him), 1 the one nearest the
-        /// ground's origin (a homebody who never wanders). Read live, each time he has no target.
+        /// arena's origin (a homebody who never wanders). Read live, each time he has no target.
         /// </summary>
         public float OriginWeight { get; set; } = DefaultOriginWeight;
 

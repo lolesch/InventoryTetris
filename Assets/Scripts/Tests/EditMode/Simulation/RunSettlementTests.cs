@@ -125,7 +125,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         // What does not fit stays on the Corpse, re-buried at the same Location (ADR-0009); the
-        // floor is not part of a recovery at all, so no port to it is handed in.
+        // ground is not part of a recovery at all, so no port to it is handed in.
 
         [Test]
         public void Recover_WithRoomForEverything_StoresItAll_AndClearsTheCorpse()

@@ -182,6 +182,12 @@ their own. A coin stack pushed out by newer loot banks to the Wallet first and o
 Wallet cannot take is lost; clicking one banks it, and what the Wallet cannot take stays.
 _Avoid_: pile (that is coins), ground loot, spill, cache
 
+**Ground**:
+Where a **Run**'s **Drops** lie: one stash-sized grid per Run, wiped when the Run ends. In Town
+there is no Run and so no ground. The **Ground Items List** and a grid of the same cells on the
+Combat Panel are two views of it. What lands and what is evicted is the **Drop**'s rule.
+_Avoid_: floor, loot area, arena (that is where the fight takes place)
+
 **Corpse**:
 The hero's bag, set aside at the Location where they were downed. Death empties the bag
 into the Corpse; recovering it means re-entering that Location and picking the items
@@ -398,21 +404,22 @@ physical (mitigated by the hero's Armor), a Skirmisher's magical (by his Magic R
 have a Magic Resist of their own, so the hero's Cast is mitigated like his Strike.
 _Avoid_: swing, attack (a Cast attacks too), auto-attack, basic attack
 
-**Ground**:
+**Arena**:
 The flat disk the fight takes place on, owned by the simulation (spatial-combat spec). The
 hero stands at its **Origin**; enemies spawn a margin beyond its edge, on a bearing the sim
-chooses, and walk in. The arena draws positions the sim owns; it never moves anyone.
-_Avoid_: map, arena (that is the view), field, board
+chooses, and walk in. The arena view draws positions the sim owns; it never moves anyone.
+Distances in it are in arena units.
+_Avoid_: map, field, board, terrain, ground (that is where **Drops** lie)
 
 **Origin**:
-The centre of the **Ground**, where the hero calls home and stands until he walks. In the
-arena it is drawn at the selected Location's Hero icon; the icon stays the Location's marker
-and does not move, while the hero **figure** that stands on the ground is a separate element.
-The arena maps ground distance to canvas distance with one adjustable tilt (ADR-0018).
+The centre of the **Arena**, where the hero calls home and stands until he walks. In the
+arena view it is drawn at the selected Location's Hero icon; the icon stays the Location's marker
+and does not move, while the hero **figure** that stands in the arena is a separate element.
+The arena view maps arena distance to canvas distance with one adjustable tilt (ADR-0018).
 _Avoid_: spawn point, anchor (that is the Hero icon's rect, the view's side of it), centre
 
 **Strike Range**:
-How far from the hero a Strike reaches, in ground units. An enemy Strikes only while the hero
+How far from the hero a Strike reaches, in arena units. An enemy Strikes only while the hero
 is within its Strike Range, so a melee enemy closes in and a ranged one - the same capability
 with a longer range - stands off. The unarmed hero has a short one; gear never rolls range.
 _Avoid_: reach, melee range, weapon range
@@ -429,7 +436,7 @@ of the kit.
 _Avoid_: spell, nuke, ability, skill
 
 **Cast Range**:
-How far from the hero an enemy may stand to be aimed at by the **Cast**, in ground units,
+How far from the hero an enemy may stand to be aimed at by the **Cast**, in arena units,
 read from the **Cast definition**. It limits who the hero aims at, not what the shape hits: an
 enemy beyond it is still caught when it stands inside a shape aimed at one within range.
 _Avoid_: spell range, reach, aggro range
@@ -507,7 +514,7 @@ _Avoid_: leash, aggro range, home pull
 The one enemy the hero is fighting. He keeps it until it falls, so a fresh spawn never turns him round mid-run,
 and walks until it is within his **Strike Range**, without overshooting. The exception is a target still out of
 reach while another enemy stands inside it: he then switches to the best-scoring enemy inside (**Origin
-Weight**), so he is never hit for free. With no enemy alive he walks back to the **Origin**. The arena rings this
+Weight**), so he is never hit for free. With no enemy alive he walks back to the **Origin**. The arena view rings this
 enemy. His movement speed is the `MovementSpeed` stat; his **Strike Range** is his weapon type's, not a stat.
 _Avoid_: lock-on, focus target, aggro target, current target
 
@@ -575,16 +582,16 @@ cooldown overlays. Minimal v1 is flash-only; cooldown visuals are a follow-up.
 _Avoid_: skill bar, action bar, power bar
 
 **Ground Items List**:
-A pooled list of slot displays reading the one bounded floor, in age order, oldest first.
+A pooled list of slot displays reading the **Ground**, in age order, oldest first.
 Each entry shows the item name and icon, supports hover preview and click-to-pick-up. One
 entry per package, so a stack is one entry, not one per item. A click picks the **Drop** up
-through the player's acquisition entry point, so a full bag leaves it lying there. The floor
+through the player's acquisition entry point, so a full bag leaves it lying there. The ground
 is a grid container the size of the stash, and this list is its second view: both read the same
-packages. A package that lands, or a stack that gains items, becomes the newest; when the floor
+packages. A package that lands, or a stack that gains items, becomes the newest; when the ground
 is full the oldest are removed until the new one fits, and nothing else is rearranged. It also
-shows what the player dropped there — by Quick Move or by releasing a drag on the floor slot,
+shows what the player dropped there — by Quick Move or by releasing a drag on the ground slot,
 which evict the oldest the same way — and like any **Drop** it is gone when the Run ends. With
-no Run there is no ground, and an item released on the floor slot goes back where it came from.
+no Run there is no ground, and an item released on the ground slot goes back where it came from.
 _Avoid_: loot beam, drop list, world items
 
 

@@ -40,6 +40,10 @@ namespace ToolSmiths.InventorySystem.Inventories
             if (onEvicted != null)
                 transaction.QueueEffect(() => evicted.ForEach(onEvicted));
             transaction.Commit();
+
+            // The commit announces the change before the age order adopts the landing, and a display fades by
+            // that order: announce again.
+            InvokeRefresh();
             return true;
         }
 

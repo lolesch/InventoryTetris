@@ -53,14 +53,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   <Position>k__BackingField: {x: 0, y: 0}
   itemGroup: {fileID: 6378314348981931348}
-  itemDisplay: {fileID: 8458286531088978991}
   icon: {fileID: 5968106837114084602}
   frame: {fileID: 1310718993614611789}
   background: {fileID: 6389210322047762246}
   amount: {fileID: 6542709027021985681}
-  slotBackground: {fileID: 7395715520113642860}
   hoverExpand: 1
   hoverLighten: 0.25
+  fadeStep: 0.02
+  minimumAlpha: 0.3
 --- !u!222 &930519027155081275
 CanvasRenderer:
   m_ObjectHideFlags: 0

@@ -15,21 +15,21 @@ be built on a sim that has no notion of where anything is.
 ## Decision
 
 1. **The simulation owns position.** The hero and every enemy have a `Coordinate` (the XZ
-   plane) on a flat **Ground** around an **Origin**. Positions advance in the Encounter's tick
+   plane) on a flat **Arena** around an **Origin**. Positions advance in the Encounter's tick
    on sim time, so they scale with sim speed and freeze at zero. The spawn bearing and the stop
    jitter are rolled in the sim, from a movement stream of their own, so adding a movement roll
    never reorders a seeded loot or spawn outcome.
 2. **The view never moves anyone.** `EnemyArena` reads `Enemy.Position` and
    `EncounterSimulation.HeroPosition` every frame and draws them through one pure projection,
-   `ArenaProjection`: canvas units per ground unit, and a **tilt** scalar where 1 draws the
-   ground top-down and less than 1 flattens the depth axis. The sim never sees the tilt, and
-   every distance the rules use is a ground distance.
-3. **The Ground's Origin is the Hero icon anchor** (the selected Location's checkmark rect).
+   `ArenaProjection`: canvas units per arena unit, and a **tilt** scalar where 1 draws the
+   arena top-down and less than 1 flattens the depth axis. The sim never sees the tilt, and
+   every distance the rules use is an arena distance.
+3. **The Arena's Origin is the Hero icon anchor** (the selected Location's checkmark rect).
    The checkmark stays the Location's marker and is not moved; the hero **figure** that stands
-   on the ground is a separate element, so a moving hero and a corpse marker never both claim
+   on the arena is a separate element, so a moving hero and a corpse marker never both claim
    the checkmark.
-4. **Facing and draw order are read from the sim's ground, not the canvas.** An enemy faces the
-   hero by which side of him it stands on, with a dead zone, and depth is the ground's z, so a
+4. **Facing and draw order are read from the sim's arena, not the canvas.** An enemy faces the
+   hero by which side of him it stands on, with a dead zone, and depth is the arena's z, so a
    tilt of zero still orders figures.
 5. **The view-side walk-in is deleted**, not kept beside the sim's: the arena walk, the
    approach, spawn-point and slot-point maths and their tests, the slot-angle pick with its
@@ -53,6 +53,6 @@ and breaks seeded tests, which run with no view at all. Rejected.
   placement is the one pure `ArenaProjection` (and the facing and depth-order functions beside
   it), tested without a scene.
 - `InventorySystem.Geometry` references `Utility` for `Coordinate`.
-- The tilt is a serialized value on the arena: drawing the ground flatter or steeper needs no
+- The tilt is a serialized value on the arena: drawing the arena flatter or steeper needs no
   sim change, and a flattened view looks closer vertically than the rules treat it.
 - A figure that fades out stays where it fell, since only its link to the enemy is cut.

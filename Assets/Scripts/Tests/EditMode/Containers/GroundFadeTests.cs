@@ -4,51 +4,46 @@ using ToolSmiths.InventorySystem.Inventories;
 namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 {
     /// <summary>
-    /// How faint a Drop on the floor is drawn (epic #214, issue #221): by its age rank among the other
-    /// drops - the newest fully opaque, the oldest at a minimum - and never by time.
+    /// How faint a Drop on the ground is drawn (epic #214, issue #221): the newest fully opaque, each drop
+    /// landed since taking one fixed step off, down to a minimum - counted in drops, never in time.
     /// </summary>
     [TestFixture]
     public sealed class GroundFadeTests
     {
-        private const float Minimum = 0.35f;
+        private const float Step = 0.15f;
+        private const float Minimum = 0.25f;
 
         [Test]
         public void TheNewest_IsFullyOpaque()
         {
-            Assert.That(GroundFade.Alpha(rank: 4, count: 5, Minimum), Is.EqualTo(1f));
+            Assert.That(GroundFade.Alpha(age: 0, Step, Minimum), Is.EqualTo(1f));
         }
 
         [Test]
-        public void TheOldest_IsAtTheMinimum()
+        public void EachLaterDrop_TakesOneStepOff()
         {
-            Assert.That(GroundFade.Alpha(rank: 0, count: 5, Minimum), Is.EqualTo(Minimum));
+            Assert.That(GroundFade.Alpha(age: 1, Step, Minimum), Is.EqualTo(0.85f).Within(1e-6f));
+            Assert.That(GroundFade.Alpha(age: 3, Step, Minimum), Is.EqualTo(0.55f).Within(1e-6f));
         }
 
         [Test]
-        public void ADropBetween_IsStepped_ByItsRank()
+        public void AnOldDrop_StopsFadingAtTheMinimum()
         {
-            // 0.35, 0.5125, 0.675, 0.8375, 1 - five drops, four equal steps.
-            Assert.That(GroundFade.Alpha(rank: 2, count: 5, Minimum), Is.EqualTo(0.675f).Within(1e-6f));
+            Assert.That(GroundFade.Alpha(age: 5, Step, Minimum), Is.EqualTo(Minimum).Within(1e-6f));
+            Assert.That(GroundFade.Alpha(age: 40, Step, Minimum), Is.EqualTo(Minimum));
         }
 
         [Test]
-        public void ALoneDrop_IsTheNewest_SoFullyOpaque()
+        public void AFreshDrop_IsNotDimmedByHowManyCameBefore()
         {
-            Assert.That(GroundFade.Alpha(rank: 0, count: 1, Minimum), Is.EqualTo(1f));
+            // One drop landing after the first fades it one step, whether the ground holds two drops or two hundred.
+            Assert.That(GroundFade.Alpha(age: 1, Step, Minimum), Is.EqualTo(0.85f).Within(1e-6f));
         }
 
         [Test]
-        public void TheFade_DependsOnTheRank_NotOnHowManyDropsThereAre()
+        public void AStepOfZero_LeavesEveryDropOpaque()
         {
-            Assert.That(GroundFade.Alpha(rank: 1, count: 2, Minimum), Is.EqualTo(1f));
-            Assert.That(GroundFade.Alpha(rank: 9, count: 10, Minimum), Is.EqualTo(1f));
-            Assert.That(GroundFade.Alpha(rank: 0, count: 10, Minimum), Is.EqualTo(Minimum));
-        }
-
-        [Test]
-        public void AMinimumOfOne_LeavesEveryDropOpaque()
-        {
-            Assert.That(GroundFade.Alpha(rank: 0, count: 3, 1f), Is.EqualTo(1f));
+            Assert.That(GroundFade.Alpha(age: 9, 0f, Minimum), Is.EqualTo(1f));
         }
     }
 }

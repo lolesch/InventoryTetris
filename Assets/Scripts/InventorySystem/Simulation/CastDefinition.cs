@@ -21,7 +21,7 @@ namespace ToolSmiths.InventorySystem.Simulation
     public sealed class CastDefinition
     {
         /// <summary>
-        /// Cast Range: only enemies within this ground distance of the hero are candidates to aim at. It is not
+        /// Cast Range: only enemies within this arena distance of the hero are candidates to aim at. It is not
         /// the shape's reach - an enemy in range may be hit by a shape that spills past it.
         /// </summary>
         public float Range { get; set; } = 7f;

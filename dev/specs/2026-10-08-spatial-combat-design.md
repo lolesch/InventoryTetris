@@ -26,17 +26,17 @@ skills with shapes and areas, because it has no notion of where anything is.
 
 ## Solution
 
-The fight takes place on a **ground**: a flat disk with an **origin** that the hero calls home.
+The fight takes place on an **arena**: a flat disk with an **origin** that the hero calls home.
 The hero and every enemy have a position on it, and the arena draws those positions.
 
-Enemies spawn at the edge of the ground and **walk in for real**. A melee enemy closes in on
+Enemies spawn at the edge of the arena and **walk in for real**. A melee enemy closes in on
 the hero until it is within its **Strike Range**, and a ranged enemy does the same with a
 longer Strike Range, so it stands off. Enemies only Strike while the hero is within their
 Strike Range, and they chase the hero's current position, so when he walks they follow.
 
 The hero **walks to fight**. He picks a target, closes to his own Strike Range (set by his
 weapon), and keeps that target until it falls. He prefers targets close to the origin, but
-also close to himself, so he fights his way across the ground instead of running past
+also close to himself, so he fights his way across the arena instead of running past
 enemies. When nothing is left alive he walks back to the origin. A single **origin weight**
 slider on the behaviour sliders sets how strongly home pulls against nearness.
 
@@ -70,7 +70,7 @@ are tinted dark blue-purple. The hero's incoming hits show numbers too.
 7. As a player, I want the hero to finish the enemy he started on, so that a new spawn does
    not make him turn around mid-run.
 8. As a player, I want the hero to prefer enemies close to his home, so that he does not
-   wander across the whole ground after a straggler.
+   wander across the whole arena after a straggler.
 9. As a player, I want the hero to also prefer enemies close to himself, so that he never runs
    past an enemy to reach one near home.
 10. As a player, I want the hero to stop and fight an enemy that closes in on him while he is
@@ -132,23 +132,23 @@ are tinted dark blue-purple. The hero's incoming hits show numbers too.
     them does not shift any seeded loot or spawn outcome.
 39. As a developer, I want the view to read positions from the sim and never move enemies
     itself, so that there is one answer to where an enemy is.
-40. As a developer, I want the view's tilt to be an adjustable scalar, so that the ground can
+40. As a developer, I want the view's tilt to be an adjustable scalar, so that the arena can
     be drawn top-down or flattened without touching the sim.
 
 ## Implementation Decisions
 
-**The ground and positions**
+**The arena and positions**
 
-- The simulation owns position. The hero and every enemy have a position on a flat ground
-  plane, expressed with the Utility `Coordinate` type (the XZ plane). The ground has an
+- The simulation owns position. The hero and every enemy have a position on a flat arena
+  plane, expressed with the Utility `Coordinate` type (the XZ plane). The arena has an
   **origin**, a radius, and a spawn margin beyond its edge; these are tuning values.
-- The arena view only projects. It maps ground positions to canvas positions with one
-  adjustable **tilt** scalar: 1 draws the ground top-down, less than 1 flattens the
-  depth axis. The sim never sees the tilt. Distances are always ground distances, so a flattened
+- The arena view only projects. It maps arena positions to canvas positions with one
+  adjustable **tilt** scalar: 1 draws the arena top-down, less than 1 flattens the
+  depth axis. The sim never sees the tilt. Distances are always arena distances, so a flattened
   view looks closer vertically than the rules treat it; area shapes are drawn through the same
   projection.
-- The ground's origin is the existing Hero icon anchor (the selected Location's checkmark rect).
-  The hero **figure** that moves on the ground is a new, separate element: the checkmark stays
+- The arena's origin is the existing Hero icon anchor (the selected Location's checkmark rect).
+  The hero **figure** that moves on the arena is a new, separate element: the checkmark stays
   the Location's marker and is not moved. The same checkmark gains a corpse variant (see the
   floor-loot spec).
 - Positions advance on sim time, in the encounter's tick, in a fixed order: the hero chooses a
@@ -175,7 +175,7 @@ are tinted dark blue-purple. The hero's incoming hits show numbers too.
 
 - Enemies are strike-only. The melee and ranged archetypes differ in Strike Range, speed,
   damage type and stats, not in capability. There is no enemy Cast, no mana and no mana regen.
-- An enemy spawns on the ground's edge at a bearing chosen in the sim (largest gap between
+- An enemy spawns on the arena's edge at a bearing chosen in the sim (largest gap between
   living enemies' bearings, plus jitter), keeps it until it falls, and chases the hero's
   current position until it is within its Strike Range. Its stop distance is its Strike Range
   reduced by a small seeded jitter, so it always stands within range.
@@ -254,7 +254,7 @@ are tinted dark blue-purple. The hero's incoming hits show numbers too.
 - ADR-0010 is amended (enemy damage types, enemy magic resist, strike-only unchanged). A new ADR
   records that the simulation owns position and the view projects it, superseding the arena
   spec's "cosmetic only". The glossary is updated: Strike (single sticky target in range, no
-  longer lowest-HP), Cast (area, anchor, range), plus new terms Ground, Origin, Strike Range,
+  longer lowest-HP), Cast (area, anchor, range), plus new terms Arena, Origin, Strike Range,
   Cast Range, Origin Weight and Cast Definition.
 
 ## Testing Decisions
@@ -291,7 +291,7 @@ are tinted dark blue-purple. The hero's incoming hits show numbers too.
 ## Further Notes
 
 **Tuning placeholders.** These are untested starting points, to be tuned in play and by a
-headless run: ground radius 10 units, spawn margin 2, unarmed Strike Range 1.5, Brute Strike
+headless run: arena radius 10 units, spawn margin 2, unarmed Strike Range 1.5, Brute Strike
 Range 1.5 and speed 2, Skirmisher Strike Range 6 and speed 3.5, Cast Range 7, Cast shape a disk
 of radius 2, origin weight 0.5, damage spread +-20%, stop jitter up to 20% of range. The hero's
 base movement speed needs a starter value, which belongs to the starter-stat work in spec D;
@@ -308,7 +308,7 @@ measured against this spec):
 | Mechanism | Vs. | Drift | Recommendation |
 |---|---|---|---|
 | The arena's view-side walk-in: the arena walk helper, the approach and spawn-point and slot-point math, the visuals asset's ring radii and approach speed (#177, #175) | Sim movement with archetype movement speed | stranded fix: their tests and #177's "hero may strike a walking enemy" rule have no callers once the sim moves enemies | retire-together: the sim-movement ticket deletes them and those two fields |
-| Enemies placed in canvas units around the Location checkmark (#176) | A ground with a hero figure and a corpse marker | coverage gap: the checkmark is both the Location marker and the arena anchor, so a moving hero and a corpse marker would both claim it | patch-the-gap: the ground's origin is the checkmark rect, the hero figure is separate, the corpse marker is a checkmark variant |
+| Enemies placed in canvas units around the Location checkmark (#176) | An arena with a hero figure and a corpse marker | coverage gap: the checkmark is both the Location marker and the arena anchor, so a moving hero and a corpse marker would both claim it | patch-the-gap: the arena's origin is the checkmark rect, the hero figure is separate, the corpse marker is a checkmark variant |
 | Spawn bearing from the slot-angle helper with view-injected jitter (#175, #177's "no draw from the sim's rolls") | Sim-owned spawn bearing and stop jitter | coverage gap: the sim needs deterministic rolls, and drawing from the existing stream would reorder seeded outcomes | patch-the-gap: movement gets its own roll stream |
 | The strike-target peek as the lowest-health choice (#182) | The sticky target | stranded fix: three strike-target tests assert the old rule | retire-together: rewrite them with the targeting slice; keep the member and the arena's per-frame poll |
 | Damage numbers read from the enemy's health-change event (#181) | The typed hit event | stranded fix: that handler cannot see type, dealer or the hero's incoming hits | retire-together: move numbers to the hit event, key the accumulator by target and type; flash and shake keep the health event |

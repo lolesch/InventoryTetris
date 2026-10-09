@@ -24,7 +24,7 @@ namespace ToolSmiths.InventorySystem.Services
     /// handed, binding the hero adapter, the roll source and the Behaviour Profile, and wires the
     /// per-kill loot flow (issue #24) and XP (issue #44) over it. The ADR-0009 Death penalty and the
     /// corpse-recovery rules are <see cref="RunSettlement"/>'s; this binds its ports to the Hero.
-    /// The tuning (cast cost, penalty fractions, and the ground, Cast and damage spread an Encounter plays on)
+    /// The tuning (cast cost, penalty fractions, and the arena, Cast and damage spread an Encounter plays on)
     /// comes from <see cref="GameConfig"/>.
     /// </summary>
     public sealed class SimulationService : ISimulationService
@@ -248,7 +248,7 @@ namespace ToolSmiths.InventorySystem.Services
             };
 
             var lootFlow = new LootFlow(encounter, hero.Behaviour, generator, items, hero, hero.Wallet,
-                new GroundContainer(config.GroundSize, items.Catalog), hero.Inventory, hero.Equipment);
+                world.Ground, hero.Inventory, hero.Equipment);
 
             // The Run accumulates the base-unit coin take so Death's fee reads it (issue #44).
             lootFlow.CoinsBanked += run.BankCurrency;
@@ -261,7 +261,7 @@ namespace ToolSmiths.InventorySystem.Services
         }
 
         /// <summary>
-        /// The tuning a real Encounter plays on: the placeholder ground, Cast and damage spread authored on
+        /// The tuning a real Encounter plays on: the placeholder arena, Cast and damage spread authored on
         /// <paramref name="config"/>. A value outside what the sim accepts is pulled back into range, so a
         /// hand-edited asset cannot make a Send throw. The weapon-type Strike Range table stays in
         /// <see cref="WeaponTypes"/>.
@@ -269,9 +269,9 @@ namespace ToolSmiths.InventorySystem.Services
         private static EncounterTuning TuningFor(GameConfig config) => new()
         {
             DelayFirstSpawn = true,
-            Ground = new GroundTuning
+            Arena = new ArenaTuning
             {
-                Radius = Mathf.Max(0f, config.GroundRadius),
+                Radius = Mathf.Max(0f, config.ArenaRadius),
                 SpawnMargin = Mathf.Max(0f, config.SpawnMargin),
                 StopJitter = Mathf.Clamp(config.StopJitter, 0f, 0.99f),
                 BearingJitter = Mathf.Clamp01(config.BearingJitter),

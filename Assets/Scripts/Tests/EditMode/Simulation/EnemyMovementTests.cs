@@ -11,10 +11,10 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 {
     /// <summary>
-    /// Enemies stand on the simulation's ground (issue #207): they spawn at its edge on a bearing the sim
+    /// Enemies stand on the simulation's arena (issue #207): they spawn at its edge on a bearing the sim
     /// picks, walk in on sim time toward the hero and stop within their Strike Range. Everything is observed
     /// through <see cref="EncounterSimulation.Advance"/> with a passive fake hero and scripted movement rolls;
-    /// the standard ground is radius 10 + margin 2, so a spawn is 12 units from the origin.
+    /// the standard arena is radius 10 + margin 2, so a spawn is 12 units from the origin.
     /// </summary>
     [TestFixture]
     public sealed class EnemyMovementTests
@@ -25,16 +25,16 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         // Neither attack can land or fire: the hero only stands there.
         private static FakeHero Passive() => new() { PhysicalDamage = 0f, MagicalDamage = 0f, Resource = 0f };
 
-        private static EncounterTuning OnTheGround(Coordinate origin = default)
+        private static EncounterTuning OnTheArena(Coordinate origin = default)
         {
-            var ground = GroundTuning.Standard();
-            ground.Origin = origin;
-            return new EncounterTuning { Ground = ground };
+            var arena = ArenaTuning.Standard();
+            arena.Origin = origin;
+            return new EncounterTuning { Arena = arena };
         }
 
         private static EncounterSimulation Sim(EncounterProfile profile, IRollSource movement, EncounterTuning tuning = null,
             FakeHero hero = null) => new(hero ?? Passive(), profile, new ConstantRollSource(0f), Behaviours.Engaging(10),
-            tuning ?? OnTheGround(), bag: null, movementRolls: movement);
+            tuning ?? OnTheArena(), bag: null, movementRolls: movement);
 
         private static float DistanceToHero(EncounterSimulation sim, Enemy enemy) =>
             Coordinate.Distance(enemy.Position, sim.HeroPosition);
@@ -44,10 +44,10 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             (Coordinate.SignedAngle(new Coordinate(1f, 0f), fromOrigin) + 360f) % 360f;
 
         [Test]
-        public void AnEnemy_SpawnsBeyondTheGroundsEdge_AroundTheOrigin()
+        public void AnEnemy_SpawnsBeyondTheArenasEdge_AroundTheOrigin()
         {
             var origin = new Coordinate(3f, -4f);
-            var sim = Sim(Profiles.Solo(EnemyArchetype.Brute), new ConstantRollSource(0.5f), OnTheGround(origin));
+            var sim = Sim(Profiles.Solo(EnemyArchetype.Brute), new ConstantRollSource(0.5f), OnTheArena(origin));
 
             var enemy = sim.Enemies.Single();
 
@@ -56,7 +56,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
-        public void APack_SpreadsAroundTheGround_InsteadOfStackingOnOneBearing()
+        public void APack_SpreadsAroundTheArena_InsteadOfStackingOnOneBearing()
         {
             var sim = Sim(Profiles.Group(EnemyArchetype.Skirmisher, 4), new ConstantRollSource(0.5f));
 
@@ -150,7 +150,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         {
             var sim = Sim(Profiles.Solo(archetype), new QueuedRollSource(0.5f, stopRoll));
             var enemy = sim.Enemies.Single();
-            var tuning = GroundTuning.Standard();
+            var tuning = ArenaTuning.Standard();
             var expectedStop = enemy.StrikeRange * (1f - tuning.StopJitter * stopRoll);
 
             var closest = float.MaxValue;
@@ -219,7 +219,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
             for (var i = 0; i < 20; i++) sim.Advance(Tick);
 
-            Assert.That(enemy.Position, Is.EqualTo(spawned), "the default ground is collapsed onto the origin: already in range");
+            Assert.That(enemy.Position, Is.EqualTo(spawned), "the default arena is collapsed onto the origin: already in range");
         }
 
         [Test]
@@ -242,7 +242,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
                 var main = new CountingRolls(new SeededRollSource(7));
                 var counted = new CountingRolls(movement);
                 var sim = new EncounterSimulation(Passive(), Profiles.Group(EnemyArchetype.Brute, 3), main, Behaviours.Engaging(10),
-                    OnTheGround(), bag: null, movementRolls: counted);
+                    OnTheArena(), bag: null, movementRolls: counted);
                 for (var i = 0; i < 50; i++) sim.Advance(Tick);
                 return (main.Count, counted.Count);
             }

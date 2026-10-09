@@ -9,7 +9,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 {
     [System.Serializable]
     [RequireComponent(typeof(RectTransform), typeof(Image), typeof(CanvasGroup))]
-    internal sealed class DropToFloorSlotDisplay : AbstractSlotDisplay
+    internal sealed class DropToGroundSlotDisplay : AbstractSlotDisplay
     {
         private CanvasGroup canvasGroup;
         public CanvasGroup CanvasGroup => canvasGroup != null ? canvasGroup : canvasGroup = GetComponent<CanvasGroup>();
@@ -20,7 +20,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             if (!package.IsValid)
                 return;
 
-            /// The floor is the Run's ground (issue #63): the item joins the Ground Items List,
+            /// This slot drops onto the Run's ground (issue #63): the item joins the Ground Items List,
             /// where a click picks it back up. A purchase in progress never gets here - the base
             /// drop turns it away first. With no Run there is no ground, and the item goes back
             /// where it came from instead of being destroyed.

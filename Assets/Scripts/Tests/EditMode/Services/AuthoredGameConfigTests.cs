@@ -80,17 +80,17 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
-        public void TheGroundCastAndDamageTuning_DefaultToTheStandardPlaceholders()
+        public void TheArenaCastAndDamageTuning_DefaultToTheStandardPlaceholders()
         {
-            var ground = GroundTuning.Standard();
+            var arena = ArenaTuning.Standard();
             var cast = CastDefinition.Standard();
 
-            Assert.That(config.GroundRadius, Is.EqualTo(ground.Radius));
-            Assert.That(config.SpawnMargin, Is.EqualTo(ground.SpawnMargin));
-            Assert.That(config.StopJitter, Is.EqualTo(ground.StopJitter));
-            Assert.That(config.BearingJitter, Is.EqualTo(ground.BearingJitter));
-            Assert.That(config.UnarmedStrikeRange, Is.EqualTo(ground.HeroStrikeRange));
-            Assert.That(config.MovementSpeedScale, Is.EqualTo(ground.MovementSpeedScale));
+            Assert.That(config.ArenaRadius, Is.EqualTo(arena.Radius));
+            Assert.That(config.SpawnMargin, Is.EqualTo(arena.SpawnMargin));
+            Assert.That(config.StopJitter, Is.EqualTo(arena.StopJitter));
+            Assert.That(config.BearingJitter, Is.EqualTo(arena.BearingJitter));
+            Assert.That(config.UnarmedStrikeRange, Is.EqualTo(arena.HeroStrikeRange));
+            Assert.That(config.MovementSpeedScale, Is.EqualTo(arena.MovementSpeedScale));
             Assert.That(config.CastRange, Is.EqualTo(cast.Range));
             Assert.That(config.CastShape.Kind, Is.EqualTo(cast.Shape.Kind));
             Assert.That(config.CastShape.Radius, Is.EqualTo(cast.Shape.Radius));

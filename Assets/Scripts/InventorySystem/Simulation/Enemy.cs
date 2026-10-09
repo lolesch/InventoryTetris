@@ -79,21 +79,21 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <summary>XP this body adds to the Encounter pot when it falls, before the balance term.</summary>
         public float Xp { get; }
 
-        /// <summary>How far from the hero this enemy can Strike, in ground units.</summary>
+        /// <summary>How far from the hero this enemy can Strike, in arena units.</summary>
         public float StrikeRange { get; }
 
-        /// <summary>Ground units this enemy walks per second while chasing the hero.</summary>
+        /// <summary>Arena units this enemy walks per second while chasing the hero.</summary>
         public float MovementSpeed => _movementSpeed.TotalValue;
 
         /// <summary>
-        /// Where this enemy stands on the ground. The Encounter owns it and moves it on sim time; the arena
+        /// Where this enemy stands on the arena. The Encounter owns it and moves it on sim time; the arena
         /// only reads it. Starts on the spawn ring.
         /// </summary>
         public Coordinate Position { get; internal set; }
 
         /// <summary>
         /// The bearing, in degrees in 0..360 (positive from +x toward +z), this enemy spawned on - seen from the
-        /// ground's origin. Kept until it falls.
+        /// arena's origin. Kept until it falls.
         /// </summary>
         public float Bearing { get; internal set; }
 

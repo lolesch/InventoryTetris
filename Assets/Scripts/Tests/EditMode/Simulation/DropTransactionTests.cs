@@ -92,7 +92,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             Assert.That(ground.Placed, Is.Empty);
         }
 
-        // ── Place: a Package already in hand (the cursor dropped on the floor slot) ──
+        // ── Place: a Package already in hand (the cursor dropped on the ground slot) ──
 
         [Test]
         public void Place_LaysOneGroundPackage_OfAPackageInHand()
@@ -128,7 +128,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var sword = new ItemInstance(SwordId, ItemRarity.Common, 1, null);
 
             Assert.That(DropTransaction.Place(new Package(null, sword, 1u), null), Is.False,
-                "the floor slot sends the item back instead of deleting it");
+                "the ground slot sends the item back instead of deleting it");
         }
 
         [Test]

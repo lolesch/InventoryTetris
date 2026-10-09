@@ -108,7 +108,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             float WalkedIn(float speedMultiplier)
             {
                 var sim = new EncounterSimulation(Caster(0f), Profiles.Solo(EnemyArchetype.Brute), new ConstantRollSource(0f),
-                    Behaviours.Engaging(1), new EncounterTuning { Ground = GroundTuning.Standard() });
+                    Behaviours.Engaging(1), new EncounterTuning { Arena = ArenaTuning.Standard() });
                 var brute = sim.Enemies.Single();
                 brute.Stat(StatName.MovementSpeed).AddModifier(Set(brute.MovementSpeed * speedMultiplier));
                 var before = Coordinate.Distance(brute.Position, sim.HeroPosition);

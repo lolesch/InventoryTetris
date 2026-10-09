@@ -11,14 +11,14 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 {
     /// <summary>
     /// Owns the pooled <see cref="EnemyView"/> figures and the <see cref="HeroFigure"/> standing on the sim's
-    /// ground, drawn around the Hero icon, and keeps one view per living enemy of the live Encounter (issues #94,
+    /// arena, drawn around the Hero icon, and keeps one view per living enemy of the live Encounter (issues #94,
     /// #176, #208). It replaces the combat panel's enemy HP bar list: the pooling and the binding are what
     /// <c>EnemyHealthBarPool</c> had.
     ///
     /// The simulation owns position (ADR-0018): this only projects it. Each frame every figure is placed at
     /// <see cref="Enemy.Position"/> (the hero at <see cref="EncounterSimulation.HeroPosition"/>) through an
-    /// <see cref="ArenaProjection"/> of <c>groundScale</c> and <c>tilt</c>, relative to the ground's
-    /// <see cref="GroundTuning.Origin"/>, which is drawn at the anchor. Nothing here walks, rolls or steers.
+    /// <see cref="ArenaProjection"/> of <c>arenaScale</c> and <c>tilt</c>, relative to the arena's
+    /// <see cref="ArenaTuning.Origin"/>, which is drawn at the anchor. Nothing here walks, rolls or steers.
     ///
     /// Only the <i>binding</i> is polled - <see cref="Update"/> compares the Run's current
     /// <see cref="EncounterSimulation"/> to the one it holds, once a frame. The sim is rebuilt on
@@ -51,13 +51,13 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         [SerializeField, Tooltip("The Locations' toggle group; its active member's Hero icon is the anchor.")]
         private ToggleGroup locations;
         [SerializeField] private EnemyVisuals visuals;
-        [SerializeField, Tooltip("The hero as a figure on the ground: a separate element, so the Hero icon (the ground's origin) stays put. Optional.")]
+        [SerializeField, Tooltip("The hero as a figure on the arena: a separate element, so the Hero icon (the arena's origin) stays put. Optional.")]
         private HeroFigure heroFigure;
-        [SerializeField, Min(0.01f), Tooltip("Canvas units one ground unit spans along the horizontal axis.")]
-        private float groundScale = 16f;
-        [SerializeField, Range(0f, 1f), Tooltip("The depth axis against the horizontal one: 1 draws the ground top-down, less flattens it. Drawing only; the rules use ground distances.")]
+        [SerializeField, Min(0.01f), Tooltip("Canvas units one arena unit spans along the horizontal axis.")]
+        private float arenaScale = 16f;
+        [SerializeField, Range(0f, 1f), Tooltip("The depth axis against the horizontal one: 1 draws the arena top-down, less flattens it. Drawing only; the rules use arena distances.")]
         private float tilt = 0.65f;
-        [SerializeField, Min(0f), Tooltip("Ground units of horizontal offset from the hero under which a figure keeps the way it faces.")]
+        [SerializeField, Min(0f), Tooltip("Arena units of horizontal offset from the hero under which a figure keeps the way it faces.")]
         private float facingDeadZoneUnits = 0.75f;
         [SerializeField, Tooltip("A defeated enemy fades out before it is pooled. Off: it is released at once.")]
         private bool deathFade = true;
@@ -83,7 +83,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private EncounterSimulation _bound;
         private AbstractToggle _anchorOwner;
         private RectTransform _anchor;
-        // Where the ground was last drawn (set by Place), so a number can be projected without a view to read.
+        // Where the arena was last drawn (set by Place), so a number can be projected without a view to read.
         private Vector2 _center;
         private ArenaProjection _projection;
         private bool _hasCenter;
@@ -92,13 +92,13 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private readonly struct DepthEntry
         {
             public readonly Transform Transform;
-            public readonly Coordinate Ground;
+            public readonly Coordinate Arena;
             public readonly int Tie;
 
-            public DepthEntry(Transform transform, Coordinate ground)
+            public DepthEntry(Transform transform, Coordinate arena)
             {
                 Transform = transform;
-                Ground = ground;
+                Arena = arena;
                 Tie = transform.GetSiblingIndex();
             }
         }
@@ -160,7 +160,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _views.Clear();
             _marked = null;
 
-            // No Run, no hero on the ground, and no number left listening to the sim that ended.
+            // No Run, no hero on the arena, and no number left listening to the sim that ended.
             if (heroFigure != null)
                 heroFigure.Hide();
             if (numbers != null)
@@ -215,7 +215,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             if (target is Enemy enemy)
             {
-                origin = _center + _projection.ToCanvas(enemy.Position, _bound.Ground.Origin);
+                origin = _center + _projection.ToCanvas(enemy.Position, _bound.Arena.Origin);
                 return true;
             }
 
@@ -224,7 +224,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             origin = heroFigure != null && heroFigure.IsShown
                 ? heroFigure.CanvasPosition
-                : _center + _projection.ToCanvas(_bound.HeroPosition, _bound.Ground.Origin);
+                : _center + _projection.ToCanvas(_bound.HeroPosition, _bound.Arena.Origin);
             return true;
         }
 
@@ -306,7 +306,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         }
 
         /// <summary>
-        /// Puts every figure where the sim has it, projected from the ground's origin at the anchor, and turns it
+        /// Puts every figure where the sim has it, projected from the arena's origin at the anchor, and turns it
         /// toward the hero (the hero toward <paramref name="strikeTarget"/>, his Strike target as <see cref="Update"/>
         /// read it this frame). Nothing with no Encounter or no anchor.
         /// </summary>
@@ -325,9 +325,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             var center = (Vector2)root.InverseTransformPoint(world) - root.rect.center;
 
             _center = center;
-            _projection = new ArenaProjection(groundScale, tilt);
+            _projection = new ArenaProjection(arenaScale, tilt);
             var projection = _projection;
-            var origin = _bound.Ground.Origin;
+            var origin = _bound.Arena.Origin;
             var hero = _bound.HeroPosition;
 
             var moved = false;
@@ -371,19 +371,19 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         }
 
         /// <summary>
-        /// Nearer draws in front: sibling order by ground depth, the far side first. It reads the ground and not
+        /// Nearer draws in front: sibling order by arena depth, the far side first. It reads the arena and not
         /// the canvas, so a tilt of zero still orders the figures.
         /// </summary>
         private void SortByDepth()
         {
             _ordered.Clear();
             foreach (var view in _views.Values)
-                _ordered.Add(new DepthEntry(view.transform, view.GroundPosition));
+                _ordered.Add(new DepthEntry(view.transform, view.ArenaPosition));
             foreach (var view in _dying)
                 if (view != null)
-                    _ordered.Add(new DepthEntry(view.transform, view.GroundPosition));
+                    _ordered.Add(new DepthEntry(view.transform, view.ArenaPosition));
             if (heroFigure != null && heroFigure.IsShown)
-                _ordered.Add(new DepthEntry(heroFigure.transform, heroFigure.GroundPosition));
+                _ordered.Add(new DepthEntry(heroFigure.transform, heroFigure.ArenaPosition));
 
             _ordered.Sort(CompareDepth);
 
@@ -393,7 +393,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         private static int CompareDepth(DepthEntry a, DepthEntry b)
         {
-            var byDepth = ArenaProjection.DepthOrder(a.Ground, b.Ground);
+            var byDepth = ArenaProjection.DepthOrder(a.Arena, b.Arena);
             return byDepth != 0 ? byDepth : a.Tie.CompareTo(b.Tie);
         }
     }

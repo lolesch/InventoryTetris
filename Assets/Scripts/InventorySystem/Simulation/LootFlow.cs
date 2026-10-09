@@ -67,7 +67,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         }
 
         /// <summary>
-        /// The ground itself: a stash-sized grid holding what lies there, where it landed, until the
+        /// The World's ground: a stash-sized grid holding what lies there, where it landed, until the
         /// player picks it up or newer loot evicts it. Wiped by <see cref="ClearGround"/>.
         /// </summary>
         public GroundContainer Ground { get; }
@@ -82,22 +82,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// Discards every Drop still on the ground - the Run-end rule (GLOSSARY.md "Drop": "a
         /// Drop still on the ground when the Run ends is gone, on Recall or Death alike").
         /// </summary>
-        public void ClearGround()
-        {
-            if (Ground.StoredPackages.Count == 0)
-                return;
-
-            Ground.RemoveAll();
-            GroundChanged?.Invoke();
-        }
-
-        /// <summary>
-        /// Raised after <see cref="Ground"/> changed - a kill grounding a Drop, a discard (which may
-        /// evict the oldest), a pick-up, or the Run-end clear. Carries nothing: the Ground Items List
-        /// re-reads the container, because <see cref="ItemInstance"/> is value-equal and an event
-        /// naming one could not say which of two equal Drops it meant.
-        /// </summary>
-        public event Action GroundChanged;
+        public void ClearGround() => Ground.RemoveAll();
 
         /// <summary>
         /// The player picks the Package of <paramref name="item"/> up off the ground, through the same
@@ -121,7 +106,6 @@ namespace ToolSmiths.InventorySystem.Simulation
                     return false;
 
                 _ = Ground.RemoveAtPosition(cell, new Package(Ground, stored.Item, taken));
-                GroundChanged?.Invoke();
                 return true;
             }
 
@@ -133,7 +117,6 @@ namespace ToolSmiths.InventorySystem.Simulation
                 return false; // dispose rolls back - the Package stays at its cell
 
             transaction.Commit();
-            GroundChanged?.Invoke();
             return true;
         }
 
@@ -156,18 +139,11 @@ namespace ToolSmiths.InventorySystem.Simulation
         public void Dispose() => _encounter.EnemyDefeated -= OnEnemyDefeated;
 
         /// <summary>
-        /// Lays <paramref name="package"/> on the ground - a Quick Move or a drop on the floor slot -
+        /// Lays <paramref name="package"/> on the ground - a Quick Move or a drop on the ground slot -
         /// evicting the oldest Packages when it is full. A stack lands as one Package.
         /// </summary>
         /// <returns>False, with the ground untouched, for a Package larger than the whole ground.</returns>
-        public bool PlaceOnGround(Package package)
-        {
-            if (!Land(package))
-                return false;
-
-            GroundChanged?.Invoke();
-            return true;
-        }
+        public bool PlaceOnGround(Package package) => Land(package);
 
         /// <summary>
         /// Raised with the base-unit total of the coins each time some bank to the Wallet - a
@@ -216,7 +192,6 @@ namespace ToolSmiths.InventorySystem.Simulation
                 return;
             }
 
-            var grounded = false;
             for (var i = 0; i < drops.Count; i++)
             {
                 var item = drops[i];
@@ -225,12 +200,8 @@ namespace ToolSmiths.InventorySystem.Simulation
                 if (_behaviour.AutoPickup && _behaviour.AdmitsItem(item.Rarity) && TryPlace(item))
                     continue; // equipped, or landed in the bag
 
-                grounded |= LandNew(item, 1u);
+                _ = LandNew(item, 1u);
             }
-
-            // Once per kill, after the list is whole: a listener repaints one list, not one per Drop.
-            if (grounded)
-                GroundChanged?.Invoke();
         }
 
         /// <summary>
@@ -269,8 +240,8 @@ namespace ToolSmiths.InventorySystem.Simulation
             if (_behaviour.AutoPickup && _behaviour.AdmitsCoin(type))
                 amount -= Bank(type, amount);
 
-            if (0u < amount && LandNew(_wallet.MintCoin(type), amount))
-                GroundChanged?.Invoke();
+            if (0u < amount)
+                _ = LandNew(_wallet.MintCoin(type), amount);
         }
 
         /// <summary>Lays <paramref name="package"/> on the ground; a coin stack pushed out banks first.</summary>

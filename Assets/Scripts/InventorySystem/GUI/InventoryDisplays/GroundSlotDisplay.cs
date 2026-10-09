@@ -1,4 +1,5 @@
 using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Runtime.Provider;
 using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Simulation;
@@ -8,13 +9,31 @@ using UnityEngine.EventSystems;
 namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 {
     /// <summary>
-    /// A cell of the floor grid (epic #214). It looks and hovers like a stash cell, but the floor lends
+    /// A cell of the ground grid (epic #214). It looks and hovers like a stash cell, but the ground lends
     /// nothing to the cursor: a click takes the drop through the acquisition entry point, like a row of the
-    /// list, and a dropped item lands through the Run's ground rather than into this cell.
+    /// list, and a dropped item lands through the Run's ground rather than into this cell. Older drops are
+    /// drawn fainter, relative to the other drops and not to time.
     /// </summary>
     [System.Serializable]
     internal sealed class GroundSlotDisplay : InventorySlotDisplay
     {
+        [SerializeField, Range(0f, 1f), Tooltip("What each drop landed since takes off a drop's alpha; the newest is fully opaque.")]
+        private float fadeStep = 0.15f;
+
+        [SerializeField, Range(0f, 1f), Tooltip("The alpha an old drop stops fading at.")]
+        private float minimumAlpha = 0.25f;
+
+        public override void RefreshSlotDisplay(Package package)
+        {
+            base.RefreshSlotDisplay(package);
+
+            if (!package.IsValid || Container is not GroundContainer ground)
+                return;
+
+            var cells = ground.CellsOldestFirst();
+            itemGroup.alpha = GroundFade.Alpha(cells.Count - 1 - cells.IndexOf(Position), fadeStep, minimumAlpha);
+        }
+
         protected override void MoveItem(PointerEventData eventData, Vector2 pointerPosition)
         {
             if (!TryBeginMove(out _, out var package))
@@ -43,7 +62,5 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         public override bool WouldAcceptDrop(Package package) =>
             package.IsValid && SimulationService.Instance.LootFlow != null && base.WouldAcceptDrop(package);
-
-        public void Fade(float alpha) => itemGroup.alpha = alpha;
     }
 }

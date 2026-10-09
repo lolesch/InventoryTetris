@@ -41,12 +41,13 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         private void OnDisable() => Session.UnsubscribeHeroLoaded(Register);
 
-        /// <summary>False for a display whose container is not a player container, so it is handed one through <see cref="SetupDisplay"/>.</summary>
-        protected virtual bool BindsByRole => true;
+        // A container outlives the scene (the World's ground, the stash), so a destroyed display must let go of
+        // its content event or the next change reaches a dead object.
+        private void OnDestroy() => SetContainer(null);
 
         private void Register()
         {
-            if (!BindsByRole || !ServiceLocator.IsArmed)
+            if (!ServiceLocator.IsArmed)
                 return;
 
             var container = InventoryService.Instance.ContainerFor(role);
@@ -63,7 +64,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         /// </summary>
         private void OnValidate()
         {
-            if (BindsByRole && role == ContainerRole.Unassigned && !UnityEditor.PrefabUtility.IsPartOfPrefabAsset(this))
+            if (role == ContainerRole.Unassigned && !UnityEditor.PrefabUtility.IsPartOfPrefabAsset(this))
                 Debug.LogWarning($"[{GetType().Name}] role is not wired - this display will never bind to a container.", this);
         }
 #endif

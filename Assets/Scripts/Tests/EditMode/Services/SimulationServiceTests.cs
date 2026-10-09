@@ -116,23 +116,23 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             service.Send(thornwood);
 
             var sim = service.Run.Encounter;
-            var ground = GroundTuning.Standard();
+            var arena = ArenaTuning.Standard();
             var cast = CastDefinition.Standard();
 
-            Assert.That(sim.Ground.Radius, Is.EqualTo(ground.Radius));
-            Assert.That(sim.Ground.SpawnMargin, Is.EqualTo(ground.SpawnMargin));
-            Assert.That(sim.Ground.StopJitter, Is.EqualTo(ground.StopJitter));
-            Assert.That(sim.Ground.BearingJitter, Is.EqualTo(ground.BearingJitter));
-            Assert.That(sim.Ground.HeroStrikeRange, Is.EqualTo(ground.HeroStrikeRange));
-            Assert.That(sim.Ground.MovementSpeedScale, Is.EqualTo(ground.MovementSpeedScale));
+            Assert.That(sim.Arena.Radius, Is.EqualTo(arena.Radius));
+            Assert.That(sim.Arena.SpawnMargin, Is.EqualTo(arena.SpawnMargin));
+            Assert.That(sim.Arena.StopJitter, Is.EqualTo(arena.StopJitter));
+            Assert.That(sim.Arena.BearingJitter, Is.EqualTo(arena.BearingJitter));
+            Assert.That(sim.Arena.HeroStrikeRange, Is.EqualTo(arena.HeroStrikeRange));
+            Assert.That(sim.Arena.MovementSpeedScale, Is.EqualTo(arena.MovementSpeedScale));
             Assert.That(sim.CastRange, Is.EqualTo(cast.Range));
             Assert.That(sim.DamageSpread, Is.EqualTo(EncounterTuning.StandardDamageSpread));
         }
 
         [Test]
-        public void Send_BuildsTheGroundCastAndDamageSpreadFromTheConfig()
+        public void Send_BuildsTheArenaCastAndDamageSpreadFromTheConfig()
         {
-            SetConfig("GroundRadius", 25f);
+            SetConfig("ArenaRadius", 25f);
             SetConfig("SpawnMargin", 4f);
             SetConfig("StopJitter", 0.3f);
             SetConfig("BearingJitter", 0.75f);
@@ -144,12 +144,12 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             service.Send(thornwood);
 
             var sim = service.Run.Encounter;
-            Assert.That(sim.Ground.Radius, Is.EqualTo(25f));
-            Assert.That(sim.Ground.SpawnMargin, Is.EqualTo(4f));
-            Assert.That(sim.Ground.StopJitter, Is.EqualTo(0.3f));
-            Assert.That(sim.Ground.BearingJitter, Is.EqualTo(0.75f));
-            Assert.That(sim.Ground.HeroStrikeRange, Is.EqualTo(2.5f));
-            Assert.That(sim.Ground.MovementSpeedScale, Is.EqualTo(0.02f));
+            Assert.That(sim.Arena.Radius, Is.EqualTo(25f));
+            Assert.That(sim.Arena.SpawnMargin, Is.EqualTo(4f));
+            Assert.That(sim.Arena.StopJitter, Is.EqualTo(0.3f));
+            Assert.That(sim.Arena.BearingJitter, Is.EqualTo(0.75f));
+            Assert.That(sim.Arena.HeroStrikeRange, Is.EqualTo(2.5f));
+            Assert.That(sim.Arena.MovementSpeedScale, Is.EqualTo(0.02f));
             Assert.That(sim.CastRange, Is.EqualTo(9f));
             Assert.That(sim.DamageSpread, Is.EqualTo(0.5f));
         }
@@ -157,7 +157,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         [Test]
         public void Send_WithAnOutOfRangeTuningValue_PullsItBackInsteadOfThrowing()
         {
-            SetConfig("GroundRadius", -5f);
+            SetConfig("ArenaRadius", -5f);
             SetConfig("StopJitter", 1f);
             SetConfig("CastSize", 0f);
             SetConfig("DamageSpread", 3f);
@@ -165,8 +165,8 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.DoesNotThrow(() => service.Send(thornwood));
 
             var sim = service.Run.Encounter;
-            Assert.That(sim.Ground.Radius, Is.Zero);
-            Assert.That(sim.Ground.StopJitter, Is.LessThan(1f));
+            Assert.That(sim.Arena.Radius, Is.Zero);
+            Assert.That(sim.Arena.StopJitter, Is.LessThan(1f));
             Assert.That(sim.DamageSpread, Is.EqualTo(1f));
         }
 
@@ -182,6 +182,24 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(service.Run.Encounter, Is.Not.Null);
             Assert.That(service.LootFlow, Is.Not.Null);
             Assert.That(session.World.LootFlow, Is.SameAs(service.LootFlow));
+        }
+
+        [Test]
+        public void TheGround_IsTheWorldsOneContainer_ThroughSendRelocateAndRecall()
+        {
+            var ground = session.World.Ground;
+            Assert.That(inventory.ContainerFor(ContainerRole.Ground), Is.SameAs(ground), "a display binds it by role");
+
+            service.Send(thornwood);
+            Assert.That(service.LootFlow.Ground, Is.SameAs(ground));
+            Assert.That(service.LootFlow.PlaceOnGround(new Package(null, items.RollEquipment(), 1u)), Is.True);
+
+            service.Relocate(ashfen);
+            Assert.That(service.LootFlow.Ground, Is.SameAs(ground), "the new loot flow lays on the same container");
+
+            _ = service.Recall();
+            Assert.That(ground.StoredPackages, Is.Empty, "a Drop on the ground when the Run ends is gone");
+            Assert.That(inventory.ContainerFor(ContainerRole.Ground), Is.SameAs(ground));
         }
 
         [Test]
@@ -275,7 +293,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
-        public void ASentRun_FightsOnTheStandardGround_WithItsEnemiesSpawnedAtTheEdge()
+        public void ASentRun_FightsOnTheStandardArena_WithItsEnemiesSpawnedAtTheEdge()
         {
             service = new SimulationService(session, items, inventory, config, new SessionBuilderTests.FixedRolls(0.5f),
                 new SessionBuilderTests.FixedRolls(0.5f));
@@ -287,10 +305,10 @@ namespace ToolSmiths.InventorySystem.Tests.Services
                 service.Tick(0.1f);
 
             Assert.That(encounter.Enemies, Is.Not.Empty, "premise: something spawned");
-            var ground = GroundTuning.Standard();
+            var arena = ArenaTuning.Standard();
             foreach (var enemy in encounter.Enemies)
                 Assert.That(Submodules.Utility.Extensions.Coordinate.Distance(enemy.Position, encounter.HeroPosition),
-                    Is.GreaterThan(ground.Radius - 1f), "none starts on top of the hero");
+                    Is.GreaterThan(arena.Radius - 1f), "none starts on top of the hero");
         }
 
         [Test]

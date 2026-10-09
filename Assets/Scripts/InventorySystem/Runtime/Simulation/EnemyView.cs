@@ -59,10 +59,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         public Enemy Enemy { get; private set; }
 
         /// <summary>
-        /// Where the enemy stood on the ground when the view was last placed. A dying view keeps it: only the
+        /// Where the enemy stood on the arena when the view was last placed. A dying view keeps it: only the
         /// link to the enemy is cut, so the figure fades out where it fell, and the depth sort still reads it.
         /// </summary>
-        public Coordinate GroundPosition { get; private set; }
+        public Coordinate ArenaPosition { get; private set; }
 
         /// <summary>The sprite's <c>scale.x</c> sign: +1 faces right, -1 faces left.</summary>
         public int FacingSign => _sign;
@@ -168,7 +168,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 _hitShake.Unbind();
             SetHighlighted(false);
 
-            GroundPosition = default;
+            ArenaPosition = default;
             IsDying = false;
             _dyingElapsed = 0f;
             _dyingDuration = 0f;
@@ -183,19 +183,19 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         /// <summary>
         /// Stand at <paramref name="canvasPosition"/> and face <paramref name="facingSign"/>, and show the view if
-        /// this is its first placement. The arena works both out from the sim's ground (ADR-0018); the view
+        /// this is its first placement. The arena works both out from the sim's arena (ADR-0018); the view
         /// only keeps them.
         /// </summary>
         /// <param name="canvasPosition">The projected position in the arena's anchored space.</param>
-        /// <param name="groundPosition">Where the enemy stands on the sim's ground; the depth sort reads it.</param>
+        /// <param name="arenaPosition">Where the enemy stands on the sim's arena; the depth sort reads it.</param>
         /// <param name="facingSign">+1 faces right, -1 faces left.</param>
         /// <returns>Whether the view moved.</returns>
-        public bool Place(Vector2 canvasPosition, Coordinate groundPosition, int facingSign)
+        public bool Place(Vector2 canvasPosition, Coordinate arenaPosition, int facingSign)
         {
             var moved = !_placed || (Rect.anchoredPosition - canvasPosition).sqrMagnitude > 1e-6f;
             if (moved)
                 Rect.anchoredPosition = canvasPosition;
-            GroundPosition = groundPosition;
+            ArenaPosition = arenaPosition;
 
             _sign = facingSign;
             if (!Mathf.Approximately(_sprite.localScale.x, _sign))

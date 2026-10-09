@@ -13,10 +13,8 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         protected override void SetupSlotDisplays()
         {
             for (var i = 0; i < containerSlotDisplays.Count; i++)
-            {
                 containerSlotDisplays[i].SetupSlot(this, Container, new(i, 0));
-            }
-
+            
             if (containerSlotDisplays.Count != Container.Capacity)
                 Debug.LogError($"equipmentSlotDisplays {containerSlotDisplays.Count} of {Container.Capacity}");
         }

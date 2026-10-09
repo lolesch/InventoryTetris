@@ -40,7 +40,7 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// order. The arrival-jitter roll is only drawn with <see cref="EncounterTuning.DelayFirstSpawn"/>.
     /// It never references the hero.
     ///
-    /// The sim owns position (spatial-combat spec): the hero starts at the <see cref="Ground"/>'s origin and each
+    /// The sim owns position (spatial-combat spec): the hero starts at the <see cref="Arena"/>'s origin and each
     /// enemy spawns on its edge, walks in on sim time and Strikes only once the hero is within its Strike Range;
     /// the hero's Strike likewise needs its target within <see cref="HeroStrikeRange"/>. Each tick, in order, the
     /// hero chooses his target (<see cref="HeroTargeting"/>), the hero moves, the enemies move, and attacks resolve
@@ -58,7 +58,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         private readonly HeroBehaviour _behaviour;
         private readonly IBagGauge _bag;
         private readonly EncounterTuning _tuning;
-        private readonly GroundTuning _ground;
+        private readonly ArenaTuning _arena;
         private readonly IRollSource _movementRolls;
         private readonly IRollSource _hitRolls;
         private readonly CombatClock _clock;
@@ -121,8 +121,8 @@ namespace ToolSmiths.InventorySystem.Simulation
 
             _tuning = tuning ?? new EncounterTuning();
             _tuning.Validate();
-            _ground = _tuning.Ground;
-            HeroPosition = _ground.Origin;
+            _arena = _tuning.Arena;
+            HeroPosition = _arena.Origin;
 
             _clock = new CombatClock(_tuning.Tick, _tuning.MaxTicksPerAdvance);
             _clock.OnTick += Step;
@@ -169,11 +169,11 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         public int AliveEnemyCount => _enemies.Count;
 
-        /// <summary>The ground the fight takes place on - its origin, radius and the unarmed Strike Range.</summary>
-        public GroundTuning Ground => _ground;
+        /// <summary>The arena the fight takes place on - its origin, radius and the unarmed Strike Range.</summary>
+        public ArenaTuning Arena => _arena;
 
         /// <summary>
-        /// Where the hero stands on the ground. He starts at the origin, walks to his target on sim time and walks
+        /// Where the hero stands on the arena. He starts at the origin, walks to his target on sim time and walks
         /// back when nothing lives; the arena only reads it.
         /// </summary>
         public Coordinate HeroPosition { get; private set; }
@@ -183,9 +183,9 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         /// <summary>
         /// How far from <see cref="HeroPosition"/> the hero's Strike reaches: his weapon type's range, or the
-        /// ground's unarmed range while he wields none. Read live, so re-gearing changes it on the spot.
+        /// arena's unarmed range while he wields none. Read live, so re-gearing changes it on the spot.
         /// </summary>
-        public float HeroStrikeRange => _hero.WeaponStrikeRange ?? _ground.HeroStrikeRange;
+        public float HeroStrikeRange => _hero.WeaponStrikeRange ?? _arena.HeroStrikeRange;
 
         /// <summary>
         /// The enemy the hero is fighting - the one he walks to and Strikes - or null when none lives (issues #182,
@@ -428,7 +428,7 @@ namespace ToolSmiths.InventorySystem.Simulation
                 // desync so a Pack does not strike in lockstep
                 StrikeTimer = (float)_rolls.Next() * (1f / EnemyArchetypes.Of(archetype).AttackSpeed),
             };
-            PlaceOnTheGround(enemy);
+            PlaceInTheArena(enemy);
             _enemies.Add(enemy);
 
             if (archetype == EnemyArchetype.Brute) _spawnedBrute++;
@@ -437,7 +437,7 @@ namespace ToolSmiths.InventorySystem.Simulation
             EnemySpawned?.Invoke(enemy);
         }
 
-        // ─── the ground ──────────────────────────────────────────────────────
+        // ─── the arena ──────────────────────────────────────────────────────
 
         // Slack on every range test: an enemy that stops exactly at its range lands on it within float error.
         private const float RangeSlack = 0.001f;
@@ -449,15 +449,15 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// Stand a fresh enemy on the spawn ring at a bearing of the sim's choosing, and fix how close it will
         /// walk in. Both rolls come from the movement stream, bearing first.
         /// </summary>
-        private void PlaceOnTheGround(Enemy enemy)
+        private void PlaceInTheArena(Enemy enemy)
         {
             var bearing = PickSpawnBearing((float)_movementRolls.Next());
             var stopRoll = (float)_movementRolls.Next();
 
             enemy.Bearing = bearing;
-            enemy.Position = _ground.Origin
-                + Coordinate.Rotate(new Coordinate(1f, 0f), bearing) * (_ground.Radius + _ground.SpawnMargin);
-            enemy.StopDistance = enemy.StrikeRange * (1f - _ground.StopJitter * stopRoll);
+            enemy.Position = _arena.Origin
+                + Coordinate.Rotate(new Coordinate(1f, 0f), bearing) * (_arena.Radius + _arena.SpawnMargin);
+            enemy.StopDistance = enemy.StrikeRange * (1f - _arena.StopJitter * stopRoll);
         }
 
         /// <summary>
@@ -485,7 +485,7 @@ namespace ToolSmiths.InventorySystem.Simulation
                 }
             }
 
-            return (start + width * (0.5f + (roll - 0.5f) * _ground.BearingJitter)) % 360f;
+            return (start + width * (0.5f + (roll - 0.5f) * _arena.BearingJitter)) % 360f;
         }
 
         private void MoveEnemies(float dt)
@@ -514,12 +514,12 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// </summary>
         private void MoveHero(float dt)
         {
-            var step = WalkingSpeed(_hero.MovementSpeed) * _ground.MovementSpeedScale * dt;
+            var step = WalkingSpeed(_hero.MovementSpeed) * _arena.MovementSpeedScale * dt;
             if (step <= 0f) return;
 
             if (_heroTarget == null)
             {
-                HeroPosition = Coordinate.MoveTowards(HeroPosition, _ground.Origin, step);
+                HeroPosition = Coordinate.MoveTowards(HeroPosition, _arena.Origin, step);
                 return;
             }
 
@@ -699,7 +699,7 @@ namespace ToolSmiths.InventorySystem.Simulation
                 var e = _enemies[i];
                 if (e.IsDown || (inReachOnly && !InReach(HeroPosition, e.Position, range))) continue;
 
-                var score = weight * Coordinate.Distance(e.Position, _ground.Origin)
+                var score = weight * Coordinate.Distance(e.Position, _arena.Origin)
                     + (1f - weight) * Coordinate.Distance(e.Position, HeroPosition);
                 if (best == null || score < bestScore) // strict: the earlier spawn keeps a tie
                 {

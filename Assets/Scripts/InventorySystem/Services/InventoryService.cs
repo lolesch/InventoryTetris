@@ -102,7 +102,7 @@ namespace ToolSmiths.InventorySystem.Services
             var world = session.World;
 
             return ContainerRoleResolver.Resolve(role, hero.Equipment, hero.Inventory, hero.Stash,
-                world.VendorSupply, world.HealerSupply, world.Sold);
+                world.VendorSupply, world.HealerSupply, world.Sold, world.Ground);
         }
 
         public QuickMoveIntent QuickMoveFor(AbstractDimensionalContainer source)

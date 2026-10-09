@@ -10,7 +10,7 @@ using UnityEngine.UI;
 namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 {
     /// <summary>
-    /// A pooled entry of the floor views (epic #214, issue #221) is bound to one Drop at a time and goes back
+    /// A pooled entry of the ground views (epic #214, issue #221) is bound to one Drop at a time and goes back
     /// to the pool between uses: what the next Drop finds on it must be nothing of the last one. The entry lives
     /// in <c>Assembly-CSharp</c>, which a test assembly cannot reference, so it is reached by type name.
     /// </summary>

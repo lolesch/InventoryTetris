@@ -6,7 +6,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 {
     /// <summary>
     /// The Strike Range is a base property of the weapon type (issue #209), not a stat gear can roll: a table
-    /// from the wielded weapon's type to ground units, and nothing for what is not a weapon.
+    /// from the wielded weapon's type to arena units, and nothing for what is not a weapon.
     /// </summary>
     [TestFixture]
     public sealed class WeaponTypesTests

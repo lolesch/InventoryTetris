@@ -460,7 +460,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         /// (issue #12). The base answers for a uniform grid, via
         /// <see cref="DragProvider.TryGetDropPosition"/> +
         /// <see cref="AbstractDimensionalContainer.CanPlaceAt"/>; a sink with no container
-        /// of its own (the floor, the sell slot) takes anything;
+        /// of its own (the ground, the sell slot) takes anything;
         /// <see cref="EquipmentSlotDisplay"/> overrides it for the paper-doll layout.
         /// </summary>
         public virtual bool WouldAcceptDrop(Package package)

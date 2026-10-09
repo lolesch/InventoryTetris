@@ -68,7 +68,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 rarityBorder.color = view.RarityColor;
         }
 
-        /// <summary>How opaque the entry is drawn: the grid fades a Drop by its age rank (<see cref="GroundFade"/>).</summary>
         /// <summary>Let go of the Drop and everything drawn for it. Safe when nothing is bound.</summary>
         public void Unbind()
         {

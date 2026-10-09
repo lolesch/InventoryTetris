@@ -9,8 +9,8 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 {
     /// <summary>
-    /// The oldest-out piece the Sold container shares with the floor, at the container seam:
-    /// a container that does not compact (the floor's case) evicts the oldest Packages until the
+    /// The oldest-out piece the Sold container shares with the ground, at the container seam:
+    /// a container that does not compact (the ground's case) evicts the oldest Packages until the
     /// new one fits and leaves every survivor in its cell. The Sold container's own behaviour,
     /// compaction included, is <see cref="SaleTests"/>.
     /// </summary>

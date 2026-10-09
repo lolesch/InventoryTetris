@@ -9,7 +9,7 @@ namespace ToolSmiths.InventorySystem.Inventories
     /// <summary>
     /// A grid whose Packages have an age: when a new Package would not fit, the oldest are
     /// discarded until it does. The age order and the eviction are shared by the Sold container
-    /// and the floor; they differ only in <see cref="Arrange"/>, whether the survivors are packed
+    /// and the ground; they differ only in <see cref="Arrange"/>, whether the survivors are packed
     /// together before a placement is tried.
     ///
     /// <para>The only ledger is the landing order: a list of cells, oldest first. A Package that
