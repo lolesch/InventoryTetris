@@ -1,3 +1,4 @@
+using System.Linq;
 using NUnit.Framework;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
@@ -50,21 +51,34 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var dropped = DropTransaction.Run(bag, Vector2Int.zero, ground);
 
             Assert.That(dropped, Is.True);
-            Assert.That(ground.Placed, Is.EqualTo(new[] { sword }));
+            Assert.That(ground.Placed.Select(placed => placed.Item), Is.EqualTo(new[] { sword }));
             Assert.That(bag.TryGetPackageAt(Vector2Int.zero, out _), Is.False, "the cell is empty");
         }
 
         [Test]
-        public void Run_OfAStack_LaysOneGroundEntryPerUnit()
+        public void Run_OfAStack_LaysOneGroundPackage()
         {
-            // The ground is one slot per item (GLOSSARY "Ground Items List"), so a stack of 3 is 3 slots -
-            // dropping it must not quietly lose two thirds of it.
             var potion = Store(PotionId, 3u);
 
             var dropped = DropTransaction.Run(bag, Vector2Int.zero, ground);
 
             Assert.That(dropped, Is.True);
-            Assert.That(ground.Placed, Is.EqualTo(new[] { potion, potion, potion }));
+            Assert.That(ground.Placed, Has.Count.EqualTo(1), "a stack of 3 is one package, not 3 entries");
+            Assert.That(ground.Placed[0].Item, Is.SameAs(potion));
+            Assert.That(ground.Placed[0].Amount, Is.EqualTo(3u));
+        }
+
+        [Test]
+        public void Run_WhenTheGroundRefusesThePackage_LeavesTheItemWhereItWas()
+        {
+            _ = Store(PotionId, 3u);
+            ground.Refuses = true;
+
+            var dropped = DropTransaction.Run(bag, Vector2Int.zero, ground);
+
+            Assert.That(dropped, Is.False);
+            Assert.That(bag.TryGetPackageAt(Vector2Int.zero, out var stored), Is.True, "handed back");
+            Assert.That(stored.Amount, Is.EqualTo(3u));
         }
 
         [Test]
@@ -81,14 +95,24 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         // ── Place: a Package already in hand (the cursor dropped on the floor slot) ──
 
         [Test]
-        public void Place_LaysOneGroundEntryPerUnit_OfAPackageInHand()
+        public void Place_LaysOneGroundPackage_OfAPackageInHand()
         {
             var potion = new ItemInstance(PotionId, ItemRarity.Common, 1, null);
 
             var placed = DropTransaction.Place(new Package(null, potion, 3u), ground);
 
             Assert.That(placed, Is.True);
-            Assert.That(ground.Placed, Is.EqualTo(new[] { potion, potion, potion }));
+            Assert.That(ground.Placed, Has.Count.EqualTo(1));
+            Assert.That(ground.Placed[0].Amount, Is.EqualTo(3u));
+        }
+
+        [Test]
+        public void Place_WhenTheGroundRefuses_ReportsItSoTheCallerKeepsTheItem()
+        {
+            var sword = new ItemInstance(SwordId, ItemRarity.Common, 1, null);
+            ground.Refuses = true;
+
+            Assert.That(DropTransaction.Place(new Package(null, sword, 1u), ground), Is.False);
         }
 
         [Test]

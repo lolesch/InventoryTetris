@@ -9,8 +9,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 {
     /// <summary>
     /// The Ground Items List (issue #63): one pooled <see cref="GroundItemSlotDisplay"/> per Drop
-    /// in the live Run's <see cref="LootFlow.GroundDrops"/>, in ground order, growing and
-    /// shrinking as Drops land and are picked up. The container's layout group and content size
+    /// in the live Run's <see cref="LootFlow.GroundDrops"/>, oldest first, growing and
+    /// shrinking as Drops land, are evicted and are picked up. The container's layout group and content size
     /// fitter do the sizing; this only keeps the rows in step with the list.
     ///
     /// Bound the way <see cref="EnemyArena"/> is, and for the same reason: the loot flow is
@@ -18,8 +18,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// compares the current one to the one it holds, and everything else is the loot flow's
     /// <see cref="LootFlow.GroundChanged"/> event. The event names nothing - <see cref="ItemInstance"/>
     /// is value-equal, so two equal Drops cannot be told apart by value - so every change re-reads
-    /// the list and rebinds row <c>i</c> to Drop <c>i</c>, which leaves a row whose Drop did not
-    /// move (and its hover) untouched.
+    /// the list and rebinds row <c>i</c> to Drop <c>i</c>, which leaves a row whose Drop and amount
+    /// did not change (and its hover) untouched.
     ///
     /// A click goes to <see cref="LootFlow.PickUpFromGround"/>, which hands the Drop to the
     /// player's acquisition entry point (<see cref="IItemReceiver"/>): auto-equip, else the bag,
@@ -78,7 +78,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// <summary>Rebinds the rows to <see cref="LootFlow.GroundDrops"/>: extras back to the pool, missing ones taken from it.</summary>
         private void Refresh()
         {
-            var drops = _bound != null ? _bound.GroundDrops : null;
+            var drops = _bound != null ? _bound.GroundDrops : null; // oldest first
             var count = drops?.Count ?? 0;
 
             while (count < _slots.Count)
@@ -92,7 +92,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 if (i == _slots.Count)
                     _slots.Add(Pool.GetObject());
 
-                _slots[i].Bind(drops[i], OnSlotClicked);
+                _slots[i].Bind(drops[i].Item, drops[i].Amount, OnSlotClicked);
                 _slots[i].transform.SetSiblingIndex(i);
             }
         }

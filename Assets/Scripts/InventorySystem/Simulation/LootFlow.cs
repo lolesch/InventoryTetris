@@ -4,6 +4,7 @@ using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
+using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Simulation
 {
@@ -11,8 +12,8 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// Turns each of an Encounter's kills into Loot (issue #24; spec "Loot flow"). Subscribed
     /// to <see cref="EncounterSimulation.EnemyDefeated"/>: rolls the kill's item Drops against
     /// a <see cref="RollContext"/> built from the Encounter's own Location and hero (its loot
-    /// table, source level and live magic find), and lays each on the ground as a
-    /// <see cref="GroundDrops"/> entry (issue #63): the player takes it through
+    /// table, source level and live magic find), and lays each on the <see cref="Ground"/>
+    /// (issues #63, #216; the oldest make room when it is full): the player takes it through
     /// <see cref="PickUpFromGround"/> - the acquisition entry point (<see cref="IItemReceiver"/> —
     /// auto-equip, else the bag). With the debug switch <see cref="HeroBehaviour.AutoPickup"/> on,
     /// a Drop that passes <see cref="HeroBehaviour.AdmitsItem"/> is offered to that entry point
@@ -35,7 +36,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         private readonly ICoinDropSource _coins;
         private readonly IItemReceiver _player;
         private readonly Wallet _wallet;
-        private readonly List<ItemInstance> _groundDrops = new();
+        private readonly AbstractDimensionalContainer[] _pickUpContainers;
 
         public LootFlow(
             EncounterSimulation encounter,
@@ -43,7 +44,9 @@ namespace ToolSmiths.InventorySystem.Simulation
             ItemGenerator items,
             ICoinDropSource coins,
             IItemReceiver player,
-            Wallet wallet)
+            Wallet wallet,
+            GroundContainer ground,
+            params AbstractDimensionalContainer[] receivingContainers)
         {
             _encounter = encounter ?? throw new ArgumentNullException(nameof(encounter));
             _behaviour = behaviour ?? throw new ArgumentNullException(nameof(behaviour));
@@ -51,89 +54,106 @@ namespace ToolSmiths.InventorySystem.Simulation
             _coins = coins ?? throw new ArgumentNullException(nameof(coins));
             _player = player ?? throw new ArgumentNullException(nameof(player));
             _wallet = wallet ?? throw new ArgumentNullException(nameof(wallet));
+            Ground = ground ?? throw new ArgumentNullException(nameof(ground));
+
+            // What a pick-up rolls back together: the ground it leaves and every container the player's
+            // entry point may add to, so a stack that only partly fits leaves no half of it in the bag.
+            _pickUpContainers = new AbstractDimensionalContainer[(receivingContainers?.Length ?? 0) + 1];
+            _pickUpContainers[0] = ground;
+            receivingContainers?.CopyTo(_pickUpContainers, 1);
 
             _encounter.EnemyDefeated += OnEnemyDefeated;
         }
 
         /// <summary>
-        /// Item Drops still lying on the ground - every kill's, until the player picks them up (or,
-        /// with <see cref="HeroBehaviour.AutoPickup"/> on, the ones the filter or the bag turned away).
-        /// Cleared by <see cref="ClearGround"/>; a Drop the player takes later leaves
-        /// one at a time through <see cref="PickUpFromGround"/>. A Drop that was picked up on the
-        /// spot is simply not added here in the first place.
+        /// The ground itself: a stash-sized grid holding what lies there, where it landed, until the
+        /// player picks it up or newer loot evicts it. Wiped by <see cref="ClearGround"/>.
         /// </summary>
-        public IReadOnlyList<ItemInstance> GroundDrops => _groundDrops;
+        public GroundContainer Ground { get; }
 
         /// <summary>
-        /// Discards every Drop still on the ground — the Run-end rule (GLOSSARY.md "Drop": "a
+        /// The Packages lying on the ground, oldest first - the Ground Items List's view of
+        /// <see cref="Ground"/>. A stack is one entry.
+        /// </summary>
+        public IReadOnlyList<Package> GroundDrops => Ground.PackagesOldestFirst();
+
+        /// <summary>
+        /// Discards every Drop still on the ground - the Run-end rule (GLOSSARY.md "Drop": "a
         /// Drop still on the ground when the Run ends is gone, on Recall or Death alike").
         /// </summary>
         public void ClearGround()
         {
-            if (_groundDrops.Count == 0)
+            if (Ground.StoredPackages.Count == 0)
                 return;
 
-            _groundDrops.Clear();
+            Ground.RemoveAll();
             GroundChanged?.Invoke();
         }
 
         /// <summary>
-        /// Raised after <see cref="GroundDrops"/> gained or lost an entry - a kill grounding a Drop,
-        /// a Quick Move to the ground, a pick-up, or the Run-end clear. Carries
-        /// nothing: the Ground Items List (issue #63) re-reads the list, because
-        /// <see cref="ItemInstance"/> is value-equal and an event naming one could not say which
-        /// of two equal Drops it meant.
+        /// Raised after <see cref="Ground"/> changed - a kill grounding a Drop, a discard (which may
+        /// evict the oldest), a pick-up, or the Run-end clear. Carries nothing: the Ground Items List
+        /// re-reads the container, because <see cref="ItemInstance"/> is value-equal and an event
+        /// naming one could not say which of two equal Drops it meant.
         /// </summary>
         public event Action GroundChanged;
 
         /// <summary>
-        /// The player picks <paramref name="item"/> up off the ground, through the same acquisition
-        /// entry point a kill's Drop goes through - auto-equip, else the bag. A pick-up that finds
-        /// no room (or throws, surfaced through <see cref="PlacementFailed"/>) leaves the Drop
-        /// where it lay. The Drop is found by reference, not by value: two equal swords on the
-        /// ground are two slots, and the one clicked is the one that goes.
+        /// The player picks the Package of <paramref name="item"/> up off the ground, through the same
+        /// acquisition entry point a kill's Drop goes through - auto-equip, else the bag. A pick-up that
+        /// finds no room for all of it (or throws, surfaced through <see cref="PlacementFailed"/>) leaves
+        /// the Package where it lay and the receiving containers as they were. The Package is found by
+        /// reference, not by value: two equal swords on the ground are two slots, and the one clicked is
+        /// the one that goes.
         /// </summary>
         /// <returns>Whether the player took it. False also for an item no longer on the ground.</returns>
         public bool PickUpFromGround(ItemInstance item)
         {
-            var index = IndexOnGround(item);
-            if (index < 0 || !TryPlace(item))
+            if (!TryFindOnGround(item, out var cell, out var stored))
                 return false;
 
-            // TryPlace runs engine-side code that may itself have touched the ground; look again.
-            index = IndexOnGround(item);
-            if (0 <= index)
-                _groundDrops.RemoveAt(index);
+            using var transaction = new ItemTransaction(_pickUpContainers);
 
+            _ = Ground.RemoveAtPosition(cell, stored); // reduces its own copy; `stored` stays whole
+
+            if (!TryPlace(stored.Item, stored.Amount))
+                return false; // dispose rolls back - the Package stays at its cell
+
+            transaction.Commit();
             GroundChanged?.Invoke();
             return true;
         }
 
-        private int IndexOnGround(ItemInstance item)
+        private bool TryFindOnGround(ItemInstance item, out Vector2Int cell, out Package stored)
         {
-            for (var i = 0; i < _groundDrops.Count; i++)
-                if (ReferenceEquals(_groundDrops[i], item))
-                    return i;
+            foreach (var entry in Ground.StoredPackages)
+                if (ReferenceEquals(entry.Value.Item, item))
+                {
+                    cell = entry.Key;
+                    stored = entry.Value;
+                    return true;
+                }
 
-            return -1;
+            cell = default;
+            stored = default;
+            return false;
         }
 
         /// <summary>Unsubscribes from the encounter's events so the LootFlow can be collected.</summary>
         public void Dispose() => _encounter.EnemyDefeated -= OnEnemyDefeated;
 
         /// <summary>
-        /// Seats <paramref name="item"/> on the ground — the corpse-recovery seat (issue #22):
-        /// a re-entry lays the Corpse's contents out, to the bag where they fit and here where
-        /// they do not, so a full bag stranding a recovery looks the same as a full bag
-        /// stranding a kill. Shares the one <see cref="GroundDrops"/> list a Run-end clears.
+        /// Lays <paramref name="package"/> on the ground - a Quick Move or a drop on the floor slot -
+        /// evicting the oldest Packages when it is full. A stack lands as one Package.
         /// </summary>
-        public void PlaceOnGround(ItemInstance item)
+        /// <returns>False, with the ground untouched, for a Package larger than the whole ground.</returns>
+        public bool PlaceOnGround(Package package)
         {
-            if (item == null)
-                throw new ArgumentNullException(nameof(item));
+            if (!Ground.TryLand(package))
+                return false;
 
-            _groundDrops.Add(item);
             GroundChanged?.Invoke();
+            return true;
         }
 
         /// <summary>
@@ -191,7 +211,7 @@ namespace ToolSmiths.InventorySystem.Simulation
                 if (_behaviour.AutoPickup && _behaviour.AdmitsItem(item.Rarity) && TryPlace(item))
                     continue; // equipped, or landed in the bag
 
-                _groundDrops.Add(item);
+                _ = Ground.TryLand(new Package(null, item, 1u));
                 grounded = true;
             }
 
@@ -209,11 +229,11 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// leave the item both equipped and on the ground - the Run-end clear drops the copy;
         /// losing it would be worse.)
         /// </summary>
-        private bool TryPlace(ItemInstance item)
+        private bool TryPlace(ItemInstance item, uint amount = 1u)
         {
             try
             {
-                return _player.PickUpItem(item, 1u);
+                return _player.PickUpItem(item, amount);
             }
             catch (Exception exception)
             {
