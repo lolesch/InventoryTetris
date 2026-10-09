@@ -569,6 +569,42 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(hero.Corpse.Exists, Is.True);
         }
 
+        // ── the Corpse marker ────────────────────────────────────────────────
+
+        [Test]
+        public void ACorpseLiesAtItsLocationOnly_UntilItIsRecovered()
+        {
+            Assert.That(service.CorpseLiesAt(thornwood), Is.False, "no Corpse yet");
+
+            _ = PutInBag();
+            service.Send(thornwood);
+            session.Hero.GetResource(StatName.Health).DepleteCurrent();
+            TickUntilHome();
+
+            Assert.That(service.CorpseLiesAt(thornwood), Is.True);
+            Assert.That(service.CorpseLiesAt(ashfen), Is.False);
+
+            service.Send(thornwood);
+
+            Assert.That(service.CorpseLiesAt(thornwood), Is.False, "recovered");
+        }
+
+        [Test]
+        public void ASecondDeathElsewhere_MovesTheMarker()
+        {
+            _ = PutInBag();
+            service.Send(thornwood);
+            session.Hero.GetResource(StatName.Health).DepleteCurrent();
+            TickUntilHome();
+
+            service.Send(ashfen);
+            session.Hero.GetResource(StatName.Health).DepleteCurrent();
+            TickUntilHome();
+
+            Assert.That(service.CorpseLiesAt(thornwood), Is.False, "replaced");
+            Assert.That(service.CorpseLiesAt(ashfen), Is.True);
+        }
+
         // ── reaching it ──────────────────────────────────────────────────────
 
         [Test]
