@@ -22,6 +22,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             image = GetComponent<Image>();
             toggle = GetComponentInParent<LocationToggle>(true);
             enabled = toggle != null;
+
+            // Without a Location to ask, Update never runs, so the image would stay as serialized.
+            if (!enabled)
+                image.enabled = false;
         }
 
         private void Update() =>
