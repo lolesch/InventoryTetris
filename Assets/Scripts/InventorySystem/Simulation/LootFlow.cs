@@ -18,8 +18,9 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// auto-equip, else the bag). With the debug switch <see cref="HeroBehaviour.AutoPickup"/> on,
     /// a Drop that passes <see cref="HeroBehaviour.AdmitsItem"/> is offered to that entry point
     /// on the spot instead, and only one that fails the filter or finds no room stays down.
-    /// Separately rolls one coin Pile per kill and banks it to the wallet iff
-    /// <see cref="HeroBehaviour.AdmitsCoin"/> passes.
+    /// Separately rolls one coin Pile per kill and treats it the same way (issue #218): with auto-pickup on
+    /// and <see cref="HeroBehaviour.AdmitsCoin"/> passing, the wallet takes what it can; the rest lies on
+    /// the ground as a coin stack, which banks to the wallet when it is evicted or clicked.
     ///
     /// The roll itself is delegated entirely to its collaborators — <see cref="ItemGenerator"/>
     /// and <see cref="ICoinDropSource"/> each own their own randomness — so this class owns only
@@ -112,6 +113,18 @@ namespace ToolSmiths.InventorySystem.Simulation
             if (!TryFindOnGround(item, out var cell, out var stored))
                 return false;
 
+            if (TryCoinOf(stored, out var coin))
+            {
+                // Coins bank rather than go through the entry point; what the Wallet cannot take stays.
+                var taken = Bank(coin, stored.Amount);
+                if (taken == 0u)
+                    return false;
+
+                _ = Ground.RemoveAtPosition(cell, new Package(Ground, stored.Item, taken));
+                GroundChanged?.Invoke();
+                return true;
+            }
+
             using var transaction = new ItemTransaction(_pickUpContainers);
 
             _ = Ground.RemoveAtPosition(cell, stored); // reduces its own copy; `stored` stays whole
@@ -149,7 +162,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <returns>False, with the ground untouched, for a Package larger than the whole ground.</returns>
         public bool PlaceOnGround(Package package)
         {
-            if (!Ground.TryLand(package))
+            if (!Land(package))
                 return false;
 
             GroundChanged?.Invoke();
@@ -157,8 +170,8 @@ namespace ToolSmiths.InventorySystem.Simulation
         }
 
         /// <summary>
-        /// Raised with the coin Pile's base-unit total each time a passed-filter Pile banks to
-        /// the Wallet. The Run tracks the take this way — <see cref="RunState.CurrencyBanked"/>,
+        /// Raised with the base-unit total of the coins each time some bank to the Wallet - a
+        /// picked-up Pile, an evicted stack, a clicked stack. The Run tracks the take this way — <see cref="RunState.CurrencyBanked"/>,
         /// the base the Death fee reads — so the engine-side driver feeds it
         /// <see cref="RunState.BankCurrency"/> per kill.
         /// </summary>
@@ -211,7 +224,7 @@ namespace ToolSmiths.InventorySystem.Simulation
                 if (_behaviour.AutoPickup && _behaviour.AdmitsItem(item.Rarity) && TryPlace(item))
                     continue; // equipped, or landed in the bag
 
-                _ = Ground.TryLand(new Package(null, item, 1u));
+                _ = Land(new Package(null, item, 1u));
                 grounded = true;
             }
 
@@ -242,17 +255,57 @@ namespace ToolSmiths.InventorySystem.Simulation
             }
         }
 
+        /// <summary>
+        /// A coin Pile follows the item rule: with auto-pickup on and the filter admitting the
+        /// denomination the Wallet takes what it can, and whatever is left lands on the ground as a
+        /// stack of that denomination's coin item.
+        /// </summary>
         private void RollCoinPile()
         {
             var (type, amount) = _coins.RollPile();
             if (amount == 0u || type == CurrencyType.NONE)
                 return;
 
-            if (!_behaviour.AdmitsCoin(type))
-                return;
+            if (_behaviour.AutoPickup && _behaviour.AdmitsCoin(type))
+                amount -= Bank(type, amount);
+
+            if (0u < amount && Land(new Package(null, _wallet.MintCoin(type), amount)))
+                GroundChanged?.Invoke();
+        }
+
+        /// <summary>Lays <paramref name="package"/> on the ground; a coin stack pushed out banks first.</summary>
+        private bool Land(Package package) => Ground.TryLand(package, BankEvicted);
+
+        private void BankEvicted(Package evicted)
+        {
+            if (TryCoinOf(evicted, out var type))
+                _ = Bank(type, evicted.Amount);
+        }
+
+        private bool TryCoinOf(Package package, out CurrencyType type)
+        {
+            var definition = Ground.ViewOf(package.Item).Definition;
+            type = definition.CurrencyType;
+            return definition.Category == ItemCategory.Currency;
+        }
+
+        /// <summary>
+        /// Deposits <paramref name="amount"/> coins to the Wallet as far as it fits and reports the Run's
+        /// take; the Wallet drops what does not fit, so the count taken is read off its balance.
+        /// </summary>
+        /// <returns>How many coins the Wallet took.</returns>
+        private uint Bank(CurrencyType type, uint amount)
+        {
+            var value = Currency.ValueOf(type);
+            var before = _wallet.Balance.Total;
 
             _wallet.Deposit(Currency.Of(type, amount));
-            CoinsBanked?.Invoke(checked((long)amount * Currency.ValueOf(type))); // the Pile's value in iron base units (GLOSSARY.md "Base Unit")
+
+            var taken = (_wallet.Balance.Total - before) / value;
+            if (0u < taken)
+                CoinsBanked?.Invoke(checked((long)taken * value)); // the Pile's value in iron base units (GLOSSARY.md "Base Unit")
+
+            return taken;
         }
 
         /// <summary>The archetype's base roll count plus the hero's <c>IncreasedItemQuantity</c> bonus.</summary>

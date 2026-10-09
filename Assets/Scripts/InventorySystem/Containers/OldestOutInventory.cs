@@ -45,9 +45,13 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// oldest first, for <see cref="NoteLanded"/> to adopt at the same moment. It travels with
         /// the attempt rather than living on the container, so an attempt that never commits
         /// leaves nothing behind.</param>
-        internal bool TryPlaceEvicting(Package package, out List<Vector2Int> landed, out List<Vector2Int> order)
+        /// <param name="evicted">The Packages discarded to make room, oldest first, whole as they
+        /// were, for a caller that must do something with them once the transaction commits.</param>
+        internal bool TryPlaceEvicting(Package package, out List<Vector2Int> landed, out List<Vector2Int> order,
+            out List<Package> evicted)
         {
             order = AgeOrder();
+            evicted = new List<Package>();
 
             while (true)
             {
@@ -56,7 +60,7 @@ namespace ToolSmiths.InventorySystem.Inventories
                 if (TryPlace(package, out landed))
                     return true;
 
-                if (!TryDiscardOldest(order))
+                if (!TryDiscardOldest(order, evicted))
                     return false;
             }
         }
@@ -122,15 +126,18 @@ namespace ToolSmiths.InventorySystem.Inventories
             return true;
         }
 
-        /// <summary>Discards the oldest Package. False when the container is empty.</summary>
-        private bool TryDiscardOldest(List<Vector2Int> order)
+        /// <summary>Discards the oldest Package, noting it in <paramref name="evicted"/>. False when
+        /// the container is empty.</summary>
+        private bool TryDiscardOldest(List<Vector2Int> order, List<Package> evicted)
         {
             var oldest = order.Where(StoredPackages.ContainsKey).Select(c => (Vector2Int?)c).FirstOrDefault();
 
             if (oldest is not { } cell)
                 return false;
 
-            _ = RemoveAtPosition(cell, StoredPackages[cell]);
+            var package = StoredPackages[cell];
+            evicted.Add(package);
+            _ = RemoveAtPosition(cell, package);
             _ = order.Remove(cell);
             return true;
         }
