@@ -1046,6 +1046,47 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
                 new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10), catalog)), wallet, ground ?? NewGround());
         }
 
+        // ─── a Drop the ground refuses is reported, never silently lost ──
+
+        [Test]
+        public void AnItem_LargerThanTheWholeFloor_IsReportedThroughPlacementFailed_AndRaisesNoGroundChange()
+        {
+            catalog = new InMemoryItemCatalog(new FakeItemDefinition { Id = HugeId, Category = ItemCategory.Consumable, Footprint = ItemSize.TwoByFour });
+            var location = Profiles.Solo(EnemyArchetype.Skirmisher,
+                table: FakeLootTable.Fixed(ItemCategory.Consumable, ItemRarity.Common));
+            var sim = NewEncounter(OneShotHero(), location);
+            var lootFlow = new LootFlow(sim, NotAutoPickingUp(), new ItemGenerator(catalog, new ConstantRollSource(0f)),
+                new FakeCoinDropSource(), new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10), catalog)),
+                NewWallet(), NewGround(1, 1));
+            ItemInstance reported = null;
+            lootFlow.PlacementFailed += (item, _) => reported = item;
+            var changes = 0;
+            lootFlow.GroundChanged += () => changes++;
+
+            sim.Advance(0.1f);
+
+            Assert.That(lootFlow.GroundDrops, Is.Empty);
+            Assert.That(reported?.DefinitionId, Is.EqualTo(HugeId), "the refused Drop is surfaced, not dropped silently");
+            Assert.That(changes, Is.Zero, "nothing landed, so nothing changed");
+        }
+
+        [Test]
+        public void ACoinPile_ThatTheWalletCannotMint_IsReportedThroughPlacementFailed()
+        {
+            var wallet = new Wallet(new CharacterInventory(new Vector2Int(6, 6), catalog)); // no minter
+            var sim = NewEncounter(OneShotHero(), Profiles.Solo(EnemyArchetype.Skirmisher, table: NoItems()));
+            var lootFlow = new LootFlow(sim, NotAutoPickingUp(), new ItemGenerator(catalog, new ConstantRollSource(0f)),
+                new FakeCoinDropSource((CurrencyType.Iron, 7u)), new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10), catalog)),
+                wallet, NewGround());
+            var failures = 0;
+            lootFlow.PlacementFailed += (_, _) => failures++;
+
+            Assert.That(() => sim.Advance(0.1f), Throws.Nothing);
+
+            Assert.That(lootFlow.GroundDrops, Is.Empty);
+            Assert.That(failures, Is.EqualTo(1), "the pile cannot lie anywhere, and that is said out loud");
+        }
+
         // ─── constructor guards ───────────────────────────────────────────────
 
         [Test]

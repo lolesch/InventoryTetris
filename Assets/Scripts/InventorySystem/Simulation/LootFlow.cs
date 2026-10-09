@@ -74,7 +74,7 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         /// <summary>
         /// The Packages lying on the ground, oldest first - the Ground Items List's view of
-        /// <see cref="Ground"/>. A stack is one entry.
+        /// <see cref="Ground"/>. A stack is one entry. Builds a new list on every access, so read it once.
         /// </summary>
         public IReadOnlyList<Package> GroundDrops => Ground.PackagesOldestFirst();
 
@@ -178,8 +178,9 @@ namespace ToolSmiths.InventorySystem.Simulation
         public event Action<long> CoinsBanked;
 
         /// <summary>
-        /// Raised when the player's pick-up threw for a Drop; the Drop stays on the ground. The
-        /// engine-side driver logs it - this class stays free of engine calls.
+        /// Raised when the player's pick-up threw for a Drop (it stays on the ground), or when a new Drop
+        /// or coin Pile could not land at all - too large for the ground, or a coin the Wallet cannot
+        /// mint (the item is then null). The engine-side driver logs it - this class stays free of engine calls.
         /// </summary>
         public event Action<ItemInstance, Exception> PlacementFailed;
 
@@ -224,8 +225,7 @@ namespace ToolSmiths.InventorySystem.Simulation
                 if (_behaviour.AutoPickup && _behaviour.AdmitsItem(item.Rarity) && TryPlace(item))
                     continue; // equipped, or landed in the bag
 
-                _ = Land(new Package(null, item, 1u));
-                grounded = true;
+                grounded |= LandNew(item, 1u);
             }
 
             // Once per kill, after the list is whole: a listener repaints one list, not one per Drop.
@@ -269,12 +269,27 @@ namespace ToolSmiths.InventorySystem.Simulation
             if (_behaviour.AutoPickup && _behaviour.AdmitsCoin(type))
                 amount -= Bank(type, amount);
 
-            if (0u < amount && Land(new Package(null, _wallet.MintCoin(type), amount)))
+            if (0u < amount && LandNew(_wallet.MintCoin(type), amount))
                 GroundChanged?.Invoke();
         }
 
         /// <summary>Lays <paramref name="package"/> on the ground; a coin stack pushed out banks first.</summary>
         private bool Land(Package package) => Ground.TryLand(package, BankEvicted);
+
+        /// <summary>
+        /// Lands a fresh Drop, or says through <see cref="PlacementFailed"/> that it could not: a null
+        /// <paramref name="item"/> is a coin the Wallet cannot mint, anything else is larger than the ground.
+        /// </summary>
+        private bool LandNew(ItemInstance item, uint amount)
+        {
+            if (item != null && Land(new Package(null, item, amount)))
+                return true;
+
+            PlacementFailed?.Invoke(item, new InvalidOperationException(item == null
+                ? "A Drop could not land on the ground: the Wallet cannot mint the coin."
+                : $"A Drop could not land on the ground: {item.DefinitionId} does not fit it."));
+            return false;
+        }
 
         private void BankEvicted(Package evicted)
         {

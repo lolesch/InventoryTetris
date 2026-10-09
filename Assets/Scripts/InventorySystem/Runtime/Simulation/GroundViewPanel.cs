@@ -41,14 +41,15 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             Refresh();
         }
 
+        // Nothing bound means nothing drawn (the last Unbind emptied the view), so a disabled or torn-down
+        // panel that never bound has nothing to release and its Refresh stays unrun.
         private void Unbind()
         {
-            if (Bound != null)
-            {
-                Bound.GroundChanged -= Refresh;
-                Bound = null;
-            }
+            if (Bound == null)
+                return;
 
+            Bound.GroundChanged -= Refresh;
+            Bound = null;
             Refresh();
         }
 
