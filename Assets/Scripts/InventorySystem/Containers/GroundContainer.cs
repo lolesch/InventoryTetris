@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using ToolSmiths.InventorySystem.Data;
@@ -21,17 +22,23 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// Package that merges into a stack makes that stack the newest. False, with the ground exactly
         /// as it was, for an empty Package or one larger than the whole grid.
         /// </summary>
-        public bool TryLand(Package package)
+        /// <param name="onEvicted">Called with each Package pushed out, once the landing is committed -
+        /// never for a landing that was refused. The ground deletes them; this is the caller's chance to
+        /// save something first.</param>
+        public bool TryLand(Package package, Action<Package> onEvicted = null)
         {
             if (!package.IsValid)
                 return false;
 
             using var transaction = new ItemTransaction(this);
 
-            if (!TryPlaceEvicting(package, out var landed, out var order))
+            if (!TryPlaceEvicting(package, out var landed, out var order, out var evicted))
                 return false;
 
             transaction.QueueEffect(() => NoteLanded(order, landed));
+
+            if (onEvicted != null)
+                transaction.QueueEffect(() => evicted.ForEach(onEvicted));
             transaction.Commit();
             return true;
         }

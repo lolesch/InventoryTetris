@@ -55,6 +55,12 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// </summary>
         public AbstractDimensionalContainer Container => coins;
 
+        /// <summary>
+        /// One coin of <paramref name="type"/>, minted the way <see cref="Deposit"/> mints, for a pile
+        /// that lies somewhere else (the floor) before it banks. Null when the wallet cannot mint it.
+        /// </summary>
+        public ItemInstance MintCoin(CurrencyType type) => minter?.MintCurrency(type);
+
         /// <summary>Fires when <see cref="Balance"/> changes, however the coins moved - a
         /// deposit, a payment, or the player dragging a coin in or out of the grid.</summary>
         public event Action<Currency> OnBalanceChanged;
