@@ -16890,8 +16890,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Utility.UI::Submodules.Utility.UI.ToggleGroup
   <ActiveMember>k__BackingField: {fileID: 464908100}
   <PreviousMember>k__BackingField: {fileID: 1449978123}
-  <UserCanUntoggle>k__BackingField: 0
-  <GroupCanUntoggle>k__BackingField: 0
+  <UserCanClear>k__BackingField: 0
+  <SystemCanClear>k__BackingField: 0
   <ResetWithParentPanel>k__BackingField: 0
 --- !u!114 &2135749434
 MonoBehaviour:

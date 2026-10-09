@@ -63,4 +63,12 @@ while IFS= read -r f; do
   done < <(git diff --cached "$base" -U0 -- "$f" | grep -aE "$decl")
 done < <(staged -- 'Assets/*.cs')
 
+# 7. A serialized rename fixes the scenes instead of adding [FormerlySerializedAs] (coding-conventions.md).
+#    Matches any staged .cs, so it also fits a hooksPath set inside the Utility submodule.
+while IFS= read -r f; do
+  if git diff --cached "$base" -U0 -- "$f" | grep -a '^+' | grep -aq 'FormerlySerializedAs'; then
+    report "$f adds [FormerlySerializedAs]; rewrite the old name in the scenes/prefabs instead."
+  fi
+done < <(staged -- '*.cs')
+
 exit "$fail"

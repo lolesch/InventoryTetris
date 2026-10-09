@@ -12,7 +12,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
     /// One of the hero slots: on means its hero is the Session's. The slot is this toggle's position
     /// among the <see cref="HeroSlotToggle"/>s of its <see cref="ToggleGroup"/>, and what it holds is
     /// <see cref="HeroSlots.At"/>: a saved hero, the create slot, or nothing. The group needs
-    /// <c>UserCanUntoggle</c> off, so choosing a slot switches the previous one off and clicking the
+    /// <c>UserCanClear</c> off, so choosing a slot switches the previous one off and clicking the
     /// active one leaves it on.
     ///
     /// <para>A slot with a hero shows the hero's template icon, and turning it on loads the hero; one
@@ -27,7 +27,6 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
     /// Mode only: <c>Selectable</c> is <c>[ExecuteAlways]</c>, so an enable in the Editor must not
     /// rewrite the authored toggles.</para>
     /// </summary>
-    [DisallowMultipleComponent]
     public sealed class HeroSlotToggle : AbstractToggle
     {
         private static readonly List<HeroSlotToggle> Shown = new();
@@ -36,6 +35,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         private static IReadOnlyList<HeroSummary> snapshot;
         private static int snapshotFrame = -1;
 
+        [Space]
         [Tooltip("The Image the hero's template icon is shown on: a child, not the toggle's own background.")]
         [SerializeField] private Image icon;
 
@@ -177,7 +177,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
             }
 
             // SyncToggle, not SetToggle: this mirrors state the save service owns, so the group's
-            // GroupCanUntoggle governs it and the user-side UserCanUntoggle does not refuse it.
+            // SystemCanClear governs it and the user-side UserCanClear does not refuse it.
             SyncToggle(heroId != null && watched.ActiveHeroId == heroId);
         }
 

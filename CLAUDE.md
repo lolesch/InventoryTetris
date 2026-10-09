@@ -50,7 +50,7 @@ Single-context: one `GLOSSARY.md` at the repo root plus `docs/adr/`, both create
 
 ### Coding conventions
 
-Read before writing a script, or during `/code-review`/`/simplify`.
+Read before writing or editing any C# or script, and during `/code-review`/`/simplify`.
 `docs/agents/coding-conventions.md`.
 
 ### Unity verification

@@ -18,7 +18,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// every frame, not subscribed, because the Run is replaced on a hero load and a Death ends it
     /// without any button click.</para>
     /// </summary>
-    [DisallowMultipleComponent]
     public sealed class PauseToggle : AbstractToggle
     {
         // The service this toggle subscribed to, so OnDisable lets go of that one: with domain reload

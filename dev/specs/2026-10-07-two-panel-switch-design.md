@@ -9,9 +9,11 @@ and the 2026-10-05 spec amendment).
 Amends: `dev/specs/2026-10-02-sold-tab-design.md` - its "Tabs are `PanelToggle`s in a group of
 their own" decision (the tab pair becomes a two-panel switch) and its Out of Scope line about
 switching to the Sold tab (a held key now shows it; a sale still never does).
-Amended 2026-10-07 (the mirror toggle, a shareable group) and 2026-10-08 (either button may be
-home, a close ends a peek). The body below states the built shape; the amendments at the end are
-dated history.
+Amended 2026-10-07 (the mirror toggle, a shareable group), 2026-10-08 (either button may be
+home, a close ends a peek), 2026-10-08 again (the group drives the mirror, the reset is what
+ends a peek) and 2026-10-08 a last time (one peek toggle: no mirror, no counters). The last
+amendment supersedes the mirror, the peek component and the restore counters the body below
+describes; the amendments at the end are dated history.
 
 ## Problem Statement
 
@@ -110,7 +112,8 @@ the player's things.
   directions. The group is the one mirror of the bool, as it already is for any two toggles; no
   second piece of state is added. The driver may be the group's first member (as built) when a
   mirror names it: the mirror is then the only way to switch the driver off, including from the
-  group's side, which is what a peek does.
+  group's side, which is what a peek does: the driver asks the group to switch to another of its
+  members and never looks for the mirror, which is driven by the group alone.
 - **The pair may share its group.** The driver is an ordinary member: any other toggle in the
   group switching on switches the driver off, and the driver switching on switches it off.
   Nothing counts the group's members. What keeps the off panel from clashing with another
@@ -204,15 +207,15 @@ the player's things.
 
 - **Defaults this spec chose without settling them with the user:** the two-state toggle in the
   Utility submodule and the peek in the game's GUI (a submodule change needs its own commit and
-  a bump here), the first-member warning, and the peek only reacting while its panel is
+  a bump here), the first-member warning, and the peek only beginning while its panel is
   reachable. Change them here before `/to-tickets` if any is wrong.
 - **Suggested slicing, from the drift review.** Expand: the two-panel switch and its reset test
   beside the old tab pair. Migrate: both panels' scene wiring and the peek. Contract: delete
   the prototype and its debug checkbox. The seven findings of the high-effort review of the
   prototype are not fixed on the prototype: the peek replaces the code they are about.
 - **Close-and-reopen within a fade.** The reset runs when the panel has finished collapsing, so
-  a reopen inside the 0.2 s fade keeps the tab. During a peek the close has already abandoned
-  the restore, so the reopen keeps the peeked tab and a release does not put the player back.
+  a reopen inside the 0.2 s fade keeps the tab. During a peek the reset has not run either, so
+  the reopen keeps the peeked tab until the key is let go, and a release puts the player back.
   This is accepted.
 - **Before Unity compile verification, asmdef changes or scripted multi-file edits,** read
   `docs/agents/codebase-notes.md`.
@@ -241,3 +244,60 @@ peek case the write count missed - a peek that landed on the first member, then 
 reset nothing to write, so a release after the reopen restored the tab the player had left - is
 closed by the peek abandoning its restore when it sees its panel closed. The body states the
 result; the glossary entries **two-panel switch**, **mirror toggle** and **peek** describe it.
+
+## Amendment 2026-10-08 (later): the group drives the mirror; the reset ends a peek
+
+History, after the review of the merged switch. Two decisions. The mirror toggle is driven only
+by the group: nothing scans for it. A peek that must switch a first-member driver off asks the
+group for another member (`ActivateAnother`), and the "a driver that is first needs a mirror
+naming it" warning goes with the scan (the mirror still warns for an unset driver or another
+group). And a peek no longer abandons its restore on any frame its panel is not open, which
+stranded the player on the peeked tab after a transient non-interactive frame: the group counts
+the resets it runs on its panel closing, the driver exposes the count, and the peek restores
+only if neither the write count nor the reset count changed. The panel-open answer now gates only
+the beginning of a peek. A hold also peeks once across a disable and enable of the selling
+panel's peek component, and an unset or wrong driver on it is warned about.
+
+## Amendment 2026-10-08: one peek toggle, no mirror, no counters
+
+Supersedes the mirror, the separate peek component and the restore bookkeeping above. A review of the
+prototype's replacement found the shape still carried a mirror class, a driver interface, a peek
+component and a reset counter to say what a group already says. The first rewrite of that shape kept a
+home/away pair for the restore; this one keeps one remembered bool.
+
+- **One component: `PanelPeekToggle`** (Utility, abstract). It owns the bool and the two panels, and a
+  serialized `companionToggle`: the other tab button, in the same `ToggleGroup`. The key is
+  `protected abstract bool PeekKeyPressed`; the game's `AltPanelPeekToggle` returns `ModifierKeys.Alt`, so
+  the tooltip and the peek agree on Alt. A test subclass, `SpyPeekToggle`, holds the key as a field.
+- **The pair is scene layout.** A group that can never be empty holds the toggle and its companion; their
+  panels sit in a `PanelGroup` of their own. `TwoPanelMirrorToggle`, `ITwoPanelDriver`, `TwoPanelPeek` and
+  `ITwoPanelPeek` are deleted, and so is `AbstractGroup.ActivateAnother`. A peek from the on state calls
+  `companionToggle.SetToggle(true)`; from the off state it calls `SetToggle(true)` on itself. With no
+  companion (unset, outside the group, or this toggle in no group at all) an on toggle flips itself, which the group refuses unless it
+  allows switch-off.
+- **A pair, and only a pair.** The toggle and its companion are the whole group. Nothing checks that, and
+  nothing is tested for it: with a third member, a click on it during a peek is undone on release, because
+  this toggle is then off where the press found it on. This is the body's "no peek on groups of more than
+  two tabs", stated for the code.
+- **One restore rule, one remembered bool.** A press records whether the toggle was on (`snapshot`); a
+  release gives the peek back only if the toggle's state still differs from it, that is, the pair is still
+  where the peek left it. A click on either tab during the hold has already put the pair where the player
+  wants it, and is left there. A click on the tab being peeked at is refused (it is on), so release brings
+  the player home. No counters: the group's `Resets` counter, added only for the old peek, is removed, and
+  so are the member the peek left and the one it switched on.
+- **Edges of "held and reachable".** The key counts only while `IsInteractable()` holds (a closed or hidden
+  `SimplePanel` takes its contents out of reach through its `CanvasGroup`). A peek begins and ends on the
+  edges of that, once per hold: a refused begin is not retried, and its release changes nothing. A panel
+  closing ends the peek in `OnCanvasGroupChanged`, before its group's reset, so the reset has the last
+  word; disabling the toggle ends it too. Alt+Tab needs no case: the next frame reads the key as up.
+- **Order of the two panels.** The incoming panel is switched on first, and the outgoing one is left alone
+  when both sit in the same `PanelGroup`, so the group is never asked to collapse its active panel. Panels
+  in no group are each switched. Each slot is optional on its own: an unset panel is skipped and the other
+  still switches.
+- **Authoring is not warned.** `OnValidate` and `AuthoringProblems` are removed, and their tests with them:
+  the pair is two objects and a group in a scene, read there. A pair authored wrongly (no group, a group
+  that allows switch-off, a companion outside it) is not reported.
+- **Scene.** Both tab pairs' Sold toggles became `AltPanelPeekToggle` (it keeps the old `TwoPanelToggle`
+  script GUID) with `companionToggle` set; the mirrors are `TestToggle`s; the `SellingPanelPeek` components
+  are gone. The scene's serialized key was renamed from `peekTarget` in the file itself, with no
+  `FormerlySerializedAs`.

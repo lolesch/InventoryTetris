@@ -15,9 +15,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// than to the Run phase: on Death or Recall the highlight lasts one fade longer than the phase,
     /// and <see cref="RunPhasePanel"/> is what guarantees the face does go.
     /// </summary>
-    [DisallowMultipleComponent]
     public sealed class LocationToggle : AbstractToggle
     {
+        [field: Space]
         [field: FormerlySerializedAs("location"), SerializeField] public LocationConfig Location { get; private set; }
 
         protected override void OnToggle()
