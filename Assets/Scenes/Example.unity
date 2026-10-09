@@ -4316,8 +4316,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Utility.UI::Submodules.Utility.UI.PanelGroup
   <ActiveMember>k__BackingField: {fileID: 0}
   <PreviousMember>k__BackingField: {fileID: 0}
-  <UserCanUntoggle>k__BackingField: 1
-  <GroupCanUntoggle>k__BackingField: 1
+  <UserCanClear>k__BackingField: 1
+  <SystemCanClear>k__BackingField: 1
   <ResetWithParentPanel>k__BackingField: 0
 --- !u!1 &356513865
 GameObject:
@@ -12436,8 +12436,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Utility.UI::Submodules.Utility.UI.ToggleGroup
   <ActiveMember>k__BackingField: {fileID: 394682331}
   <PreviousMember>k__BackingField: {fileID: 0}
-  <UserCanUntoggle>k__BackingField: 0
-  <GroupCanUntoggle>k__BackingField: 0
+  <UserCanClear>k__BackingField: 0
+  <SystemCanClear>k__BackingField: 0
   <ResetWithParentPanel>k__BackingField: 1
 --- !u!114 &963343018
 MonoBehaviour:
@@ -13814,8 +13814,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Utility.UI::Submodules.Utility.UI.PanelGroup
   <ActiveMember>k__BackingField: {fileID: 1909361633}
   <PreviousMember>k__BackingField: {fileID: 0}
-  <UserCanUntoggle>k__BackingField: 0
-  <GroupCanUntoggle>k__BackingField: 0
+  <UserCanClear>k__BackingField: 0
+  <SystemCanClear>k__BackingField: 0
   <ResetWithParentPanel>k__BackingField: 0
 --- !u!114 &1116774829
 MonoBehaviour:
@@ -17188,8 +17188,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Utility.UI::Submodules.Utility.UI.RadioGroup
   <ActiveMember>k__BackingField: {fileID: 0}
   <PreviousMember>k__BackingField: {fileID: 0}
-  <UserCanUntoggle>k__BackingField: 1
-  <GroupCanUntoggle>k__BackingField: 1
+  <UserCanClear>k__BackingField: 1
+  <SystemCanClear>k__BackingField: 1
   <ResetWithParentPanel>k__BackingField: 0
 --- !u!1001 &1444363989
 PrefabInstance:
@@ -20447,8 +20447,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Utility.UI::Submodules.Utility.UI.ToggleGroup
   <ActiveMember>k__BackingField: {fileID: 7022399921479454649}
   <PreviousMember>k__BackingField: {fileID: 0}
-  <UserCanUntoggle>k__BackingField: 0
-  <GroupCanUntoggle>k__BackingField: 0
+  <UserCanClear>k__BackingField: 0
+  <SystemCanClear>k__BackingField: 0
   <ResetWithParentPanel>k__BackingField: 1
 --- !u!114 &1738999153
 MonoBehaviour:
@@ -22200,8 +22200,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Utility.UI::Submodules.Utility.UI.PanelGroup
   <ActiveMember>k__BackingField: {fileID: 1970015442}
   <PreviousMember>k__BackingField: {fileID: 0}
-  <UserCanUntoggle>k__BackingField: 0
-  <GroupCanUntoggle>k__BackingField: 0
+  <UserCanClear>k__BackingField: 0
+  <SystemCanClear>k__BackingField: 0
   <ResetWithParentPanel>k__BackingField: 0
 --- !u!114 &1921830477
 MonoBehaviour:
@@ -25800,8 +25800,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Utility.UI::Submodules.Utility.UI.RadioGroup
   <ActiveMember>k__BackingField: {fileID: 0}
   <PreviousMember>k__BackingField: {fileID: 0}
-  <UserCanUntoggle>k__BackingField: 0
-  <GroupCanUntoggle>k__BackingField: 1
+  <UserCanClear>k__BackingField: 0
+  <SystemCanClear>k__BackingField: 1
   <ResetWithParentPanel>k__BackingField: 1
 --- !u!1 &2144819083
 GameObject:
@@ -25855,8 +25855,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Utility.UI::Submodules.Utility.UI.PanelGroup
   <ActiveMember>k__BackingField: {fileID: 1741980405}
   <PreviousMember>k__BackingField: {fileID: 0}
-  <UserCanUntoggle>k__BackingField: 0
-  <GroupCanUntoggle>k__BackingField: 0
+  <UserCanClear>k__BackingField: 0
+  <SystemCanClear>k__BackingField: 0
   <ResetWithParentPanel>k__BackingField: 0
 --- !u!224 &108098073199083388 stripped
 RectTransform:
