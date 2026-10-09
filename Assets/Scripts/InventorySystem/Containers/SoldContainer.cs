@@ -10,144 +10,17 @@ namespace ToolSmiths.InventorySystem.Inventories
     /// The Sold container (issue #126): what the player sold, held as a Supply so it can be
     /// bought back. The same grid as the Vendor's shelf plus the one thing a shelf does not
     /// have, an age - when a sale would not fit, the oldest sold Packages are discarded until
-    /// it does. A discarded Package belongs to the Town Stop; the player was paid for it.
+    /// it does (<see cref="OldestOutInventory"/>). A discarded Package belongs to the Town Stop;
+    /// the player was paid for it.
     ///
-    /// <para>The only ledger is the sale order: a list of cells, oldest first. A sale that
-    /// merges into a stack moves that stack's cell to the newest position. The list is
-    /// reconciled against the grid whenever it is read, because the container is also a shelf
-    /// - a buy-back or a drag empties a cell without telling the ledger - so a cell with no
-    /// Package is skipped, and a Package the ledger never heard of (one returned to its cell
-    /// after an abandoned buy-back) counts as the oldest. Both are cheaper than a second
-    /// source of truth about what is in the grid.</para>
-    ///
-    /// <para>The container itself is just a <see cref="CharacterInventory"/>; the rest is
+    /// <para>What is its own is the compaction: the Sold container stays old-to-young, so before
+    /// anything is placed the existing Packages are packed together oldest first, and a hole a
+    /// buy-back left does not take the new sale - it lands after the others. The rest is
     /// <see cref="Sale"/>, which drives these members inside its transaction.</para>
     /// </summary>
-    public sealed class SoldContainer : CharacterInventory
+    public sealed class SoldContainer : OldestOutInventory
     {
-        /// <summary>The cells of the Packages sold, oldest first.</summary>
-        private readonly List<Vector2Int> saleOrder = new();
-
         public SoldContainer(Vector2Int dimensions, IItemCatalog catalog) : base(dimensions, catalog) { }
-
-        /// <summary>
-        /// Places all of <paramref name="package"/>, discarding the oldest sold Packages until
-        /// it fits. The Sold container stays old-to-young: before anything is placed the
-        /// existing Packages are packed together oldest first, so a hole a buy-back left does not
-        /// take the new sale - it lands after the others, and a discard packs the rest again.
-        /// All or nothing for the caller's transaction: false means even an empty
-        /// container could not take it, and the caller rolls back, which restores whatever was
-        /// discarded or moved on the way. Reads and writes <see cref="AbstractDimensionalContainer.StoredPackages"/>
-        /// - the working copy, mid-transaction.
-        /// </summary>
-        /// <param name="landed">The cells the sale changed, to be made the newest by
-        /// <see cref="NoteSold"/> once the transaction commits.</param>
-        /// <param name="order">The age order after the compaction and discards of this attempt,
-        /// oldest first, for <see cref="NoteSold"/> to adopt at the same moment. It travels with
-        /// the attempt rather than living on the container, so an attempt that never commits
-        /// leaves nothing behind.</param>
-        internal bool TryPlaceEvicting(Package package, out List<Vector2Int> landed, out List<Vector2Int> order)
-        {
-            order = AgeOrder();
-
-            while (true)
-            {
-                order = Compact(order);
-
-                if (TryPlace(package, out landed))
-                    return true;
-
-                if (!TryDiscardOldest(order))
-                    return false;
-            }
-        }
-
-        /// <summary>
-        /// Adopts <paramref name="order"/> - the age order <see cref="TryPlaceEvicting"/> ended
-        /// with - makes <paramref name="cells"/> the newest sales, in order, and forgets every
-        /// cell that no longer holds a Package. Runs as a commit-time effect, so a rolled-back
-        /// sale leaves the order alone.
-        /// </summary>
-        internal void NoteSold(IEnumerable<Vector2Int> order, IEnumerable<Vector2Int> cells)
-        {
-            saleOrder.Clear();
-            saleOrder.AddRange(order);
-
-            _ = saleOrder.RemoveAll(cell => !StoredPackages.ContainsKey(cell));
-
-            foreach (var cell in cells)
-            {
-                _ = saleOrder.Remove(cell);
-                saleOrder.Add(cell);
-            }
-        }
-
-        /// <summary>
-        /// One attempt to place the whole of <paramref name="package"/> without discarding
-        /// anything, restoring the grid when it does not all fit. Not
-        /// <see cref="AbstractDimensionalContainer.TryAddToContainer"/>: that warns "is full!"
-        /// on every miss, and a miss is the ordinary first step of an eviction here.
-        /// </summary>
-        private bool TryPlace(Package package, out List<Vector2Int> landed)
-        {
-            var before = new Dictionary<Vector2Int, Package>(StoredPackages);
-            var remaining = package;
-
-            _ = TryStack(ref remaining);
-
-            while (0 < remaining.Amount && TryFindEmptyCell(ViewOf(remaining.Item).Dimensions, out var cell))
-            {
-                var left = remaining.Amount;
-                remaining = AddAtPosition(cell, remaining);
-
-                if (remaining.Amount == left)
-                    break; // the cell took nothing: bail out rather than spin
-            }
-
-            if (0 < remaining.Amount)
-            {
-                StoredPackages.Clear();
-
-                foreach (var entry in before)
-                    StoredPackages[entry.Key] = entry.Value;
-
-                landed = null;
-                return false;
-            }
-
-            landed = StoredPackages
-                .Where(entry => !before.TryGetValue(entry.Key, out var was) || was.Amount != entry.Value.Amount)
-                .Select(entry => entry.Key)
-                .ToList();
-
-            return true;
-        }
-
-        /// <summary>Discards the oldest sold Package. False when the container is empty.</summary>
-        private bool TryDiscardOldest(List<Vector2Int> order)
-        {
-            var oldest = order.Where(StoredPackages.ContainsKey).Select(c => (Vector2Int?)c).FirstOrDefault();
-
-            if (oldest is not { } cell)
-                return false;
-
-            _ = RemoveAtPosition(cell, StoredPackages[cell]);
-            _ = order.Remove(cell);
-            return true;
-        }
-
-        /// <summary>The cells now holding a Package, oldest first: what the ledger does not know
-        /// is older than any recorded sale (in grid order), then the recorded sales.</summary>
-        private List<Vector2Int> AgeOrder()
-        {
-            var known = new HashSet<Vector2Int>(saleOrder);
-
-            return StoredPackages.Keys
-                .Where(cell => !known.Contains(cell))
-                .OrderBy(cell => cell.x).ThenBy(cell => cell.y)
-                .Concat(saleOrder.Where(StoredPackages.ContainsKey))
-                .ToList();
-        }
 
         /// <summary>
         /// Packs every Package against the start of the grid in age order, oldest first, and
@@ -155,7 +28,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// footprints can pack worse than they were laid out - restores the grid as it was and
         /// returns <paramref name="order"/> unchanged: carries on uncompacted.
         /// </summary>
-        private List<Vector2Int> Compact(List<Vector2Int> order)
+        protected override List<Vector2Int> Arrange(List<Vector2Int> order)
         {
             var before = new Dictionary<Vector2Int, Package>(StoredPackages);
             var packed = new List<Vector2Int>();
