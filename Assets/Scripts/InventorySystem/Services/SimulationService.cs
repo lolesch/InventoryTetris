@@ -2,6 +2,7 @@ using Submodules.Utility.Services;
 using System;
 using System.Collections.Generic;
 using ToolSmiths.InventorySystem.Data.Enums;
+using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Locations;
 using ToolSmiths.InventorySystem.Runtime.Character;
@@ -231,7 +232,8 @@ namespace ToolSmiths.InventorySystem.Services
                     hero.GainExperience(xp, hero.Level);
             };
 
-            var lootFlow = new LootFlow(encounter, hero.Behaviour, generator, items, hero, hero.Wallet);
+            var lootFlow = new LootFlow(encounter, hero.Behaviour, generator, items, hero, hero.Wallet,
+                new GroundContainer(config.GroundSize, items.Catalog), hero.Inventory, hero.Equipment);
 
             // The Run accumulates the base-unit coin take so Death's fee reads it (issue #44).
             lootFlow.CoinsBanked += run.BankCurrency;

@@ -29,6 +29,7 @@ MonoBehaviour:
   <StashSize>k__BackingField: {x: 10, y: 13}
   <SupplySize>k__BackingField: {x: 10, y: 7}
   <SoldSize>k__BackingField: {x: 10, y: 7}
+  <GroundSize>k__BackingField: {x: 10, y: 13}
   <SimSpeed>k__BackingField: 1
   <Engagement>k__BackingField: 3
   <RetreatHealthFraction>k__BackingField: 0

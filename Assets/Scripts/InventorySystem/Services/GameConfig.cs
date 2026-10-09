@@ -110,6 +110,9 @@ namespace ToolSmiths.InventorySystem.Services
         [field: SerializeField, Tooltip("The Sold container (epic #124).")]
         public Vector2Int SoldSize { get; private set; } = new(10, 7);
 
+        [field: SerializeField, Tooltip("The Run's ground, a grid like the stash (epic #214).")]
+        public Vector2Int GroundSize { get; private set; } = new(10, 13);
+
         [field: Header("Simulation: Behaviour Profile defaults")]
         [field: SerializeField, Range(1f, 8f)] public float SimSpeed { get; private set; } = 1f;
         [field: SerializeField, Min(1)] public int Engagement { get; private set; } = 3;

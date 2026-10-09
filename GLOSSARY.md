@@ -167,10 +167,12 @@ _Avoid_: frag, takedown, defeat
 Loot lying on the ground at a Location — shed by a defeated enemy — not yet picked up.
 A recovered **Corpse** is never laid out as Drops. Drops accumulate as enemies
 fall, never as one bundle at the end; a Drop still on the ground when the Run ends is
-gone, on Recall or Death alike. By default a Drop lies in the **Ground Items List** until the
-player clicks it; the click goes through the player's acquisition entry point (see **Quick
-Move**) — auto-equip into an empty slot, else the **Inventory**; with no room it stays on the
-ground. A debug switch on the Combat Panel, `AutoPickup`, hands that back to the hero: on, a
+gone, on Recall or Death alike. The ground is a stash-sized grid: a Drop lies at the cell it
+landed in and never moves, and when a new package does not fit the oldest ones are removed
+until it does (one larger than the whole grid is refused). By default a Drop lies in the
+**Ground Items List** until the player clicks it; the click goes through the player's acquisition
+entry point (see **Quick Move**) — auto-equip into an empty slot, else the **Inventory**; with no
+room it stays on the ground. A debug switch on the Combat Panel, `AutoPickup`, hands that back to the hero: on, a
 Drop the hero's loot filter admits is picked up the same way as it falls, and only the rest
 stay down. A coin Pile the filter admits banks to the Wallet on the spot either way.
 _Avoid_: pile (that is coins), ground loot, spill, cache
@@ -568,13 +570,16 @@ cooldown overlays. Minimal v1 is flash-only; cooldown visuals are a follow-up.
 _Avoid_: skill bar, action bar, power bar
 
 **Ground Items List**:
-A pooled list of slot displays for items lying on the ground. Each entry shows the
-item name and icon, supports hover preview and click-to-pick-up. One slot per item,
-not spatial. A click picks the **Drop** up through the player's acquisition entry point,
-so a full bag leaves it lying there. It also shows what the player dropped there — by Quick
-Move or by releasing a drag on the floor slot — and like any **Drop** it is gone when the Run
-ends. With no Run there is no ground, and an item released on the floor slot goes back where it
-came from.
+A pooled list of slot displays reading the one bounded floor, in age order, oldest first.
+Each entry shows the item name and icon, supports hover preview and click-to-pick-up. One
+entry per package, so a stack is one entry, not one per item. A click picks the **Drop** up
+through the player's acquisition entry point, so a full bag leaves it lying there. The floor
+is a grid container the size of the stash, and this list is its second view: both read the same
+packages. A package that lands, or a stack that gains items, becomes the newest; when the floor
+is full the oldest are removed until the new one fits, and nothing else is rearranged. It also
+shows what the player dropped there — by Quick Move or by releasing a drag on the floor slot,
+which evict the oldest the same way — and like any **Drop** it is gone when the Run ends. With
+no Run there is no ground, and an item released on the floor slot goes back where it came from.
 _Avoid_: loot beam, drop list, world items
 
 

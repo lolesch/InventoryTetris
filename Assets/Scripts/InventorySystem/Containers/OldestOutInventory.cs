@@ -137,7 +137,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         /// <summary>The cells now holding a Package, oldest first: what the ledger does not know
         /// is older than any recorded landing (in grid order), then the recorded landings.</summary>
-        private List<Vector2Int> AgeOrder()
+        private protected List<Vector2Int> AgeOrder()
         {
             var known = new HashSet<Vector2Int>(landingOrder);
 
