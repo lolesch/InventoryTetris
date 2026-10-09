@@ -112,7 +112,7 @@ namespace ToolSmiths.InventorySystem.Services
 
             // The ground exists exactly while a Run's loot flow does (issue #63): Town has none.
             return QuickMoveResolver.Resolve(world.Context.Active, source, hero.Inventory, hero.Stash, hero.Equipment,
-                world.VendorSupply, world.HealerSupply, world.Sold, groundOpen: world.LootFlow != null);
+                world.VendorSupply, world.HealerSupply, world.Sold, world.Ground, groundOpen: world.LootFlow != null);
         }
 
         public bool PickUpOrStash(Package package)

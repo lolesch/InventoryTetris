@@ -130,6 +130,11 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                     _ = DropTransaction.Run(Container, position, SimulationService.Instance.LootFlow);
                     return true;
 
+                case QuickMoveIntentKind.PickUp:
+                    /// The Ground context's row: the same pick-up a plain click on a ground slot makes.
+                    _ = SimulationService.Instance.LootFlow?.PickUpFromGround(package.Item);
+                    return true;
+
                 case QuickMoveIntentKind.Acquire:
                     /// The Stash retrieval row (issue #86): routed through
                     /// PickUpTransaction.Run - the player's acquisition entry point - instead

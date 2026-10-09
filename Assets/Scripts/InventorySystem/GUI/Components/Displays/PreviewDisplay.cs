@@ -2,7 +2,6 @@
 using TMPro;
 using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Data;
-using ToolSmiths.InventorySystem.Items;
 using Submodules.Utility.Extensions;
 using Submodules.Utility.Tools;
 using Submodules.Utility.UI;

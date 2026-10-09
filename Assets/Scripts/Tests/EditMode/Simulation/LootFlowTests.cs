@@ -908,7 +908,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
-        public void EvictingACoinStack_BanksItToTheWallet_FirstAndInFull()
+        public void EvictingACoinStack_BanksItToTheWallet_FirstAndInFull_ButNotAsTheRunsTake()
         {
             var wallet = NewWallet();
             var lootFlow = KillForPiles(NotAutoPickingUp(), wallet, NewGround(1, 1), (CurrencyType.Iron, 5u));
@@ -920,7 +920,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
             Assert.That(wallet.Balance.Iron, Is.EqualTo(5u));
             Assert.That(lootFlow.GroundDrops.Select(drop => drop.Item), Is.EqualTo(new[] { sword }));
-            Assert.That(banked, Is.EqualTo(5L));
+            Assert.That(banked, Is.Zero, "the hero never picked it up, so the Death fee's base does not grow");
         }
 
         [Test]

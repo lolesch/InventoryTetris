@@ -15,7 +15,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// on the ground, oldest first, growing and shrinking as Drops land, are evicted and are picked up. It
     /// binds the ground by its role like any container display, and is the second view of that container beside the
     /// ground grid. The rows' layout group and content size fitter do the sizing; this only keeps the rows in
-    /// step with the container. Row <c>i</c> is rebound to Drop <c>i</c> on every change, which leaves a row whose
+    /// step with the container, and fades each row by its Drop's age like the grid's slots do. Row <c>i</c> is rebound to Drop <c>i</c> on every change, which leaves a row whose
     /// Drop and amount did not change (and its hover) untouched.
     ///
     /// A click goes to <see cref="LootFlow.PickUpFromGround"/>, which hands the Drop to the
@@ -27,6 +27,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     {
         [SerializeField] private GroundItemSlotDisplay prefab;
         [SerializeField] private Transform rows;
+        [SerializeField, Tooltip("The same fade as the ground grid's slots.")] private GroundFadeSettings fade = new();
 
         private readonly List<GroundItemSlotDisplay> _slots = new();
         private PrefabPool<GroundItemSlotDisplay> _pool;
@@ -57,6 +58,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                     _slots.Add(Pool.GetObject());
 
                 _slots[i].Bind(drops[i].Item, drops[i].Amount, ItemService.Instance.View(drops[i].Item), OnSlotClicked);
+                _slots[i].SetAlpha(fade.AlphaOf(count - 1 - i));
                 _slots[i].transform.SetSiblingIndex(i);
             }
         }

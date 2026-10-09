@@ -50,16 +50,16 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
 
         private const int GroundRole = 7; // ContainerRole.Ground, as the scene stores it
 
-        private static object Field(Component component, string name)
+        private static object Field(object target, string name)
         {
-            for (var type = component.GetType(); type != null; type = type.BaseType)
+            for (var type = target.GetType(); type != null; type = type.BaseType)
             {
-                var field = type.GetField(name, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                var field = type.GetField(name, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
                 if (field != null)
-                    return field.GetValue(component);
+                    return field.GetValue(target);
             }
 
-            throw new System.MissingFieldException(component.GetType().Name, name);
+            throw new System.MissingFieldException(target.GetType().Name, name);
         }
 
         /// <summary>The scene's display bound to the ground: the grid beside the Ground Items List.</summary>
@@ -88,19 +88,27 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             SimulationService.Instance.Send(_locations[0]);
             var lootFlow = SimulationService.Instance.LootFlow;
             var grid = GroundGrid();
-            var step = (float)Field(FirstSlot(grid), "fadeStep");
+            var fade = Field(FirstSlot(grid), "fade");
+            var fresh = (int)Field(fade, "fullOpacityCount");
+            var step = (float)Field(fade, "fadeStep");
 
-            Land(lootFlow, 3);
+            Land(lootFlow, fresh + 2);
             yield return null;
 
             var slots = FilledSlots(grid);
             Assert.That(slots.Length, Is.EqualTo(lootFlow.Ground.StoredPackages.Count), "one slot per package");
 
-            // Oldest first, the cells run oldest to newest: each later drop takes one step off.
+            // Oldest first, the cells run oldest to newest: the newest few are opaque, then a step per drop.
             var alphas = lootFlow.Ground.CellsOldestFirst().Select(cell => Alpha(slots.Single(s => CellOf(s) == cell))).ToList();
-            Assert.That(alphas[^1], Is.EqualTo(1f), "the newest is fully opaque");
-            Assert.That(alphas[^2], Is.EqualTo(1f - step).Within(1e-4f), "one drop since: one step");
-            Assert.That(alphas[^3], Is.EqualTo(1f - (2 * step)).Within(1e-4f), "two drops since: two steps");
+            Assert.That(alphas.Skip(2), Is.All.EqualTo(1f), "the newest few are fully opaque");
+            Assert.That(alphas[1], Is.EqualTo(1f - step).Within(1e-4f), "the first beyond them: one step");
+            Assert.That(alphas[0], Is.EqualTo(1f - (2 * step)).Within(1e-4f), "the next: two steps");
+
+            // The Ground Items List lists the same drops oldest first and fades them by the same rule.
+            var rows = Named("GroundItemsPanel").Single().GetComponentsInChildren<MonoBehaviour>()
+                .Where(c => c.GetType().Name == "GroundItemSlotDisplay")
+                .Select(row => row.GetComponent<CanvasGroup>().alpha).ToList();
+            Assert.That(rows, Is.EqualTo(alphas).Within(1e-4f), "one row per drop, faded like its slot");
         }
 
         private static Component FirstSlot(Component grid) =>

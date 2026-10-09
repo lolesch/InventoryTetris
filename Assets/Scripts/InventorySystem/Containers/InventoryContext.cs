@@ -22,5 +22,8 @@ namespace ToolSmiths.InventorySystem.Inventories
         Stash,
         Vendor,
         Healer,
+
+        /// <summary>The Combat Panel's ground tab, open during a Run. Like every non-<c>None</c> context it brings the Hero Panel with it.</summary>
+        Ground,
     }
 }

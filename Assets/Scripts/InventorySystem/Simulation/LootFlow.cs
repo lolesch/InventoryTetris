@@ -146,8 +146,8 @@ namespace ToolSmiths.InventorySystem.Simulation
         public bool PlaceOnGround(Package package) => Land(package);
 
         /// <summary>
-        /// Raised with the base-unit total of the coins each time some bank to the Wallet - a
-        /// picked-up Pile, an evicted stack, a clicked stack. The Run tracks the take this way — <see cref="RunState.CurrencyBanked"/>,
+        /// Raised with the base-unit total of the coins each time some bank to the Wallet by the hero's
+        /// own pickup - a picked-up Pile, a clicked stack; an evicted stack banks without it. The Run tracks the take this way — <see cref="RunState.CurrencyBanked"/>,
         /// the base the Death fee reads — so the engine-side driver feeds it
         /// <see cref="RunState.BankCurrency"/> per kill.
         /// </summary>
@@ -265,7 +265,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         private void BankEvicted(Package evicted)
         {
             if (TryCoinOf(evicted, out var type))
-                _ = Bank(type, evicted.Amount);
+                _ = Bank(type, evicted.Amount, countsAsTake: false);
         }
 
         private bool TryCoinOf(Package package, out CurrencyType type)
@@ -276,11 +276,12 @@ namespace ToolSmiths.InventorySystem.Simulation
         }
 
         /// <summary>
-        /// Deposits <paramref name="amount"/> coins to the Wallet as far as it fits and reports the Run's
-        /// take; the Wallet drops what does not fit, so the count taken is read off its balance.
+        /// Deposits <paramref name="amount"/> coins to the Wallet as far as it fits; the Wallet drops what does
+        /// not fit, so the count taken is read off its balance. Reports the Run's take unless
+        /// <paramref name="countsAsTake"/> is false - an eviction banks coins the hero never picked up.
         /// </summary>
         /// <returns>How many coins the Wallet took.</returns>
-        private uint Bank(CurrencyType type, uint amount)
+        private uint Bank(CurrencyType type, uint amount, bool countsAsTake = true)
         {
             var value = Currency.ValueOf(type);
             var before = _wallet.Balance.Total;
@@ -288,7 +289,7 @@ namespace ToolSmiths.InventorySystem.Simulation
             _wallet.Deposit(Currency.Of(type, amount));
 
             var taken = (_wallet.Balance.Total - before) / value;
-            if (0u < taken)
+            if (countsAsTake && 0u < taken)
                 CoinsBanked?.Invoke(checked((long)taken * value)); // the Pile's value in iron base units (GLOSSARY.md "Base Unit")
 
             return taken;

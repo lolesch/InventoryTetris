@@ -11,7 +11,8 @@ namespace ToolSmiths.InventorySystem.Inventories
     /// auto-equip - it routes through the player's acquisition entry point
     /// (<see cref="ToolSmiths.InventorySystem.Items.IItemReceiver"/>) instead of a plain move.
     /// <see cref="Drop"/> (issue #63) lays the item on the Run's ground - the Hero context's one
-    /// sink, and only while a Run has a ground.
+    /// sink, and only while a Run has a ground. <see cref="PickUp"/> takes a Drop off the ground
+    /// through the loot flow, which banks a coin stack rather than placing it.
     /// </summary>
     public enum QuickMoveIntentKind
     {
@@ -21,6 +22,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         Acquire = 4,
         Sell = 5,
         Drop = 6,
+        PickUp = 7,
     }
 
     /// <summary>
@@ -51,5 +53,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         public static QuickMoveIntent Sell => new(QuickMoveIntentKind.Sell, null);
 
         public static QuickMoveIntent Drop => new(QuickMoveIntentKind.Drop, null);
+
+        public static QuickMoveIntent PickUp => new(QuickMoveIntentKind.PickUp, null);
     }
 }

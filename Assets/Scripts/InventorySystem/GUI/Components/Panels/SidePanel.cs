@@ -33,7 +33,6 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
     /// itself: two layers deciding visibility is what this rework removes. The request lands
     /// synchronously, so the context a panel derives from never lags its fade.</para>
     /// </summary>
-    [DisallowMultipleComponent]
     public sealed class SidePanel : SimplePanel
     {
         [Tooltip("Which Inventory Context this panel belongs to. Visibility is derived from the " +
@@ -146,8 +145,9 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
         /// mechanism - nothing derives its visibility, so it never appears, and its toggle
         /// requests nothing. The code has no way to infer what a panel is for.
         /// </summary>
-        private void OnValidate()
+        protected override void OnValidate()
         {
+            base.OnValidate();
             if (inventoryContext == InventoryContext.None)
                 Debug.LogWarning($"{name}: SidePanel has no InventoryContext - nothing derives " +
                                  "its visibility, so it never appears, and its toggle requests " +

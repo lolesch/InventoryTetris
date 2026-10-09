@@ -30,7 +30,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// <see cref="EncounterStatsPanel"/> (issue #61), as its own sibling section between this
     /// panel and the enemy HP bar pool.
     /// </summary>
-    [DisallowMultipleComponent]
     public sealed class BehaviourSlidersPanel : SimplePanel
     {
         [Header("Hero behaviour sliders")]

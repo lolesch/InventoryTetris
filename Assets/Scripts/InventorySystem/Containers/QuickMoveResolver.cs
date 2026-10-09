@@ -29,19 +29,21 @@ namespace ToolSmiths.InventorySystem.Inventories
     /// ground, a shift-click on the backpack drops the item there. Equipment stays out of it -
     /// rule two's Hero exemption holds, so a stray shift-click never unequips to the dirt. With
     /// no ground (Town) the Hero context resolves to nothing, a stated outcome, not an omission.
-    /// It never reaches <see cref="Route"/>.</para>
+    /// It never reaches <see cref="Route"/>. <see cref="InventoryContext.Ground"/> has the same drop
+    /// row and one more: a shift-click on the ground itself picks the Drop up, through the loot flow.</para>
     /// </summary>
     public static class QuickMoveResolver
     {
         /// <param name="sold">The Sold container (issue #126) - a Supply, so a shift-click on it
         /// is a Buy in every context.</param>
+        /// <param name="ground">The Run's ground, the source of the Ground context's one pick-up row.</param>
         /// <param name="groundOpen">Whether a Run has a ground to drop on (issue #63): true in the
         /// Field, false in Town.</param>
         public static QuickMoveIntent Resolve(InventoryContext context, AbstractDimensionalContainer source,
             AbstractDimensionalContainer backpack, AbstractDimensionalContainer stash,
             AbstractDimensionalContainer equipment, AbstractDimensionalContainer store,
             AbstractDimensionalContainer healerSupply, AbstractDimensionalContainer sold,
-            bool groundOpen = false)
+            AbstractDimensionalContainer ground, bool groundOpen = false)
         {
             if (source == store || source == healerSupply || source == sold)
                 return QuickMoveIntent.Buy;
@@ -50,7 +52,9 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             return context switch
             {
-                InventoryContext.Hero when groundOpen && source == hub => QuickMoveIntent.Drop,
+                InventoryContext.Hero or InventoryContext.Ground when groundOpen && source == hub => QuickMoveIntent.Drop,
+
+                InventoryContext.Ground when groundOpen && source == ground => QuickMoveIntent.PickUp,
 
                 InventoryContext.Stash => Route(source, hub, equipment,
                     sink: QuickMoveIntent.MoveTo(stash),

@@ -2643,20 +2643,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 235697922}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 931890043a783f24ba448a00c72fe6fa, type: 3}
+  m_Script: {fileID: 11500000, guid: 0194eebc42f431c4f828f607404c5322, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.Runtime.Simulation.BehaviourSlidersPanel
+  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Components.Panels.SidePanel
   <RadioGroup>k__BackingField: {fileID: 347723239}
-  <FadeDuration>k__BackingField: 0.2
+  <FadeDuration>k__BackingField: 0.15
   scaleFrom: 1
   moveFrom: {x: -640, y: 0}
-  retreatHealthSlider: {fileID: 1980204759}
-  recallBagFillSlider: {fileID: 1967065812}
-  resourceReserveSlider: {fileID: 803048410}
-  originWeightSlider: {fileID: 1900000015}
-  lootFilterSlider: {fileID: 194834020}
-  simSpeedSlider: {fileID: 422789409}
-  autoPickupToggle: {fileID: 1989266055}
+  inventoryContext: 5
 --- !u!1 &236794250
 GameObject:
   m_ObjectHideFlags: 0
@@ -6592,8 +6586,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65d6947b13dfe1326a489c44cc2c84b0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Utility.UI::Submodules.Utility.UI.PanelGroup
-  <ActiveMember>k__BackingField: {fileID: 573553621}
-  <PreviousMember>k__BackingField: {fileID: 1244222693}
+  <ActiveMember>k__BackingField: {fileID: 573553626}
+  <PreviousMember>k__BackingField: {fileID: 0}
   <UserCanClear>k__BackingField: 0
   <SystemCanClear>k__BackingField: 0
 --- !u!114 &453985515
@@ -7969,7 +7963,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 573553620}
-  - component: {fileID: 573553621}
+  - component: {fileID: 573553626}
   - component: {fileID: 573553624}
   - component: {fileID: 573553623}
   - component: {fileID: 573553622}
@@ -8004,22 +7998,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 620, y: 100}
   m_Pivot: {x: 0, y: 1}
---- !u!114 &573553621
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 573553619}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1814ee7b30ef16444b80fff87e8b0c62, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Utility.UI::Submodules.Utility.UI.SimplePanel
-  <RadioGroup>k__BackingField: {fileID: 453985514}
-  <FadeDuration>k__BackingField: 0.2
-  scaleFrom: 1
-  moveFrom: {x: 0, y: 0}
 --- !u!114 &573553622
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8099,6 +8077,29 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!114 &573553626
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 573553619}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 931890043a783f24ba448a00c72fe6fa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.Runtime.Simulation.BehaviourSlidersPanel
+  <RadioGroup>k__BackingField: {fileID: 453985514}
+  <FadeDuration>k__BackingField: 0.2
+  scaleFrom: 1
+  moveFrom: {x: 0, y: 0}
+  retreatHealthSlider: {fileID: 1980204759}
+  recallBagFillSlider: {fileID: 1967065812}
+  resourceReserveSlider: {fileID: 803048410}
+  originWeightSlider: {fileID: 1900000015}
+  lootFilterSlider: {fileID: 194834020}
+  simSpeedSlider: {fileID: 422789409}
+  autoPickupToggle: {fileID: 1989266055}
 --- !u!1 &573723978
 GameObject:
   m_ObjectHideFlags: 0
@@ -9021,8 +9022,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0194eebc42f431c4f828f607404c5322, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Components.Panels.SidePanel
-  <RadioGroup>k__BackingField: {fileID: 0}
-  <FadeDuration>k__BackingField: 0.2
+  <RadioGroup>k__BackingField: {fileID: 347723239}
+  <FadeDuration>k__BackingField: 0.15
   scaleFrom: 1
   moveFrom: {x: -640, y: 0}
   inventoryContext: 3
@@ -11673,7 +11674,7 @@ MonoBehaviour:
   hoverScale: 1.06
   tooltip: 
   tooltipLabel: {fileID: 0}
-  <IsOn>k__BackingField: 1
+  <IsOn>k__BackingField: 0
   <RadioGroup>k__BackingField: {fileID: 0}
   toggledOffSprite: {fileID: 0}
   toggledOnSprite: {fileID: 0}
@@ -12158,6 +12159,10 @@ MonoBehaviour:
   role: 7
   prefab: {fileID: 2938690695903610728, guid: 9e1d69e4713665945b59748fef963448, type: 3}
   rows: {fileID: 897817980}
+  fade:
+    fullOpacityCount: 5
+    fadeStep: 0.02
+    minimumAlpha: 0.3
 --- !u!114 &897817982
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16008,6 +16013,9 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 789433002789331200, guid: dbd3926b3b1bb914c83142e05b14b028, type: 3}
       insertIndex: -1
+      addedObject: {fileID: 1244222708}
+    - targetCorrespondingSourceObject: {fileID: 789433002789331200, guid: dbd3926b3b1bb914c83142e05b14b028, type: 3}
+      insertIndex: -1
       addedObject: {fileID: 1244222696}
     - targetCorrespondingSourceObject: {fileID: 789433002789331200, guid: dbd3926b3b1bb914c83142e05b14b028, type: 3}
       insertIndex: -1
@@ -16015,9 +16023,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 789433002789331200, guid: dbd3926b3b1bb914c83142e05b14b028, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1244222694}
-    - targetCorrespondingSourceObject: {fileID: 789433002789331200, guid: dbd3926b3b1bb914c83142e05b14b028, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1244222693}
   m_SourcePrefab: {fileID: 100100000, guid: dbd3926b3b1bb914c83142e05b14b028, type: 3}
 --- !u!224 &1244222691 stripped
 RectTransform:
@@ -16029,22 +16034,6 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 789433002789331200, guid: dbd3926b3b1bb914c83142e05b14b028, type: 3}
   m_PrefabInstance: {fileID: 1244222690}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1244222693
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1244222692}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1814ee7b30ef16444b80fff87e8b0c62, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Utility.UI::Submodules.Utility.UI.SimplePanel
-  <RadioGroup>k__BackingField: {fileID: 453985514}
-  <FadeDuration>k__BackingField: 0.2
-  scaleFrom: 1
-  moveFrom: {x: 0, y: 0}
 --- !u!114 &1244222694
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16098,6 +16087,22 @@ CanvasGroup:
   m_Interactable: 0
   m_BlocksRaycasts: 0
   m_IgnoreParentGroups: 0
+--- !u!114 &1244222708
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1244222692}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1814ee7b30ef16444b80fff87e8b0c62, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Utility.UI::Submodules.Utility.UI.SimplePanel
+  <RadioGroup>k__BackingField: {fileID: 453985514}
+  <FadeDuration>k__BackingField: 0.2
+  scaleFrom: 1
+  moveFrom: {x: 0, y: 0}
 --- !u!1001 &1267847925
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -16705,8 +16710,8 @@ MonoBehaviour:
   <RadioGroup>k__BackingField: {fileID: 1383145024}
   toggledOffSprite: {fileID: 0}
   toggledOnSprite: {fileID: 0}
-  panelWhenOn: {fileID: 573553621}
-  panelWhenOff: {fileID: 1244222693}
+  panelWhenOn: {fileID: 573553626}
+  panelWhenOff: {fileID: 1244222708}
   companionToggle: {fileID: 633928699}
 --- !u!1 &1338745223
 GameObject:
@@ -18356,9 +18361,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.Runtime.Simulation.FieldFacePanel
   <RadioGroup>k__BackingField: {fileID: 2144819085}
-  <FadeDuration>k__BackingField: 0.2
+  <FadeDuration>k__BackingField: 0.25
   scaleFrom: 2
-  moveFrom: {x: 0, y: 0}
+  moveFrom: {x: 0, y: -100}
   combatPanel: {fileID: 235697930}
 --- !u!1 &1434855899
 GameObject:
@@ -19624,8 +19629,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0194eebc42f431c4f828f607404c5322, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Components.Panels.SidePanel
-  <RadioGroup>k__BackingField: {fileID: 0}
-  <FadeDuration>k__BackingField: 0.2
+  <RadioGroup>k__BackingField: {fileID: 347723239}
+  <FadeDuration>k__BackingField: 0.15
   scaleFrom: 1
   moveFrom: {x: -640, y: 0}
   inventoryContext: 2
@@ -20245,7 +20250,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Components.Panels.SidePanel
   <RadioGroup>k__BackingField: {fileID: 0}
-  <FadeDuration>k__BackingField: 0.2
+  <FadeDuration>k__BackingField: 0.15
   scaleFrom: 1
   moveFrom: {x: 640, y: 0}
   inventoryContext: 1
@@ -22092,9 +22097,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.Runtime.Simulation.RunPhasePanel
   <RadioGroup>k__BackingField: {fileID: 2144819085}
-  <FadeDuration>k__BackingField: 0.2
+  <FadeDuration>k__BackingField: 0.25
   scaleFrom: 0
-  moveFrom: {x: 0, y: 0}
+  moveFrom: {x: 0, y: 100}
   activeDuring: 0
 --- !u!1 &1758569919
 GameObject:
@@ -27157,8 +27162,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0194eebc42f431c4f828f607404c5322, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Components.Panels.SidePanel
-  <RadioGroup>k__BackingField: {fileID: 0}
-  <FadeDuration>k__BackingField: 0.2
+  <RadioGroup>k__BackingField: {fileID: 347723239}
+  <FadeDuration>k__BackingField: 0.15
   scaleFrom: 1
   moveFrom: {x: -640, y: 0}
   inventoryContext: 4

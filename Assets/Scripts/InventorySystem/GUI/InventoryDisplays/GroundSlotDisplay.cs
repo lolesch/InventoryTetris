@@ -17,11 +17,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
     [System.Serializable]
     internal sealed class GroundSlotDisplay : InventorySlotDisplay
     {
-        [SerializeField, Range(0f, 1f), Tooltip("What each drop landed since takes off a drop's alpha; the newest is fully opaque.")]
-        private float fadeStep = 0.15f;
-
-        [SerializeField, Range(0f, 1f), Tooltip("The alpha an old drop stops fading at.")]
-        private float minimumAlpha = 0.25f;
+        [SerializeField] private GroundFadeSettings fade = new();
 
         public override void RefreshSlotDisplay(Package package)
         {
@@ -31,7 +27,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 return;
 
             var cells = ground.CellsOldestFirst();
-            itemGroup.alpha = GroundFade.Alpha(cells.Count - 1 - cells.IndexOf(Position), fadeStep, minimumAlpha);
+            itemGroup.alpha = fade.AlphaOf(cells.Count - 1 - cells.IndexOf(Position));
         }
 
         protected override void MoveItem(PointerEventData eventData, Vector2 pointerPosition)

@@ -59,8 +59,10 @@ MonoBehaviour:
   amount: {fileID: 6542709027021985681}
   hoverExpand: 1
   hoverLighten: 0.25
-  fadeStep: 0.02
-  minimumAlpha: 0.3
+  fade:
+    fullOpacityCount: 8
+    fadeStep: 0.02
+    minimumAlpha: 0.3
 --- !u!222 &930519027155081275
 CanvasRenderer:
   m_ObjectHideFlags: 0

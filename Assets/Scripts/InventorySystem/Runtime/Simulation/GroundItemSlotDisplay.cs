@@ -27,6 +27,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         [SerializeField] private TextMeshProUGUI nameLabel;
         [SerializeField, Tooltip("Tinted to the item's rarity. Optional.")] private Image rarityBorder;
 
+        private CanvasGroup _group;
         private Action<ItemInstance> _onClick;
         private bool _previewShown;
         private Coroutine _pendingPreview;
@@ -66,6 +67,15 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             if (rarityBorder != null)
                 rarityBorder.color = view.RarityColor;
+        }
+
+        /// <summary>How faint the row is drawn, by its Drop's age on the ground.</summary>
+        public void SetAlpha(float alpha)
+        {
+            if (!_group && !TryGetComponent(out _group))
+                _group = gameObject.AddComponent<CanvasGroup>();
+
+            _group.alpha = alpha;
         }
 
         /// <summary>Let go of the Drop and everything drawn for it. Safe when nothing is bound.</summary>

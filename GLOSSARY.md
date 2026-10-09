@@ -99,7 +99,7 @@ context but `Hero`, and a listed source comes back to the hub. A context with no
 moves nothing — the **Supply** is never a sink, and its own shift-click stays a **Buy** in
 every context. `Hero` has one row of its own: while a **Run** has a ground, the **Inventory**
 drops its item there, into the **Ground Items List**; in Town there is no ground, so `Hero`
-moves nothing. A move between containers always executes — into the target container, or the
+moves nothing. `Ground` has that row and one more: a shift-click on the ground picks the **Drop** up. A move between containers always executes — into the target container, or the
 hand if that is full. A retrieval from the **Stash** and a **Buy** go through the player's
 acquisition entry point instead, so auto-equip applies, and when nothing has room they roll
 back with nothing moved.
@@ -179,7 +179,8 @@ denomination the Wallet takes what it can, and the rest — or the whole Pile, w
 off — lies on the ground as a stack of that denomination's coin, merging with the stack already
 there up to the item's stack limit and making it the newest; denominations never consolidate on
 their own. A coin stack pushed out by newer loot banks to the Wallet first and only what the
-Wallet cannot take is lost; clicking one banks it, and what the Wallet cannot take stays.
+Wallet cannot take is lost, and it does not count toward the **Run**'s take; clicking one banks
+it, and what the Wallet cannot take stays.
 _Avoid_: pile (that is coins), ground loot, spill, cache
 
 **Ground**:
@@ -557,17 +558,18 @@ Run.
 _Avoid_: tab, drawer, sidebar; right-side (that is the **Hero Panel**)
 
 **Inventory Context**:
-The single-valued enum (`None`, `Hero`, `Stash`, `Vendor`, `Healer`) that answers two
+The single-valued enum (`None`, `Hero`, `Stash`, `Vendor`, `Healer`, `Ground`) that answers two
 questions at once: which panels are up, and where a **Quick Move** lands. Entry points
 *request* a context; every panel *derives* its visibility from it. A context names the
-**Hero Panel** plus at most one Town Stop's panel, so the panel set is derived rather than
+**Hero Panel** plus at most one other panel (a Town Stop's, or the **Combat Panel**'s ground
+tab for `Ground`, so that one needs the hero's bag open too), so the panel set is derived rather than
 announced, and a panel that belongs to every context can never be the thing that names one
 (ADR-0013). It is held by the **World** (reached through the inventory service,
 ADR-0015) and read by the trade flow for **Quick Move**
 routing. Its members are not homogeneous and need not be — the Stash is the player's
 own storage, the Vendor is someone else's — because the only question the enum answers is
-which context is active. Run phase is not a member: only `None` and `Hero` are reachable
-in the field, so a Run *constrains* contexts rather than being one.
+which context is active. Run phase is not a member: only `None`, `Hero` and `Ground` are
+reachable in the field, so a Run *constrains* contexts rather than being one.
 _Avoid_: Side Panel Context (retired), trade target, active panel, current context
 
 **Combat Panel**:

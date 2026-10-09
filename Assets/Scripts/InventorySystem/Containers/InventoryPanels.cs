@@ -15,5 +15,6 @@ namespace ToolSmiths.InventorySystem.Inventories
         Stash = 1 << 1,
         Vendor = 1 << 2,
         Healer = 1 << 3,
+        Ground = 1 << 4,
     }
 }
