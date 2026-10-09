@@ -9,13 +9,12 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// place. <see cref="Settle"/> runs the Death penalty - bury the bag's non-currency contents
     /// as the one <see cref="Corpse"/> tagged with the fall Location, charge the currency fee,
     /// forfeit the XP, revive the hero. <see cref="Recover"/> is the other half: re-entering the
-    /// Corpse's own Location lays it back out, to the bag where it fits and the ground where it
-    /// does not - with no ground to strand it on, the overflow is re-buried rather than lost.
+    /// Corpse's own Location lays it back out into the bag, and what does not fit stays on the
+    /// Corpse, re-buried at the same Location.
     ///
-    /// Everything Unity-typed - the live bag, the Wallet, the character sheet, the ground - sits
-    /// behind <see cref="ISettlementBag"/>, <see cref="ISettlementLedger"/> and
-    /// <see cref="ILootGround"/>, so the rules are verified through this interface against
-    /// in-memory ports. The engine side (<c>SimulationService</c>) binds the ports and owns
+    /// Everything Unity-typed - the live bag, the Wallet, the character sheet - sits behind
+    /// <see cref="ISettlementBag"/> and <see cref="ISettlementLedger"/>, so the rules are
+    /// verified through this interface against in-memory ports. The engine side (<c>SimulationService</c>) binds the ports and owns
     /// nothing else about Death.
     /// </summary>
     public sealed class RunSettlement
@@ -71,12 +70,11 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         /// <summary>
         /// Re-entering <paramref name="location"/>: if the standing Corpse is tagged with it, lay
-        /// its contents back out - to the bag where they fit, else onto <paramref name="ground"/>.
-        /// A <c>null</c> <paramref name="ground"/> (a Run with no loot flow) means the leftover is
-        /// re-buried at the same Location for a later recovery rather than destroyed. A no-op with
-        /// no Corpse or a Location that is not the Corpse's.
+        /// its contents back out into the bag, and whatever does not fit is re-buried at the same
+        /// Location for a later recovery - never put on the ground. A no-op with no Corpse or a
+        /// Location that is not the Corpse's.
         /// </summary>
-        public void Recover(EncounterProfile location, ILootGround ground)
+        public void Recover(EncounterProfile location)
         {
             if (!_corpse.TryRecover(location, out var drops))
                 return;
@@ -84,12 +82,7 @@ namespace ToolSmiths.InventorySystem.Simulation
             var stranded = new List<ItemInstance>();
             foreach (var item in drops)
             {
-                if (_bag.TryStore(item))
-                    continue;
-
-                if (ground != null)
-                    ground.PlaceOnGround(item);
-                else
+                if (!_bag.TryStore(item))
                     stranded.Add(item);
             }
 

@@ -11,7 +11,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
     /// review — these rules had zero coverage while they lived in the scene's simulation component).
     /// A Death buries the bag's non-currency contents as the one Location-tagged Corpse, charges
     /// the currency fee, forfeits the XP and revives the hero; re-entering that Location lays the
-    /// Corpse back out, to the bag where it fits and the ground where it does not.
+    /// Corpse back out, to the bag where it fits and re-burying what does not.
     /// </summary>
     [TestFixture]
     public sealed class RunSettlementTests
@@ -119,43 +119,97 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var settlement = new RunSettlement(new InMemorySettlementBag(Item("sword")), new RecordingSettlementLedger());
             settlement.Settle(Death(), Thornwood());
 
-            settlement.Recover(Ashfen(), new RecordingLootGround());
+            settlement.Recover(Ashfen());
 
             Assert.That(settlement.Corpse.Exists, Is.True);
         }
 
-        [Test]
-        public void Recover_AtTheCorpsesLocation_StoresWhatFits_AndGroundsTheRest()
-        {
-            var bag = new InMemorySettlementBag(Item("a"), Item("b"), Item("c")) { Capacity = 0 };
-            var settlement = new RunSettlement(bag, new RecordingSettlementLedger());
-            var thornwood = Thornwood();
-            settlement.Settle(Death(), thornwood);
-            bag.Capacity = 2; // room for two of the three recovered items
-
-            var ground = new RecordingLootGround();
-            settlement.Recover(thornwood, ground);
-
-            Assert.That(bag.Stored, Has.Count.EqualTo(2));
-            Assert.That(ground.Placed, Has.Count.EqualTo(1));
-            Assert.That(settlement.Corpse.Exists, Is.False, "a recovery with a ground clears the Corpse");
-        }
+        // What does not fit stays on the Corpse, re-buried at the same Location (ADR-0009); the
+        // floor is not part of a recovery at all, so no port to it is handed in.
 
         [Test]
-        public void Recover_WithNoGround_ReBuriesTheOverflowAtTheSameLocation()
+        public void Recover_WithRoomForEverything_StoresItAll_AndClearsTheCorpse()
         {
             var bag = new InMemorySettlementBag(Item("a"), Item("b")) { Capacity = 0 };
             var settlement = new RunSettlement(bag, new RecordingSettlementLedger());
             var thornwood = Thornwood();
             settlement.Settle(Death(), thornwood);
-            bag.Capacity = 1; // one of the two fits
+            bag.Capacity = null;
 
-            settlement.Recover(thornwood, ground: null);
+            settlement.Recover(thornwood);
 
-            Assert.That(bag.Stored, Has.Count.EqualTo(1));
+            Assert.That(bag.Stored, Has.Count.EqualTo(2));
+            Assert.That(settlement.Corpse.Exists, Is.False, "nothing was left over, so nothing stays buried");
+        }
+
+        [Test]
+        public void Recover_WithAPartialFit_StoresWhatFits_AndReBuriesTheRestAtTheSameLocation()
+        {
+            var a = Item("a");
+            var b = Item("b");
+            var c = Item("c");
+            var bag = new InMemorySettlementBag(a, b, c) { Capacity = 0 };
+            var settlement = new RunSettlement(bag, new RecordingSettlementLedger());
+            var thornwood = Thornwood();
+            settlement.Settle(Death(), thornwood);
+            bag.Capacity = 2; // room for two of the three recovered items
+
+            settlement.Recover(thornwood);
+
+            Assert.That(bag.Stored, Is.EqualTo(new[] { a, b }));
             Assert.That(settlement.Corpse.Exists, Is.True, "the item that did not fit stays recoverable");
             Assert.That(settlement.Corpse.Location, Is.SameAs(thornwood));
-            Assert.That(settlement.Corpse.Items.Count, Is.EqualTo(1));
+            Assert.That(settlement.Corpse.Items, Is.EqualTo(new[] { c }));
+        }
+
+        [Test]
+        public void Recover_WithAFullBag_LeavesTheWholeCorpseWhereItLay()
+        {
+            var a = Item("a");
+            var b = Item("b");
+            var bag = new InMemorySettlementBag(a, b) { Capacity = 0 };
+            var settlement = new RunSettlement(bag, new RecordingSettlementLedger());
+            var thornwood = Thornwood();
+            settlement.Settle(Death(), thornwood);
+
+            settlement.Recover(thornwood);
+
+            Assert.That(bag.Stored, Is.Empty);
+            Assert.That(settlement.Corpse.Location, Is.SameAs(thornwood));
+            Assert.That(settlement.Corpse.Items, Is.EqualTo(new[] { a, b }));
+        }
+
+        [Test]
+        public void Recover_OfAnEmptyCorpse_StoresNothing_AndClearsIt()
+        {
+            var bag = new InMemorySettlementBag();
+            var settlement = new RunSettlement(bag, new RecordingSettlementLedger());
+            var thornwood = Thornwood();
+            settlement.Settle(Death(), thornwood);
+
+            settlement.Recover(thornwood);
+
+            Assert.That(bag.Stored, Is.Empty);
+            Assert.That(settlement.Corpse.Exists, Is.False);
+        }
+
+        [Test]
+        public void Recover_AfterALeftoverReBurial_TakesTheRestOnTheNextVisit()
+        {
+            var a = Item("a");
+            var b = Item("b");
+            var bag = new InMemorySettlementBag(a, b) { Capacity = 0 };
+            var settlement = new RunSettlement(bag, new RecordingSettlementLedger());
+            var thornwood = Thornwood();
+            settlement.Settle(Death(), thornwood);
+            bag.Capacity = 1;
+            settlement.Recover(thornwood);
+
+            bag.Capacity = null; // room made between visits
+            settlement.Recover(thornwood);
+
+            Assert.That(bag.Stored, Is.EqualTo(new[] { a, b }));
+            Assert.That(settlement.Corpse.Exists, Is.False);
         }
     }
 }

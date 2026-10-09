@@ -46,7 +46,7 @@ namespace ToolSmiths.InventorySystem.Services
         /// <summary>
         /// Through the hero's acquisition entry point, so a recovered piece of gear auto-equips
         /// into an empty slot exactly as a fresh Drop does - not a raw bag add. <c>false</c> when
-        /// it fits nowhere, so <see cref="RunSettlement.Recover"/> grounds or re-buries the item
+        /// it fits nowhere, so <see cref="RunSettlement.Recover"/> re-buries the item
         /// rather than losing it.
         /// </summary>
         public bool TryStore(ItemInstance item) => _hero.PickUpItem(item, 1u);

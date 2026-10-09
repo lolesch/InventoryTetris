@@ -164,8 +164,8 @@ the Encounter's clear.
 _Avoid_: frag, takedown, defeat
 
 **Drop**:
-Loot lying on the ground at a Location — shed by a defeated enemy, or laid out from a
-Corpse when the hero returns for it — not yet picked up. Drops accumulate as enemies
+Loot lying on the ground at a Location — shed by a defeated enemy — not yet picked up.
+A recovered **Corpse** is never laid out as Drops. Drops accumulate as enemies
 fall, never as one bundle at the end; a Drop still on the ground when the Run ends is
 gone, on Recall or Death alike. By default a Drop lies in the **Ground Items List** until the
 player clicks it; the click goes through the player's acquisition entry point (see **Quick
@@ -179,7 +179,9 @@ _Avoid_: pile (that is coins), ground loot, spill, cache
 The hero's bag, set aside at the Location where they were downed. Death empties the bag
 into the Corpse; recovering it means re-entering that Location and picking the items
 back up — through the same acquisition entry point as a **Drop**, so gear auto-equips into
-an empty slot. There is only ever one — a second Death destroys any Corpse still unclaimed —
+an empty slot. What does not fit stays on the Corpse, re-buried at the same Location to come
+back for; a recovery never lays anything on the ground. The Corpse is bag-only: equipped gear
+is untouched. There is only ever one — a second Death destroys any Corpse still unclaimed —
 and it belongs to the **Hero**: it saves with it and persists between Sessions until
 recovered.
 _Avoid_: grave, body, loot bag; remains (reserved for a possible future enemy corpse)

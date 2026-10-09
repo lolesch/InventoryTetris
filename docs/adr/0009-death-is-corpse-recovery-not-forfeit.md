@@ -33,5 +33,7 @@ at the harder Location is only recoverable by surviving there again.
 - "A second Death destroys the Corpse" bounds the mechanic to at most one persistent
   loot object at a time — deliberate, to keep both the rule and its serialization
   simple.
+- Recovery leftovers stay on the Corpse: what the bag cannot take is re-buried at the same
+  Location, never laid on the ground (floor-loot spec, 2026-10-08).
 - Harsh for an MVP by the owner's own assessment; accepted now, revisitable once the
   loop is played.

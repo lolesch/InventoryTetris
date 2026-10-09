@@ -60,7 +60,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _bound = lootFlow;
             _bound.GroundChanged += Refresh;
 
-            // The Run's first Drops can land, or a Corpse be laid out, before this could listen.
+            // The Run's first Drops can land before this could listen.
             Refresh();
         }
 

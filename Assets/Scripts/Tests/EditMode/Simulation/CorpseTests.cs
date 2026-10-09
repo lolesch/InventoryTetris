@@ -137,6 +137,24 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
+        public void ReBurying_TheLeftovers_AtTheSameLocation_KeepsOnlyTheLeftovers()
+        {
+            var corpse = new Corpse();
+            var location = Thornwood();
+            var sword = Item("sword");
+            var shield = Item("shield");
+            corpse.Bury(location, new[] { sword, shield });
+            corpse.TryRecover(location, out _);
+
+            corpse.Bury(location, new[] { shield });
+
+            Assert.That(corpse.Location, Is.SameAs(location));
+            Assert.That(corpse.Items, Is.EqualTo(new[] { shield }));
+            Assert.That(corpse.TryRecover(location, out var drops), Is.True);
+            Assert.That(drops, Is.EqualTo(new[] { shield }));
+        }
+
+        [Test]
         public void TryRecover_AtAnyOtherLocation_ProducesNoDrops()
         {
             var corpse = new Corpse();
