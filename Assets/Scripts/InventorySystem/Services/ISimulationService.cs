@@ -55,6 +55,13 @@ namespace ToolSmiths.InventorySystem.Services
         /// </summary>
         void Relocate(LocationConfig location);
 
+        /// <summary>
+        /// Whether the Hero's Corpse lies at <paramref name="location"/>. What the Hero icon's Corpse
+        /// marker under each Location toggle reads: it holds whether or not that Location is selected,
+        /// and is false once the Corpse is recovered or replaced by a Death elsewhere.
+        /// </summary>
+        bool CorpseLiesAt(LocationConfig location);
+
         /// <summary>End the Run with everything kept. Refused once the hero is down - that ends in a Death.</summary>
         RunResult Recall();
 

@@ -106,6 +106,15 @@ namespace ToolSmiths.InventorySystem.Services
             RecoverCorpseAt(hero, profile);
         }
 
+        public bool CorpseLiesAt(LocationConfig location)
+        {
+            if (location == null)
+                throw new ArgumentNullException(nameof(location));
+
+            var corpse = session.Hero.Corpse;
+            return corpse.Exists && corpse.Location == ProfileFor(location);
+        }
+
         public event Action<RunResult> RunSettled;
 
         public RunResult Recall()
