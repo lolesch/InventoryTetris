@@ -41,8 +41,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private ValueSlider originWeightSlider;
         [SerializeField] private RarityFilterSlider lootFilterSlider;
         [SerializeField] private SimSpeedSlider simSpeedSlider;
-        [FormerlySerializedAs("autoPickupToggle")] [SerializeField, Tooltip("Debug (issue #63): on picks up what the filter admits, off leaves every item on the ground.")]
-        private EventToggle eventToggle;
+        [SerializeField, Tooltip("Debug (issue #63): on picks up what the filter admits, off leaves every item on the ground.")]
+        private EventToggle autoPickupToggle;
 
         private HeroBehaviour _behaviour;
 
@@ -73,17 +73,17 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         private void SetSliderListeners(bool add)
         {
-            Wire(retreatHealthSlider, OnRetreatHealthChanged, add);
-            Wire(recallBagFillSlider, OnRecallBagFillChanged, add);
-            Wire(resourceReserveSlider, OnResourceReserveChanged, add);
-            Wire(originWeightSlider, OnOriginWeightChanged, add);
-            Wire(lootFilterSlider, OnLootFilterChanged, add);
-            Wire(simSpeedSlider, OnSimSpeedChanged, add);
+            Wire(retreatHealthSlider, ChangeHealthThreshold, add);
+            Wire(recallBagFillSlider, ChangeBagFillThreshold, add);
+            Wire(resourceReserveSlider, ChangeCastThreshold, add);
+            Wire(originWeightSlider, ChangeOriginWeight, add);
+            Wire(lootFilterSlider, ChangeLootFilter, add);
+            Wire(simSpeedSlider, ChangeSimSpeed, add);
 
-            if (eventToggle != null)
+            if (autoPickupToggle != null)
             {
-                eventToggle.Toggled -= OnToggled;
-                if (add) eventToggle.Toggled += OnToggled;
+                autoPickupToggle.Toggled -= ToggleAutoPickup;
+                if (add) autoPickupToggle.Toggled += ToggleAutoPickup;
             }
 
             static void Wire(AbstractSlider slider, System.Action<float> handler, bool add)
@@ -114,40 +114,40 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (originWeightSlider != null) originWeightSlider.SetValueWithoutNotify(_behaviour.OriginWeight);
             if (lootFilterSlider != null) lootFilterSlider.SetStepIndexWithoutNotify(HeroBehaviour.RarityIndex(_behaviour.LootFilterMinimum));
             if (simSpeedSlider != null) simSpeedSlider.SetSimSpeedWithoutNotify(_behaviour.SimSpeed);
-            if (eventToggle != null) eventToggle.SyncToggle(_behaviour.AutoPickup);
+            if (autoPickupToggle != null) autoPickupToggle.SyncToggle(_behaviour.AutoPickup);
         }
 
-        private void OnRetreatHealthChanged(float value)
+        private void ChangeHealthThreshold(float value)
         {
             if (_behaviour != null) _behaviour.RetreatHealthFraction = value;
         }
 
-        private void OnRecallBagFillChanged(float value)
+        private void ChangeBagFillThreshold(float value)
         {
             if (_behaviour != null) _behaviour.RecallBagFillFraction = value;
         }
 
-        private void OnResourceReserveChanged(float value)
+        private void ChangeCastThreshold(float value)
         {
             if (_behaviour != null) _behaviour.CastThreshold = value;
         }
 
-        private void OnOriginWeightChanged(float value)
+        private void ChangeOriginWeight(float value)
         {
             if (_behaviour != null) _behaviour.OriginWeight = value;
         }
 
-        private void OnLootFilterChanged(float value)
+        private void ChangeLootFilter(float value)
         {
             if (_behaviour != null) _behaviour.LootFilterMinimum = lootFilterSlider.Selected;
         }
 
-        private void OnToggled(bool on)
+        private void ToggleAutoPickup(bool on)
         {
             if (_behaviour != null) _behaviour.AutoPickup = on;
         }
 
-        private void OnSimSpeedChanged(float value)
+        private void ChangeSimSpeed(float value)
         {
             if (_behaviour != null) _behaviour.SimSpeed = simSpeedSlider.SimSpeed;
         }
