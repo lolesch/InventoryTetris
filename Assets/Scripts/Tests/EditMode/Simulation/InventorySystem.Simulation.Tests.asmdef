@@ -8,6 +8,7 @@
         "InventorySystem.Items",
         "InventorySystem.Containers",
         "InventorySystem.Probability",
+        "UnityEngine.UI",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

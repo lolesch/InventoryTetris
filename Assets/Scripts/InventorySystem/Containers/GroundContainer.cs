@@ -36,6 +36,9 @@ namespace ToolSmiths.InventorySystem.Inventories
             return true;
         }
 
+        /// <summary>The cells holding a Package, oldest first: a cell's index is its Package's age rank.</summary>
+        public List<Vector2Int> CellsOldestFirst() => AgeOrder();
+
         /// <summary>The Packages lying here, oldest first - the order the list view reads.</summary>
         public List<Package> PackagesOldestFirst() => AgeOrder().Select(cell => StoredPackages[cell]).ToList();
     }
