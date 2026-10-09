@@ -292,11 +292,10 @@ namespace ToolSmiths.InventorySystem.Services
 
         /// <summary>
         /// Lay the Hero's Corpse (if it is at <paramref name="profile"/>) back out - to the bag where
-        /// it fits, else the ground (or re-buried with no loot flow). The rules are
-        /// <see cref="RunSettlement.Recover"/>'s; this only hands it the live ground.
+        /// it fits, the rest stays buried on it. The rules are <see cref="RunSettlement.Recover"/>'s.
         /// </summary>
         private void RecoverCorpseAt(Hero hero, EncounterProfile profile) =>
-            SettlementFor(hero).Recover(profile, session.World.LootFlow);
+            SettlementFor(hero).Recover(profile);
 
         // Stateless over the Hero's own Corpse, so one is built for each use rather than held across
         // a hero load.

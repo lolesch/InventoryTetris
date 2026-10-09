@@ -16,8 +16,8 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// Pure state: nothing here touches a live bag or the ground. <see cref="Bury"/>'s
     /// <c>bagContents</c> must already be the bag's contents only - equipped gear is a caller
     /// contract, never filtered here, because this module cannot see <c>CharacterEquipment</c>.
-    /// Reading the bag, clearing it on burial, and placing the recovered Drops on the ground is
-    /// the engine-side loot flow, issue #26.
+    /// Recovery leftovers are <see cref="Bury"/>ed again at the same Location, never put on the
+    /// ground; reading and clearing the bag is <c>RunSettlement</c>'s port.
     /// </summary>
     public sealed class Corpse
     {

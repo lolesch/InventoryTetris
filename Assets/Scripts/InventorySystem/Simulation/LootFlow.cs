@@ -79,7 +79,7 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         /// <summary>
         /// Raised after <see cref="GroundDrops"/> gained or lost an entry - a kill grounding a Drop,
-        /// a Corpse recovery, a Quick Move to the ground, a pick-up, or the Run-end clear. Carries
+        /// a Quick Move to the ground, a pick-up, or the Run-end clear. Carries
         /// nothing: the Ground Items List (issue #63) re-reads the list, because
         /// <see cref="ItemInstance"/> is value-equal and an event naming one could not say which
         /// of two equal Drops it meant.
