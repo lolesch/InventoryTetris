@@ -23,8 +23,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// (still <see cref="RunPhase.InTown"/>, no Run yet). <see cref="FieldFacePanel"/> cascades
     /// this panel's <see cref="SimplePanel.Expand"/>/<see cref="SimplePanel.Collapse"/> straight from its own appear/
     /// disappear instead, so both follow the same UI-layer event the preview relies on. Subscribes
-    /// to slider events in <see cref="SimplePanel.BeforeAppear"/> so they are live as soon as the
-    /// panel becomes visible.
+    /// to slider events on enable and again in <see cref="SimplePanel.BeforeAppear"/>, so they are live
+    /// as soon as the panel becomes visible - including a panel the scene authors as already up.
     ///
     /// The live-encounter and last-run readouts that used to live here moved to
     /// <see cref="EncounterStatsPanel"/> (issue #61), as its own sibling section between this
@@ -45,21 +45,33 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         private HeroBehaviour _behaviour;
 
+        // A panel authored as its PanelGroup's active member is up from Awake without ever appearing
+        // (the group refuses to deactivate it, so nothing calls BeforeAppear): enabling must wire the
+        // sliders too, or they show the saved values and write nothing.
+        private void OnEnable() => Attach();
+
         protected override void BeforeAppear()
         {
             base.BeforeAppear();
 
+            Attach();
+        }
+
+        private void Attach()
+        {
+            // A hero load (#114) replaces the Hero and with it the Profile: the sliders go on
+            // writing the new one and show its values. Nothing to wire with no Session armed
+            // (an enable in Edit Mode).
+            if (!Session.TrySubscribeHeroLoaded(BindBehaviour))
+                return;
+
             BindBehaviour();
 
-            // BeforeAppear runs on every fade-in and the panel stays enabled between them, so
-            // OnPanelDisable is not a reliable pair — detach before attach so a re-appear cannot
-            // stack a second listener that writes the behaviour once per duplicate on each drag.
+            // Enable and every fade-in both land here and the panel stays enabled between fade-ins,
+            // so detach before attach: a second listener would write the behaviour once per
+            // duplicate on each drag.
             SetSliderListeners(add: false);
             SetSliderListeners(add: true);
-
-            // A hero load (#114) replaces the Hero and with it the Profile: the sliders go on
-            // writing the new one and show its values.
-            _ = Session.TrySubscribeHeroLoaded(BindBehaviour);
         }
 
         // The Hero's Behaviour Profile: the sliders write it live, and the sim reads it live.
