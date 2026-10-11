@@ -363,8 +363,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (member != _anchorOwner)
             {
                 _anchorOwner = member;
-                var checkmark = member.GetComponentInChildren<ToggleCheckmark>(true);
-                _anchor = checkmark != null ? (RectTransform)checkmark.transform : null;
+                //var checkmark = member.GetComponentInChildren<ToggleCheckmark>(true);
+                _anchor = (RectTransform) member.transform; //checkmark != null ? (RectTransform)checkmark.transform : null;
             }
 
             return _anchor;

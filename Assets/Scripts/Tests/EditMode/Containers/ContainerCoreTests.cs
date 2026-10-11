@@ -440,11 +440,11 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var equipment = Wearing(sender, BowId, ShieldId);
 
             var (shown, against) = equipment.CompareTargets(Sword(), false);
-            Assert.That(Ids(shown), Is.EqualTo(new[] { BowId, ShieldId }));
+            Assert.That(Ids(shown), Is.EqualTo(new[] { BowId }), "only the targeted slot is listed");
             Assert.That(Ids(against), Is.EqualTo(new[] { BowId }));
 
             (shown, against) = equipment.CompareTargets(Sword(), true);
-            Assert.That(Ids(shown), Is.EqualTo(new[] { ShieldId, BowId }));
+            Assert.That(Ids(shown), Is.EqualTo(new[] { ShieldId }), "shift lists the other one");
             Assert.That(Ids(against), Is.EqualTo(new[] { ShieldId }), "shift targets the second slot");
         }
 

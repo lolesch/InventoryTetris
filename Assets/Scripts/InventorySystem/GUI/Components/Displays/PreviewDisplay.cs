@@ -74,7 +74,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
             if (goldValue)
                 goldValue.Refresh(0f <= priceOverride
                     ? new Currency(priceOverride)
-                    : new Currency(view.SellValue));
+                    : new Currency(view.SellValue * package.Amount));
 
             if (frame)
                 frame.color = rarityColor;
