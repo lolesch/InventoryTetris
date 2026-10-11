@@ -55,7 +55,7 @@ MonoBehaviour:
   background: {fileID: 5062772906587210717}
   initialColor: {r: 0, g: 0, b: 0, a: 0}
   amount: {fileID: 4910545370180954890}
-  slotSize: 60
+  slotSize: 50
 --- !u!1001 &468711172340972281
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -127,6 +127,14 @@ PrefabInstance:
     - target: {fileID: 7856935647508189773, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
       propertyPath: m_RootOrder
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7856935647508189773, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 50
+      objectReference: {fileID: 0}
+    - target: {fileID: 7856935647508189773, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 7856935647508189773, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
       propertyPath: m_LocalPosition.x
