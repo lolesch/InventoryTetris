@@ -10,7 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 4737588000363776923}
   - component: {fileID: 6875568616667671697}
-  - component: {fileID: 1297111378894660768}
   m_Layer: 5
   m_Name: StaticDragDisplay
   m_TagString: Untagged
@@ -56,15 +55,7 @@ MonoBehaviour:
   background: {fileID: 5062772906587210717}
   initialColor: {r: 0, g: 0, b: 0, a: 0}
   amount: {fileID: 4910545370180954890}
-  slotSize: 60
---- !u!222 &1297111378894660768
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4737588000363776922}
-  m_CullTransparentMesh: 1
+  slotSize: 50
 --- !u!1001 &468711172340972281
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -83,6 +74,14 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 745403343036375855, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
       propertyPath: m_RaycastTarget
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2882963554637447358, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2882963554637447358, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
+      propertyPath: m_SizeDelta.y
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4001338958284427548, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
@@ -128,6 +127,14 @@ PrefabInstance:
     - target: {fileID: 7856935647508189773, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
       propertyPath: m_RootOrder
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7856935647508189773, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 50
+      objectReference: {fileID: 0}
+    - target: {fileID: 7856935647508189773, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 7856935647508189773, guid: 00a5ae12eb7b70242b73e9bc06927086, type: 3}
       propertyPath: m_LocalPosition.x

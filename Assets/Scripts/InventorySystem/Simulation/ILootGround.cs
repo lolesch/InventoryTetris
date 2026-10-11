@@ -1,17 +1,19 @@
-using ToolSmiths.InventorySystem.Items;
+using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Inventories;
 
 namespace ToolSmiths.InventorySystem.Simulation
 {
     /// <summary>
-    /// The Run's ground as a corpse recovery needs it: somewhere to seat an item that the bag
-    /// would not take. <see cref="LootFlow"/> is the real implementation (its one
-    /// <see cref="LootFlow.GroundDrops"/> list, cleared on Run end); a Run with no loot flow
-    /// hands <see cref="RunSettlement.Recover"/> a <c>null</c> ground and the overflow is
-    /// re-buried instead.
+    /// The Run's ground as a discard needs it: somewhere to lay a Package. <see cref="LootFlow"/> is the
+    /// real implementation (its one <see cref="GroundContainer"/>, wiped on Run end); a Run with no loot
+    /// flow hands <see cref="DropTransaction"/> a <c>null</c> ground and the item stays where it was.
     /// </summary>
     public interface ILootGround
     {
-        /// <summary>Seat <paramref name="item"/> on the ground - picked back up, or seen stranded.</summary>
-        void PlaceOnGround(ItemInstance item);
+        /// <summary>
+        /// Lays <paramref name="package"/> on the ground, evicting the oldest when it is full.
+        /// False, with nothing changed, for a Package larger than the whole ground.
+        /// </summary>
+        bool PlaceOnGround(Package package);
     }
 }

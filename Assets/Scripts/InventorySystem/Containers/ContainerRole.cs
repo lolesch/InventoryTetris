@@ -27,5 +27,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// <summary>The Sold container (issues #124, #127): what the player sold, shown on each
         /// selling panel's Sold tab. Both panels' Sold grids bind the one container.</summary>
         Sold,
+        /// <summary>The Run's ground: where the Drops lie. Empty in Town, wiped when a Run ends.</summary>
+        Ground,
     }
 }

@@ -3,11 +3,11 @@ using ToolSmiths.InventorySystem.Data.Enums;
 namespace ToolSmiths.InventorySystem.Simulation
 {
     /// <summary>
-    /// What a weapon type means on the ground (spatial-combat spec): the hero's Strike Range is a base property
+    /// What a weapon type means on the arena (spatial-combat spec): the hero's Strike Range is a base property
     /// of the type he wields, never a stat, so gear cannot roll extra reach and range does not become the one
     /// stat every build must stack. An unarmed hero (or one holding no weapon) has
-    /// <see cref="GroundTuning.HeroStrikeRange"/> instead. The numbers are untested starting points, in
-    /// ground units, to be tuned in play.
+    /// <see cref="ArenaTuning.HeroStrikeRange"/> instead. The numbers are untested starting points, in
+    /// arena units, to be tuned in play.
     /// </summary>
     public static class WeaponTypes
     {

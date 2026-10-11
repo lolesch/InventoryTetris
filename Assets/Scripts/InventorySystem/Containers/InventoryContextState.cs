@@ -56,9 +56,9 @@ namespace ToolSmiths.InventorySystem.Inventories
         public void Close() => Set(InventoryContext.None);
 
         /// <summary>
-        /// Applies a Run-phase change. Only <see cref="InventoryContext.None"/> and
-        /// <see cref="InventoryContext.Hero"/> are reachable while <paramref name="inField"/>
-        /// - a phase change that leaves <see cref="Active"/> unreachable drops it to
+        /// Applies a Run-phase change. Only <see cref="InventoryContext.None"/>,
+        /// <see cref="InventoryContext.Hero"/> and <see cref="InventoryContext.Ground"/> are reachable
+        /// while <paramref name="inField"/> - a phase change that leaves <see cref="Active"/> unreachable drops it to
         /// <see cref="InventoryContext.None"/>. Returning to Town reopens nothing on its own.
         /// </summary>
         public void SyncToPhase(bool inField)
@@ -68,7 +68,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         }
 
         private static bool IsReachableInField(InventoryContext context) =>
-            context is InventoryContext.None or InventoryContext.Hero;
+            context is InventoryContext.None or InventoryContext.Hero or InventoryContext.Ground;
 
         /// <summary>
         /// The one panel a context names for itself: the Hero Panel for
@@ -83,6 +83,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             InventoryContext.Stash => InventoryPanels.Stash,
             InventoryContext.Vendor => InventoryPanels.Vendor,
             InventoryContext.Healer => InventoryPanels.Healer,
+            InventoryContext.Ground => InventoryPanels.Ground,
             _ => InventoryPanels.None,
         };
 

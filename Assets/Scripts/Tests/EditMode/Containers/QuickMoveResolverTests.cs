@@ -39,11 +39,12 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 
         private readonly AbstractDimensionalContainer healerSupply = new CharacterInventory(new Vector2Int(4, 4), catalog);
         private readonly AbstractDimensionalContainer sold = new SoldContainer(new Vector2Int(4, 4), catalog);
+        private readonly AbstractDimensionalContainer ground = new GroundContainer(new Vector2Int(4, 4), catalog);
 
         private QuickMoveIntent Resolve(InventoryContext context, AbstractDimensionalContainer source,
             AbstractDimensionalContainer backpack, AbstractDimensionalContainer stash,
             AbstractDimensionalContainer equipment, AbstractDimensionalContainer store, bool groundOpen = false)
-            => QuickMoveResolver.Resolve(context, source, backpack, stash, equipment, store, healerSupply, sold, groundOpen);
+            => QuickMoveResolver.Resolve(context, source, backpack, stash, equipment, store, healerSupply, sold, ground, groundOpen);
 
         // ── Stash open: backpack ↔ Stash, equipment → Stash (byte-for-byte as today) ──
 
@@ -137,6 +138,48 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var intent = Resolve(InventoryContext.Hero, SourceOf(sourceName), backpack, stash, equipment, store, groundOpen: true);
 
             Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.None));
+        }
+
+        // ── Ground context: the Hero row, and picking a Drop up off the ground ──
+
+        [Test]
+        public void GroundContext_Backpack_DropsTheItemToTheGround()
+        {
+            var intent = Resolve(InventoryContext.Ground, backpack, backpack, stash, equipment, store, groundOpen: true);
+
+            Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.Drop));
+        }
+
+        [Test]
+        public void GroundContext_TheGround_PicksTheDropUp()
+        {
+            var intent = Resolve(InventoryContext.Ground, ground, backpack, stash, equipment, store, groundOpen: true);
+
+            Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.PickUp));
+            Assert.That(intent.Target, Is.Null);
+        }
+
+        [TestCase(nameof(stash))]
+        [TestCase(nameof(equipment))]
+        public void GroundContext_OtherPlayerContainers_DoNothing(string sourceName)
+        {
+            var intent = Resolve(InventoryContext.Ground, SourceOf(sourceName), backpack, stash, equipment, store, groundOpen: true);
+
+            Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.None));
+        }
+
+        [Test]
+        public void GroundContext_WithNoGroundOpen_DoesNothing()
+        {
+            Assert.That(Resolve(InventoryContext.Ground, backpack, backpack, stash, equipment, store).Kind, Is.EqualTo(QuickMoveIntentKind.None));
+            Assert.That(Resolve(InventoryContext.Ground, ground, backpack, stash, equipment, store).Kind, Is.EqualTo(QuickMoveIntentKind.None));
+        }
+
+        [Test]
+        public void TheGround_PicksNothingUp_OutsideTheGroundContext()
+        {
+            Assert.That(Resolve(InventoryContext.Hero, ground, backpack, stash, equipment, store, groundOpen: true).Kind,
+                Is.EqualTo(QuickMoveIntentKind.None));
         }
 
         [TestCase(InventoryContext.None)]

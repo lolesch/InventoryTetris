@@ -328,7 +328,8 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// </summary>
         /// <param name="secondSlot">Shift: the equip would target the second slot, so its
         /// occupant leads and the display order flips wherever two slots are in play.</param>
-        /// <returns><c>Shown</c>: each distinct worn item once, in display order (at most two).
+        /// <returns><c>Shown</c>: each distinct worn item once, in display order. Two only for a hovered
+        /// two-hander; every other item lists just the occupant of the slot it targets.
         /// <c>Against</c>: the items an equip would actually displace and the hovered one's stat rows are
         /// measured against - the targeted slot's occupant, for a two-hander everything it pushes out,
         /// and nothing when the equip lands in a free slot.</returns>
@@ -364,6 +365,11 @@ namespace ToolSmiths.InventorySystem.Inventories
                 against.AddRange(shown);
             else if (SwapTarget(equipmentType, secondSlot ? 1 : 0) is { } target && OccupantOf(target) is { IsValid: true } displaced)
                 against.Add(displaced);
+
+            // Only a two-hander has two worn items in play. Anything else lists the one slot it targets (the
+            // leader, which Shift flips), so the second panel is for the weapon and off-hand it would replace.
+            if (!IsTwoHandedWeapon(equipmentType) && 1 < shown.Count)
+                shown.RemoveRange(1, shown.Count - 1);
 
             return (shown, against);
 

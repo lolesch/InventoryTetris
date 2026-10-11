@@ -11,7 +11,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
     /// <summary>
     /// The Cast is an area (issue #212): of the enemies within Cast Range the hero aims at the one whose shape would
     /// catch the most enemies, and everything inside takes his magical damage. Driven through the simulation's
-    /// advance entry point. The enemies are placed by hand on the ground (the hero stands at its origin) and pinned
+    /// advance entry point. The enemies are placed by hand on the arena (the hero stands at its origin) and pinned
     /// there, so a test reads as a picture: who stands where, and who is hit by the one Cast the hero can afford.
     /// </summary>
     [TestFixture]
@@ -21,7 +21,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         private const float CastDamage = 5f;
         private const float CastCost = 16f;
 
-        // One enemy to place: x and z on the ground, the hero at (0, 0).
+        // One enemy to place: x and z on the arena, the hero at (0, 0).
         private readonly struct At
         {
             public readonly float X, Z;

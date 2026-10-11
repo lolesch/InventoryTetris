@@ -13,7 +13,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
     /// The typed hit event and the damage spread (issue #211): every Strike and Cast that lands is announced with
     /// its dealer, target, damage type, raw amount and the amount actually lost, and each hit rolls a small spread
     /// on its own random stream. Driven through the simulation's advance entry point on the collapsed default
-    /// ground, where every enemy is in reach from the first tick. The lost amount is checked against a known Armor
+    /// arena, where every enemy is in reach from the first tick. The lost amount is checked against a known Armor
     /// and Magic Resist, each paired with the opposite resist as its negative control.
     /// </summary>
     [TestFixture]

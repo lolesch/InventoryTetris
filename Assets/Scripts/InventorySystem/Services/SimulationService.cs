@@ -2,6 +2,7 @@ using Submodules.Utility.Services;
 using System;
 using System.Collections.Generic;
 using ToolSmiths.InventorySystem.Data.Enums;
+using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Locations;
 using ToolSmiths.InventorySystem.Runtime.Character;
@@ -23,7 +24,7 @@ namespace ToolSmiths.InventorySystem.Services
     /// handed, binding the hero adapter, the roll source and the Behaviour Profile, and wires the
     /// per-kill loot flow (issue #24) and XP (issue #44) over it. The ADR-0009 Death penalty and the
     /// corpse-recovery rules are <see cref="RunSettlement"/>'s; this binds its ports to the Hero.
-    /// The tuning (cast cost, penalty fractions, and the ground, Cast and damage spread an Encounter plays on)
+    /// The tuning (cast cost, penalty fractions, and the arena, Cast and damage spread an Encounter plays on)
     /// comes from <see cref="GameConfig"/>.
     /// </summary>
     public sealed class SimulationService : ISimulationService
@@ -103,6 +104,21 @@ namespace ToolSmiths.InventorySystem.Services
             hero.SelectedLocation = location;
 
             RecoverCorpseAt(hero, profile);
+        }
+
+        public bool CorpseLiesAt(LocationConfig location)
+        {
+            if (location == null)
+                throw new ArgumentNullException(nameof(location));
+
+            var corpse = session.Hero.Corpse;
+            return corpse.Exists && corpse.Location == ProfileFor(location);
+        }
+
+        public event Action CorpseChanged
+        {
+            add => session.Hero.Corpse.Changed += value;
+            remove => session.Hero.Corpse.Changed -= value;
         }
 
         public event Action<RunResult> RunSettled;
@@ -231,7 +247,8 @@ namespace ToolSmiths.InventorySystem.Services
                     hero.GainExperience(xp, hero.Level);
             };
 
-            var lootFlow = new LootFlow(encounter, hero.Behaviour, generator, items, hero, hero.Wallet);
+            var lootFlow = new LootFlow(encounter, hero.Behaviour, generator, items, hero, hero.Wallet,
+                world.Ground, hero.Inventory, hero.Equipment);
 
             // The Run accumulates the base-unit coin take so Death's fee reads it (issue #44).
             lootFlow.CoinsBanked += run.BankCurrency;
@@ -244,7 +261,7 @@ namespace ToolSmiths.InventorySystem.Services
         }
 
         /// <summary>
-        /// The tuning a real Encounter plays on: the placeholder ground, Cast and damage spread authored on
+        /// The tuning a real Encounter plays on: the placeholder arena, Cast and damage spread authored on
         /// <paramref name="config"/>. A value outside what the sim accepts is pulled back into range, so a
         /// hand-edited asset cannot make a Send throw. The weapon-type Strike Range table stays in
         /// <see cref="WeaponTypes"/>.
@@ -252,9 +269,9 @@ namespace ToolSmiths.InventorySystem.Services
         private static EncounterTuning TuningFor(GameConfig config) => new()
         {
             DelayFirstSpawn = true,
-            Ground = new GroundTuning
+            Arena = new ArenaTuning
             {
-                Radius = Mathf.Max(0f, config.GroundRadius),
+                Radius = Mathf.Max(0f, config.ArenaRadius),
                 SpawnMargin = Mathf.Max(0f, config.SpawnMargin),
                 StopJitter = Mathf.Clamp(config.StopJitter, 0f, 0.99f),
                 BearingJitter = Mathf.Clamp01(config.BearingJitter),
@@ -292,11 +309,10 @@ namespace ToolSmiths.InventorySystem.Services
 
         /// <summary>
         /// Lay the Hero's Corpse (if it is at <paramref name="profile"/>) back out - to the bag where
-        /// it fits, else the ground (or re-buried with no loot flow). The rules are
-        /// <see cref="RunSettlement.Recover"/>'s; this only hands it the live ground.
+        /// it fits, the rest stays buried on it. The rules are <see cref="RunSettlement.Recover"/>'s.
         /// </summary>
         private void RecoverCorpseAt(Hero hero, EncounterProfile profile) =>
-            SettlementFor(hero).Recover(profile, session.World.LootFlow);
+            SettlementFor(hero).Recover(profile);
 
         // Stateless over the Hero's own Corpse, so one is built for each use rather than held across
         // a hero load.

@@ -99,7 +99,7 @@ context but `Hero`, and a listed source comes back to the hub. A context with no
 moves nothing — the **Supply** is never a sink, and its own shift-click stays a **Buy** in
 every context. `Hero` has one row of its own: while a **Run** has a ground, the **Inventory**
 drops its item there, into the **Ground Items List**; in Town there is no ground, so `Hero`
-moves nothing. A move between containers always executes — into the target container, or the
+moves nothing. `Ground` has that row and one more: a shift-click on the ground picks the **Drop** up. A move between containers always executes — into the target container, or the
 hand if that is full. A retrieval from the **Stash** and a **Buy** go through the player's
 acquisition entry point instead, so auto-equip applies, and when nothing has room they roll
 back with nothing moved.
@@ -164,22 +164,38 @@ the Encounter's clear.
 _Avoid_: frag, takedown, defeat
 
 **Drop**:
-Loot lying on the ground at a Location — shed by a defeated enemy, or laid out from a
-Corpse when the hero returns for it — not yet picked up. Drops accumulate as enemies
+Loot lying on the ground at a Location — shed by a defeated enemy — not yet picked up.
+A recovered **Corpse** is never laid out as Drops. Drops accumulate as enemies
 fall, never as one bundle at the end; a Drop still on the ground when the Run ends is
-gone, on Recall or Death alike. By default a Drop lies in the **Ground Items List** until the
-player clicks it; the click goes through the player's acquisition entry point (see **Quick
-Move**) — auto-equip into an empty slot, else the **Inventory**; with no room it stays on the
-ground. A debug switch on the Combat Panel, `AutoPickup`, hands that back to the hero: on, a
+gone, on Recall or Death alike. The ground is a stash-sized grid: a Drop lies at the cell it
+landed in and never moves, and when a new package does not fit the oldest ones are removed
+until it does (one larger than the whole grid is refused). By default a Drop lies in the
+**Ground Items List** until the player clicks it; the click goes through the player's acquisition
+entry point (see **Quick Move**) — auto-equip into an empty slot, else the **Inventory**; with no
+room it stays on the ground. A debug switch on the Combat Panel, `AutoPickup`, hands that back to the hero: on, a
 Drop the hero's loot filter admits is picked up the same way as it falls, and only the rest
-stay down. A coin Pile the filter admits banks to the Wallet on the spot either way.
+stay down. A coin Pile follows the same rule: with `AutoPickup` on and the filter admitting its
+denomination the Wallet takes what it can, and the rest — or the whole Pile, with `AutoPickup`
+off — lies on the ground as a stack of that denomination's coin, merging with the stack already
+there up to the item's stack limit and making it the newest; denominations never consolidate on
+their own. A coin stack pushed out by newer loot banks to the Wallet first and only what the
+Wallet cannot take is lost, and it does not count toward the **Run**'s take; clicking one banks
+it, and what the Wallet cannot take stays.
 _Avoid_: pile (that is coins), ground loot, spill, cache
+
+**Ground**:
+Where a **Run**'s **Drops** lie: one stash-sized grid per Run, wiped when the Run ends. In Town
+there is no Run and so no ground. The **Ground Items List** and a grid of the same cells on the
+Combat Panel are two views of it. What lands and what is evicted is the **Drop**'s rule.
+_Avoid_: floor, loot area, arena (that is where the fight takes place)
 
 **Corpse**:
 The hero's bag, set aside at the Location where they were downed. Death empties the bag
 into the Corpse; recovering it means re-entering that Location and picking the items
 back up — through the same acquisition entry point as a **Drop**, so gear auto-equips into
-an empty slot. There is only ever one — a second Death destroys any Corpse still unclaimed —
+an empty slot. What does not fit stays on the Corpse, re-buried at the same Location to come
+back for; a recovery never lays anything on the ground. The Corpse is bag-only: equipped gear
+is untouched. There is only ever one — a second Death destroys any Corpse still unclaimed —
 and it belongs to the **Hero**: it saves with it and persists between Sessions until
 recovered.
 _Avoid_: grave, body, loot bag; remains (reserved for a possible future enemy corpse)
@@ -389,21 +405,22 @@ physical (mitigated by the hero's Armor), a Skirmisher's magical (by his Magic R
 have a Magic Resist of their own, so the hero's Cast is mitigated like his Strike.
 _Avoid_: swing, attack (a Cast attacks too), auto-attack, basic attack
 
-**Ground**:
+**Arena**:
 The flat disk the fight takes place on, owned by the simulation (spatial-combat spec). The
 hero stands at its **Origin**; enemies spawn a margin beyond its edge, on a bearing the sim
-chooses, and walk in. The arena draws positions the sim owns; it never moves anyone.
-_Avoid_: map, arena (that is the view), field, board
+chooses, and walk in. The arena view draws positions the sim owns; it never moves anyone.
+Distances in it are in arena units.
+_Avoid_: map, field, board, terrain, ground (that is where **Drops** lie)
 
 **Origin**:
-The centre of the **Ground**, where the hero calls home and stands until he walks. In the
-arena it is drawn at the selected Location's Hero icon; the icon stays the Location's marker
-and does not move, while the hero **figure** that stands on the ground is a separate element.
-The arena maps ground distance to canvas distance with one adjustable tilt (ADR-0018).
+The centre of the **Arena**, where the hero calls home and stands until he walks. In the
+arena view it is drawn at the selected Location's Hero icon; the icon stays the Location's marker
+and does not move, while the hero **figure** that stands in the arena is a separate element.
+The arena view maps arena distance to canvas distance with one adjustable tilt (ADR-0018).
 _Avoid_: spawn point, anchor (that is the Hero icon's rect, the view's side of it), centre
 
 **Strike Range**:
-How far from the hero a Strike reaches, in ground units. An enemy Strikes only while the hero
+How far from the hero a Strike reaches, in arena units. An enemy Strikes only while the hero
 is within its Strike Range, so a melee enemy closes in and a ranged one - the same capability
 with a longer range - stands off. The unarmed hero has a short one; gear never rolls range.
 _Avoid_: reach, melee range, weapon range
@@ -420,7 +437,7 @@ of the kit.
 _Avoid_: spell, nuke, ability, skill
 
 **Cast Range**:
-How far from the hero an enemy may stand to be aimed at by the **Cast**, in ground units,
+How far from the hero an enemy may stand to be aimed at by the **Cast**, in arena units,
 read from the **Cast definition**. It limits who the hero aims at, not what the shape hits: an
 enemy beyond it is still caught when it stands inside a shape aimed at one within range.
 _Avoid_: spell range, reach, aggro range
@@ -498,7 +515,7 @@ _Avoid_: leash, aggro range, home pull
 The one enemy the hero is fighting. He keeps it until it falls, so a fresh spawn never turns him round mid-run,
 and walks until it is within his **Strike Range**, without overshooting. The exception is a target still out of
 reach while another enemy stands inside it: he then switches to the best-scoring enemy inside (**Origin
-Weight**), so he is never hit for free. With no enemy alive he walks back to the **Origin**. The arena rings this
+Weight**), so he is never hit for free. With no enemy alive he walks back to the **Origin**. The arena view rings this
 enemy. His movement speed is the `MovementSpeed` stat; his **Strike Range** is his weapon type's, not a stat.
 _Avoid_: lock-on, focus target, aggro target, current target
 
@@ -541,17 +558,18 @@ Run.
 _Avoid_: tab, drawer, sidebar; right-side (that is the **Hero Panel**)
 
 **Inventory Context**:
-The single-valued enum (`None`, `Hero`, `Stash`, `Vendor`, `Healer`) that answers two
+The single-valued enum (`None`, `Hero`, `Stash`, `Vendor`, `Healer`, `Ground`) that answers two
 questions at once: which panels are up, and where a **Quick Move** lands. Entry points
 *request* a context; every panel *derives* its visibility from it. A context names the
-**Hero Panel** plus at most one Town Stop's panel, so the panel set is derived rather than
+**Hero Panel** plus at most one other panel (a Town Stop's, or the **Combat Panel**'s ground
+tab for `Ground`, so that one needs the hero's bag open too), so the panel set is derived rather than
 announced, and a panel that belongs to every context can never be the thing that names one
 (ADR-0013). It is held by the **World** (reached through the inventory service,
 ADR-0015) and read by the trade flow for **Quick Move**
 routing. Its members are not homogeneous and need not be — the Stash is the player's
 own storage, the Vendor is someone else's — because the only question the enum answers is
-which context is active. Run phase is not a member: only `None` and `Hero` are reachable
-in the field, so a Run *constrains* contexts rather than being one.
+which context is active. Run phase is not a member: only `None`, `Hero` and `Ground` are
+reachable in the field, so a Run *constrains* contexts rather than being one.
 _Avoid_: Side Panel Context (retired), trade target, active panel, current context
 
 **Combat Panel**:
@@ -566,13 +584,16 @@ cooldown overlays. Minimal v1 is flash-only; cooldown visuals are a follow-up.
 _Avoid_: skill bar, action bar, power bar
 
 **Ground Items List**:
-A pooled list of slot displays for items lying on the ground. Each entry shows the
-item name and icon, supports hover preview and click-to-pick-up. One slot per item,
-not spatial. A click picks the **Drop** up through the player's acquisition entry point,
-so a full bag leaves it lying there. It also shows what the player dropped there — by Quick
-Move or by releasing a drag on the floor slot — and like any **Drop** it is gone when the Run
-ends. With no Run there is no ground, and an item released on the floor slot goes back where it
-came from.
+A pooled list of slot displays reading the **Ground**, in age order, oldest first.
+Each entry shows the item name and icon, supports hover preview and click-to-pick-up. One
+entry per package, so a stack is one entry, not one per item. A click picks the **Drop** up
+through the player's acquisition entry point, so a full bag leaves it lying there. The ground
+is a grid container the size of the stash, and this list is its second view: both read the same
+packages. A package that lands, or a stack that gains items, becomes the newest; when the ground
+is full the oldest are removed until the new one fits, and nothing else is rearranged. It also
+shows what the player dropped there — by Quick Move or by releasing a drag on the ground slot,
+which evict the oldest the same way — and like any **Drop** it is gone when the Run ends. With
+no Run there is no ground, and an item released on the ground slot goes back where it came from.
 _Avoid_: loot beam, drop list, world items
 
 

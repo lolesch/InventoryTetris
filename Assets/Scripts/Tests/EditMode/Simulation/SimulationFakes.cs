@@ -238,12 +238,22 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         public void ReviveIfDown() => ReviveCalls++;
     }
 
-    /// <summary>An <see cref="ILootGround"/> that just collects what it is handed.</summary>
+    /// <summary>An <see cref="ILootGround"/> that just collects what it is handed, or refuses it when told to.</summary>
     internal sealed class RecordingLootGround : ILootGround
     {
-        public List<ItemInstance> Placed { get; } = new();
+        public List<Package> Placed { get; } = new();
 
-        public void PlaceOnGround(ItemInstance item) => Placed.Add(item);
+        /// <summary>The ground is too small for anything: every Package is turned away.</summary>
+        public bool Refuses { get; set; }
+
+        public bool PlaceOnGround(Package package)
+        {
+            if (Refuses)
+                return false;
+
+            Placed.Add(package);
+            return true;
+        }
     }
 
     internal static class Profiles

@@ -32,18 +32,18 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         /// <summary>
         /// The Cast's range, targeting, shape, size and anchor (issue #212). Defaults to
-        /// <see cref="CastDefinition.Standard"/>; on the collapsed default <see cref="Ground"/> every enemy stands
+        /// <see cref="CastDefinition.Standard"/>; on the collapsed default <see cref="Arena"/> every enemy stands
         /// on the hero, so it catches them all. The <c>SimulationService</c> sets the standard one explicitly, so a
         /// change to this default can never move the game.
         /// </summary>
         public CastDefinition Cast { get; set; } = CastDefinition.Standard();
 
         /// <summary>
-        /// The ground the fight takes place on. Collapsed by default - every enemy spawns on the hero, so a
+        /// The arena the fight takes place on. Collapsed by default - every enemy spawns on the hero, so a
         /// test sees the fight at once, as with <see cref="DelayFirstSpawn"/>; the <c>SimulationService</c>
-        /// plays on <see cref="GroundTuning.Standard"/>.
+        /// plays on <see cref="ArenaTuning.Standard"/>.
         /// </summary>
-        public GroundTuning Ground { get; set; } = new();
+        public ArenaTuning Arena { get; set; } = new();
 
         /// <summary>How the hero picks the enemy he fights. A tuning value until skills can supply it.</summary>
         public HeroTargeting HeroTargeting { get; set; } = HeroTargeting.WeightedProximity;
@@ -77,9 +77,9 @@ namespace ToolSmiths.InventorySystem.Simulation
                 throw new ArgumentOutOfRangeException(nameof(DamageSpread), DamageSpread, "Damage spread is a fraction of 0..1.");
             if (MaxTicksPerAdvance < 1)
                 throw new ArgumentOutOfRangeException(nameof(MaxTicksPerAdvance), MaxTicksPerAdvance, "Max ticks per advance must be at least 1.");
-            if (Ground == null)
-                throw new ArgumentNullException(nameof(Ground));
-            Ground.Validate();
+            if (Arena == null)
+                throw new ArgumentNullException(nameof(Arena));
+            Arena.Validate();
         }
     }
 }

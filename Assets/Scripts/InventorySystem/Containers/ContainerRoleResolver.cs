@@ -11,7 +11,8 @@ namespace ToolSmiths.InventorySystem.Inventories
         public static AbstractDimensionalContainer Resolve(ContainerRole role,
             AbstractDimensionalContainer equipment, AbstractDimensionalContainer inventory,
             AbstractDimensionalContainer stash, AbstractDimensionalContainer store,
-            AbstractDimensionalContainer healerSupply, AbstractDimensionalContainer sold) => role switch
+            AbstractDimensionalContainer healerSupply, AbstractDimensionalContainer sold,
+            AbstractDimensionalContainer ground) => role switch
         {
             ContainerRole.Equipment => equipment,
             ContainerRole.Inventory => inventory,
@@ -19,6 +20,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             ContainerRole.VendorSupply => store,
             ContainerRole.HealerSupply => healerSupply,
             ContainerRole.Sold => sold,
+            ContainerRole.Ground => ground,
             _ => null,
         };
     }

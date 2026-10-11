@@ -12,14 +12,14 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
     /// The hero walks to fight (issue #209): he closes to his Strike Range on his target, keeps it until it
     /// falls, and walks home when nothing lives. Everything is observed through
     /// <see cref="EncounterSimulation.Advance"/> with a fake hero. A Skirmisher stands off at about 5.4 units,
-    /// outside the unarmed Strike Range of 1.5, so only a hero who walks can reach it; the standard ground is
+    /// outside the unarmed Strike Range of 1.5, so only a hero who walks can reach it; the standard arena is
     /// radius 10 + margin 2, and 300 points of movement speed are 3 units per second.
     /// </summary>
     [TestFixture]
     public sealed class HeroWalkTests
     {
         private const float Tick = 0.1f;
-        private const float WalkSpeed = 300f; // stat points: 3 ground units per second at the default scale
+        private const float WalkSpeed = 300f; // stat points: 3 arena units per second at the default scale
         private const float UnarmedRange = 1.5f;
 
         // Strikes on every tick for a sliver of damage, so a Skirmisher (about 60 health) outlives every test that is not about
@@ -33,16 +33,16 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             MovementSpeed = speed,
         };
 
-        private static EncounterTuning OnTheGround(float beat = 1000f)
+        private static EncounterTuning OnTheArena(float beat = 1000f)
         {
-            var tuning = new EncounterTuning { Ground = GroundTuning.Standard(), Beat = beat };
-            tuning.Ground.HeroStrikeRange = UnarmedRange;
+            var tuning = new EncounterTuning { Arena = ArenaTuning.Standard(), Beat = beat };
+            tuning.Arena.HeroStrikeRange = UnarmedRange;
             return tuning;
         }
 
         private static EncounterSimulation Sim(FakeHero hero, EncounterProfile profile, EncounterTuning tuning = null,
             HeroBehaviour behaviour = null, IRollSource movement = null) => new(hero, profile, new ConstantRollSource(0f),
-            behaviour ?? Behaviours.Engaging(10), tuning ?? OnTheGround(), bag: null,
+            behaviour ?? Behaviours.Engaging(10), tuning ?? OnTheArena(), bag: null,
             movementRolls: movement ?? new ConstantRollSource(0.5f));
 
         private static EncounterSimulation SoloSkirmisher(FakeHero hero, EncounterTuning tuning = null) =>
@@ -64,7 +64,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
             Run(sim, 100);
 
-            Assert.That(sim.HeroPosition, Is.Not.EqualTo(sim.Ground.Origin), "he walked");
+            Assert.That(sim.HeroPosition, Is.Not.EqualTo(sim.Arena.Origin), "he walked");
             Assert.That(Gap(sim, skirmisher), Is.EqualTo(UnarmedRange).Within(0.01f), "and stopped at his Strike Range");
         }
 
@@ -87,7 +87,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
             Run(sim, 200);
 
-            Assert.That(sim.HeroPosition, Is.EqualTo(sim.Ground.Origin));
+            Assert.That(sim.HeroPosition, Is.EqualTo(sim.Arena.Origin));
             Assert.That(Gap(sim, skirmisher), Is.GreaterThan(UnarmedRange));
             Assert.That(skirmisher.Health, Is.EqualTo(skirmisher.MaxHealth), "he cannot reach it");
         }
@@ -100,19 +100,19 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
             Run(sim, 50);
 
-            Assert.That(sim.HeroPosition, Is.EqualTo(sim.Ground.Origin));
+            Assert.That(sim.HeroPosition, Is.EqualTo(sim.Arena.Origin));
         }
 
         [Test]
-        public void TheHeroWalks_MovementSpeedTimesTheGroundsScale_UnitsPerSecond()
+        public void TheHeroWalks_MovementSpeedTimesTheArenasScale_UnitsPerSecond()
         {
             float Walked(float scale)
             {
-                var tuning = OnTheGround();
-                tuning.Ground.MovementSpeedScale = scale;
+                var tuning = OnTheArena();
+                tuning.Arena.MovementSpeedScale = scale;
                 var sim = SoloSkirmisher(Walker(), tuning);
                 Run(sim, 10); // one second
-                return Coordinate.Distance(sim.HeroPosition, sim.Ground.Origin);
+                return Coordinate.Distance(sim.HeroPosition, sim.Arena.Origin);
             }
 
             Assert.That(Walked(0.01f), Is.EqualTo(3f).Within(0.01f));
@@ -120,12 +120,12 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
-        public void TheHeroStopsAtHisWeaponsStrikeRange_AndAnUnarmedHeroAtTheGrounds()
+        public void TheHeroStopsAtHisWeaponsStrikeRange_AndAnUnarmedHeroAtTheArenas()
         {
-            float StoppedAt(float? weaponRange, float groundRange)
+            float StoppedAt(float? weaponRange, float arenaRange)
             {
-                var tuning = OnTheGround();
-                tuning.Ground.HeroStrikeRange = groundRange;
+                var tuning = OnTheArena();
+                tuning.Arena.HeroStrikeRange = arenaRange;
                 var hero = Walker();
                 hero.WeaponStrikeRange = weaponRange;
                 var sim = SoloSkirmisher(hero, tuning);
@@ -133,8 +133,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
                 return Gap(sim, sim.Enemies.Single());
             }
 
-            Assert.That(StoppedAt(weaponRange: 4f, groundRange: 1.5f), Is.EqualTo(4f).Within(0.01f), "the weapon sets it");
-            Assert.That(StoppedAt(weaponRange: null, groundRange: 2.5f), Is.EqualTo(2.5f).Within(0.01f), "unarmed falls back to the ground's");
+            Assert.That(StoppedAt(weaponRange: 4f, arenaRange: 1.5f), Is.EqualTo(4f).Within(0.01f), "the weapon sets it");
+            Assert.That(StoppedAt(weaponRange: null, arenaRange: 2.5f), Is.EqualTo(2.5f).Within(0.01f), "unarmed falls back to the arena's");
         }
 
         [Test]
@@ -143,17 +143,17 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var sim = SoloSkirmisher(Walker(damage: 30f));
             for (var i = 0; i < 200 && sim.EnemiesDefeated == 0; i++) sim.Advance(Tick);
             Assert.That(sim.EnemiesDefeated, Is.EqualTo(1), "premise: he killed it");
-            var away = Coordinate.Distance(sim.HeroPosition, sim.Ground.Origin);
+            var away = Coordinate.Distance(sim.HeroPosition, sim.Arena.Origin);
             Assert.That(away, Is.GreaterThan(1f), "premise: it drew him off the origin");
 
             var trail = new List<float>();
             for (var i = 0; i < 100; i++)
             {
                 sim.Advance(Tick);
-                trail.Add(Coordinate.Distance(sim.HeroPosition, sim.Ground.Origin));
+                trail.Add(Coordinate.Distance(sim.HeroPosition, sim.Arena.Origin));
             }
 
-            Assert.That(sim.HeroPosition, Is.EqualTo(sim.Ground.Origin), "home, exactly - no overshoot");
+            Assert.That(sim.HeroPosition, Is.EqualTo(sim.Arena.Origin), "home, exactly - no overshoot");
             for (var i = 1; i < trail.Count; i++)
                 Assert.That(trail[i], Is.LessThanOrEqualTo(trail[i - 1]), "he only ever closes on home");
         }

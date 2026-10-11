@@ -1,5 +1,8 @@
 using System.Collections.Generic;
 using Submodules.Utility.Tools;
+using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.GUI.InventoryDisplays;
+using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Simulation;
@@ -9,76 +12,38 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 {
     /// <summary>
     /// The Ground Items List (issue #63): one pooled <see cref="GroundItemSlotDisplay"/> per Drop
-    /// in the live Run's <see cref="LootFlow.GroundDrops"/>, in ground order, growing and
-    /// shrinking as Drops land and are picked up. The container's layout group and content size
-    /// fitter do the sizing; this only keeps the rows in step with the list.
-    ///
-    /// Bound the way <see cref="EnemyArena"/> is, and for the same reason: the loot flow is
-    /// rebuilt on every Send and Relocate, and a hero load replaces the Run, so <see cref="Update"/>
-    /// compares the current one to the one it holds, and everything else is the loot flow's
-    /// <see cref="LootFlow.GroundChanged"/> event. The event names nothing - <see cref="ItemInstance"/>
-    /// is value-equal, so two equal Drops cannot be told apart by value - so every change re-reads
-    /// the list and rebinds row <c>i</c> to Drop <c>i</c>, which leaves a row whose Drop did not
-    /// move (and its hover) untouched.
+    /// on the ground, oldest first, growing and shrinking as Drops land, are evicted and are picked up. It
+    /// binds the ground by its role like any container display, and is the second view of that container beside the
+    /// ground grid. The rows' layout group and content size fitter do the sizing; this only keeps the rows in
+    /// step with the container, and fades each row by its Drop's age like the grid's slots do. Row <c>i</c> is rebound to Drop <c>i</c> on every change, which leaves a row whose
+    /// Drop and amount did not change (and its hover) untouched.
     ///
     /// A click goes to <see cref="LootFlow.PickUpFromGround"/>, which hands the Drop to the
     /// player's acquisition entry point (<see cref="IItemReceiver"/>): auto-equip, else the bag,
     /// and with no room it stays on the ground and its row stays in the list.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class GroundItemsPanel : MonoBehaviour
+    internal sealed class GroundItemsPanel : AbstractContainerDisplay
     {
         [SerializeField] private GroundItemSlotDisplay prefab;
-        [SerializeField] private Transform container;
+        [SerializeField] private Transform rows;
+        [SerializeField, Tooltip("The same fade as the ground grid's slots.")] private GroundFadeSettings fade = new();
 
         private readonly List<GroundItemSlotDisplay> _slots = new();
         private PrefabPool<GroundItemSlotDisplay> _pool;
-        private LootFlow _bound;
 
         // Lazily built rather than in Awake, which does not run again on the second Play entry
-        // under disabled domain reload - the scene object survives, only OnEnable/Update repeat.
+        // under disabled domain reload - the scene object survives, only OnEnable repeats.
         private PrefabPool<GroundItemSlotDisplay> Pool =>
-            _pool ??= new PrefabPool<GroundItemSlotDisplay>(prefab, container != null ? container : transform);
+            _pool ??= new PrefabPool<GroundItemSlotDisplay>(prefab, rows != null ? rows : transform);
 
-        private void Update()
+        // The rows follow the Drops, not the cells.
+        protected override void SetupSlotDisplays() { }
+
+        /// <summary>Rebinds the rows to the ground's Drops, oldest first: extras back to the pool, missing ones taken from it.</summary>
+        protected override void Refresh(Dictionary<Vector2Int, Package> storedPackages)
         {
-            var lootFlow = SimulationService.Instance.LootFlow;
-            if (lootFlow == _bound)
-                return;
-
-            Unbind();
-            if (lootFlow != null)
-                Bind(lootFlow);
-        }
-
-        // Update never runs while disabled, so a disabled panel would hold a subscription no one
-        // can retire. Letting go here means the first Update after re-enabling binds afresh.
-        private void OnDisable() => Unbind();
-
-        private void Bind(LootFlow lootFlow)
-        {
-            _bound = lootFlow;
-            _bound.GroundChanged += Refresh;
-
-            // The Run's first Drops can land, or a Corpse be laid out, before this could listen.
-            Refresh();
-        }
-
-        private void Unbind()
-        {
-            if (_bound != null)
-            {
-                _bound.GroundChanged -= Refresh;
-                _bound = null;
-            }
-
-            Refresh();
-        }
-
-        /// <summary>Rebinds the rows to <see cref="LootFlow.GroundDrops"/>: extras back to the pool, missing ones taken from it.</summary>
-        private void Refresh()
-        {
-            var drops = _bound != null ? _bound.GroundDrops : null;
+            var drops = (Container as GroundContainer)?.PackagesOldestFirst();
             var count = drops?.Count ?? 0;
 
             while (count < _slots.Count)
@@ -92,15 +57,16 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 if (i == _slots.Count)
                     _slots.Add(Pool.GetObject());
 
-                _slots[i].Bind(drops[i], OnSlotClicked);
+                _slots[i].Bind(drops[i].Item, drops[i].Amount, ItemService.Instance.View(drops[i].Item), OnSlotClicked);
+                _slots[i].SetAlpha(fade.AlphaOf(count - 1 - i));
                 _slots[i].transform.SetSiblingIndex(i);
             }
         }
 
-        private void OnSlotClicked(ItemInstance item) => _ = _bound?.PickUpFromGround(item);
+        private static void OnSlotClicked(ItemInstance item) => _ = SimulationService.Instance.LootFlow?.PickUpFromGround(item);
 
-        // OnDisable also runs as Play mode tears the scene down, when a row may already be
-        // destroyed - releasing one would throw, and one exception pauses the Editor.
+        // Play mode tearing the scene down may already have destroyed a row - releasing one would
+        // throw, and one exception pauses the Editor.
         private void Release(GroundItemSlotDisplay slot)
         {
             if (slot == null)

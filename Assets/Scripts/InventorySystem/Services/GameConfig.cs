@@ -25,7 +25,7 @@ namespace ToolSmiths.InventorySystem.Services
     /// Locations. The item data is live: <see cref="ItemService"/> is built from it (#109). So are
     /// the default hero, the container sizes and the Behaviour Profile defaults: <see cref="SessionBuilder"/>
     /// builds the Hero and the World from them (#112), and <see cref="SimulationService"/> reads the
-    /// cast cost and the Death penalty fractions from it (#113), and builds the Encounter's ground, Cast and damage
+    /// cast cost and the Death penalty fractions from it (#113), and builds the Encounter's arena, Cast and damage
     /// spread tuning from it (spatial-combat spec). The Locations are still read from
     /// their providers' own copies until each is replaced, so a value changed here is not live
     /// until then.
@@ -110,6 +110,9 @@ namespace ToolSmiths.InventorySystem.Services
         [field: SerializeField, Tooltip("The Sold container (epic #124).")]
         public Vector2Int SoldSize { get; private set; } = new(10, 7);
 
+        [field: SerializeField, Tooltip("The Run's ground, a grid like the stash (epic #214).")]
+        public Vector2Int GroundSize { get; private set; } = new(10, 13);
+
         [field: Header("Simulation: Behaviour Profile defaults")]
         [field: SerializeField, Range(1f, 8f)] public float SimSpeed { get; private set; } = 1f;
         [field: SerializeField, Min(1)] public int Engagement { get; private set; } = 3;
@@ -127,11 +130,11 @@ namespace ToolSmiths.InventorySystem.Services
         [field: SerializeField, Range(0f, 1f)] public float XpLossFraction { get; private set; } = 0.25f;
         [field: SerializeField, Range(0f, 1f)] public float CurrencyFeeFraction { get; private set; } = 0.5f;
 
-        [field: Header("Simulation: ground tuning (placeholders, untested starting points)")]
-        [field: SerializeField, Min(0f), Tooltip("Radius of the ground the fight takes place on, in ground units.")]
-        public float GroundRadius { get; private set; } = 10f;
+        [field: Header("Simulation: arena tuning (placeholders, untested starting points)")]
+        [field: SerializeField, Min(0f), Tooltip("Radius of the arena the fight takes place on, in arena units.")]
+        public float ArenaRadius { get; private set; } = 10f;
 
-        [field: SerializeField, Min(0f), Tooltip("How far beyond the ground's edge an enemy spawns, so it walks onto it.")]
+        [field: SerializeField, Min(0f), Tooltip("How far beyond the arena's edge an enemy spawns, so it walks onto it.")]
         public float SpawnMargin { get; private set; } = 2f;
 
         [field: SerializeField, Range(0f, 0.99f), Tooltip("The most an enemy's stop distance is pulled in from its Strike Range, as a fraction of it.")]
@@ -140,14 +143,14 @@ namespace ToolSmiths.InventorySystem.Services
         [field: SerializeField, Range(0f, 1f), Tooltip("How far a spawn bearing may stray from the middle of the widest gap between living enemies, as a fraction of that gap.")]
         public float BearingJitter { get; private set; } = 0.5f;
 
-        [field: SerializeField, Min(0f), Tooltip("The hero's Strike Range while unarmed, in ground units. A weapon type's range (WeaponTypes) replaces it.")]
+        [field: SerializeField, Min(0f), Tooltip("The hero's Strike Range while unarmed, in arena units. A weapon type's range (WeaponTypes) replaces it.")]
         public float UnarmedStrikeRange { get; private set; } = 1.5f;
 
-        [field: SerializeField, Min(0f), Tooltip("Ground units per second the hero walks for each point of his MovementSpeed stat.")]
+        [field: SerializeField, Min(0f), Tooltip("Arena units per second the hero walks for each point of his MovementSpeed stat.")]
         public float MovementSpeedScale { get; private set; } = 0.01f;
 
         [field: Header("Simulation: Cast tuning (placeholders, untested starting points)")]
-        [field: SerializeField, Min(0f), Tooltip("Cast Range: only enemies within this ground distance of the hero are candidates to aim at.")]
+        [field: SerializeField, Min(0f), Tooltip("Cast Range: only enemies within this arena distance of the hero are candidates to aim at.")]
         public float CastRange { get; private set; } = 7f;
 
         [field: SerializeField, Tooltip("The area one Cast hits, before the size scales it.")]

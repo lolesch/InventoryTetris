@@ -137,6 +137,24 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
+        public void ReBurying_TheLeftovers_AtTheSameLocation_KeepsOnlyTheLeftovers()
+        {
+            var corpse = new Corpse();
+            var location = Thornwood();
+            var sword = Item("sword");
+            var shield = Item("shield");
+            corpse.Bury(location, new[] { sword, shield });
+            corpse.TryRecover(location, out _);
+
+            corpse.Bury(location, new[] { shield });
+
+            Assert.That(corpse.Location, Is.SameAs(location));
+            Assert.That(corpse.Items, Is.EqualTo(new[] { shield }));
+            Assert.That(corpse.TryRecover(location, out var drops), Is.True);
+            Assert.That(drops, Is.EqualTo(new[] { shield }));
+        }
+
+        [Test]
         public void TryRecover_AtAnyOtherLocation_ProducesNoDrops()
         {
             var corpse = new Corpse();
@@ -163,6 +181,24 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             Assert.That(corpse.Exists, Is.True);
             Assert.That(corpse.Location, Is.SameAs(buried));
             Assert.That(corpse.Items, Is.EqualTo(bagContents));
+        }
+
+        [Test]
+        public void Changed_FiresOnABury_AndOnARecovery_ButNotOnARefusedRecovery()
+        {
+            var corpse = new Corpse();
+            var changes = 0;
+            corpse.Changed += () => changes++;
+
+            corpse.Bury(Thornwood(), new[] { Item("sword") });
+            Assert.That(changes, Is.EqualTo(1), "buried");
+
+            _ = corpse.TryRecover(Ashfen(), out _);
+            Assert.That(changes, Is.EqualTo(1), "a recovery elsewhere changed nothing");
+
+            var buried = corpse.Location;
+            _ = corpse.TryRecover(buried, out _);
+            Assert.That(changes, Is.EqualTo(2), "recovered");
         }
 
         [Test]

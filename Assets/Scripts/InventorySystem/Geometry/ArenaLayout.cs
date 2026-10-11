@@ -22,11 +22,11 @@ namespace ToolSmiths.InventorySystem.Geometry
 
         /// <summary>
         /// The sprite's <c>scale.x</c>: +1 when the hero stands to the right of the enemy, -1 to the left. Both
-        /// x are ground x, the sim's, so the facing is the enemy's side of the hero and not an artefact of the
+        /// x are arena x, the sim's, so the facing is the enemy's side of the hero and not an artefact of the
         /// projection. Inside the dead zone (<c>|dx| &lt; deadZone</c>) the current sign is kept, so an enemy
         /// standing straight above or below the hero does not flicker. Art is authored facing right.
         /// </summary>
-        /// <param name="deadZone">Ground units, the same unit as the two x.</param>
+        /// <param name="deadZone">Arena units, the same unit as the two x.</param>
         public static int FacingSign(float enemyX, float heroX, int currentSign, float deadZone)
         {
             var dx = heroX - enemyX;

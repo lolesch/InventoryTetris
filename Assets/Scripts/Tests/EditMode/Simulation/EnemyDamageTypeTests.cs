@@ -8,7 +8,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
     /// <summary>
     /// Archetype damage types (issue #210): each archetype declares the type its Strike deals - Brute physical,
     /// Skirmisher magical - and the hero mitigates it with the matching resist. Driven through the simulation's
-    /// advance entry point on the collapsed default ground, where every enemy is in reach from the first tick.
+    /// advance entry point on the collapsed default arena, where every enemy is in reach from the first tick.
     /// Each mitigation test is paired with the opposite resist as its negative control.
     /// </summary>
     [TestFixture]

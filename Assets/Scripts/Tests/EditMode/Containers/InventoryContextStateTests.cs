@@ -141,6 +141,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         [TestCase(InventoryContext.Stash, InventoryPanels.Hero | InventoryPanels.Stash)]
         [TestCase(InventoryContext.Vendor, InventoryPanels.Hero | InventoryPanels.Vendor)]
         [TestCase(InventoryContext.Healer, InventoryPanels.Hero | InventoryPanels.Healer)]
+        [TestCase(InventoryContext.Ground, InventoryPanels.Hero | InventoryPanels.Ground)]
         public void Panels_IncludesHeroForEveryNonNoneContext(InventoryContext context, InventoryPanels expected)
         {
             state.Set(context);
@@ -153,6 +154,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         [TestCase(InventoryContext.Stash, InventoryPanels.Stash)]
         [TestCase(InventoryContext.Vendor, InventoryPanels.Vendor)]
         [TestCase(InventoryContext.Healer, InventoryPanels.Healer)]
+        [TestCase(InventoryContext.Ground, InventoryPanels.Ground)]
         public void PanelFor_NamesTheOnePanelAContextOwns(InventoryContext context, InventoryPanels expected)
         {
             Assert.That(InventoryContextState.PanelFor(context), Is.EqualTo(expected));
@@ -185,6 +187,13 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         [TestCase(InventoryContext.Healer, InventoryPanels.Stash, false)]
         [TestCase(InventoryContext.Healer, InventoryPanels.Vendor, false)]
         [TestCase(InventoryContext.Healer, InventoryPanels.Healer, true)]
+        [TestCase(InventoryContext.Ground, InventoryPanels.Hero, true)]
+        [TestCase(InventoryContext.Ground, InventoryPanels.Ground, true)]
+        [TestCase(InventoryContext.Ground, InventoryPanels.Stash, false)]
+        [TestCase(InventoryContext.Ground, InventoryPanels.Vendor, false)]
+        [TestCase(InventoryContext.Ground, InventoryPanels.Healer, false)]
+        [TestCase(InventoryContext.Hero, InventoryPanels.Ground, false)]
+        [TestCase(InventoryContext.Stash, InventoryPanels.Ground, false)]
         public void PanelIsUp_ExactlyWhenTheActiveContextDerivesIt(InventoryContext active, InventoryPanels panel, bool expected)
         {
             state.Set(active);
@@ -252,6 +261,19 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             state.SyncToPhase(inField: true);
 
             Assert.That(state.Active, Is.EqualTo(InventoryContext.Hero));
+            Assert.That(fired, Is.Zero);
+        }
+
+        [Test]
+        public void SyncToPhase_EnteringField_KeepsGroundReachable()
+        {
+            state.Set(InventoryContext.Ground);
+            var fired = 0;
+            state.Changed += _ => fired++;
+
+            state.SyncToPhase(inField: true);
+
+            Assert.That(state.Active, Is.EqualTo(InventoryContext.Ground));
             Assert.That(fired, Is.Zero);
         }
 

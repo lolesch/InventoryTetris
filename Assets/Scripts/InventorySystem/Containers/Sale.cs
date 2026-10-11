@@ -19,7 +19,7 @@ namespace ToolSmiths.InventorySystem.Inventories
     /// Package too big for the Sold container even when empty, and currency, which is never for
     /// sale: it has a face value and the Wallet already holds it. A full Sold container never
     /// refuses a sale that can pay out; it discards its oldest instead
-    /// (<see cref="SoldContainer.TryPlaceEvicting"/>).</para>
+    /// (<see cref="OldestOutInventory.TryPlaceEvicting"/>).</para>
     ///
     /// <para>It replaced the staged Sell Basket, which is deleted (issue #131). The shift-click sink calls <see cref="TrySell"/> (issue #128);
     /// the drop sale, <see cref="TrySellHeld"/>, is called by a Supply slot's drop (issue #129),
@@ -107,11 +107,11 @@ namespace ToolSmiths.InventorySystem.Inventories
             if (0u == payout.Total || !wallet.CanDeposit(payout))
                 return false;
 
-            if (!sold.TryPlaceEvicting(package, out var landed, out var order))
+            if (!sold.TryPlaceEvicting(package, out var landed, out var order, out _))
                 return false;
 
             transaction.QueueEffect(() => wallet.Deposit(payout));
-            transaction.QueueEffect(() => sold.NoteSold(order, landed));
+            transaction.QueueEffect(() => sold.NoteLanded(order, landed));
 
             transaction.Commit();
             return true;

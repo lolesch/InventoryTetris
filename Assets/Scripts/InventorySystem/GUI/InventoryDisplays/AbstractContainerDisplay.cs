@@ -41,6 +41,10 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         private void OnDisable() => Session.UnsubscribeHeroLoaded(Register);
 
+        // A container outlives the scene (the World's ground, the stash), so a destroyed display must let go of
+        // its content event or the next change reaches a dead object.
+        private void OnDestroy() => SetContainer(null);
+
         private void Register()
         {
             if (!ServiceLocator.IsArmed)

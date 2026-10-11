@@ -8,9 +8,9 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 {
     /// <summary>
     /// Targeting is minimal and deterministic (ADR-0010, issues #209 and #212): the Strike hits the hero's one
-    /// sticky weighted-proximity target (on the collapsed ground every enemy scores alike, so the first spawn),
+    /// sticky weighted-proximity target (on the collapsed arena every enemy scores alike, so the first spawn),
     /// the Cast every enemy in its area (who it aims at is <c>CastAreaTests</c>), no RNG. Health no longer steers
-    /// the Strike; where the enemies stand does (<c>HeroTargetingTests</c>). On the collapsed default ground all
+    /// the Strike; where the enemies stand does (<c>HeroTargetingTests</c>). On the collapsed default arena all
     /// four stand on the hero, so the Cast catches the whole mixed quad.
     /// </summary>
     [TestFixture]

@@ -26,13 +26,14 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
     internal sealed class PreviewProvider : AbstractSceneSingleton<PreviewProvider>
     {
         [SerializeField] private PreviewDisplay hoveredItem;
-        private RectTransform hoveredItemTransform;
-        [SerializeField] private RectTransform compareItemParent;
-        [SerializeField] private PreviewDisplay compareDisplay1;
-        [SerializeField] private PreviewDisplay compareDisplay2;
+        [SerializeField] private HorizontalOrVerticalLayoutGroup compareGroup;
+        [SerializeField] private PreviewDisplay comparedItem1;
+        [SerializeField] private PreviewDisplay comparedItem2;
 
+        private RectTransform compareTransform;
         private Canvas rootCanvas;
         private bool showLeft;
+        private float pivotX;
 
         // What the tooltip last showed, so a Shift press or release while it is up can re-run it.
         private Package lastPackage;
@@ -40,75 +41,88 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         private bool lastSecondSlot;
         private bool lastAlt;
 
-        private float OffsetX => showLeft ? +10 : -10;
+        private const float OffestDisplayToMouse = 15f;
+        private float OffsetX => showLeft ? OffestDisplayToMouse : -OffestDisplayToMouse;
 
         private void Awake()
         {
             transform.root.TryGetComponent(out rootCanvas);
 
-            hoveredItemTransform = hoveredItem.transform as RectTransform;
-            hoveredItemTransform.anchorMin = Vector2.zero;
-            hoveredItemTransform.anchorMax = Vector2.zero;
+            compareTransform = (RectTransform)compareGroup.transform;
+            compareTransform.anchorMin = Vector2.zero;
+            compareTransform.anchorMax = Vector2.zero;
         }
 
         private void Update()
         {
-            if (!hoveredItem.IsCollapsed)
-            {
-                MoveDisplay();
-
-                // The compare order depends on Shift, and the roll range and comparison trade places on Alt, but
-                // the tooltip is only built on hover.
-                if (lastPackage.IsValid && (Input.GetKey(KeyCode.LeftShift) != lastSecondSlot || ModifierKeys.Alt != lastAlt))
-                    RefreshPreviewDisplay(lastPackage, lastSlot);
-            }
-
-            void MoveDisplay()
-            {
-                var mousePos = Input.mousePosition / rootCanvas.scaleFactor;
-                hoveredItemTransform.anchoredPosition = new Vector2(mousePos.x + OffsetX, mousePos.y);
-            }
+            if (hoveredItem.IsCollapsed) 
+                return;
+            
+            var mousePos = Input.mousePosition / rootCanvas.scaleFactor;
+            compareTransform.anchoredPosition = new Vector2(mousePos.x + OffsetX, mousePos.y);
+            
+            if (Input.GetKey(KeyCode.LeftShift) != lastSecondSlot || ModifierKeys.Alt != lastAlt)
+                RefreshPreviewDisplay(lastPackage, lastSlot);
         }
 
         public void RefreshPreviewDisplay(Package package, AbstractSlotDisplay slot)
         {
-            /// pivot pointing towards center of screen
-            showLeft = Input.mousePosition.x < (Screen.width * 0.5);
-            var pivotX = showLeft ? 0 : 1;
-            var pivotY = Input.mousePosition.y.MapTo01(0, Screen.height);
-            hoveredItemTransform.pivot = new Vector2(pivotX, pivotY);
+            if (!package.Equals(lastPackage))
+            {
+                showLeft = Input.mousePosition.x < (Screen.width * 0.5);
+                pivotX = showLeft ? 0 : 1;
 
-            var mousePos = Input.mousePosition / rootCanvas.scaleFactor;
-            hoveredItemTransform.anchoredPosition = new Vector2(mousePos.x + OffsetX, mousePos.y);
+                comparedItem1.gameObject.SetActive(false);
+                comparedItem2.gameObject.SetActive(false);
+            }
 
             lastPackage = package;
             lastSlot = slot;
             lastSecondSlot = Input.GetKey(KeyCode.LeftShift);
             lastAlt = ModifierKeys.Alt;
 
+            var pivotY = Input.mousePosition.y.MapTo01(0, Screen.height);
+            var mousePos = Input.mousePosition / rootCanvas.scaleFactor;
+
+            compareTransform.pivot = new Vector2(pivotX, pivotY);
+            compareTransform.anchoredPosition = new Vector2(mousePos.x + OffsetX, mousePos.y);
+
             if (slot is EquipmentSlotDisplay)
                 hoveredItem.Refresh(package);
             else
             {
-                // Shift = the second slot, the same key that equips there (InventorySlotDisplay): its
-                // occupant leads the compare panels, and an equip there is what the hovered stats measure.
+                // Shift = the second slot, the same key that equips there (InventorySlotDisplay).
                 IReadOnlyList<Package> shown = System.Array.Empty<Package>();
                 IReadOnlyList<Package> against = null;
 
-                if (package.Item != null && ItemService.Instance.View(package.Item).Definition.Category == ItemCategory.Equipment)
+                if (package.IsValid && 
+                    ItemService.Instance.View(package.Item).Definition.Category == ItemCategory.Equipment)
                     (shown, against) = Session.Instance.Hero.Equipment.CompareTargets(package.Item, lastSecondSlot);
 
-                var priceOverride = slot is VendorSlotDisplay && package.Item != null
+                // Only a shelf prices differently (the buy price); every other slot shows the stack's sell value.
+                var priceOverride = slot is VendorSlotDisplay && package.IsValid
                     ? VendorTransaction.BuyPrice(package.Item, ItemService.Instance.Catalog) * package.Amount
                     : -1f;
 
-                // Only the hovered item carries the difference; the worn items are shown as they are.
                 hoveredItem.Refresh(package, against, priceOverride);
 
                 // A worn item the equip would not displace (the bow beside a free off-hand) is only listed.
                 var displaced = against ?? System.Array.Empty<Package>();
-                compareDisplay1.RefreshWorn(0 < shown.Count ? shown[0] : default, package, 0 < shown.Count && IsDisplaced(shown[0]));
-                compareDisplay2.RefreshWorn(1 < shown.Count ? shown[1] : default, package, 1 < shown.Count && IsDisplaced(shown[1]));
+                
+                var show1 = 0 < shown.Count;
+                var show2 = 1 < shown.Count;
+                
+                comparedItem1.gameObject.SetActive(show1);
+                comparedItem1.RefreshWorn(show1 ? shown[0] : default, package, show1 && IsDisplaced(shown[0]));
+
+                // Only a two-hander has a second worn item to list (CompareTargets).
+                comparedItem2.gameObject.SetActive(show2);
+                comparedItem2.RefreshWorn(show2 ? shown[1] : default, package, show2 && IsDisplaced(shown[1]));
+
+                compareGroup.reverseArrangement = !showLeft;
+                compareGroup.childAlignment = showLeft ? TextAnchor.UpperRight : TextAnchor.UpperLeft;
+                
+                return;
 
                 bool IsDisplaced(Package worn)
                 {
@@ -118,25 +132,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
                     return false;
                 }
-
-                (compareDisplay1.transform as RectTransform).pivot = showLeft ? Vector2.up : Vector2.one;
-                (compareDisplay2.transform as RectTransform).pivot = showLeft ? Vector2.up : Vector2.one;
-
-                var showTop = Input.mousePosition.y < (Screen.height * 0.5);
-                var compPivotY = showTop ? 0 : 1;
-
-                compareItemParent.GetComponent<VerticalLayoutGroup>().childAlignment = showTop
-                    ? (showLeft ? TextAnchor.LowerRight
-                                : TextAnchor.LowerLeft)
-                    : (showLeft ? TextAnchor.UpperRight
-                                : TextAnchor.UpperLeft);
-
-                compareItemParent.pivot = new Vector2(pivotX, compPivotY);
-
-                compareItemParent.anchorMin = new Vector2(showLeft ? 1 : 0, showTop ? 0 : 1);
-                compareItemParent.anchorMax = new Vector2(showLeft ? 1 : 0, showTop ? 0 : 1);
-
-                compareItemParent.anchoredPosition = new Vector2(OffsetX, 0);
             }
         }
     }

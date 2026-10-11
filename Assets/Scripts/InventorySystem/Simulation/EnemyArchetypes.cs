@@ -51,11 +51,11 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// </summary>
         public readonly int LootRolls;
         /// <summary>
-        /// How far from the hero this body can Strike, in ground units - flat, not a curve. Melee is short;
+        /// How far from the hero this body can Strike, in arena units - flat, not a curve. Melee is short;
         /// ranged is the same capability with a longer range, so it stands off (spatial-combat spec).
         /// </summary>
         public readonly float StrikeRange;
-        /// <summary>Ground units walked per second while chasing the hero - flat, not a curve.</summary>
+        /// <summary>Arena units walked per second while chasing the hero - flat, not a curve.</summary>
         public readonly float MovementSpeed;
 
         public EnemyArchetypeStats(StatCurve health, StatCurve damage, StatCurve armorPercent, StatCurve magicResistPercent, DamageType damageType, float attackSpeed, StatCurve xp, int lootRolls,

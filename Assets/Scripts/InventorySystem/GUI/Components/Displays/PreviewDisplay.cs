@@ -2,7 +2,6 @@
 using TMPro;
 using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Data;
-using ToolSmiths.InventorySystem.Items;
 using Submodules.Utility.Extensions;
 using Submodules.Utility.Tools;
 using Submodules.Utility.UI;
@@ -75,7 +74,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
             if (goldValue)
                 goldValue.Refresh(0f <= priceOverride
                     ? new Currency(priceOverride)
-                    : new Currency(view.SellValue));
+                    : new Currency(view.SellValue * package.Amount));
 
             if (frame)
                 frame.color = rarityColor;

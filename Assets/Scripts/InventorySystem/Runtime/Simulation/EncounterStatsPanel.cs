@@ -40,7 +40,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             }
 
             var hero = encounter.Hero;
-            var groundDrops = simulation.LootFlow?.GroundDrops.Count ?? 0;
+            var groundDrops = simulation.LootFlow?.Ground.StoredPackages.Count ?? 0;
 
             combatStatsText.text =
                 (simulation.IsPaused ? "PAUSED - Space to resume\n" : string.Empty) +

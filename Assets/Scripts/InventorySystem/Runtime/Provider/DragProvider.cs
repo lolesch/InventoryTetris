@@ -188,7 +188,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
                 /// WouldAcceptDrop exactly the way its own DropItem behaves - CanPlaceAt at
                 /// the pixel-derived cell for the inventory grid, the fixed type-specific
                 /// slot for the paper-doll equipment layout, always-yes for a container-less
-                /// sink (the floor, the sell slot). Red only while the cursor is over a real
+                /// sink (the ground, the sell slot). Red only while the cursor is over a real
                 /// slot that would turn the drop away; hovering nothing clears it.
                 var refused = Hovered != null && !Hovered.WouldAcceptDrop(DraggingPackage);
 
@@ -314,7 +314,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         }
 
         /// <summary>
-        /// The drag is over - the package landed, or a sink (sell slot, floor) consumed it.
+        /// The drag is over - the package landed, or a sink (sell slot, ground) consumed it.
         /// Clears the hand and hides the display; the sinks used to hand an empty Package to
         /// SetPackage purely to reach this.
         /// </summary>
@@ -411,11 +411,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         //}
 
         //public void OnEndDrag(PointerEventData eventData) =>
-        //    // raycast through center top position of drag display to check if over slotDisplay to add at, or to revert, or to drop item at floor
+        //    // raycast through center top position of drag display to check if over slotDisplay to add at, or to revert, or to drop item at ground
         //    throw new System.NotImplementedException();
 
         //public void OnPointerClick(PointerEventData eventData) =>
-        //    // raycast through center top position of drag display to check if over slotDisplay to add at, or to revert, or to drop item at floor
+        //    // raycast through center top position of drag display to check if over slotDisplay to add at, or to revert, or to drop item at ground
         //    throw new System.NotImplementedException();
     }
 }

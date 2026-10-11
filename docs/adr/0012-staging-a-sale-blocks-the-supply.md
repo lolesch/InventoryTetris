@@ -30,8 +30,8 @@ originally recorded. It is wrong: not-destroying is not the same as being recove
 a basket that can only ever hand back one of its five items is a dead end the player
 cannot reason about.
 
-**Drop the overflow on the floor.** Rejected because there is no Town ground to drop to.
-`DropToFloorSlotDisplay` destroys what it is given, and `ILootGround` is Field-side, bound
+**Drop the overflow on the ground.** Rejected because there is no Town ground to drop to.
+`DropToGroundSlotDisplay` destroys what it is given, and `ILootGround` is Field-side, bound
 to a Location. Building a Town ground to catch a case the modal block already prevents
 would add a domain concept — `CONTEXT.md`'s **Drop** is explicitly Field-and-Location-bound
 — to serve an error path.

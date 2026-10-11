@@ -10,7 +10,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
     /// <see cref="EncounterSimulation.StrikeTarget"/> (issues #182, #209) is a read-only peek at the hero's
     /// own choice - the sticky weighted-proximity target, the earliest spawned on a tie - so the arena's target
     /// highlight cannot disagree with the Strike that follows. It holds no state and raises nothing. These
-    /// fights run on the collapsed ground, where every enemy stands on the hero and scores alike; where they
+    /// fights run on the collapsed arena, where every enemy stands on the hero and scores alike; where they
     /// stand apart is <c>HeroTargetingTests</c>.
     /// </summary>
     [TestFixture]
@@ -78,7 +78,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var skirmishers = sim.Enemies.Where(e => e.Archetype == EnemyArchetype.Skirmisher).ToList();
             Assert.That(skirmishers[0].Health, Is.EqualTo(skirmishers[1].Health), "premise: a tie on health");
 
-            Assert.That(sim.StrikeTarget, Is.SameAs(sim.Enemies[0]), "every score ties on the collapsed ground");
+            Assert.That(sim.StrikeTarget, Is.SameAs(sim.Enemies[0]), "every score ties on the collapsed arena");
         }
 
         [Test]

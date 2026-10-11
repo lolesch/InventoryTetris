@@ -87,6 +87,7 @@ namespace ToolSmiths.InventorySystem.Services
                 new CharacterInventory(config.SupplySize, catalog),
                 new CharacterInventory(config.SupplySize, catalog),
                 new SoldContainer(config.SoldSize, catalog),
+                new GroundContainer(config.GroundSize, catalog),
                 new InventoryContextState());
 
             // 4. The Healer's side effect (issue #58): a full Health and Resource refill on every

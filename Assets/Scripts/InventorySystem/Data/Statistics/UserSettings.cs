@@ -28,7 +28,7 @@ namespace ToolSmiths.InventorySystem.Data
         }
 
         /// <summary>
-        /// Seconds an item dropped to the floor lies there before it fades out. Stored and bounded,
+        /// Seconds an item dropped to the ground lies there before it fades out. Stored and bounded,
         /// but nothing reads it yet: the ground has no fade-out.
         /// </summary>
         public static float GroundItemFadeDelay

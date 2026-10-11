@@ -58,15 +58,15 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <summary>
         /// A debug switch (issue #63): on, a kill's item Drops that pass <see cref="AdmitsItem"/> are
         /// picked up on the hero's behalf, as before the Ground Items List; off - the default - every
-        /// item Drop lies on the ground until the player clicks it. Coins are not affected: a Pile that
-        /// passes <see cref="AdmitsCoin"/> banks either way.
+        /// item Drop lies on the ground until the player clicks it. A coin Pile follows the same rule
+        /// with <see cref="AdmitsCoin"/> as its filter (issue #218).
         /// </summary>
         public bool AutoPickup { get; set; }
 
         /// <summary>
         /// How strongly home pulls against nearness when the hero picks a target, 0..1 (spatial-combat spec):
         /// 0 takes the enemy nearest himself (a brawler who fights what is in front of him), 1 the one nearest the
-        /// ground's origin (a homebody who never wanders). Read live, each time he has no target.
+        /// arena's origin (a homebody who never wanders). Read live, each time he has no target.
         /// </summary>
         public float OriginWeight { get; set; } = DefaultOriginWeight;
 

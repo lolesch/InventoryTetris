@@ -102,7 +102,7 @@ namespace ToolSmiths.InventorySystem.Services
             var world = session.World;
 
             return ContainerRoleResolver.Resolve(role, hero.Equipment, hero.Inventory, hero.Stash,
-                world.VendorSupply, world.HealerSupply, world.Sold);
+                world.VendorSupply, world.HealerSupply, world.Sold, world.Ground);
         }
 
         public QuickMoveIntent QuickMoveFor(AbstractDimensionalContainer source)
@@ -112,7 +112,7 @@ namespace ToolSmiths.InventorySystem.Services
 
             // The ground exists exactly while a Run's loot flow does (issue #63): Town has none.
             return QuickMoveResolver.Resolve(world.Context.Active, source, hero.Inventory, hero.Stash, hero.Equipment,
-                world.VendorSupply, world.HealerSupply, world.Sold, groundOpen: world.LootFlow != null);
+                world.VendorSupply, world.HealerSupply, world.Sold, world.Ground, groundOpen: world.LootFlow != null);
         }
 
         public bool PickUpOrStash(Package package)

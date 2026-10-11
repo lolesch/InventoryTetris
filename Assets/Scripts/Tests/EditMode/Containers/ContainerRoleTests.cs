@@ -25,6 +25,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             Assert.AreEqual(4, (int)ContainerRole.VendorSupply);
             Assert.AreEqual(5, (int)ContainerRole.HealerSupply);
             Assert.AreEqual(6, (int)ContainerRole.Sold);
+            Assert.AreEqual(7, (int)ContainerRole.Ground);
         }
 
         // ── Each role resolves to its container (the provider binds displays through this) ──
@@ -39,16 +40,18 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         [TestCase(ContainerRole.VendorSupply)]
         [TestCase(ContainerRole.HealerSupply)]
         [TestCase(ContainerRole.Sold)]
+        [TestCase(ContainerRole.Ground)]
         public void EveryRoleResolvesToItsOwnContainer(ContainerRole role)
         {
             var all = new Dictionary<ContainerRole, AbstractDimensionalContainer>();
             foreach (var r in new[] { ContainerRole.Equipment, ContainerRole.Inventory, ContainerRole.Stash,
-                                      ContainerRole.VendorSupply, ContainerRole.HealerSupply, ContainerRole.Sold })
+                                      ContainerRole.VendorSupply, ContainerRole.HealerSupply, ContainerRole.Sold,
+                                      ContainerRole.Ground })
                 all[r] = NewContainer();
 
             var resolved = ContainerRoleResolver.Resolve(role, all[ContainerRole.Equipment], all[ContainerRole.Inventory],
                 all[ContainerRole.Stash], all[ContainerRole.VendorSupply], all[ContainerRole.HealerSupply],
-                all[ContainerRole.Sold]);
+                all[ContainerRole.Sold], all[ContainerRole.Ground]);
 
             Assert.That(resolved, Is.SameAs(all[role]));
         }
@@ -58,7 +61,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         {
             var c = NewContainer();
 
-            Assert.That(ContainerRoleResolver.Resolve(ContainerRole.Unassigned, c, c, c, c, c, c), Is.Null);
+            Assert.That(ContainerRoleResolver.Resolve(ContainerRole.Unassigned, c, c, c, c, c, c, c), Is.Null);
         }
     }
 }
