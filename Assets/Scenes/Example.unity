@@ -11562,7 +11562,7 @@ MonoBehaviour:
   prefab: {fileID: 2938690695903610728, guid: 9e1d69e4713665945b59748fef963448, type: 3}
   rows: {fileID: 897817980}
   fade:
-    fullOpacityCount: 5
+    fullOpacityCount: 8
     fadeStep: 0.02
     minimumAlpha: 0.3
 --- !u!114 &897817982
