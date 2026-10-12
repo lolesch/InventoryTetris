@@ -16,6 +16,11 @@ compile errors, the totals and each failing test's message; its exit status is t
 EditMode suite ~90 s. It restores `ProjectSettings`, which every run rewrites, and sends a PlayMode
 run's saves to a scratch folder (`-savesFolder`, below).
 
+It starts Unity through `dev/launch-detached.ps1` (WMI), never directly: a `Unity.exe` child of the
+foreground app takes keyboard focus for the whole boot even with `-batchmode -nographics`, so the user
+loses keystrokes mid-sentence. `-WindowStyle Hidden` does not prevent it. Launch any other Unity
+batch run the same way.
+
 **With the Editor open on the project the script runs in a shadow copy by itself**: it detects the
 project lock, mirrors `Assets`, `Packages` and `ProjectSettings` into
 `%TEMP%/<project>-shadow/<branch>` (`SHADOW_DIR` relocates it, `--shadow` as the first argument forces it)
