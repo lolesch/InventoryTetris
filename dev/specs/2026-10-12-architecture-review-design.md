@@ -33,16 +33,17 @@ Four places in the code say one thing more than once, and one place does two job
 Five changes, each small except D, listed below. None changes what the player sees on
 the first day, except that the hero's figure gains a health bar and hit feedback.
 
-| | Change | Blocked by |
-|---|---|---|
-| A | The tuning owns its defaults and sanitising | - |
-| B | A hit carries the scale and place its number is drawn at | - |
-| C | One figure for hero and enemy | B |
-| D | Brains decide, the Encounter carries out Intents (ADR-0020) | A |
-| E | The receiver owns its pick-up transaction | - |
+| | Change | Tickets | Blocked by |
+|---|---|---|---|
+| A | The tuning owns its defaults and sanitising; one shared ground fade | #263, #264 | - |
+| B | A hit carries the scale and place its number is drawn at | #265 | - |
+| C | One figure for hero and enemy | #266, then #268 (numbers rise from the hit's place) | #268: #265 and #266 |
+| D | Brains decide, the Encounter carries out Intents (ADR-0020) | #269 Arena, #270 enemy side, #271 hero side | #269: #263; then in a chain |
+| E | The receiver owns its pick-up transaction | #267 | - |
 
-A, B and E can run in parallel. The ground-fade setting that the review first proposed as its own
-change is part of A (see below); there is no separate ticket for it.
+
+A, B, E and the figure (#266) can run in parallel. The ground-fade setting that the review first proposed as its own
+change is part of A (see below), as its own small ticket (#264).
 
 ## Implementation Decisions
 
@@ -173,7 +174,7 @@ Recorded in full in ADR-0020; the decisions that matter to a ticket:
 
 ## Further Notes
 
-**Order:** A, B and E in parallel; then C (after B); then D (after A). Run `python dev/frontier.py`
+**Order:** #263, #264, #265, #266 and #267 in parallel; then #268 (after #265 and #266); then #269 (after #263), #270, #271 in a chain. Run `python dev/frontier.py`
 before each `/implement #N`.
 
 **ADR numbering:** ADR-0020 was numbered against `origin/main`, whose last ADR is 0019. Renumber
