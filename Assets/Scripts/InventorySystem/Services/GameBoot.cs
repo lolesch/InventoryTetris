@@ -39,14 +39,15 @@ namespace ToolSmiths.InventorySystem.Services
         }
 
         /// <summary>The <c>PlayerPrefs</c> key of the player's key rebindings: per machine, like <see cref="Data.UserSettings"/>.</summary>
-        public const string BindingsKey = "settings.keyBindings";
+        private const string BindingsKey = "settings.keyBindings";
 
         /// <summary>The <c>Resources</c> asset holding the default keys, one action per <see cref="GameAction"/>.</summary>
         public const string InputResourceKey = "GameInput";
 
-        // The input of the boot before: cloned actions that stay enabled until someone disposes them,
-        // and domain reload is disabled, so the next boot does.
-        private static InputService<GameAction> input;
+        /// <summary>The key-spam guard: a hotkey pressed again within this long is the same press. Short
+        /// enough that no deliberate double-tap is lost, long enough to swallow a key held in a bounce
+        /// or a hammered one that would flicker a panel or the pause.</summary>
+        private const float HotkeyRepeatSeconds = 0.15f;
 
         /// <summary>The <c>EditorPrefs</c> key of the Start Fresh Each Play toggle. Per machine, so it neither
         /// dirties an asset nor follows the developer to another machine.</summary>
@@ -159,13 +160,22 @@ namespace ToolSmiths.InventorySystem.Services
             var registry = Build(config, saves);
 
             // Not in Build: enabling actions is a global side effect, and Build touches no global.
+            // The registry owns the service from here: a failed install disposes it, and so does the
+            // locator's Reset, which ends this boot.
             var keys = BuildInput(bindings ?? new InMemoryBindingStore());
             registry.Register<IInputService<GameAction>>(keys);
+            keys.Performed += GameInput.Raise;
 
-            input?.Dispose();
-            input = keys;
+            try
+            {
+                ServiceLocator.Install(registry);
+            }
+            catch
+            {
+                registry.Dispose();
+                throw;
+            }
 
-            ServiceLocator.Install(registry);
             GameLoop.Install();
 
             // The pause key listens for its press; the tick it adds only lets go of the UI selection.
@@ -179,7 +189,7 @@ namespace ToolSmiths.InventorySystem.Services
             var actions = Resources.Load<InputActionAsset>(InputResourceKey);
 
             return actions != null
-                ? new InputService<GameAction>(actions, bindings)
+                ? new InputService<GameAction>(actions, bindings, HotkeyRepeatSeconds)
                 : throw new InvalidOperationException(
                     $"No default keys are available. Expected the input actions at Assets/Resources/{InputResourceKey}.inputactions; " +
                     $"{nameof(GameBoot)} binds every {nameof(GameAction)} from it.");

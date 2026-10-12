@@ -216,8 +216,8 @@ reach for them before writing a local copy.
 
 Active Input Handling is the Input System package, so **any `Input.GetKey` / `Input.mousePosition` read
 throws in Play**; the pre-commit hook rejects an added one. A view reads `GameInput.IsHeld` /
-`GameInput.PointerPosition` and subscribes to `GameInput.Armed.Performed` in `OnEnable` (release it in
-`OnDisable`, from the instance it joined: the service is replaced on every boot).
+`GameInput.PointerPosition` and subscribes to `GameInput.Performed` in `OnEnable` (release it in
+`OnDisable`). That event outlives a boot's service, so subscribe to it, never to `GameInput.Armed`'s.
 
 - **Package version is tied to the Editor.** `com.unity.inputsystem` 1.18.0 does not compile on Unity
   6000.6 (`CS0619` on `EntityId`'s int conversion in `PlayerInputEditor`); 1.20.1 does. A sibling repo on
@@ -234,7 +234,10 @@ throws in Play**; the pre-commit hook rejects an added one. A view reads `GameIn
   `DestroyImmediate(StandaloneInputModule)` + `AddComponent<InputSystemUIInputModule>()`.
 - **The shared asset is never enabled.** `InputService` works on a clone (`Object.Instantiate`), because
   with domain reload off the ScriptableObject outlives Play and would carry rebindings and enabled state
-  into the next session. `GameBoot.Arm` disposes the previous boot's clone.
+  into the next session. The registry owns the service, so `ServiceLocator.Reset()` disposes the clone;
+  a test that arms calls `Reset` in its teardown and leaks nothing.
+- **A hotkey pressed twice within 0.15 s of input time is one press** (`GameBoot.HotkeyRepeatSeconds`). A
+  test that presses the same action twice advances `currentTime` between them.
 - **`Utility/UI/Demo.unity` still has a `StandaloneInputModule`**, which errors every frame in this
   project. It is a submodule demo shared with repos on the legacy handler; swap it only there.
 - **Serialized `GameAction` values are scene data** (a toggle's `hotkey`). Append a member, never

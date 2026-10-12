@@ -29,7 +29,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
         public void Release(GameAction action) => held.Remove(action);
 
-        public void Rebind(GameAction action, int bindingIndex, Action<bool> completed) => throw new NotSupportedException();
+        public void Rebind(GameAction action, int bindingIndex, Action<RebindResult> completed) => throw new NotSupportedException();
 
         public void ResetBindings() => throw new NotSupportedException();
     }

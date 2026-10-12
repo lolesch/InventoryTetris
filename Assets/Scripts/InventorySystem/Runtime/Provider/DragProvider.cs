@@ -1,5 +1,4 @@
 using NaughtyAttributes;
-using Submodules.Utility.Bindings;
 using Submodules.Utility.Provider;
 using Submodules.Utility.Services;
 using TMPro;
@@ -89,9 +88,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
         private float frameAlpha = 1f;
 
-        // The service this subscribed to, so OnDisable lets go of the same one it joined.
-        private IInputService<GameAction> keys;
-
         private void Awake()
         {
             //_ = transform.root.TryGetComponent(out rootCanvas);
@@ -124,10 +120,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             _ = Session.TrySubscribeHeroLoaded(OnHeroLoaded);
             _ = HeroSaveService.TryAddBeforeSave(ReturnHeldToOrigin);
 
-            keys = GameInput.Armed;
-
-            if (keys != null)
-                keys.Performed += OnAction;
+            GameInput.Performed -= OnAction;
+            GameInput.Performed += OnAction;
         }
 
         private void OnDisable()
@@ -136,10 +130,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             Session.UnsubscribeHeroLoaded(OnHeroLoaded);
             HeroSaveService.TryRemoveBeforeSave(ReturnHeldToOrigin);
 
-            if (keys != null)
-                keys.Performed -= OnAction;
-
-            keys = null;
+            GameInput.Performed -= OnAction;
         }
 
         private void OnAction(GameAction action)

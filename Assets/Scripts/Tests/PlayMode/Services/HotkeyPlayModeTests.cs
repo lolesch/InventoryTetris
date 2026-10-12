@@ -58,10 +58,13 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
                 (keyboard.iKey, InventoryContext.Hero),
             })
             {
+                // Input time, which the fixture holds still: a press within the repeat guard of the last is one press.
+                currentTime += 1.0;
                 PressAndRelease(key);
                 yield return null;
                 Assert.That(Context, Is.EqualTo(context), $"{key.displayName} opens {context}");
 
+                currentTime += 1.0;
                 PressAndRelease(key);
                 yield return null;
                 Assert.That(Context, Is.EqualTo(InventoryContext.None), $"{key.displayName} again closes it");

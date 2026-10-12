@@ -1,4 +1,3 @@
-using Submodules.Utility.Bindings;
 using Submodules.Utility.Services;
 using Submodules.Utility.UI;
 using ToolSmiths.InventorySystem.GUI.Components.Panels;
@@ -63,9 +62,6 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
                  "the HUD and keeps its hotkey in the field. The key itself is the player's to rebind.")]
         [SerializeField] private GameAction hotkey = GameAction.None;
 
-        // The service this subscribed to, so OnDisable lets go of the same one it joined.
-        private IInputService<GameAction> keys;
-
         protected override void OnClick() => UserToggle();
 
         /// <summary>
@@ -117,10 +113,9 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
             if (InventoryService.TrySubscribeContextChanged(SyncToContext, out var activeContext))
                 SyncToContext(activeContext);
 
-            keys = GameInput.Armed;
-
-            if (keys != null)
-                keys.Performed += OnAction;
+            // Detach first, so a re-enable cannot subscribe twice.
+            GameInput.Performed -= OnAction;
+            GameInput.Performed += OnAction;
         }
 
         protected override void OnDisable()
@@ -129,10 +124,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
 
             InventoryService.UnsubscribeContextChanged(SyncToContext);
 
-            if (keys != null)
-                keys.Performed -= OnAction;
-
-            keys = null;
+            GameInput.Performed -= OnAction;
         }
 
         /// <summary>
