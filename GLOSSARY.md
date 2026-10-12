@@ -419,6 +419,20 @@ and does not move, while the hero **figure** that stands in the arena is a separ
 The arena view maps arena distance to canvas distance with one adjustable tilt (ADR-0018).
 _Avoid_: spawn point, anchor (that is the Hero icon's rect, the view's side of it), centre
 
+**Brain**:
+What decides, tick by tick, what one fighter in an **Encounter** does. The hero's is steered by the
+player's **Behaviour Profile**, so the player still never controls him directly; an enemy's is to
+close in on the hero and **Strike**. A Brain only asks (see **Intent**); the Encounter decides
+whether the ask is allowed. Swapping a fighter's Brain changes who it fights like and nothing else.
+_Avoid_: AI (a Brain may be a player), controller, driver, behaviour (that is the **Behaviour Profile**)
+
+**Intent**:
+What a **Brain** asks of its fighter in one tick: walk toward a point in the **Arena**, **Strike**
+a target, **Cast** at a point, or - for the hero - request a **Recall**. The Encounter carries an
+Intent out only when the rules allow it (in reach, off cooldown, enough Resource); an Intent it
+refuses costs nothing.
+_Avoid_: command, order, input, action
+
 **Strike Range**:
 How far from the hero a Strike reaches, in arena units. An enemy Strikes only while the hero
 is within its Strike Range, so a melee enemy closes in and a ranged one - the same capability
