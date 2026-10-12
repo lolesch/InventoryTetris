@@ -464,13 +464,12 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             try
             {
                 var input = new FakeInput();
-                var hotkey = new PauseHotkey(service, input);
+                _ = new PauseHotkey(service, input);
 
                 events.SetSelectedGameObject(field);
                 service.Send(thornwood);
 
                 input.Press(GameAction.TogglePause);
-                hotkey.Tick(0.1f);
 
                 Assert.That(service.IsPaused, Is.False, "the space went to the field");
                 Assert.That(events.currentSelectedGameObject, Is.SameAs(field), "and the field kept its focus");

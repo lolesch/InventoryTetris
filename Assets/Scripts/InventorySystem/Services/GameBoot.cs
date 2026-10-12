@@ -178,9 +178,9 @@ namespace ToolSmiths.InventorySystem.Services
 
             GameLoop.Install();
 
-            // The pause key listens for its press; the tick it adds only lets go of the UI selection.
+            // The pause key subscribes to its press and lives with the service; it has no tick.
             var simulation = registry.Get<ISimulationService>();
-            GameLoop.Add(new PauseHotkey(simulation, keys).Tick);
+            _ = new PauseHotkey(simulation, keys);
             GameLoop.Add(simulation.Tick);
         }
 
