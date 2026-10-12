@@ -14,10 +14,9 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// <see cref="EncounterSimulation.RecallRequested"/> signal the engine-side driver turns
     /// into a <see cref="RunState.Recall"/>.
     /// <see cref="ShouldCast"/> is the <see cref="CastThreshold"/> hysteresis latch (ADR-0010):
-    /// hold below the fraction, then Cast every opportunity down to empty, then wait back up —
-    /// it never gates the Strike, because the Strike never asks it. The sim evaluates it once
-    /// per Cast cadence whether or not a Cast is affordable that beat, so the latch tracks the
-    /// pool continuously. <see cref="AdmitsItem"/> and
+    /// hold below the fraction, then Cast every opportunity until the pool is drained to 0, then
+    /// wait back up to the fraction — it never gates the Strike, because the
+    /// Strike never asks it. <see cref="AdmitsItem"/> and
     /// <see cref="AdmitsCoin"/> are the loot filter, reading a coin denomination's fixed Rarity
     /// off GLOSSARY.md's Denomination ladder (iron Common … gold Unique). <see cref="Engagement"/>
     /// is re-read by the sim's spawn schedule every spawn tick, so raising it mid-Run refills
@@ -26,13 +25,6 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// </summary>
     public sealed class HeroBehaviour
     {
-        // The live sim's Regenerate runs every tick before the next Cast affordability check
-        // (EncounterSimulation.Step), so Resource only ever sits at a nonzero remainder and is
-        // already climbing again by the time anything samples it — an exact float zero is never
-        // actually observed once a casting run is under way. ADR-0010 itself says "burn to
-        // ~empty", so the release floor is a near-zero band, not a bit-exact comparison.
-        private const float EmptyResourceFraction = 0.02f;
-
         private bool _castingRun;
 
         /// <summary>Auto-Recall fires at or below this hero health fraction.</summary>
@@ -86,27 +78,21 @@ namespace ToolSmiths.InventorySystem.Simulation
         public bool ShouldRecallForBagFull(float bagFillFraction) => bagFillFraction >= RecallBagFillFraction;
 
         /// <summary>
-        /// The <see cref="CastThreshold"/> hysteresis latch. Starts a casting run once
-        /// <paramref name="resourceFraction"/> charges up to the threshold; once running, stays
-        /// <c>true</c> regardless of the fraction dropping back below it, releasing only once the
-        /// pool is spent down to <see cref="EmptyResourceFraction"/> — the run then has to
-        /// recharge to the threshold again to restart.
-        ///
-        /// The release is tested before the start rather than instead of it, so a run that ends
-        /// on this call can re-arm on the same call when the fraction still clears the threshold.
-        /// That only differs at <see cref="CastThreshold"/> 0 — "never hold" — where an
-        /// <c>else if</c> would drop one Cast every time the pool bottomed out.
+        /// Starts a casting run once <paramref name="resourceFraction"/> charges up to the threshold;
+        /// a started run stays <c>true</c> however far the fraction falls, until it is released.
         /// </summary>
         public bool ShouldCast(float resourceFraction)
         {
-            if (_castingRun && resourceFraction <= EmptyResourceFraction)
-                _castingRun = false;
-
             if (!_castingRun && resourceFraction >= CastThreshold)
                 _castingRun = true;
 
             return _castingRun;
         }
+
+        /// <summary>
+        /// Ends the run: the pool is drained, so it has to recharge to the threshold to restart.
+        /// </summary>
+        public void ReleaseCastingRun() => _castingRun = false;
 
         /// <summary>The loot filter for items: admits <paramref name="rarity"/> at or above <see cref="LootFilterMinimum"/>.</summary>
         public bool AdmitsItem(ItemRarity rarity) => rarity >= LootFilterMinimum;

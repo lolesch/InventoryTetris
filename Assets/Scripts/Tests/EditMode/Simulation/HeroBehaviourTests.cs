@@ -97,39 +97,14 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
-        public void CastGate_SpentToEmpty_ReleasesTheRun()
-        {
-            var behaviour = new HeroBehaviour { CastThreshold = 0.5f };
-
-            behaviour.ShouldCast(0.5f);  // starts
-            behaviour.ShouldCast(0.05f); // still running, low but not empty
-
-            Assert.That(behaviour.ShouldCast(0f), Is.False, "empty releases the run");
-        }
-
-        [Test]
-        public void CastGate_SpentToNearEmpty_StillReleases()
+        public void CastGate_Released_StopsTheRun()
         {
             var behaviour = new HeroBehaviour { CastThreshold = 0.5f };
 
             behaviour.ShouldCast(0.5f); // starts
+            behaviour.ReleaseCastingRun();
 
-            // The live sim regenerates every tick before the next affordability check, so an
-            // exact 0f is never actually observed once a run is under way — the release floor
-            // has to tolerate a near-empty remainder, not just a bit-exact zero.
-            Assert.That(behaviour.ShouldCast(0.01f), Is.False, "a near-empty remainder still releases the run");
-        }
-
-        [Test]
-        public void CastGate_AfterReleaseBelowThreshold_StaysReleased()
-        {
-            var behaviour = new HeroBehaviour { CastThreshold = 0.5f };
-
-            behaviour.ShouldCast(0.5f); // starts
-            behaviour.ShouldCast(0f);   // releases
-
-            // regen climbs back partway, still below the threshold — no restart yet
-            Assert.That(behaviour.ShouldCast(0.4f), Is.False);
+            Assert.That(behaviour.ShouldCast(0.12f), Is.False, "a released run waits for the threshold again");
         }
 
         [Test]
@@ -138,9 +113,21 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var behaviour = new HeroBehaviour { CastThreshold = 0.5f };
 
             behaviour.ShouldCast(0.5f); // starts
-            behaviour.ShouldCast(0f);   // releases
+            behaviour.ReleaseCastingRun();
 
+            Assert.That(behaviour.ShouldCast(0.4f), Is.False, "regen climbing back partway does not restart it");
             Assert.That(behaviour.ShouldCast(0.5f), Is.True, "recharging back to the threshold restarts the run");
+        }
+
+        [Test]
+        public void CastGate_ZeroThreshold_RearmsAfterRelease()
+        {
+            var behaviour = new HeroBehaviour { CastThreshold = 0f };
+
+            behaviour.ShouldCast(0.12f);
+            behaviour.ReleaseCastingRun();
+
+            Assert.That(behaviour.ShouldCast(0.12f), Is.True, "threshold 0 never holds: purely regen gated");
         }
 
         [Test]

@@ -560,6 +560,8 @@ namespace ToolSmiths.InventorySystem.Simulation
             if (target.IsDown) Defeat(target);
         }
 
+        private bool CanAffordCast(float resource) => resource >= _hero.CastCost;
+
         private void ResolveCast(float dt)
         {
             _castTimer += dt;
@@ -568,18 +570,20 @@ namespace ToolSmiths.InventorySystem.Simulation
             _castTimer = Math.Min(_castTimer - _tuning.CastCadence, _tuning.CastCadence);
 
             // The CastThreshold latch is stepped every Cast opportunity, before the affordability
-            // and target tests short-circuit — it is a hysteresis on the pool, so it has to see
-            // the pool on every beat, not only on the beats a Cast could actually land.
+            // and target tests short-circuit: it arms on the pool charging up, however idle the beat.
             var casting = _behaviour.ShouldCast(_hero.ResourceFraction);
 
-            if (!casting || _hero.Resource < _hero.CastCost) return;
+            if (!casting || !CanAffordCast(_hero.Resource)) return;
 
             // No one to aim at, or a shape that would catch nobody: the Cast does not fire and spends nothing.
             var shape = _tuning.Cast.Shape.Scaled(_tuning.Cast.Size);
             var aim = DensestCluster(shape);
             if (aim == null) return;
 
-            _hero.SpendResource(_hero.CastCost);
+            // The Cast that leaves too little for another takes the whole remainder, so a run always ends on 0.
+            var drains = !CanAffordCast(_hero.Resource - _hero.CastCost);
+            _hero.SpendResource(drains ? _hero.Resource : _hero.CastCost);
+            if (drains) _behaviour.ReleaseCastingRun();
             HeroCast?.Invoke();
 
             var targets = InShape(shape, aim);
