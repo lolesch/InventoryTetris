@@ -36,3 +36,6 @@ Experience should not be a resource at all. we instead should have an experience
 
 ### Pause Menu
 pauses inGame time by stopping ticker time propagation. Gives access to return to the main menu, quitting or returning to the game.
+
+### Hardcore Mode
+a hero mode chosen at creation, softcore (today's Death: a Corpse to recover) or hardcore. What a hardcore Death does is the open question: the hero is deleted, or kept as a read-only grave, or retired to a hall. It breaks ADR-0009 ("Death is not a game-over") and ADR-0008 rules out a results screen, so it needs a grilling of its own, a save field and a Death flow that writes the file. The Heroes screen (front-end flow spec, 2026-10-12) leaves room for a mode on a row but shows none.

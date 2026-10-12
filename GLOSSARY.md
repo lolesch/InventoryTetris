@@ -222,13 +222,13 @@ _Avoid_: no-drop chance, miss, empty
 
 **Hero**:
 The single persistent character — the one that fights — and everything that is its own:
-its stats, level and XP, its **Equipment**, **Inventory** and **Stash**, its **Wallet**,
+its stats, level and XP, its lifetime count of **Kills**, its **Equipment**, **Inventory** and **Stash**, its **Wallet**,
 its **Behaviour Profile**, the **Location** it is set to be Sent to, and its **Corpse** if
 it has one. That is the whole of what saves, and nothing the hero does not own does.
 During a Run the player never controls it directly; they set its Behaviour Profile and
 its gear and it fights autonomously. One hero per Session; several can be saved and one
-loaded (which replaces the Hero and the **World**, see **Session**), but a screen to
-choose among them is deferred.
+loaded (which replaces the Hero and the **World**, see **Session**), chosen on the
+**Heroes screen**.
 _Avoid_: character, unit, avatar, champion; "player" for the thing in the Field
 
 **Hero save**:
@@ -236,7 +236,7 @@ One file holding one **Hero**, named `Name_id`: the hero's name, for the eye, an
 that never changes, which is the identity (a rename moves the file, never the id), and nothing else.
 It holds the hero's display name, the id of the template it was built from (`HeroData`: its icon and
 class name), level, the current Health, Resource, Shield and
-Experience, its **Behaviour Profile**, its selected **Location** (by id), its **Corpse** if
+Experience, its total **Kills** (banked when a **Run** settles), its **Behaviour Profile**, its selected **Location** (by id), its **Corpse** if
 it has one, and the packages in its **Equipment**, **Inventory** and **Stash** by cell
 (the **Wallet** is coins in the Inventory, so it saves with it). It never holds the **World**
 (**Supply**, the Sold container, the **Run** and its ground **Drops**, the **Inventory
@@ -596,6 +596,57 @@ which evict the oldest the same way — and like any **Drop** it is gone when th
 no Run there is no ground, and an item released on the ground slot goes back where it came from.
 _Avoid_: loot beam, drop list, world items
 
+
+## Front End
+
+The screens around the game, as opposed to inside it.
+
+**Main Menu**:
+The first screen a launch shows, and where leaving a **Session** lands. Its **hero slots** and showcase
+choose the **Hero**; its buttons lead into the game (**Play**) or to the screens around it (Settings,
+the **Changelog**, Credits and the community links). Nothing on it is a Run, and no Run is ever
+underway while it is shown.
+_Avoid_: title screen, start screen, home
+
+**Play**:
+The Main Menu's way into the game with the selected **Hero**. On arrival the selected hero is the one
+last played, so returning is one click. Disabled until a hero that can be read is selected.
+_Avoid_: Start Run (a Run starts in Town, not here), Continue, Load Game
+
+**Hero slots**:
+The row of **Hero saves** on the Main Menu, one slot per hero and one to create another. Selecting a
+slot loads that hero for show and enters nothing: its gear, name, level and class appear, and so do the
+**Location** it will next be Sent to (blank before its first Send), its **Corpse** and where it lies,
+its total **Kills**, and the average item level of the gear it wears (coins and empty slots aside).
+**Play** is what enters the game. A save that cannot be read keeps its slot, says why, and can only be
+deleted. Creating a hero takes a name and nothing else; deleting one asks first, because the file is
+gone for good.
+_Avoid_: Heroes screen, character select, profile screen, save slots
+
+**Pause**:
+The player freezing a Run in the Field so it stops advancing. Refused in Town, where nothing advances.
+_Avoid_: stop, freeze (the Pause Menu does that without being a Pause)
+
+**Pause Menu**:
+The in-game menu **Cancel** opens when there is nothing left to dismiss: Resume, Settings, **Save &
+Exit** and Quit Game. While it is open the Run holds still, and closing it gives back whatever Pause
+state the player had, so opening and closing it never changes the player's own Pause. Available in
+Town and in the Field.
+_Avoid_: Pause (that is the player's freeze), escape menu, options
+
+**Cancel**:
+The player's way to back out, one layer per press: a Package held on the cursor goes back, then an
+open menu screen closes to the one beneath it, then the **Inventory Context** returns to `None`
+(every panel closes at once), and only then does the **Pause Menu** open. On the Main Menu it steps
+back out of a screen and does nothing at the root.
+_Avoid_: Escape (that is the usual key), close, back
+
+**Save & Exit**:
+Leaving the **Session** for the Main Menu. In the Field it first ends the Run with a **Recall**, so
+everything the hero holds is kept and there is no Death penalty, then writes the **Hero save**. The
+player is asked to confirm only in the Field. It is the one action that tells the player their
+progress is safe to leave.
+_Avoid_: quit, exit (the Main Menu's Exit closes the application), abandon
 
 ## Changelog
 
