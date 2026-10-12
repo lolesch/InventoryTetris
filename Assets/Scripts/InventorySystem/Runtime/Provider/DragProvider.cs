@@ -88,7 +88,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
         private float frameAlpha = 1f;
 
-
         private void Awake()
         {
             //_ = transform.root.TryGetComponent(out rootCanvas);
@@ -120,6 +119,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             _ = InventoryService.TrySubscribeContextChanged(OnContextChanged, out _);
             _ = Session.TrySubscribeHeroLoaded(OnHeroLoaded);
             _ = HeroSaveService.TryAddBeforeSave(ReturnHeldToOrigin);
+
+            GameInput.Performed -= OnAction;
+            GameInput.Performed += OnAction;
         }
 
         private void OnDisable()
@@ -127,6 +129,14 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             InventoryService.UnsubscribeContextChanged(OnContextChanged);
             Session.UnsubscribeHeroLoaded(OnHeroLoaded);
             HeroSaveService.TryRemoveBeforeSave(ReturnHeldToOrigin);
+
+            GameInput.Performed -= OnAction;
+        }
+
+        private void OnAction(GameAction action)
+        {
+            if (action == GameAction.CancelDrag && IsDragging)
+                CancelDrag();
         }
 
         /// <summary>
@@ -171,9 +181,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         {
             if (IsDragging)
             {
-                if (Input.GetKeyDown(KeyCode.Escape))
-                    CancelDrag();
-
                 SetToMousePosition();
 
                 HighlightOverlappingSlots();
@@ -214,7 +221,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
                 return false;
 
             position = DragGeometry.DropPosition(
-                (Vector2)Input.mousePosition / transform.lossyScale,
+                GameInput.PointerPosition / transform.lossyScale,
                 itemDisplay.pivot,
                 ItemService.Instance.View(DraggingPackage.Item).Dimensions,
                 (Vector2)hovered.transform.position / transform.lossyScale,
@@ -237,7 +244,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             itemDisplay.anchorMin = Vector2.zero;
             itemDisplay.anchorMax = Vector2.zero;
 
-            itemDisplay.anchoredPosition = (Vector2)Input.mousePosition / itemDisplay.lossyScale;
+            itemDisplay.anchoredPosition = GameInput.PointerPosition / itemDisplay.lossyScale;
         }
 
         /// <param name="purchasePrice">The vendor price this package was lifted off the shelf

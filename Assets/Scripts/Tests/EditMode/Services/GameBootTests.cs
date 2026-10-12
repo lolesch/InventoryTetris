@@ -121,6 +121,19 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
+        public void Arm_MakesTheInputServiceReachable_AndANewBootReplacesIt()
+        {
+            GameBoot.Arm(testConfig);
+            var first = GameInput.Armed;
+            Assert.That(first, Is.Not.Null);
+
+            ServiceLocator.Reset();
+            GameBoot.Arm(testConfig);
+
+            Assert.That(GameInput.Armed, Is.Not.Null.And.Not.SameAs(first));
+        }
+
+        [Test]
         public void Arm_MakesTheItemServiceReachableFromTheLocator()
         {
             GameBoot.Arm(testConfig);

@@ -71,4 +71,12 @@ while IFS= read -r f; do
   fi
 done < <(staged -- '*.cs')
 
+# 8. No read of the legacy Input class: Active Input Handling is the Input System package, so a read throws
+#    in Play. Keys and the pointer go through IInputService<GameAction> (GameInput, from a view).
+while IFS= read -r f; do
+  if git diff --cached "$base" -U0 -- "$f" | grep -a '^+' | grep -aqE '\bInput\.(Get[A-Za-z]*|mouse[A-Za-z]*|any[A-Za-z]*|touch[A-Za-z]*|inputString)\b'; then
+    report "$f reads the legacy Input class; use IInputService<GameAction> (GameInput) instead."
+  fi
+done < <(staged -- '*.cs')
+
 exit "$fail"

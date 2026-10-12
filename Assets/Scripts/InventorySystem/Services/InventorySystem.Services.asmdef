@@ -4,6 +4,8 @@
     "references": [
         "Utility",
         "Utility.Persistence",
+        "Utility.Bindings",
+        "Unity.InputSystem",
         "InventorySystem.Data",
         "InventorySystem.Items",
         "InventorySystem.Distributions",

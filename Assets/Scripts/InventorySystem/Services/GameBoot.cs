@@ -1,7 +1,9 @@
+using Submodules.Utility.Bindings;
 using Submodules.Utility.Persistence;
 using Submodules.Utility.Services;
 using System;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace ToolSmiths.InventorySystem.Services
 {
@@ -19,20 +21,33 @@ namespace ToolSmiths.InventorySystem.Services
     public static class GameBoot
     {
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        private static void BootOnPlayEntry() => Boot(Load(), SaveStoreForPlay(StartFreshEachPlay));
+        private static void BootOnPlayEntry() =>
+            Boot(Load(), SaveStoreForPlay(StartFreshEachPlay), new PlayerPrefsBindingStore(BindingsKey));
 
         /// <summary>
         /// A Play entry over <paramref name="saves"/>: arms the services, continues the last hero (or
         /// creates one) and installs the quit save. Separate from the hook so a test can run it over an
         /// in-memory store.
         /// </summary>
-        internal static void Boot(GameConfig config, ISaveStore saves)
+        /// <param name="bindings">Where the player's key rebindings live; a test leaves it out and gets none.</param>
+        internal static void Boot(GameConfig config, ISaveStore saves, IBindingOverrideStore bindings = null)
         {
-            Arm(config, saves);
+            Arm(config, saves, bindings);
 
             ContinueLastHero();
             GameExit.Install(ServiceLocator.Get<ISimulationService>(), ServiceLocator.Get<IHeroSaveService>());
         }
+
+        /// <summary>The <c>PlayerPrefs</c> key of the player's key rebindings: per machine, like <see cref="Data.UserSettings"/>.</summary>
+        private const string BindingsKey = "settings.keyBindings";
+
+        /// <summary>The <c>Resources</c> asset holding the default keys, one action per <see cref="GameAction"/>.</summary>
+        public const string InputResourceKey = "GameInput";
+
+        /// <summary>The key-spam guard: a hotkey pressed again within this long is the same press. Short
+        /// enough that no deliberate double-tap is lost, long enough to swallow a key held in a bounce
+        /// or a hammered one that would flicker a panel or the pause.</summary>
+        private const float HotkeyRepeatSeconds = 0.15f;
 
         /// <summary>The <c>EditorPrefs</c> key of the Start Fresh Each Play toggle. Per machine, so it neither
         /// dirties an asset nor follows the developer to another machine.</summary>
@@ -138,17 +153,46 @@ namespace ToolSmiths.InventorySystem.Services
         /// <summary>Builds from <paramref name="config"/>, arms the locator, installs the frame loop
         /// and hands it the simulation's tick. Builds first, so a failed build leaves nothing
         /// half-armed.</summary>
-        public static void Arm(GameConfig config, ISaveStore saves)
+        /// <param name="bindings">Where the player's key rebindings live; none by default, so a test
+        /// never reads the developer's own.</param>
+        public static void Arm(GameConfig config, ISaveStore saves, IBindingOverrideStore bindings = null)
         {
             var registry = Build(config, saves);
 
-            ServiceLocator.Install(registry);
+            // Not in Build: enabling actions is a global side effect, and Build touches no global.
+            // The registry owns the service from here: a failed install disposes it, and so does the
+            // locator's Reset, which ends this boot.
+            var keys = BuildInput(bindings ?? new InMemoryBindingStore());
+            registry.Register<IInputService<GameAction>>(keys);
+            keys.Performed += GameInput.Raise;
+
+            try
+            {
+                ServiceLocator.Install(registry);
+            }
+            catch
+            {
+                registry.Dispose();
+                throw;
+            }
+
             GameLoop.Install();
 
-            // The pause key ahead of the tick, so a press freezes the frame it lands on.
+            // The pause key subscribes to its press and lives with the service; it has no tick.
             var simulation = registry.Get<ISimulationService>();
-            GameLoop.Add(new PauseHotkey(simulation).Tick);
+            _ = new PauseHotkey(simulation, keys);
             GameLoop.Add(simulation.Tick);
+        }
+
+        private static InputService<GameAction> BuildInput(IBindingOverrideStore bindings)
+        {
+            var actions = Resources.Load<InputActionAsset>(InputResourceKey);
+
+            return actions != null
+                ? new InputService<GameAction>(actions, bindings, HotkeyRepeatSeconds)
+                : throw new InvalidOperationException(
+                    $"No default keys are available. Expected the input actions at Assets/Resources/{InputResourceKey}.inputactions; " +
+                    $"{nameof(GameBoot)} binds every {nameof(GameAction)} from it.");
         }
 
         private static InvalidOperationException MissingConfig() => new(

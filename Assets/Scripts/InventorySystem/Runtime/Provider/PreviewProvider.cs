@@ -58,18 +58,24 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             if (hoveredItem.IsCollapsed) 
                 return;
             
-            var mousePos = Input.mousePosition / rootCanvas.scaleFactor;
+            var mousePos = GameInput.PointerPosition / rootCanvas.scaleFactor;
             compareTransform.anchoredPosition = new Vector2(mousePos.x + OffsetX, mousePos.y);
-            
-            if (Input.GetKey(KeyCode.LeftShift) != lastSecondSlot || ModifierKeys.Alt != lastAlt)
+
+            // One read of each per frame: every GameInput call is a service lookup.
+            var secondSlot = GameInput.IsHeld(GameAction.SecondSlot);
+            var alt = GameInput.IsHeld(GameAction.Peek);
+
+            if (secondSlot != lastSecondSlot || alt != lastAlt)
                 RefreshPreviewDisplay(lastPackage, lastSlot);
         }
 
         public void RefreshPreviewDisplay(Package package, AbstractSlotDisplay slot)
         {
+            var pointer = GameInput.PointerPosition;
+
             if (!package.Equals(lastPackage))
             {
-                showLeft = Input.mousePosition.x < (Screen.width * 0.5);
+                showLeft = pointer.x < (Screen.width * 0.5);
                 pivotX = showLeft ? 0 : 1;
 
                 comparedItem1.gameObject.SetActive(false);
@@ -78,11 +84,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
             lastPackage = package;
             lastSlot = slot;
-            lastSecondSlot = Input.GetKey(KeyCode.LeftShift);
-            lastAlt = ModifierKeys.Alt;
+            lastSecondSlot = GameInput.IsHeld(GameAction.SecondSlot);
+            lastAlt = GameInput.IsHeld(GameAction.Peek);
 
-            var pivotY = Input.mousePosition.y.MapTo01(0, Screen.height);
-            var mousePos = Input.mousePosition / rootCanvas.scaleFactor;
+            var pivotY = pointer.y.MapTo01(0, Screen.height);
+            var mousePos = pointer / rootCanvas.scaleFactor;
 
             compareTransform.pivot = new Vector2(pivotX, pivotY);
             compareTransform.anchoredPosition = new Vector2(mousePos.x + OffsetX, mousePos.y);

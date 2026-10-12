@@ -80,7 +80,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         {
             if (DragProvider.Instance.IsDragging)
                 Drop();
-            else if (eventData.button != PointerEventData.InputButton.Right && Input.GetKey(KeyCode.LeftShift) && TryQuickMove())
+            else if (eventData.button != PointerEventData.InputButton.Right && GameInput.IsHeld(GameAction.QuickMove) && TryQuickMove())
                 return;
             else
                 MoveItem(eventData, pressPosition);
@@ -322,8 +322,8 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             return true;
         }
 
-        /// <summary>Whether a pick-up right now takes half the stack (Ctrl held).</summary>
-        protected static bool HalvesOnPickUp => Input.GetKey(KeyCode.LeftControl);
+        /// <summary>Whether a pick-up right now takes half the stack (<see cref="GameAction.HalveStack"/> held).</summary>
+        protected static bool HalvesOnPickUp => GameInput.IsHeld(GameAction.HalveStack);
 
         /// <summary>
         /// The "DRAG ITEM" tail every concrete slot falls through to once its own special-cases

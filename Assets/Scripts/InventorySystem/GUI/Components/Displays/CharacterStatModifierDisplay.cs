@@ -50,7 +50,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 
                 // Alt trades the comparison for the roll range: the range only while it is held, the difference
                 // the rest of the time.
-                var altHeld = ModifierKeys.Alt;
+                var altHeld = GameInput.IsHeld(GameAction.Peek);
                 var difference = altHeld ? string.Empty : comparison?.Format() ?? string.Empty;
                 var range = altHeld ? $" {statMod.Modifier.Range.ToString().Colored(UiColors.Muted)}" : string.Empty;
 
