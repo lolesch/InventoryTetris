@@ -120,11 +120,37 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var sim = new EncounterSimulation(hero, Profiles.Group(EnemyArchetype.Skirmisher, 3),
                 new ConstantRollSource(0f), behaviour, FastCast());
 
+            var casts = 0;
+            sim.HeroCast += () => casts++;
+
             Run(sim, 10);
 
-            // 60 → 44 → 28 → 12, then the next Cast is unaffordable. The latch stays armed all
-            // the way down: it is the *start* the threshold gates, never the continuation.
-            Assert.That(hero.Resource, Is.EqualTo(12f).Within(0.001f));
+            // 60 → 44 → 28 → 0: the latch stays armed all the way down (it is the *start* the threshold
+            // gates, never the continuation), and the Cast that leaves too little for another takes the rest.
+            Assert.That(casts, Is.EqualTo(3));
+            Assert.That(hero.Resource, Is.EqualTo(0f).Within(0.001f));
+        }
+
+        [Test]
+        public void CastThreshold_Zero_CastsAgainAsSoonAsAnotherIsAffordable()
+        {
+            var hero = PassiveHero();
+            hero.MaxResource = 100f;
+            hero.Resource = 40f;
+            hero.CastCost = 16f;
+
+            var sim = new EncounterSimulation(hero, Profiles.Group(EnemyArchetype.Skirmisher, 3),
+                new ConstantRollSource(0f), Behaviours.Engaging(5), FastCast());
+
+            var casts = 0;
+            sim.HeroCast += () => casts++;
+
+            Run(sim, 10); // 40 → 24 → 0
+            hero.Resource = 20f;
+            Run(sim, 10);
+
+            Assert.That(casts, Is.EqualTo(3), "threshold 0 never holds: the next affordable Cast fires");
+            Assert.That(hero.Resource, Is.EqualTo(0f).Within(0.001f));
         }
 
         [Test]
@@ -141,7 +167,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var sim = new EncounterSimulation(hero, Profiles.Group(EnemyArchetype.Skirmisher, 3),
                 new ConstantRollSource(0f), behaviour, FastCast());
 
-            Run(sim, 10); // burns to 12, which cannot pay another Cast: the run is over
+            Run(sim, 10); // 60 → 44 → 28 → 0: the run is over
             hero.Resource = 32f; // recharged by hand: past the cost, short of the threshold
             Run(sim, 10);
 

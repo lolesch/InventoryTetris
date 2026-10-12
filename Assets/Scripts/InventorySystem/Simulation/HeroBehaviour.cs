@@ -14,8 +14,8 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// <see cref="EncounterSimulation.RecallRequested"/> signal the engine-side driver turns
     /// into a <see cref="RunState.Recall"/>.
     /// <see cref="ShouldCast"/> is the <see cref="CastThreshold"/> hysteresis latch (ADR-0010):
-    /// hold below the fraction, then Cast every opportunity until a Cast leaves the pool unable
-    /// to pay another, then wait back up to the fraction — it never gates the Strike, because the
+    /// hold below the fraction, then Cast every opportunity until the pool is drained to 0, then
+    /// wait back up to the fraction — it never gates the Strike, because the
     /// Strike never asks it. <see cref="AdmitsItem"/> and
     /// <see cref="AdmitsCoin"/> are the loot filter, reading a coin denomination's fixed Rarity
     /// off GLOSSARY.md's Denomination ladder (iron Common … gold Unique). <see cref="Engagement"/>
@@ -78,10 +78,8 @@ namespace ToolSmiths.InventorySystem.Simulation
         public bool ShouldRecallForBagFull(float bagFillFraction) => bagFillFraction >= RecallBagFillFraction;
 
         /// <summary>
-        /// The <see cref="CastThreshold"/> hysteresis latch's rising edge. Starts a casting run once
-        /// <paramref name="resourceFraction"/> charges up to the threshold; once running, stays
-        /// <c>true</c> regardless of the fraction dropping back below it, until
-        /// <see cref="ReleaseCastingRun"/> ends the run.
+        /// Starts a casting run once <paramref name="resourceFraction"/> charges up to the threshold;
+        /// a started run stays <c>true</c> however far the fraction falls, until it is released.
         /// </summary>
         public bool ShouldCast(float resourceFraction)
         {
@@ -92,9 +90,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         }
 
         /// <summary>
-        /// The latch's falling edge: the Cast just paid left the pool unable to pay another, so the
-        /// run is over and has to recharge to the threshold to restart. A Cast is whole, so the pool
-        /// is spent to a remainder under one Cast's cost, never to an exact zero.
+        /// Ends the run: the pool is drained, so it has to recharge to the threshold to restart.
         /// </summary>
         public void ReleaseCastingRun() => _castingRun = false;
 
