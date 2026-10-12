@@ -18,6 +18,10 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         /// <summary>Which player container this display binds to - see <see cref="ContainerRole"/>.</summary>
         [SerializeField] private ContainerRole role;
 
+        /// <summary>Whether this display's slots only hover; read by <see cref="AbstractSlotDisplay"/>.</summary>
+        [field: Tooltip("The slots show hover and the item preview but take no click, drag or drop (the main menu's hero display).")]
+        [field: SerializeField] internal bool PreviewOnly { get; private set; }
+
         /// <summary>
         /// Binds itself to the container <see cref="role"/> names, asked of the inventory service,
         /// rather than waiting to be pushed one by a hard scene reference - the seam that lets a
