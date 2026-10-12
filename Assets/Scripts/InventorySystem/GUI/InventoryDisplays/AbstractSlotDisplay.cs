@@ -74,10 +74,17 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         /// anchoring to that reading is what made the item jump away from the cursor on grab.
         private Vector2 pressPosition;
 
+        /// A preview-only container (the main menu's hero display) keeps hover but swallows every
+        /// click, drag and drop. Gated here rather than by a CanvasGroup, which would drop hover too.
+        private bool PreviewOnly => owner && owner.PreviewOnly;
+
         public void OnPointerDown(PointerEventData eventData) => pressPosition = eventData.position;
 
         public void OnPointerClick(PointerEventData eventData)
         {
+            if (PreviewOnly)
+                return;
+
             if (DragProvider.Instance.IsDragging)
                 Drop();
             else if (eventData.button != PointerEventData.InputButton.Right && Input.GetKey(KeyCode.LeftShift) && TryQuickMove())
@@ -278,6 +285,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         public void OnBeginDrag(PointerEventData eventData)
         {
+            if (PreviewOnly)
+                return;
+
             if (DragProvider.Instance.IsDragging)
                 Drop();
             else
@@ -289,7 +299,11 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         public void OnEndDrag(PointerEventData eventData) { }
 
-        public void OnDrop(PointerEventData eventData) => Drop();
+        public void OnDrop(PointerEventData eventData)
+        {
+            if (!PreviewOnly)
+                Drop();
+        }
 
         /// <summary>
         /// Right-click and drag-pickup, the two behaviors that genuinely differ per
