@@ -521,7 +521,9 @@ _Avoid_: lock-on, focus target, aggro target, current target
 
 **Cast Threshold**:
 The `Resource` fraction the hero charges up to before it will start a run of Casts,
-after which it spends down to empty and recharges. Low is a continuous, evenly-spaced
+after which it Casts until the pool can no longer pay one, then recharges back up to the
+threshold. At 0 that is purely regen-gated; at 100% it refills completely, then bursts the
+lot. Low is a continuous, evenly-spaced
 stream of Casts; high is the same Casts arriving clumped. A rhythm knob, not a power one
 — the `/prototype` found it barely moves an Encounter's outcome against a continuous
 spawn (ADR-0010).

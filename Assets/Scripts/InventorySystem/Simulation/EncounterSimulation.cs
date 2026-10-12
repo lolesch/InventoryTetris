@@ -568,8 +568,7 @@ namespace ToolSmiths.InventorySystem.Simulation
             _castTimer = Math.Min(_castTimer - _tuning.CastCadence, _tuning.CastCadence);
 
             // The CastThreshold latch is stepped every Cast opportunity, before the affordability
-            // and target tests short-circuit — it is a hysteresis on the pool, so it has to see
-            // the pool on every beat, not only on the beats a Cast could actually land.
+            // and target tests short-circuit: it arms on the pool charging up, however idle the beat.
             var casting = _behaviour.ShouldCast(_hero.ResourceFraction);
 
             if (!casting || _hero.Resource < _hero.CastCost) return;
@@ -580,6 +579,7 @@ namespace ToolSmiths.InventorySystem.Simulation
             if (aim == null) return;
 
             _hero.SpendResource(_hero.CastCost);
+            if (_hero.Resource < _hero.CastCost) _behaviour.ReleaseCastingRun(); // drained: recharge to the threshold
             HeroCast?.Invoke();
 
             var targets = InShape(shape, aim);

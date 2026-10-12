@@ -128,6 +128,28 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
+        public void CastThreshold_DrainedPool_RechargesToTheThresholdBeforeCastingAgain()
+        {
+            var hero = PassiveHero();
+            hero.MaxResource = 100f;
+            hero.Resource = 60f;
+            hero.CastCost = 16f;
+
+            var behaviour = Behaviours.Engaging(5);
+            behaviour.CastThreshold = 0.5f;
+
+            var sim = new EncounterSimulation(hero, Profiles.Group(EnemyArchetype.Skirmisher, 3),
+                new ConstantRollSource(0f), behaviour, FastCast());
+
+            Run(sim, 10); // burns to 12, which cannot pay another Cast: the run is over
+            hero.Resource = 32f; // recharged by hand: past the cost, short of the threshold
+            Run(sim, 10);
+
+            Assert.That(hero.Resource, Is.EqualTo(32f).Within(0.001f),
+                "a drained pool is not regen-gated at the cost: it waits for the threshold");
+        }
+
+        [Test]
         public void CastThreshold_RaisedMidFight_StopsTheNextCastingRun()
         {
             var hero = PassiveHero();
