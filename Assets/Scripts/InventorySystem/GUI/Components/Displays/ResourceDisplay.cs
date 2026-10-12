@@ -37,7 +37,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
         private float _recoveryTotal;
         private bool _altShown;
 
-        private static bool AltHeld => ModifierKeys.Alt;
+        private static bool AltHeld => GameInput.IsHeld(GameAction.Peek);
 
         /// <summary>
         /// Drive this display from a resource handed in, instead of from the Hero — an

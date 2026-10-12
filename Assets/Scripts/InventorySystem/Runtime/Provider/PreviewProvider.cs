@@ -58,10 +58,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             if (hoveredItem.IsCollapsed) 
                 return;
             
-            var mousePos = Input.mousePosition / rootCanvas.scaleFactor;
+            var mousePos = GameInput.PointerPosition / rootCanvas.scaleFactor;
             compareTransform.anchoredPosition = new Vector2(mousePos.x + OffsetX, mousePos.y);
             
-            if (Input.GetKey(KeyCode.LeftShift) != lastSecondSlot || ModifierKeys.Alt != lastAlt)
+            if (GameInput.IsHeld(GameAction.SecondSlot) != lastSecondSlot || GameInput.IsHeld(GameAction.Peek) != lastAlt)
                 RefreshPreviewDisplay(lastPackage, lastSlot);
         }
 
@@ -69,7 +69,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         {
             if (!package.Equals(lastPackage))
             {
-                showLeft = Input.mousePosition.x < (Screen.width * 0.5);
+                showLeft = GameInput.PointerPosition.x < (Screen.width * 0.5);
                 pivotX = showLeft ? 0 : 1;
 
                 comparedItem1.gameObject.SetActive(false);
@@ -78,11 +78,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
             lastPackage = package;
             lastSlot = slot;
-            lastSecondSlot = Input.GetKey(KeyCode.LeftShift);
-            lastAlt = ModifierKeys.Alt;
+            lastSecondSlot = GameInput.IsHeld(GameAction.SecondSlot);
+            lastAlt = GameInput.IsHeld(GameAction.Peek);
 
-            var pivotY = Input.mousePosition.y.MapTo01(0, Screen.height);
-            var mousePos = Input.mousePosition / rootCanvas.scaleFactor;
+            var pivotY = GameInput.PointerPosition.y.MapTo01(0, Screen.height);
+            var mousePos = GameInput.PointerPosition / rootCanvas.scaleFactor;
 
             compareTransform.pivot = new Vector2(pivotX, pivotY);
             compareTransform.anchoredPosition = new Vector2(mousePos.x + OffsetX, mousePos.y);

@@ -69,8 +69,9 @@ scene-save modal.
 
 `docs/agents/codebase-notes.md` — read before editing through a shell or python script (`Edit` keeps
 CRLF + UTF-8; `perl -pi` mojibakes it), changing an asmdef, hitting a Play Mode reload surprise or a
-`.cs.meta` error, and committing in the `Utility` submodule (`dev/bump-utility.sh` pushes it, then
-pins it). To enable the pre-commit hook: `git config core.hooksPath dev/hooks`.
+`.cs.meta` error, reading a key or the pointer (`Input.*` throws here; use `GameInput`), and committing in
+the `Utility` submodule (`dev/bump-utility.sh` pushes it, then pins it). To enable the pre-commit hook:
+`git config core.hooksPath dev/hooks`.
 
 ## GitHub Pages: keep `docs/agents/` and `docs/adr/` out of `GitPage`
 

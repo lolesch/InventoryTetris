@@ -133,7 +133,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
                     // Shift: target the second slot of a dual-slot equipment type (rings,
                     // dual-wielded 1H weapons) instead of always defaulting to the first.
-                    var preferredSlotIndex = Input.GetKey(KeyCode.LeftShift) ? 1 : 0;
+                    var preferredSlotIndex = GameInput.IsHeld(GameAction.SecondSlot) ? 1 : 0;
 
                     _ = Container.RemoveAtPosition(position, package);
                     _ = equipment.TryAddToContainer(ref package, preferredSlotIndex);

@@ -1,3 +1,4 @@
+using Submodules.Utility.Bindings;
 using Submodules.Utility.Services;
 using Submodules.Utility.UI;
 using ToolSmiths.InventorySystem.GUI.Components.Panels;
@@ -56,11 +57,14 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
                  "authored.")]
         [SerializeField] private SidePanel panel;
 
-        [Tooltip("Optional hotkey. Inert whenever the toggle is non-interactable - which includes " +
-                 "sitting under a hidden panel: a Town Stop is out of reach while the InTown face " +
-                 "is hidden, whereas the Hero Panel's toggle sits under the HUD and keeps its hotkey " +
-                 "in the field.")]
-        [SerializeField] private KeyCode hotkey = KeyCode.None;
+        [Tooltip("The action that presses this toggle, or None for no hotkey. Inert whenever the toggle " +
+                 "is non-interactable - which includes sitting under a hidden panel: a Town Stop is out " +
+                 "of reach while the InTown face is hidden, whereas the Hero Panel's toggle sits under " +
+                 "the HUD and keeps its hotkey in the field. The key itself is the player's to rebind.")]
+        [SerializeField] private GameAction hotkey = GameAction.None;
+
+        // The service this subscribed to, so OnDisable lets go of the same one it joined.
+        private IInputService<GameAction> keys;
 
         protected override void OnClick() => UserToggle();
 
@@ -83,21 +87,15 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         }
 
         /// <summary>
-        /// The hotkey, asked every frame like <see cref="SyncToContext"/> asks the panel. Reachability
-        /// is not decided here: <see cref="Selectable.IsInteractable"/> includes the
-        /// <c>CanvasGroup</c>s above this toggle, so a hidden parent panel (InTown while the Field face
-        /// is up) silences the key without a phase or service dependency. The Hero Panel's toggle has
-        /// no such panel above it and stays reachable in both faces, structurally.
+        /// The hotkey's press. Reachability is not decided here: <see cref="Selectable.IsInteractable"/>
+        /// includes the <c>CanvasGroup</c>s above this toggle, so a hidden parent panel (InTown while the
+        /// Field face is up) silences the key without a phase or service dependency. The Hero Panel's
+        /// toggle has no such panel above it and stays reachable in both faces, structurally.
         /// </summary>
-        private void Update()
+        private void OnAction(GameAction action)
         {
-            if (hotkey == KeyCode.None || !IsInteractable())
-                return;
-
-            if (!Input.GetKeyDown(hotkey))
-                return;
-
-            UserToggle();
+            if (hotkey != GameAction.None && action == hotkey && IsInteractable())
+                UserToggle();
         }
 
         /// <summary>
@@ -118,6 +116,11 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
 
             if (InventoryService.TrySubscribeContextChanged(SyncToContext, out var activeContext))
                 SyncToContext(activeContext);
+
+            keys = GameInput.Armed;
+
+            if (keys != null)
+                keys.Performed += OnAction;
         }
 
         protected override void OnDisable()
@@ -125,6 +128,11 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
             base.OnDisable();
 
             InventoryService.UnsubscribeContextChanged(SyncToContext);
+
+            if (keys != null)
+                keys.Performed -= OnAction;
+
+            keys = null;
         }
 
         /// <summary>

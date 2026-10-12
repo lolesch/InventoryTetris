@@ -13,6 +13,8 @@
         "InventorySystem.Persistence",
         "Utility",
         "Utility.Persistence",
+        "Utility.Bindings",
+        "Unity.InputSystem",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
         "UnityEditor"

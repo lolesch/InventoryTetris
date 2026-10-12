@@ -1,4 +1,5 @@
 using NaughtyAttributes;
+using Submodules.Utility.Bindings;
 using Submodules.Utility.Provider;
 using Submodules.Utility.Services;
 using TMPro;
@@ -88,6 +89,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
         private float frameAlpha = 1f;
 
+        // The service this subscribed to, so OnDisable lets go of the same one it joined.
+        private IInputService<GameAction> keys;
 
         private void Awake()
         {
@@ -120,6 +123,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             _ = InventoryService.TrySubscribeContextChanged(OnContextChanged, out _);
             _ = Session.TrySubscribeHeroLoaded(OnHeroLoaded);
             _ = HeroSaveService.TryAddBeforeSave(ReturnHeldToOrigin);
+
+            keys = GameInput.Armed;
+
+            if (keys != null)
+                keys.Performed += OnAction;
         }
 
         private void OnDisable()
@@ -127,6 +135,17 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             InventoryService.UnsubscribeContextChanged(OnContextChanged);
             Session.UnsubscribeHeroLoaded(OnHeroLoaded);
             HeroSaveService.TryRemoveBeforeSave(ReturnHeldToOrigin);
+
+            if (keys != null)
+                keys.Performed -= OnAction;
+
+            keys = null;
+        }
+
+        private void OnAction(GameAction action)
+        {
+            if (action == GameAction.CancelDrag && IsDragging)
+                CancelDrag();
         }
 
         /// <summary>
@@ -171,9 +190,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         {
             if (IsDragging)
             {
-                if (Input.GetKeyDown(KeyCode.Escape))
-                    CancelDrag();
-
                 SetToMousePosition();
 
                 HighlightOverlappingSlots();
@@ -214,7 +230,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
                 return false;
 
             position = DragGeometry.DropPosition(
-                (Vector2)Input.mousePosition / transform.lossyScale,
+                GameInput.PointerPosition / transform.lossyScale,
                 itemDisplay.pivot,
                 ItemService.Instance.View(DraggingPackage.Item).Dimensions,
                 (Vector2)hovered.transform.position / transform.lossyScale,
@@ -237,7 +253,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             itemDisplay.anchorMin = Vector2.zero;
             itemDisplay.anchorMax = Vector2.zero;
 
-            itemDisplay.anchoredPosition = (Vector2)Input.mousePosition / itemDisplay.lossyScale;
+            itemDisplay.anchoredPosition = GameInput.PointerPosition / itemDisplay.lossyScale;
         }
 
         /// <param name="purchasePrice">The vendor price this package was lifted off the shelf

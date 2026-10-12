@@ -463,16 +463,20 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             try
             {
+                var input = new FakeInput();
+                var hotkey = new PauseHotkey(service, input);
+
                 events.SetSelectedGameObject(field);
                 service.Send(thornwood);
 
-                new PauseHotkey(service, () => true).Tick(0.1f);
+                input.Press(GameAction.TogglePause);
+                hotkey.Tick(0.1f);
 
                 Assert.That(service.IsPaused, Is.False, "the space went to the field");
                 Assert.That(events.currentSelectedGameObject, Is.SameAs(field), "and the field kept its focus");
 
                 events.SetSelectedGameObject(null);
-                new PauseHotkey(service, () => true).Tick(0.1f);
+                input.Press(GameAction.TogglePause);
 
                 Assert.That(service.IsPaused, Is.True, "with no field focused the key pauses");
             }
@@ -487,23 +491,21 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         [Test]
         public void ThePauseKey_Toggles_OnlyWhileARunIsInTheField()
         {
-            var down = false;
-            var hotkey = new PauseHotkey(service, () => down);
+            var input = new FakeInput();
+            _ = new PauseHotkey(service, input);
 
-            down = true;
-            hotkey.Tick(0.1f);
+            input.Press(GameAction.TogglePause);
             Assert.That(service.IsPaused, Is.False, "Town ignores the key");
 
             service.Send(thornwood);
-            hotkey.Tick(0.1f);
+            input.Press(GameAction.TogglePause);
             Assert.That(service.IsPaused, Is.True);
 
-            hotkey.Tick(0.1f);
+            input.Press(GameAction.TogglePause);
             Assert.That(service.IsPaused, Is.False, "the same key resumes");
 
-            down = false;
-            hotkey.Tick(0.1f);
-            Assert.That(service.IsPaused, Is.False, "no press, no change");
+            input.Press(GameAction.Peek);
+            Assert.That(service.IsPaused, Is.False, "another action, no change");
         }
 
         [Test]

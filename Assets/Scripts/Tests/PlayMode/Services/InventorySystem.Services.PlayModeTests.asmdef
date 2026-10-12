@@ -9,6 +9,9 @@
         "InventorySystem.Simulation",
         "InventorySystem.Characters",
         "Utility",
+        "Utility.Bindings",
+        "Unity.InputSystem",
+        "Unity.InputSystem.TestFramework",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],
