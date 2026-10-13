@@ -95,9 +95,23 @@ namespace ToolSmiths.InventorySystem.Services
         void SetPaused(bool paused);
 
         /// <summary>
-        /// The sim seconds <paramref name="deltaSeconds"/> of real time is worth: 0 while <see cref="IsPaused"/>,
-        /// otherwise scaled by the Behaviour Profile's sim speed. What <see cref="Tick"/> advances by, for views
-        /// that animate on sim time (they scale with the speed slider and freeze with the Run).
+        /// Whether a menu holds the live Run still. A second freeze beside <see cref="IsPaused"/>, which stays
+        /// the player's own: releasing the hold gives the Pause back as it was found. Like the Pause it can only
+        /// be true while a Run is in the Field, so it is never true in Town and the Run's end clears it.
+        /// </summary>
+        bool IsHeld { get; }
+
+        /// <summary>
+        /// Holds (<c>true</c>) or releases (<c>false</c>) the live Run for a menu. Holding is refused - nothing
+        /// happens - unless a Run is in the Field; releasing is always allowed, and holding twice is one hold.
+        /// Never changes <see cref="IsPaused"/> or raises <see cref="PausedChanged"/>.
+        /// </summary>
+        void SetHeld(bool held);
+
+        /// <summary>
+        /// The sim seconds <paramref name="deltaSeconds"/> of real time is worth: 0 while <see cref="IsPaused"/>
+        /// or <see cref="IsHeld"/>, otherwise scaled by the Behaviour Profile's sim speed. What <see cref="Tick"/>
+        /// advances by, for views that animate on sim time (they scale with the speed slider and freeze with the Run).
         /// </summary>
         float SimDelta(float deltaSeconds);
 
@@ -106,7 +120,7 @@ namespace ToolSmiths.InventorySystem.Services
         /// regeneration (Town and Field alike), the Encounter while a Run is in the Field, and the
         /// Run's two ways home (a Death, or the Behaviour Profile's auto-Recall). Scaled by the
         /// Behaviour Profile's sim speed here, never through <c>Time.timeScale</c> (ADR-0008).
-        /// Does nothing while <see cref="IsPaused"/>.
+        /// Does nothing while <see cref="IsPaused"/> or <see cref="IsHeld"/>.
         /// </summary>
         void Tick(float deltaSeconds);
     }

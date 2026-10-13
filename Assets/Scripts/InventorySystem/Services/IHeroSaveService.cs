@@ -10,8 +10,18 @@ namespace ToolSmiths.InventorySystem.Services
     /// <summary>One saved hero as the hero list shows it. A hero whose file cannot be read has no name, no template and level 0.</summary>
     public readonly struct HeroSummary
     {
+        /// <summary>Shown for a file that is damaged and has no usable backup.</summary>
+        public const string CorruptReason = "File damaged and no backup could be read";
+
+        /// <summary>Shown for a file written by a newer build.</summary>
+        public const string NewerVersionReason = "Saved by a newer version of the game";
+
+        /// <summary>Shown for a file that read but would not become a hero when it was chosen.</summary>
+        public const string NotLoadableReason = "This save could not be loaded";
+
+        /// <param name="loadFailure">Why a file that reads would not load, or <c>null</c>.</param>
         public HeroSummary(string id, string name, uint level, DateTime savedAtUtc, LoadStatus status, HeroData template = null,
-            long createdAtTicks = 0L)
+            long createdAtTicks = 0L, string loadFailure = null)
         {
             Id = id;
             Name = name;
@@ -20,7 +30,17 @@ namespace ToolSmiths.InventorySystem.Services
             Status = status;
             Template = template;
             CreatedAtTicks = createdAtTicks;
+            UnreadableReason = status switch
+            {
+                LoadStatus.Corrupt => CorruptReason,
+                LoadStatus.NewerVersion => NewerVersionReason,
+                _ => loadFailure,
+            };
         }
+
+        /// <summary>Why the hero cannot be entered, in words for the player; <c>null</c> for a hero that loads. The file
+        /// is not read as a hero in any of these cases, and the only thing left to do with it is delete it.</summary>
+        public string UnreadableReason { get; }
 
         /// <summary>When the hero was created, in UTC ticks; 0 for a save written before there was a stamp
         /// and for a file that cannot be read. Unlike <see cref="SavedAtUtc"/> a save does not move it, so
@@ -64,6 +84,58 @@ namespace ToolSmiths.InventorySystem.Services
         public RestoreReport Report { get; }
     }
 
+    /// <summary>Why a <see cref="IHeroSaveService.Save"/> did not write.</summary>
+    public enum SaveFailure
+    {
+        /// <summary>It wrote.</summary>
+        None,
+
+        /// <summary>The Session's hero did not come from a save file (a template load, or another hero loaded behind the service's back).</summary>
+        NotFromSave,
+
+        /// <summary>A Run is in the Field; the file only ever holds a Town hero.</summary>
+        RunInField,
+
+        /// <summary>A before-save step failed, so the previous file was kept.</summary>
+        BeforeSaveFailed,
+
+        /// <summary>The store could not write the file; the previous one is untouched.</summary>
+        StoreFailed,
+    }
+
+    /// <summary>
+    /// What a <see cref="IHeroSaveService.Save"/> did: whether it wrote and, when it did not, a short
+    /// player-facing <see cref="Reason"/>. The technical text of a failure stays in the log.
+    /// </summary>
+    public readonly struct SaveResult
+    {
+        private SaveResult(SaveFailure failure, string reason)
+        {
+            Failure = failure;
+            Reason = reason;
+        }
+
+        /// <summary>The hero is written.</summary>
+        public static SaveResult Written => new(SaveFailure.None, string.Empty);
+
+        public static SaveResult Failed(SaveFailure failure) => new(failure, failure switch
+        {
+            SaveFailure.NotFromSave => "This hero did not come from a save file, so there is nothing to write.",
+            SaveFailure.RunInField => "A Run is in the Field, and a hero is only saved in Town.",
+            SaveFailure.BeforeSaveFailed => "Something the game does before saving failed, so the previous save was kept.",
+            SaveFailure.StoreFailed => "The save could not be written: storage is blocked or has no room.",
+            _ => throw new ArgumentOutOfRangeException(nameof(failure), failure, "A failure is not None."),
+        });
+
+        public SaveFailure Failure { get; }
+
+        /// <summary>Whether the hero was written.</summary>
+        public bool Wrote => Failure == SaveFailure.None;
+
+        /// <summary>A short plain-language cause; empty when the hero was written.</summary>
+        public string Reason { get; }
+    }
+
     /// <summary>
     /// The saved heroes and the Account (GLOSSARY.md "Account"): which heroes exist, which one was
     /// last used, and moving one into and out of the Session. One file per hero, named by its
@@ -77,7 +149,7 @@ namespace ToolSmiths.InventorySystem.Services
 
         /// <summary>
         /// Raised after the hero list or the active hero changed: a hero was created, deleted, renamed or
-        /// loaded, or an unreadable file was set aside. A view of the list refreshes from it instead of
+        /// loaded, the last-selected hero was chosen, a hero would not load, or an unreadable file was set aside. A view of the list refreshes from it instead of
         /// every caller that changes a hero having to know the view exists. A handler that throws is logged
         /// and does not undo the change.
         /// </summary>
@@ -96,10 +168,19 @@ namespace ToolSmiths.InventorySystem.Services
         /// <summary>Changes the name, and the file's name with it; the id stays. <c>false</c> when the hero cannot be read.</summary>
         bool Rename(string id, string name);
 
+        /// <summary>One hero as <see cref="List"/> shows it, reading only its file. <c>false</c> for an id with no file.</summary>
+        bool TryGet(string id, out HeroSummary hero);
+
         /// <summary>The hero last loaded or chosen, or <c>null</c> when there is none.</summary>
         string LastSelectedHeroId { get; }
 
-        /// <summary>Makes <paramref name="id"/> (or none, for <c>null</c>) the last-selected hero. Throws for an id with no file.</summary>
+        /// <summary>
+        /// Makes <paramref name="id"/> (or none, for <c>null</c>) the last-selected hero and raises
+        /// <see cref="HeroesChanged"/>. Throws for an id with no file. The id need not be one that reads: the
+        /// Main Menu selects an unreadable hero this way so it can be shown and deleted. That selection lasts
+        /// this session only: a launch must not find a damaged file named as the hero to continue, since loading
+        /// it sets the file aside.
+        /// </summary>
         void SetLastSelected(string id);
 
         /// <summary>
@@ -109,8 +190,22 @@ namespace ToolSmiths.InventorySystem.Services
         HeroLoadResult Load(string id);
 
         /// <summary>
-        /// The hero a launch continues: the last-selected one, else the newest that reads, else a new
-        /// hero called "Hero", written at once so leaving the game in Town without a Run still leaves a save.
+        /// What the game scene tells the player on entering the active hero, once: the notice its load made (a
+        /// backup restore, packages that were left out), or <c>null</c> after a clean load or when it was taken
+        /// already. Held across scene loads until taken; a notice for a hero that is not active waits for it.
+        /// </summary>
+        EntryNotice TakeEntryNotice();
+
+        /// <summary>
+        /// The hero a launch continues: the last-selected one, else the newest that reads. Creates nothing:
+        /// with no hero that reads the result is <see cref="LoadStatus.Missing"/> and not entered, and the
+        /// Session keeps the hero it had.
+        /// </summary>
+        HeroLoadResult LoadLast();
+
+        /// <summary>
+        /// <see cref="LoadLast"/>, else a new hero called "Hero", written at once so leaving the game in
+        /// Town without a Run still leaves a save. The Editor's launch; a built player uses <see cref="LoadLast"/>.
         /// </summary>
         HeroLoadResult LoadLastOrCreate();
 
@@ -118,11 +213,12 @@ namespace ToolSmiths.InventorySystem.Services
         string ActiveHeroId { get; }
 
         /// <summary>
-        /// Writes the Session's hero over its own file. <c>false</c> when the Session's hero did not come
-        /// from a save (a template load, or another hero loaded behind this service's back), so a
-        /// hero that is not the file's can never overwrite it.
+        /// Writes the Session's hero over its own file. Refused, with <see cref="SaveFailure.NotFromSave"/>,
+        /// when the Session's hero did not come from a save (a template load, or another hero loaded behind
+        /// this service's back), so a hero that is not the file's can never overwrite it. A failure says why
+        /// in <see cref="SaveResult.Reason"/>; the next save point is the retry.
         /// </summary>
-        bool Save();
+        SaveResult Save();
 
         /// <summary>
         /// Registers a normaliser that runs at the start of every <see cref="Save"/> that is going to

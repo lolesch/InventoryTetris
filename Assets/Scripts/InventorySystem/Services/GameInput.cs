@@ -25,7 +25,17 @@ namespace ToolSmiths.InventorySystem.Services
         /// <summary>A button action went down, from whichever service is armed.</summary>
         public static event Action<GameAction> Performed;
 
-        internal static void Raise(GameAction action) => Performed?.Invoke(action);
+        // An open Pause Menu is modal: only Cancel, which closes it, reaches a view; the hotkeys wait.
+        internal static void Raise(GameAction action)
+        {
+            if (action != GameAction.Cancel && PauseMenuIsOpen)
+                return;
+
+            Performed?.Invoke(action);
+        }
+
+        private static bool PauseMenuIsOpen =>
+            ServiceLocator.IsArmed && ServiceLocator.Current.TryGet<IPauseMenu>(out var menu) && menu.IsOpen;
 
         public static bool IsHeld(GameAction action) => Armed?.IsHeld(action) ?? false;
 

@@ -50,7 +50,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             PressAndRelease(keyboard.escapeKey);
 
-            Assert.That(heard, Is.EqualTo(new[] { GameAction.CancelDrag }));
+            Assert.That(heard, Is.EqualTo(new[] { GameAction.Cancel }));
         }
 
         [Test]
@@ -64,7 +64,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             PressAndRelease(keyboard.escapeKey);
 
-            Assert.That(heard, Is.EqualTo(new[] { GameAction.CancelDrag }), "once: the replaced service was disposed");
+            Assert.That(heard, Is.EqualTo(new[] { GameAction.Cancel }), "once: the replaced service was disposed");
         }
 
         [Test]
@@ -78,7 +78,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             currentTime += 1.0;
             PressAndRelease(keyboard.escapeKey);
 
-            Assert.That(heard, Is.EqualTo(new[] { GameAction.CancelDrag, GameAction.CancelDrag }));
+            Assert.That(heard, Is.EqualTo(new[] { GameAction.Cancel, GameAction.Cancel }));
         }
     }
 }

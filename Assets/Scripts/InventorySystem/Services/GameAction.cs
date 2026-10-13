@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
 namespace ToolSmiths.InventorySystem.Services
 {
     /// <summary>
@@ -34,7 +38,20 @@ namespace ToolSmiths.InventorySystem.Services
         /// <summary>Held: panels and tooltips show more than they do at a glance.</summary>
         Peek = 9,
 
-        /// <summary>Puts the dragged item back where it came from.</summary>
-        CancelDrag = 10,
+        /// <summary>
+        /// The back-out key (Escape): each press peels one layer of the <see cref="ICancelChain"/>. Not
+        /// rebindable, because Escape also cancels an interactive rebind (ADR-0019).
+        /// </summary>
+        Cancel = 10,
+    }
+
+    /// <summary>The actions a rebinding screen offers.</summary>
+    public static class RebindableActions
+    {
+        /// <summary>Every action but the placeholder and <see cref="GameAction.Cancel"/>.</summary>
+        public static readonly IReadOnlyList<GameAction> All = Enum.GetValues(typeof(GameAction))
+            .Cast<GameAction>()
+            .Where(action => action != GameAction.None && action != GameAction.Cancel)
+            .ToArray();
     }
 }

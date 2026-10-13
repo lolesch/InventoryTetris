@@ -2,6 +2,7 @@ using Submodules.Utility.Bindings;
 using Submodules.Utility.Persistence;
 using Submodules.Utility.Services;
 using System;
+using ToolSmiths.InventorySystem.Inventories;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -22,20 +23,27 @@ namespace ToolSmiths.InventorySystem.Services
     {
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void BootOnPlayEntry() =>
-            Boot(Load(), SaveStoreForPlay(StartFreshEachPlay), new PlayerPrefsBindingStore(BindingsKey));
+            Boot(Load(), SaveStoreForPlay(StartFreshEachPlay), new PlayerPrefsBindingStore(BindingsKey), builtPlayer: !Application.isEditor);
 
         /// <summary>
-        /// A Play entry over <paramref name="saves"/>: arms the services, continues the last hero (or
-        /// creates one) and installs the quit save. Separate from the hook so a test can run it over an
-        /// in-memory store.
+        /// A Play entry over <paramref name="saves"/>: arms the services, continues the last hero and installs
+        /// the quit save. Separate from the hook so a test can run it over an in-memory store.
         /// </summary>
         /// <param name="bindings">Where the player's key rebindings live; a test leaves it out and gets none.</param>
-        internal static void Boot(GameConfig config, ISaveStore saves, IBindingOverrideStore bindings = null)
+        /// <param name="builtPlayer">
+        /// Whether this is a built player rather than the Editor. A built player opens on the Main Menu, whose
+        /// showcase needs a hero in the Session, so it continues the last-selected hero but never creates one:
+        /// with no saves the Session keeps the default-template hero, which is not from a file and is never
+        /// saved, and the name is asked for on the menu. The Editor creates "Hero" on a first launch, so Play
+        /// from the game scene stays a developer shortcut. A test passes <c>true</c> to take the player's path.
+        /// </param>
+        internal static void Boot(GameConfig config, ISaveStore saves, IBindingOverrideStore bindings = null, bool builtPlayer = false)
         {
             Arm(config, saves, bindings);
 
-            ContinueLastHero();
+            ContinueLastHero(builtPlayer);
             GameExit.Install(ServiceLocator.Get<ISimulationService>(), ServiceLocator.Get<IHeroSaveService>());
+            GameEntryGuard.Install(builtPlayer);
         }
 
         /// <summary>The <c>PlayerPrefs</c> key of the player's key rebindings: per machine, like <see cref="Data.UserSettings"/>.</summary>
@@ -73,14 +81,15 @@ namespace ToolSmiths.InventorySystem.Services
         public static ISaveStore SaveStoreForPlay(bool startFresh) =>
             startFresh ? new InMemorySaveStore() : new FileSaveStore(SaveLocation.Folder());
 
-        // Pressing Play, or launching, continues the last-selected hero, or creates one on a first launch.
-        // A save that cannot be read must not stop the game booting: the template hero plays on, and
-        // nothing is written over the files (the service saves only a hero it loaded).
-        private static void ContinueLastHero()
+        // Pressing Play, or launching, continues the last-selected hero; the Editor also creates one on a
+        // first launch. A save that cannot be read must not stop the game booting: the template hero plays
+        // on, and nothing is written over the files (the service saves only a hero it loaded).
+        private static void ContinueLastHero(bool builtPlayer)
         {
             try
             {
-                _ = ServiceLocator.Get<IHeroSaveService>().LoadLastOrCreate();
+                var saves = ServiceLocator.Get<IHeroSaveService>();
+                _ = builtPlayer ? saves.LoadLast() : saves.LoadLastOrCreate();
             }
             catch (Exception exception)
             {
@@ -140,6 +149,8 @@ namespace ToolSmiths.InventorySystem.Services
             var simulation = new SimulationService(session, items, inventory, config, rolls);
             registry.Register<ISimulationService>(simulation);
 
+            registry.Register<IPauseMenu>(new PauseMenu(simulation));
+
             // The heroes on disk. It reads and writes nothing until a caller asks.
             registry.Register<IHeroSaveService>(
                 new HeroSaveService(session, items, config, simulation, saves, new JsonUtilitySerializer()));
@@ -165,6 +176,7 @@ namespace ToolSmiths.InventorySystem.Services
             var keys = BuildInput(bindings ?? new InMemoryBindingStore());
             registry.Register<IInputService<GameAction>>(keys);
             keys.Performed += GameInput.Raise;
+            registry.Register<ICancelChain>(BuildCancel(keys, registry.Get<IInventoryService>()));
 
             try
             {
@@ -182,6 +194,24 @@ namespace ToolSmiths.InventorySystem.Services
             var simulation = registry.Get<ISimulationService>();
             _ = new PauseHotkey(simulation, keys);
             GameLoop.Add(simulation.Tick);
+        }
+
+        // The Cancel chain, with the Context layer that is the services' own. The Drag layer is the drag
+        // provider's and the Modal and Pause Menu layers the menus', so each registers itself.
+        private static CancelChain BuildCancel(IInputService<GameAction> keys, IInventoryService inventory)
+        {
+            var chain = new CancelChain(keys);
+
+            _ = chain.Register(CancelRank.Context, () =>
+            {
+                if (inventory.ActiveContext == InventoryContext.None)
+                    return false;
+
+                inventory.CloseContext();
+                return true;
+            });
+
+            return chain;
         }
 
         private static InputService<GameAction> BuildInput(IBindingOverrideStore bindings)

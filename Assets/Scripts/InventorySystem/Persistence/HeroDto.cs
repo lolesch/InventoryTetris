@@ -35,6 +35,9 @@ namespace ToolSmiths.InventorySystem.Persistence
 
         public uint level = 1u;
 
+        /// <summary>The hero's lifetime Kill count. 0 in a save written before there was one, so those need no schema migration.</summary>
+        public int totalKills;
+
         public float health;
         public float resource;
         public float shield;

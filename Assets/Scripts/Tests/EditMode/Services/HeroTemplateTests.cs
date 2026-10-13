@@ -167,7 +167,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             var hero = saves.Create("Aria", "scout");
             _ = saves.Load(hero.Id);
 
-            Assert.That(saves.Save(), Is.True);
+            Assert.That(saves.Save().Wrote, Is.True);
 
             Assert.That(NewService().List().Single().Template.Id, Is.EqualTo("scout"));
         }
@@ -213,7 +213,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             LogAssert.Expect(LogType.Warning, new Regex("scout.*no longer authored"));
             _ = saves.Load(hero.Id);
 
-            Assert.That(saves.Save(), Is.True);
+            Assert.That(saves.Save().Wrote, Is.True);
 
             _ = AddScout();
             Assert.That(NewService().List().Single().Template.Id, Is.EqualTo("scout"), "re-authoring the template gets the hero back");

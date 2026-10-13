@@ -32,6 +32,16 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         public HeroSaveService SavesOver(GameConfig config, ISaveStore store, Func<DateTime> utcNow = null) =>
             new(Session, Items, config, Simulation, store, new JsonUtilitySerializer(), utcNow);
 
+        /// <summary>
+        /// A save service over <paramref name="store"/> whose Session cannot build any hero from a save: a file
+        /// reads, and choosing it fails. For the hero that reads in the list but will not load.
+        /// </summary>
+        public HeroSaveService RefusingSavesOver(GameConfig config, ISaveStore store, Func<DateTime> utcNow = null) =>
+            new(new Session(Hero, Session.World,
+                    _ => throw new InvalidOperationException("no template"),
+                    (_, _) => throw new InvalidOperationException("no template")),
+                Items, config, Simulation, store, new JsonUtilitySerializer(), utcNow);
+
         public static TestGame Create(GameConfig config)
         {
             var rolls = new SessionBuilderTests.FixedRolls(0.5f);

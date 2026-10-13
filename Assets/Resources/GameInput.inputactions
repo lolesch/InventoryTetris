@@ -87,7 +87,7 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "CancelDrag",
+                    "name": "Cancel",
                     "type": "Button",
                     "id": "3d698057-ed66-4259-85a8-d7a7e254fae0",
                     "expectedControlType": "Button",
@@ -214,7 +214,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "CancelDrag",
+                    "action": "Cancel",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

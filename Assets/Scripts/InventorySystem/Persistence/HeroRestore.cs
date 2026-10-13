@@ -51,9 +51,10 @@ namespace ToolSmiths.InventorySystem.Persistence
             hero.GetResource(StatName.Shield).RestoreCurrent(dto.shield);
             hero.GetResource(StatName.Experience).RestoreCurrent(dto.experience);
 
-            // 5. The sliders and the Location the next Send goes to.
+            // 5. The sliders, the Location the next Send goes to, and the lifetime Kill count.
             RestoreBehaviour(dto.behaviour, hero);
             hero.SelectedLocation = locations.Find(dto.selectedLocationId);
+            hero.AddKills(dto.totalKills);
 
             return report;
         }

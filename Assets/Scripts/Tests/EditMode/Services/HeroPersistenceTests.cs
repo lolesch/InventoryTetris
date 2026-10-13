@@ -158,6 +158,34 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
+        public void TheLifetimeKillCount_RoundTripsThroughASave()
+        {
+            var before = PlayedGame();
+            before.Hero.AddKills(41);
+            before.Hero.AddKills(1);
+            var after = TestGame.Create(config);
+
+            Assert.That(after.Session.TryLoad(Snapshot(before), after.Simulation.Locations, out _), Is.True);
+
+            Assert.That(after.Hero.TotalKills, Is.EqualTo(42));
+        }
+
+        [Test]
+        public void ASaveWrittenBeforeTheKillCount_LoadsWithZero()
+        {
+            var before = PlayedGame();
+            before.Hero.AddKills(5);
+            var oldText = JsonUtility.ToJson(HeroMapper.ToDto(before.Hero, "hero-1", "Aria", before.Simulation.Locations))
+                .Replace("\"totalKills\":5,", string.Empty);
+            Assert.That(oldText, Does.Not.Contain("totalKills"), "premise: the text is a pre-count save");
+            var after = TestGame.Create(config);
+
+            Assert.That(after.Session.TryLoad(JsonUtility.FromJson<HeroDto>(oldText), after.Simulation.Locations, out _), Is.True);
+
+            Assert.That(after.Hero.TotalKills, Is.EqualTo(0));
+        }
+
+        [Test]
         public void ALoadedHero_IsANewHeroInANewWorld_NotTheOldOnesPatchedUp()
         {
             var before = TestGame.Create(config);
