@@ -2,6 +2,7 @@ using Submodules.Utility.Bindings;
 using Submodules.Utility.Services;
 using System;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace ToolSmiths.InventorySystem.Services
 {
@@ -38,6 +39,10 @@ namespace ToolSmiths.InventorySystem.Services
             ServiceLocator.IsArmed && ServiceLocator.Current.TryGet<IPauseMenu>(out var menu) && menu.IsOpen;
 
         public static bool IsHeld(GameAction action) => Armed?.IsHeld(action) ?? false;
+
+        /// <summary>The keyboard's <paramref name="key"/> itself, not an action bound to it: for the operating
+        /// system's own chords, which rebinding does not move.</summary>
+        public static bool IsKeyHeld(Key key) => Armed?.IsKeyHeld(key) ?? false;
 
         public static Vector2 PointerPosition => Armed?.PointerPosition ?? Vector2.zero;
 

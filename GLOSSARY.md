@@ -730,10 +730,13 @@ which can hold any number of tabs and cannot say "the other one".
 _Avoid_: tab group (for a pair), tab toggle pair, mirror toggle, driver
 
 **Peek**:
-Holding Alt on an open selling panel (the Vendor, the Healer) shows the other tab of its
+Holding Tab on an open selling panel (the Vendor, the Healer) shows the other tab of its
 **Two-panel switch**; letting go lands back where the player was. A real selection through the group,
 not a view-only overlay, so both buttons follow. It is the **peek toggle**'s own behaviour: a subclass
-names the key (`AltPanelPeekToggle` reads Alt through the same helper as the tooltip), and the
+names the key (`SellingPanelPeekToggle` reads `GameAction.PeekTab`, not the tooltip's `GameAction.ShowDetails` on
+Alt: Alt over an item expands its tooltip, and a tab swap would take that item away; `PeekTabKey` also
+ignores a Tab that went down while an Alt key was held, which is the window switch, while Tab then Alt keeps the
+peek; it reads the physical keys, not the actions bound to them), and the
 peek counts only while the toggle is reachable, so a closed or hidden panel never peeks. It begins
 and ends once per hold. A press remembers whether the peek toggle was on; on release the peek is given
 back only if that has changed, so a click on either tab during the hold leaves the player where they

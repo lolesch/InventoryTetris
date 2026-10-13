@@ -78,7 +78,7 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "Peek",
+                    "name": "ShowDetails",
                     "type": "Button",
                     "id": "434d1a55-61ea-414a-89c1-d360b6a1d2ae",
                     "expectedControlType": "Button",
@@ -90,6 +90,15 @@
                     "name": "Cancel",
                     "type": "Button",
                     "id": "3d698057-ed66-4259-85a8-d7a7e254fae0",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "PeekTab",
+                    "type": "Button",
+                    "id": "0a43970b-25a0-41f6-8111-355c805fa5d5",
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "",
@@ -192,7 +201,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Peek",
+                    "action": "ShowDetails",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -203,7 +212,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Peek",
+                    "action": "ShowDetails",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -215,6 +224,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "Cancel",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "8c99ba4b-2cb9-46ea-b579-e4f2b0a3f96e",
+                    "path": "<Keyboard>/tab",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "PeekTab",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

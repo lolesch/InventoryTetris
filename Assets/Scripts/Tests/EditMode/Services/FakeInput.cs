@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using ToolSmiths.InventorySystem.Services;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace ToolSmiths.InventorySystem.Tests.Services
 {
@@ -13,6 +14,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
     public sealed class FakeInput : IInputService<GameAction>
     {
         private readonly HashSet<GameAction> held = new();
+        private readonly HashSet<Key> heldKeys = new();
 
         public event Action<GameAction> Performed;
 
@@ -28,6 +30,14 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         public void Release(GameAction action) => held.Remove(action);
+
+        public bool IsKeyHeld(Key key) => heldKeys.Contains(key);
+
+        /// <summary>Holds the physical key, whatever it is bound to. Does not press an action: pair it with
+        /// <see cref="Press"/> for a key that is bound to one.</summary>
+        public void PressKey(Key key) => heldKeys.Add(key);
+
+        public void ReleaseKey(Key key) => heldKeys.Remove(key);
 
         public void Rebind(GameAction action, int bindingIndex, Action<RebindResult> completed) => throw new NotSupportedException();
 

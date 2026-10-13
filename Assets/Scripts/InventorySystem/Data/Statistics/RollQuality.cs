@@ -1,5 +1,4 @@
 using Submodules.Utility.Extensions;
-using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Data
 {
@@ -8,15 +7,14 @@ namespace ToolSmiths.InventorySystem.Data
     {
         /// <summary>
         /// Font size scales with roll quality: an affix at the bottom of its range renders at
-        /// <paramref name="minSize"/>, one at the top at <paramref name="maxSize"/>. The clamp keeps a value
-        /// outside its range from extrapolating past those bounds. A fixed roll (a zero-width range) cannot
+        /// <paramref name="minSize"/>, one at the top at <paramref name="maxSize"/>. <c>Map</c> clamps, so a value
+        /// outside its range cannot leave those bounds. A fixed roll (a zero-width range) cannot
         /// roll any better, so it renders at <paramref name="maxSize"/>.
         /// </summary>
         public static float FontSize(StatModifier modifier, float minSize, float maxSize)
         {
             var range = modifier.Range;
-            var quality = range.x == range.y ? 1f : Mathf.Clamp01(modifier.Value.MapTo01(range.x, range.y));
-            return quality.MapFrom01(minSize, maxSize);
+            return range.x == range.y ? maxSize : modifier.Value.Map(range.x, range.y, minSize, maxSize);
         }
     }
 }

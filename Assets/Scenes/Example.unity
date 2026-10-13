@@ -6633,7 +6633,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ae690ccf9f1fd33409d08f025a7b1217, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Components.Toggles.AltPanelPeekToggle
+  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Components.Toggles.SellingPanelPeekToggle
   m_Navigation:
     m_Mode: 3
     m_WrapAround: 0
@@ -18696,7 +18696,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ae690ccf9f1fd33409d08f025a7b1217, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Components.Toggles.AltPanelPeekToggle
+  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Components.Toggles.SellingPanelPeekToggle
   m_Navigation:
     m_Mode: 3
     m_WrapAround: 0
@@ -36444,7 +36444,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ae690ccf9f1fd33409d08f025a7b1217, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Components.Toggles.AltPanelPeekToggle
+  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Components.Toggles.SellingPanelPeekToggle
   m_Navigation:
     m_Mode: 3
     m_WrapAround: 0

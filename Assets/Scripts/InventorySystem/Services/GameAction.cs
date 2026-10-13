@@ -35,14 +35,18 @@ namespace ToolSmiths.InventorySystem.Services
         /// <summary>Held while picking up a stack: takes half.</summary>
         HalveStack = 8,
 
-        /// <summary>Held: panels and tooltips show more than they do at a glance.</summary>
-        Peek = 9,
+        /// <summary>Held: tooltips and stat displays show more than they do at a glance.</summary>
+        ShowDetails = 9,
 
         /// <summary>
         /// The back-out key (Escape): each press peels one layer of the <see cref="ICancelChain"/>. Not
         /// rebindable, because Escape also cancels an interactive rebind (ADR-0019).
         /// </summary>
         Cancel = 10,
+
+        /// <summary>Held on an open selling panel: shows the other tab of its two-panel switch. Apart from
+        /// <see cref="ShowDetails"/> so that holding it over an item does not swap that item away.</summary>
+        PeekTab = 11,
     }
 
     /// <summary>The actions a rebinding screen offers.</summary>

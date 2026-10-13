@@ -29,7 +29,7 @@ namespace ToolSmiths.InventorySystem.Data
         public static DamageNumberStyle Of(float amount, float referenceMax, DamageType type, float minSize, float maxSize,
             Color physicalTint, Color magicalTint)
         {
-            var size = referenceMax > 0f ? amount.MapClamped(0f, referenceMax, minSize, maxSize) : maxSize;
+            var size = referenceMax > 0f ? amount.Map(0f, referenceMax, minSize, maxSize) : maxSize;
             return new DamageNumberStyle(size, type == DamageType.MagicalDamage ? magicalTint : physicalTint);
         }
     }
