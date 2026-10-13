@@ -27,7 +27,7 @@ namespace ToolSmiths.InventorySystem.Services
         /// <returns>Whether the hero is now the Session's.</returns>
         public static bool Select(IHeroSaveService saves, string id)
         {
-            if (!TryFind(saves, id, out var hero))
+            if (!saves.TryGet(id, out var hero))
                 return false;
 
             var unreadable = hero.UnreadableReason != null;
@@ -40,7 +40,7 @@ namespace ToolSmiths.InventorySystem.Services
 
             // A load that failed has marked the hero unreadable by now; one that was only refused (a Run is in
             // the Field) has not, and selects nothing.
-            if (unreadable || TryFind(saves, id, out hero) && hero.UnreadableReason != null)
+            if (unreadable || saves.TryGet(id, out hero) && hero.UnreadableReason != null)
                 saves.SetLastSelected(id);
 
             return false;
@@ -52,7 +52,7 @@ namespace ToolSmiths.InventorySystem.Services
             var selected = saves.LastSelectedHeroId;
 
             if (selected != null)
-                return TryFind(saves, selected, out hero);
+                return saves.TryGet(selected, out hero);
 
             hero = default;
             return false;
@@ -87,36 +87,16 @@ namespace ToolSmiths.InventorySystem.Services
             return deleted;
         }
 
-        private static bool TryFind(IHeroSaveService saves, string id, out HeroSummary found)
-        {
-            foreach (var hero in saves.List())
-            {
-                if (hero.Id != id)
-                    continue;
-
-                found = hero;
-                return true;
-            }
-
-            found = default;
-            return false;
-        }
-
         /// <summary>
         /// Loads the selected hero from disk again, then asks for the game scene. The load replaces the Hero
         /// and the World together, so nothing of the previous trip leaks and the Supply is restocked. A hero
         /// that no longer loads keeps the player on the menu.
         /// </summary>
-        /// <param name="loadScene">The scene change, so a test supplies its own and the menu its loader.</param>
-        /// <returns>Whether the game scene was asked for.</returns>
-        public static bool Play(IHeroSaveService saves, Action<string> loadScene)
-        {
-            if (!CanPlay(saves) || !saves.Load(saves.ActiveHeroId).Entered)
-                return false;
-
-            loadScene(GameEntryGuard.GameScene);
-            return true;
-        }
+        /// <param name="loadScene">The scene change, so a test supplies its own and the menu its loader. It answers
+        /// whether the load started; a loader that declines leaves the player on the menu to press Play again.</param>
+        /// <returns>Whether the game scene was asked for and the loader took it.</returns>
+        public static bool Play(IHeroSaveService saves, Func<string, bool> loadScene) =>
+            CanPlay(saves) && saves.Load(saves.ActiveHeroId).Entered && loadScene(GameEntryGuard.GameScene);
 
         /// <summary>
         /// The create slot's confirm: checks <paramref name="name"/> (<see cref="HeroNameRules"/>) and only
@@ -142,18 +122,11 @@ namespace ToolSmiths.InventorySystem.Services
         /// </summary>
         public static string SavedLine(IHeroSaveService saves, TimeZoneInfo zone = null)
         {
-            var last = saves.LastSelectedHeroId;
+            if (!TrySelected(saves, out var hero))
+                return null;
 
-            foreach (var hero in saves.List())
-            {
-                if (hero.Id != last)
-                    continue;
-
-                var local = TimeZoneInfo.ConvertTimeFromUtc(hero.SavedAtUtc, zone ?? TimeZoneInfo.Local);
-                return $"Saved: {hero.Name}, Level {hero.Level}, {local.ToString("HH:mm", CultureInfo.InvariantCulture)}";
-            }
-
-            return null;
+            var local = TimeZoneInfo.ConvertTimeFromUtc(hero.SavedAtUtc, zone ?? TimeZoneInfo.Local);
+            return $"Saved: {hero.Name}, Level {hero.Level}, {local.ToString("HH:mm", CultureInfo.InvariantCulture)}";
         }
     }
 }

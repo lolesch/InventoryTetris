@@ -408,6 +408,12 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             ClickPrompt("secondary");
 
             Assert.That(quits, Is.EqualTo(1));
+
+            // The real quit raises Application.quitting, whose save would write the hero the player just chose not to save.
+            store.FailWrites = false;
+            var savedBefore = Saves.List()[0].SavedAtUtc;
+            GameExit.SaveHero(Simulation, Saves);
+            Assert.That(Saves.List()[0].SavedAtUtc, Is.EqualTo(savedBefore), "the quit that follows Exit without saving writes nothing");
         }
 
         [UnityTest]
@@ -419,9 +425,50 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 
             ClickQuitGame();
 
-            Assert.That(Member<Component>(Find("PauseMenuPanel"), "quitGame").GetComponent<UnityEngine.UI.Selectable>().interactable, Is.False);
-            Assert.That(Member<Component>(Find("PauseMenuPanel"), "saveExit").GetComponent<UnityEngine.UI.Selectable>().interactable, Is.False);
+            Assert.That(ExitButton("quitGame").interactable, Is.False);
+            Assert.That(ExitButton("saveExit").interactable, Is.False);
         }
+
+        [UnityTest]
+        public IEnumerator AnExitTheSceneLoaderRefuses_LeavesBothButtonsLive_SoTheNextClickCanLeave()
+        {
+            yield return Open("Example");
+            Menu.Open();
+            yield return null;
+            Assert.That(RequestScene("MainMenu"), Is.True, "premise: a load is already under way, as in the loader's fade");
+
+            ClickSaveExit();
+
+            Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("Example"));
+            Assert.That(ExitButton("saveExit").interactable, Is.True, "the refused leave locked nothing");
+            Assert.That(ExitButton("quitGame").interactable, Is.True);
+
+            yield return WaitForScene("MainMenu");
+        }
+
+        [UnityTest]
+        public IEnumerator ASceneRequest_IsRefusedWhileOneIsUnderway_AndAcceptedAgainOnceItEnds()
+        {
+            yield return Open("Example");
+
+            Assert.That(RequestScene("MainMenu"), Is.True);
+            Assert.That(RequestScene("MainMenu"), Is.False, "one load at a time");
+
+            yield return WaitForScene("MainMenu");
+
+            Assert.That(RequestScene("Example"), Is.True, "the loader is free again");
+            yield return WaitForScene("Example");
+        }
+
+        private static UnityEngine.UI.Selectable ExitButton(string field) =>
+            Member<Component>(Find("PauseMenuPanel"), field).GetComponent<UnityEngine.UI.Selectable>();
+
+        // The game project's scene request, by name: this assembly cannot reference Assembly-CSharp.
+        private static bool RequestScene(string scene) =>
+            (bool)Assembly.Load("Assembly-CSharp")
+                .GetType("ToolSmiths.InventorySystem.GUI.SceneRequest")!
+                .GetMethod("TryLoad")!
+                .Invoke(null, new object[] { scene });
 
         [UnityTest]
         public IEnumerator QuitGame_IsHiddenInAWebGLBuild_AndOfferedOnTheOthers()

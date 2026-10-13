@@ -1,5 +1,4 @@
 using Submodules.Utility.Services;
-using Submodules.Utility.UI;
 using System;
 using TMPro;
 using ToolSmiths.InventorySystem.GUI.Components.Buttons;
@@ -31,22 +30,25 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
         [SerializeField] private ClickEventButton back;
 
         private IDisposable cancelLayer;
-        private Action leave;
+        private Func<bool> leave;
+        private Func<bool> leaveUnsaved;
         private Step step;
         private string failure = string.Empty;
 
-        /// <summary>Raised once the game is leaving, saved or not, so the Pause Menu can stop taking clicks.</summary>
+        /// <summary>Raised once the game has started leaving, saved or not, so the Pause Menu can stop taking clicks.
+        /// A leave the scene loader declines raises nothing: the buttons stay live for another try.</summary>
         public event Action Left;
 
         /// <summary>Starts a Save &amp; Exit: asks first when it ends a Run, else leaves for the Main Menu at once.</summary>
-        public void BeginSaveAndExit() => Begin(LoadMenu);
+        public void BeginSaveAndExit() => Begin(LoadMenu, LoadMenu);
 
         /// <summary>Starts a Quit Game: the same rule as <see cref="BeginSaveAndExit"/>, then the application ends.</summary>
-        public void BeginQuit() => Begin(GameExit.Quitter);
+        public void BeginQuit() => Begin(Quit, QuitUnsaved);
 
-        private void Begin(Action onLeave)
+        private void Begin(Func<bool> onLeave, Func<bool> onLeaveUnsaved)
         {
             leave = onLeave;
+            leaveUnsaved = onLeaveUnsaved;
 
             if (SaveAndExit.NeedsConfirmation(ServiceLocator.Get<ISimulationService>()))
                 Show(Step.Confirm);
@@ -115,7 +117,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
         private void OnSecondary()
         {
             if (step == Step.Discard)
-                Exit();
+                Exit(leaveUnsaved);
             else
                 Show(Step.Discard);
         }
@@ -136,7 +138,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
 
         private void Attempt()
         {
-            var result = SaveAndExit.Leave(ServiceLocator.Get<ISimulationService>(), HeroSaveService.Instance, Exit);
+            var result = SaveAndExit.Leave(ServiceLocator.Get<ISimulationService>(), HeroSaveService.Instance, () => Exit(leave));
 
             if (result.Wrote)
                 return;
@@ -145,13 +147,29 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
             Show(Step.Failed);
         }
 
-        private void Exit()
+        // Leaving counts only once it started: a scene load the loader declines changes nothing, so the modal and
+        // both Pause Menu buttons stay as they were, and pressing again tries again.
+        private void Exit(Func<bool> start)
         {
+            if (!start())
+                return;
+
             gameObject.SetActive(false);
             Left?.Invoke();
-            leave();
         }
 
-        private static void LoadMenu() => SceneProvider.Instance.LoadScene(GameEntryGuard.MenuScene);
+        private static bool LoadMenu() => SceneRequest.TryLoad(GameEntryGuard.MenuScene);
+
+        private static bool Quit()
+        {
+            GameExit.Quitter();
+            return true;
+        }
+
+        private static bool QuitUnsaved()
+        {
+            GameExit.QuitWithoutSaving();
+            return true;
+        }
     }
 }

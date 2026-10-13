@@ -168,13 +168,18 @@ namespace ToolSmiths.InventorySystem.Services
         /// <summary>Changes the name, and the file's name with it; the id stays. <c>false</c> when the hero cannot be read.</summary>
         bool Rename(string id, string name);
 
+        /// <summary>One hero as <see cref="List"/> shows it, reading only its file. <c>false</c> for an id with no file.</summary>
+        bool TryGet(string id, out HeroSummary hero);
+
         /// <summary>The hero last loaded or chosen, or <c>null</c> when there is none.</summary>
         string LastSelectedHeroId { get; }
 
         /// <summary>
         /// Makes <paramref name="id"/> (or none, for <c>null</c>) the last-selected hero and raises
         /// <see cref="HeroesChanged"/>. Throws for an id with no file. The id need not be one that reads: the
-        /// Main Menu selects an unreadable hero this way so it can be shown and deleted.
+        /// Main Menu selects an unreadable hero this way so it can be shown and deleted. That selection lasts
+        /// this session only: a launch must not find a damaged file named as the hero to continue, since loading
+        /// it sets the file aside.
         /// </summary>
         void SetLastSelected(string id);
 

@@ -42,7 +42,8 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
 
         protected override void OnClick()
         {
-            if (MainMenuFlow.Play(HeroSaveService.Instance, scene => SceneProvider.Instance.LoadScene(scene)))
+            // Locks only once the load started: a refused one leaves Play to be pressed again.
+            if (MainMenuFlow.Play(HeroSaveService.Instance, SceneRequest.TryLoad))
                 interactable = false;
         }
 

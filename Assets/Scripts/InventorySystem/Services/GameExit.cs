@@ -13,7 +13,8 @@ namespace ToolSmiths.InventorySystem.Services
     /// run away and never leaves a hero in the Field.
     ///
     /// The Pause Menu's Quit Game ends the application through <see cref="Quitter"/> once the hero is written,
-    /// and is not offered where <see cref="CanQuit"/> says quitting does nothing.
+    /// and is not offered where <see cref="CanQuit"/> says quitting does nothing. After a failed write its
+    /// Exit without saving ends the application through <see cref="QuitWithoutSaving"/>, which skips this save.
     ///
     /// The handler uses the services, so it is released on entering Edit Mode, after the scene's
     /// teardown, and not on <c>ExitingPlayMode</c> (docs/agents/codebase-notes.md, "Static state needs
@@ -23,6 +24,7 @@ namespace ToolSmiths.InventorySystem.Services
     public static class GameExit
     {
         private static Action quitHandler;
+        private static bool discarding;
 
         public static bool IsInstalled => quitHandler != null;
 
@@ -31,6 +33,16 @@ namespace ToolSmiths.InventorySystem.Services
 
         /// <summary>Whether a menu offers a quit: not in a browser, where <see cref="Application.Quit"/> does nothing.</summary>
         public static bool CanQuit(RuntimePlatform platform) => platform != RuntimePlatform.WebGLPlayer;
+
+        /// <summary>
+        /// Ends the application for a player who chose Exit without saving after a failed write: the quit save
+        /// is skipped, so the last save stays as it is. Lasts until the next <see cref="Install"/> or reset.
+        /// </summary>
+        public static void QuitWithoutSaving()
+        {
+            discarding = true;
+            Quitter();
+        }
 
         /// <summary>Attaches the quit handler once; installing again replaces it, never doubles it.</summary>
         public static void Install(ISimulationService simulation, IHeroSaveService saves)
@@ -55,10 +67,13 @@ namespace ToolSmiths.InventorySystem.Services
         /// <summary>
         /// Ends a live Run and writes the hero. The Run's own end is a save point (<see cref="ISimulationService.RunSettled"/>),
         /// so a Run that was ended here has been written already; only a hero in Town is written by this call.
-        /// Never throws: the game is closing, and a failure here is logged.
+        /// Never throws: the game is closing, and a failure here is logged. Does nothing after <see cref="QuitWithoutSaving"/>.
         /// </summary>
         public static void SaveHero(ISimulationService simulation, IHeroSaveService saves)
         {
+            if (discarding)
+                return;
+
             try
             {
                 if (!simulation.LeaveField())
@@ -82,6 +97,8 @@ namespace ToolSmiths.InventorySystem.Services
 
         private static void Release()
         {
+            discarding = false;
+
             if (quitHandler == null)
                 return;
 

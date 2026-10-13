@@ -45,7 +45,36 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             created.Clear();
         }
 
-        private void Enter(string scene) => requested = scene;
+        private bool Enter(string scene)
+        {
+            requested = scene;
+            return true;
+        }
+
+        private static bool Refuse(string scene) => false;
+
+        // Counts the reads of each file, to show a lookup of one hero does not read the others.
+        private sealed class CountingStore : ISaveStore
+        {
+            private readonly ISaveStore real;
+
+            public CountingStore(ISaveStore real) => this.real = real;
+
+            public List<string> Reads { get; } = new();
+
+            public bool TryRead(string key, out string content)
+            {
+                Reads.Add(key);
+                return real.TryRead(key, out content);
+            }
+
+            public bool TryReadBackup(string key, out string content) => real.TryReadBackup(key, out content);
+            public bool Delete(string key) => real.Delete(key);
+            public IReadOnlyCollection<string> Keys() => real.Keys();
+            public bool SetAside(string key) => real.SetAside(key);
+            public void AppendSideFile(string fileName, string text) => real.AppendSideFile(fileName, text);
+            public void Write(string key, string content) => real.Write(key, content);
+        }
 
         [Test]
         public void Play_IsDisabled_WithNoHeroSelected_AndEntersNothing()
@@ -100,6 +129,16 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(MainMenuFlow.Play(saves, Enter), Is.False);
             Assert.That(requested, Is.Null, "no scene change on a load that did not enter");
             Assert.That(game.Session.Hero, Is.SameAs(heroBefore), "the Session was not touched");
+        }
+
+        [Test]
+        public void Play_ReportsFalse_WhenTheSceneLoaderRefuses_SoTheButtonCanStayLive()
+        {
+            var id = saves.Create("Aria").Id;
+            _ = saves.Load(id);
+
+            Assert.That(MainMenuFlow.Play(saves, Refuse), Is.False);
+            Assert.That(MainMenuFlow.CanPlay(saves), Is.True, "nothing about the selection changed");
         }
 
         [Test]
@@ -227,6 +266,22 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
+        public void Select_AnUnreadableHero_IsNotRememberedAsTheLastSelected_SoTheNextLaunchLeavesItAlone()
+        {
+            var aria = saves.Create("Aria").Id;
+            _ = MainMenuFlow.Select(saves, aria);
+            Damage();
+
+            _ = MainMenuFlow.Select(saves, DamagedId);
+
+            var relaunched = game.SavesOver(config, store, () => now);
+            Assert.That(relaunched.LastSelectedHeroId, Is.EqualTo(aria), "the damaged slot was only looked at");
+            Assert.That(relaunched.LoadLast().Entered, Is.True);
+            Assert.That(relaunched.ActiveHeroId, Is.EqualTo(aria));
+            Assert.That(store.Keys(), Does.Contain(DamagedId), "so it was not set aside, and still has its slot");
+        }
+
+        [Test]
         public void Select_AHeroThatReadsButWillNotLoad_IsSelectedWithTheReason_AndNeverEntersTheSession()
         {
             var id = saves.Create("Aria").Id;
@@ -249,6 +304,25 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         // ── deleting ────────────────────────────────────────────────────────
+
+        [Test]
+        public void LookingUpTheSelectedHero_ReadsItsFileAlone_NotEveryHeroSave()
+        {
+            var counting = new CountingStore(store);
+            var counted = game.SavesOver(config, counting, () => now);
+            _ = counted.Create("Aria");
+            _ = counted.Create("Bram");
+            var selected = counted.Create("Cass").Id;
+            _ = MainMenuFlow.Select(counted, selected);
+            counting.Reads.Clear();
+
+            Assert.That(MainMenuFlow.TrySelected(counted, out var hero), Is.True);
+            Assert.That(MainMenuFlow.SavedLine(counted, TimeZoneInfo.Utc), Does.StartWith("Saved: Cass"));
+
+            Assert.That(hero.Id, Is.EqualTo(selected));
+            Assert.That(counting.Reads.Where(key => key != "account" && HeroFileKey.IdOf(key) != selected), Is.Empty,
+                "the other heroes' files were not read");
+        }
 
         [Test]
         public void TheDeleteQuestion_NamesTheHero_AndAnUnreadableOneIsCalledWhatItIs()

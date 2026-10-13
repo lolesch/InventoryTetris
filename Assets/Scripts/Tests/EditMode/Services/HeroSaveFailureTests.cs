@@ -158,17 +158,20 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         [Test]
         public void ACorruptLastSelectedHero_IsSetAside_AndALaunchStartsAFreshHeroUnderANewId()
         {
-            store.Write("deadbeef", "this is not a save");
+            var seeding = NewSetup();
+            var damaged = seeding.Saves.Create("Aria").Id;
+            seeding.Saves.SetLastSelected(damaged);
+            store.Write(KeyOf(damaged), "this is not a save");
+            store.Write(KeyOf(damaged), "this is not a save either");
             var setup = NewSetup();
-            setup.Saves.SetLastSelected("deadbeef");
-            ExpectLog(LogType.Error, "deadbeef.*damaged");
+            ExpectLog(LogType.Error, $"{damaged}.*damaged");
 
             var result = setup.Saves.LoadLastOrCreate();
 
             Assert.That(result.Entered, Is.True);
-            Assert.That(setup.Saves.ActiveHeroId, Is.Not.EqualTo("deadbeef"));
+            Assert.That(setup.Saves.ActiveHeroId, Is.Not.EqualTo(damaged));
             Assert.That(setup.Saves.LastSelectedHeroId, Is.EqualTo(setup.Saves.ActiveHeroId));
-            Assert.That(inner.SetAsideValues, Is.EqualTo(new[] { "this is not a save" }));
+            Assert.That(inner.SetAsideValues, Does.Contain("this is not a save either"));
             Assert.That(setup.Saves.List().Select(hero => hero.Id), Is.EqualTo(new[] { setup.Saves.ActiveHeroId }));
         }
 
@@ -200,8 +203,8 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         {
             var seeding = NewSetup();
             var future = seeding.Saves.Create("FromTheFuture");
-            HeroSlot(future.Id, version: 2).Save(new HeroDto { id = future.Id, name = "FromTheFuture" });
             seeding.Saves.SetLastSelected(future.Id);
+            HeroSlot(future.Id, version: 2).Save(new HeroDto { id = future.Id, name = "FromTheFuture" });
             inner.TryRead(KeyOf(future.Id), out var before);
             var setup = NewSetup();
             ExpectLog(LogType.Warning, "newer version");
@@ -251,6 +254,25 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(raised, Is.EqualTo(1), "the slot repaints");
             Assert.That(refusing.List().Single().UnreadableReason, Is.EqualTo("This save could not be loaded"));
             Assert.That(inner.SetAsideValues, Is.Empty, "the file is left alone");
+        }
+
+        [Test]
+        public void AHeroLoadedHandlerThatThrows_DoesNotUndoTheLoad_NorKeepTheOthersFromRunning()
+        {
+            var setup = NewSetup();
+            var hero = setup.Saves.Create("Aria");
+            var ran = 0;
+            setup.Game.Session.HeroLoaded += () => throw new InvalidOperationException("a view failed");
+            setup.Game.Session.HeroLoaded += () => ran++;
+            ExpectLog(LogType.Error, "a view failed");
+
+            var result = setup.Saves.Load(hero.Id);
+
+            Assert.That(result.Entered, Is.True, "the Session swapped before the handler threw");
+            Assert.That(setup.Saves.ActiveHeroId, Is.EqualTo(hero.Id));
+            Assert.That(setup.Saves.LastSelectedHeroId, Is.EqualTo(hero.Id));
+            Assert.That(setup.Saves.List().Single().UnreadableReason, Is.Null, "the hero is not marked as one that will not load");
+            Assert.That(ran, Is.EqualTo(1), "the handler after the failing one still ran");
         }
 
         [Test]

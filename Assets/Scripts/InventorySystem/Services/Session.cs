@@ -3,6 +3,7 @@ using System;
 using ToolSmiths.InventorySystem.Persistence;
 using ToolSmiths.InventorySystem.Runtime.Character;
 using ToolSmiths.InventorySystem.Simulation;
+using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Services
 {
@@ -100,7 +101,27 @@ namespace ToolSmiths.InventorySystem.Services
             Hero = hero;
             World = world;
 
-            HeroLoaded?.Invoke();
+            RaiseHeroLoaded();
+        }
+
+        // The swap is done and cannot be undone, so a view that throws is logged and the rest still rebind: a
+        // load never fails after it has replaced the Hero, and a caller can tell a failed build from a late handler.
+        private void RaiseHeroLoaded()
+        {
+            if (HeroLoaded == null)
+                return;
+
+            foreach (var handler in HeroLoaded.GetInvocationList())
+            {
+                try
+                {
+                    ((Action)handler)();
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogError($"A hero-loaded handler failed: {exception.Message}");
+                }
+            }
         }
     }
 }

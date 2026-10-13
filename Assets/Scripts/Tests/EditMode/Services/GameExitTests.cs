@@ -118,6 +118,35 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
+        public void AQuitWithoutSaving_WritesNothing_AndQuits_UntilTheNextInstallSavesAgain()
+        {
+            var (game, saves, id) = Playing();
+            game.Hero.Wallet.Deposit(new Currency(40u));
+            var quits = 0;
+            var previous = GameExit.Quitter;
+            GameExit.Quitter = () => quits++;
+
+            try
+            {
+                GameExit.QuitWithoutSaving();
+            }
+            finally
+            {
+                GameExit.Quitter = previous;
+            }
+
+            GameExit.SaveHero(game.Simulation, saves);
+
+            Assert.That(quits, Is.EqualTo(1));
+            Assert.That(Reloaded(id).Game.Hero.Wallet.Balance.Total, Is.Zero, "the last save is kept, this session's gold is not written");
+
+            GameExit.Install(game.Simulation, saves);
+            GameExit.SaveHero(game.Simulation, saves);
+
+            Assert.That(Reloaded(id).Game.Hero.Wallet.Balance.Total, Is.EqualTo(40u), "a later quit saves as usual");
+        }
+
+        [Test]
         public void AQuitWithNoSavedHero_WritesNothing_AndDoesNotThrow()
         {
             var game = TestGame.Create(config);

@@ -129,6 +129,39 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
+        public void TryGet_FindsOneHeroAsTheListShowsIt_AndNothingForAnIdWithNoFile()
+        {
+            var saves = NewSetup().Saves;
+            var hero = saves.Create("Aria");
+            store.Write("deadbeef", "this is not a save");
+
+            Assert.That(saves.TryGet(hero.Id, out var found), Is.True);
+            Assert.That(found.Name, Is.EqualTo("Aria"));
+            Assert.That(saves.TryGet("deadbeef", out var damaged), Is.True);
+            Assert.That(damaged.UnreadableReason, Is.EqualTo(HeroSummary.CorruptReason));
+            Assert.That(saves.TryGet("nosuchhero", out _), Is.False);
+            Assert.That(saves.TryGet(null, out _), Is.False);
+        }
+
+        [Test]
+        public void SetLastSelected_OfAnUnreadableHero_ShowsAsSelected_ButIsNotWrittenToTheAccount()
+        {
+            var first = NewSetup().Saves;
+            var aria = first.Create("Aria").Id;
+            first.SetLastSelected(aria);
+            store.Write("deadbeef", "this is not a save");
+
+            first.SetLastSelected("deadbeef");
+
+            Assert.That(first.LastSelectedHeroId, Is.EqualTo("deadbeef"), "this session sees it selected");
+            Assert.That(NewSetup().Saves.LastSelectedHeroId, Is.EqualTo(aria), "the next launch does not");
+
+            first.SetLastSelected(aria);
+
+            Assert.That(first.LastSelectedHeroId, Is.EqualTo(aria), "choosing a readable hero replaces it");
+        }
+
+        [Test]
         public void Create_RefusesAnEmptyName()
         {
             var saves = NewSetup().Saves;
