@@ -1,0 +1,282 @@
+using NUnit.Framework;
+using Submodules.Utility.Persistence;
+using Submodules.Utility.Services;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Text.RegularExpressions;
+using TMPro;
+using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Data.Enums;
+using ToolSmiths.InventorySystem.Inventories;
+using ToolSmiths.InventorySystem.Items;
+using ToolSmiths.InventorySystem.Services;
+using ToolSmiths.InventorySystem.Simulation;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
+using UnityEngine.TestTools;
+
+namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
+{
+    /// <summary>
+    /// The real scenes' Save &amp; Exit (issue #258): in Town it writes and loads the Main Menu with no prompt; in
+    /// the Field it asks first, and on confirm Recalls with the loot kept; Cancel leaves the Run untouched; a
+    /// failed write stays in the game with the cause, Retry works and Exit without saving has its own confirm.
+    /// The saves are real files in a scratch folder. Boots again over the Input System fixture's isolation,
+    /// like <see cref="PauseMenuPlayModeTests"/>.
+    /// </summary>
+    public sealed class SaveExitPlayModeTests : InputTestFixture
+    {
+        private string folder;
+        private FailableStore store;
+
+        private static IHeroSaveService Saves => ServiceLocator.Get<IHeroSaveService>();
+        private static IPauseMenu Menu => ServiceLocator.Get<IPauseMenu>();
+        private static ISimulationService Simulation => ServiceLocator.Get<ISimulationService>();
+        private static ISession Session => ServiceLocator.Get<ISession>();
+
+        // The save store with a switch that makes every write fail, over the real files.
+        private sealed class FailableStore : ISaveStore
+        {
+            private readonly ISaveStore real;
+
+            public FailableStore(ISaveStore real) => this.real = real;
+
+            public bool FailWrites { get; set; }
+
+            public bool TryRead(string key, out string content) => real.TryRead(key, out content);
+            public bool TryReadBackup(string key, out string content) => real.TryReadBackup(key, out content);
+            public bool Delete(string key) => real.Delete(key);
+            public IReadOnlyCollection<string> Keys() => real.Keys();
+            public bool SetAside(string key) => real.SetAside(key);
+            public void AppendSideFile(string fileName, string text) => real.AppendSideFile(fileName, text);
+
+            public void Write(string key, string content)
+            {
+                if (FailWrites)
+                    throw new IOException("the disk is full");
+
+                real.Write(key, content);
+            }
+        }
+
+        [TearDown]
+        public void LeaveTheGameAsItWasFound()
+        {
+            if (ServiceLocator.IsArmed)
+            {
+                Menu.Close();
+
+                // The services outlive the test with domain reload off, and the next fixture sends its own Run.
+                _ = Simulation.LeaveField();
+            }
+
+            if (folder != null && Directory.Exists(folder))
+                Directory.Delete(folder, true);
+        }
+
+        // Aria on disk and selected, the Main Menu open; or straight into the game scene.
+        private IEnumerator Open(string scene)
+        {
+            folder = Path.Combine(Path.GetTempPath(), "InventoryTetris-saveexit-" + Guid.NewGuid().ToString("N"));
+            store = new FailableStore(new FileSaveStore(folder));
+
+            ServiceLocator.Reset();
+            GameBoot.Arm(GameBoot.Load(), store);
+            _ = InputSystem.AddDevice<Keyboard>();
+            _ = Saves.Load(Saves.Create("Aria").Id);
+
+            yield return SceneManager.LoadSceneAsync(scene);
+            yield return null;
+        }
+
+        private static MonoBehaviour Find(string typeName) =>
+            UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include)
+                .First(component => component.GetType().Name == typeName);
+
+        private static T Member<T>(Component owner, string field) =>
+            (T)owner.GetType().GetField(field, BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(owner);
+
+        private static void Click(Component target)
+        {
+            var click = new PointerEventData(EventSystem.current) { button = PointerEventData.InputButton.Left };
+            _ = ExecuteEvents.Execute(target.gameObject, click, ExecuteEvents.pointerClickHandler);
+        }
+
+        private static MonoBehaviour Prompt() => Member<MonoBehaviour>(Find("PauseMenuPanel"), "saveExitPrompt");
+
+        private static void ClickSaveExit() => Click(Member<Component>(Find("PauseMenuPanel"), "saveExit"));
+
+        private static string PromptText() => Member<TextMeshProUGUI>(Prompt(), "message").text;
+
+        private static void ClickPrompt(string button) => Click(Member<Component>(Prompt(), button));
+
+        private static IEnumerator WaitForScene(string name)
+        {
+            var deadline = Time.realtimeSinceStartup + 30f;
+
+            while (SceneManager.GetActiveScene().name != name && Time.realtimeSinceStartup < deadline)
+                yield return null;
+
+            Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo(name));
+
+            // The loader keeps refusing a second load until its loading screen has faded out again.
+            while (LoaderIsBusy() && Time.realtimeSinceStartup < deadline)
+                yield return null;
+
+            Assert.That(LoaderIsBusy(), Is.False);
+        }
+
+        private static bool LoaderIsBusy() =>
+            UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include)
+                .Where(component => component.GetType().Name == "SceneProvider")
+                .Any(provider => provider.GetType().GetField("loaderOperation", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(provider) != null);
+
+        // Loot the hero picked up on this Run: a helm in the bag.
+        private static ItemInstance PutHelmInBag()
+        {
+            var helm = ServiceLocator.Get<IItemService>().RollEquipment(EquipmentType.Helm, 0f);
+            var package = new Package(null, helm, 1u);
+            Assert.That(Session.Hero.Inventory.TryAddToContainer(ref package), Is.True, "premise: the helm fits");
+            return helm;
+        }
+
+        private static bool BagHolds(ItemInstance item) =>
+            Session.Hero.Inventory.StoredPackages.Values.Any(stored => stored.Item.Equals(item));
+
+        private static void SendToTheField() => Simulation.Send(GameBoot.Load().Locations.First());
+
+        [UnityTest]
+        public IEnumerator InTown_SaveAndExit_WritesTheHeroAndLoadsTheMenu_WithNoPrompt()
+        {
+            yield return Open("Example");
+            var savedBefore = Saves.List()[0].SavedAtUtc;
+            Menu.Open();
+            yield return null;
+
+            ClickSaveExit();
+
+            Assert.That(Prompt().gameObject.activeSelf, Is.False, "Town asks nothing");
+            yield return WaitForScene("MainMenu");
+            Assert.That(Saves.List()[0].SavedAtUtc, Is.GreaterThan(savedBefore), "the hero was written");
+            Assert.That(Menu.IsOpen, Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator InTheField_AConfirmAppears_AndCancelLeavesTheRunUntouched()
+        {
+            yield return Open("Example");
+            SendToTheField();
+            var helm = PutHelmInBag();
+            Menu.Open();
+            yield return null;
+
+            ClickSaveExit();
+
+            Assert.That(Prompt().gameObject.activeSelf, Is.True);
+            Assert.That(PromptText(), Is.EqualTo(SaveAndExit.FieldQuestion));
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.InField), "asking ends nothing");
+
+            ClickPrompt("back");
+            yield return null;
+
+            Assert.That(Prompt().gameObject.activeSelf, Is.False);
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.InField), "Cancel leaves the Run untouched");
+            Assert.That(Menu.IsOpen, Is.True, "and the Pause Menu stays where it was");
+            Assert.That(BagHolds(helm), Is.True);
+            Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("Example"));
+
+            ClickSaveExit();
+            Assert.That(ServiceLocator.Get<ICancelChain>().Cancel(), Is.True, "the Cancel key closes the confirm too");
+            Assert.That(Prompt().gameObject.activeSelf, Is.False);
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.InField));
+        }
+
+        [UnityTest]
+        public IEnumerator MenuPlayRunSaveAndExitMenu_TheBankedLootIsPresentAfterPlay()
+        {
+            yield return Open("MainMenu");
+            Click(Find("PlayButton"));
+            yield return WaitForScene("Example");
+
+            SendToTheField();
+            var helm = PutHelmInBag();
+            Menu.Open();
+            yield return null;
+
+            ClickSaveExit();
+            ClickPrompt("primary");
+
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.InTown), "the implicit Recall");
+            Assert.That(Session.Hero.Corpse.Exists, Is.False, "no Death penalty");
+            yield return WaitForScene("MainMenu");
+
+            Click(Find("PlayButton"));
+            yield return WaitForScene("Example");
+
+            Assert.That(BagHolds(helm), Is.True, "the Run's loot came back from the file");
+        }
+
+        [UnityTest]
+        public IEnumerator AFailedWrite_StaysInTheGame_NamesTheCause_AndRetryLeavesOnceItWrites()
+        {
+            yield return Open("Example");
+            SendToTheField();
+            var helm = PutHelmInBag();
+            Menu.Open();
+            yield return null;
+            store.FailWrites = true;
+            LogAssert.Expect(LogType.Error, new Regex("Could not save hero"));
+            LogAssert.Expect(LogType.Error, new Regex("Could not save hero"));
+
+            ClickSaveExit();
+            ClickPrompt("primary");
+            yield return null;
+
+            Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("Example"), "a failed write keeps the player in the game");
+            Assert.That(Prompt().gameObject.activeSelf, Is.True);
+            Assert.That(PromptText(), Does.Contain(SaveResult.Failed(SaveFailure.StoreFailed).Reason));
+            Assert.That(BagHolds(helm), Is.True, "the banked loot is still held");
+
+            store.FailWrites = false;
+            ClickPrompt("primary");
+
+            yield return WaitForScene("MainMenu");
+            Assert.That(Saves.List()[0].SavedAtUtc, Is.GreaterThan(DateTime.UtcNow.AddMinutes(-5)));
+        }
+
+        [UnityTest]
+        public IEnumerator ExitWithoutSaving_NeedsItsOwnConfirm_AndBackReturnsToTheFailure()
+        {
+            yield return Open("Example");
+            Menu.Open();
+            yield return null;
+            store.FailWrites = true;
+            LogAssert.Expect(LogType.Error, new Regex("Could not save hero"));
+
+            ClickSaveExit();
+            yield return null;
+
+            Assert.That(Prompt().gameObject.activeSelf, Is.True, "Town went straight through, and the failure opened the prompt");
+
+            ClickPrompt("secondary");
+            yield return null;
+
+            Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("Example"), "asking is not leaving");
+            Assert.That(PromptText(), Is.EqualTo(SaveAndExit.DiscardQuestion));
+
+            Assert.That(ServiceLocator.Get<ICancelChain>().Cancel(), Is.True);
+            Assert.That(PromptText(), Does.StartWith("The hero was not saved."), "Cancel steps back to the failure");
+
+            ClickPrompt("secondary");
+            ClickPrompt("secondary");
+
+            yield return WaitForScene("MainMenu");
+        }
+    }
+}

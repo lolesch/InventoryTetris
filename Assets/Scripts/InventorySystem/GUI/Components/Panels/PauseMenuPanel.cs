@@ -11,12 +11,16 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
     /// <see cref="IPauseMenu"/> is open. It is the <see cref="CancelRank.PauseMenu"/> layer, so a Cancel with
     /// nothing above it opens the menu and a Cancel with it open closes it; Resume does the same by click.
     /// Leaving the scene closes the menu, so the Run is never left held. The component sits on an object
-    /// that stays active; <c>prompt</c> is the scrim it shows.
+    /// that stays active; <c>prompt</c> is the scrim it shows. Save &amp; Exit hands over to
+    /// <see cref="SaveExitPrompt"/> and stops taking clicks once the game is leaving, so a second press cannot
+    /// queue a second scene load.
     /// </summary>
     public sealed class PauseMenuPanel : MonoBehaviour
     {
         [SerializeField] private GameObject prompt;
         [SerializeField] private ClickEventButton resume;
+        [SerializeField] private ClickEventButton saveExit;
+        [SerializeField] private SaveExitPrompt saveExitPrompt;
 
         private IPauseMenu menu;
         private IDisposable cancelLayer;
@@ -24,6 +28,9 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
         private void OnEnable()
         {
             resume.Clicked += Close;
+            saveExit.Clicked += saveExitPrompt.Begin;
+            saveExitPrompt.Left += Leaving;
+            saveExit.interactable = true;
 
             // A scene object survives a Play session, so it starts as the menu is, not as the last session left it.
             if (ServiceLocator.IsArmed && ServiceLocator.Current.TryGet<IPauseMenu>(out menu))
@@ -38,6 +45,8 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
         private void OnDisable()
         {
             resume.Clicked -= Close;
+            saveExit.Clicked -= saveExitPrompt.Begin;
+            saveExitPrompt.Left -= Leaving;
 
             cancelLayer?.Dispose();
             cancelLayer = null;
@@ -53,6 +62,8 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
         private void Show(bool open) => prompt.SetActive(open);
 
         private void Close() => menu.Close();
+
+        private void Leaving() => saveExit.interactable = false;
 
         private bool Cancel()
         {
