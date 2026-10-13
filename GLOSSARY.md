@@ -600,7 +600,7 @@ cooldown overlays. Minimal v1 is flash-only; cooldown visuals are a follow-up.
 _Avoid_: skill bar, action bar, power bar
 
 **Ground Items List**:
-A pooled list of slot displays reading the **Ground**, in age order, oldest first.
+A pooled list of Ground Items (one bound row each) reading the **Ground**, in age order, oldest first.
 Each entry shows the item name and icon, supports hover preview and click-to-pick-up. One
 entry per package, so a stack is one entry, not one per item. A click picks the **Drop** up
 through the player's acquisition entry point, so a full bag leaves it lying there. The ground
@@ -661,7 +661,7 @@ _Avoid_: Pause (that is the player's freeze), escape menu, options
 
 **Cancel**:
 The player's way to back out, one layer per press: a Package held on the cursor goes back, then an
-open menu screen closes to the one beneath it, then the **Inventory Context** returns to `None`
+open **Popup** closes to the one beneath it, then the **Inventory Context** returns to `None`
 (every panel closes at once), and only then does the **Pause Menu** open. On the Main Menu it steps
 back out of a screen and does nothing at the root.
 _Avoid_: Escape (that is the usual key), close, back
@@ -711,7 +711,7 @@ The Submodule provides basic components to reuse or derive from.
 It reacts to pointer handler to provide visual feedback. Base class for buttons and toggles.
 
 **Panels**:
-A panel is a parent component that groups content. It provides appearance options such as fading in and out, scaling and movement. A panel should always stay enabled, only its alpha is set to 0.
+A panel is a parent component that groups content. It provides appearance options such as fading in and out, scaling and movement. A panel should always stay enabled, only its alpha is set to 0. Only a `SimplePanel` is called a panel: a component that groups content and is shown by being enabled is a **Popup**, and one that only lists or lays out is a list, a sheet or a layout.
 
 **ExclusiveGroups**:
 A collection of mutually exclusive Toggles or Panels of which at most one is active at a time. 
@@ -746,4 +746,17 @@ Context**. A sale never switches the tab.
 _Avoid_: preview, hover tab, tab flip
 
 **Displays and Views**:
-A display is the visual representation of a data object. *IDisplay* provides a *Refresh()* call to update the display on data change. This differs from views, that show static data.
+A display is the visual representation of a data object, and is either pushed or bound. A *pushed* display
+implements `IDisplay<T>`: `Refresh(T)` redraws it from the data it is handed on a data change. A *bound*
+display follows a source it was given (`Bind`/`Unbind`) or resolves itself (a container display binds by its
+role) and redraws on that source's events. It implements no interface, because the bindings share no signature
+and `Bind` is a subscription with a lifetime, not a draw. A component that is neither pushed nor bound is not a
+display. This differs from views, that show static data (an item's name, icon and colour; the build version).
+_Avoid_: calling a list, a text or a layout a display unless it is pushed or bound
+
+**Popup**:
+A screen opened over the one beneath it, which **Cancel** closes. It is shown either by being enabled, so it
+resets each time it opens (the hero name entry, the delete and Save & Exit confirmations, the entry notice, the
+**Pause Menu**), or as a **Panel**, so it fades (the **Changelog**). Each registers a Cancel layer while it is
+open: the **Pause Menu** on its own rank, every other Popup on the Popup rank.
+_Avoid_: modal, dialog, prompt, overlay (that names the scrim, and not every Popup has one)

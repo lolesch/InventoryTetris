@@ -1,5 +1,8 @@
 # Front-end flow — main menu, hero select, pause menu and Cancel
 
+> 2026-10-14: "Modal" below is now **Popup** (`CancelRank.Popup`), and `*Prompt` components are `*Popup`;
+> see `2026-10-14-ui-naming-design.md`. The behaviour is unchanged.
+
 Date: 2026-10-12
 Status: Spec, ready for `/to-tickets` once #69 is merged. Settled by a grilling on 2026-10-12 (five
 rounds, every recommendation accepted or amended by the owner as recorded below). This is spec 2 of 2
