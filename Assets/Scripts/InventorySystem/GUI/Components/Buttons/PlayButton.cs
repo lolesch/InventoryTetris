@@ -1,5 +1,6 @@
 using Submodules.Utility.Services;
 using Submodules.Utility.UI;
+using TMPro;
 using ToolSmiths.InventorySystem.Services;
 using UnityEngine;
 
@@ -7,8 +8,9 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
 {
     /// <summary>
     /// The Main Menu's Play: enters the game with the selected hero (<see cref="MainMenuFlow.Play"/>) through the
-    /// scene loader and its progress display. Not interactable until a hero is selected, and again once it has
-    /// been pressed, so a second click cannot queue a second load. It follows
+    /// scene loader and its progress display, and says what that does: "Start Game" for a hero that has no save
+    /// yet, "Continue" for one that has. Not interactable once it has been pressed, so a second click cannot
+    /// queue a second load; the menu hides it while there is no hero to enter. It follows
     /// <see cref="IHeroSaveService.HeroesChanged"/>, which every select, create and delete raises, and acts in
     /// Play Mode only: <c>Selectable</c> is <c>[ExecuteAlways]</c>.
     /// </summary>
@@ -16,6 +18,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
     public sealed class PlayButton : AbstractButton
     {
         private IHeroSaveService watched;
+        private TMP_Text label;
 
         protected override void OnEnable()
         {
@@ -24,6 +27,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
             if (!Application.isPlaying || !ServiceLocator.IsArmed)
                 return;
 
+            label = GetComponentInChildren<TMP_Text>(true);
             watched = HeroSaveService.Instance;
             watched.HeroesChanged += Refresh;
             Refresh();
@@ -54,6 +58,15 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
             return loader && loader.LoadScene(scene);
         }
 
-        private void Refresh() => interactable = MainMenuFlow.CanPlay(watched);
+        private void Refresh()
+        {
+            // The menu hides this button from its own HeroesChanged handler, and an event runs the handlers it
+            // started with: this one can still be called after the disable has let go of the service.
+            if (watched == null)
+                return;
+
+            interactable = MainMenuFlow.CanPlay(watched);
+            label.text = MainMenuFlow.PlayLabel(watched);
+        }
     }
 }

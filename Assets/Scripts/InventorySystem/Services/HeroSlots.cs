@@ -52,6 +52,15 @@ namespace ToolSmiths.InventorySystem.Services
                 .ThenBy(hero => hero.Id, StringComparer.Ordinal)
                 .ToArray();
 
+        /// <summary>The saved heroes and then the draft, which is newer than all of them: the hero slots as the menu
+        /// shows them.</summary>
+        public static IReadOnlyList<HeroSummary> Ordered(IHeroSaveService saves)
+        {
+            var heroes = saves.List();
+
+            return Ordered(saves.TryGetDraft(out var draft) ? heroes.Append(draft) : heroes);
+        }
+
         /// <param name="ordered">The result of <see cref="Ordered"/>.</param>
         public static HeroSlot At(IReadOnlyList<HeroSummary> ordered, int slot) =>
             slot < ordered.Count ? new HeroSlot(HeroSlotKind.Hero, ordered[slot])

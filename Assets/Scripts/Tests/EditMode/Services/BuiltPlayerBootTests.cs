@@ -9,8 +9,8 @@ using UnityEditor;
 namespace ToolSmiths.InventorySystem.Tests.Services
 {
     /// <summary>
-    /// What a built player's boot does differently from the Editor's: it continues the last hero but never
-    /// writes the fallback "Hero", so a first launch finds no saves and the menu asks for a name.
+    /// What a launch does about the first hero: it continues the last hero but never writes the fallback "Hero",
+    /// so a first launch finds no saves and the menu asks for a name. Only a Start Fresh Play creates one.
     /// </summary>
     [TestFixture]
     public sealed class BuiltPlayerBootTests
@@ -53,9 +53,18 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
-        public void TheEditorBoot_StillCreatesTheFirstHero()
+        public void TheEditorBoot_CreatesNoHero_ItsHeroesComeFromTheToolsMenu()
         {
             GameBoot.Boot(config, store);
+
+            Assert.That(store.Keys(), Is.Empty, "no fallback \"Hero\" file");
+            Assert.That(ServiceLocator.Get<IHeroSaveService>().ActiveHeroId, Is.Null);
+        }
+
+        [Test]
+        public void ABootThatCreatesTheFirstHero_WritesOne_AsAStartFreshPlayDoes()
+        {
+            GameBoot.Boot(config, store, createFirstHero: true);
 
             Assert.That(store.Keys().Count(key => key != "account"), Is.EqualTo(1), "one hero file");
             Assert.That(ServiceLocator.Get<IHeroSaveService>().ActiveHeroId, Is.Not.Null);

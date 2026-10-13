@@ -8,6 +8,10 @@
 - The Pause Menu holds the game still and lets you resume, or save and exit back to the main menu.
 - The main menu shows the build version in the corner.
 - A Changelog button on the main menu opens Patch Notes, Known Issues and the Roadmap.
+- The Changelog closes with the Cancel key, and its text scrolls instead of running off the panel.
+- A new hero has to be named, and is saved the first time you press Start Game; after that the button reads Continue. Play and Delete only appear once a hero is chosen.
+- The main menu shows the chosen hero's name, class and level.
+- Fixed the health and resource bars not showing a higher maximum after equipping gear while the game is paused.
 
 ## 0.0.5_Alpha - 2026-09-25
 

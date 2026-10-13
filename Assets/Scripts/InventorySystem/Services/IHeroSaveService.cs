@@ -20,9 +20,11 @@ namespace ToolSmiths.InventorySystem.Services
         public const string NotLoadableReason = "This save could not be loaded";
 
         /// <param name="loadFailure">Why a file that reads would not load, or <c>null</c>.</param>
+        /// <param name="isDraft">Whether this is <see cref="IHeroSaveService.CreateDraft"/>'s hero, which has no file yet.</param>
         public HeroSummary(string id, string name, uint level, DateTime savedAtUtc, LoadStatus status, HeroData template = null,
-            long createdAtTicks = 0L, string loadFailure = null)
+            long createdAtTicks = 0L, string loadFailure = null, bool isDraft = false)
         {
+            IsDraft = isDraft;
             Id = id;
             Name = name;
             Level = level;
@@ -37,6 +39,10 @@ namespace ToolSmiths.InventorySystem.Services
                 _ => loadFailure,
             };
         }
+
+        /// <summary>Whether the hero has no file yet: it was made on the menu and is first written when the player
+        /// starts the game with it. A hero with a file is one the player continues.</summary>
+        public bool IsDraft { get; }
 
         /// <summary>Why the hero cannot be entered, in words for the player; <c>null</c> for a hero that loads. The file
         /// is not read as a hero in any of these cases, and the only thing left to do with it is delete it.</summary>
@@ -162,13 +168,24 @@ namespace ToolSmiths.InventorySystem.Services
         /// </summary>
         HeroSummary Create(string name, string templateId = null);
 
-        /// <summary>Removes the hero's file and its backup. <c>false</c> when there was none.</summary>
+        /// <summary>
+        /// Makes a new hero called <paramref name="name"/> exactly as <see cref="Create"/> does, but holds it in
+        /// memory: no file, no entry in <see cref="List"/>, nothing in the Account. It is the player's choice
+        /// of a name, kept until <see cref="SaveDraft"/> writes it, it is deleted or another draft replaces it;
+        /// closing the game loses it. There is at most one.
+        /// </summary>
+        HeroSummary CreateDraft(string name, string templateId = null);
+
+        /// <summary>The hero <see cref="CreateDraft"/> made and nothing has written yet; <c>false</c> when there is none.</summary>
+        bool TryGetDraft(out HeroSummary draft);
+
+        /// <summary>Removes the hero's file and its backup, or discards the draft. <c>false</c> when there was none.</summary>
         bool Delete(string id);
 
         /// <summary>Changes the name, and the file's name with it; the id stays. <c>false</c> when the hero cannot be read.</summary>
         bool Rename(string id, string name);
 
-        /// <summary>One hero as <see cref="List"/> shows it, reading only its file. <c>false</c> for an id with no file.</summary>
+        /// <summary>One hero as <see cref="List"/> shows it, reading only its file; the draft too. <c>false</c> for an id with neither.</summary>
         bool TryGet(string id, out HeroSummary hero);
 
         /// <summary>The hero last loaded or chosen, or <c>null</c> when there is none.</summary>
@@ -205,7 +222,7 @@ namespace ToolSmiths.InventorySystem.Services
 
         /// <summary>
         /// <see cref="LoadLast"/>, else a new hero called "Hero", written at once so leaving the game in
-        /// Town without a Run still leaves a save. The Editor's launch; a built player uses <see cref="LoadLast"/>.
+        /// Town without a Run still leaves a save. A Start Fresh Play's launch; every other launch uses <see cref="LoadLast"/>.
         /// </summary>
         HeroLoadResult LoadLastOrCreate();
 
@@ -216,9 +233,17 @@ namespace ToolSmiths.InventorySystem.Services
         /// Writes the Session's hero over its own file. Refused, with <see cref="SaveFailure.NotFromSave"/>,
         /// when the Session's hero did not come from a save (a template load, or another hero loaded behind
         /// this service's back), so a hero that is not the file's can never overwrite it. A failure says why
-        /// in <see cref="SaveResult.Reason"/>; the next save point is the retry.
+        /// in <see cref="SaveResult.Reason"/>; the next save point is the retry. The draft is never written
+        /// here: leaving the game must not turn a hero the player has not started into a save.
         /// </summary>
         SaveResult Save();
+
+        /// <summary>
+        /// Writes the draft for the first time and makes it a saved hero: listed, remembered by the Account, and
+        /// written by every <see cref="Save"/> from then on. Refused, with <see cref="SaveFailure.NotFromSave"/>,
+        /// unless the draft is the Session's hero. A failed write leaves it a draft.
+        /// </summary>
+        SaveResult SaveDraft();
 
         /// <summary>
         /// Registers a normaliser that runs at the start of every <see cref="Save"/> that is going to

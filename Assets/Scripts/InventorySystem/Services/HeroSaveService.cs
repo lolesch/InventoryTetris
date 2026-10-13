@@ -39,9 +39,13 @@ namespace ToolSmiths.InventorySystem.Services
         private long activeCreatedAtTicks;
         private string activeTemplateId;
 
-        // The hero the menu has selected although its file cannot become a hero. Held for this session alone:
-        // the account names the hero a launch continues, and loading a damaged one sets its file aside.
-        private string unreadableSelected;
+        // The hero the menu has selected although the account must not name it: a file that cannot become a
+        // hero (loading a damaged one sets it aside) or the draft (no file yet). Held for this session alone;
+        // the account names the hero a launch continues.
+        private string sessionSelected;
+
+        // The hero the menu made and nothing has written. A full hero, built the way Create builds one.
+        private HeroDto draft;
 
         /// <summary>Call sites at the Unity edge read the service as <c>HeroSaveService.Instance</c>.</summary>
         public static IHeroSaveService Instance => ServiceLocator.Get<IHeroSaveService>();
@@ -115,7 +119,7 @@ namespace ToolSmiths.InventorySystem.Services
 
         public void RemoveBeforeSave(Action normaliser) => beforeSave.Remove(normaliser);
 
-        public string LastSelectedHeroId => unreadableSelected ?? RememberedHeroId();
+        public string LastSelectedHeroId => sessionSelected ?? RememberedHeroId();
 
         // What the account file names: the hero a launch continues.
         private string RememberedHeroId()
@@ -135,12 +139,43 @@ namespace ToolSmiths.InventorySystem.Services
 
         public bool TryGet(string id, out HeroSummary hero)
         {
+            if (draft != null && id == draft.id)
+                return TryGetDraft(out hero);
+
             var key = string.IsNullOrEmpty(id) || id == AccountKey ? null : KeyOf(id);
             hero = key == null ? default : SummaryOf(id, key);
             return key != null;
         }
 
         public HeroSummary Create(string name, string templateId = null)
+        {
+            var dto = NewHeroDto(name, templateId);
+            var summary = SummaryOf(dto.id, WriteHero(dto.id, dto));
+
+            RaiseHeroesChanged();
+            return summary;
+        }
+
+        public HeroSummary CreateDraft(string name, string templateId = null)
+        {
+            var dto = NewHeroDto(name, templateId);
+
+            // The earlier draft was never written; it goes, and the Session's hero stops being its file's.
+            DiscardDraft();
+            draft = dto;
+
+            RaiseHeroesChanged();
+            return DraftSummary();
+        }
+
+        public bool TryGetDraft(out HeroSummary summary)
+        {
+            summary = draft == null ? default : DraftSummary();
+            return draft != null;
+        }
+
+        // A throwaway hero, built the way a new one is, so the file holds exactly what a load restores.
+        private HeroDto NewHeroDto(string name, string templateId)
         {
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException("A hero needs a name.", nameof(name));
@@ -151,22 +186,43 @@ namespace ToolSmiths.InventorySystem.Services
                 throw new ArgumentException($"There is no hero template '{templateId}'.", nameof(templateId));
 
             var id = Guid.NewGuid().ToString("N");
-
-            // A throwaway hero, built the way a new one is, so the file holds exactly what a load restores.
             var hero = SessionBuilder.BuildHero(config, template, items);
             var dto = HeroMapper.ToDto(hero, id, name.Trim(), locations);
             dto.createdAtTicks = (utcNow?.Invoke() ?? DateTime.UtcNow).Ticks;
 
-            var summary = SummaryOf(id, WriteHero(id, dto));
+            return dto;
+        }
 
-            RaiseHeroesChanged();
-            return summary;
+        private HeroSummary DraftSummary() =>
+            new(draft.id, draft.name, draft.level, new DateTime(draft.createdAtTicks, DateTimeKind.Utc), LoadStatus.Loaded,
+                config.FindHero(draft.templateId), draft.createdAtTicks, isDraft: true);
+
+        // The draft is gone: unselected, and no longer what the Session's hero would be saved as.
+        private void DiscardDraft()
+        {
+            if (draft == null)
+                return;
+
+            var id = draft.id;
+            draft = null;
+
+            if (sessionSelected == id)
+                sessionSelected = null;
+
+            if (ActiveHeroId == id)
+            {
+                ActiveHeroId = null;
+                activeHero = null;
+            }
         }
 
         public bool Delete(string id)
         {
             var target = Checked(id);
-            var deleted = false;
+            var deleted = draft?.id == target;
+
+            if (deleted)
+                DiscardDraft();
 
             // Every file of the id: a rename that was interrupted can leave two.
             foreach (var key in store.Keys().Where(key => key != AccountKey && HeroFileKey.IdOf(key) == target).ToArray())
@@ -212,15 +268,15 @@ namespace ToolSmiths.InventorySystem.Services
         public void SetLastSelected(string id)
         {
             // Only a hero that can be entered is written down; looking at a damaged one must not make the next
-            // launch try it first (and set it aside).
-            if (id != null && TryGet(id, out var hero) && hero.UnreadableReason != null)
+            // launch try it first (and set it aside), and a draft has no file to continue.
+            if (id != null && TryGet(id, out var hero) && (hero.UnreadableReason != null || hero.IsDraft))
             {
-                unreadableSelected = id;
+                sessionSelected = id;
             }
             else
             {
                 Remember(id);
-                unreadableSelected = null;
+                sessionSelected = null;
             }
 
             RaiseHeroesChanged();
@@ -237,6 +293,9 @@ namespace ToolSmiths.InventorySystem.Services
 
         public HeroLoadResult Load(string id)
         {
+            if (draft != null && Checked(id) == draft.id)
+                return LoadDraft();
+
             var key = KeyOf(Checked(id));
 
             if (key == null)
@@ -277,12 +336,8 @@ namespace ToolSmiths.InventorySystem.Services
                 return new HeroLoadResult(result.Status, false, null);
 
             _ = notLoadable.Remove(id);
-            ActiveHeroId = id;
-            activeHero = session.Hero;
-            activeName = result.Payload.name;
-            activeCreatedAtTicks = result.Payload.createdAtTicks;
-            activeTemplateId = result.Payload.templateId;
-            unreadableSelected = null;
+            Activate(id, result.Payload);
+            sessionSelected = null;
             TrySetLastSelected(id);
 
             // A clean load keeps what an earlier load of the hero left: selecting it on the menu may have
@@ -303,6 +358,29 @@ namespace ToolSmiths.InventorySystem.Services
 
             RaiseHeroesChanged();
             return new HeroLoadResult(result.Status, true, report);
+        }
+
+        // A fresh hero has nothing a restore could leave out, so there is no notice and no quarantine.
+        private HeroLoadResult LoadDraft()
+        {
+            if (!session.TryLoad(draft, locations, out var report))
+                return new HeroLoadResult(LoadStatus.Loaded, false, null);
+
+            Activate(draft.id, draft);
+            sessionSelected = draft.id;
+
+            RaiseHeroesChanged();
+            return new HeroLoadResult(LoadStatus.Loaded, true, report);
+        }
+
+        // The Session's hero is now this file's (or this draft's): what a save writes it back under.
+        private void Activate(string id, HeroDto payload)
+        {
+            ActiveHeroId = id;
+            activeHero = session.Hero;
+            activeName = payload.name;
+            activeCreatedAtTicks = payload.createdAtTicks;
+            activeTemplateId = payload.templateId;
         }
 
         public EntryNotice TakeEntryNotice() =>
@@ -334,7 +412,32 @@ namespace ToolSmiths.InventorySystem.Services
             return new HeroLoadResult(LoadStatus.Missing, false, null);
         }
 
-        public SaveResult Save()
+        public SaveResult Save() =>
+            IsActiveDraft() ? SaveResult.Failed(SaveFailure.NotFromSave) : WriteActive();
+
+        public SaveResult SaveDraft()
+        {
+            if (!IsActiveDraft())
+                return SaveResult.Failed(SaveFailure.NotFromSave);
+
+            var result = WriteActive();
+
+            if (!result.Wrote)
+                return result;
+
+            // The file is down: the draft is a saved hero from here, and the one a launch continues.
+            draft = null;
+            sessionSelected = null;
+            TrySetLastSelected(ActiveHeroId);
+
+            RaiseHeroesChanged();
+            return result;
+        }
+
+        private bool IsActiveDraft() =>
+            draft != null && ActiveHeroId == draft.id && ReferenceEquals(activeHero, session.Hero);
+
+        private SaveResult WriteActive()
         {
             // The Session's hero is the file's only while it is the one this service loaded; a template
             // load or another load behind its back leaves the file alone.
@@ -404,8 +507,8 @@ namespace ToolSmiths.InventorySystem.Services
         // The hero is gone or set aside, so it is selected no longer.
         private void Forget(string id)
         {
-            if (unreadableSelected == id)
-                unreadableSelected = null;
+            if (sessionSelected == id)
+                sessionSelected = null;
 
             if (RememberedHeroId() == id)
                 TrySetLastSelected(null);

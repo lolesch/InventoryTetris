@@ -23,7 +23,8 @@ namespace ToolSmiths.InventorySystem.Services
     {
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void BootOnPlayEntry() =>
-            Boot(Load(), SaveStoreForPlay(StartFreshEachPlay), new PlayerPrefsBindingStore(BindingsKey), builtPlayer: !Application.isEditor);
+            Boot(Load(), SaveStoreForPlay(StartFreshEachPlay), new PlayerPrefsBindingStore(BindingsKey),
+                builtPlayer: !Application.isEditor, createFirstHero: StartFreshEachPlay);
 
         /// <summary>
         /// A Play entry over <paramref name="saves"/>: arms the services, continues the last hero and installs
@@ -31,17 +32,22 @@ namespace ToolSmiths.InventorySystem.Services
         /// </summary>
         /// <param name="bindings">Where the player's key rebindings live; a test leaves it out and gets none.</param>
         /// <param name="builtPlayer">
-        /// Whether this is a built player rather than the Editor. A built player opens on the Main Menu, whose
-        /// showcase needs a hero in the Session, so it continues the last-selected hero but never creates one:
-        /// with no saves the Session keeps the default-template hero, which is not from a file and is never
-        /// saved, and the name is asked for on the menu. The Editor creates "Hero" on a first launch, so Play
-        /// from the game scene stays a developer shortcut. A test passes <c>true</c> to take the player's path.
+        /// Whether this is a built player rather than the Editor. It decides only whether the game scene may
+        /// start on a hero that is not from a save (<see cref="GameEntryGuard"/>): the Editor's Play from the
+        /// game scene stays a developer shortcut.
         /// </param>
-        internal static void Boot(GameConfig config, ISaveStore saves, IBindingOverrideStore bindings = null, bool builtPlayer = false)
+        /// <param name="createFirstHero">
+        /// Whether a launch with no hero to continue creates one called "Hero". Only a Start Fresh Play does (its
+        /// store is empty by design); otherwise the Session keeps the default-template hero, which is not from a
+        /// file and is never saved, and the Main Menu asks the player for a name. The Editor makes a saved hero
+        /// from the Tools menu.
+        /// </param>
+        internal static void Boot(GameConfig config, ISaveStore saves, IBindingOverrideStore bindings = null,
+            bool builtPlayer = false, bool createFirstHero = false)
         {
             Arm(config, saves, bindings);
 
-            ContinueLastHero(builtPlayer);
+            ContinueLastHero(createFirstHero);
             GameExit.Install(ServiceLocator.Get<ISimulationService>(), ServiceLocator.Get<IHeroSaveService>());
             GameEntryGuard.Install(builtPlayer);
         }
@@ -81,15 +87,15 @@ namespace ToolSmiths.InventorySystem.Services
         public static ISaveStore SaveStoreForPlay(bool startFresh) =>
             startFresh ? new InMemorySaveStore() : new FileSaveStore(SaveLocation.Folder());
 
-        // Pressing Play, or launching, continues the last-selected hero; the Editor also creates one on a
-        // first launch. A save that cannot be read must not stop the game booting: the template hero plays
-        // on, and nothing is written over the files (the service saves only a hero it loaded).
-        private static void ContinueLastHero(bool builtPlayer)
+        // Pressing Play, or launching, continues the last-selected hero. A save that cannot be read must not
+        // stop the game booting: the template hero plays on, and nothing is written over the files (the
+        // service saves only a hero it loaded).
+        private static void ContinueLastHero(bool createFirstHero)
         {
             try
             {
                 var saves = ServiceLocator.Get<IHeroSaveService>();
-                _ = builtPlayer ? saves.LoadLast() : saves.LoadLastOrCreate();
+                _ = createFirstHero ? saves.LoadLastOrCreate() : saves.LoadLast();
             }
             catch (Exception exception)
             {

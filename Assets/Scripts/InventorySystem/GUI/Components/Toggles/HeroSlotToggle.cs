@@ -136,7 +136,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         {
             if (snapshot == null || snapshotFrame != Time.frameCount)
             {
-                snapshot = HeroSlots.Ordered(HeroSaveService.Instance.List());
+                snapshot = HeroSlots.Ordered(HeroSaveService.Instance);
                 selectedId = HeroSaveService.Instance.LastSelectedHeroId;
                 snapshotFrame = Time.frameCount;
             }

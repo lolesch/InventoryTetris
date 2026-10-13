@@ -243,8 +243,8 @@ it has one, and the packages in its **Equipment**, **Inventory** and **Stash** b
 Context**), authored data (the item catalog, `GameConfig`), or a derived stat: a stat is recomputed
 from the template, level and gear on load.
 A loaded hero is the default template with the file restored over it, so a file is never a
-different shape from a new hero. It is written when a **Run** has settled and on quitting,
-never while a Run is in the Field.
+different shape from a new hero. It is first written when the player starts the game with a new hero
+(a **Draft**), then when a **Run** has settled and on quitting, never while a Run is in the Field.
 _Avoid_: save game, profile, character file; "save" for the **Session** (the Hero saves,
 the Session holds none)
 
@@ -626,8 +626,17 @@ _Avoid_: title screen, start screen, home
 
 **Play**:
 The Main Menu's way into the game with the selected **Hero**. On arrival the selected hero is the one
-last played, so returning is one click. Disabled until a hero that can be read is selected.
-_Avoid_: Start Run (a Run starts in Town, not here), Continue, Load Game
+last played, so returning is one click. Not shown until a hero that can be read is selected. Its button says
+what it does: "Start Game" for a **Draft** (the first time the hero enters), "Continue" for a hero that has a
+**Hero save**.
+_Avoid_: Start Run (a Run starts in Town, not here), Load Game
+
+**Draft**:
+A **Hero** the player has named on the Main Menu and not yet started. It sits in the **Hero slots** and shows
+in the showcase like any hero, but it has no **Hero save** and the **Account** does not know it: **Play**
+writes its first save, and closing the game, deleting it or naming another hero before then loses it. There
+is at most one.
+_Avoid_: unsaved hero, pending hero, new hero
 
 **Hero slots**:
 The row of **Hero saves** on the Main Menu, one slot per hero and one to create another. Selecting a
@@ -635,8 +644,8 @@ slot loads that hero for show and enters nothing: its gear, name, level and clas
 **Location** it will next be Sent to (blank before its first Send), its **Corpse** and where it lies,
 its total **Kills**, and the average item level of the gear it wears (coins and empty slots aside).
 **Play** is what enters the game. A save that cannot be read keeps its slot, says why, and can only be
-deleted. Creating a hero takes a name and nothing else; deleting one asks first, because the file is
-gone for good.
+deleted. Creating a hero takes a name and nothing else, and makes a **Draft**; deleting one asks first,
+because the file is gone for good.
 _Avoid_: Heroes screen, character select, profile screen, save slots
 
 **Pause**:

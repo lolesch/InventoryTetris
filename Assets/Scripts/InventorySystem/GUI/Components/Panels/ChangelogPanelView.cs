@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using Submodules.Utility.UI;
 using TMPro;
 using ToolSmiths.InventorySystem.Changelogs;
+using ToolSmiths.InventorySystem.Services;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -26,6 +28,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
         private readonly List<ChangelogEntryHeading> headings = new();
         private readonly List<GameObject> rows = new();
         private SimplePanel panel;
+        private IDisposable cancelLayer;
 
         private void Awake() => panel = GetComponent<SimplePanel>();
 
@@ -37,15 +40,31 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
             AddEntries(patchNotesBody, tabs);
             AddRows(knownIssuesBody, tabs.KnownIssues);
             AddRows(roadmapBody, tabs.Roadmap);
+
+            cancelLayer = CancelChain.TryRegister(CancelRank.Modal, Cancel);
         }
 
         private void OnDisable()
         {
+            cancelLayer?.Dispose();
+            cancelLayer = null;
+
             foreach (var row in rows)
                 if (row) DestroyRow(row);
 
             rows.Clear();
             headings.Clear();
+        }
+
+        /// <summary>Cancel closes the panel like its Close button. A closed panel (it stays enabled, faded out)
+        /// leaves the press to the layers below.</summary>
+        private bool Cancel()
+        {
+            if (!panel.IsInteractive)
+                return false;
+
+            panel.Collapse();
+            return true;
         }
 
         /// <summary>Unity calls this on every CanvasGroup change above, so on each frame of a fade;
