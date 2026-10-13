@@ -6,8 +6,8 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// <summary>
     /// The reference maximum a damage number's size is read against (issue #213): the best raw hit of a damage type
     /// the dealer can land, with the damage spread (<see cref="EncounterTuning.DamageSpread"/>) applied, so the top
-    /// of the spread is the biggest number there is. Pure, and read when a number is shown, so a re-geared hero or a
-    /// changed spread moves it on the spot.
+    /// of the spread is the biggest number there is. Pure, and read as each hit lands (<see cref="HitEvent.Reference"/>),
+    /// so a re-geared hero moves it on the spot.
     /// </summary>
     public static class DamageReference
     {

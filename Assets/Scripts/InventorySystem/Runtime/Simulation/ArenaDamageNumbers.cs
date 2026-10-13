@@ -1,8 +1,8 @@
+using System.Collections.Generic;
 using Submodules.Utility.Tools;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Geometry;
-using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
 
@@ -20,7 +20,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// Strike and a Cast on one enemy give two numbers, and so do two enemies. The number shows the amount lost
     /// (a hit the target mitigates fully shows nothing); its size and tint come from <see cref="DamageNumberStyle"/>,
     /// the raw amount of <i>one</i> hit (the frame's mean, so a coarse frame does not saturate it) read against
-    /// <see cref="DamageReference"/> - the best the dealer could do with that type.
+    /// <see cref="HitEvent.Reference"/> - the best the dealer could do with that type, carried by the hit itself.
     /// </para>
     /// <para>
     /// The killing blow: <see cref="EncounterSimulation.HitLanded"/> raises before the enemy is removed, and a
@@ -59,8 +59,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private PrefabPool<DamageNumber> _pool;
         private RectTransform _space;
         private IDamageNumberOrigins _origins;
+        private readonly Dictionary<(ICombatant Target, DamageType Type), float> _references = new();
+        private readonly List<DamageNumber> _live = new();
         private EncounterSimulation _encounter;
-        private RunState _run;
         private bool _hasPending;
 
         // Lazily built rather than in Awake, which does not run again on the second Play entry
@@ -89,22 +90,28 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             _space = space;
             _origins = origins;
-            _run = SimulationService.Instance.Run;
             _encounter = encounter;
             _encounter.HitLanded += OnHitLanded;
         }
 
-        /// <summary>Stop listening and forget everything queued: the Encounter is over. Safe when unbound.</summary>
+        /// <summary>
+        /// Stop listening, forget everything queued and call back every rising number: the Encounter is over, so
+        /// nothing outlives it. Safe when unbound.
+        /// </summary>
         public void Unbind()
         {
             if (_encounter != null)
                 _encounter.HitLanded -= OnHitLanded;
 
             _hits.Flush(static (_, _, _, _) => { });
+            _references.Clear();
             _hasPending = false;
+
+            for (var i = _live.Count; i-- > 0;)
+                _live[i].Dismiss();
+
             _origins = null;
             _encounter = null;
-            _run = null;
         }
 
         private void OnHitLanded(HitEvent hit)
@@ -113,7 +120,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (hit.LostAmount <= 0f)
                 return;
 
-            _hits.Add((hit.Target, hit.DamageType), hit.LostAmount, hit.RawAmount);
+            var key = (hit.Target, hit.DamageType);
+            _hits.Add(key, hit.LostAmount, hit.RawAmount);
+            _references[key] = hit.Reference;
             _hasPending = true;
         }
 
@@ -127,12 +136,13 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             _hasPending = false;
             _hits.Flush(ShowNumber);
+            _references.Clear();
         }
 
         private void ShowNumber((ICombatant Target, DamageType Type) key, float lost, float rawSum, int hits)
         {
-            // The Run ended (Recall, hero death, Relocate) or the arena is going down: nothing is shown.
-            if (!isActiveAndEnabled || _encounter == null || _run == null || _run.Encounter != _encounter)
+            // Unbound (the Run ended: Recall, hero death, Relocate) or the arena is going down: nothing is shown.
+            if (!isActiveAndEnabled || _encounter == null)
                 return;
 
             if (!_origins.TryGetNumberOrigin(key.Target, out var origin))
@@ -141,18 +151,18 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             // The size reads one hit (the frame's mean), not the sum: the reference is the best single hit, so at
             // high sim speed several ordinary hits summed would saturate it. The label still shows the summed loss.
             var raw = rawSum / Mathf.Max(1, hits);
-            var style = DamageNumberStyle.Of(raw, ReferenceFor(key.Target, key.Type), key.Type,
+            var style = DamageNumberStyle.Of(raw, _references[key], key.Type,
                 minFontSize, maxFontSize, physicalTint, magicalTint);
 
             var number = Pool.GetObject();
-            number.Show(origin + startOffset, lost, style, lifetime, riseHeight, holdFraction, _encounter, Pool.ReleaseObject);
+            _live.Add(number);
+            number.Show(origin + startOffset, lost, style, lifetime, riseHeight, holdFraction, Release);
         }
 
-        // The best raw hit of the type the dealer can land: the Location's strongest for a hit on the hero,
-        // the hero's own stat for a hit on an enemy.
-        private float ReferenceFor(ICombatant target, DamageType type) =>
-            ReferenceEquals(target, _encounter.Hero)
-                ? DamageReference.OfEnemies(_encounter.Profile, type, _encounter.DamageSpread)
-                : DamageReference.OfHero(_encounter.Hero, type, _encounter.DamageSpread);
+        private void Release(DamageNumber number)
+        {
+            _ = _live.Remove(number);
+            Pool.ReleaseObject(number);
+        }
     }
 }
