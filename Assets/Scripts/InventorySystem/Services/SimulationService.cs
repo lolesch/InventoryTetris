@@ -167,13 +167,28 @@ namespace ToolSmiths.InventorySystem.Services
             PausedChanged?.Invoke(value);
         }
 
+        // A menu's freeze, separate from the player's Pause so that releasing it gives the Pause back
+        // as found. Transient and read through the phase, like the Pause.
+        private bool held;
+
+        public bool IsHeld => held && Run.Phase == RunPhase.InField;
+
+        public void SetHeld(bool value)
+        {
+            // Holding needs a Run in the Field, so Town has nothing to hold; releasing never does.
+            if (value && Run.Phase != RunPhase.InField)
+                return;
+
+            held = value;
+        }
+
         public float SimDelta(float deltaSeconds) =>
-            IsPaused ? 0f : deltaSeconds * Mathf.Max(0f, session.Hero.Behaviour.SimSpeed);
+            IsPaused || IsHeld ? 0f : deltaSeconds * Mathf.Max(0f, session.Hero.Behaviour.SimSpeed);
 
         public void Tick(float deltaSeconds)
         {
             // A frozen Run stands still whole: no regeneration, no Encounter, no auto-Recall.
-            if (IsPaused)
+            if (IsPaused || IsHeld)
                 return;
 
             var hero = session.Hero;
@@ -333,8 +348,9 @@ namespace ToolSmiths.InventorySystem.Services
             if (run.LastResult is { } result)
                 session.Hero.AddKills(result.EnemiesDefeated);
 
-            // Home is never paused, Recall and Death alike.
+            // Home is never paused or held, Recall and Death alike.
             SetPaused(false);
+            held = false;
 
             // Coming home by Recall brings the shops new stock; a Death does not.
             if (run.LastResult is { Outcome: RunOutcome.Recalled })

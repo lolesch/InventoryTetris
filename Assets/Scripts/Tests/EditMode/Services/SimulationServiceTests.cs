@@ -414,6 +414,110 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(session.Hero.Behaviour.SimSpeed, Is.EqualTo(4f));
         }
 
+        // ── the menu hold ────────────────────────────────────────────────────
+
+        [Test]
+        public void AHeldRun_StandsStill_ThenResumesWhereItStopped()
+        {
+            service.Send(thornwood);
+            service.Tick(0.1f);
+            var duration = service.Run.Encounter.Duration;
+
+            service.SetHeld(true);
+            service.Tick(0.1f);
+
+            Assert.That(service.IsHeld, Is.True);
+            Assert.That(service.Run.Encounter.Duration, Is.EqualTo(duration), "the Encounter's clock froze");
+            Assert.That(service.SimDelta(0.1f), Is.EqualTo(0f), "views on sim time freeze with it");
+
+            service.SetHeld(false);
+            service.Tick(0.1f);
+
+            Assert.That(service.IsHeld, Is.False);
+            Assert.That(service.Run.Encounter.Duration, Is.GreaterThan(duration));
+        }
+
+        [Test]
+        public void ARunPausedBeforeTheHold_IsStillPausedAfterTheRelease_AndOneRunningResumes()
+        {
+            service.Send(thornwood);
+            service.SetPaused(true);
+
+            service.SetHeld(true);
+            service.SetHeld(false);
+
+            Assert.That(service.IsPaused, Is.True, "the player's own Pause is given back as found");
+
+            service.SetPaused(false);
+            service.SetHeld(true);
+            service.SetHeld(false);
+
+            Assert.That(service.IsPaused, Is.False);
+            Assert.That(service.SimDelta(0.1f), Is.GreaterThan(0f));
+        }
+
+        [Test]
+        public void TheHold_NeverChangesIsPaused_OrRaisesPausedChanged()
+        {
+            service.Send(thornwood);
+            var raised = new List<bool>();
+            service.PausedChanged += raised.Add;
+
+            service.SetHeld(true);
+            Assert.That(service.IsPaused, Is.False);
+            service.SetHeld(false);
+
+            service.SetPaused(true);
+            raised.Clear();
+            service.SetHeld(true);
+            Assert.That(service.IsPaused, Is.True);
+            service.SetHeld(false);
+
+            Assert.That(raised, Is.Empty);
+        }
+
+        [Test]
+        public void HoldingAndReleasingInTown_DoesNothingAndDoesNotThrow()
+        {
+            Assert.DoesNotThrow(() => service.SetHeld(true));
+            Assert.That(service.IsHeld, Is.False, "there is nothing to hold in Town");
+            Assert.DoesNotThrow(() => service.SetHeld(false));
+
+            service.SetHeld(true);
+            service.Send(thornwood);
+
+            Assert.That(service.IsHeld, Is.False, "a refused hold does not wait for the next Run");
+            Assert.That(service.SimDelta(0.1f), Is.GreaterThan(0f));
+        }
+
+        [Test]
+        public void HoldAndRelease_AreIdempotent()
+        {
+            service.Send(thornwood);
+
+            service.SetHeld(true);
+            service.SetHeld(true);
+            service.SetHeld(false);
+
+            Assert.That(service.IsHeld, Is.False, "a second hold is the same hold");
+
+            service.SetHeld(false);
+
+            Assert.That(service.IsHeld, Is.False);
+        }
+
+        [Test]
+        public void TheRunsEnd_ReleasesTheHold()
+        {
+            service.Send(thornwood);
+            service.SetHeld(true);
+
+            _ = service.Recall();
+            service.Send(thornwood);
+
+            Assert.That(service.IsHeld, Is.False, "a hold left over from the last Run does not freeze the next");
+        }
+
         [Test]
         public void TheRunsEnd_ClearsThePause()
         {
