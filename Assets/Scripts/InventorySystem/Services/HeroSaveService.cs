@@ -32,6 +32,7 @@ namespace ToolSmiths.InventorySystem.Services
         private readonly Func<DateTime> utcNow;
         private readonly List<Action> beforeSave = new();
         private readonly HashSet<string> notLoadable = new();
+        private readonly Dictionary<string, EntryNotice> entryNotices = new();
 
         private Hero activeHero;
         private string activeName;
@@ -161,6 +162,7 @@ namespace ToolSmiths.InventorySystem.Services
                 deleted |= store.Delete(key);
 
             _ = notLoadable.Remove(target);
+            _ = entryNotices.Remove(target);
 
             if (LastSelectedHeroId == id)
                 TrySetLastSelected(null);
@@ -260,6 +262,13 @@ namespace ToolSmiths.InventorySystem.Services
             activeTemplateId = result.Payload.templateId;
             TrySetLastSelected(id);
 
+            // A clean load keeps what an earlier load of the hero left: selecting it on the menu may have
+            // written the quarantined items out of the file, so the load Play makes reads clean.
+            var notice = EntryNotice.From(result.Status, report);
+
+            if (notice != null)
+                entryNotices[id] = notice;
+
             if (result.Status == LoadStatus.RestoredFromBackup)
                 Debug.LogWarning($"Hero save '{id}' was damaged; loaded its backup instead. The next save replaces the damaged file.");
 
@@ -272,6 +281,9 @@ namespace ToolSmiths.InventorySystem.Services
             RaiseHeroesChanged();
             return new HeroLoadResult(result.Status, true, report);
         }
+
+        public EntryNotice TakeEntryNotice() =>
+            ActiveHeroId != null && entryNotices.Remove(ActiveHeroId, out var notice) ? notice : null;
 
         public HeroLoadResult LoadLastOrCreate()
         {

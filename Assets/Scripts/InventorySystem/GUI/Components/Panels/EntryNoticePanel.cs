@@ -1,0 +1,85 @@
+using Submodules.Utility.Services;
+using System;
+using TMPro;
+using ToolSmiths.InventorySystem.GUI.Components.Buttons;
+using ToolSmiths.InventorySystem.Services;
+using UnityEngine;
+
+namespace ToolSmiths.InventorySystem.GUI.Components.Panels
+{
+    /// <summary>
+    /// The game scene's one-time notice after a load that went wrong (<see cref="EntryNotice"/>): taken from the
+    /// save service when the scene enables, and shown in a modal only if there is something to say. A damaged
+    /// latest save and a partial load read as one message; the names of the packages left out stay behind Show.
+    /// Dismiss (the button, or the Cancel key as a <see cref="CancelRank.Modal"/> layer) closes it. Taking the
+    /// notice is what drops it, so a later scene change shows nothing. The component sits on an object that
+    /// stays active; <c>prompt</c> is the modal it opens.
+    /// </summary>
+    public sealed class EntryNoticePanel : MonoBehaviour
+    {
+        [SerializeField] private GameObject prompt;
+        [SerializeField] private TextMeshProUGUI message;
+        [SerializeField] private TextMeshProUGUI names;
+        [SerializeField] private ClickEventButton show;
+        [SerializeField] private ClickEventButton dismiss;
+
+        private IDisposable cancelLayer;
+        private string namesText;
+
+        private void OnEnable()
+        {
+            show.Clicked += ShowNames;
+            dismiss.Clicked += Close;
+
+            // A scene object survives a Play session, so it starts closed whatever the last session left.
+            prompt.SetActive(false);
+
+            var notice = ServiceLocator.IsArmed ? HeroSaveService.Instance.TakeEntryNotice() : null;
+
+            if (notice != null)
+                Open(notice);
+        }
+
+        private void OnDisable()
+        {
+            show.Clicked -= ShowNames;
+            dismiss.Clicked -= Close;
+
+            cancelLayer?.Dispose();
+            cancelLayer = null;
+        }
+
+        private void Open(EntryNotice notice)
+        {
+            message.text = notice.RestoredFromBackup && notice.UnplacedCount != 0
+                ? $"{EntryNotice.BackupText}\n\n{notice.UnplacedText}"
+                : notice.RestoredFromBackup ? EntryNotice.BackupText : notice.UnplacedText;
+            namesText = notice.NamesText;
+
+            names.gameObject.SetActive(false);
+            show.gameObject.SetActive(notice.UnplacedCount != 0);
+            prompt.SetActive(true);
+            cancelLayer ??= CancelChain.TryRegister(CancelRank.Modal, Cancel);
+        }
+
+        private void ShowNames()
+        {
+            names.text = namesText;
+            names.gameObject.SetActive(true);
+            show.gameObject.SetActive(false);
+        }
+
+        private void Close()
+        {
+            prompt.SetActive(false);
+            cancelLayer?.Dispose();
+            cancelLayer = null;
+        }
+
+        private bool Cancel()
+        {
+            Close();
+            return true;
+        }
+    }
+}

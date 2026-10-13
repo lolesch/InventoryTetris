@@ -185,6 +185,13 @@ namespace ToolSmiths.InventorySystem.Services
         HeroLoadResult Load(string id);
 
         /// <summary>
+        /// What the game scene tells the player on entering the active hero, once: the notice its load made (a
+        /// backup restore, packages that were left out), or <c>null</c> after a clean load or when it was taken
+        /// already. Held across scene loads until taken; a notice for a hero that is not active waits for it.
+        /// </summary>
+        EntryNotice TakeEntryNotice();
+
+        /// <summary>
         /// The hero a launch continues: the last-selected one, else the newest that reads. Creates nothing:
         /// with no hero that reads the result is <see cref="LoadStatus.Missing"/> and not entered, and the
         /// Session keeps the hero it had.
