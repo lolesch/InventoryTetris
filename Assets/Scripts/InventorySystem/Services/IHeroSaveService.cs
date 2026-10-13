@@ -64,6 +64,58 @@ namespace ToolSmiths.InventorySystem.Services
         public RestoreReport Report { get; }
     }
 
+    /// <summary>Why a <see cref="IHeroSaveService.Save"/> did not write.</summary>
+    public enum SaveFailure
+    {
+        /// <summary>It wrote.</summary>
+        None,
+
+        /// <summary>The Session's hero did not come from a save file (a template load, or another hero loaded behind the service's back).</summary>
+        NotFromSave,
+
+        /// <summary>A Run is in the Field; the file only ever holds a Town hero.</summary>
+        RunInField,
+
+        /// <summary>A before-save step failed, so the previous file was kept.</summary>
+        BeforeSaveFailed,
+
+        /// <summary>The store could not write the file; the previous one is untouched.</summary>
+        StoreFailed,
+    }
+
+    /// <summary>
+    /// What a <see cref="IHeroSaveService.Save"/> did: whether it wrote and, when it did not, a short
+    /// player-facing <see cref="Reason"/>. The technical text of a failure stays in the log.
+    /// </summary>
+    public readonly struct SaveResult
+    {
+        private SaveResult(SaveFailure failure, string reason)
+        {
+            Failure = failure;
+            Reason = reason;
+        }
+
+        /// <summary>The hero is written.</summary>
+        public static SaveResult Written => new(SaveFailure.None, string.Empty);
+
+        public static SaveResult Failed(SaveFailure failure) => new(failure, failure switch
+        {
+            SaveFailure.NotFromSave => "This hero did not come from a save file, so there is nothing to write.",
+            SaveFailure.RunInField => "A Run is in the Field, and a hero is only saved in Town.",
+            SaveFailure.BeforeSaveFailed => "Something the game does before saving failed, so the previous save was kept.",
+            SaveFailure.StoreFailed => "The save could not be written: storage is blocked or has no room.",
+            _ => throw new ArgumentOutOfRangeException(nameof(failure), failure, "A failure is not None."),
+        });
+
+        public SaveFailure Failure { get; }
+
+        /// <summary>Whether the hero was written.</summary>
+        public bool Wrote => Failure == SaveFailure.None;
+
+        /// <summary>A short plain-language cause; empty when the hero was written.</summary>
+        public string Reason { get; }
+    }
+
     /// <summary>
     /// The saved heroes and the Account (GLOSSARY.md "Account"): which heroes exist, which one was
     /// last used, and moving one into and out of the Session. One file per hero, named by its
@@ -118,11 +170,12 @@ namespace ToolSmiths.InventorySystem.Services
         string ActiveHeroId { get; }
 
         /// <summary>
-        /// Writes the Session's hero over its own file. <c>false</c> when the Session's hero did not come
-        /// from a save (a template load, or another hero loaded behind this service's back), so a
-        /// hero that is not the file's can never overwrite it.
+        /// Writes the Session's hero over its own file. Refused, with <see cref="SaveFailure.NotFromSave"/>,
+        /// when the Session's hero did not come from a save (a template load, or another hero loaded behind
+        /// this service's back), so a hero that is not the file's can never overwrite it. A failure says why
+        /// in <see cref="SaveResult.Reason"/>; the next save point is the retry.
         /// </summary>
-        bool Save();
+        SaveResult Save();
 
         /// <summary>
         /// Registers a normaliser that runs at the start of every <see cref="Save"/> that is going to

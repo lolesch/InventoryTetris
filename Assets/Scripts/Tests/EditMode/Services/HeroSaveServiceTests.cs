@@ -237,7 +237,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             Assert.That(again.Saves.List().Single().Name, Is.EqualTo("Veteran"));
             Assert.That(again.Saves.Load(hero.Id).Entered, Is.True);
-            Assert.That(again.Saves.Save(), Is.True);
+            Assert.That(again.Saves.Save().Wrote, Is.True);
 
             Assert.That(store.Keys(), Is.EquivalentTo(new[] { HeroFileKey.Compose("Veteran", hero.Id), "account" }), "the bare-id file is gone");
         }
@@ -280,7 +280,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             _ = setup.Saves.Load(hero.Id);
 
             _ = setup.Saves.Rename(hero.Id, "After");
-            Assert.That(setup.Saves.Save(), Is.True);
+            Assert.That(setup.Saves.Save().Wrote, Is.True);
 
             Assert.That(setup.Saves.List().Single().Name, Is.EqualTo("After"));
         }
@@ -330,7 +330,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             playing.Game.Hero.GainExperience(1500f, playing.Game.Hero.Level);
             playing.Game.Hero.SelectedLocation = thornwood;
             Tick();
-            Assert.That(playing.Saves.Save(), Is.True);
+            Assert.That(playing.Saves.Save().Wrote, Is.True);
 
             var next = NewSetup();
             var result = next.Saves.Load(hero.Id);
@@ -383,7 +383,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(result.Entered, Is.False);
             Assert.That(result.Status, Is.EqualTo(LoadStatus.Loaded), "the file reads; the Session said no");
             Assert.That(setup.Saves.ActiveHeroId, Is.Null);
-            Assert.That(setup.Saves.Save(), Is.False);
+            Assert.That(setup.Saves.Save().Wrote, Is.False);
         }
 
         [Test]
@@ -396,7 +396,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             setup.Game.Hero.Wallet.Deposit(new Currency(50u));
             Tick();
 
-            Assert.That(setup.Saves.Save(), Is.True);
+            Assert.That(setup.Saves.Save().Wrote, Is.True);
 
             var reloaded = NewSetup();
             _ = reloaded.Saves.Load(active.Id);
@@ -416,7 +416,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             // Another hero takes the Session behind the save service's back.
             Assert.That(setup.Game.Session.TryLoad(config.DefaultHero), Is.True);
 
-            Assert.That(setup.Saves.Save(), Is.False, "the template hero must not overwrite the saved one");
+            Assert.That(setup.Saves.Save().Wrote, Is.False, "the template hero must not overwrite the saved one");
             Assert.That(store.Keys(), Is.EqualTo(files));
         }
 
@@ -425,7 +425,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         {
             var setup = NewSetup();
 
-            Assert.That(setup.Saves.Save(), Is.False);
+            Assert.That(setup.Saves.Save().Wrote, Is.False);
             Assert.That(store.Keys(), Is.Empty);
         }
 
@@ -583,7 +583,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             setup.Game.Simulation.Send(thornwood);
             Tick();
 
-            Assert.That(setup.Saves.Save(), Is.False);
+            Assert.That(setup.Saves.Save().Wrote, Is.False);
 
             Assert.That(setup.Saves.List().Single().SavedAtUtc, Is.Not.EqualTo(now));
             Assert.That(setup.Saves.ActiveHeroId, Is.EqualTo(id));
@@ -619,7 +619,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             var setup = LoadedHero(out var id);
             setup.Saves.AddBeforeSave(() => setup.Game.Hero.Wallet.Deposit(new Currency(7u)));
 
-            Assert.That(setup.Saves.Save(), Is.True);
+            Assert.That(setup.Saves.Save().Wrote, Is.True);
 
             var next = NewSetup();
             _ = next.Saves.Load(id);
@@ -675,7 +675,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(inventory.TryAddAtPosition(cell, ref gear), Is.True, "something took the freed cell");
             setup.Saves.AddBeforeSave(() => held = ReturnToOrigin.Return(held, inventory, cell, inventory));
 
-            Assert.That(setup.Saves.Save(), Is.True);
+            Assert.That(setup.Saves.Save().Wrote, Is.True);
 
             Assert.That(held.IsValid, Is.False);
             var next = NewSetup();
@@ -710,7 +710,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             setup.Saves.AddBeforeSave(() => otherRan = true);
             LogAssert.Expect(LogType.Error, new Regex("before-save step failed.*boom"));
 
-            Assert.That(setup.Saves.Save(), Is.False);
+            Assert.That(setup.Saves.Save().Wrote, Is.False);
 
             Assert.That(otherRan, Is.True);
         }
@@ -721,12 +721,14 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             var setup = NewSetup();
             var runs = 0;
             setup.Saves.AddBeforeSave(() => runs++);
-            Assert.That(setup.Saves.Save(), Is.False, "no active hero");
+            Assert.That(setup.Saves.Save().Failure, Is.EqualTo(SaveFailure.NotFromSave), "no active hero");
 
             var id = setup.Saves.Create("Aria").Id;
             _ = setup.Saves.Load(id);
             setup.Game.Simulation.Send(thornwood);
-            Assert.That(setup.Saves.Save(), Is.False, "a Run in the Field");
+            var inField = setup.Saves.Save();
+            Assert.That(inField.Failure, Is.EqualTo(SaveFailure.RunInField), "a Run in the Field");
+            Assert.That(inField.Reason, Is.Not.Empty);
 
             Assert.That(runs, Is.Zero);
         }

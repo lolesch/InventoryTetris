@@ -132,7 +132,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             ExpectLog(LogType.Warning, "was damaged; loaded its backup");
             _ = setup.Saves.Load(hero.Id);
 
-            Assert.That(setup.Saves.Save(), Is.True);
+            Assert.That(setup.Saves.Save().Wrote, Is.True);
 
             Assert.That(NewSetup().Saves.List().Single().Status, Is.EqualTo(LoadStatus.Loaded));
         }
@@ -188,7 +188,8 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(result.Entered, Is.False);
             Assert.That(result.Status, Is.EqualTo(LoadStatus.NewerVersion));
             Assert.That(setup.Saves.ActiveHeroId, Is.Null);
-            Assert.That(setup.Saves.Save(), Is.False, "no active hero, so nothing can overwrite it");
+            Assert.That(setup.Saves.Save().Wrote, Is.False, "no active hero, so nothing can overwrite it");
+            Assert.That(setup.Saves.Save().Failure, Is.EqualTo(SaveFailure.NotFromSave));
             inner.TryRead(KeyOf(hero.Id), out var after);
             Assert.That(after, Is.EqualTo(before));
             Assert.That(inner.SetAsideValues, Is.Empty);
@@ -216,26 +217,30 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         // ── a failed write ──────────────────────────────────────────────────
 
         [Test]
-        public void AFailingWrite_ReturnsFalse_LeavesThePreviousSaveIntact_AndTheNextSaveSucceeds()
+        public void AFailingWrite_SaysTheStoreFailed_LeavesThePreviousSaveIntact_AndTheNextSaveSucceeds()
         {
             var setup = NewSetup();
             var hero = setup.Saves.Create("Aria");
             _ = setup.Saves.Load(hero.Id);
             setup.Game.Hero.Wallet.Deposit(new Currency(100u));
-            Assert.That(setup.Saves.Save(), Is.True);
+            Assert.That(setup.Saves.Save().Wrote, Is.True);
 
             setup.Game.Hero.Wallet.Deposit(new Currency(900u));
             store.FailWrites = true;
             ExpectLog(LogType.Error, "Could not save hero .*the disk is full");
 
-            Assert.That(setup.Saves.Save(), Is.False);
+            var failed = setup.Saves.Save();
+
+            Assert.That(failed.Wrote, Is.False);
+            Assert.That(failed.Failure, Is.EqualTo(SaveFailure.StoreFailed));
+            Assert.That(failed.Reason, Is.Not.Empty.And.Not.Contain("disk is full"), "the technical text stays in the log");
 
             store.FailWrites = false;
             var survivor = NewSetup();
             _ = survivor.Saves.Load(hero.Id);
             Assert.That(survivor.Game.Hero.Wallet.Balance.Total, Is.EqualTo(100u), "the previous save is untouched");
 
-            Assert.That(setup.Saves.Save(), Is.True, "the next save point is the retry");
+            Assert.That(setup.Saves.Save().Wrote, Is.True, "the next save point is the retry");
 
             var retried = NewSetup();
             _ = retried.Saves.Load(hero.Id);
@@ -291,7 +296,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             _ = setup.Saves.Load(id);
             var sidecar = inner.SideFiles[$"{id}.quarantine.json"];
 
-            Assert.That(setup.Saves.Save(), Is.True);
+            Assert.That(setup.Saves.Save().Wrote, Is.True);
 
             Assert.That(inner.SideFiles[$"{id}.quarantine.json"], Is.EqualTo(sidecar));
             Assert.That(inner.Keys(), Is.EquivalentTo(new[] { HeroFileKey.Compose("Aria", id), "account" }));
@@ -372,14 +377,18 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             setup.Game.Hero.Wallet.Deposit(new Currency(5u));
             ExpectLog(LogType.Error, "this save was skipped.*nowhere to put it");
 
-            Assert.That(setup.Saves.Save(), Is.False);
+            var failed = setup.Saves.Save();
+
+            Assert.That(failed.Wrote, Is.False);
+            Assert.That(failed.Failure, Is.EqualTo(SaveFailure.BeforeSaveFailed));
+            Assert.That(failed.Reason, Is.Not.Empty.And.Not.Contain("nowhere to put it"), "the technical text stays in the log");
 
             var survivor = NewSetup();
             _ = survivor.Saves.Load(hero.Id);
             Assert.That(survivor.Game.Hero.Wallet.Balance.Total, Is.Zero, "the previous file is kept");
 
             fail = false;
-            Assert.That(setup.Saves.Save(), Is.True);
+            Assert.That(setup.Saves.Save().Wrote, Is.True);
         }
     }
 }

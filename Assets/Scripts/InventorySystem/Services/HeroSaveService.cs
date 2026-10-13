@@ -264,21 +264,21 @@ namespace ToolSmiths.InventorySystem.Services
             return Load(Create(FirstHeroName).Id);
         }
 
-        public bool Save()
+        public SaveResult Save()
         {
             // The Session's hero is the file's only while it is the one this service loaded; a template
             // load or another load behind its back leaves the file alone.
             if (ActiveHeroId == null || !ReferenceEquals(activeHero, session.Hero))
-                return false;
+                return SaveResult.Failed(SaveFailure.NotFromSave);
 
             // A hero in the Field holds a bag the Run has not settled; the file only ever holds a Town hero.
             if (simulation.Run.Phase == RunPhase.InField)
-                return false;
+                return SaveResult.Failed(SaveFailure.RunInField);
 
             // A normaliser that failed left the hero in a state that is not safe to write (a held Package
             // that is in no container). The previous file still holds it, so keep that one.
             if (!RunNormalisers())
-                return false;
+                return SaveResult.Failed(SaveFailure.BeforeSaveFailed);
 
             // A write that fails must not take the game down. The write is atomic, so the previous save is
             // untouched; every save point writes the whole hero, so the next one is the retry.
@@ -293,12 +293,12 @@ namespace ToolSmiths.InventorySystem.Services
                     dto.templateId = activeTemplateId;
 
                 _ = WriteHero(ActiveHeroId, dto);
-                return true;
+                return SaveResult.Written;
             }
             catch (Exception exception)
             {
                 Debug.LogError($"Could not save hero '{ActiveHeroId}': {exception.Message} The previous save is untouched; the next save point tries again.");
-                return false;
+                return SaveResult.Failed(SaveFailure.StoreFailed);
             }
         }
 

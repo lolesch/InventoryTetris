@@ -60,7 +60,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             // Saving the first hero makes it the newest save; its slot must not change.
             _ = saves.Load(first.Id);
-            Assert.That(saves.Save(), Is.True);
+            Assert.That(saves.Save().Wrote, Is.True);
 
             Assert.That(saves.List().First().Id, Is.EqualTo(first.Id), "the list is newest save first");
             Assert.That(HeroSlots.Ordered(saves.List()).Select(hero => hero.Id), Is.EqualTo(new[] { first.Id, second.Id }));
@@ -84,7 +84,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             Tick();
             _ = saves.Load(hero.Id);
-            Assert.That(saves.Save(), Is.True);
+            Assert.That(saves.Save().Wrote, Is.True);
 
             Assert.That(saves.List().Single().CreatedAtTicks, Is.EqualTo(now.AddMinutes(-1).Ticks));
         }
