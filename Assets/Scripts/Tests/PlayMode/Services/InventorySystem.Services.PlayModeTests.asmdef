@@ -10,7 +10,10 @@
         "InventorySystem.Characters",
         "Utility",
         "Utility.Bindings",
+        "Utility.Persistence",
         "Unity.InputSystem",
+        "UnityEngine.UI",
+        "Unity.TextMeshPro",
         "Unity.InputSystem.TestFramework",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
