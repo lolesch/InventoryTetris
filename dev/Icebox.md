@@ -1,10 +1,3 @@
-
-# Bugs
-
-
-# Known Issues
-
-
 # Ideas
 
 ### Item Crafting
@@ -26,10 +19,6 @@ define a set of stats -> affixes that define the character. then define on what 
 Give each affix a rough value so items become comparable and spikes can be detected. 
 ### Item Sandbox
 a player facing item catalogue with a dummy character to equip. For theory crafting and filtering. Think BackpackBattles or Magicraft for reference.
-
-### Loot Filter
-a more dedicated filter than the current rarity slider.
-
 
 ### Rework Experience
 Experience should not be a resource at all. we instead should have an experienceGainBonus stat. This links to more design on what a level actually is or wnats to express.

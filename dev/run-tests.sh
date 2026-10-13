@@ -65,7 +65,7 @@ args=(-batchmode -nographics -projectPath "$(cygpath -m "$project")"
 [ "$platform" = "PlayMode" ] && args+=(-savesFolder "$out/saves")
 
 # Through dev/launch-detached.ps1: a direct launch takes keyboard focus from whatever the user is typing in.
-powershell.exe -NoProfile -File "$(cygpath -m "$root/dev/launch-detached.ps1")" "$unity" "${args[@]}" >/dev/null 2>&1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(cygpath -m "$root/dev/launch-detached.ps1")" "$unity" "${args[@]}" >/dev/null 2>&1
 
 # The run rewrites ProjectSettings; the change is never part of the work. A shadow copy absorbed it.
 [ "$project" = "$root" ] && git -C "$root" checkout -- ProjectSettings 2>/dev/null
