@@ -1,18 +1,17 @@
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Geometry;
 using ToolSmiths.InventorySystem.Services;
-using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace ToolSmiths.InventorySystem.Runtime.Simulation
 {
     /// <summary>
-    /// The hit flash feedback (issue #179): the enemy's sprite goes white each time its health drops and
-    /// ramps back over a short stretch of <i>sim</i> time. It listens to the enemy's own
+    /// The hit flash feedback (issue #179): a figure's sprite goes white each time its health drops and
+    /// ramps back over a short stretch of <i>sim</i> time. It listens to the bound
     /// <see cref="CharacterResource.CurrentHasChanged"/>, so the sim is untouched, and nothing else of the
-    /// view knows about it: <see cref="EnemyArena"/> binds it behind its <c>hitFlash</c> switch, and
-    /// <see cref="EnemyView.Unbind"/> lets it go. Pruning the feature is deleting this component, its
+    /// figure knows about it: <see cref="EnemyArena"/> binds it behind its <c>hitFlash</c> switch, and
+    /// <see cref="Figure.Unbind"/> lets it go. Pruning the feature is deleting this component, its
     /// <c>HitFlash</c> child in the prefab, and those two call sites.
     /// <para>
     /// A <see cref="UnityEngine.UI.Graphic"/> tint can only darken, so the white is a plain Image
@@ -21,7 +20,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// </para>
     /// <para>
     /// The health event raises before the value is written, so the handler reads its arguments, never
-    /// <c>Enemy.Health</c>. Several hits in one coarse frame call <see cref="HitFlashRamp.Hit"/> several
+    /// the resource's current value. Several hits in one coarse frame call <see cref="HitFlashRamp.Hit"/> several
     /// times and flash once.
     /// </para>
     /// <para>
@@ -31,7 +30,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// </para>
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class EnemyHitFlash : MonoBehaviour
+    public sealed class HitFlash : MonoBehaviour
     {
         [SerializeField, Tooltip("A copy of the sprite that only shapes the flash: a Mask on it clips the fill to the silhouette.")]
         private Image silhouette;
@@ -46,11 +45,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// <summary>The flash in flight, 0 when the sprite is normal.</summary>
         public float Intensity => _ramp.Intensity;
 
-        /// <summary>Whether this component is listening to an enemy's health.</summary>
+        /// <summary>Whether this component is listening to a health resource.</summary>
         public bool IsBound => _health != null;
 
-        /// <summary>Flash <paramref name="sprite"/> each time <paramref name="enemy"/>'s health drops.</summary>
-        public void Bind(Enemy enemy, Sprite sprite)
+        /// <summary>Flash <paramref name="sprite"/> each time <paramref name="health"/> drops.</summary>
+        public void Bind(CharacterResource health, Sprite sprite)
         {
             Unbind();
 
@@ -59,7 +58,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 return;
 
             silhouette.sprite = sprite;
-            _health = enemy.HealthResource;
+            _health = health;
             _health.CurrentHasChanged += OnHealthChanged;
         }
 

@@ -10,7 +10,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 {
     /// <summary>
     /// One rising damage figure (issue #181), pooled by <see cref="ArenaDamageNumbers"/>. It is not a child
-    /// of any <see cref="EnemyView"/>: a view fades with its death and is pooled with its enemy, and the
+    /// of any <see cref="Figure"/>: a figure fades with its death and is pooled with its enemy, and the
     /// number of the killing blow has to outlive both. It lives in the arena's space, drives itself on
     /// <i>sim</i> time (faster at x8, frozen on pause) and hands itself back when its life is over or when
     /// the Encounter it was born in is gone (Recall, hero death, Relocate: the Run ended, so nothing lingers).

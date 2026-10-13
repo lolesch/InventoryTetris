@@ -102,7 +102,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7cda4c7272d925441adcd83307a1a69e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.Runtime.Simulation.EnemyHitFlash
+  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.Runtime.Simulation.HitFlash
   silhouette: {fileID: 8003716039066781163}
   fill: {fileID: 591466223705019335}
   duration: 0.15
@@ -360,7 +360,7 @@ GameObject:
   - component: {fileID: 7346023086139494097}
   - component: {fileID: 7114436011070331753}
   m_Layer: 0
-  m_Name: EnemyView
+  m_Name: Figure
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -411,7 +411,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 310f33975d3468842a5795f483725a69, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.Runtime.Simulation.EnemyView
+  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.Runtime.Simulation.Figure
   spriteImage: {fileID: 4562817553787274349}
   highlight: {fileID: 6902718430215506104}
 --- !u!1001 &3527010079025441697
@@ -530,4 +530,4 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b6f4e15c8b6ad324d9709a92f65e78d9, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.Runtime.Simulation.EnemyHealthBarDisplay
+  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.Runtime.Simulation.HealthBarDisplay
