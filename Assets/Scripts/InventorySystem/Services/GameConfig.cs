@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Distributions;
 using ToolSmiths.InventorySystem.Data.Enums;
+using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Locations;
 using ToolSmiths.InventorySystem.Runtime.Character;
@@ -132,6 +133,10 @@ namespace ToolSmiths.InventorySystem.Services
         [field: Header("Simulation: Encounter tuning (placeholders, untested starting points)")]
         [field: SerializeField, Tooltip("The arena, the Cast, the damage spread and the combat clock an Encounter plays on. A value outside what the sim accepts is pulled back into range when the Encounter is built, so a hand-edited asset cannot make a Send throw.")]
         public EncounterTuning Tuning { get; private set; } = EncounterTuning.Standard();
+
+        [field: Header("Ground")]
+        [field: SerializeField, Tooltip("How the ground fades its drops by age. The grid's slots and the list's rows both read this one setting.")]
+        public GroundFadeSettings GroundFade { get; private set; } = new();
 
         [field: Header("Locations")]
         [SerializeField] private LocationConfig[] locations = System.Array.Empty<LocationConfig>();

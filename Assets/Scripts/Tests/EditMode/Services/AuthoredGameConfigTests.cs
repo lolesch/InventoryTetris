@@ -80,6 +80,16 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
+        public void TheGroundFade_IsTheOneTheGridAndTheListUsedToSerialize()
+        {
+            var fade = config.GroundFade;
+
+            Assert.That(fade.AlphaOf(age: 7), Is.EqualTo(1f), "the newest eight are fully opaque");
+            Assert.That(fade.AlphaOf(age: 8), Is.EqualTo(0.98f).Within(1e-6f), "then a 0.02 step per drop");
+            Assert.That(fade.AlphaOf(age: 1000), Is.EqualTo(0.3f), "the oldest rest at the minimum");
+        }
+
+        [Test]
         public void TheEncounterTuning_DefaultsToTheStandardPlaceholders()
         {
             var standard = EncounterTuning.Standard();

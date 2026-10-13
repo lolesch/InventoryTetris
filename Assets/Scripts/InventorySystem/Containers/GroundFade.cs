@@ -19,18 +19,18 @@ namespace ToolSmiths.InventorySystem.Inventories
             Mathf.Max(minimum, 1f - (Mathf.Max(0, age - fullOpacityCount + 1) * step));
     }
 
-    /// <summary>The authored numbers of <see cref="GroundFade"/>, so each view of the ground (the grid's slots, the list's rows) fades by the same rule.</summary>
+    /// <summary>The authored numbers of <see cref="GroundFade"/>, declared once on <c>GameConfig</c> so each view of the ground (the grid's slots, the list's rows) fades by the same rule. Read-only: a write to the asset would survive Stop.</summary>
     [Serializable]
     public sealed class GroundFadeSettings
     {
-        [Range(1, 20), Tooltip("How many of the newest drops stay fully opaque.")]
-        public int fullOpacityCount = 5;
+        [SerializeField, Range(1, 20), Tooltip("How many of the newest drops stay fully opaque.")]
+        private int fullOpacityCount = 5;
 
-        [Range(0f, 1f), Tooltip("What each drop beyond the fully opaque ones takes off a drop's alpha.")]
-        public float fadeStep = 0.15f;
+        [SerializeField, Range(0f, 1f), Tooltip("What each drop beyond the fully opaque ones takes off a drop's alpha.")]
+        private float fadeStep = 0.15f;
 
-        [Range(0f, 1f), Tooltip("The alpha an old drop stops fading at.")]
-        public float minimumAlpha = 0.25f;
+        [SerializeField, Range(0f, 1f), Tooltip("The alpha an old drop stops fading at.")]
+        private float minimumAlpha = 0.25f;
 
         /// <param name="age">How many drops landed after this one: 0 for the newest.</param>
         public float AlphaOf(int age) => GroundFade.Alpha(age, fullOpacityCount, fadeStep, minimumAlpha);
