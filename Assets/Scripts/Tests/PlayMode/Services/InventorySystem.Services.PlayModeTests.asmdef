@@ -13,6 +13,7 @@
         "Utility",
         "Utility.Bindings",
         "Utility.Persistence",
+        "Utility.UI",
         "Unity.InputSystem",
         "UnityEngine.UI",
         "Unity.TextMeshPro",

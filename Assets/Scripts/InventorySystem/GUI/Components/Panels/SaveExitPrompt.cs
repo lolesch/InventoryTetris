@@ -1,4 +1,5 @@
 using Submodules.Utility.Services;
+using Submodules.Utility.UI;
 using System;
 using TMPro;
 using ToolSmiths.InventorySystem.GUI.Components.Buttons;
@@ -158,7 +159,12 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
             Left?.Invoke();
         }
 
-        private static bool LoadMenu() => SceneRequest.TryLoad(GameEntryGuard.MenuScene);
+        // A missing loader (the application is quitting) counts as a load that did not start.
+        private static bool LoadMenu()
+        {
+            var loader = SceneProvider.Instance;
+            return loader && loader.LoadScene(GameEntryGuard.MenuScene);
+        }
 
         private static bool Quit()
         {
