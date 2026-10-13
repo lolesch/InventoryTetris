@@ -52,6 +52,16 @@ namespace ToolSmiths.InventorySystem.Services
                 .ThenBy(hero => hero.Id, StringComparer.Ordinal)
                 .ToArray();
 
+        /// <summary>The saved heroes oldest first and then the draft, always last: the hero slots as the menu shows
+        /// them. A hero saved while the draft waits (the Editor's Tools menu) was created after it, but must not
+        /// take the slot the player named it in.</summary>
+        public static IReadOnlyList<HeroSummary> Ordered(IHeroSaveService saves)
+        {
+            var saved = Ordered(saves.List());
+
+            return saves.TryGetDraft(out var draft) ? saved.Append(draft).ToArray() : saved;
+        }
+
         /// <param name="ordered">The result of <see cref="Ordered"/>.</param>
         public static HeroSlot At(IReadOnlyList<HeroSummary> ordered, int slot) =>
             slot < ordered.Count ? new HeroSlot(HeroSlotKind.Hero, ordered[slot])

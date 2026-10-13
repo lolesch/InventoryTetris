@@ -44,6 +44,12 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
 
         protected override void OnClick() => prompt.Open();
 
-        private void Refresh() => interactable = MainMenuFlow.TrySelected(watched, out _);
+        // The menu hides this button from its own HeroesChanged handler, and an event runs the handlers it
+        // started with: this one can still be called after the disable has let go of the service.
+        private void Refresh()
+        {
+            if (watched != null)
+                interactable = MainMenuFlow.TrySelected(watched, out _);
+        }
     }
 }

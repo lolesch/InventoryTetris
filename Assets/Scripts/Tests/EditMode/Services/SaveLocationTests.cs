@@ -141,13 +141,13 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
-        public void AFirstPlayEntry_CreatesAHero_AndWritesItAtOnce()
+        public void AFirstStartFreshPlayEntry_CreatesAHero_AndWritesItAtOnce()
         {
             var store = new InMemorySaveStore();
 
             try
             {
-                GameBoot.Boot(config, store);
+                GameBoot.Boot(config, store, createFirstHero: true);
 
                 Assert.That(ServiceLocator.Get<IHeroSaveService>().ActiveHeroId, Is.Not.Null);
                 Assert.That(store.Keys().Count, Is.EqualTo(2), "the hero and the Account file");

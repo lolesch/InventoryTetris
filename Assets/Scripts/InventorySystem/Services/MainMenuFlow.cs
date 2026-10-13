@@ -87,28 +87,41 @@ namespace ToolSmiths.InventorySystem.Services
             return deleted;
         }
 
+        /// <summary>The label of Play: the first time a hero enters the game it starts it, after that it continues.</summary>
+        public static string PlayLabel(IHeroSaveService saves) =>
+            TrySelected(saves, out var hero) && hero.IsDraft ? "Start Game" : "Continue";
+
         /// <summary>
-        /// Loads the selected hero from disk again, then asks for the game scene. The load replaces the Hero
-        /// and the World together, so nothing of the previous trip leaks and the Supply is restocked. A hero
-        /// that no longer loads keeps the player on the menu.
+        /// Writes a draft hero for the first time, loads the selected hero from disk again, then asks for the game
+        /// scene. The load replaces the Hero and the World together, so nothing of the previous trip leaks and the
+        /// Supply is restocked. A hero that no longer loads, or a draft that cannot be written, keeps the player on
+        /// the menu.
         /// </summary>
         /// <param name="loadScene">The scene change, so a test supplies its own and the menu its loader. It answers
         /// whether the load started; a loader that declines leaves the player on the menu to press Play again.</param>
         /// <returns>Whether the game scene was asked for and the loader took it.</returns>
-        public static bool Play(IHeroSaveService saves, Func<string, bool> loadScene) =>
-            CanPlay(saves) && saves.Load(saves.ActiveHeroId).Entered && loadScene(GameEntryGuard.GameScene);
+        public static bool Play(IHeroSaveService saves, Func<string, bool> loadScene)
+        {
+            if (!CanPlay(saves))
+                return false;
+
+            if (TrySelected(saves, out var hero) && hero.IsDraft && !saves.SaveDraft().Wrote)
+                return false;
+
+            return saves.Load(saves.ActiveHeroId).Entered && loadScene(GameEntryGuard.GameScene);
+        }
 
         /// <summary>
         /// The create slot's confirm: checks <paramref name="name"/> (<see cref="HeroNameRules"/>) and only
-        /// then creates the hero from the default template, loads it and so selects it. A refused name
-        /// creates nothing and says why in the result.
+        /// then makes a draft hero from the default template, loads it and so selects it. Nothing is written
+        /// until Play starts the game with it. A refused name creates nothing and says why in the result.
         /// </summary>
         public static HeroNameCheck CreateHero(IHeroSaveService saves, string name)
         {
             var check = HeroNameRules.Check(name);
 
             if (check.IsValid)
-                _ = saves.Load(saves.Create(check.Name).Id);
+                _ = saves.Load(saves.CreateDraft(check.Name).Id);
 
             return check;
         }
@@ -122,7 +135,7 @@ namespace ToolSmiths.InventorySystem.Services
         /// </summary>
         public static string SavedLine(IHeroSaveService saves, TimeZoneInfo zone = null)
         {
-            if (!TrySelected(saves, out var hero))
+            if (!TrySelected(saves, out var hero) || hero.IsDraft)
                 return null;
 
             var local = TimeZoneInfo.ConvertTimeFromUtc(hero.SavedAtUtc, zone ?? TimeZoneInfo.Local);

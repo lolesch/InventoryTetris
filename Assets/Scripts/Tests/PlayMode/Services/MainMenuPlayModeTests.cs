@@ -97,12 +97,13 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         }
 
         [UnityTest]
-        public IEnumerator Play_IsDisabled_WithNoHero_AndAClickEntersNothing()
+        public IEnumerator PlayAndDelete_AreNotShown_WithNoHero_AndAClickEntersNothing()
         {
             yield return OpenMenu(withHero: false);
             var play = Find<Selectable>("PlayButton");
 
-            Assert.That(play.interactable, Is.False);
+            Assert.That(play.gameObject.activeSelf, Is.False, "no hero, no Play");
+            Assert.That(Find<Selectable>("HeroDeleteButton").gameObject.activeSelf, Is.False, "and nothing to delete");
 
             Click(play);
             yield return null;
@@ -111,15 +112,29 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         }
 
         [UnityTest]
-        public IEnumerator Play_BecomesAvailable_WhenAHeroIsCreated()
+        public IEnumerator PlayAndDelete_AppearWhenAHeroIsSelected_AsContinue()
         {
             yield return OpenMenu(withHero: false);
             var play = Find<Selectable>("PlayButton");
-            Assert.That(play.interactable, Is.False, "premise");
+            Assert.That(play.gameObject.activeSelf, Is.False, "premise");
 
             _ = Saves.Load(Saves.Create("Aria").Id);
 
+            Assert.That(play.gameObject.activeSelf, Is.True);
             Assert.That(play.interactable, Is.True);
+            Assert.That(play.GetComponentInChildren<TextMeshProUGUI>().text, Is.EqualTo("Continue"), "a hero with a save continues");
+            Assert.That(Find<Selectable>("HeroDeleteButton").gameObject.activeSelf, Is.True);
+        }
+
+        [UnityTest]
+        public IEnumerator AFreshLaunch_CreatesNoHero_AndOffersOnlyTheCreateSlot()
+        {
+            yield return OpenMenu(withHero: false);
+
+            Assert.That(Saves.List(), Is.Empty);
+            Assert.That(Saves.ActiveHeroId, Is.Null);
+            Assert.That(Directory.Exists(folder) ? Directory.GetFiles(folder) : Array.Empty<string>(), Is.Empty, "no file written");
+            Assert.That(CreateSlot().interactable, Is.True);
         }
 
         [UnityTest]
@@ -204,10 +219,43 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             yield return null;
 
             Assert.That(prompt.gameObject.activeSelf, Is.False);
-            Assert.That(Saves.List().Count, Is.EqualTo(heroes + 1));
-            var bran = Saves.List().Single(hero => hero.Name == "Bran");
+            Assert.That(Saves.List().Count, Is.EqualTo(heroes), "a named hero is a draft: nothing is written yet");
+            Assert.That(Saves.TryGetDraft(out var bran), Is.True);
+            Assert.That(bran.Name, Is.EqualTo("Bran"));
             Assert.That(Saves.ActiveHeroId, Is.EqualTo(bran.Id), "the new hero is created, loaded and selected");
+            Assert.That(Find<Selectable>("PlayButton").GetComponentInChildren<TextMeshProUGUI>().text, Is.EqualTo("Start Game"));
         }
+
+        [UnityTest]
+        public IEnumerator ADraft_IsFirstSavedWhenTheGameStarts_AndIsNamedOnTheMenu()
+        {
+            yield return OpenMenu(withHero: false);
+            var prompt = Find<MonoBehaviour>("HeroNamePrompt");
+
+            Click(CreateSlot());
+            yield return null;
+            Member<TMP_InputField>(prompt, "input").text = "Bran";
+            Click(Member<Component>(prompt, "confirm"));
+            yield return null;
+
+            Assert.That(Directory.Exists(folder) ? Directory.GetFiles(folder) : Array.Empty<string>(), Is.Empty, "naming a hero writes nothing");
+            Assert.That(Texts("HeroNameDisplay"), Is.EqualTo("Bran"));
+            Assert.That(Texts("HeroLevelDisplay"), Does.Match("^Level \\d+$"));
+            Assert.That(Texts("HeroClassDisplay"), Is.EqualTo(GameBoot.Load().DefaultHero.DisplayName));
+
+            Click(Find<Selectable>("PlayButton"));
+            var deadline = Time.realtimeSinceStartup + 30f;
+            while (SceneManager.GetActiveScene().name != "Example" && Time.realtimeSinceStartup < deadline)
+                yield return null;
+
+            Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("Example"));
+            Assert.That(Saves.List().Single().Name, Is.EqualTo("Bran"), "written when the game started");
+            Assert.That(Saves.TryGetDraft(out _), Is.False);
+            Assert.That(Saves.ActiveHeroId, Is.EqualTo(Saves.List().Single().Id));
+        }
+
+        // The display's label sits on its own object.
+        private static string Texts(string typeName) => Find<MonoBehaviour>(typeName).GetComponent<TextMeshProUGUI>().text;
 
         [UnityTest]
         public IEnumerator NameEntry_ClosesOnCancel_AndCreatesNothing()
@@ -307,8 +355,8 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             Assert.That(Saves.ActiveHeroId, Is.Null);
             Assert.That(Saves.LastSelectedHeroId, Is.Null, "a later quit cannot bring it back");
             Assert.That(File.Exists(SavePath("Aria", aria)), Is.False);
-            Assert.That(Find<Selectable>("PlayButton").interactable, Is.False);
-            Assert.That(Find<Selectable>("HeroDeleteButton").interactable, Is.False);
+            Assert.That(Find<Selectable>("PlayButton").gameObject.activeSelf, Is.False);
+            Assert.That(Find<Selectable>("HeroDeleteButton").gameObject.activeSelf, Is.False);
             Assert.That(Find<MonoBehaviour>("HeroShowcaseText").GetComponent<TextMeshProUGUI>().text, Is.Empty);
             Assert.That(prompt.gameObject.activeSelf, Is.False, "and the slots did not re-select anything, or open the name entry");
             Assert.That(UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include)
@@ -372,7 +420,8 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             Assert.That(IsOn(SlotOf(aria)), Is.False);
             Assert.That(Saves.LastSelectedHeroId, Is.EqualTo(damaged));
             Assert.That(Saves.ActiveHeroId, Is.EqualTo(aria), "it never entered the Session");
-            Assert.That(play.interactable, Is.False, "only Delete is available");
+            Assert.That(play.gameObject.activeSelf, Is.False, "only Delete is available");
+            Assert.That(delete.gameObject.activeSelf, Is.True);
             Assert.That(delete.interactable, Is.True);
             Assert.That(File.Exists(SavePath("Cass", damaged)), Is.True, "choosing it leaves the file alone");
 
@@ -384,7 +433,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             yield return null;
 
             Assert.That(showcase.text, Is.EqualTo("Saved by a newer version of the game"));
-            Assert.That(play.interactable, Is.False);
+            Assert.That(play.gameObject.activeSelf, Is.False);
             Assert.That(delete.interactable, Is.True);
 
             Click(delete);

@@ -118,6 +118,11 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                 _resource.CurrentHasChanged -= UpdateDisplay;
                 _resource.CurrentHasChanged += UpdateDisplay;
 
+                // A raised maximum leaves the current value where it is, so CurrentHasChanged stays silent:
+                // gear equipped while the sim is paused would never reach the bar (a lowered one clamps it).
+                _resource.TotalHasChanged -= UpdateTotal;
+                _resource.TotalHasChanged += UpdateTotal;
+
                 UpdateDisplay(0, _resource.CurrentValue, _resource.TotalValue);
             }
 
@@ -133,7 +138,10 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
         private void Release()
         {
             if (_resource != null)
+            {
                 _resource.CurrentHasChanged -= UpdateDisplay;
+                _resource.TotalHasChanged -= UpdateTotal;
+            }
 
             if (_recovery != null)
                 _recovery.TotalHasChanged -= UpdateRechargeDisplay;
@@ -162,6 +170,8 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
             ApplyFill();
             RefreshTexts();
         }
+
+        private void UpdateTotal(float total) => UpdateDisplay(_current, _resource.CurrentValue, total);
 
         private void UpdateRechargeDisplay(float total)
         {

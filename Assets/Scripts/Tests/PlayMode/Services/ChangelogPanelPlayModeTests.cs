@@ -110,6 +110,53 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         }
 
         [UnityTest]
+        public IEnumerator Cancel_ClosesTheOpenPanel_LikeItsCloseButton_AndIsLeftAloneWhenItIsClosed()
+        {
+            yield return OpenMenu();
+            var view = FindView();
+            var chain = ServiceLocator.Get<ICancelChain>();
+            Assert.That(chain.Cancel(), Is.False, "premise: a closed panel takes no part in Cancel");
+
+            yield return OpenPanel(view);
+
+            Assert.That(chain.Cancel(), Is.True, "the open panel consumes the press");
+            yield return Until(() => Alpha(view) <= 0f);
+            Assert.That(Alpha(view), Is.EqualTo(0f));
+            Assert.That(chain.Cancel(), Is.False, "and the next press finds nothing at the menu root");
+        }
+
+        [UnityTest]
+        public IEnumerator EveryTabBody_SitsInAMaskedScrollView_SoLongTextCannotOverflow()
+        {
+            yield return OpenMenu();
+            var view = FindView();
+
+            foreach (var name in new[] { "PatchNotes", "KnownIssues", "Roadmap" })
+            {
+                var panel = Part(view, name + "Panel");
+                var scroll = panel.GetComponent<ScrollRect>();
+                var body = (RectTransform)Part(view, name + "Body");
+
+                Assert.That(scroll, Is.Not.Null, name + " scrolls");
+                Assert.That(scroll.content, Is.SameAs(body));
+                Assert.That(scroll.viewport.GetComponent<RectMask2D>(), Is.Not.Null, name + " is clipped to its viewport");
+                Assert.That(body.parent, Is.SameAs(scroll.viewport));
+                Assert.That(scroll.horizontal, Is.False);
+            }
+
+            yield return OpenPanel(view);
+            var patchNotes = Part(view, "PatchNotesPanel").GetComponent<ScrollRect>();
+            LayoutRebuilder.ForceRebuildLayoutImmediate(patchNotes.content);
+
+            // The seeded history is longer than the panel; the scroll position moves the body, not the panel.
+            Assert.That(patchNotes.content.rect.height, Is.GreaterThan(0f), "the entries are laid out in the body");
+            patchNotes.verticalNormalizedPosition = 0f;
+            Assert.That(patchNotes.content.rect.height > patchNotes.viewport.rect.height
+                ? patchNotes.content.anchoredPosition.y > 0f
+                : patchNotes.content.anchoredPosition.y == 0f, Is.True, "scrolled to the end, or nothing to scroll");
+        }
+
+        [UnityTest]
         public IEnumerator SwitchingTabs_ShowsOneTabAtATime_AndAReopenedPanelStartsOnPatchNotes()
         {
             yield return OpenMenu();
