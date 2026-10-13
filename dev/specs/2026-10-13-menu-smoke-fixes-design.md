@@ -1,5 +1,7 @@
 # Main Menu smoke-test fixes — draft heroes, Start Game / Continue, hero identity displays
 
+> 2026-10-14: "Modal" below is now **Popup**; see `2026-10-14-ui-naming-design.md`.
+
 Date: 2026-10-13
 Status: Built on `fix/menu-smoke-test`. Settled in conversation after a smoke test of the Changelog
 epic's last commit (`7390dd3`) against `2026-10-12-front-end-flow-design.md` and
