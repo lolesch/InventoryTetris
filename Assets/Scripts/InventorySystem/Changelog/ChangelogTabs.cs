@@ -38,7 +38,8 @@ namespace ToolSmiths.InventorySystem.Changelogs
             FailureLog = failureLog;
         }
 
-        public static ChangelogTabs Read(string text)
+        /// <param name="development">True in the Editor and development builds; see <see cref="Shown"/>. Applied here so the entries and the placeholder agree.</param>
+        public static ChangelogTabs Read(string text, bool development)
         {
             if (!ChangelogParser.TryParse(text, out var changelog, out var error))
             {
@@ -46,14 +47,24 @@ namespace ToolSmiths.InventorySystem.Changelogs
                 return new ChangelogTabs(new PatchNotesGroup[0], failure[0], failure, failure, $"Changelog line {error.Line}: {error.Message}");
             }
 
-            var entries = new PatchNotesGroup[changelog.Entries.Count];
+            var shown = Shown(changelog.Entries, development);
+            var entries = new PatchNotesGroup[shown.Count];
             for (var i = 0; i < entries.Length; i++)
             {
-                var entry = changelog.Entries[i];
+                var entry = shown[i];
                 entries[i] = new PatchNotesGroup(Heading(entry), Lines(entry.Bullets));
             }
 
             return new ChangelogTabs(entries, entries.Length == 0 ? NoPatchNotes : null,Lines(changelog.KnownIssues, NoKnownIssues), Lines(changelog.Roadmap, NoRoadmap));
+        }
+
+        /// <summary>The entries a viewer sees: <c>Unreleased</c> is for the developer checking wording, so players never see it.</summary>
+        public static IReadOnlyList<PatchNotesEntry> Shown(IReadOnlyList<PatchNotesEntry> entries, bool development)
+        {
+            var shown = new List<PatchNotesEntry>(entries.Count);
+            foreach (var entry in entries)
+                if (development || !entry.IsUnreleased) shown.Add(entry);
+            return shown;
         }
 
         /// <summary>A version-less build's label already is its date, and Unreleased has none.</summary>

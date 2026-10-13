@@ -29,7 +29,8 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
             if (isBound) return;
             isBound = true;
 
-            var tabs = ChangelogTabs.Read(changelogFile ? changelogFile.text : string.Empty);
+            var development = Application.isEditor || Debug.isDebugBuild;
+            var tabs = ChangelogTabs.Read(changelogFile ? changelogFile.text : string.Empty, development);
             if (tabs.Failed) Debug.LogError(tabs.FailureLog, changelogFile);
 
             AddEntries(patchNotesBody, tabs);
