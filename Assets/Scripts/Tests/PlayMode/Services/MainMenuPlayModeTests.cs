@@ -139,6 +139,27 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         }
 
         [UnityTest]
+        public IEnumerator Showcase_ShowsTheSelectedHerosFigures_AndIsBlankWithNoHero()
+        {
+            yield return OpenMenu(withHero: false);
+            var text = Find<MonoBehaviour>("HeroShowcaseText").GetComponent<TextMeshProUGUI>();
+            Assert.That(text.text, Is.Empty, "no hero is selected");
+
+            var aria = Saves.Create("Aria");
+            _ = Saves.Load(aria.Id);
+            ServiceLocator.Get<ISession>().Hero.AddKills(7);
+            Assert.That(Saves.Save().Failure, Is.EqualTo(SaveFailure.None), "premise");
+            _ = Saves.Load(aria.Id);
+
+            Assert.That(text.text, Does.Contain("Kills: 7"), "read from the hero the Session now holds");
+
+            var bran = Saves.Create("Bran");
+            _ = Saves.Load(bran.Id);
+
+            Assert.That(text.text, Is.EqualTo("Location:\nCorpse: none\nKills: 0\nGear level:"));
+        }
+
+        [UnityTest]
         public IEnumerator Cancel_AtTheMenuRoot_DoesNothing()
         {
             yield return OpenMenu(withHero: true);
