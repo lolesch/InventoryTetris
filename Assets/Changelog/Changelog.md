@@ -55,3 +55,7 @@
 - Rings and weapons are not compared against both of their slots, including two-handed weapons.
 
 # Roadmap
+
+- A Pause Menu to pause the game, return to the main menu, or quit.
+- A dedicated loot filter, more precise than the rarity slider.
+- Deeper item design, with more interesting choices than bigger numbers.
