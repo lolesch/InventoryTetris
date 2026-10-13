@@ -34,8 +34,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         {
             var tuning = new EncounterTuning { Arena = ArenaTuning.Standard(), Beat = 1000f };
             tuning.Arena.HeroStrikeRange = UnarmedRange;
-            return new EncounterSimulation(hero, profile, new ConstantRollSource(0f), behaviour, tuning, bag: null,
-                movementRolls: new ConstantRollSource(0.5f));
+            return new EncounterSimulation(hero, profile, new RollStreams(new ConstantRollSource(0f), new ConstantRollSource(0.5f)),
+                behaviour, tuning);
         }
 
         private static HeroBehaviour Weighted(float originWeight) => new() { Engagement = 10, OriginWeight = originWeight };
@@ -235,7 +235,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             {
                 var tuning = new EncounterTuning { Arena = ArenaTuning.Standard(), Beat = 1000f };
                 var sim = new EncounterSimulation(Hero(speed: 300f, damage: 3f), Profiles.Group(EnemyArchetype.Skirmisher, 3),
-                    new SeededRollSource(3), Weighted(0.5f), tuning, bag: null, movementRolls: new SeededRollSource(movementSeed));
+                    new RollStreams(new SeededRollSource(3), new SeededRollSource(movementSeed)), Weighted(0.5f), tuning);
                 var path = new System.Collections.Generic.List<Coordinate>();
                 for (var i = 0; i < 150; i++)
                 {

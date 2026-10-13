@@ -60,8 +60,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
                 CastCost = CastCost, Resource = CastCost, MaxResource = CastCost,
             };
             var tuning = new EncounterTuning { CastCadence = 0.05f, Cast = cast, DamageSpread = hitRolls == null ? 0f : 0.2f };
-            var sim = new EncounterSimulation(hero, Profiles.Group(EnemyArchetype.Brute, at.Length), new ConstantRollSource(0f),
-                Behaviours.Engaging(at.Length + 1), tuning, hitRolls: hitRolls);
+            var sim = new EncounterSimulation(hero, Profiles.Group(EnemyArchetype.Brute, at.Length), new RollStreams(new ConstantRollSource(0f), hit: hitRolls),
+                Behaviours.Engaging(at.Length + 1), tuning);
 
             var enemies = sim.Enemies.ToList();
             for (var i = 0; i < at.Length; i++)

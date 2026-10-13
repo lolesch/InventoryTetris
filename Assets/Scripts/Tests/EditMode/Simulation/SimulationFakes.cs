@@ -23,6 +23,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
         public int Consumed => _next;
 
+        public static implicit operator RollStreams(QueuedRollSource rolls) => new(rolls);
+
         public float Next()
         {
             if (_next >= _rolls.Length)
@@ -39,6 +41,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
         public SeededRollSource(int seed) => _rng = new Random(seed);
 
+        public static implicit operator RollStreams(SeededRollSource rolls) => new(rolls);
+
         public float Next() => (float)_rng.NextDouble();
     }
 
@@ -48,6 +52,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         private readonly float _value;
 
         public ConstantRollSource(float value) => _value = value;
+
+        public static implicit operator RollStreams(ConstantRollSource rolls) => new(rolls);
 
         public float Next() => _value;
     }
