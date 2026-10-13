@@ -171,6 +171,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             _behaviour = behaviour ?? throw new ArgumentNullException(nameof(behaviour));
         }
 
+        /// <summary>What <see cref="PickUpItem"/> may write to: the Equipment and the Inventory.</summary>
+        public IReadOnlyList<AbstractDimensionalContainer> ReceivingContainers => new AbstractDimensionalContainer[] { Equipment, Inventory };
+
         /// <summary>
         /// The placement every acquisition shares: auto-equip into an empty slot, else the
         /// Inventory, and nothing behind that. <c>false</c> means no room, so the caller decides

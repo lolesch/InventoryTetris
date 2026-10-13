@@ -263,7 +263,7 @@ namespace ToolSmiths.InventorySystem.Services
             };
 
             var lootFlow = new LootFlow(encounter, hero.Behaviour, generator, items, hero, hero.Wallet,
-                world.Ground, hero.Inventory, hero.Equipment);
+                world.Ground);
 
             // The Run accumulates the base-unit coin take so Death's fee reads it (issue #44).
             lootFlow.CoinsBanked += run.BankCurrency;
