@@ -752,7 +752,7 @@ display follows a source it was given (`Bind`/`Unbind`) or resolves itself (a co
 role) and redraws on that source's events. It implements no interface, because the bindings share no signature
 and `Bind` is a subscription with a lifetime, not a draw. A component that is neither pushed nor bound is not a
 display. This differs from views, that show static data (an item's name, icon and colour; the build version).
-_Avoid_: calling a list, a text or a layout a display
+_Avoid_: calling a list, a text or a layout a display unless it is pushed or bound
 
 **Popup**:
 A screen opened over the one beneath it, which **Cancel** closes. It is shown either by being enabled, so it

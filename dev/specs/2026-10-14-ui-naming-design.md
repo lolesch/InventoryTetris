@@ -13,7 +13,8 @@ Components added since then use the words for what they look like. A `Panel` tha
 `SetActive`, a `Display` that only shows and hides buttons, a `Panel` that is a text, and a `Panel` that is a
 list each tell the next reader something false, and three of the names (`DebugPanel`, `CharacterStatPanel`,
 `GroundItemsPanel`) sit on words the glossary lists under *Avoid* for other things. "Modal" is used by
-`CancelRank`, two specs and six doc comments and is defined nowhere.
+`CancelRank`, two specs and the doc comments and tests of nine source files (`CancelRank`, `EntryNoticePanel`,
+the three `*Prompt`s, `ChangelogPanelView`, `GameBoot`, `GameInput`, `CancelChainTests`) and is defined nowhere.
 
 ## Decisions
 
@@ -23,7 +24,9 @@ list each tell the next reader something false, and three of the names (`DebugPa
 (`CurrencyDisplay`, `CharacterStatDisplay`, `PreviewDisplay`). A *bound* display follows a source it is
 given (`Bind`/`Unbind`) or resolves itself (a container display binds by role) and redraws on that source's
 events (`ResourceDisplay`, `AbstractContainerDisplay` and its subclasses, `AbstractSlotDisplay`). A
-component that is neither is not a display: a text, a list, a layout.
+component that is neither is not a display: a text, a list, a layout. A list that binds a container by role
+is a bound display that happens to draw a list (`GroundItemsList`); its name follows the glossary's
+**Ground Items List**, and `AbstractContainerDisplay` names how it binds.
 
 **`IDisplay<T>` does not grow `Bind`/`Unbind`.** They are a different concern. `Refresh(T)` is "draw this
 now", stateless about where the data came from; `Bind` is a subscription with a lifetime and an `Unbind`
@@ -36,8 +39,9 @@ three callers do not share. Revisit if a pool wants to hold bound displays gener
 nothing here).
 
 **`AbstractContainerDisplay` keeps its name.** It is a bound display, so `Display` is accurate. Its
-"inherit AbstractDisplay or rename this pattern" TODO is deleted, and so is `PreviewDisplay`'s: no
-`AbstractDisplay` exists, and one could not coexist with `SimplePanel` on a type that is both.
+"inherit AbstractDisplay or rename this pattern" TODO is deleted, and so are `AbstractSlotDisplay`'s (the
+same line) and `PreviewDisplay`'s: no `AbstractDisplay` exists, and one could not coexist with `SimplePanel`
+on a type that is both.
 
 **Modal becomes Popup.** A **Popup** is a screen opened over the one beneath it, which Cancel closes. It is
 shown either by being enabled (it resets each time it opens: the hero name entry, the delete and Save &
@@ -64,11 +68,13 @@ becomes `CancelRank.Popup`. `Prompt`, `Modal` and `Dialog` go on the Avoid list,
 Also: the serialized `prompt` field of the two controllers becomes `popup`; the private argument-less
 `Refresh()` of `HeroShowcaseText` and `MainMenuLayout` becomes `Repaint`, as `HeroIdentityDisplay` already
 has it, so `Refresh` keeps meaning `IDisplay<T>.Refresh`; the tests named for a renamed type are renamed
-with it; doc comments that say "modal" say "popup". A class is renamed with its `.meta` so prefab and scene
+with it (`DebugPanelPlayModeTests`, `CancelChainTests`' modal cases); doc comments that say "modal" say
+"popup", in `docs/agents/coding-conventions.md` too ("the hero prompts and the Changelog panel"). A class is renamed with its `.meta` so prefab and scene
 references survive; the serialized-rename rule in `coding-conventions.md` covers the field.
 
 Unchanged, because the word is right: `ChangelogPanelView` (it fills rows from a static file, which is what a
-View is), `SidePanel`, `RunPhasePanel`, `FieldFacePanel`, `BehaviourSlidersPanel`, `BundleVersionView`,
+View is, and "Panel" names the `SimplePanel` it requires on the same object: the Changelog Popup is that
+panel, the view only fills it and registers its Cancel layer), `SidePanel`, `RunPhasePanel`, `FieldFacePanel`, `BehaviourSlidersPanel`, `BundleVersionView`,
 `ItemView`, the `Panel*` toggles and buttons, `InventoryPanels`.
 
 ## Notes for open work
