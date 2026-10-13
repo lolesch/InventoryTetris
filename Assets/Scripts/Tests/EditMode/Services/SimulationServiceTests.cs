@@ -607,7 +607,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             input.Press(GameAction.TogglePause);
             Assert.That(service.IsPaused, Is.False, "the same key resumes");
 
-            input.Press(GameAction.Peek);
+            input.Press(GameAction.ShowDetails);
             Assert.That(service.IsPaused, Is.False, "another action, no change");
         }
 

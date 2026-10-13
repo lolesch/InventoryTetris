@@ -35,9 +35,9 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
         private float _current;
         private float _total;
         private float _recoveryTotal;
-        private bool _altShown;
+        private bool _detailsShown;
 
-        private static bool AltHeld => GameInput.IsHeld(GameAction.Peek);
+        private static bool DetailsHeld => GameInput.IsHeld(GameAction.ShowDetails);
 
         /// <summary>
         /// Drive this display from a resource handed in, instead of from the Hero — an
@@ -153,9 +153,9 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
             if (fillMask && fillMask.rectTransform.rect.size != _maskSize)
                 ApplyFill();
 
-            // The texts are formatted when a value changes, so a change of the Alt state has to re-format them.
-            // Compared as a held state, not as KeyDown/KeyUp: either Alt counts, and an Alt+Tab never sends the KeyUp.
-            if (AltHeld != _altShown)
+            // The texts are formatted when a value changes, so a change of the show-details state has to re-format them.
+            // Compared as a held state, not as KeyDown/KeyUp: a bound key may never send the KeyUp (an Alt+Tab away).
+            if (DetailsHeld != _detailsShown)
                 RefreshTexts();
         }
 
@@ -180,19 +180,19 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
             RefreshTexts();
         }
 
-        /// <summary>Alt swaps the figures for a percentage. The texts are formatted from the cached values, so
+        /// <summary>Show-details swaps the figures for a percentage. The texts are formatted from the cached values, so
         /// they can be redrawn on a key press without waiting for the resource to change.</summary>
         private void RefreshTexts()
         {
-            _altShown = AltHeld;
+            _detailsShown = DetailsHeld;
 
             if (currentText && _resource != null)
-                currentText.text = _altShown
+                currentText.text = _detailsShown
                     ? $"{resourceName}: {(0 < _total ? _current / _total * 100 : 0f).ToString(NumberFormats.Resource)}%"
                     : $"{_current.ToString(NumberFormats.Resource)} / {_total.ToString(NumberFormats.Resource)}";
 
             if (recoveryText && _recovery != null)
-                recoveryText.text = _altShown
+                recoveryText.text = _detailsShown
                     ? $"{recoveryName}: {_recoveryTotal.ToString(NumberFormats.Rate)} / sec"
                     : _recoveryTotal.ToString(NumberFormats.Rate);
         }

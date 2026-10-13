@@ -39,7 +39,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         private Package lastPackage;
         private AbstractSlotDisplay lastSlot;
         private bool lastSecondSlot;
-        private bool lastAlt;
+        private bool lastDetails;
 
         private const float OffestDisplayToMouse = 15f;
         private float OffsetX => showLeft ? OffestDisplayToMouse : -OffestDisplayToMouse;
@@ -63,9 +63,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
             // One read of each per frame: every GameInput call is a service lookup.
             var secondSlot = GameInput.IsHeld(GameAction.SecondSlot);
-            var alt = GameInput.IsHeld(GameAction.Peek);
+            var details = GameInput.IsHeld(GameAction.ShowDetails);
 
-            if (secondSlot != lastSecondSlot || alt != lastAlt)
+            if (secondSlot != lastSecondSlot || details != lastDetails)
                 RefreshPreviewDisplay(lastPackage, lastSlot);
         }
 
@@ -85,7 +85,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             lastPackage = package;
             lastSlot = slot;
             lastSecondSlot = GameInput.IsHeld(GameAction.SecondSlot);
-            lastAlt = GameInput.IsHeld(GameAction.Peek);
+            lastDetails = GameInput.IsHeld(GameAction.ShowDetails);
 
             var pivotY = pointer.y.MapTo01(0, Screen.height);
             var mousePos = pointer / rootCanvas.scaleFactor;

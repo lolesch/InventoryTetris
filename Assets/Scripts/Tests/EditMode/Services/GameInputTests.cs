@@ -51,7 +51,8 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(keys.IsHeld(GameAction.TogglePause), Is.False);
         }
 
-        // The keys the game had before the catalog existed (hard-coded reads and four scene hotkeys).
+        // The shipped default keys: the ones the game had before the catalog existed (hard-coded reads and four scene
+        // hotkeys), and those added since.
         [TestCase(GameAction.TogglePause, "<Keyboard>/space")]
         [TestCase(GameAction.ToggleHeroPanel, "<Keyboard>/i")]
         [TestCase(GameAction.ToggleStash, "<Keyboard>/s")]
@@ -60,10 +61,11 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         [TestCase(GameAction.QuickMove, "<Keyboard>/leftShift")]
         [TestCase(GameAction.SecondSlot, "<Keyboard>/leftShift")]
         [TestCase(GameAction.HalveStack, "<Keyboard>/leftCtrl")]
-        [TestCase(GameAction.Peek, "<Keyboard>/leftAlt")]
-        [TestCase(GameAction.Peek, "<Keyboard>/rightAlt")]
+        [TestCase(GameAction.ShowDetails, "<Keyboard>/leftAlt")]
+        [TestCase(GameAction.ShowDetails, "<Keyboard>/rightAlt")]
         [TestCase(GameAction.Cancel, "<Keyboard>/escape")]
-        public void TheDefaultKeys_AreTheOnesTheGameHadBefore(GameAction action, string path)
+        [TestCase(GameAction.PeekTab, "<Keyboard>/tab")]
+        public void TheDefaultKeys_AreTheShippedOnes(GameAction action, string path)
         {
             Assert.That(shipped.FindAction(action.ToString()).bindings.Select(binding => binding.path), Does.Contain(path));
         }
@@ -72,7 +74,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         public void WithNothingArmed_NothingIsHeld_AndThePointerIsAtTheOrigin()
         {
             Assert.That(GameInput.Armed, Is.Null);
-            Assert.That(GameInput.IsHeld(GameAction.Peek), Is.False);
+            Assert.That(GameInput.IsHeld(GameAction.ShowDetails), Is.False);
             Assert.That(GameInput.PointerPosition, Is.EqualTo(Vector2.zero));
         }
 
@@ -82,7 +84,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             ServiceLocator.Install(new ServiceRegistry());
 
             Assert.That(GameInput.Armed, Is.Null);
-            Assert.That(GameInput.IsHeld(GameAction.Peek), Is.False);
+            Assert.That(GameInput.IsHeld(GameAction.ShowDetails), Is.False);
         }
 
         [Test]
@@ -93,10 +95,10 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             registry.Register<IInputService<GameAction>>(input);
             ServiceLocator.Install(registry);
 
-            input.Press(GameAction.Peek);
+            input.Press(GameAction.ShowDetails);
 
             Assert.That(GameInput.Armed, Is.SameAs(input));
-            Assert.That(GameInput.IsHeld(GameAction.Peek), Is.True);
+            Assert.That(GameInput.IsHeld(GameAction.ShowDetails), Is.True);
             Assert.That(GameInput.IsHeld(GameAction.HalveStack), Is.False);
             Assert.That(GameInput.PointerPosition, Is.EqualTo(new Vector2(30f, 40f)));
         }

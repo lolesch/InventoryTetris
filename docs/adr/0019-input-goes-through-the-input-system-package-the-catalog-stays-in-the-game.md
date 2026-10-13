@@ -23,7 +23,7 @@ it could be rebound, and a test could not press a key.
    and `Resources/GameInput.inputactions` (the default keys) stay in the game, as the save format
    stays out of Utility (ADR-0017). The asmdef compiles only where the package is installed
    (`versionDefines`), so a repo without it is unaffected.
-3. **Members are named for intent, never the key** (`QuickMove`, `Peek`, not `Shift`, `Alt`). The
+3. **Members are named for intent, never the key** (`QuickMove`, `ShowDetails`, not `Shift`, `Alt`). The
    player rebinds the key; the code asks for the intent. `GameInput` is the one static a view reads
    (held keys, pointer) and answers "nothing held" when no service is armed.
 4. **Presses are events, modifiers are state.** A toggle or a provider subscribes to
