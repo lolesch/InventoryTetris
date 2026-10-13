@@ -120,8 +120,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             _ = Session.TrySubscribeHeroLoaded(OnHeroLoaded);
             _ = HeroSaveService.TryAddBeforeSave(ReturnHeldToOrigin);
 
-            GameInput.Performed -= OnAction;
-            GameInput.Performed += OnAction;
+            cancelLayer?.Dispose();
+            cancelLayer = CancelChain.TryRegister(CancelRank.Drag, CancelHeldPackage);
         }
 
         private void OnDisable()
@@ -130,13 +130,21 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             Session.UnsubscribeHeroLoaded(OnHeroLoaded);
             HeroSaveService.TryRemoveBeforeSave(ReturnHeldToOrigin);
 
-            GameInput.Performed -= OnAction;
+            cancelLayer?.Dispose();
+            cancelLayer = null;
         }
 
-        private void OnAction(GameAction action)
+        private System.IDisposable cancelLayer;
+
+        // The top Cancel layer. A Package in hand takes the press even when it found no room to return to,
+        // so one press never both leaves it stuck and closes a panel.
+        private bool CancelHeldPackage()
         {
-            if (action == GameAction.CancelDrag && IsDragging)
-                CancelDrag();
+            if (!IsDragging)
+                return false;
+
+            _ = CancelDrag();
+            return true;
         }
 
         /// <summary>

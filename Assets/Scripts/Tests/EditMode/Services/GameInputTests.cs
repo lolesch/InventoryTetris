@@ -62,7 +62,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         [TestCase(GameAction.HalveStack, "<Keyboard>/leftCtrl")]
         [TestCase(GameAction.Peek, "<Keyboard>/leftAlt")]
         [TestCase(GameAction.Peek, "<Keyboard>/rightAlt")]
-        [TestCase(GameAction.CancelDrag, "<Keyboard>/escape")]
+        [TestCase(GameAction.Cancel, "<Keyboard>/escape")]
         public void TheDefaultKeys_AreTheOnesTheGameHadBefore(GameAction action, string path)
         {
             Assert.That(shipped.FindAction(action.ToString()).bindings.Select(binding => binding.path), Does.Contain(path));

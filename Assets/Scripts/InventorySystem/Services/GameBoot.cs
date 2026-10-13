@@ -2,6 +2,7 @@ using Submodules.Utility.Bindings;
 using Submodules.Utility.Persistence;
 using Submodules.Utility.Services;
 using System;
+using ToolSmiths.InventorySystem.Inventories;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -165,6 +166,7 @@ namespace ToolSmiths.InventorySystem.Services
             var keys = BuildInput(bindings ?? new InMemoryBindingStore());
             registry.Register<IInputService<GameAction>>(keys);
             keys.Performed += GameInput.Raise;
+            registry.Register<ICancelChain>(BuildCancel(keys, registry.Get<IInventoryService>()));
 
             try
             {
@@ -182,6 +184,24 @@ namespace ToolSmiths.InventorySystem.Services
             var simulation = registry.Get<ISimulationService>();
             _ = new PauseHotkey(simulation, keys);
             GameLoop.Add(simulation.Tick);
+        }
+
+        // The Cancel chain, with the Context layer that is the services' own. The Drag layer is the drag
+        // provider's and the Modal and Pause Menu layers the menus', so each registers itself.
+        private static CancelChain BuildCancel(IInputService<GameAction> keys, IInventoryService inventory)
+        {
+            var chain = new CancelChain(keys);
+
+            _ = chain.Register(CancelRank.Context, () =>
+            {
+                if (inventory.ActiveContext == InventoryContext.None)
+                    return false;
+
+                inventory.CloseContext();
+                return true;
+            });
+
+            return chain;
         }
 
         private static InputService<GameAction> BuildInput(IBindingOverrideStore bindings)
