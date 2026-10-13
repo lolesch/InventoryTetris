@@ -9,7 +9,8 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.GUI.Components.Panels
 {
     /// <summary>
-    /// The modal behind the Pause Menu's Save &amp; Exit (<see cref="SaveAndExit"/>). In Town the button goes
+    /// The modal behind the Pause Menu's Save &amp; Exit and Quit Game (<see cref="SaveAndExit"/>); they differ only in
+    /// where a saved hero goes, the Main Menu or out of the application. In Town the button goes
     /// straight through and this stays closed unless the write fails; in the Field it first asks, since leaving
     /// ends the Run. A failed write keeps the player in the game with the cause and offers Retry and, behind its
     /// own confirmation, Exit without saving. The component sits on the modal, which is shown by being enabled;
@@ -30,15 +31,23 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
         [SerializeField] private ClickEventButton back;
 
         private IDisposable cancelLayer;
+        private Action leave;
         private Step step;
         private string failure = string.Empty;
 
-        /// <summary>Raised once the game is leaving for the Main Menu, saved or not, so the Pause Menu can stop taking clicks.</summary>
+        /// <summary>Raised once the game is leaving, saved or not, so the Pause Menu can stop taking clicks.</summary>
         public event Action Left;
 
-        /// <summary>Starts a Save &amp; Exit: asks first when it ends a Run, else leaves at once.</summary>
-        public void Begin()
+        /// <summary>Starts a Save &amp; Exit: asks first when it ends a Run, else leaves for the Main Menu at once.</summary>
+        public void BeginSaveAndExit() => Begin(LoadMenu);
+
+        /// <summary>Starts a Quit Game: the same rule as <see cref="BeginSaveAndExit"/>, then the application ends.</summary>
+        public void BeginQuit() => Begin(GameExit.Quitter);
+
+        private void Begin(Action onLeave)
         {
+            leave = onLeave;
+
             if (SaveAndExit.NeedsConfirmation(ServiceLocator.Get<ISimulationService>()))
                 Show(Step.Confirm);
             else
@@ -140,7 +149,9 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
         {
             gameObject.SetActive(false);
             Left?.Invoke();
-            SceneProvider.Instance.LoadScene(GameEntryGuard.MenuScene);
+            leave();
         }
+
+        private static void LoadMenu() => SceneProvider.Instance.LoadScene(GameEntryGuard.MenuScene);
     }
 }

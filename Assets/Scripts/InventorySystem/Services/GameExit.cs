@@ -12,6 +12,9 @@ namespace ToolSmiths.InventorySystem.Services
     /// already down takes its Death) and then writes, so closing the game mid-Run never throws the
     /// run away and never leaves a hero in the Field.
     ///
+    /// The Pause Menu's Quit Game ends the application through <see cref="Quitter"/> once the hero is written,
+    /// and is not offered where <see cref="CanQuit"/> says quitting does nothing.
+    ///
     /// The handler uses the services, so it is released on entering Edit Mode, after the scene's
     /// teardown, and not on <c>ExitingPlayMode</c> (docs/agents/codebase-notes.md, "Static state needs
     /// a SubsystemRegistration reset"). The boot installs it; a test of the logic calls
@@ -22,6 +25,12 @@ namespace ToolSmiths.InventorySystem.Services
         private static Action quitHandler;
 
         public static bool IsInstalled => quitHandler != null;
+
+        /// <summary>What ending the application does; a test swaps it for a recorder, since a real quit would end the run.</summary>
+        public static Action Quitter { get; set; } = QuitApplication;
+
+        /// <summary>Whether a menu offers a quit: not in a browser, where <see cref="Application.Quit"/> does nothing.</summary>
+        public static bool CanQuit(RuntimePlatform platform) => platform != RuntimePlatform.WebGLPlayer;
 
         /// <summary>Attaches the quit handler once; installing again replaces it, never doubles it.</summary>
         public static void Install(ISimulationService simulation, IHeroSaveService saves)
@@ -59,6 +68,16 @@ namespace ToolSmiths.InventorySystem.Services
             {
                 Debug.LogError($"Could not save the hero on exit: {exception.Message}");
             }
+        }
+
+        // Application.Quit does nothing in the Editor, so there it stops Play Mode, as the Utility's QuitGameButton does.
+        private static void QuitApplication()
+        {
+#if UNITY_EDITOR
+            EditorApplication.ExitPlaymode();
+#else
+            Application.Quit();
+#endif
         }
 
         private static void Release()

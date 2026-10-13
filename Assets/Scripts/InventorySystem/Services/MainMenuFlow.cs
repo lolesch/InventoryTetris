@@ -134,7 +134,7 @@ namespace ToolSmiths.InventorySystem.Services
         }
 
         /// <summary>Whether the menu offers Exit: not in a browser, where quitting does nothing.</summary>
-        public static bool ShowsExit(RuntimePlatform platform) => platform != RuntimePlatform.WebGLPlayer;
+        public static bool ShowsExit(RuntimePlatform platform) => GameExit.CanQuit(platform);
 
         /// <summary>
         /// "Saved: Aria, Level 12, 14:32" for the last-selected hero, at its save's time in

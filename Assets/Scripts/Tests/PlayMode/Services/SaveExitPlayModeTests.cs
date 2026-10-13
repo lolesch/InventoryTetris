@@ -27,6 +27,8 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
     /// The real scenes' Save &amp; Exit (issue #258): in Town it writes and loads the Main Menu with no prompt; in
     /// the Field it asks first, and on confirm Recalls with the loot kept; Cancel leaves the Run untouched; a
     /// failed write stays in the game with the cause, Retry works and Exit without saving has its own confirm.
+    /// Quit Game (issue #259) follows the same rule and then quits, through <see cref="GameExit.Quitter"/> so the
+    /// test run survives it, and is hidden in a WebGL build.
     /// The saves are real files in a scratch folder. Boots again over the Input System fixture's isolation,
     /// like <see cref="PauseMenuPlayModeTests"/>.
     /// </summary>
@@ -34,6 +36,9 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
     {
         private string folder;
         private FailableStore store;
+        private Action previousQuitter;
+        private int quits;
+        private DateTime savedAtTheQuit;
 
         private static IHeroSaveService Saves => ServiceLocator.Get<IHeroSaveService>();
         private static IPauseMenu Menu => ServiceLocator.Get<IPauseMenu>();
@@ -76,6 +81,11 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
                 _ = Simulation.LeaveField();
             }
 
+            if (previousQuitter != null)
+                GameExit.Quitter = previousQuitter;
+
+            previousQuitter = null;
+
             if (folder != null && Directory.Exists(folder))
                 Directory.Delete(folder, true);
         }
@@ -90,6 +100,14 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             GameBoot.Arm(GameBoot.Load(), store);
             _ = InputSystem.AddDevice<Keyboard>();
             _ = Saves.Load(Saves.Create("Aria").Id);
+
+            quits = 0;
+            previousQuitter ??= GameExit.Quitter;
+            GameExit.Quitter = () =>
+            {
+                quits++;
+                savedAtTheQuit = Saves.List()[0].SavedAtUtc;
+            };
 
             yield return SceneManager.LoadSceneAsync(scene);
             yield return null;
@@ -109,6 +127,8 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         }
 
         private static MonoBehaviour Prompt() => Member<MonoBehaviour>(Find("PauseMenuPanel"), "saveExitPrompt");
+
+        private static void ClickQuitGame() => Click(Member<Component>(Find("PauseMenuPanel"), "quitGame"));
 
         private static void ClickSaveExit() => Click(Member<Component>(Find("PauseMenuPanel"), "saveExit"));
 
@@ -277,6 +297,145 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             ClickPrompt("secondary");
 
             yield return WaitForScene("MainMenu");
+        }
+
+        [UnityTest]
+        public IEnumerator InTown_QuitGame_WritesTheHeroThenQuits_WithNoPrompt()
+        {
+            yield return Open("Example");
+            var savedBefore = Saves.List()[0].SavedAtUtc;
+            Menu.Open();
+            yield return null;
+
+            ClickQuitGame();
+
+            Assert.That(Prompt().gameObject.activeSelf, Is.False, "Town asks nothing");
+            Assert.That(quits, Is.EqualTo(1));
+            Assert.That(savedAtTheQuit, Is.GreaterThan(savedBefore), "the hero was written before the quit");
+            Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("Example"), "a quit loads no scene");
+        }
+
+        [UnityTest]
+        public IEnumerator InTheField_QuitGame_AsksFirst_AndCancelQuitsNothing()
+        {
+            yield return Open("Example");
+            SendToTheField();
+            var helm = PutHelmInBag();
+            Menu.Open();
+            yield return null;
+
+            ClickQuitGame();
+
+            Assert.That(Prompt().gameObject.activeSelf, Is.True);
+            Assert.That(PromptText(), Is.EqualTo(SaveAndExit.FieldQuestion));
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.InField), "asking ends nothing");
+            Assert.That(quits, Is.Zero);
+
+            ClickPrompt("back");
+            yield return null;
+
+            Assert.That(Prompt().gameObject.activeSelf, Is.False);
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.InField));
+            Assert.That(BagHolds(helm), Is.True);
+            Assert.That(quits, Is.Zero);
+        }
+
+        [UnityTest]
+        public IEnumerator InTheField_QuitGame_RecallsAndSavesTheLoot_BeforeItQuits()
+        {
+            yield return Open("Example");
+            SendToTheField();
+            var helm = PutHelmInBag();
+            Menu.Open();
+            yield return null;
+            var savedBefore = Saves.List()[0].SavedAtUtc;
+
+            ClickQuitGame();
+            ClickPrompt("primary");
+
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.InTown), "the implicit Recall");
+            Assert.That(Session.Hero.Corpse.Exists, Is.False, "no Death penalty");
+            Assert.That(quits, Is.EqualTo(1));
+            Assert.That(savedAtTheQuit, Is.GreaterThan(savedBefore), "written before the quit");
+
+            _ = Saves.Load(Saves.List()[0].Id);
+            Assert.That(BagHolds(helm), Is.True, "the Run's loot came back from the file");
+        }
+
+        [UnityTest]
+        public IEnumerator AFailedWriteOnQuitGame_StaysInTheGame_RetryQuitsOnceItWrites()
+        {
+            yield return Open("Example");
+            SendToTheField();
+            var helm = PutHelmInBag();
+            Menu.Open();
+            yield return null;
+            store.FailWrites = true;
+            LogAssert.Expect(LogType.Error, new Regex("Could not save hero"));
+            LogAssert.Expect(LogType.Error, new Regex("Could not save hero"));
+
+            ClickQuitGame();
+            ClickPrompt("primary");
+            yield return null;
+
+            Assert.That(quits, Is.Zero, "a failed write quits nothing");
+            Assert.That(Prompt().gameObject.activeSelf, Is.True);
+            Assert.That(PromptText(), Does.Contain(SaveResult.Failed(SaveFailure.StoreFailed).Reason));
+            Assert.That(BagHolds(helm), Is.True);
+
+            store.FailWrites = false;
+            ClickPrompt("primary");
+
+            Assert.That(quits, Is.EqualTo(1));
+            Assert.That(Prompt().gameObject.activeSelf, Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator AFailedWriteOnQuitGame_CanQuitWithoutSaving_BehindItsOwnConfirm()
+        {
+            yield return Open("Example");
+            Menu.Open();
+            yield return null;
+            store.FailWrites = true;
+            LogAssert.Expect(LogType.Error, new Regex("Could not save hero"));
+
+            ClickQuitGame();
+            ClickPrompt("secondary");
+
+            Assert.That(PromptText(), Is.EqualTo(SaveAndExit.DiscardQuestion));
+            Assert.That(quits, Is.Zero, "asking is not quitting");
+
+            ClickPrompt("secondary");
+
+            Assert.That(quits, Is.EqualTo(1));
+        }
+
+        [UnityTest]
+        public IEnumerator OnceTheGameIsLeaving_NeitherExitButtonTakesAClick()
+        {
+            yield return Open("Example");
+            Menu.Open();
+            yield return null;
+
+            ClickQuitGame();
+
+            Assert.That(Member<Component>(Find("PauseMenuPanel"), "quitGame").GetComponent<UnityEngine.UI.Selectable>().interactable, Is.False);
+            Assert.That(Member<Component>(Find("PauseMenuPanel"), "saveExit").GetComponent<UnityEngine.UI.Selectable>().interactable, Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator QuitGame_IsHiddenInAWebGLBuild_AndOfferedOnTheOthers()
+        {
+            yield return Open("Example");
+            var panel = Find("PauseMenuPanel");
+            var quitGame = Member<Component>(panel, "quitGame").gameObject;
+            var apply = panel.GetType().GetMethod("Apply")!;
+
+            _ = apply.Invoke(panel, new object[] { RuntimePlatform.WebGLPlayer });
+            Assert.That(quitGame.activeSelf, Is.False);
+
+            _ = apply.Invoke(panel, new object[] { RuntimePlatform.WindowsPlayer });
+            Assert.That(quitGame.activeSelf, Is.True);
         }
     }
 }

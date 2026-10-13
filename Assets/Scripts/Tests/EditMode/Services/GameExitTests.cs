@@ -9,6 +9,7 @@ using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Locations;
 using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Simulation;
+using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Tests.Services
 {
@@ -94,6 +95,15 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             var next = Reloaded(id);
             Assert.That(PotionsHeld(next.Game), Is.EqualTo(3), "the Run's loot is banked in the file");
             Assert.That(next.Game.Hero.Corpse.Exists, Is.False);
+        }
+
+        [Test]
+        public void TheGame_CanBeQuitFromTheMenu_ExceptInAWebGLBuild()
+        {
+            Assert.That(GameExit.CanQuit(RuntimePlatform.WebGLPlayer), Is.False);
+            Assert.That(GameExit.CanQuit(RuntimePlatform.WindowsPlayer), Is.True);
+            Assert.That(GameExit.CanQuit(RuntimePlatform.OSXPlayer), Is.True);
+            Assert.That(GameExit.CanQuit(RuntimePlatform.LinuxPlayer), Is.True);
         }
 
         [Test]
