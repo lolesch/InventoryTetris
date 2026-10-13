@@ -37,7 +37,6 @@ namespace ToolSmiths.InventorySystem.Simulation
         private readonly ICoinDropSource _coins;
         private readonly IItemReceiver _player;
         private readonly Wallet _wallet;
-        private readonly AbstractDimensionalContainer[] _pickUpContainers;
 
         public LootFlow(
             EncounterSimulation encounter,
@@ -46,8 +45,7 @@ namespace ToolSmiths.InventorySystem.Simulation
             ICoinDropSource coins,
             IItemReceiver player,
             Wallet wallet,
-            GroundContainer ground,
-            params AbstractDimensionalContainer[] receivingContainers)
+            GroundContainer ground)
         {
             _encounter = encounter ?? throw new ArgumentNullException(nameof(encounter));
             _behaviour = behaviour ?? throw new ArgumentNullException(nameof(behaviour));
@@ -56,12 +54,6 @@ namespace ToolSmiths.InventorySystem.Simulation
             _player = player ?? throw new ArgumentNullException(nameof(player));
             _wallet = wallet ?? throw new ArgumentNullException(nameof(wallet));
             Ground = ground ?? throw new ArgumentNullException(nameof(ground));
-
-            // What a pick-up rolls back together: the ground it leaves and every container the player's
-            // entry point may add to, so a stack that only partly fits leaves no half of it in the bag.
-            _pickUpContainers = new AbstractDimensionalContainer[(receivingContainers?.Length ?? 0) + 1];
-            _pickUpContainers[0] = ground;
-            receivingContainers?.CopyTo(_pickUpContainers, 1);
 
             _encounter.EnemyDefeated += OnEnemyDefeated;
         }
@@ -109,15 +101,15 @@ namespace ToolSmiths.InventorySystem.Simulation
                 return true;
             }
 
-            using var transaction = new ItemTransaction(_pickUpContainers);
-
-            _ = Ground.RemoveAtPosition(cell, stored); // reduces its own copy; `stored` stays whole
-
-            if (!TryPlace(stored.Item, stored.Amount))
-                return false; // dispose rolls back - the Package stays at its cell
-
-            transaction.Commit();
-            return true;
+            try
+            {
+                return PickUpTransaction.Run(Ground, cell, _player); // a throw rolls back inside Run
+            }
+            catch (Exception exception)
+            {
+                PlacementFailed?.Invoke(item, exception);
+                return false;
+            }
         }
 
         private bool TryFindOnGround(ItemInstance item, out Vector2Int cell, out Package stored)
@@ -214,11 +206,11 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// leave the item both equipped and on the ground - the Run-end clear drops the copy;
         /// losing it would be worse.)
         /// </summary>
-        private bool TryPlace(ItemInstance item, uint amount = 1u)
+        private bool TryPlace(ItemInstance item)
         {
             try
             {
-                return _player.PickUpItem(item, amount);
+                return _player.PickUpItem(item, 1u);
             }
             catch (Exception exception)
             {

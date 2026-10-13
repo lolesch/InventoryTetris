@@ -168,6 +168,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
         public BagItemReceiver(AbstractDimensionalContainer bag) => _bag = bag;
 
+        public IReadOnlyList<AbstractDimensionalContainer> ReceivingContainers => new[] { _bag };
+
         public Func<ItemInstance, bool> Equips { get; set; }
 
         /// <summary>When set, every pick-up throws it - an equip whose engine-side effects blew up.</summary>

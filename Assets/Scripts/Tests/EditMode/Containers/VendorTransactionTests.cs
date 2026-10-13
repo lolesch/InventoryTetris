@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using ToolSmiths.InventorySystem.Data;
@@ -135,7 +136,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var instance = store.StoredPackages[new Vector2Int(0, 0)].Item;
 
             var bought = VendorTransaction.Buy(store, new Vector2Int(0, 0),
-                store.StoredPackages[new Vector2Int(0, 0)], wallet, SwordBuyPrice);
+                store.StoredPackages[new Vector2Int(0, 0)], wallet, SwordBuyPrice, new BagOnlyReceiver(wallet.Container));
 
             Assert.That(bought, Is.True);
             Assert.That(store.StoredPackages, Is.Empty, "the shelf no longer holds it");
@@ -154,7 +155,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var instance = store.StoredPackages[new Vector2Int(0, 0)].Item;
 
             var bought = VendorTransaction.Buy(store, new Vector2Int(0, 0),
-                store.StoredPackages[new Vector2Int(0, 0)], wallet, SwordBuyPrice);
+                store.StoredPackages[new Vector2Int(0, 0)], wallet, SwordBuyPrice, new BagOnlyReceiver(wallet.Container));
 
             Assert.That(bought, Is.False);
             Assert.That(Holds(store, instance), Is.True, "the item stayed on the shelf");
@@ -173,7 +174,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var instance = store.StoredPackages[new Vector2Int(0, 0)].Item;
 
             var bought = VendorTransaction.Buy(store, new Vector2Int(0, 0),
-                store.StoredPackages[new Vector2Int(0, 0)], wallet, SwordBuyPrice);
+                store.StoredPackages[new Vector2Int(0, 0)], wallet, SwordBuyPrice, new BagOnlyReceiver(wallet.Container));
 
             Assert.That(bought, Is.False);
             Assert.That(Holds(store, instance), Is.True);
@@ -183,7 +184,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         /// Like <see cref="PickUpTransactionTests.FakePlayer"/>: the player's placement
         /// (<see cref="ItemAcquisition"/>) without the MonoBehaviour or the provider singleton, so a
         /// shift-click buy's real path - through <see cref="IItemReceiver"/>, not the
-        /// null-player bag-add seam every other Buy test above exercises - is covered too.
+        /// bag-add receiver every other Buy test above exercises - is covered too.
         private sealed class FakePlayer : IItemReceiver
         {
             private readonly CharacterEquipment equipment;
@@ -194,6 +195,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
                 this.equipment = equipment;
                 this.inventory = inventory;
             }
+
+            public IReadOnlyList<AbstractDimensionalContainer> ReceivingContainers => new AbstractDimensionalContainer[] { equipment, inventory };
 
             public bool PickUpItem(ItemInstance item, uint amount)
             {
@@ -254,7 +257,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             _ = store.AddAtPosition(new Vector2Int(0, 0), new Package(store, Sword(), 1u));
 
             _ = VendorTransaction.Buy(store, new Vector2Int(0, 0),
-                store.StoredPackages[new Vector2Int(0, 0)], wallet, SwordBuyPrice);
+                store.StoredPackages[new Vector2Int(0, 0)], wallet, SwordBuyPrice, new BagOnlyReceiver(wallet.Container));
 
             Assert.That(() => new ItemTransaction(store, wallet.Container).Dispose(), Throws.Nothing);
         }
@@ -582,6 +585,25 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             Assert.That(mayProceed, Is.False, "the caller must abandon the drop");
             Assert.That(WalletValue(wallet), Is.EqualTo(before),
                 "committing anyway charges nothing - the unaffordable price was never queued");
+        }
+    }
+
+    /// <summary>
+    /// A receiver that only adds to its bag, so shelf and payment logic can be exercised through
+    /// <see cref="PickUpTransaction.Run"/> without auto-equip.
+    /// </summary>
+    internal sealed class BagOnlyReceiver : IItemReceiver
+    {
+        private readonly AbstractDimensionalContainer bag;
+
+        public BagOnlyReceiver(AbstractDimensionalContainer bag) => this.bag = bag;
+
+        public IReadOnlyList<AbstractDimensionalContainer> ReceivingContainers => new[] { bag };
+
+        public bool PickUpItem(ItemInstance item, uint amount)
+        {
+            var package = new Package(bag, item, amount);
+            return bag.TryAddToContainer(ref package);
         }
     }
 }

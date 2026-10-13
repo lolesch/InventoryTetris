@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using ToolSmiths.InventorySystem.Items;
 using UnityEngine;
 
@@ -27,21 +28,19 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// <paramref name="onAcquired"/> get a chance to queue a further commit-time effect
         /// (a vendor's payment) on the same transaction, before <see cref="ItemTransaction.Commit"/>.
         /// </summary>
-        /// <param name="inventory">Enrolled so a plain bag add rolls back with everything else.</param>
-        /// <param name="equipment">Enrolled so an auto-equip inside the pick-up rolls back
-        /// with everything else.</param>
+        /// <param name="player">Its <see cref="IItemReceiver.ReceivingContainers"/> are enrolled, so
+        /// a bag add or an auto-equip inside the pick-up rolls back with everything else.</param>
         /// <param name="onAcquired">Runs only after a successful pick-up, before commit - the
         /// seam a vendor buy queues its payment through.</param>
         /// <returns>Whether the Package was placed.</returns>
         public static bool Run(AbstractDimensionalContainer source, Vector2Int sourceCell,
-            IItemReceiver player, AbstractDimensionalContainer inventory, AbstractDimensionalContainer equipment,
-            Action<ItemTransaction> onAcquired = null)
+            IItemReceiver player, Action<ItemTransaction> onAcquired = null)
         {
             if (source == null || player == null
                 || !source.TryGetPackageAt(sourceCell, out var stored) || !stored.IsValid)
                 return false;
 
-            using var transaction = new ItemTransaction(source, inventory, equipment);
+            using var transaction = new ItemTransaction(player.ReceivingContainers.Prepend(source).ToArray());
 
             _ = source.RemoveAtPosition(sourceCell, stored);
 

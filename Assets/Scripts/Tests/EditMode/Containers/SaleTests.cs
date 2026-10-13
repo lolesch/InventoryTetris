@@ -541,7 +541,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 
             SeedCash(wallet, CurrencyType.Silver, 2u); // 120 more: 330
 
-            Assert.That(VendorTransaction.Buy(sold, cell, sold.StoredPackages[cell], wallet, price), Is.True);
+            Assert.That(VendorTransaction.Buy(sold, cell, sold.StoredPackages[cell], wallet, price, new BagOnlyReceiver(inventory)), Is.True);
 
             Assert.That(Holds(inventory, sword), Is.True, "the sword is back with its affixes");
             Assert.That(sold.StoredPackages, Is.Empty);
