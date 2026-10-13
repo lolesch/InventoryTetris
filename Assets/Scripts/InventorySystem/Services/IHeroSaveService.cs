@@ -161,8 +161,15 @@ namespace ToolSmiths.InventorySystem.Services
         HeroLoadResult Load(string id);
 
         /// <summary>
-        /// The hero a launch continues: the last-selected one, else the newest that reads, else a new
-        /// hero called "Hero", written at once so leaving the game in Town without a Run still leaves a save.
+        /// The hero a launch continues: the last-selected one, else the newest that reads. Creates nothing:
+        /// with no hero that reads the result is <see cref="LoadStatus.Missing"/> and not entered, and the
+        /// Session keeps the hero it had.
+        /// </summary>
+        HeroLoadResult LoadLast();
+
+        /// <summary>
+        /// <see cref="LoadLast"/>, else a new hero called "Hero", written at once so leaving the game in
+        /// Town without a Run still leaves a save. The Editor's launch; a built player uses <see cref="LoadLast"/>.
         /// </summary>
         HeroLoadResult LoadLastOrCreate();
 

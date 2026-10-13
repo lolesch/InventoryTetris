@@ -247,6 +247,13 @@ namespace ToolSmiths.InventorySystem.Services
 
         public HeroLoadResult LoadLastOrCreate()
         {
+            var continued = LoadLast();
+
+            return continued.Status == LoadStatus.Missing ? Load(Create(FirstHeroName).Id) : continued;
+        }
+
+        public HeroLoadResult LoadLast()
+        {
             // The last-selected hero first; the common launch reads one file. Only when it cannot be
             // used are the other files listed, newest first.
             var last = LastSelectedHeroId;
@@ -261,7 +268,7 @@ namespace ToolSmiths.InventorySystem.Services
                     return continued;
             }
 
-            return Load(Create(FirstHeroName).Id);
+            return new HeroLoadResult(LoadStatus.Missing, false, null);
         }
 
         public SaveResult Save()
