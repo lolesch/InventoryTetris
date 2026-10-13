@@ -17,8 +17,8 @@ namespace ToolSmiths.InventorySystem.Services
     /// Exit without saving ends the application through <see cref="QuitWithoutSaving"/>, which skips this save.
     ///
     /// The handler uses the services, so it is released on entering Edit Mode, after the scene's
-    /// teardown, and not on <c>ExitingPlayMode</c> (docs/agents/codebase-notes.md, "Static state needs
-    /// a SubsystemRegistration reset"). The boot installs it; a test of the logic calls
+    /// teardown, and not on <c>ExitingPlayMode</c> (docs/agents/codebase-notes/play-mode-and-assemblies.md,
+    /// "Static state needs a SubsystemRegistration reset"). The boot installs it; a test of the logic calls
     /// <see cref="SaveHero"/> directly.
     /// </summary>
     public static class GameExit

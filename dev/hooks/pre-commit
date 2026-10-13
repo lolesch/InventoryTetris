@@ -29,7 +29,7 @@ done < <(staged | grep -E '\.bak(\.meta)?$')
 while IFS= read -r f; do
   blob=$(git show ":$f")
   if grep -q MonoImporter <<<"$blob" && [ -n "$(git show ":$f" | tail -c1)" ]; then
-    report "$f is a cut .meta (no trailing newline); see codebase-notes.md, 'broken .meta'."
+    report "$f is a cut .meta (no trailing newline); see codebase-notes/meta-files.md."
   fi
 done < <(staged -- '*.cs.meta')
 
@@ -78,5 +78,40 @@ while IFS= read -r f; do
     report "$f reads the legacy Input class; use IInputService<GameAction> (GameInput) instead."
   fi
 done < <(staged -- '*.cs')
+
+# 9. A class named *Panel is a SimplePanel (GLOSSARY.md, "Panel"): it derives SimplePanel directly or
+#    through a base that does. A name that claims the role without the fade-and-stay-enabled behaviour is
+#    renamed to what it is (View, List, Sheet, Popup...). Only a newly declared class is checked: an edited
+#    declaration line (a `-` twin names the same class) is left to the rename that fixes it.
+panel_yes=" "; panel_no=" "   # resolved class names, so each is looked up in Assets once
+derives_simple_panel() {   # $1 = class name, $2 = depth
+  local name=$1 depth=$2 file header bases b
+  [ "$name" = SimplePanel ] && return 0
+  [[ $panel_yes == *" $name "* ]] && return 0
+  [[ $panel_no == *" $name "* ]] && return 1
+  [ "$depth" -gt 6 ] && return 1
+  bases=
+  file=$(grep -rEls --include='*.cs' "class[[:space:]]+$name\b" Assets | head -n 1)
+  if [ -n "$file" ]; then   # the header runs to `{`, so a base list on the next line is read too
+    header=$(tr -d '\r' < "$file" | tr '\n' ' ' | grep -oE "class[[:space:]]+$name\b[^{;]*" | head -n 1)
+    bases=$(sed -E ':a; s/<[^<>]*>//g; ta; s/\([^)]*\)//g; s/[[:space:]]where[[:space:]].*//' <<<"$header" \
+      | sed -nE 's/^[^:]*:(.*)$/\1/p' | sed -E 's/[A-Za-z_0-9:]*\.//g' | tr ',' ' ')
+  fi
+  for b in $bases; do
+    if derives_simple_panel "$b" $((depth + 1)); then panel_yes+="$name "; return 0; fi
+  done
+  panel_no+="$name "
+  return 1
+}
+panel_decl='^\+[^/]*\bclass[[:space:]]+[A-Za-z_0-9]*Panel\b'
+while IFS= read -r f; do
+  diff=$(git diff --cached "$base" -U0 -- "$f")
+  while IFS= read -r line; do
+    name=$(sed -E 's/.*\bclass[[:space:]]+([A-Za-z_0-9]*Panel)\b.*/\1/' <<<"$line")
+    grep -aqE "^-[^/]*\bclass[[:space:]]+$name\b" <<<"$diff" && continue
+    derives_simple_panel "$name" 0 \
+      || report "$f: class $name is named *Panel but does not derive SimplePanel; rename it to what it is."
+  done < <(grep -aE "$panel_decl" <<<"$diff")
+done < <(staged -- 'Assets/*.cs')
 
 exit "$fail"

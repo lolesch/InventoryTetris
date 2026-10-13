@@ -7,9 +7,9 @@ How the engineering skills should consume this repo's domain documentation when 
 ## Before exploring, read these
 
 - **`GLOSSARY.md`** at the repo root — the domain glossary.
-- **`docs/agents/codebase-notes.md`** — durable engineering gotchas (Unity compile/test
-  verification, assembly-definition layout, the shared submodule, broken `.meta` files).
-  Read before any Unity compile verification or asmdef change.
+- **`docs/agents/codebase-notes.md`** — the index of durable engineering gotchas (assembly-definition
+  layout, Play Mode reload, the shared submodule, broken `.meta` files). Open the note its table names
+  before an asmdef change or a Unity compile verification.
 - **`docs/adr/`** — read ADRs that touch the area you're about to work in.
 - **`dev/specs/`** — this repo's design specs (`YYYY-MM-DD-<topic>-design.md`),
   repo-specific and the richest source of intent for in-flight work. Read the newest

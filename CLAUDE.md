@@ -14,14 +14,14 @@ time -> `/code-review`.
 
 - Execute inline by default. Starting subagents needs the user's decision each time, including
   `/implement-spec`, which runs implementer and merger subagents: ask before spawning, state what
-  would run, and wait for a clear yes. One approval covers that one run, never later ones.
+  would run and what running it inline costs, and wait for a clear yes. One approval covers that one run, never later ones.
 - Subagent model: set `model` on every `Agent` call, sized to the task. Only `haiku` or `sonnet`; never
   `opus` or `fable`, whatever the task. `haiku` for work with no judgment in it: exploration and search,
   a merger with no conflicts, running a test or build and reporting the result, a mechanical rename or
   doc edit. `sonnet` for everything that writes code: an implementer, a ticket that designs a seam or
   refactors across files, the code-review fix agent, a merger resolving conflicts. When unsure, `sonnet`.
-- Search with `Grep` (`head_limit`, `files_with_matches` first) and read with `Read` `offset`/`limit`.
-  A Bash `grep`, `cat` or `sed -n` result stays in context for every later turn of the run.
+- Search with `Grep` (`head_limit`, `files_with_matches` first) and read with `Read` `offset`/`limit`;
+  a hook (`dev/claude-hooks/read-limit.py`) rejects a `Read` of a long `.cs` file that has no `limit`. A Bash `grep`, `cat` or `sed -n` result stays in context for every later turn of the run.
 - Before `/implement #N`, run `python dev/frontier.py`. `ready-for-agent` means the spec is
   written, not that the dependencies are closed. If `#N` isn't the frontier, surface that and stop.
   The frontier is derived from each issue's **Blocked by**, so a PR carries no tracker commit.
@@ -31,19 +31,17 @@ time -> `/code-review`.
   mechanism a sibling ticket is about to replace.
 - The issue is the unit of work; there is no per-phase implementation-plan document. An issue too
   big for one context window splits into more issues.
-- Closing an issue-epic surfaces implementation gaps against its spec, or closes the epic if the
-  spec is fully covered. Never delete an issue: commits, specs and ADRs cite them by number.
+- Closing an issue-epic walks the spec's numbered user stories one by one: each needs a closed ticket
+  or a named test. The uncovered ones go to the user as gaps; none uncovered closes the epic. A story
+  that dropped out between spec and tickets is the usual gap. Never delete an issue: commits, specs
+  and ADRs cite them by number.
 - After a PR merges successfully, clean up: delete its branch (local and remote), its worktree, and
   the submodule branch if the PR bumped `Utility`. Skip any branch that isn't merged. Leave stashes alone.
 
 ## Changelog
 
-The player-facing Changelog is `Assets/Changelog/Changelog.md`; its terms are in `GLOSSARY.md`
-("Changelog"). A change a player would notice adds a bullet under `Unreleased` in Patch Notes, in
-the same change. Fixing a Known Issue or shipping a Roadmap item removes it from its list in that
-same change, and a version bump renames `Unreleased` to the version and date. The Icebox
-(`dev/Icebox.md`) stays private: an idea reaches the Roadmap only reworded for players, never with
-internal vocabulary.
+`docs/agents/changelog.md` — open it when a change is player-visible, fixes a Known Issue, ships a
+Roadmap item, bumps a version, or touches `Assets/Changelog/Changelog.md`.
 
 ## Agent skills
 
@@ -76,14 +74,13 @@ scene-save modal.
 
 ### Codebase notes
 
-`docs/agents/codebase-notes.md` — read before editing through a shell or python script (`Edit` keeps
-CRLF + UTF-8; `perl -pi` mojibakes it), changing an asmdef, hitting a Play Mode reload surprise or a
-`.cs.meta` error, reading a key or the pointer (`Input.*` throws here; use `GameInput`), and committing in
-the `Utility` submodule (`dev/bump-utility.sh` pushes it, then pins it). To enable the pre-commit hook:
+`docs/agents/codebase-notes.md` — the index of topic notes; open it before editing through a shell or
+python script (`Edit` keeps CRLF + UTF-8; `perl -pi` mojibakes it), changing an asmdef, hitting a Play
+Mode reload surprise or a `.cs.meta` error, reading a key or the pointer (`Input.*` throws here; use
+`GameInput`), starting work on a checkout that has uncommitted changes (open a worktree), and committing
+in the `Utility` submodule (`dev/bump-utility.sh` pushes it, then pins it). To enable the pre-commit hook:
 `git config core.hooksPath dev/hooks`.
 
 ## GitHub Pages: keep `docs/agents/` and `docs/adr/` out of `GitPage`
 
-The site at <https://lolesch.github.io/InventoryTetris/> builds from the `GitPage` branch, path
-`/docs`. Leave `docs/agents/` and `docs/adr/` out of a `main` -> `GitPage` merge; `exclude:` in
-`docs/_config.yml` (byte-identical on both branches) is the backstop that stops Jekyll publishing them.
+`docs/agents/github-pages.md` — open it before a `main` -> `GitPage` merge or an edit to `docs/_config.yml`.
