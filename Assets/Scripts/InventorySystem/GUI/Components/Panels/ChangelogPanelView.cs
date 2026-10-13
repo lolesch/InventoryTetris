@@ -8,11 +8,10 @@ using UnityEngine.UI;
 namespace ToolSmiths.InventorySystem.GUI.Components.Panels
 {
     /// <summary>
-    /// Fills the Changelog panel's tab bodies from the shipped Changelog file. The lines come from
-    /// <see cref="ChangelogTabs"/>; this only turns them into TMP rows. The panel root stays enabled
-    /// (SimplePanel fades a CanvasGroup), so the file is parsed once, when the scene loads. Patch Notes
-    /// entries collapse under their heading; only the newest starts open, and closing the panel restores that.
+    /// Fills the Changelog panel's tab bodies from the shipped file. The rows are children of this object,
+    /// so they are built on its first enable and live exactly as long as it does.
     /// </summary>
+    [RequireComponent(typeof(SimplePanel))]
     public sealed class ChangelogPanelView : MonoBehaviour
     {
         private const float FontSize = 18f;
@@ -27,6 +26,8 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
         private readonly List<ChangelogEntryHeading> headings = new();
         private SimplePanel panel;
         private bool isBound;
+
+        private void Awake() => panel = GetComponent<SimplePanel>();
 
         private void OnEnable()
         {
@@ -43,14 +44,14 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
         }
 
         /// <summary>Unity calls this on every CanvasGroup change above, so on each frame of a fade;
-        /// a collapsed panel is closed for good, whichever button closed it.</summary>
+        /// a collapsed panel is closed for good, whichever button closed it. SimplePanel's own Awake
+        /// can run before our Awake, while <c>panel</c> is still null.</summary>
         private void OnCanvasGroupChanged()
         {
-            if (!panel) panel = GetComponent<SimplePanel>();
             if (panel && panel.IsCollapsed) ResetEntries();
         }
 
-        /// <summary>Only the newest entry (the first shown) is open.</summary>
+        /// <summary>Entries collapse under their heading; only the newest (the first shown) starts open.</summary>
         private void ResetEntries()
         {
             for (var i = 0; i < headings.Count; i++) headings[i].SetExpanded(i == 0);
@@ -72,7 +73,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
                 var button = heading.gameObject.AddComponent<ChangelogEntryHeading>();
                 heading.raycastTarget = true;
                 heading.rectTransform.pivot = new Vector2(0f, .5f);
-                button.Bind(entry.Heading, bullets, expanded: i == 0);
+                button.Bind(entry.Heading, bullets, body, expanded: i == 0);
                 headings.Add(button);
             }
         }
