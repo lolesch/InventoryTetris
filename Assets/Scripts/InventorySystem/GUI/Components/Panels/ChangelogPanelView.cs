@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Submodules.Utility.UI;
 using TMPro;
 using ToolSmiths.InventorySystem.Changelogs;
 using UnityEngine;
@@ -9,7 +10,8 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
     /// <summary>
     /// Fills the Changelog panel's tab bodies from the shipped Changelog file. The lines come from
     /// <see cref="ChangelogTabs"/>; this only turns them into TMP rows. The panel root stays enabled
-    /// (SimplePanel fades a CanvasGroup), so the file is parsed once, when the scene loads.
+    /// (SimplePanel fades a CanvasGroup), so the file is parsed once, when the scene loads. Patch Notes
+    /// entries collapse under their heading; only the newest starts open, and closing the panel restores that.
     /// </summary>
     public sealed class ChangelogPanelView : MonoBehaviour
     {
@@ -22,6 +24,8 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
         [SerializeField] private RectTransform knownIssuesBody;
         [SerializeField] private RectTransform roadmapBody;
 
+        private readonly List<ChangelogEntryHeading> headings = new();
+        private SimplePanel panel;
         private bool isBound;
 
         private void OnEnable()
@@ -38,16 +42,38 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
             AddRows(roadmapBody, tabs.Roadmap);
         }
 
-        /// <summary>Each entry is its own object (heading row, then a bullet container), so an entry can later collapse as a group.</summary>
-        private static void AddEntries(RectTransform body, ChangelogTabs tabs)
+        /// <summary>Unity calls this on every CanvasGroup change above, so on each frame of a fade;
+        /// a collapsed panel is closed for good, whichever button closed it.</summary>
+        private void OnCanvasGroupChanged()
+        {
+            if (!panel) panel = GetComponent<SimplePanel>();
+            if (panel && panel.IsCollapsed) ResetEntries();
+        }
+
+        /// <summary>Only the newest entry (the first shown) is open.</summary>
+        private void ResetEntries()
+        {
+            for (var i = 0; i < headings.Count; i++) headings[i].SetExpanded(i == 0);
+        }
+
+        /// <summary>Each entry is its own object: a heading button, then the bullet container it shows and hides.</summary>
+        private void AddEntries(RectTransform body, ChangelogTabs tabs)
         {
             if (tabs.PatchNotesPlaceholder != null) AddRows(body, new[] { tabs.PatchNotesPlaceholder });
 
-            foreach (var entry in tabs.Entries)
+            for (var i = 0; i < tabs.Entries.Count; i++)
             {
+                var entry = tabs.Entries[i];
                 var group = AddContainer("Entry", body, EntrySpacing);
-                AddRow(group, "Heading", entry.Heading, HeadingFontSize, FontStyles.Bold);
-                AddRows(AddContainer("Bullets", group, 0f), entry.Lines);
+                var heading = AddRow(group, "Heading", entry.Heading, HeadingFontSize, FontStyles.Bold);
+                var bullets = AddContainer("Bullets", group, 0f);
+                AddRows(bullets, entry.Lines);
+
+                var button = heading.gameObject.AddComponent<ChangelogEntryHeading>();
+                heading.raycastTarget = true;
+                heading.rectTransform.pivot = new Vector2(0f, .5f);
+                button.Bind(entry.Heading, bullets, expanded: i == 0);
+                headings.Add(button);
             }
         }
 
@@ -70,7 +96,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
             foreach (var line in lines) AddRow(body, "Line", line, FontSize, FontStyles.Normal);
         }
 
-        private static void AddRow(RectTransform parent, string name, string line, float fontSize, FontStyles style)
+        private static TextMeshProUGUI AddRow(RectTransform parent, string name, string line, float fontSize, FontStyles style)
         {
             var row = new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI));
             row.transform.SetParent(parent, false);
@@ -81,6 +107,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
             text.fontStyle = style;
             text.textWrappingMode = TextWrappingModes.Normal;
             text.raycastTarget = false;
+            return text;
         }
     }
 }
