@@ -39,6 +39,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Locations
 
             public ConstantRollSource(float value) => _value = value;
 
+            public static implicit operator RollStreams(ConstantRollSource rolls) => new(rolls);
+
             public float Next() => _value;
         }
 

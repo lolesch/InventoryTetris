@@ -8,6 +8,7 @@ using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Runtime.Character;
 using ToolSmiths.InventorySystem.Services;
+using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Tests.Services
@@ -255,6 +256,8 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             private readonly float value;
             public FixedRolls(float value) => this.value = value;
             public float Next() => value;
+
+            public static implicit operator RollStreams(FixedRolls rolls) => new(rolls);
         }
     }
 }

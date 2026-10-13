@@ -1,3 +1,4 @@
+using Submodules.Utility.Extensions;
 using ToolSmiths.InventorySystem.Data.Enums;
 
 namespace ToolSmiths.InventorySystem.Simulation
@@ -11,13 +12,16 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// </summary>
     public readonly struct HitEvent
     {
-        public HitEvent(ICombatant dealer, ICombatant target, DamageType damageType, float rawAmount, float lostAmount)
+        public HitEvent(ICombatant dealer, ICombatant target, DamageType damageType, float rawAmount, float lostAmount,
+            float reference, Coordinate targetPosition)
         {
             Dealer = dealer;
             Target = target;
             DamageType = damageType;
             RawAmount = rawAmount;
             LostAmount = lostAmount;
+            Reference = reference;
+            TargetPosition = targetPosition;
         }
 
         /// <summary>The hero, or the enemy that struck.</summary>
@@ -33,5 +37,14 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         /// <summary>What the target actually lost: after its mitigation, and no more than it had to lose.</summary>
         public float LostAmount { get; }
+
+        /// <summary>
+        /// The scale <see cref="RawAmount"/> is judged against: the best raw hit the dealer could do with this damage
+        /// type (<see cref="DamageReference"/>), read when the hit landed.
+        /// </summary>
+        public float Reference { get; }
+
+        /// <summary>Where the target stood when the hit landed; a killing blow still carries its place.</summary>
+        public Coordinate TargetPosition { get; }
     }
 }

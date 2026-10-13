@@ -33,8 +33,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         private static EncounterSimulation Sim(EncounterProfile profile, IRollSource movement, EncounterTuning tuning = null,
-            FakeHero hero = null) => new(hero ?? Passive(), profile, new ConstantRollSource(0f), Behaviours.Engaging(10),
-            tuning ?? OnTheArena(), bag: null, movementRolls: movement);
+            FakeHero hero = null) => new(hero ?? Passive(), profile, new RollStreams(new ConstantRollSource(0f), movement),
+            Behaviours.Engaging(10), tuning ?? OnTheArena());
 
         private static float DistanceToHero(EncounterSimulation sim, Enemy enemy) =>
             Coordinate.Distance(enemy.Position, sim.HeroPosition);
@@ -241,8 +241,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             {
                 var main = new CountingRolls(new SeededRollSource(7));
                 var counted = new CountingRolls(movement);
-                var sim = new EncounterSimulation(Passive(), Profiles.Group(EnemyArchetype.Brute, 3), main, Behaviours.Engaging(10),
-                    OnTheArena(), bag: null, movementRolls: counted);
+                var sim = new EncounterSimulation(Passive(), Profiles.Group(EnemyArchetype.Brute, 3),
+                    new RollStreams(main, counted), Behaviours.Engaging(10), OnTheArena());
                 for (var i = 0; i < 50; i++) sim.Advance(Tick);
                 return (main.Count, counted.Count);
             }
