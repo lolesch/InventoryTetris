@@ -48,11 +48,11 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 
                 var comparisonColor = comparison.HasValue ? UiColors.Of(comparison.Value.Verdict) : UiColors.Neutral;
 
-                // Alt trades the comparison for the roll range: the range only while it is held, the difference
-                // the rest of the time.
-                var altHeld = GameInput.IsHeld(GameAction.Peek);
-                var difference = altHeld ? string.Empty : comparison?.Format() ?? string.Empty;
-                var range = altHeld ? $" {statMod.Modifier.Range.ToString().Colored(UiColors.Muted)}" : string.Empty;
+                // Show-details trades the comparison for the roll range: the range only while it is held, the
+                // difference the rest of the time.
+                var detailsHeld = GameInput.IsHeld(GameAction.ShowDetails);
+                var difference = detailsHeld ? string.Empty : comparison?.Format() ?? string.Empty;
+                var range = detailsHeld ? $" {statMod.Modifier.Range.ToString().Colored(UiColors.Muted)}" : string.Empty;
 
                 icon = ItemService.Instance.GetStatIcon(statMod.Stat);
                 displayText = $"{statMod.Modifier}{range}"

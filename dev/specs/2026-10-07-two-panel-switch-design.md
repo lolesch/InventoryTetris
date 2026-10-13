@@ -14,6 +14,14 @@ home, a close ends a peek), 2026-10-08 again (the group drives the mirror, the r
 ends a peek) and 2026-10-08 a last time (one peek toggle: no mirror, no counters). The last
 amendment supersedes the mirror, the peek component and the restore counters the body below
 describes; the amendments at the end are dated history.
+Amended 2026-10-13: **the peek key is Tab, not Alt** (`GameAction.PeekTab`). The body below still says
+Alt and accepts the Alt tooltip coexisting with the peek on a hover (story 15); smoke testing showed the
+peek swaps the hovered item's tab away, so the tooltip detail cannot be inspected. Alt stays the
+tooltip's `GameAction.Peek` (renamed `ShowDetails`). Chosen over suppressing the peek on hover (a modal key) and over dropping
+the peek. `AltPanelPeekToggle` is now `SellingPanelPeekToggle`. Alt then Tab is the operating system's
+window switch and must not flick a tab, so `PeekTabKey` blocks a peek whose physical Tab went down with a
+physical Alt already down (`IInputService.IsKeyHeld`), and keeps one whose Alt came second. It reads the
+keys, not the actions: the rule is about the chord, so rebinding `ShowDetails` or the peek moves nothing.
 
 ## Problem Statement
 
