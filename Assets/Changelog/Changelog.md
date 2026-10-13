@@ -51,4 +51,7 @@
 
 # Known Issues
 
+- The item comparison shows wrong numbers for the item that is not equipped.
+- Rings and weapons are not compared against both of their slots, including two-handed weapons.
+
 # Roadmap

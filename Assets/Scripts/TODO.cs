@@ -1,7 +1,3 @@
-/// KNOWN ISSUES:
-// comparison shows wrong numbers on the unequipped item
-// comparison cant compare against all equipment of same type (rings, 2h vs both weapon slots)
-
 #region TODO
 // rework item comparison
 // compare rings and weapons to both slots
