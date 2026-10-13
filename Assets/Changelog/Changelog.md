@@ -1,5 +1,14 @@
 # Patch Notes
 
+## Unreleased
+
+- The game now starts on the main menu: pick a hero or create one, then press Play.
+- New heroes are given a name, and a hero can be deleted after a confirmation.
+- The Cancel key steps back one layer at a time, and with nothing left to close it opens the Pause Menu.
+- The Pause Menu holds the game still and lets you resume, or save and exit back to the main menu.
+- The main menu shows the build version in the corner.
+- A Changelog button on the main menu opens Patch Notes, Known Issues and the Roadmap.
+
 ## 0.0.5_Alpha - 2026-09-25
 
 - The hero now fights on its own in the field, using Strike and Cast against groups of enemies.

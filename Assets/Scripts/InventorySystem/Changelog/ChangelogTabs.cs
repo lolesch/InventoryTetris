@@ -44,7 +44,7 @@ namespace ToolSmiths.InventorySystem.Changelogs
             if (!ChangelogParser.TryParse(text, out var changelog, out var error))
             {
                 var failure = new[] { $"The changelog could not be read (line {error.Line})." };
-                return new ChangelogTabs(new PatchNotesGroup[0], failure[0], failure, failure, $"Changelog line {error.Line}: {error.Message}");
+                return new ChangelogTabs(System.Array.Empty<PatchNotesGroup>(), failure[0], failure, failure, $"Changelog line {error.Line}: {error.Message}");
             }
 
             var shown = Shown(changelog.Entries, development);
@@ -70,10 +70,9 @@ namespace ToolSmiths.InventorySystem.Changelogs
         /// <summary>A version-less build's label already is its date, and Unreleased has none.</summary>
         private static string Heading(PatchNotesEntry entry)
         {
-            if (entry.Date == null) return entry.Label;
+            if (!entry.HasVersion) return entry.Label;
 
-            var date = entry.Date.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-            return entry.Label == date ? date : $"{entry.Label} - {date}";
+            return $"{entry.Label} - {entry.Date.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
         }
 
         private static IReadOnlyList<string> Lines(IReadOnlyList<string> bullets)

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("InventorySystem.Changelog.Tests")]
@@ -35,6 +36,9 @@ namespace ToolSmiths.InventorySystem.Changelogs
 
         public IReadOnlyList<string> Bullets { get; }
         public bool IsUnreleased => Date == null;
+
+        /// <summary>False for a build that predates version numbers, whose label is its date.</summary>
+        public bool HasVersion => Date != null && Label != Date.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
         public PatchNotesEntry(string label, DateTime? date, IReadOnlyList<string> bullets)
         {

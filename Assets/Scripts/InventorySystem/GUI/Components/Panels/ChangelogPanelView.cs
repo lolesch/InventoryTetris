@@ -8,8 +8,8 @@ using UnityEngine.UI;
 namespace ToolSmiths.InventorySystem.GUI.Components.Panels
 {
     /// <summary>
-    /// Fills the Changelog panel's tab bodies from the shipped file. The rows are children of this object,
-    /// so they are built on its first enable and live exactly as long as it does.
+    /// Fills the Changelog panel's tab bodies from the shipped file on every enable and removes the rows on disable,
+    /// so a scene object that survives a Play session (reload disabled) never keeps stale or saved-in rows.
     /// </summary>
     [RequireComponent(typeof(SimplePanel))]
     public sealed class ChangelogPanelView : MonoBehaviour
@@ -24,23 +24,28 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
         [SerializeField] private RectTransform roadmapBody;
 
         private readonly List<ChangelogEntryHeading> headings = new();
+        private readonly List<GameObject> rows = new();
         private SimplePanel panel;
-        private bool isBound;
 
         private void Awake() => panel = GetComponent<SimplePanel>();
 
         private void OnEnable()
         {
-            if (isBound) return;
-            isBound = true;
-
-            var development = Application.isEditor || Debug.isDebugBuild;
-            var tabs = ChangelogTabs.Read(changelogFile ? changelogFile.text : string.Empty, development);
+            var tabs = ChangelogTabs.Read(changelogFile ? changelogFile.text : string.Empty, Debug.isDebugBuild);
             if (tabs.Failed) Debug.LogError(tabs.FailureLog, changelogFile);
 
             AddEntries(patchNotesBody, tabs);
             AddRows(knownIssuesBody, tabs.KnownIssues);
             AddRows(roadmapBody, tabs.Roadmap);
+        }
+
+        private void OnDisable()
+        {
+            foreach (var row in rows)
+                if (row) DestroyRow(row);
+
+            rows.Clear();
+            headings.Clear();
         }
 
         /// <summary>Unity calls this on every CanvasGroup change above, so on each frame of a fade;
@@ -78,10 +83,17 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
             }
         }
 
-        private static RectTransform AddContainer(string name, RectTransform parent, float spacing)
+        private static void DestroyRow(GameObject row)
+        {
+            if (Application.isPlaying) Destroy(row);
+            else DestroyImmediate(row);
+        }
+
+        private RectTransform AddContainer(string name, RectTransform parent, float spacing)
         {
             var container = new GameObject(name, typeof(RectTransform), typeof(VerticalLayoutGroup));
             container.transform.SetParent(parent, false);
+            rows.Add(container);
 
             var layout = container.GetComponent<VerticalLayoutGroup>();
             layout.spacing = spacing;
@@ -92,15 +104,16 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
             return (RectTransform)container.transform;
         }
 
-        private static void AddRows(RectTransform body, IReadOnlyList<string> lines)
+        private void AddRows(RectTransform body, IReadOnlyList<string> lines)
         {
             foreach (var line in lines) AddRow(body, "Line", line, FontSize, FontStyles.Normal);
         }
 
-        private static TextMeshProUGUI AddRow(RectTransform parent, string name, string line, float fontSize, FontStyles style)
+        private TextMeshProUGUI AddRow(RectTransform parent, string name, string line, float fontSize, FontStyles style)
         {
             var row = new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI));
             row.transform.SetParent(parent, false);
+            rows.Add(row);
 
             var text = row.GetComponent<TextMeshProUGUI>();
             text.text = line;

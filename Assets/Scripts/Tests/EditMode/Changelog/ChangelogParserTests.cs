@@ -307,5 +307,48 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Changelogs
         {
             Assert.AreEqual(4, Reject("# Patch Notes\n# Known Issues\n# Roadmap\n- \n").Line);
         }
+
+        [TestCase("- Fixed <b>bold</b> items")]
+        [TestCase("- <color=red>New</color>")]
+        [TestCase("- Use `code` here")]
+        [TestCase("- An *odd* word")]
+        [TestCase("- | a | b |")]
+        public void InlineMarkup_IsAnError(string bullet)
+        {
+            Assert.AreEqual(4, Reject("# Patch Notes\n# Known Issues\n# Roadmap\n" + bullet + "\n").Line);
+        }
+
+        [TestCase("- Items worth < 5 coins sell for more")]
+        [TestCase("- Level 5 > level 4")]
+        [TestCase("- Rings and weapons are compared, 2 slots each")]
+        public void PlainTextWithAngleBrackets_IsAccepted(string bullet)
+        {
+            Assert.AreEqual(1, Parse("# Patch Notes\n# Known Issues\n# Roadmap\n" + bullet + "\n").Roadmap.Count);
+        }
+
+        [Test]
+        public void LowerVersionListedAboveAHigherOne_IsAnErrorEvenWhenTheDatesDescend()
+        {
+            Assert.AreEqual(4, Reject(PatchNotes("## 0.0.4_Alpha - 2026-09-25\n- A\n## 0.0.5_Alpha - 2026-09-20\n")).Line);
+        }
+
+        [Test]
+        public void VersionsCompareNumericallyPerSegment_NotAsText()
+        {
+            Assert.AreEqual(2, Parse(PatchNotes("## 0.0.10_Alpha - 2026-09-25\n## 0.0.9_Alpha - 2026-09-20\n")).Entries.Count);
+            Assert.AreEqual(4, Reject(PatchNotes("## 0.0.9_Alpha - 2026-09-25\n- A\n## 0.0.10_Alpha - 2026-09-20\n")).Line);
+        }
+
+        [Test]
+        public void VersionsWithoutANumericPrefix_AreOrderedByDateOnly()
+        {
+            Assert.AreEqual(2, Parse(PatchNotes("## beta - 2026-09-25\n## alpha - 2026-09-20\n")).Entries.Count);
+        }
+
+        [Test]
+        public void MarkerWithAnInvisibleCharacter_IsNotABullet()
+        {
+            Assert.AreEqual(4, Reject("# Patch Notes\n# Known Issues\n# Roadmap\n-­ text\n").Line);
+        }
     }
 }

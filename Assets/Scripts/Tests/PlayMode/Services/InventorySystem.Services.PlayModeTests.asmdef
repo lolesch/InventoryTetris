@@ -11,6 +11,7 @@
         "InventorySystem.Characters",
         "InventorySystem.Persistence",
         "Utility",
+        "Utility.UI",
         "Utility.Bindings",
         "Utility.Persistence",
         "Unity.InputSystem",
