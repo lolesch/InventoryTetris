@@ -56,6 +56,18 @@ Every class or MonoBehaviour that other systems call into gets an `IThing`, and 
 depend on that instead of the concrete type. Keeps call sites mockable and keeps
 serialized fields and Unity lifecycle methods out of the contract.
 
+## Screens, lists and displays
+
+Judgement calls the hook cannot see; `/code-review` checks each on any change that adds or edits a UI
+component.
+
+- **A screen the player can dismiss registers with `ICancelChain`** at a `CancelRank`: the Pause Menu,
+  the hero prompts and the Changelog panel do. An unregistered screen ignores Esc.
+- **A list that can outgrow its rect sits in a masked `ScrollRect`**, as the Changelog tab bodies do.
+- **A display refreshes on every event that changes what it shows.** A resource bar follows the total as
+  well as the current value: on `CurrentHasChanged` alone, equipping a +max-health item while paused left
+  the bar stale.
+
 ## Enforced by the pre-commit hook
 
 `dev/hooks/pre-commit` (enable: `git config core.hooksPath dev/hooks`) rejects what a linter would:
@@ -64,9 +76,11 @@ serialized fields and Unity lifecycle methods out of the contract.
 - A `using UnityEditor;` outside an `Editor`/`Tests` folder that is not under `#if UNITY_EDITOR`
   (a player build has no `UnityEditor.dll`, so it fails with `CS0246` even if nothing runs).
 - An added `[FormerlySerializedAs]` (see the serialized-rename rule below).
+- An added class named `*Panel` that does not derive `SimplePanel` (`GLOSSARY.md`, **Panel**): rename it
+  to what it is.
 
 Files that compile editor-only by construction (asmdef `includePlatforms: ["Editor"]`, an
-`Editor`/`EditMode` folder; see `codebase-notes.md`'s asmdef section) need no guard.
+`Editor`/`EditMode` folder; see `codebase-notes/play-mode-and-assemblies.md`) need no guard.
 
 ## Reverse `for` loops
 
