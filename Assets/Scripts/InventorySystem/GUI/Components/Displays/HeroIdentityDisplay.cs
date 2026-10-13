@@ -49,9 +49,13 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
         /// <summary>How the hero reads in this display. Only called for a hero that exists.</summary>
         protected abstract string Format(HeroIdentity identity);
 
-        // A hero load replaces the Hero: let go of the old one's stats and follow the new.
+        // A hero load replaces the Hero: let go of the old one's stats and follow the new. An event runs the
+        // handlers it started with, so this can be called after a disable has let go of the service.
         private void Follow()
         {
+            if (watched == null)
+                return;
+
             Release();
 
             followed = Session.Instance.Hero;

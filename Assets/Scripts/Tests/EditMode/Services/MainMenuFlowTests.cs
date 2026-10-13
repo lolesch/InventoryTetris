@@ -268,6 +268,16 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
+        public void ADraft_StaysTheLastHeroSlot_WhenAHeroIsSavedAfterIt()
+        {
+            _ = MainMenuFlow.CreateHero(saves, "Aria");
+            now = now.AddMinutes(1);
+            _ = saves.Create("Bram");
+
+            Assert.That(HeroSlots.Ordered(saves).Select(hero => hero.Name), Is.EqualTo(new[] { "Bram", "Aria" }));
+        }
+
+        [Test]
         public void PlayLabel_StartsADraft_AndContinuesASavedHero()
         {
             _ = MainMenuFlow.CreateHero(saves, "Aria");
