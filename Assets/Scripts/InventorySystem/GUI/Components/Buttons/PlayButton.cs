@@ -43,8 +43,15 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
         protected override void OnClick()
         {
             // Locks only once the load started: a refused one leaves Play to be pressed again.
-            if (MainMenuFlow.Play(HeroSaveService.Instance, SceneRequest.TryLoad))
+            if (MainMenuFlow.Play(HeroSaveService.Instance, LoadScene))
                 interactable = false;
+        }
+
+        // A missing loader (the application is quitting) counts as a load that did not start.
+        private static bool LoadScene(string scene)
+        {
+            var loader = SceneProvider.Instance;
+            return loader && loader.LoadScene(scene);
         }
 
         private void Refresh() => interactable = MainMenuFlow.CanPlay(watched);

@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using Submodules.Utility.Persistence;
 using Submodules.Utility.Services;
+using Submodules.Utility.UI;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -152,10 +153,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             Assert.That(LoaderIsBusy(), Is.False);
         }
 
-        private static bool LoaderIsBusy() =>
-            UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include)
-                .Where(component => component.GetType().Name == "SceneProvider")
-                .Any(provider => provider.GetType().GetField("loaderOperation", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(provider) != null);
+        private static bool LoaderIsBusy() => SceneProvider.Instance.IsLoading;
 
         // Loot the hero picked up on this Run: a helm in the bag.
         private static ItemInstance PutHelmInBag()
@@ -436,6 +434,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             Menu.Open();
             yield return null;
             Assert.That(RequestScene("MainMenu"), Is.True, "premise: a load is already under way, as in the loader's fade");
+            LogAssert.Expect(LogType.Error, new Regex("while another is still loading"));
 
             ClickSaveExit();
 
@@ -447,12 +446,15 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         }
 
         [UnityTest]
-        public IEnumerator ASceneRequest_IsRefusedWhileOneIsUnderway_AndAcceptedAgainOnceItEnds()
+        public IEnumerator ASceneLoad_IsRefusedWhileOneIsUnderway_AndAcceptedAgainOnceItEnds()
         {
             yield return Open("Example");
+            Assert.That(LoaderIsBusy(), Is.False);
 
             Assert.That(RequestScene("MainMenu"), Is.True);
-            Assert.That(RequestScene("MainMenu"), Is.False, "one load at a time");
+            Assert.That(LoaderIsBusy(), Is.True, "the loader is busy at once, before its first frame");
+            LogAssert.Expect(LogType.Error, new Regex("while another is still loading"));
+            Assert.That(RequestScene("MainMenu"), Is.False, "one load at a time, even in the same frame");
 
             yield return WaitForScene("MainMenu");
 
@@ -460,15 +462,23 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             yield return WaitForScene("Example");
         }
 
+        [UnityTest]
+        public IEnumerator ASceneLoad_OfAnUnknownScene_IsRefusedBeforeTheScreenFades()
+        {
+            yield return Open("Example");
+            LogAssert.Expect(LogType.Error, new Regex("not in the build"));
+
+            Assert.That(RequestScene("NoSuchScene"), Is.False);
+            Assert.That(LoaderIsBusy(), Is.False, "nothing was started");
+            yield return null;
+
+            Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("Example"));
+        }
+
         private static UnityEngine.UI.Selectable ExitButton(string field) =>
             Member<Component>(Find("PauseMenuPanel"), field).GetComponent<UnityEngine.UI.Selectable>();
 
-        // The game project's scene request, by name: this assembly cannot reference Assembly-CSharp.
-        private static bool RequestScene(string scene) =>
-            (bool)Assembly.Load("Assembly-CSharp")
-                .GetType("ToolSmiths.InventorySystem.GUI.SceneRequest")!
-                .GetMethod("TryLoad")!
-                .Invoke(null, new object[] { scene });
+        private static bool RequestScene(string scene) => SceneProvider.Instance.LoadScene(scene);
 
         [UnityTest]
         public IEnumerator QuitGame_IsHiddenInAWebGLBuild_AndOfferedOnTheOthers()
