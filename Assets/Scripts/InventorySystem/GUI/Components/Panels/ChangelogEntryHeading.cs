@@ -14,15 +14,18 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
 
         private TextMeshProUGUI label;
         private RectTransform bullets;
+        private RectTransform layoutRoot;
         private string title;
 
         public bool IsExpanded => bullets.gameObject.activeSelf;
 
-        public void Bind(string headingText, RectTransform bulletContainer, bool expanded)
+        /// <param name="layoutToRebuild">The layout that has to reflow when the bullets show or hide.</param>
+        public void Bind(string headingText, RectTransform bulletContainer, RectTransform layoutToRebuild, bool expanded)
         {
             label = GetComponent<TextMeshProUGUI>();
             title = headingText;
             bullets = bulletContainer;
+            layoutRoot = layoutToRebuild;
             Apply(expanded);
         }
 
@@ -31,7 +34,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
             if (IsExpanded == expanded) return;
 
             Apply(expanded);
-            LayoutRebuilder.MarkLayoutForRebuild((RectTransform)bullets.parent.parent);
+            LayoutRebuilder.MarkLayoutForRebuild(layoutRoot);
         }
 
         protected override void OnClick() => SetExpanded(!IsExpanded);

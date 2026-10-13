@@ -6,12 +6,12 @@ using System.Text.RegularExpressions;
 namespace ToolSmiths.InventorySystem.Changelogs
 {
     /// <summary>Turns the Changelog file's text into a <see cref="Changelog"/>, or names the line it cannot read.</summary>
-    public static class ChangelogParser
+    internal static class ChangelogParser
     {
-        private static readonly string[] Sections = { "Patch Notes", "Known Issues", "Roadmap" };
-        private const int PatchNotes = 0;
-        private const int KnownIssues = 1;
-        private const int Roadmap = 2;
+        /// <summary>The file's sections in the order it must list them; <c>None</c> before the first heading.</summary>
+        private enum Section { None = -1, PatchNotes, KnownIssues, Roadmap }
+
+        private static readonly string[] SectionNames = { "Patch Notes", "Known Issues", "Roadmap" };
         private const string UnreleasedHeading = "## " + PatchNotesEntry.UnreleasedLabel;
 
         private static readonly Regex EntryHeading = new Regex(@"^## (?:(?<version>[^\s+]+) - )?(?<date>[0-9]{4}-[0-9]{2}-[0-9]{2})$");
@@ -28,7 +28,7 @@ namespace ToolSmiths.InventorySystem.Changelogs
             var entries = new List<PatchNotesEntry>();
             var knownIssues = new List<string>();
             var roadmap = new List<string>();
-            var section = -1;
+            var section = Section.None;
             List<string> entryBullets = null; // the open entry's list, null until the first entry heading
 
             for (var i = 0; i < lineCount; i++)
@@ -47,7 +47,7 @@ namespace ToolSmiths.InventorySystem.Changelogs
                 {
                     if (IsEntryHeading(line))
                     {
-                        if (section != PatchNotes)
+                        if (section != Section.PatchNotes)
                         {
                             error = new ChangelogParseError(number, "Entry headings belong under '# Patch Notes'.");
                             return false;
@@ -74,14 +74,14 @@ namespace ToolSmiths.InventorySystem.Changelogs
                 }
 
                 var bullet = line.Substring(1).Trim();
-                if (!IsPlainBullet(bullet, number, entryBullets != null || section > PatchNotes, out error)) return false;
+                if (!IsPlainBullet(bullet, number, entryBullets != null || section > Section.PatchNotes, out error)) return false;
 
-                (section == PatchNotes ? entryBullets : section == KnownIssues ? knownIssues : roadmap).Add(bullet);
+                (section == Section.PatchNotes ? entryBullets : section == Section.KnownIssues ? knownIssues : roadmap).Add(bullet);
             }
 
-            if (section < Roadmap)
+            if (section < Section.Roadmap)
             {
-                error = new ChangelogParseError(lineCount + 1, $"Missing section '# {Sections[section + 1]}'.");
+                error = new ChangelogParseError(lineCount + 1, $"Missing section '# {SectionNames[(int)section + 1]}'.");
                 return false;
             }
 
@@ -118,6 +118,12 @@ namespace ToolSmiths.InventorySystem.Changelogs
             }
 
             var label = match.Groups["version"].Success ? match.Groups["version"].Value : match.Groups["date"].Value;
+            if (label == PatchNotesEntry.UnreleasedLabel)
+            {
+                error = new ChangelogParseError(number, "'Unreleased' is reserved for the heading '## Unreleased' and takes no date.");
+                return false;
+            }
+
             if (entries.Exists(e => e.Label == label))
             {
                 error = new ChangelogParseError(number, $"Duplicate entry '{label}'.");
@@ -134,7 +140,7 @@ namespace ToolSmiths.InventorySystem.Changelogs
             return true;
         }
 
-        private static bool TryOpenSection(string heading, int number, ref int section, out ChangelogParseError error)
+        private static bool TryOpenSection(string heading, int number, ref Section section, out ChangelogParseError error)
         {
             error = default;
             if (heading.StartsWith("###"))
@@ -144,26 +150,26 @@ namespace ToolSmiths.InventorySystem.Changelogs
             }
 
             var name = heading.StartsWith("# ") ? heading.Substring(2).Trim() : null;
-            var index = System.Array.IndexOf(Sections, name);
+            var index = Array.IndexOf(SectionNames, name);
             if (index < 0)
             {
                 error = new ChangelogParseError(number, "Expected '# Patch Notes', '# Known Issues' or '# Roadmap'.");
                 return false;
             }
 
-            if (index <= section)
+            if (index <= (int)section)
             {
                 error = new ChangelogParseError(number, $"Duplicate section '# {name}'.");
                 return false;
             }
 
-            if (index != section + 1)
+            if (index != (int)section + 1)
             {
-                error = new ChangelogParseError(number, $"Expected '# {Sections[section + 1]}' before '# {name}'.");
+                error = new ChangelogParseError(number, $"Expected '# {SectionNames[(int)section + 1]}' before '# {name}'.");
                 return false;
             }
 
-            section = index;
+            section = (Section)index;
             return true;
         }
 

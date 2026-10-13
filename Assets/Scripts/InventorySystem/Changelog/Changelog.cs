@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("InventorySystem.Changelog.Tests")]
 
 namespace ToolSmiths.InventorySystem.Changelogs
 {
     /// <summary>The parsed Changelog file: the player-facing content the panel renders.</summary>
-    public sealed class Changelog
+    internal sealed class Changelog
     {
         /// <summary>Patch Notes entries, newest first; an <c>Unreleased</c> entry can only be the first.</summary>
         public IReadOnlyList<PatchNotesEntry> Entries { get; }
@@ -20,11 +23,11 @@ namespace ToolSmiths.InventorySystem.Changelogs
     }
 
     /// <summary>One build's Patch Notes: a version, a date for builds that predate versions, or <c>Unreleased</c>.</summary>
-    public sealed class PatchNotesEntry
+    internal sealed class PatchNotesEntry
     {
         public const string UnreleasedLabel = "Unreleased";
 
-        /// <summary>The version, the date text of a version-less build, or <see cref="UnreleasedLabel"/>.</summary>
+        /// <summary>The version, the date text of a version-less build, or <c>Unreleased</c>.</summary>
         public string Label { get; }
 
         /// <summary>Null only for the <c>Unreleased</c> entry.</summary>
@@ -42,7 +45,7 @@ namespace ToolSmiths.InventorySystem.Changelogs
     }
 
     /// <summary>Why the file was rejected, and the 1-based line the author has to fix.</summary>
-    public readonly struct ChangelogParseError
+    internal readonly struct ChangelogParseError
     {
         public int Line { get; }
         public string Message { get; }

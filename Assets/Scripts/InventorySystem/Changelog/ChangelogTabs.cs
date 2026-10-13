@@ -7,16 +7,16 @@ namespace ToolSmiths.InventorySystem.Changelogs
     public sealed class ChangelogTabs
     {
         /// <summary>Starts every bullet line; the glyph is in the default TMP font's atlas.</summary>
-        public const string BulletPrefix = "• ";
+        private const string BulletPrefix = "• ";
 
-        public const string NoPatchNotes = "No patch notes yet.";
-        public const string NoKnownIssues = "No known issues.";
-        public const string NoRoadmap = "Nothing planned yet.";
+        private const string NoPatchNotes = "No patch notes yet.";
+        private const string NoKnownIssues = "No known issues.";
+        private const string NoRoadmap = "Nothing planned yet.";
 
         /// <summary>The Patch Notes entries in file order; empty when the file did not parse or has none.</summary>
         public IReadOnlyList<PatchNotesGroup> Entries { get; }
 
-        /// <summary>The one line the Patch Notes tab shows instead of <see cref="Entries"/>; null when there are entries.</summary>
+        /// <summary>The one line the Patch Notes tab shows when there are no entries; null otherwise.</summary>
         public string PatchNotesPlaceholder { get; }
 
         public IReadOnlyList<string> KnownIssues { get; }
@@ -38,7 +38,7 @@ namespace ToolSmiths.InventorySystem.Changelogs
             FailureLog = failureLog;
         }
 
-        /// <param name="development">True in the Editor and development builds; see <see cref="Shown"/>. Applied here so the entries and the placeholder agree.</param>
+        /// <param name="development">True in the Editor and development builds, where the <c>Unreleased</c> entry is shown.</param>
         public static ChangelogTabs Read(string text, bool development)
         {
             if (!ChangelogParser.TryParse(text, out var changelog, out var error))
@@ -55,11 +55,11 @@ namespace ToolSmiths.InventorySystem.Changelogs
                 entries[i] = new PatchNotesGroup(Heading(entry), Lines(entry.Bullets));
             }
 
-            return new ChangelogTabs(entries, entries.Length == 0 ? NoPatchNotes : null,Lines(changelog.KnownIssues, NoKnownIssues), Lines(changelog.Roadmap, NoRoadmap));
+            return new ChangelogTabs(entries, entries.Length == 0 ? NoPatchNotes : null, Lines(changelog.KnownIssues, NoKnownIssues), Lines(changelog.Roadmap, NoRoadmap));
         }
 
         /// <summary>The entries a viewer sees: <c>Unreleased</c> is for the developer checking wording, so players never see it.</summary>
-        public static IReadOnlyList<PatchNotesEntry> Shown(IReadOnlyList<PatchNotesEntry> entries, bool development)
+        internal static IReadOnlyList<PatchNotesEntry> Shown(IReadOnlyList<PatchNotesEntry> entries, bool development)
         {
             var shown = new List<PatchNotesEntry>(entries.Count);
             foreach (var entry in entries)
@@ -95,7 +95,7 @@ namespace ToolSmiths.InventorySystem.Changelogs
         public string Heading { get; }
         public IReadOnlyList<string> Lines { get; }
 
-        public PatchNotesGroup(string heading, IReadOnlyList<string> lines)
+        internal PatchNotesGroup(string heading, IReadOnlyList<string> lines)
         {
             Heading = heading;
             Lines = lines;

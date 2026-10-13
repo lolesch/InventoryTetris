@@ -11,7 +11,9 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Changelogs
         private const string Sample =
             "# Patch Notes\n\n# Known Issues\n\n- First issue.\n- Second issue.\n\n# Roadmap\n\n- First plan.\n- Second plan.\n";
 
-        private const string Empty = "# Patch Notes\n\n# Known Issues\n\n# Roadmap\n";
+        private const string Empty = ChangelogParserTests.Empty;
+
+        private const string Unparsable = "# Patch Notes\n\n# Known Issues\n\nstray text\n\n# Roadmap\n";
 
         private const string WithUnreleased =
             "# Patch Notes\n\n## Unreleased\n\n- Coming soon.\n\n## 0.1.0 - 2026-08-01\n\n- First build.\n\n# Known Issues\n\n# Roadmap\n";
@@ -42,7 +44,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Changelogs
         [Test]
         public void ParseError_ShowsOneFailureLineOnBothTabs_AndNamesTheLineForTheLog()
         {
-            var tabs = ReadInDevelopment("# Patch Notes\n\n# Known Issues\n\nstray text\n\n# Roadmap\n");
+            var tabs = ReadInDevelopment(Unparsable);
 
             Assert.IsTrue(tabs.Failed);
             CollectionAssert.AreEqual(new[] { "The changelog could not be read (line 5)." }, tabs.KnownIssues);
@@ -82,7 +84,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Changelogs
         [Test]
         public void ParseError_ShowsTheSameFailureLineOnPatchNotes_AndNoEntries()
         {
-            var tabs = ReadInDevelopment("# Patch Notes\n\n# Known Issues\n\nstray text\n\n# Roadmap\n");
+            var tabs = ReadInDevelopment(Unparsable);
 
             Assert.IsEmpty(tabs.Entries);
             Assert.AreEqual(tabs.KnownIssues[0], tabs.PatchNotesPlaceholder);
@@ -99,9 +101,9 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Changelogs
         [Test]
         public void PatchNotes_ShowTheUnreleasedEntryUnderItsOwnHeading()
         {
-            var tabs = ReadInDevelopment(
-                "# Patch Notes\n\n## Unreleased\n\n- Coming soon.\n\n## 0.1.0 - 2026-08-01\n\n- First build.\n\n# Known Issues\n\n# Roadmap\n");
+            var tabs = ReadInDevelopment(WithUnreleased);
 
+            Assert.AreEqual(2, tabs.Entries.Count);
             Assert.AreEqual("Unreleased", tabs.Entries[0].Heading);
             CollectionAssert.AreEqual(new[] { "• Coming soon." }, tabs.Entries[0].Lines);
             Assert.AreEqual("0.1.0 - 2026-08-01", tabs.Entries[1].Heading);
@@ -164,15 +166,6 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Changelogs
 
             Assert.IsEmpty(tabs.Entries);
             Assert.AreEqual("No patch notes yet.", tabs.PatchNotesPlaceholder);
-        }
-
-        [Test]
-        public void PatchNotes_ShowTheUnreleasedEntry_WhenDevelopment()
-        {
-            var tabs = ChangelogTabs.Read(WithUnreleased, true);
-
-            Assert.AreEqual("Unreleased", tabs.Entries[0].Heading);
-            Assert.AreEqual(2, tabs.Entries.Count);
         }
     }
 }

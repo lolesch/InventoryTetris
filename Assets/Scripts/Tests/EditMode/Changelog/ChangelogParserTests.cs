@@ -9,7 +9,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Changelogs
     [TestFixture]
     public sealed class ChangelogParserTests
     {
-        private const string Empty = "# Patch Notes\n\n# Known Issues\n\n# Roadmap\n";
+        internal const string Empty ="# Patch Notes\n\n# Known Issues\n\n# Roadmap\n";
 
         private static string PatchNotes(string entries) => "# Patch Notes\n" + entries + "# Known Issues\n# Roadmap\n";
 
@@ -237,6 +237,15 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Changelogs
         public void MalformedEntryHeading_IsAnErrorAtItsLine(string heading)
         {
             Assert.AreEqual(2, Reject(PatchNotes(heading + "\n")).Line);
+        }
+
+        [Test]
+        public void UnreleasedWithADate_IsAnErrorAtItsLine_BecauseTheNameIsReservedForTheBareForm()
+        {
+            var error = Reject(PatchNotes("## Unreleased - 2026-01-01\n"));
+
+            Assert.AreEqual(2, error.Line);
+            StringAssert.Contains("Unreleased", error.Message);
         }
 
         [Test]
