@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace ToolSmiths.InventorySystem.Changelogs
 {
@@ -8,20 +9,30 @@ namespace ToolSmiths.InventorySystem.Changelogs
         /// <summary>Starts every bullet line; the glyph is in the default TMP font's atlas.</summary>
         public const string BulletPrefix = "• ";
 
+        public const string NoPatchNotes = "No patch notes yet.";
         public const string NoKnownIssues = "No known issues.";
         public const string NoRoadmap = "Nothing planned yet.";
+
+        /// <summary>The Patch Notes entries in file order; empty when the file did not parse or has none.</summary>
+        public IReadOnlyList<PatchNotesGroup> Entries { get; }
+
+        /// <summary>The one line the Patch Notes tab shows instead of <see cref="Entries"/>; null when there are entries.</summary>
+        public string PatchNotesPlaceholder { get; }
 
         public IReadOnlyList<string> KnownIssues { get; }
         public IReadOnlyList<string> Roadmap { get; }
 
-        /// <summary>True when the file did not parse: both tabs then show the failure line.</summary>
+        /// <summary>True when the file did not parse: every tab then shows the failure line.</summary>
         public bool Failed => FailureLog != null;
 
         /// <summary>The error with its file line for the log; null when the file parsed.</summary>
         public string FailureLog { get; }
 
-        private ChangelogTabs(IReadOnlyList<string> knownIssues, IReadOnlyList<string> roadmap, string failureLog = null)
+        private ChangelogTabs(IReadOnlyList<PatchNotesGroup> entries, string patchNotesPlaceholder,
+            IReadOnlyList<string> knownIssues, IReadOnlyList<string> roadmap, string failureLog = null)
         {
+            Entries = entries;
+            PatchNotesPlaceholder = patchNotesPlaceholder;
             KnownIssues = knownIssues;
             Roadmap = roadmap;
             FailureLog = failureLog;
@@ -32,19 +43,51 @@ namespace ToolSmiths.InventorySystem.Changelogs
             if (!ChangelogParser.TryParse(text, out var changelog, out var error))
             {
                 var failure = new[] { $"The changelog could not be read (line {error.Line})." };
-                return new ChangelogTabs(failure, failure, $"Changelog line {error.Line}: {error.Message}");
+                return new ChangelogTabs(new PatchNotesGroup[0], failure[0], failure, failure, $"Changelog line {error.Line}: {error.Message}");
             }
 
-            return new ChangelogTabs(Lines(changelog.KnownIssues, NoKnownIssues), Lines(changelog.Roadmap, NoRoadmap));
+            var entries = new PatchNotesGroup[changelog.Entries.Count];
+            for (var i = 0; i < entries.Length; i++)
+            {
+                var entry = changelog.Entries[i];
+                entries[i] = new PatchNotesGroup(Heading(entry), Lines(entry.Bullets));
+            }
+
+            return new ChangelogTabs(entries, entries.Length == 0 ? NoPatchNotes : null,Lines(changelog.KnownIssues, NoKnownIssues), Lines(changelog.Roadmap, NoRoadmap));
+        }
+
+        /// <summary>A version-less build's label already is its date, and Unreleased has none.</summary>
+        private static string Heading(PatchNotesEntry entry)
+        {
+            if (entry.Date == null) return entry.Label;
+
+            var date = entry.Date.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            return entry.Label == date ? date : $"{entry.Label} - {date}";
+        }
+
+        private static IReadOnlyList<string> Lines(IReadOnlyList<string> bullets)
+        {
+            var lines = new string[bullets.Count];
+            for (var i = 0; i < lines.Length; i++) lines[i] = BulletPrefix + bullets[i];
+            return lines;
         }
 
         private static IReadOnlyList<string> Lines(IReadOnlyList<string> bullets, string placeholder)
         {
-            if (bullets.Count == 0) return new[] { placeholder };
+            return bullets.Count == 0 ? new[] { placeholder } : Lines(bullets);
+        }
+    }
 
-            var lines = new string[bullets.Count];
-            for (var i = 0; i < lines.Length; i++) lines[i] = BulletPrefix + bullets[i];
-            return lines;
+    /// <summary>One Patch Notes entry as the tab shows it: a heading, then its bullet lines.</summary>
+    public sealed class PatchNotesGroup
+    {
+        public string Heading { get; }
+        public IReadOnlyList<string> Lines { get; }
+
+        public PatchNotesGroup(string heading, IReadOnlyList<string> lines)
+        {
+            Heading = heading;
+            Lines = lines;
         }
     }
 }

@@ -2008,6 +2008,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Components.Panels.ChangelogPanelView
   changelogFile: {fileID: 4900000, guid: c3799e20e4ef4d25bf29cfcdb7941620, type: 3}
+  patchNotesBody: {fileID: 4886866454554692279}
   knownIssuesBody: {fileID: 5579082507978794069}
   roadmapBody: {fileID: 9154972592738887453}
 --- !u!1 &7793314950609022781
