@@ -414,6 +414,110 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(session.Hero.Behaviour.SimSpeed, Is.EqualTo(4f));
         }
 
+        // ── the menu hold ────────────────────────────────────────────────────
+
+        [Test]
+        public void AHeldRun_StandsStill_ThenResumesWhereItStopped()
+        {
+            service.Send(thornwood);
+            service.Tick(0.1f);
+            var duration = service.Run.Encounter.Duration;
+
+            service.SetHeld(true);
+            service.Tick(0.1f);
+
+            Assert.That(service.IsHeld, Is.True);
+            Assert.That(service.Run.Encounter.Duration, Is.EqualTo(duration), "the Encounter's clock froze");
+            Assert.That(service.SimDelta(0.1f), Is.EqualTo(0f), "views on sim time freeze with it");
+
+            service.SetHeld(false);
+            service.Tick(0.1f);
+
+            Assert.That(service.IsHeld, Is.False);
+            Assert.That(service.Run.Encounter.Duration, Is.GreaterThan(duration));
+        }
+
+        [Test]
+        public void ARunPausedBeforeTheHold_IsStillPausedAfterTheRelease_AndOneRunningResumes()
+        {
+            service.Send(thornwood);
+            service.SetPaused(true);
+
+            service.SetHeld(true);
+            service.SetHeld(false);
+
+            Assert.That(service.IsPaused, Is.True, "the player's own Pause is given back as found");
+
+            service.SetPaused(false);
+            service.SetHeld(true);
+            service.SetHeld(false);
+
+            Assert.That(service.IsPaused, Is.False);
+            Assert.That(service.SimDelta(0.1f), Is.GreaterThan(0f));
+        }
+
+        [Test]
+        public void TheHold_NeverChangesIsPaused_OrRaisesPausedChanged()
+        {
+            service.Send(thornwood);
+            var raised = new List<bool>();
+            service.PausedChanged += raised.Add;
+
+            service.SetHeld(true);
+            Assert.That(service.IsPaused, Is.False);
+            service.SetHeld(false);
+
+            service.SetPaused(true);
+            raised.Clear();
+            service.SetHeld(true);
+            Assert.That(service.IsPaused, Is.True);
+            service.SetHeld(false);
+
+            Assert.That(raised, Is.Empty);
+        }
+
+        [Test]
+        public void HoldingAndReleasingInTown_DoesNothingAndDoesNotThrow()
+        {
+            Assert.DoesNotThrow(() => service.SetHeld(true));
+            Assert.That(service.IsHeld, Is.False, "there is nothing to hold in Town");
+            Assert.DoesNotThrow(() => service.SetHeld(false));
+
+            service.SetHeld(true);
+            service.Send(thornwood);
+
+            Assert.That(service.IsHeld, Is.False, "a refused hold does not wait for the next Run");
+            Assert.That(service.SimDelta(0.1f), Is.GreaterThan(0f));
+        }
+
+        [Test]
+        public void HoldAndRelease_AreIdempotent()
+        {
+            service.Send(thornwood);
+
+            service.SetHeld(true);
+            service.SetHeld(true);
+            service.SetHeld(false);
+
+            Assert.That(service.IsHeld, Is.False, "a second hold is the same hold");
+
+            service.SetHeld(false);
+
+            Assert.That(service.IsHeld, Is.False);
+        }
+
+        [Test]
+        public void TheRunsEnd_ReleasesTheHold()
+        {
+            service.Send(thornwood);
+            service.SetHeld(true);
+
+            _ = service.Recall();
+            service.Send(thornwood);
+
+            Assert.That(service.IsHeld, Is.False, "a hold left over from the last Run does not freeze the next");
+        }
+
         [Test]
         public void TheRunsEnd_ClearsThePause()
         {
@@ -523,6 +627,63 @@ namespace ToolSmiths.InventorySystem.Tests.Services
                 service.Tick(0.5f);
 
             Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.InTown), "the Run never ended");
+        }
+
+        // ── the lifetime Kill count ──────────────────────────────────────────
+
+        // An invincible hero, so the Run is still there once the first body has fallen.
+        private int SendAndTickUntilAKill()
+        {
+            session.Hero.IsInvincible = true;
+            service.Send(thornwood);
+
+            for (var i = 0; i < 2000 && service.Run.Encounter.EnemiesDefeated == 0; i++)
+                service.Tick(0.1f);
+
+            Assert.That(service.Run.Encounter.EnemiesDefeated, Is.GreaterThan(0), "premise: the hero killed something");
+            return service.Run.Encounter.EnemiesDefeated;
+        }
+
+        [Test]
+        public void ARecall_FoldsTheRunsKillsIntoTheHerosLifetimeCount_Once()
+        {
+            var kills = SendAndTickUntilAKill();
+            Assert.That(session.Hero.TotalKills, Is.EqualTo(0), "a Run in the Field has not been folded yet");
+
+            var result = service.Recall();
+            service.Tick(0.5f);
+            service.Tick(0.5f);
+
+            Assert.That(result.EnemiesDefeated, Is.EqualTo(kills));
+            Assert.That(session.Hero.TotalKills, Is.EqualTo(kills));
+        }
+
+        [Test]
+        public void ADeath_CountsTheKillsOfTheRunThatEndedInIt()
+        {
+            var kills = SendAndTickUntilAKill();
+
+            session.Hero.GetResource(StatName.Health).DepleteCurrent();
+            TickUntilHome();
+
+            Assert.That(service.Run.LastResult?.Outcome, Is.EqualTo(RunOutcome.Died));
+            Assert.That(session.Hero.TotalKills, Is.GreaterThanOrEqualTo(kills));
+            Assert.That(session.Hero.TotalKills, Is.EqualTo(service.Run.LastResult?.EnemiesDefeated));
+        }
+
+        [Test]
+        public void TheLifetimeCount_AddsUpAcrossRuns_AndRelocateKeepsTheRunsKillsForItsEnd()
+        {
+            var first = SendAndTickUntilAKill();
+            service.Relocate(ashfen);
+            _ = service.Recall();
+            Assert.That(session.Hero.TotalKills, Is.GreaterThanOrEqualTo(first), "the Relocate carried the first Encounter's kills into the Run");
+            var afterFirst = session.Hero.TotalKills;
+
+            _ = SendAndTickUntilAKill();
+            _ = service.Recall();
+
+            Assert.That(session.Hero.TotalKills, Is.EqualTo(afterFirst + service.Run.LastResult?.EnemiesDefeated));
         }
 
         private ItemInstance PutInBag()

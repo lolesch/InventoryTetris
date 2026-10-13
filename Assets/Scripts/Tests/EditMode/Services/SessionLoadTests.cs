@@ -100,6 +100,21 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
+        public void TryLoad_WithAHeroLoadedHandlerThatThrows_StillLoads_AndTheOtherHandlersRun()
+        {
+            var old = Session.Instance.Hero;
+            var ran = 0;
+            Session.Instance.HeroLoaded += () => throw new InvalidOperationException("a view failed");
+            Session.Instance.HeroLoaded += () => ran++;
+            UnityEngine.TestTools.LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("a view failed"));
+
+            Assert.That(Session.Instance.TryLoad(data), Is.True, "the pair is swapped, so the load happened");
+
+            Assert.That(Session.Instance.Hero, Is.Not.SameAs(old));
+            Assert.That(ran, Is.EqualTo(1));
+        }
+
+        [Test]
         public void TryLoad_GivesTheNewHeroNothingOfTheOld()
         {
             var old = Session.Instance.Hero;

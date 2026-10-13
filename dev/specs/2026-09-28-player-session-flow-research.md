@@ -85,7 +85,7 @@ one hero:
 | Corpse | hero | persist as Location **id** + instance DTOs |
 | Supply | **not saved** | Restock on load and on every Recall (§6.4) |
 | Sell Basket, hand/cursor Package, ground Drops, the Run | **never saved** | see A2 |
-| Settings, key bindings | machine / Account | separate file from hero data |
+| Settings, key bindings | machine / Account | separate file from hero data *(corrected: `PlayerPrefs`, see `2026-10-12-front-end-flow-design.md`)* |
 
 **A2 — Save lifecycle rules.**
 - **Write points:** every `InField → InTown` transition (Recall and Death), exit to menu,

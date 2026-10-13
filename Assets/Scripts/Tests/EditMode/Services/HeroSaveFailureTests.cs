@@ -132,7 +132,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             ExpectLog(LogType.Warning, "was damaged; loaded its backup");
             _ = setup.Saves.Load(hero.Id);
 
-            Assert.That(setup.Saves.Save(), Is.True);
+            Assert.That(setup.Saves.Save().Wrote, Is.True);
 
             Assert.That(NewSetup().Saves.List().Single().Status, Is.EqualTo(LoadStatus.Loaded));
         }
@@ -158,17 +158,20 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         [Test]
         public void ACorruptLastSelectedHero_IsSetAside_AndALaunchStartsAFreshHeroUnderANewId()
         {
-            store.Write("deadbeef", "this is not a save");
+            var seeding = NewSetup();
+            var damaged = seeding.Saves.Create("Aria").Id;
+            seeding.Saves.SetLastSelected(damaged);
+            store.Write(KeyOf(damaged), "this is not a save");
+            store.Write(KeyOf(damaged), "this is not a save either");
             var setup = NewSetup();
-            setup.Saves.SetLastSelected("deadbeef");
-            ExpectLog(LogType.Error, "deadbeef.*damaged");
+            ExpectLog(LogType.Error, $"{damaged}.*damaged");
 
             var result = setup.Saves.LoadLastOrCreate();
 
             Assert.That(result.Entered, Is.True);
-            Assert.That(setup.Saves.ActiveHeroId, Is.Not.EqualTo("deadbeef"));
+            Assert.That(setup.Saves.ActiveHeroId, Is.Not.EqualTo(damaged));
             Assert.That(setup.Saves.LastSelectedHeroId, Is.EqualTo(setup.Saves.ActiveHeroId));
-            Assert.That(inner.SetAsideValues, Is.EqualTo(new[] { "this is not a save" }));
+            Assert.That(inner.SetAsideValues, Does.Contain("this is not a save either"));
             Assert.That(setup.Saves.List().Select(hero => hero.Id), Is.EqualTo(new[] { setup.Saves.ActiveHeroId }));
         }
 
@@ -188,7 +191,8 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(result.Entered, Is.False);
             Assert.That(result.Status, Is.EqualTo(LoadStatus.NewerVersion));
             Assert.That(setup.Saves.ActiveHeroId, Is.Null);
-            Assert.That(setup.Saves.Save(), Is.False, "no active hero, so nothing can overwrite it");
+            Assert.That(setup.Saves.Save().Wrote, Is.False, "no active hero, so nothing can overwrite it");
+            Assert.That(setup.Saves.Save().Failure, Is.EqualTo(SaveFailure.NotFromSave));
             inner.TryRead(KeyOf(hero.Id), out var after);
             Assert.That(after, Is.EqualTo(before));
             Assert.That(inner.SetAsideValues, Is.Empty);
@@ -199,8 +203,8 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         {
             var seeding = NewSetup();
             var future = seeding.Saves.Create("FromTheFuture");
-            HeroSlot(future.Id, version: 2).Save(new HeroDto { id = future.Id, name = "FromTheFuture" });
             seeding.Saves.SetLastSelected(future.Id);
+            HeroSlot(future.Id, version: 2).Save(new HeroDto { id = future.Id, name = "FromTheFuture" });
             inner.TryRead(KeyOf(future.Id), out var before);
             var setup = NewSetup();
             ExpectLog(LogType.Warning, "newer version");
@@ -213,29 +217,136 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(after, Is.EqualTo(before));
         }
 
+        // ── unreadable heroes, as the hero list says them ───────────────────
+
+        private HeroSaveService RefusingSaves(Setup setup) => setup.Game.RefusingSavesOver(config, store, () => now);
+
+        [Test]
+        public void TheList_GivesAnUnreadableHeroItsReason_AndAReadableOneNone()
+        {
+            var setup = NewSetup();
+            var good = setup.Saves.Create("Aria");
+            store.Write("deadbeef", "this is not a save");
+            var future = setup.Saves.Create("Bram");
+            HeroSlot(future.Id, version: 2).Save(new HeroDto { id = future.Id, name = "FromTheFuture" });
+
+            var byId = setup.Saves.List().ToDictionary(hero => hero.Id);
+
+            Assert.That(byId[good.Id].UnreadableReason, Is.Null);
+            Assert.That(byId["deadbeef"].UnreadableReason, Is.EqualTo("File damaged and no backup could be read"));
+            Assert.That(byId[future.Id].UnreadableReason, Is.EqualTo("Saved by a newer version of the game"));
+        }
+
+        [Test]
+        public void AHeroThatReadsButWillNotLoad_StaysOutOfTheSession_AndIsListedAsUnreadable()
+        {
+            var setup = NewSetup();
+            var hero = setup.Saves.Create("Aria");
+            var refusing = RefusingSaves(setup);
+            var raised = 0;
+            refusing.HeroesChanged += () => raised++;
+            ExpectLog(LogType.Error, "could not be loaded.*no template");
+
+            var result = refusing.Load(hero.Id);
+
+            Assert.That(result.Entered, Is.False);
+            Assert.That(refusing.ActiveHeroId, Is.Null);
+            Assert.That(raised, Is.EqualTo(1), "the slot repaints");
+            Assert.That(refusing.List().Single().UnreadableReason, Is.EqualTo("This save could not be loaded"));
+            Assert.That(inner.SetAsideValues, Is.Empty, "the file is left alone");
+        }
+
+        [Test]
+        public void AHeroLoadedHandlerThatThrows_DoesNotUndoTheLoad_NorKeepTheOthersFromRunning()
+        {
+            var setup = NewSetup();
+            var hero = setup.Saves.Create("Aria");
+            var ran = 0;
+            setup.Game.Session.HeroLoaded += () => throw new InvalidOperationException("a view failed");
+            setup.Game.Session.HeroLoaded += () => ran++;
+            ExpectLog(LogType.Error, "a view failed");
+
+            var result = setup.Saves.Load(hero.Id);
+
+            Assert.That(result.Entered, Is.True, "the Session swapped before the handler threw");
+            Assert.That(setup.Saves.ActiveHeroId, Is.EqualTo(hero.Id));
+            Assert.That(setup.Saves.LastSelectedHeroId, Is.EqualTo(hero.Id));
+            Assert.That(setup.Saves.List().Single().UnreadableReason, Is.Null, "the hero is not marked as one that will not load");
+            Assert.That(ran, Is.EqualTo(1), "the handler after the failing one still ran");
+        }
+
+        [Test]
+        public void ADeletedHero_ForgetsThatItWouldNotLoad()
+        {
+            var setup = NewSetup();
+            var hero = setup.Saves.Create("Aria");
+            var refusing = RefusingSaves(setup);
+            ExpectLog(LogType.Error, "could not be loaded");
+            _ = refusing.Load(hero.Id);
+
+            Assert.That(refusing.Delete(hero.Id), Is.True);
+
+            Assert.That(refusing.List(), Is.Empty);
+        }
+
+        [Test]
+        public void DeletingAnUnreadableHero_RemovesTheFileAndItsBackup()
+        {
+            var setup = NewSetup();
+            var hero = setup.Saves.Create("Aria");
+            var key = KeyOf(hero.Id);
+            store.Write(key, "{ truncated");
+            store.Write(key, "{ truncated again");
+            Assert.That(setup.Saves.List().Single().Status, Is.EqualTo(LoadStatus.Corrupt));
+            Assert.That(inner.TryReadBackup(key, out _), Is.True);
+
+            Assert.That(setup.Saves.Delete(hero.Id), Is.True);
+
+            Assert.That(setup.Saves.List(), Is.Empty);
+            Assert.That(inner.TryReadBackup(key, out _), Is.False);
+        }
+
+        [Test]
+        public void ChoosingTheLastSelectedHero_TellsTheViews()
+        {
+            var setup = NewSetup();
+            var hero = setup.Saves.Create("Aria");
+            var raised = 0;
+            setup.Saves.HeroesChanged += () => raised++;
+
+            setup.Saves.SetLastSelected(hero.Id);
+
+            Assert.That(raised, Is.EqualTo(1));
+            Assert.That(setup.Saves.LastSelectedHeroId, Is.EqualTo(hero.Id));
+        }
+
         // ── a failed write ──────────────────────────────────────────────────
 
         [Test]
-        public void AFailingWrite_ReturnsFalse_LeavesThePreviousSaveIntact_AndTheNextSaveSucceeds()
+        public void AFailingWrite_SaysTheStoreFailed_LeavesThePreviousSaveIntact_AndTheNextSaveSucceeds()
         {
             var setup = NewSetup();
             var hero = setup.Saves.Create("Aria");
             _ = setup.Saves.Load(hero.Id);
             setup.Game.Hero.Wallet.Deposit(new Currency(100u));
-            Assert.That(setup.Saves.Save(), Is.True);
+            Assert.That(setup.Saves.Save().Wrote, Is.True);
 
             setup.Game.Hero.Wallet.Deposit(new Currency(900u));
             store.FailWrites = true;
             ExpectLog(LogType.Error, "Could not save hero .*the disk is full");
 
-            Assert.That(setup.Saves.Save(), Is.False);
+            var failed = setup.Saves.Save();
+
+            Assert.That(failed.Wrote, Is.False);
+            Assert.That(failed.Failure, Is.EqualTo(SaveFailure.StoreFailed));
+            Assert.That(failed.Reason, Is.Not.Empty.And.Not.Contain("disk is full"), "the technical text stays in the log");
 
             store.FailWrites = false;
             var survivor = NewSetup();
             _ = survivor.Saves.Load(hero.Id);
             Assert.That(survivor.Game.Hero.Wallet.Balance.Total, Is.EqualTo(100u), "the previous save is untouched");
 
-            Assert.That(setup.Saves.Save(), Is.True, "the next save point is the retry");
+            Assert.That(setup.Saves.Save().Wrote, Is.True, "the next save point is the retry");
 
             var retried = NewSetup();
             _ = retried.Saves.Load(hero.Id);
@@ -291,7 +402,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             _ = setup.Saves.Load(id);
             var sidecar = inner.SideFiles[$"{id}.quarantine.json"];
 
-            Assert.That(setup.Saves.Save(), Is.True);
+            Assert.That(setup.Saves.Save().Wrote, Is.True);
 
             Assert.That(inner.SideFiles[$"{id}.quarantine.json"], Is.EqualTo(sidecar));
             Assert.That(inner.Keys(), Is.EquivalentTo(new[] { HeroFileKey.Compose("Aria", id), "account" }));
@@ -372,14 +483,18 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             setup.Game.Hero.Wallet.Deposit(new Currency(5u));
             ExpectLog(LogType.Error, "this save was skipped.*nowhere to put it");
 
-            Assert.That(setup.Saves.Save(), Is.False);
+            var failed = setup.Saves.Save();
+
+            Assert.That(failed.Wrote, Is.False);
+            Assert.That(failed.Failure, Is.EqualTo(SaveFailure.BeforeSaveFailed));
+            Assert.That(failed.Reason, Is.Not.Empty.And.Not.Contain("nowhere to put it"), "the technical text stays in the log");
 
             var survivor = NewSetup();
             _ = survivor.Saves.Load(hero.Id);
             Assert.That(survivor.Game.Hero.Wallet.Balance.Total, Is.Zero, "the previous file is kept");
 
             fail = false;
-            Assert.That(setup.Saves.Save(), Is.True);
+            Assert.That(setup.Saves.Save().Wrote, Is.True);
         }
     }
 }

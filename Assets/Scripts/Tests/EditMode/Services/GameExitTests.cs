@@ -9,6 +9,7 @@ using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Locations;
 using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Simulation;
+using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Tests.Services
 {
@@ -97,6 +98,15 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
+        public void TheGame_CanBeQuitFromTheMenu_ExceptInAWebGLBuild()
+        {
+            Assert.That(GameExit.CanQuit(RuntimePlatform.WebGLPlayer), Is.False);
+            Assert.That(GameExit.CanQuit(RuntimePlatform.WindowsPlayer), Is.True);
+            Assert.That(GameExit.CanQuit(RuntimePlatform.OSXPlayer), Is.True);
+            Assert.That(GameExit.CanQuit(RuntimePlatform.LinuxPlayer), Is.True);
+        }
+
+        [Test]
         public void AQuitInTown_WritesTheHero()
         {
             var (game, saves, id) = Playing();
@@ -105,6 +115,35 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             GameExit.SaveHero(game.Simulation, saves);
 
             Assert.That(Reloaded(id).Game.Hero.Wallet.Balance.Total, Is.EqualTo(40u));
+        }
+
+        [Test]
+        public void AQuitWithoutSaving_WritesNothing_AndQuits_UntilTheNextInstallSavesAgain()
+        {
+            var (game, saves, id) = Playing();
+            game.Hero.Wallet.Deposit(new Currency(40u));
+            var quits = 0;
+            var previous = GameExit.Quitter;
+            GameExit.Quitter = () => quits++;
+
+            try
+            {
+                GameExit.QuitWithoutSaving();
+            }
+            finally
+            {
+                GameExit.Quitter = previous;
+            }
+
+            GameExit.SaveHero(game.Simulation, saves);
+
+            Assert.That(quits, Is.EqualTo(1));
+            Assert.That(Reloaded(id).Game.Hero.Wallet.Balance.Total, Is.Zero, "the last save is kept, this session's gold is not written");
+
+            GameExit.Install(game.Simulation, saves);
+            GameExit.SaveHero(game.Simulation, saves);
+
+            Assert.That(Reloaded(id).Game.Hero.Wallet.Balance.Total, Is.EqualTo(40u), "a later quit saves as usual");
         }
 
         [Test]

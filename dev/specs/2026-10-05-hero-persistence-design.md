@@ -234,7 +234,7 @@ Dto field names, file bytes (outside the file store), or the order of internal c
 - Hero classes or archetypes, and a template reference in the Dto.
 - A shared Stash tab and any state owned by the Account beyond the last-selected id (ADR-0014, Stash tabs).
 - Saving the World: Supplies, the Sold container, the Run and its ground Drops, the Inventory Context.
-- Settings and key bindings (`#69`), which are a separate file.
+- Settings and key bindings (`#69`), which are a separate file. *(Corrected: they live in `PlayerPrefs`, per machine, see `2026-10-12-front-end-flow-design.md`.)*
 - Gating the dev spawners out of the player path (`#118`).
 - A timer or per-change autosave, and async or cloud saves.
 - Newtonsoft; `JsonUtility` stands, and the serializer seam makes a change one adapter.
@@ -260,4 +260,4 @@ buried (the Death ordering above). A coin saved before the denomination ladder e
 load only through the catalog overload of the item round trip. `Corpse` matches a Location by profile
 reference, so the loader must reuse the one profile per Location the simulation service memoizes.
 The Wallet needs no save of its own. `MainMenu.unity` exists but is not in the build settings; that
-is spec 2's concern.
+is spec 2's concern. *(Corrected: it is in the build settings, behind the game scene until the front-end flow's boot ticket moves it first, see `2026-10-12-front-end-flow-design.md`.)*

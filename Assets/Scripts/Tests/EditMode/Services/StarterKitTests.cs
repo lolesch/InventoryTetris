@@ -105,7 +105,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             var hero = saves.Create("Aria");
 
             _ = saves.Load(hero.Id);
-            Assert.That(saves.Save(), Is.True);
+            Assert.That(saves.Save().Wrote, Is.True);
             var (second, secondSaves) = NewGame();
             _ = secondSaves.Load(hero.Id);
 

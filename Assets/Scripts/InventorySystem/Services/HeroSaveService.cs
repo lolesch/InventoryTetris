@@ -31,11 +31,17 @@ namespace ToolSmiths.InventorySystem.Services
         private readonly ISaveSerializer serializer;
         private readonly Func<DateTime> utcNow;
         private readonly List<Action> beforeSave = new();
+        private readonly HashSet<string> notLoadable = new();
+        private readonly Dictionary<string, EntryNotice> entryNotices = new();
 
         private Hero activeHero;
         private string activeName;
         private long activeCreatedAtTicks;
         private string activeTemplateId;
+
+        // The hero the menu has selected although its file cannot become a hero. Held for this session alone:
+        // the account names the hero a launch continues, and loading a damaged one sets its file aside.
+        private string unreadableSelected;
 
         /// <summary>Call sites at the Unity edge read the service as <c>HeroSaveService.Instance</c>.</summary>
         public static IHeroSaveService Instance => ServiceLocator.Get<IHeroSaveService>();
@@ -109,15 +115,15 @@ namespace ToolSmiths.InventorySystem.Services
 
         public void RemoveBeforeSave(Action normaliser) => beforeSave.Remove(normaliser);
 
-        public string LastSelectedHeroId
+        public string LastSelectedHeroId => unreadableSelected ?? RememberedHeroId();
+
+        // What the account file names: the hero a launch continues.
+        private string RememberedHeroId()
         {
-            get
-            {
-                var result = AccountSlot().Load();
-                return result.HasPayload && !string.IsNullOrEmpty(result.Payload.lastSelectedHeroId)
-                    ? result.Payload.lastSelectedHeroId
-                    : null;
-            }
+            var result = AccountSlot().Load();
+            return result.HasPayload && !string.IsNullOrEmpty(result.Payload.lastSelectedHeroId)
+                ? result.Payload.lastSelectedHeroId
+                : null;
         }
 
         public IReadOnlyList<HeroSummary> List() =>
@@ -126,6 +132,13 @@ namespace ToolSmiths.InventorySystem.Services
                 .OrderByDescending(hero => hero.SavedAtUtc)
                 .ThenBy(hero => hero.Id, StringComparer.Ordinal)
                 .ToArray();
+
+        public bool TryGet(string id, out HeroSummary hero)
+        {
+            var key = string.IsNullOrEmpty(id) || id == AccountKey ? null : KeyOf(id);
+            hero = key == null ? default : SummaryOf(id, key);
+            return key != null;
+        }
 
         public HeroSummary Create(string name, string templateId = null)
         {
@@ -159,8 +172,10 @@ namespace ToolSmiths.InventorySystem.Services
             foreach (var key in store.Keys().Where(key => key != AccountKey && HeroFileKey.IdOf(key) == target).ToArray())
                 deleted |= store.Delete(key);
 
-            if (LastSelectedHeroId == id)
-                TrySetLastSelected(null);
+            _ = notLoadable.Remove(target);
+            _ = entryNotices.Remove(target);
+
+            Forget(id);
 
             if (ActiveHeroId == id)
             {
@@ -196,6 +211,24 @@ namespace ToolSmiths.InventorySystem.Services
 
         public void SetLastSelected(string id)
         {
+            // Only a hero that can be entered is written down; looking at a damaged one must not make the next
+            // launch try it first (and set it aside).
+            if (id != null && TryGet(id, out var hero) && hero.UnreadableReason != null)
+            {
+                unreadableSelected = id;
+            }
+            else
+            {
+                Remember(id);
+                unreadableSelected = null;
+            }
+
+            RaiseHeroesChanged();
+        }
+
+        // The account write alone, for a caller that raises the change itself.
+        private void Remember(string id)
+        {
             if (id != null && KeyOf(Checked(id)) == null)
                 throw new ArgumentException($"There is no saved hero '{id}'.", nameof(id));
 
@@ -222,15 +255,42 @@ namespace ToolSmiths.InventorySystem.Services
                 return new HeroLoadResult(result.Status, false, null);
             }
 
-            if (!session.TryLoad(result.Payload, locations, out var report))
+            RestoreReport report;
+            bool entered;
+
+            // A file that reads can still fail to become a hero (a value the restore cannot place). The Session
+            // builds the pair before it swaps, so a throw here left it untouched, and the hero stays listed,
+            // marked, for the player to delete. A view that throws on the swap is the Session's to log.
+            try
+            {
+                entered = session.TryLoad(result.Payload, locations, out report);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError($"Hero save '{id}' could not be loaded: {exception.Message}");
+                _ = notLoadable.Add(id);
+                RaiseHeroesChanged();
+                return new HeroLoadResult(result.Status, false, null);
+            }
+
+            if (!entered)
                 return new HeroLoadResult(result.Status, false, null);
 
+            _ = notLoadable.Remove(id);
             ActiveHeroId = id;
             activeHero = session.Hero;
             activeName = result.Payload.name;
             activeCreatedAtTicks = result.Payload.createdAtTicks;
             activeTemplateId = result.Payload.templateId;
+            unreadableSelected = null;
             TrySetLastSelected(id);
+
+            // A clean load keeps what an earlier load of the hero left: selecting it on the menu may have
+            // written the quarantined items out of the file, so the load Play makes reads clean.
+            var notice = EntryNotice.From(result.Status, report);
+
+            if (notice != null)
+                entryNotices[id] = notice;
 
             if (result.Status == LoadStatus.RestoredFromBackup)
                 Debug.LogWarning($"Hero save '{id}' was damaged; loaded its backup instead. The next save replaces the damaged file.");
@@ -245,11 +305,21 @@ namespace ToolSmiths.InventorySystem.Services
             return new HeroLoadResult(result.Status, true, report);
         }
 
+        public EntryNotice TakeEntryNotice() =>
+            ActiveHeroId != null && entryNotices.Remove(ActiveHeroId, out var notice) ? notice : null;
+
         public HeroLoadResult LoadLastOrCreate()
+        {
+            var continued = LoadLast();
+
+            return continued.Status == LoadStatus.Missing ? Load(Create(FirstHeroName).Id) : continued;
+        }
+
+        public HeroLoadResult LoadLast()
         {
             // The last-selected hero first; the common launch reads one file. Only when it cannot be
             // used are the other files listed, newest first.
-            var last = LastSelectedHeroId;
+            var last = RememberedHeroId();
             if (last != null && TryContinue(last, out var continued))
                 return continued;
 
@@ -261,24 +331,24 @@ namespace ToolSmiths.InventorySystem.Services
                     return continued;
             }
 
-            return Load(Create(FirstHeroName).Id);
+            return new HeroLoadResult(LoadStatus.Missing, false, null);
         }
 
-        public bool Save()
+        public SaveResult Save()
         {
             // The Session's hero is the file's only while it is the one this service loaded; a template
             // load or another load behind its back leaves the file alone.
             if (ActiveHeroId == null || !ReferenceEquals(activeHero, session.Hero))
-                return false;
+                return SaveResult.Failed(SaveFailure.NotFromSave);
 
             // A hero in the Field holds a bag the Run has not settled; the file only ever holds a Town hero.
             if (simulation.Run.Phase == RunPhase.InField)
-                return false;
+                return SaveResult.Failed(SaveFailure.RunInField);
 
             // A normaliser that failed left the hero in a state that is not safe to write (a held Package
             // that is in no container). The previous file still holds it, so keep that one.
             if (!RunNormalisers())
-                return false;
+                return SaveResult.Failed(SaveFailure.BeforeSaveFailed);
 
             // A write that fails must not take the game down. The write is atomic, so the previous save is
             // untouched; every save point writes the whole hero, so the next one is the retry.
@@ -293,12 +363,12 @@ namespace ToolSmiths.InventorySystem.Services
                     dto.templateId = activeTemplateId;
 
                 _ = WriteHero(ActiveHeroId, dto);
-                return true;
+                return SaveResult.Written;
             }
             catch (Exception exception)
             {
                 Debug.LogError($"Could not save hero '{ActiveHeroId}': {exception.Message} The previous save is untouched; the next save point tries again.");
-                return false;
+                return SaveResult.Failed(SaveFailure.StoreFailed);
             }
         }
 
@@ -331,12 +401,22 @@ namespace ToolSmiths.InventorySystem.Services
             return result.Status is LoadStatus.Loaded or LoadStatus.RestoredFromBackup;
         }
 
+        // The hero is gone or set aside, so it is selected no longer.
+        private void Forget(string id)
+        {
+            if (unreadableSelected == id)
+                unreadableSelected = null;
+
+            if (RememberedHeroId() == id)
+                TrySetLastSelected(null);
+        }
+
         // The last-selected id is a convenience: failing to remember it must not undo a load or a delete.
         private void TrySetLastSelected(string id)
         {
             try
             {
-                SetLastSelected(id);
+                Remember(id);
             }
             catch (Exception exception)
             {
@@ -354,8 +434,7 @@ namespace ToolSmiths.InventorySystem.Services
                 case LoadStatus.Corrupt:
                     _ = store.SetAside(key);
 
-                    if (LastSelectedHeroId == id)
-                        TrySetLastSelected(null);
+                    Forget(id);
 
                     Debug.LogError($"Hero save '{id}' is damaged and its backup is no use: {result.Failure} It was set aside, not deleted.");
                     break;
@@ -395,7 +474,8 @@ namespace ToolSmiths.InventorySystem.Services
 
             return result.HasPayload
                 ? new HeroSummary(id, result.Payload.name, result.Payload.level, result.SavedAtUtc, result.Status,
-                    config.FindHero(result.Payload.templateId), result.Payload.createdAtTicks)
+                    config.FindHero(result.Payload.templateId), result.Payload.createdAtTicks,
+                    notLoadable.Contains(id) ? HeroSummary.NotLoadableReason : null)
                 : new HeroSummary(id, string.Empty, 0u, result.SavedAtUtc, result.Status);
         }
 

@@ -1,4 +1,3 @@
-using Submodules.Utility.Persistence;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,11 +31,9 @@ namespace ToolSmiths.InventorySystem.Services
         /// <summary>The hero of a <see cref="HeroSlotKind.Hero"/> slot; <c>default</c> for the others.</summary>
         public HeroSummary Hero { get; }
 
-        /// <summary>Whether choosing the slot does anything: a create slot, or a hero whose file reads.
-        /// A file that cannot be read is shown but cannot be chosen.</summary>
-        public bool IsUsable =>
-            Kind == HeroSlotKind.Create
-            || Kind == HeroSlotKind.Hero && Hero.Status is LoadStatus.Loaded or LoadStatus.RestoredFromBackup;
+        /// <summary>Whether choosing the slot does anything: a create slot, or any hero. A file that cannot be read
+        /// is chosen too, to show why (<see cref="HeroSummary.UnreadableReason"/>) and to be deleted.</summary>
+        public bool IsUsable => Kind is HeroSlotKind.Create or HeroSlotKind.Hero;
     }
 
     /// <summary>
