@@ -214,6 +214,90 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(after, Is.EqualTo(before));
         }
 
+        // ── unreadable heroes, as the hero list says them ───────────────────
+
+        private HeroSaveService RefusingSaves(Setup setup) => setup.Game.RefusingSavesOver(config, store, () => now);
+
+        [Test]
+        public void TheList_GivesAnUnreadableHeroItsReason_AndAReadableOneNone()
+        {
+            var setup = NewSetup();
+            var good = setup.Saves.Create("Aria");
+            store.Write("deadbeef", "this is not a save");
+            var future = setup.Saves.Create("Bram");
+            HeroSlot(future.Id, version: 2).Save(new HeroDto { id = future.Id, name = "FromTheFuture" });
+
+            var byId = setup.Saves.List().ToDictionary(hero => hero.Id);
+
+            Assert.That(byId[good.Id].UnreadableReason, Is.Null);
+            Assert.That(byId["deadbeef"].UnreadableReason, Is.EqualTo("File damaged and no backup could be read"));
+            Assert.That(byId[future.Id].UnreadableReason, Is.EqualTo("Saved by a newer version of the game"));
+        }
+
+        [Test]
+        public void AHeroThatReadsButWillNotLoad_StaysOutOfTheSession_AndIsListedAsUnreadable()
+        {
+            var setup = NewSetup();
+            var hero = setup.Saves.Create("Aria");
+            var refusing = RefusingSaves(setup);
+            var raised = 0;
+            refusing.HeroesChanged += () => raised++;
+            ExpectLog(LogType.Error, "could not be loaded.*no template");
+
+            var result = refusing.Load(hero.Id);
+
+            Assert.That(result.Entered, Is.False);
+            Assert.That(refusing.ActiveHeroId, Is.Null);
+            Assert.That(raised, Is.EqualTo(1), "the slot repaints");
+            Assert.That(refusing.List().Single().UnreadableReason, Is.EqualTo("This save could not be loaded"));
+            Assert.That(inner.SetAsideValues, Is.Empty, "the file is left alone");
+        }
+
+        [Test]
+        public void ADeletedHero_ForgetsThatItWouldNotLoad()
+        {
+            var setup = NewSetup();
+            var hero = setup.Saves.Create("Aria");
+            var refusing = RefusingSaves(setup);
+            ExpectLog(LogType.Error, "could not be loaded");
+            _ = refusing.Load(hero.Id);
+
+            Assert.That(refusing.Delete(hero.Id), Is.True);
+
+            Assert.That(refusing.List(), Is.Empty);
+        }
+
+        [Test]
+        public void DeletingAnUnreadableHero_RemovesTheFileAndItsBackup()
+        {
+            var setup = NewSetup();
+            var hero = setup.Saves.Create("Aria");
+            var key = KeyOf(hero.Id);
+            store.Write(key, "{ truncated");
+            store.Write(key, "{ truncated again");
+            Assert.That(setup.Saves.List().Single().Status, Is.EqualTo(LoadStatus.Corrupt));
+            Assert.That(inner.TryReadBackup(key, out _), Is.True);
+
+            Assert.That(setup.Saves.Delete(hero.Id), Is.True);
+
+            Assert.That(setup.Saves.List(), Is.Empty);
+            Assert.That(inner.TryReadBackup(key, out _), Is.False);
+        }
+
+        [Test]
+        public void ChoosingTheLastSelectedHero_TellsTheViews()
+        {
+            var setup = NewSetup();
+            var hero = setup.Saves.Create("Aria");
+            var raised = 0;
+            setup.Saves.HeroesChanged += () => raised++;
+
+            setup.Saves.SetLastSelected(hero.Id);
+
+            Assert.That(raised, Is.EqualTo(1));
+            Assert.That(setup.Saves.LastSelectedHeroId, Is.EqualTo(hero.Id));
+        }
+
         // ── a failed write ──────────────────────────────────────────────────
 
         [Test]

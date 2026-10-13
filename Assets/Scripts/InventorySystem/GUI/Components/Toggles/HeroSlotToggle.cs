@@ -15,8 +15,9 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
     /// <c>UserCanClear</c> off, so choosing a slot switches the previous one off and clicking the
     /// active one leaves it on.
     ///
-    /// <para>A slot with a hero shows the hero's template icon, and turning it on loads the hero; one
-    /// that cannot be read is not interactable. The create slot shows <see cref="createSprite"/>, and a
+    /// <para>A slot with a hero shows the hero's template icon, and turning it on loads the hero
+    /// (<see cref="MainMenuFlow.Select"/>); one that cannot be read shows <see cref="unreadableSprite"/>
+    /// instead and is selected without being loaded, so the menu can say why and offer Delete. The create slot shows <see cref="createSprite"/>, and a
     /// <b>click</b> on it opens the <see cref="HeroNamePrompt"/>, which creates the hero once a name is
     /// confirmed - only a click: the group switching it on of its own accord (a reset to its first member)
     /// asks for nothing. Every slot after it is not interactable and shows no icon.</para>
@@ -34,6 +35,9 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         private static IHeroSaveService watched;
         private static IReadOnlyList<HeroSummary> snapshot;
         private static int snapshotFrame = -1;
+        private static string selectedId;
+
+        private static readonly Color UnreadableTint = new(1f, 0.45f, 0.4f, 1f);
 
         [Space]
         [Tooltip("The Image the hero's template icon is shown on: a child, not the toggle's own background.")]
@@ -41,6 +45,9 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
 
         [Tooltip("The icon of the create slot: the first slot with no hero.")]
         [SerializeField] private Sprite createSprite;
+
+        [Tooltip("The icon of a hero whose save cannot be read, in place of its template's.")]
+        [SerializeField] private Sprite unreadableSprite;
 
         [Tooltip("The name entry a click on the create slot opens.")]
         [SerializeField] private HeroNamePrompt namePrompt;
@@ -57,6 +64,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
             watched = null;
             snapshot = null;
             snapshotFrame = -1;
+            selectedId = null;
         }
 
         protected override void OnEnable()
@@ -98,12 +106,9 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
 
             var saves = HeroSaveService.Instance;
 
-            if (saves.ActiveHeroId == heroId)
-                return;
-
-            // A load that happened raised HeroesChanged. One that did not (a Run is in the Field, or the
-            // file is gone) left this slot pressed while the old hero is still the Session's.
-            if (!saves.Load(heroId).Entered)
+            // A selection that happened raised HeroesChanged. One that did not (a Run is in the Field, or the
+            // file is gone) left this slot pressed while the old hero is still the selected one.
+            if (!MainMenuFlow.Select(saves, heroId) && saves.LastSelectedHeroId != heroId)
                 Refresh();
         }
 
@@ -132,6 +137,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
             if (snapshot == null || snapshotFrame != Time.frameCount)
             {
                 snapshot = HeroSlots.Ordered(HeroSaveService.Instance.List());
+                selectedId = HeroSaveService.Instance.LastSelectedHeroId;
                 snapshotFrame = Time.frameCount;
             }
 
@@ -157,16 +163,19 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
 
             if (icon)
             {
+                var unreadable = view.Kind == HeroSlotKind.Hero && view.Hero.UnreadableReason != null;
                 var template = view.Hero.Template;
-                var sprite = creates ? createSprite : template ? template.Icon : null;
+                var sprite = creates ? createSprite : unreadable ? unreadableSprite : template ? template.Icon : null;
 
                 icon.sprite = sprite;
                 icon.enabled = sprite != null;
+                icon.color = unreadable ? UnreadableTint : Color.white;
             }
 
             // SyncToggle, not SetToggle: this mirrors state the save service owns, so the group's
-            // SystemCanClear governs it and the user-side UserCanClear does not refuse it.
-            SyncToggle(heroId != null && watched.ActiveHeroId == heroId);
+            // SystemCanClear governs it and the user-side UserCanClear does not refuse it. With no hero
+            // selected that is what lets the group end up with none on.
+            SyncToggle(heroId != null && selectedId == heroId);
         }
 
         // Counted among the slot toggles only, so a sibling that is not one does not shift the numbering.

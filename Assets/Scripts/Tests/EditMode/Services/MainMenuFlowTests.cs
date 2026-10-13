@@ -3,8 +3,10 @@ using Submodules.Utility.Persistence;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using ToolSmiths.InventorySystem.Services;
 using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace ToolSmiths.InventorySystem.Tests.Services
 {
@@ -180,6 +182,145 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(saves.List().Count, Is.EqualTo(2));
             Assert.That(saves.List().Select(hero => hero.Id).Distinct().Count(), Is.EqualTo(2));
             Assert.That(saves.ActiveHeroId, Is.Not.EqualTo(first), "the new hero is the selected one");
+        }
+
+        // ── selecting, including a hero that cannot be read ─────────────────
+
+        private const string DamagedId = "deadbeef";
+
+        private void Damage() => store.Write(DamagedId, "this is not a save");
+
+        [Test]
+        public void Select_AReadableHero_EntersItOnce_AndASecondSelectDoesNotLoadItAgain()
+        {
+            var id = saves.Create("Aria").Id;
+
+            Assert.That(MainMenuFlow.Select(saves, id), Is.True);
+            Assert.That(saves.ActiveHeroId, Is.EqualTo(id));
+            Assert.That(saves.LastSelectedHeroId, Is.EqualTo(id));
+
+            var heroBefore = game.Session.Hero;
+
+            Assert.That(MainMenuFlow.Select(saves, id), Is.True);
+            Assert.That(game.Session.Hero, Is.SameAs(heroBefore), "already the Session's");
+        }
+
+        [Test]
+        public void Select_AnUnreadableHero_IsSelectedNotEntered_PlayIsOff_AndTheFileIsKept()
+        {
+            var aria = saves.Create("Aria").Id;
+            _ = MainMenuFlow.Select(saves, aria);
+            var heroBefore = game.Session.Hero;
+            Damage();
+
+            Assert.That(MainMenuFlow.Select(saves, DamagedId), Is.False);
+
+            Assert.That(saves.LastSelectedHeroId, Is.EqualTo(DamagedId));
+            Assert.That(game.Session.Hero, Is.SameAs(heroBefore), "the Session was not touched");
+            Assert.That(MainMenuFlow.CanPlay(saves), Is.False, "the previous hero is still loaded, but it is not the selection");
+            Assert.That(MainMenuFlow.Play(saves, Enter), Is.False);
+            Assert.That(requested, Is.Null);
+            Assert.That(store.Keys(), Does.Contain(DamagedId), "not set aside, so it can be deleted");
+            Assert.That(MainMenuFlow.TrySelected(saves, out var selected), Is.True);
+            Assert.That(selected.Id, Is.EqualTo(DamagedId));
+            Assert.That(selected.UnreadableReason, Is.EqualTo("File damaged and no backup could be read"));
+        }
+
+        [Test]
+        public void Select_AHeroThatReadsButWillNotLoad_IsSelectedWithTheReason_AndNeverEntersTheSession()
+        {
+            var id = saves.Create("Aria").Id;
+            var refusing = game.RefusingSavesOver(config, store, () => now);
+            LogAssert.Expect(LogType.Error, new Regex("could not be loaded"));
+
+            Assert.That(MainMenuFlow.Select(refusing, id), Is.False);
+
+            Assert.That(refusing.ActiveHeroId, Is.Null);
+            Assert.That(MainMenuFlow.CanPlay(refusing), Is.False);
+            Assert.That(MainMenuFlow.TrySelected(refusing, out var selected), Is.True);
+            Assert.That(selected.UnreadableReason, Is.EqualTo("This save could not be loaded"));
+        }
+
+        [Test]
+        public void Select_AHeroWhoseFileIsGone_SelectsNothing()
+        {
+            Assert.That(MainMenuFlow.Select(saves, "nosuchhero"), Is.False);
+            Assert.That(saves.LastSelectedHeroId, Is.Null);
+        }
+
+        // ── deleting ────────────────────────────────────────────────────────
+
+        [Test]
+        public void TheDeleteQuestion_NamesTheHero_AndAnUnreadableOneIsCalledWhatItIs()
+        {
+            var aria = new HeroSummary("a", "Aria", 3u, now, LoadStatus.Loaded);
+            var damaged = new HeroSummary("b", string.Empty, 0u, now, LoadStatus.Corrupt);
+
+            Assert.That(MainMenuFlow.DeleteQuestion(aria), Does.Contain("Aria"));
+            Assert.That(MainMenuFlow.DeleteQuestion(damaged), Does.Contain("unreadable"));
+        }
+
+        [Test]
+        public void DeleteSelected_RemovesTheHero_AndSelectsTheNewestOfTheOthers()
+        {
+            var oldest = saves.Create("Aria").Id;
+            now = now.AddHours(1);
+            var newer = saves.Create("Bram").Id;
+            now = now.AddHours(1);
+            var selected = saves.Create("Cass").Id;
+            _ = MainMenuFlow.Select(saves, selected);
+
+            Assert.That(MainMenuFlow.DeleteSelected(saves), Is.True);
+
+            Assert.That(saves.List().Select(hero => hero.Id), Is.EquivalentTo(new[] { oldest, newer }));
+            Assert.That(saves.ActiveHeroId, Is.EqualTo(newer));
+            Assert.That(saves.LastSelectedHeroId, Is.EqualTo(newer));
+            Assert.That(MainMenuFlow.CanPlay(saves), Is.True);
+        }
+
+        [Test]
+        public void DeleteSelected_TheOnlyHero_LeavesNoneSelected_SoNothingCanRecreateIt()
+        {
+            var id = saves.Create("Aria").Id;
+            _ = MainMenuFlow.Select(saves, id);
+
+            Assert.That(MainMenuFlow.DeleteSelected(saves), Is.True);
+
+            Assert.That(saves.List(), Is.Empty);
+            Assert.That(saves.ActiveHeroId, Is.Null);
+            Assert.That(saves.LastSelectedHeroId, Is.Null);
+            Assert.That(MainMenuFlow.CanPlay(saves), Is.False);
+            Assert.That(MainMenuFlow.TrySelected(saves, out _), Is.False);
+            Assert.That(saves.Save().Wrote, Is.False, "a later save cannot write the deleted hero back");
+            Assert.That(store.Keys().Where(key => key != "account"), Is.Empty);
+        }
+
+        [Test]
+        public void DeleteSelected_AnUnreadableHero_RemovesItsFiles_AndSelectsTheNewestReadableOne()
+        {
+            var oldest = saves.Create("Aria").Id;
+            now = now.AddHours(1);
+            var newest = saves.Create("Bram").Id;
+            _ = MainMenuFlow.Select(saves, oldest);
+            Damage();
+            _ = MainMenuFlow.Select(saves, DamagedId);
+
+            Assert.That(MainMenuFlow.DeleteSelected(saves), Is.True);
+
+            Assert.That(store.Keys(), Does.Not.Contain(DamagedId));
+            Assert.That(store.TryReadBackup(DamagedId, out _), Is.False);
+            Assert.That(saves.ActiveHeroId, Is.EqualTo(newest));
+            Assert.That(saves.LastSelectedHeroId, Is.EqualTo(newest));
+        }
+
+        [Test]
+        public void DeleteSelected_WithNothingSelected_DeletesNothing()
+        {
+            _ = saves.Create("Aria");
+
+            Assert.That(MainMenuFlow.DeleteSelected(saves), Is.False);
+
+            Assert.That(saves.List().Count, Is.EqualTo(1));
         }
     }
 }

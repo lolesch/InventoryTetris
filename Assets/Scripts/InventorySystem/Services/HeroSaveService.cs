@@ -31,6 +31,7 @@ namespace ToolSmiths.InventorySystem.Services
         private readonly ISaveSerializer serializer;
         private readonly Func<DateTime> utcNow;
         private readonly List<Action> beforeSave = new();
+        private readonly HashSet<string> notLoadable = new();
 
         private Hero activeHero;
         private string activeName;
@@ -159,6 +160,8 @@ namespace ToolSmiths.InventorySystem.Services
             foreach (var key in store.Keys().Where(key => key != AccountKey && HeroFileKey.IdOf(key) == target).ToArray())
                 deleted |= store.Delete(key);
 
+            _ = notLoadable.Remove(target);
+
             if (LastSelectedHeroId == id)
                 TrySetLastSelected(null);
 
@@ -196,6 +199,13 @@ namespace ToolSmiths.InventorySystem.Services
 
         public void SetLastSelected(string id)
         {
+            Remember(id);
+            RaiseHeroesChanged();
+        }
+
+        // The account write alone, for a caller that raises the change itself.
+        private void Remember(string id)
+        {
             if (id != null && KeyOf(Checked(id)) == null)
                 throw new ArgumentException($"There is no saved hero '{id}'.", nameof(id));
 
@@ -222,9 +232,27 @@ namespace ToolSmiths.InventorySystem.Services
                 return new HeroLoadResult(result.Status, false, null);
             }
 
-            if (!session.TryLoad(result.Payload, locations, out var report))
+            RestoreReport report;
+            bool entered;
+
+            // A file that reads can still fail to become a hero (a value the restore cannot place). The Session
+            // was not touched, so the hero stays listed, marked, for the player to delete.
+            try
+            {
+                entered = session.TryLoad(result.Payload, locations, out report);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError($"Hero save '{id}' could not be loaded: {exception.Message}");
+                _ = notLoadable.Add(id);
+                RaiseHeroesChanged();
+                return new HeroLoadResult(result.Status, false, null);
+            }
+
+            if (!entered)
                 return new HeroLoadResult(result.Status, false, null);
 
+            _ = notLoadable.Remove(id);
             ActiveHeroId = id;
             activeHero = session.Hero;
             activeName = result.Payload.name;
@@ -343,7 +371,7 @@ namespace ToolSmiths.InventorySystem.Services
         {
             try
             {
-                SetLastSelected(id);
+                Remember(id);
             }
             catch (Exception exception)
             {
@@ -402,7 +430,8 @@ namespace ToolSmiths.InventorySystem.Services
 
             return result.HasPayload
                 ? new HeroSummary(id, result.Payload.name, result.Payload.level, result.SavedAtUtc, result.Status,
-                    config.FindHero(result.Payload.templateId), result.Payload.createdAtTicks)
+                    config.FindHero(result.Payload.templateId), result.Payload.createdAtTicks,
+                    notLoadable.Contains(id) ? HeroSummary.NotLoadableReason : null)
                 : new HeroSummary(id, string.Empty, 0u, result.SavedAtUtc, result.Status);
         }
 

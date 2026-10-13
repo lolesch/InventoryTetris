@@ -10,8 +10,18 @@ namespace ToolSmiths.InventorySystem.Services
     /// <summary>One saved hero as the hero list shows it. A hero whose file cannot be read has no name, no template and level 0.</summary>
     public readonly struct HeroSummary
     {
+        /// <summary>Shown for a file that is damaged and has no usable backup.</summary>
+        public const string CorruptReason = "File damaged and no backup could be read";
+
+        /// <summary>Shown for a file written by a newer build.</summary>
+        public const string NewerVersionReason = "Saved by a newer version of the game";
+
+        /// <summary>Shown for a file that read but would not become a hero when it was chosen.</summary>
+        public const string NotLoadableReason = "This save could not be loaded";
+
+        /// <param name="loadFailure">Why a file that reads would not load, or <c>null</c>.</param>
         public HeroSummary(string id, string name, uint level, DateTime savedAtUtc, LoadStatus status, HeroData template = null,
-            long createdAtTicks = 0L)
+            long createdAtTicks = 0L, string loadFailure = null)
         {
             Id = id;
             Name = name;
@@ -20,7 +30,17 @@ namespace ToolSmiths.InventorySystem.Services
             Status = status;
             Template = template;
             CreatedAtTicks = createdAtTicks;
+            UnreadableReason = status switch
+            {
+                LoadStatus.Corrupt => CorruptReason,
+                LoadStatus.NewerVersion => NewerVersionReason,
+                _ => loadFailure,
+            };
         }
+
+        /// <summary>Why the hero cannot be entered, in words for the player; <c>null</c> for a hero that loads. The file
+        /// is not read as a hero in any of these cases, and the only thing left to do with it is delete it.</summary>
+        public string UnreadableReason { get; }
 
         /// <summary>When the hero was created, in UTC ticks; 0 for a save written before there was a stamp
         /// and for a file that cannot be read. Unlike <see cref="SavedAtUtc"/> a save does not move it, so
@@ -129,7 +149,7 @@ namespace ToolSmiths.InventorySystem.Services
 
         /// <summary>
         /// Raised after the hero list or the active hero changed: a hero was created, deleted, renamed or
-        /// loaded, or an unreadable file was set aside. A view of the list refreshes from it instead of
+        /// loaded, the last-selected hero was chosen, a hero would not load, or an unreadable file was set aside. A view of the list refreshes from it instead of
         /// every caller that changes a hero having to know the view exists. A handler that throws is logged
         /// and does not undo the change.
         /// </summary>
@@ -151,7 +171,11 @@ namespace ToolSmiths.InventorySystem.Services
         /// <summary>The hero last loaded or chosen, or <c>null</c> when there is none.</summary>
         string LastSelectedHeroId { get; }
 
-        /// <summary>Makes <paramref name="id"/> (or none, for <c>null</c>) the last-selected hero. Throws for an id with no file.</summary>
+        /// <summary>
+        /// Makes <paramref name="id"/> (or none, for <c>null</c>) the last-selected hero and raises
+        /// <see cref="HeroesChanged"/>. Throws for an id with no file. The id need not be one that reads: the
+        /// Main Menu selects an unreadable hero this way so it can be shown and deleted.
+        /// </summary>
         void SetLastSelected(string id);
 
         /// <summary>

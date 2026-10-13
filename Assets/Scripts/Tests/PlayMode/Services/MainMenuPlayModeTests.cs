@@ -46,7 +46,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 
         // The menu over a saves folder holding Aria, who is the selected hero when the menu opens (a launch
         // continues the last-selected one), or over an empty folder.
-        private IEnumerator OpenMenu(bool withHero)
+        private IEnumerator OpenMenu(bool withHero, Action<IHeroSaveService> seed = null)
         {
             folder = Path.Combine(Path.GetTempPath(), "InventoryTetris-menu-" + Guid.NewGuid().ToString("N"));
 
@@ -56,6 +56,8 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 
             if (withHero)
                 _ = Saves.Load(Saves.Create("Aria").Id);
+
+            seed?.Invoke(Saves);
 
             yield return SceneManager.LoadSceneAsync("MainMenu");
             yield return null;
@@ -234,6 +236,177 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             Assert.That(prompt.gameObject.activeSelf, Is.False, "the Cancel button closes it too");
             Assert.That(Saves.List().Count, Is.EqualTo(heroes));
             Assert.That(Saves.ActiveHeroId, Is.EqualTo(active));
+        }
+
+        // ── delete, and the slots that cannot be read ───────────────────────
+
+        [Serializable]
+        private sealed class AnyPayload
+        {
+            public int value;
+        }
+
+        private static Selectable SlotOf(string heroId) =>
+            UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include)
+                .Where(component => component.GetType().Name == "HeroSlotToggle")
+                .First(slot => Member<string>(slot, "heroId") == heroId)
+                .GetComponent<Selectable>();
+
+        private static bool IsOn(Selectable slot) => (bool)slot.GetType().GetProperty("IsOn")!.GetValue(slot);
+
+        private string SavePath(string name, string id) => Path.Combine(folder, HeroFileKey.Compose(name, id) + ".sav");
+
+        [UnityTest]
+        public IEnumerator Delete_AsksFirstNamingTheHero_AndCancelDeletesNothing()
+        {
+            yield return OpenMenu(withHero: true);
+            var prompt = Find<MonoBehaviour>("HeroDeletePrompt");
+            var question = Member<TextMeshProUGUI>(prompt, "question");
+            var delete = Find<Selectable>("HeroDeleteButton");
+            var aria = Saves.ActiveHeroId;
+            Assert.That(delete.interactable, Is.True, "premise: a hero is selected");
+            Assert.That(prompt.gameObject.activeSelf, Is.False, "premise: the confirmation starts closed");
+
+            Click(delete);
+            yield return null;
+
+            Assert.That(prompt.gameObject.activeSelf, Is.True);
+            Assert.That(question.text, Does.Contain("Aria"), "it names the hero");
+            Assert.That(Saves.List().Count, Is.EqualTo(1), "asking deletes nothing");
+
+            Assert.That(ServiceLocator.Get<ICancelChain>().Cancel(), Is.True, "the Cancel key dismisses it");
+            Assert.That(prompt.gameObject.activeSelf, Is.False);
+            Assert.That(Saves.List().Single().Id, Is.EqualTo(aria));
+
+            Click(delete);
+            yield return null;
+            Click(Member<Component>(prompt, "cancel"));
+            yield return null;
+
+            Assert.That(prompt.gameObject.activeSelf, Is.False, "the Cancel button dismisses it too");
+            Assert.That(Saves.List().Single().Id, Is.EqualTo(aria));
+            Assert.That(Saves.ActiveHeroId, Is.EqualTo(aria));
+            Assert.That(Find<Selectable>("PlayButton").interactable, Is.True);
+        }
+
+        [UnityTest]
+        public IEnumerator Delete_OfTheOnlyHero_LeavesNoneSelected_AndNothingToPlayOrDelete()
+        {
+            yield return OpenMenu(withHero: true);
+            var prompt = Find<MonoBehaviour>("HeroNamePrompt");
+            var deletePrompt = Find<MonoBehaviour>("HeroDeletePrompt");
+            var aria = Saves.ActiveHeroId;
+
+            Click(Find<Selectable>("HeroDeleteButton"));
+            yield return null;
+            Click(Member<Component>(deletePrompt, "confirm"));
+            yield return null;
+
+            Assert.That(deletePrompt.gameObject.activeSelf, Is.False);
+            Assert.That(Saves.List(), Is.Empty);
+            Assert.That(Saves.ActiveHeroId, Is.Null);
+            Assert.That(Saves.LastSelectedHeroId, Is.Null, "a later quit cannot bring it back");
+            Assert.That(File.Exists(SavePath("Aria", aria)), Is.False);
+            Assert.That(Find<Selectable>("PlayButton").interactable, Is.False);
+            Assert.That(Find<Selectable>("HeroDeleteButton").interactable, Is.False);
+            Assert.That(Find<MonoBehaviour>("HeroShowcaseText").GetComponent<TextMeshProUGUI>().text, Is.Empty);
+            Assert.That(prompt.gameObject.activeSelf, Is.False, "and the slots did not re-select anything, or open the name entry");
+            Assert.That(UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include)
+                .Where(component => component.GetType().Name == "HeroSlotToggle")
+                .Any(slot => IsOn(slot.GetComponent<Selectable>())), Is.False, "no slot is on");
+        }
+
+        [UnityTest]
+        public IEnumerator Delete_SelectsTheNextHeroThatReads()
+        {
+            string bran = null;
+            yield return OpenMenu(withHero: true, seed: saves => bran = saves.Create("Bran").Id);
+            var aria = Saves.ActiveHeroId;
+            var deletePrompt = Find<MonoBehaviour>("HeroDeletePrompt");
+
+            Click(Find<Selectable>("HeroDeleteButton"));
+            yield return null;
+            Click(Member<Component>(deletePrompt, "confirm"));
+            yield return null;
+
+            Assert.That(Saves.List().Single().Id, Is.EqualTo(bran));
+            Assert.That(Saves.ActiveHeroId, Is.EqualTo(bran), "the remaining hero is selected and loaded");
+            Assert.That(IsOn(SlotOf(bran)), Is.True);
+            Assert.That(Find<Selectable>("PlayButton").interactable, Is.True);
+            Assert.That(Find<MonoBehaviour>("HeroShowcaseText").GetComponent<TextMeshProUGUI>().text, Does.Contain("Kills"));
+            Assert.That(File.Exists(SavePath("Aria", aria)), Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator AnUnreadableSlot_IsSelectable_ShowsItsReason_AndOffersOnlyDelete()
+        {
+            string bran = null, damaged = null, future = null;
+            yield return OpenMenu(withHero: true, seed: saves =>
+            {
+                bran = saves.Create("Bran").Id;
+                damaged = saves.Create("Cass").Id;
+                future = saves.Create("Dana").Id;
+
+                File.WriteAllText(SavePath("Cass", damaged), "this is not a save");
+                File.WriteAllText(SavePath("Cass", damaged) + ".bak", "nor is this");
+
+                // Written twice: the second leaves the first as the file's backup.
+                var newer = new SaveSlot<AnyPayload>(new FileSaveStore(folder), new JsonUtilitySerializer(),
+                    HeroFileKey.Compose("Dana", future), 2);
+                newer.Save(new AnyPayload());
+                newer.Save(new AnyPayload());
+            });
+            var aria = Saves.ActiveHeroId;
+            var showcase = Find<MonoBehaviour>("HeroShowcaseText").GetComponent<TextMeshProUGUI>();
+            var play = Find<Selectable>("PlayButton");
+            var delete = Find<Selectable>("HeroDeleteButton");
+            var deletePrompt = Find<MonoBehaviour>("HeroDeletePrompt");
+            Assert.That(SlotOf(damaged).interactable, Is.True, "an unreadable slot can be chosen");
+            Assert.That(SlotOf(future).interactable, Is.True);
+
+            Click(SlotOf(damaged));
+            yield return null;
+
+            Assert.That(showcase.text, Is.EqualTo("File damaged and no backup could be read"));
+            Assert.That(IsOn(SlotOf(damaged)), Is.True);
+            Assert.That(IsOn(SlotOf(aria)), Is.False);
+            Assert.That(Saves.LastSelectedHeroId, Is.EqualTo(damaged));
+            Assert.That(Saves.ActiveHeroId, Is.EqualTo(aria), "it never entered the Session");
+            Assert.That(play.interactable, Is.False, "only Delete is available");
+            Assert.That(delete.interactable, Is.True);
+            Assert.That(File.Exists(SavePath("Cass", damaged)), Is.True, "choosing it leaves the file alone");
+
+            Click(play);
+            yield return null;
+            Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("MainMenu"));
+
+            Click(SlotOf(future));
+            yield return null;
+
+            Assert.That(showcase.text, Is.EqualTo("Saved by a newer version of the game"));
+            Assert.That(play.interactable, Is.False);
+            Assert.That(delete.interactable, Is.True);
+
+            Click(delete);
+            yield return null;
+            Assert.That(Member<TextMeshProUGUI>(deletePrompt, "question").text, Does.Contain("unreadable"));
+            Click(Member<Component>(deletePrompt, "confirm"));
+            yield return null;
+
+            Assert.That(Directory.GetFiles(folder, "*" + future + "*"), Is.Empty, "the file and its backup are both gone");
+            Assert.That(File.Exists(SavePath("Cass", damaged)), Is.True, "the other one is untouched");
+            Assert.That(Saves.ActiveHeroId, Is.EqualTo(bran), "the newest hero that reads is selected");
+            Assert.That(play.interactable, Is.True);
+            Assert.That(IsOn(SlotOf(bran)), Is.True);
+
+            Click(SlotOf(damaged));
+            yield return null;
+            Click(delete);
+            yield return null;
+            Click(Member<Component>(deletePrompt, "confirm"));
+            yield return null;
+
+            Assert.That(Directory.GetFiles(folder, "*" + damaged + "*"), Is.Empty, "a damaged file and its backup go too");
         }
 
         [UnityTest]

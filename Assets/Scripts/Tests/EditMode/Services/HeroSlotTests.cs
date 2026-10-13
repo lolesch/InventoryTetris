@@ -112,13 +112,13 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
-        public void IsUsable_IsTrueForTheCreateSlotAndAReadableHero_OnlyThose()
+        public void IsUsable_IsTrueForTheCreateSlotAndEveryHero_AnUnreadableOneIncluded()
         {
             Assert.That(new HeroSlot(HeroSlotKind.Create).IsUsable, Is.True);
             Assert.That(new HeroSlot(HeroSlotKind.Hero, Summary("a", 1)).IsUsable, Is.True);
             Assert.That(new HeroSlot(HeroSlotKind.Hero, Summary("a", 1, LoadStatus.RestoredFromBackup)).IsUsable, Is.True);
-            Assert.That(new HeroSlot(HeroSlotKind.Hero, Summary("a", 1, LoadStatus.Corrupt)).IsUsable, Is.False);
-            Assert.That(new HeroSlot(HeroSlotKind.Hero, Summary("a", 1, LoadStatus.NewerVersion)).IsUsable, Is.False);
+            Assert.That(new HeroSlot(HeroSlotKind.Hero, Summary("a", 1, LoadStatus.Corrupt)).IsUsable, Is.True, "selectable, to show why and to delete");
+            Assert.That(new HeroSlot(HeroSlotKind.Hero, Summary("a", 1, LoadStatus.NewerVersion)).IsUsable, Is.True);
             Assert.That(new HeroSlot(HeroSlotKind.Empty).IsUsable, Is.False);
         }
 
