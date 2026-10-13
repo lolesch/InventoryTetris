@@ -146,7 +146,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         }
 
         [UnityTest]
-        public IEnumerator TheCancelKey_DismissesTheNotice_AndASecondPressFindsNothing()
+        public IEnumerator TheCancelKey_DismissesTheNotice_AndASecondPressOpensThePauseMenu()
         {
             yield return EnterGame(DamageThePrimary);
             var prompt = Member<GameObject>(Panel(), "prompt");
@@ -154,7 +154,8 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 
             Assert.That(ServiceLocator.Get<ICancelChain>().Cancel(), Is.True, "the open notice consumes the press");
             Assert.That(prompt.activeSelf, Is.False);
-            Assert.That(ServiceLocator.Get<ICancelChain>().Cancel(), Is.False);
+            Assert.That(ServiceLocator.Get<ICancelChain>().Cancel(), Is.True, "nothing left above it, the press reaches the Pause Menu");
+            Assert.That(ServiceLocator.Get<IPauseMenu>().IsOpen, Is.True);
         }
     }
 }

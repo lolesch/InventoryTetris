@@ -149,6 +149,8 @@ namespace ToolSmiths.InventorySystem.Services
             var simulation = new SimulationService(session, items, inventory, config, rolls);
             registry.Register<ISimulationService>(simulation);
 
+            registry.Register<IPauseMenu>(new PauseMenu(simulation));
+
             // The heroes on disk. It reads and writes nothing until a caller asks.
             registry.Register<IHeroSaveService>(
                 new HeroSaveService(session, items, config, simulation, saves, new JsonUtilitySerializer()));
