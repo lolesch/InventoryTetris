@@ -149,7 +149,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                     /// lands there instead of the Inventory.
                     var hero = Session.Instance.Hero;
 
-                    _ = PickUpTransaction.Run(Container, position, hero, hero.Inventory, hero.Equipment);
+                    _ = PickUpTransaction.Run(Container, position, hero);
                     return true;
 
                 case QuickMoveIntentKind.MoveToContainer:
@@ -196,7 +196,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             var hero = Session.Instance.Hero;
             var price = VendorTransaction.BuyPrice(package.Item, ItemService.Instance.Catalog) * package.Amount;
 
-            _ = VendorTransaction.Buy(Container, position, package, hero.Wallet, price, hero, hero.Equipment);
+            _ = VendorTransaction.Buy(Container, position, package, hero.Wallet, price, hero);
         }
 
         public void OnPointerExit(PointerEventData eventData)

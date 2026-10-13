@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using NUnit.Framework;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
@@ -60,10 +61,32 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
                 this.inventory = inventory;
             }
 
+            public IReadOnlyList<AbstractDimensionalContainer> ReceivingContainers => new AbstractDimensionalContainer[] { equipment, inventory };
+
             public bool PickUpItem(ItemInstance item, uint amount)
             {
                 var package = new Package(null, item, amount);
                 return ItemAcquisition.TryPlace(ref package, equipment, inventory);
+            }
+        }
+
+        /// <summary>
+        /// Adds to a third container before it reports no room: only a receiver that declares
+        /// that container lets the transaction roll the write back.
+        /// </summary>
+        private sealed class OverflowingReceiver : IItemReceiver
+        {
+            private readonly CharacterInventory overflow;
+
+            public OverflowingReceiver(CharacterInventory overflow) => this.overflow = overflow;
+
+            public IReadOnlyList<AbstractDimensionalContainer> ReceivingContainers => new AbstractDimensionalContainer[] { overflow };
+
+            public bool PickUpItem(ItemInstance item, uint amount)
+            {
+                var package = new Package(overflow, item, amount);
+                _ = overflow.TryAddToContainer(ref package);
+                return false;
             }
         }
 
@@ -79,7 +102,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var potion = stash.StoredPackages[new Vector2Int(0, 0)].Item;
 
             var moved = PickUpTransaction.Run(stash, new Vector2Int(0, 0),
-                new FakePlayer(equipment, inventory), inventory, equipment);
+                new FakePlayer(equipment, inventory));
 
             Assert.That(moved, Is.True);
             Assert.That(stash.StoredPackages, Is.Empty, "the Stash cell was vacated");
@@ -100,7 +123,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var sword = stash.StoredPackages[new Vector2Int(0, 0)].Item;
 
             var moved = PickUpTransaction.Run(stash, new Vector2Int(0, 0),
-                new FakePlayer(equipment, inventory), inventory, equipment);
+                new FakePlayer(equipment, inventory));
 
             Assert.That(moved, Is.True);
             Assert.That(stash.StoredPackages, Is.Empty, "the Stash cell was vacated");
@@ -121,7 +144,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var sword = stash.StoredPackages[new Vector2Int(0, 0)].Item;
 
             var moved = PickUpTransaction.Run(stash, new Vector2Int(0, 0),
-                new FakePlayer(equipment, inventory), inventory, equipment);
+                new FakePlayer(equipment, inventory));
 
             Assert.That(moved, Is.True);
             Assert.That(equipment.StoredPackages, Is.Empty, "auto-equip is off");
@@ -146,7 +169,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var incoming = stash.StoredPackages[new Vector2Int(0, 0)].Item;
 
             var moved = PickUpTransaction.Run(stash, new Vector2Int(0, 0),
-                new FakePlayer(equipment, inventory), inventory, equipment);
+                new FakePlayer(equipment, inventory));
 
             Assert.That(moved, Is.True);
             Assert.That(equipment.StoredPackages.Count, Is.EqualTo(1), "the worn helm was not swapped out");
@@ -170,11 +193,26 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var potion = stash.StoredPackages[new Vector2Int(0, 0)].Item;
 
             var moved = PickUpTransaction.Run(stash, new Vector2Int(0, 0),
-                new FakePlayer(equipment, inventory), inventory, equipment);
+                new FakePlayer(equipment, inventory));
 
             Assert.That(moved, Is.False);
             Assert.That(stash.StoredPackages[new Vector2Int(0, 0)].Item, Is.SameAs(potion), "the item stayed in the Stash");
             Assert.That(inventory.StoredPackages.Count, Is.EqualTo(1), "the Inventory is unchanged");
+        }
+
+        [Test]
+        public void ARefusedPickUp_RollsBackEveryContainerTheReceiverDeclares()
+        {
+            var stash = Stash();
+            var overflow = Inventory();
+            _ = stash.AddAtPosition(new Vector2Int(0, 0), new Package(stash, Potion(), 1u));
+            var potion = stash.StoredPackages[new Vector2Int(0, 0)].Item;
+
+            var moved = PickUpTransaction.Run(stash, new Vector2Int(0, 0), new OverflowingReceiver(overflow));
+
+            Assert.That(moved, Is.False);
+            Assert.That(stash.StoredPackages[new Vector2Int(0, 0)].Item, Is.SameAs(potion), "the item stayed in the Stash");
+            Assert.That(overflow.StoredPackages, Is.Empty, "the declared third container was rolled back");
         }
 
         // ── nothing stored at the cell ──────────────────────────────────────
@@ -187,7 +225,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var equipment = Equipment();
 
             var moved = PickUpTransaction.Run(stash, new Vector2Int(0, 0),
-                new FakePlayer(equipment, inventory), inventory, equipment);
+                new FakePlayer(equipment, inventory));
 
             Assert.That(moved, Is.False);
             Assert.That(inventory.StoredPackages, Is.Empty);
@@ -201,7 +239,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var equipment = Equipment();
             _ = stash.AddAtPosition(new Vector2Int(0, 0), new Package(stash, Potion(), 1u));
 
-            var moved = PickUpTransaction.Run(stash, new Vector2Int(0, 0), null, inventory, equipment);
+            var moved = PickUpTransaction.Run(stash, new Vector2Int(0, 0), null);
 
             Assert.That(moved, Is.False);
             Assert.That(stash.StoredPackages, Is.Not.Empty, "the item stayed put");
@@ -220,7 +258,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var invoked = false;
 
             var moved = PickUpTransaction.Run(stash, new Vector2Int(0, 0),
-                new FakePlayer(equipment, inventory), inventory, equipment,
+                new FakePlayer(equipment, inventory),
                 onAcquired: _ => invoked = true);
 
             Assert.That(moved, Is.True);
@@ -240,7 +278,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var invoked = false;
 
             var moved = PickUpTransaction.Run(stash, new Vector2Int(0, 0),
-                new FakePlayer(equipment, inventory), inventory, equipment,
+                new FakePlayer(equipment, inventory),
                 onAcquired: _ => invoked = true);
 
             Assert.That(moved, Is.False);
