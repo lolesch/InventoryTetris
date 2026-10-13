@@ -156,9 +156,6 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <summary>The hero fighting this Encounter — its live magic find and item quantity (issue #24).</summary>
         public IHeroCombatant Hero => _hero;
 
-        /// <summary>The fraction a hit's damage may stray from its base (<see cref="EncounterTuning.DamageSpread"/>) - what a damage number's size reference reads (issue #213).</summary>
-        public float DamageSpread => _tuning.DamageSpread;
-
         public SimulationPhase Phase { get; private set; } = SimulationPhase.Fighting;
 
         /// <summary>Whether the first enemies are still on their way — the sim is <see cref="SimulationPhase.Arriving"/>.</summary>
@@ -605,8 +602,15 @@ namespace ToolSmiths.InventorySystem.Simulation
             var rawAmount = baseDamage * (1f + ((float)_hitRolls.Next() * 2f - 1f) * _tuning.DamageSpread);
             var wasDown = target.IsDown;
             var lost = type == DamageType.MagicalDamage ? target.ReceiveMagical(rawAmount) : target.ReceivePhysical(rawAmount);
-            if (!wasDown)
-                HitLanded?.Invoke(new HitEvent(dealer, target, type, rawAmount, lost));
+            if (wasDown)
+                return;
+
+            var heroIsTarget = ReferenceEquals(target, _hero);
+            var reference = heroIsTarget
+                ? DamageReference.OfEnemies(_profile, type, _tuning.DamageSpread)
+                : DamageReference.OfHero(_hero, type, _tuning.DamageSpread);
+            var place = target is Enemy enemy ? enemy.Position : HeroPosition;
+            HitLanded?.Invoke(new HitEvent(dealer, target, type, rawAmount, lost, reference, place));
         }
 
         private void ResolveEnemyStrikes(float dt)

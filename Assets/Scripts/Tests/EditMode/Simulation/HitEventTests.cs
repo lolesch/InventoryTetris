@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
+using Submodules.Utility.Extensions;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Items;
@@ -178,6 +179,96 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             sim.Advance(Tick);
 
             Assert.That(hits.Where(h => ReferenceEquals(h.Target, hero)), Is.Empty);
+        }
+
+        // --- the scale and the place -------------------------------------------
+
+        // The Standard arena puts enemies off the origin and walks the hero, so a Coordinate read off the event is
+        // not vacuously the origin. Each hit is stored with where its target stood the moment it landed.
+        private static EncounterSimulation OnTheArena(FakeHero hero, EncounterProfile profile, float spread = 0.2f) => new(
+            hero, profile, new ConstantRollSource(0f), Behaviours.Engaging(10),
+            new EncounterTuning { Arena = ArenaTuning.Standard(), DamageSpread = spread });
+
+        private static List<(HitEvent Hit, Coordinate Stood)> RecordWithPlace(EncounterSimulation sim)
+        {
+            var hits = new List<(HitEvent, Coordinate)>();
+            sim.HitLanded += hit => hits.Add((hit, hit.Target is Enemy enemy ? enemy.Position : sim.HeroPosition));
+            return hits;
+        }
+
+        private static void RunUntil(EncounterSimulation sim, System.Func<bool> done, int maxTicks = 300)
+        {
+            for (var i = 0; i < maxTicks && !done(); i++) sim.Advance(Tick);
+        }
+
+        [Test]
+        public void TheHerosStrike_CarriesHisBestPhysicalHit_AndWhereTheEnemyStood()
+        {
+            var hero = Striker(10f);
+            hero.MovementSpeed = 300f; // he has to walk out to the skirmisher standing off
+            var sim = OnTheArena(hero, Profiles.Solo(EnemyArchetype.Skirmisher));
+            var hits = RecordWithPlace(sim);
+
+            RunUntil(sim, () => hits.Any(h => h.Hit.DamageType == DamageType.PhysicalDamage));
+
+            var (hit, stood) = hits.First(h => h.Hit.DamageType == DamageType.PhysicalDamage);
+            Assert.That(hit.Reference, Is.EqualTo(12f).Within(0.0001f), "10 base at the top of a 20 % spread");
+            Assert.That(hit.TargetPosition, Is.EqualTo(stood));
+            Assert.That(hit.TargetPosition, Is.Not.EqualTo(sim.Arena.Origin), "the skirmisher stands off");
+        }
+
+        [Test]
+        public void TheHerosCast_CarriesHisBestMagicalHit_AndWhereTheEnemyStood()
+        {
+            var sim = OnTheArena(Caster(8f), Profiles.Solo(EnemyArchetype.Brute));
+            var hits = RecordWithPlace(sim);
+
+            RunUntil(sim, () => hits.Any(h => h.Hit.DamageType == DamageType.MagicalDamage));
+
+            var (hit, stood) = hits.First(h => h.Hit.DamageType == DamageType.MagicalDamage);
+            Assert.That(hit.Reference, Is.EqualTo(9.6f).Within(0.0001f), "8 base at the top of a 20 % spread");
+            Assert.That(hit.TargetPosition, Is.EqualTo(stood));
+        }
+
+        [Test]
+        public void ABrutesStrike_CarriesTheLocationsStrongestPhysicalHit_AndWhereTheHeroStood()
+        {
+            var sim = OnTheArena(Passive(), Profiles.Solo(EnemyArchetype.Brute));
+            var hits = RecordWithPlace(sim);
+
+            RunUntil(sim, () => hits.Count > 0);
+
+            var (hit, stood) = hits.First(h => ReferenceEquals(h.Hit.Target, sim.Hero));
+            Assert.That(hit.Reference, Is.EqualTo(6.12f).Within(0.0001f), "brute damage 5.1 at source level 5, top of the spread");
+            Assert.That(hit.TargetPosition, Is.EqualTo(stood));
+            Assert.That(hit.TargetPosition, Is.EqualTo(sim.HeroPosition));
+        }
+
+        [Test]
+        public void ASkirmishersStrike_CarriesTheLocationsStrongestMagicalHit_NotItsOwnPhysicalOne()
+        {
+            var sim = OnTheArena(Passive(), Profiles.Solo(EnemyArchetype.Skirmisher));
+            var hits = RecordWithPlace(sim);
+
+            RunUntil(sim, () => hits.Count > 0);
+
+            var hit = hits.First(h => ReferenceEquals(h.Hit.Target, sim.Hero)).Hit;
+            Assert.That(hit.DamageType, Is.EqualTo(DamageType.MagicalDamage));
+            Assert.That(hit.Reference, Is.EqualTo(3.6f).Within(0.0001f), "skirmisher damage 3 at source level 5, top of the spread");
+        }
+
+        [Test]
+        public void AHitOnTheWalkingHero_CarriesWhereHeStoodWhenItLanded()
+        {
+            var hero = new FakeHero { PhysicalDamage = 0.1f, MagicalDamage = 0f, Resource = 0f, AttackSpeed = 10f, MovementSpeed = 300f };
+            var sim = OnTheArena(hero, Profiles.Solo(EnemyArchetype.Skirmisher));
+            var hits = RecordWithPlace(sim);
+
+            RunUntil(sim, () => hits.Any(h => ReferenceEquals(h.Hit.Target, sim.Hero)));
+
+            var (hit, stood) = hits.First(h => ReferenceEquals(h.Hit.Target, sim.Hero));
+            Assert.That(hit.TargetPosition, Is.EqualTo(stood));
+            Assert.That(hit.TargetPosition, Is.Not.EqualTo(sim.Arena.Origin), "he had walked from the origin");
         }
 
         // --- the damage spread ------------------------------------------------

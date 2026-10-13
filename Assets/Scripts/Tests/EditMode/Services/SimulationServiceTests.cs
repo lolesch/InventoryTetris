@@ -110,6 +110,31 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             _ = so.ApplyModifiedPropertiesWithoutUndo();
         }
 
+        // The damage spread the Encounter plays on, read off the first hit it lands: the hit's reference scale
+        // against the same reference taken with no spread.
+        private float SpreadOfTheFirstHit()
+        {
+            var sim = service.Run.Encounter;
+            HitEvent? first = null;
+            sim.HitLanded += hit =>
+            {
+                // A Cast of a hero with no magic lands at a scale of 0, which shows no spread.
+                if (hit.Reference > 0f)
+                    first ??= hit;
+            };
+
+            for (var i = 0; i < 600 && first == null; i++)
+                service.Tick(0.1f);
+
+            Assert.That(first, Is.Not.Null, "a hit landed");
+            var hit = first.Value;
+            var bare = ReferenceEquals(hit.Target, sim.Hero)
+                ? DamageReference.OfEnemies(sim.Profile, hit.DamageType, 0f)
+                : DamageReference.OfHero(sim.Hero, hit.DamageType, 0f);
+            Assert.That(bare, Is.GreaterThan(0f));
+            return hit.Reference / bare - 1f;
+        }
+
         [Test]
         public void Send_PlaysOnTheStandardTuning_WhenTheConfigIsLeftAtItsDefaults()
         {
@@ -126,7 +151,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(sim.Arena.HeroStrikeRange, Is.EqualTo(arena.HeroStrikeRange));
             Assert.That(sim.Arena.MovementSpeedScale, Is.EqualTo(arena.MovementSpeedScale));
             Assert.That(sim.CastRange, Is.EqualTo(cast.Range));
-            Assert.That(sim.DamageSpread, Is.EqualTo(EncounterTuning.StandardDamageSpread));
+            Assert.That(SpreadOfTheFirstHit(), Is.EqualTo(EncounterTuning.StandardDamageSpread).Within(1e-4f));
         }
 
         [Test]
@@ -151,7 +176,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(sim.Arena.HeroStrikeRange, Is.EqualTo(2.5f));
             Assert.That(sim.Arena.MovementSpeedScale, Is.EqualTo(0.02f));
             Assert.That(sim.CastRange, Is.EqualTo(9f));
-            Assert.That(sim.DamageSpread, Is.EqualTo(0.5f));
+            Assert.That(SpreadOfTheFirstHit(), Is.EqualTo(0.5f).Within(1e-4f));
         }
 
         [Test]
@@ -167,7 +192,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             var sim = service.Run.Encounter;
             Assert.That(sim.Arena.Radius, Is.Zero);
             Assert.That(sim.Arena.StopJitter, Is.LessThan(1f));
-            Assert.That(sim.DamageSpread, Is.EqualTo(1f));
+            Assert.That(SpreadOfTheFirstHit(), Is.EqualTo(1f).Within(1e-4f));
         }
 
         // ── Send / Recall ────────────────────────────────────────────────────
