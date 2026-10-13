@@ -1858,6 +1858,7 @@ GameObject:
   - component: {fileID: 4196869372303796202}
   - component: {fileID: 5425822372139528236}
   - component: {fileID: 683310746074701938}
+  - component: {fileID: 8085716896490259476}
   m_Layer: 5
   m_Name: ChangelogPanel
   m_TagString: Untagged
@@ -1994,6 +1995,21 @@ MonoBehaviour:
   <FadeDuration>k__BackingField: 0.15
   scaleFrom: 1
   moveFrom: {x: 0, y: 0}
+--- !u!114 &8085716896490259476
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7434589072414446802}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 85df9f4e0857425ea94134a0b9164584, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Components.Panels.ChangelogPanelView
+  changelogFile: {fileID: 4900000, guid: c3799e20e4ef4d25bf29cfcdb7941620, type: 3}
+  knownIssuesBody: {fileID: 5579082507978794069}
+  roadmapBody: {fileID: 9154972592738887453}
 --- !u!1 &7793314950609022781
 GameObject:
   m_ObjectHideFlags: 0

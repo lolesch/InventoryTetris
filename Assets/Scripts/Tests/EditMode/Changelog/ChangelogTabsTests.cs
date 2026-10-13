@@ -17,8 +17,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Changelogs
         {
             var tabs = ChangelogTabs.Read(Sample);
 
-            CollectionAssert.AreEqual(new[] { "First issue.", "Second issue." }, tabs.KnownIssues);
-            CollectionAssert.AreEqual(new[] { "First plan.", "Second plan." }, tabs.Roadmap);
+            CollectionAssert.AreEqual(new[] { "• First issue.", "• Second issue." }, tabs.KnownIssues);
+            CollectionAssert.AreEqual(new[] { "• First plan.", "• Second plan." }, tabs.Roadmap);
         }
 
         [Test]

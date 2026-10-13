@@ -5,6 +5,9 @@ namespace ToolSmiths.InventorySystem.Changelogs
     /// <summary>What the Changelog tabs show for the file's text, so the panel only binds lines onto rows.</summary>
     public sealed class ChangelogTabs
     {
+        /// <summary>Starts every bullet line; the glyph is in the default TMP font's atlas.</summary>
+        public const string BulletPrefix = "• ";
+
         public const string NoKnownIssues = "No known issues.";
         public const string NoRoadmap = "Nothing planned yet.";
 
@@ -32,10 +35,16 @@ namespace ToolSmiths.InventorySystem.Changelogs
                 return new ChangelogTabs(failure, failure, $"Changelog line {error.Line}: {error.Message}");
             }
 
-            return new ChangelogTabs(OrPlaceholder(changelog.KnownIssues, NoKnownIssues), OrPlaceholder(changelog.Roadmap, NoRoadmap));
+            return new ChangelogTabs(Lines(changelog.KnownIssues, NoKnownIssues), Lines(changelog.Roadmap, NoRoadmap));
         }
 
-        private static IReadOnlyList<string> OrPlaceholder(IReadOnlyList<string> bullets, string placeholder) =>
-            bullets.Count > 0 ? bullets : new[] { placeholder };
+        private static IReadOnlyList<string> Lines(IReadOnlyList<string> bullets, string placeholder)
+        {
+            if (bullets.Count == 0) return new[] { placeholder };
+
+            var lines = new string[bullets.Count];
+            for (var i = 0; i < lines.Length; i++) lines[i] = BulletPrefix + bullets[i];
+            return lines;
+        }
     }
 }
