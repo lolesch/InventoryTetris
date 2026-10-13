@@ -36,7 +36,7 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// mid-fight therefore changes the fight, which is the point of them.
     ///
     /// Engine-free and deterministic: every roll (arrival jitter, Roster size, spawn type, Pack
-    /// size, jitter, spawn desync) is drawn from the injected <see cref="IRollSource"/>, in that
+    /// size, jitter, spawn desync) is drawn from the main stream of the injected <see cref="RollStreams"/>, in that
     /// order. The arrival-jitter roll is only drawn with <see cref="EncounterTuning.DelayFirstSpawn"/>.
     /// It never references the hero.
     ///
@@ -44,10 +44,9 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// enemy spawns on its edge, walks in on sim time and Strikes only once the hero is within its Strike Range;
     /// the hero's Strike likewise needs its target within <see cref="HeroStrikeRange"/>. Each tick, in order, the
     /// hero chooses his target (<see cref="HeroTargeting"/>), the hero moves, the enemies move, and attacks resolve
-    /// against the new positions. The spawn bearing and stop jitter come from a separate movement stream, so they
-    /// never shift a seeded outcome above.
+    /// against the new positions. The spawn bearing and stop jitter come from the movement stream.
     ///
-    /// Every hit that lands (the hero's Strike and Cast, each enemy Strike) rolls its damage spread from a third
+    /// Every hit that lands (the hero's Strike and Cast, each enemy Strike) rolls its damage spread from the hit
     /// stream and is announced by <see cref="HitLanded"/> with the amount the target actually lost (issue #211).
     /// </summary>
     public sealed class EncounterSimulation
@@ -91,33 +90,26 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// Optional — an Encounter built without one never fires the bag-full auto-Recall, which
         /// is what a fight with no storage wired to it should do.
         /// </param>
-        /// <param name="movementRolls">
-        /// The movement stream - spawn bearing and stop jitter - kept apart from <paramref name="rolls"/> so
-        /// adding or changing a movement roll can never reorder a seeded loot, roster or spawn outcome. Optional:
-        /// without one every movement roll reads 0.5 (no bearing jitter, a stop pulled in by half the jitter).
-        /// </param>
-        /// <param name="hitRolls">
-        /// The hit stream - one roll per hit, for the <see cref="EncounterTuning.DamageSpread"/> - kept apart from
-        /// <paramref name="rolls"/> and <paramref name="movementRolls"/> so a hit can never reorder a seeded outcome.
-        /// Optional: without one every hit rolls 0.5, the middle of the spread, so a hit is its base damage.
+        /// <param name="rolls">
+        /// Every roll the Encounter draws - the main stream, the movement stream (spawn bearing, stop jitter) and
+        /// the hit stream (the damage spread). The streams stay separate so a seeded outcome never reorders: see
+        /// <see cref="RollStreams"/>.
         /// </param>
         public EncounterSimulation(
             IHeroCombatant hero,
             EncounterProfile profile,
-            IRollSource rolls,
+            RollStreams rolls,
             HeroBehaviour behaviour,
             EncounterTuning tuning = null,
-            IBagGauge bag = null,
-            IRollSource movementRolls = null,
-            IRollSource hitRolls = null)
+            IBagGauge bag = null)
         {
             _hero = hero ?? throw new ArgumentNullException(nameof(hero));
             _profile = profile ?? throw new ArgumentNullException(nameof(profile));
-            _rolls = rolls ?? throw new ArgumentNullException(nameof(rolls));
+            _rolls = rolls?.Main ?? throw new ArgumentNullException(nameof(rolls));
             _behaviour = behaviour ?? throw new ArgumentNullException(nameof(behaviour));
             _bag = bag;
-            _movementRolls = movementRolls ?? new NeutralRolls();
-            _hitRolls = hitRolls ?? new NeutralRolls();
+            _movementRolls = rolls.Movement;
+            _hitRolls = rolls.Hit;
 
             _tuning = tuning ?? new EncounterTuning();
             _tuning.Validate();
@@ -524,11 +516,6 @@ namespace ToolSmiths.InventorySystem.Simulation
             if (excess <= 0f) return;
 
             HeroPosition = Coordinate.MoveTowards(HeroPosition, _heroTarget.Position, Math.Min(step, excess));
-        }
-
-        private sealed class NeutralRolls : IRollSource
-        {
-            public float Next() => 0.5f;
         }
 
         // ─── the hero's two attacks ──────────────────────────────────────────
