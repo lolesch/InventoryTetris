@@ -18,7 +18,10 @@ Amended 2026-10-13: **the peek key is Tab, not Alt** (`GameAction.PeekTab`). The
 Alt and accepts the Alt tooltip coexisting with the peek on a hover (story 15); smoke testing showed the
 peek swaps the hovered item's tab away, so the tooltip detail cannot be inspected. Alt stays the
 tooltip's `GameAction.Peek` (renamed `ShowDetails`). Chosen over suppressing the peek on hover (a modal key) and over dropping
-the peek. `AltPanelPeekToggle` is now `SellingPanelPeekToggle`.
+the peek. `AltPanelPeekToggle` is now `SellingPanelPeekToggle`. Alt then Tab is the operating system's
+window switch and must not flick a tab, so `PeekTabKey` blocks a peek whose physical Tab went down with a
+physical Alt already down (`IInputService.IsKeyHeld`), and keeps one whose Alt came second. It reads the
+keys, not the actions: the rule is about the chord, so rebinding `ShowDetails` or the peek moves nothing.
 
 ## Problem Statement
 

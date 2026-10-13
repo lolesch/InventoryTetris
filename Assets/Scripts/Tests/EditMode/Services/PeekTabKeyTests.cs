@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using Submodules.Utility.Services;
 using ToolSmiths.InventorySystem.Services;
+using UnityEngine.InputSystem;
 
 namespace ToolSmiths.InventorySystem.Tests.Services
 {
@@ -24,64 +25,113 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         [TearDown]
         public void TearDown() => ServiceLocator.Reset();
 
+        // Tab as shipped: the physical key and the action bound to it go down together.
+        private void PressTab()
+        {
+            input.PressKey(Key.Tab);
+            input.Press(GameAction.PeekTab);
+        }
+
+        private void ReleaseTab()
+        {
+            input.ReleaseKey(Key.Tab);
+            input.Release(GameAction.PeekTab);
+        }
+
         [Test]
         public void TabHeld_Peeks_AndLettingGoEndsIt()
         {
-            input.Press(GameAction.PeekTab);
+            PressTab();
             Assert.That(key.IsHeld(), Is.True);
 
-            input.Release(GameAction.PeekTab);
+            ReleaseTab();
             Assert.That(key.IsHeld(), Is.False);
         }
 
-        [Test]
-        public void ShowDetailsAlone_DoesNotPeek()
+        [TestCase(Key.LeftAlt)]
+        [TestCase(Key.RightAlt)]
+        public void AltAlone_DoesNotPeek(Key alt)
         {
-            input.Press(GameAction.ShowDetails);
+            input.PressKey(alt);
 
             Assert.That(key.IsHeld(), Is.False);
         }
 
-        [Test]
-        public void TabThenShowDetails_KeepsThePeek()
+        [TestCase(Key.LeftAlt)]
+        [TestCase(Key.RightAlt)]
+        public void TabThenAlt_KeepsThePeek(Key alt)
         {
-            input.Press(GameAction.PeekTab);
+            PressTab();
             Assert.That(key.IsHeld(), Is.True);
 
-            input.Press(GameAction.ShowDetails);
+            input.PressKey(alt);
             Assert.That(key.IsHeld(), Is.True);
         }
 
-        [Test]
-        public void ShowDetailsThenTab_IsTheWindowSwitch_AndNeverPeeks()
+        [TestCase(Key.LeftAlt)]
+        [TestCase(Key.RightAlt)]
+        public void AltThenTab_IsTheWindowSwitch_AndNeverPeeks(Key alt)
         {
-            input.Press(GameAction.ShowDetails);
-            input.Press(GameAction.PeekTab);
+            input.PressKey(alt);
+            PressTab();
 
             Assert.That(key.IsHeld(), Is.False);
         }
 
         [Test]
-        public void AfterShowDetailsThenTab_LettingGoOfShowDetailsFirst_StillDoesNotPeek()
+        public void AfterAltThenTab_LettingGoOfAltFirst_StillDoesNotPeek()
         {
-            input.Press(GameAction.ShowDetails);
-            input.Press(GameAction.PeekTab);
+            input.PressKey(Key.LeftAlt);
+            PressTab();
             Assert.That(key.IsHeld(), Is.False);
 
-            input.Release(GameAction.ShowDetails);
+            input.ReleaseKey(Key.LeftAlt);
             Assert.That(key.IsHeld(), Is.False, "the press began blocked and stays blocked until Tab is let go");
         }
 
         [Test]
         public void ABlockedPress_DoesNotBlockTheNextOne()
         {
-            input.Press(GameAction.ShowDetails);
-            input.Press(GameAction.PeekTab);
+            input.PressKey(Key.LeftAlt);
+            PressTab();
             _ = key.IsHeld();
-            input.Release(GameAction.PeekTab);
-            input.Release(GameAction.ShowDetails);
+            ReleaseTab();
+            input.ReleaseKey(Key.LeftAlt);
             _ = key.IsHeld();
 
+            PressTab();
+
+            Assert.That(key.IsHeld(), Is.True);
+        }
+
+        // The rule is about the keys: what ShowDetails is bound to changes nothing, so an action held first that is
+        // not an Alt key does not block, and Alt itself blocks whatever ShowDetails is bound to.
+        [Test]
+        public void ShowDetailsHeldFirst_OnAKeyThatIsNotAlt_StillPeeks()
+        {
+            input.Press(GameAction.ShowDetails);
+            input.PressKey(Key.LeftShift);
+            PressTab();
+
+            Assert.That(key.IsHeld(), Is.True);
+        }
+
+        [Test]
+        public void AltThenTab_BlocksWithShowDetailsRebound()
+        {
+            input.PressKey(Key.LeftAlt);
+            PressTab();
+
+            Assert.That(input.IsHeld(GameAction.ShowDetails), Is.False, "ShowDetails is not on Alt in this test");
+            Assert.That(key.IsHeld(), Is.False);
+        }
+
+        // A peek rebound off Tab is not the window switch: Alt then that key is not Alt+Tab.
+        [Test]
+        public void APeekRebound_OffTab_IsNotBlockedByAlt()
+        {
+            input.PressKey(Key.LeftAlt);
+            input.PressKey(Key.Q);
             input.Press(GameAction.PeekTab);
 
             Assert.That(key.IsHeld(), Is.True);

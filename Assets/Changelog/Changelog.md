@@ -12,6 +12,7 @@
 - A new hero has to be named, and is saved the first time you press Start Game; after that the button reads Continue. Play and Delete only appear once a hero is chosen.
 - The main menu shows the chosen hero's name, class and level.
 - Fixed the health and resource bars not showing a higher maximum after equipping gear while the game is paused.
+- Hold Tab over an open Vendor or Healer to peek at its other tab; Alt still shows more detail on an item.
 
 ## 0.0.5_Alpha - 2026-09-25
 

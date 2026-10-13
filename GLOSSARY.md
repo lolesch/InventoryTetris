@@ -735,8 +735,8 @@ Holding Tab on an open selling panel (the Vendor, the Healer) shows the other ta
 not a view-only overlay, so both buttons follow. It is the **peek toggle**'s own behaviour: a subclass
 names the key (`SellingPanelPeekToggle` reads `GameAction.PeekTab`, not the tooltip's `GameAction.ShowDetails` on
 Alt: Alt over an item expands its tooltip, and a tab swap would take that item away; `PeekTabKey` also
-ignores a Tab that went down while Alt was held, which is the window switch, while Tab then Alt keeps the
-peek), and the
+ignores a Tab that went down while an Alt key was held, which is the window switch, while Tab then Alt keeps the
+peek; it reads the physical keys, not the actions bound to them), and the
 peek counts only while the toggle is reachable, so a closed or hidden panel never peeks. It begins
 and ends once per hold. A press remembers whether the peek toggle was on; on release the peek is given
 back only if that has changed, so a click on either tab during the hold leaves the player where they
