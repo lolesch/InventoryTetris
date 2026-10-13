@@ -525,6 +525,63 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.InTown), "the Run never ended");
         }
 
+        // ── the lifetime Kill count ──────────────────────────────────────────
+
+        // An invincible hero, so the Run is still there once the first body has fallen.
+        private int SendAndTickUntilAKill()
+        {
+            session.Hero.IsInvincible = true;
+            service.Send(thornwood);
+
+            for (var i = 0; i < 2000 && service.Run.Encounter.EnemiesDefeated == 0; i++)
+                service.Tick(0.1f);
+
+            Assert.That(service.Run.Encounter.EnemiesDefeated, Is.GreaterThan(0), "premise: the hero killed something");
+            return service.Run.Encounter.EnemiesDefeated;
+        }
+
+        [Test]
+        public void ARecall_FoldsTheRunsKillsIntoTheHerosLifetimeCount_Once()
+        {
+            var kills = SendAndTickUntilAKill();
+            Assert.That(session.Hero.TotalKills, Is.EqualTo(0), "a Run in the Field has not been folded yet");
+
+            var result = service.Recall();
+            service.Tick(0.5f);
+            service.Tick(0.5f);
+
+            Assert.That(result.EnemiesDefeated, Is.EqualTo(kills));
+            Assert.That(session.Hero.TotalKills, Is.EqualTo(kills));
+        }
+
+        [Test]
+        public void ADeath_CountsTheKillsOfTheRunThatEndedInIt()
+        {
+            var kills = SendAndTickUntilAKill();
+
+            session.Hero.GetResource(StatName.Health).DepleteCurrent();
+            TickUntilHome();
+
+            Assert.That(service.Run.LastResult?.Outcome, Is.EqualTo(RunOutcome.Died));
+            Assert.That(session.Hero.TotalKills, Is.GreaterThanOrEqualTo(kills));
+            Assert.That(session.Hero.TotalKills, Is.EqualTo(service.Run.LastResult?.EnemiesDefeated));
+        }
+
+        [Test]
+        public void TheLifetimeCount_AddsUpAcrossRuns_AndRelocateKeepsTheRunsKillsForItsEnd()
+        {
+            var first = SendAndTickUntilAKill();
+            service.Relocate(ashfen);
+            _ = service.Recall();
+            Assert.That(session.Hero.TotalKills, Is.GreaterThanOrEqualTo(first), "the Relocate carried the first Encounter's kills into the Run");
+            var afterFirst = session.Hero.TotalKills;
+
+            _ = SendAndTickUntilAKill();
+            _ = service.Recall();
+
+            Assert.That(session.Hero.TotalKills, Is.EqualTo(afterFirst + service.Run.LastResult?.EnemiesDefeated));
+        }
+
         private ItemInstance PutInBag()
         {
             var item = items.RollEquipment(EquipmentType.Chest);

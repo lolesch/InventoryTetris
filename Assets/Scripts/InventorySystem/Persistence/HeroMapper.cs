@@ -27,6 +27,7 @@ namespace ToolSmiths.InventorySystem.Persistence
                 name = name ?? string.Empty,
                 templateId = hero.Template != null && hero.Template.Id != null ? hero.Template.Id : string.Empty,
                 level = hero.Level,
+                totalKills = hero.TotalKills,
 
                 health = hero.GetResource(StatName.Health).CurrentValue,
                 resource = hero.GetResource(StatName.Resource).CurrentValue,

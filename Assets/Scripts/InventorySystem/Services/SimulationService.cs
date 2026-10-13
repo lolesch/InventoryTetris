@@ -328,6 +328,11 @@ namespace ToolSmiths.InventorySystem.Services
             // Death alike (issue #44).
             ReleaseLoot(world);
 
+            // The Run is never saved in the Field, so its Kills join the hero's lifetime count here,
+            // before RunSettled drives the save. Death counts them too.
+            if (run.LastResult is { } result)
+                session.Hero.AddKills(result.EnemiesDefeated);
+
             // Home is never paused, Recall and Death alike.
             SetPaused(false);
 

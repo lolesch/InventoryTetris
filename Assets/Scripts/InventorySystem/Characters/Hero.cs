@@ -142,6 +142,15 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         /// <summary>The Location a Send will (or last did) go to. <c>null</c> until the hero was first sent.</summary>
         public LocationConfig SelectedLocation { get; set; }
 
+        /// <summary>
+        /// Monsters this hero has killed over its life, Runs that ended in Death included. A Run in the
+        /// Field is never saved, so its count joins this one when the Run settles.
+        /// </summary>
+        public int TotalKills { get; private set; }
+
+        /// <summary>Adds <paramref name="count"/> Kills to the lifetime count; a negative count (a hand-edited save) adds none.</summary>
+        public void AddKills(int count) => TotalKills += Math.Max(0, count);
+
         /// <summary>Whether <see cref="Outfit"/> has run.</summary>
         public bool IsOutfitted => _equipment != null;
 
