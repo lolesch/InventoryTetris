@@ -41,9 +41,9 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         private static EncounterSimulation Sim(FakeHero hero, EncounterProfile profile, EncounterTuning tuning = null,
-            HeroBehaviour behaviour = null, IRollSource movement = null) => new(hero, profile, new ConstantRollSource(0f),
-            behaviour ?? Behaviours.Engaging(10), tuning ?? OnTheArena(), bag: null,
-            movementRolls: movement ?? new ConstantRollSource(0.5f));
+            HeroBehaviour behaviour = null, IRollSource movement = null) => new(hero, profile,
+            new RollStreams(new ConstantRollSource(0f), movement ?? new ConstantRollSource(0.5f)),
+            behaviour ?? Behaviours.Engaging(10), tuning ?? OnTheArena());
 
         private static EncounterSimulation SoloSkirmisher(FakeHero hero, EncounterTuning tuning = null) =>
             Sim(hero, Profiles.Solo(EnemyArchetype.Skirmisher), tuning);

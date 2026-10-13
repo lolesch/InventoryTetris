@@ -27,8 +27,9 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         private static EncounterTuning OnTheArena() => new() { Arena = ArenaTuning.Standard() };
 
         private static EncounterSimulation Sim(FakeHero hero, EncounterProfile profile, EncounterTuning tuning,
-            IRollSource main = null, IRollSource movement = null) => new(hero, profile, main ?? new ConstantRollSource(0f),
-            Behaviours.Engaging(10), tuning, bag: null, movementRolls: movement ?? new ConstantRollSource(0.5f));
+            IRollSource main = null, IRollSource movement = null) => new(hero, profile,
+            new RollStreams(main ?? new ConstantRollSource(0f), movement ?? new ConstantRollSource(0.5f)),
+            Behaviours.Engaging(10), tuning);
 
         private static float Distance(EncounterSimulation sim, Enemy enemy) => Coordinate.Distance(enemy.Position, sim.HeroPosition);
 

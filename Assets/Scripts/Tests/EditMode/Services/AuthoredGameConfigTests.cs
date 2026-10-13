@@ -80,24 +80,25 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
-        public void TheArenaCastAndDamageTuning_DefaultToTheStandardPlaceholders()
+        public void TheEncounterTuning_DefaultsToTheStandardPlaceholders()
         {
-            var arena = ArenaTuning.Standard();
-            var cast = CastDefinition.Standard();
+            var standard = EncounterTuning.Standard();
+            var tuning = config.Tuning;
 
-            Assert.That(config.ArenaRadius, Is.EqualTo(arena.Radius));
-            Assert.That(config.SpawnMargin, Is.EqualTo(arena.SpawnMargin));
-            Assert.That(config.StopJitter, Is.EqualTo(arena.StopJitter));
-            Assert.That(config.BearingJitter, Is.EqualTo(arena.BearingJitter));
-            Assert.That(config.UnarmedStrikeRange, Is.EqualTo(arena.HeroStrikeRange));
-            Assert.That(config.MovementSpeedScale, Is.EqualTo(arena.MovementSpeedScale));
-            Assert.That(config.CastRange, Is.EqualTo(cast.Range));
-            Assert.That(config.CastShape.Kind, Is.EqualTo(cast.Shape.Kind));
-            Assert.That(config.CastShape.Radius, Is.EqualTo(cast.Shape.Radius));
-            Assert.That(config.CastShape.InnerRadius, Is.EqualTo(cast.Shape.InnerRadius));
-            Assert.That(config.CastSize, Is.EqualTo(cast.Size));
-            Assert.That(config.CastAnchor, Is.EqualTo(cast.Anchor));
-            Assert.That(config.DamageSpread, Is.EqualTo(EncounterTuning.StandardDamageSpread));
+            Assert.That(tuning.DelayFirstSpawn, Is.EqualTo(standard.DelayFirstSpawn));
+            Assert.That(tuning.DamageSpread, Is.EqualTo(standard.DamageSpread));
+            Assert.That(tuning.Arena.Radius, Is.EqualTo(10f), "the authored asset keeps the arena the game plays on");
+            Assert.That(tuning.Arena.SpawnMargin, Is.EqualTo(standard.Arena.SpawnMargin));
+            Assert.That(tuning.Arena.StopJitter, Is.EqualTo(standard.Arena.StopJitter));
+            Assert.That(tuning.Arena.BearingJitter, Is.EqualTo(standard.Arena.BearingJitter));
+            Assert.That(tuning.Arena.HeroStrikeRange, Is.EqualTo(standard.Arena.HeroStrikeRange));
+            Assert.That(tuning.Arena.MovementSpeedScale, Is.EqualTo(standard.Arena.MovementSpeedScale));
+            Assert.That(tuning.Cast.Range, Is.EqualTo(standard.Cast.Range));
+            Assert.That(tuning.Cast.Shape.Kind, Is.EqualTo(standard.Cast.Shape.Kind));
+            Assert.That(tuning.Cast.Shape.Radius, Is.EqualTo(standard.Cast.Shape.Radius));
+            Assert.That(tuning.Cast.Shape.InnerRadius, Is.EqualTo(standard.Cast.Shape.InnerRadius));
+            Assert.That(tuning.Cast.Size, Is.EqualTo(standard.Cast.Size));
+            Assert.That(tuning.Cast.Anchor, Is.EqualTo(standard.Cast.Anchor));
         }
 
         [Test]

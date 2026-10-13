@@ -204,8 +204,9 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         private static EncounterSimulation SpreadSim(FakeHero hero, EncounterProfile profile, float spread,
-            IRollSource hitRolls, IRollSource main = null) => new(hero, profile, main ?? new ConstantRollSource(0f),
-            Behaviours.Engaging(10), new EncounterTuning { DamageSpread = spread }, bag: null, hitRolls: hitRolls);
+            IRollSource hitRolls, IRollSource main = null) => new(hero, profile,
+            new RollStreams(main ?? new ConstantRollSource(0f), hit: hitRolls),
+            Behaviours.Engaging(10), new EncounterTuning { DamageSpread = spread });
 
         [TestCase(0f, 0.8f)]
         [TestCase(0.5f, 1.0f)]

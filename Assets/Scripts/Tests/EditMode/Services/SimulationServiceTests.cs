@@ -103,10 +103,10 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
         // ── the Encounter's tuning comes from the config ─────────────────────
 
-        private void SetConfig(string property, float value)
+        private void SetConfig(string path, float value)
         {
             var so = new SerializedObject(config);
-            so.FindProperty($"<{property}>k__BackingField").floatValue = value;
+            so.FindProperty($"<Tuning>k__BackingField.{path}").floatValue = value;
             _ = so.ApplyModifiedPropertiesWithoutUndo();
         }
 
@@ -132,13 +132,13 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         [Test]
         public void Send_BuildsTheArenaCastAndDamageSpreadFromTheConfig()
         {
-            SetConfig("ArenaRadius", 25f);
-            SetConfig("SpawnMargin", 4f);
-            SetConfig("StopJitter", 0.3f);
-            SetConfig("BearingJitter", 0.75f);
-            SetConfig("UnarmedStrikeRange", 2.5f);
-            SetConfig("MovementSpeedScale", 0.02f);
-            SetConfig("CastRange", 9f);
+            SetConfig("Arena.Radius", 25f);
+            SetConfig("Arena.SpawnMargin", 4f);
+            SetConfig("Arena.StopJitter", 0.3f);
+            SetConfig("Arena.BearingJitter", 0.75f);
+            SetConfig("Arena.HeroStrikeRange", 2.5f);
+            SetConfig("Arena.MovementSpeedScale", 0.02f);
+            SetConfig("Cast.Range", 9f);
             SetConfig("DamageSpread", 0.5f);
 
             service.Send(thornwood);
@@ -157,9 +157,9 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         [Test]
         public void Send_WithAnOutOfRangeTuningValue_PullsItBackInsteadOfThrowing()
         {
-            SetConfig("ArenaRadius", -5f);
-            SetConfig("StopJitter", 1f);
-            SetConfig("CastSize", 0f);
+            SetConfig("Arena.Radius", -5f);
+            SetConfig("Arena.StopJitter", 1f);
+            SetConfig("Cast.Size", 0f);
             SetConfig("DamageSpread", 3f);
 
             Assert.DoesNotThrow(() => service.Send(thornwood));
@@ -311,8 +311,8 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         [Test]
         public void ASentRun_FightsOnTheStandardArena_WithItsEnemiesSpawnedAtTheEdge()
         {
-            service = new SimulationService(session, items, inventory, config, new SessionBuilderTests.FixedRolls(0.5f),
-                new SessionBuilderTests.FixedRolls(0.5f));
+            service = new SimulationService(session, items, inventory, config, new RollStreams(new SessionBuilderTests.FixedRolls(0.5f),
+                new SessionBuilderTests.FixedRolls(0.5f)));
             service.Send(thornwood);
             var encounter = service.Run.Encounter;
 
