@@ -2,6 +2,7 @@ using NUnit.Framework;
 using Submodules.Utility.Persistence;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using ToolSmiths.InventorySystem.Services;
 using UnityEngine;
 
@@ -139,6 +140,46 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             _ = saves.Create("Aria");
 
             Assert.That(MainMenuFlow.SavedLine(saves, TimeZoneInfo.Utc), Is.Null);
+        }
+
+        [Test]
+        public void CreateHero_CreatesLoadsAndSelectsTheHero_UnderTheTrimmedName()
+        {
+            var check = MainMenuFlow.CreateHero(saves, "  Aria ");
+
+            Assert.That(check.IsValid, Is.True);
+            Assert.That(saves.List().Count, Is.EqualTo(1));
+            Assert.That(saves.List()[0].Name, Is.EqualTo("Aria"));
+            Assert.That(saves.ActiveHeroId, Is.EqualTo(saves.List()[0].Id), "loaded and selected");
+            Assert.That(game.Session.Hero, Is.Not.Null);
+        }
+
+        [TestCase("")]
+        [TestCase("   ")]
+        [TestCase("this name is far too long to keep")]
+        [TestCase("a/b")]
+        public void CreateHero_WithARefusedName_CreatesNothing_AndSaysWhy(string name)
+        {
+            var check = MainMenuFlow.CreateHero(saves, name);
+
+            Assert.That(check.IsValid, Is.False);
+            Assert.That(check.Reason, Is.Not.Empty);
+            Assert.That(saves.List(), Is.Empty, "no hero before a valid name is confirmed");
+            Assert.That(saves.ActiveHeroId, Is.Null);
+        }
+
+        [Test]
+        public void CreateHero_AcceptsADuplicateName_ItGetsItsOwnId()
+        {
+            _ = MainMenuFlow.CreateHero(saves, "Aria");
+            var first = saves.ActiveHeroId;
+
+            var check = MainMenuFlow.CreateHero(saves, "Aria");
+
+            Assert.That(check.IsValid, Is.True);
+            Assert.That(saves.List().Count, Is.EqualTo(2));
+            Assert.That(saves.List().Select(hero => hero.Id).Distinct().Count(), Is.EqualTo(2));
+            Assert.That(saves.ActiveHeroId, Is.Not.EqualTo(first), "the new hero is the selected one");
         }
     }
 }

@@ -31,6 +31,21 @@ namespace ToolSmiths.InventorySystem.Services
             return true;
         }
 
+        /// <summary>
+        /// The create slot's confirm: checks <paramref name="name"/> (<see cref="HeroNameRules"/>) and only
+        /// then creates the hero from the default template, loads it and so selects it. A refused name
+        /// creates nothing and says why in the result.
+        /// </summary>
+        public static HeroNameCheck CreateHero(IHeroSaveService saves, string name)
+        {
+            var check = HeroNameRules.Check(name);
+
+            if (check.IsValid)
+                _ = saves.Load(saves.Create(check.Name).Id);
+
+            return check;
+        }
+
         /// <summary>Whether the menu offers Exit: not in a browser, where quitting does nothing.</summary>
         public static bool ShowsExit(RuntimePlatform platform) => platform != RuntimePlatform.WebGLPlayer;
 

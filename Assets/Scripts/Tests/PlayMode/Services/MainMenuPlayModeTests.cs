@@ -5,6 +5,7 @@ using System;
 using System.Collections;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using TMPro;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
@@ -157,6 +158,82 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             _ = Saves.Load(bran.Id);
 
             Assert.That(text.text, Is.EqualTo("Location:\nCorpse: none\nKills: 0\nGear level:"));
+        }
+
+        // The create slot is the one whose private flag says it creates; the prompt is reached by type name.
+        private static Selectable CreateSlot() =>
+            UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include)
+                .Where(component => component.GetType().Name == "HeroSlotToggle")
+                .First(slot => (bool)slot.GetType().GetField("creates", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(slot))
+                .GetComponent<Selectable>();
+
+        private static T Member<T>(Component owner, string field) =>
+            (T)owner.GetType().GetField(field, BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(owner);
+
+        [UnityTest]
+        public IEnumerator CreateSlot_AsksForAName_AndCreatesNothingUntilItIsConfirmed()
+        {
+            yield return OpenMenu(withHero: true);
+            var prompt = Find<MonoBehaviour>("HeroNamePrompt");
+            var input = Member<TMP_InputField>(prompt, "input");
+            var reason = Member<TextMeshProUGUI>(prompt, "reason");
+            var confirm = Member<Component>(prompt, "confirm");
+            var heroes = Saves.List().Count;
+            var active = Saves.ActiveHeroId;
+            Assert.That(prompt.gameObject.activeSelf, Is.False, "premise: the entry starts closed");
+
+            Click(CreateSlot());
+            yield return null;
+
+            Assert.That(prompt.gameObject.activeSelf, Is.True, "a click on the create slot opens the name entry");
+            Assert.That(Saves.List().Count, Is.EqualTo(heroes), "nothing is created by opening it");
+            Assert.That(Saves.ActiveHeroId, Is.EqualTo(active));
+
+            input.text = "a/b";
+            Click(confirm);
+            yield return null;
+
+            Assert.That(prompt.gameObject.activeSelf, Is.True, "a refused name keeps the entry open");
+            Assert.That(reason.text, Does.Contain("cannot contain /"));
+            Assert.That(Saves.List().Count, Is.EqualTo(heroes));
+
+            input.text = "  Bran ";
+            Click(confirm);
+            yield return null;
+
+            Assert.That(prompt.gameObject.activeSelf, Is.False);
+            Assert.That(Saves.List().Count, Is.EqualTo(heroes + 1));
+            var bran = Saves.List().Single(hero => hero.Name == "Bran");
+            Assert.That(Saves.ActiveHeroId, Is.EqualTo(bran.Id), "the new hero is created, loaded and selected");
+        }
+
+        [UnityTest]
+        public IEnumerator NameEntry_ClosesOnCancel_AndCreatesNothing()
+        {
+            yield return OpenMenu(withHero: true);
+            var prompt = Find<MonoBehaviour>("HeroNamePrompt");
+            var input = Member<TMP_InputField>(prompt, "input");
+            var cancel = Member<Component>(prompt, "cancel");
+            var heroes = Saves.List().Count;
+            var active = Saves.ActiveHeroId;
+
+            Click(CreateSlot());
+            yield return null;
+            input.text = "Bran";
+
+            Assert.That(ServiceLocator.Get<ICancelChain>().Cancel(), Is.True, "the open entry consumes the Cancel press");
+            Assert.That(prompt.gameObject.activeSelf, Is.False);
+            Assert.That(ServiceLocator.Get<ICancelChain>().Cancel(), Is.False, "and a second press finds nothing at the root");
+
+            Click(CreateSlot());
+            yield return null;
+            Assert.That(input.text, Is.Empty, "reopened clean");
+            Click(cancel);
+            yield return null;
+
+            Assert.That(prompt.gameObject.activeSelf, Is.False, "the Cancel button closes it too");
+            Assert.That(Saves.List().Count, Is.EqualTo(heroes));
+            Assert.That(Saves.ActiveHeroId, Is.EqualTo(active));
         }
 
         [UnityTest]

@@ -1,7 +1,7 @@
 using Submodules.Utility.Services;
 using Submodules.Utility.UI;
-using System;
 using System.Collections.Generic;
+using ToolSmiths.InventorySystem.GUI.Components.Panels;
 using ToolSmiths.InventorySystem.Services;
 using UnityEngine;
 using UnityEngine.UI;
@@ -17,9 +17,9 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
     ///
     /// <para>A slot with a hero shows the hero's template icon, and turning it on loads the hero; one
     /// that cannot be read is not interactable. The create slot shows <see cref="createSprite"/>, and a
-    /// <b>click</b> on it creates and loads a hero - only a click: the group switching it on of its own
-    /// accord (a reset to its first member) creates nothing. Every slot after it is not interactable and
-    /// shows no icon.</para>
+    /// <b>click</b> on it opens the <see cref="HeroNamePrompt"/>, which creates the hero once a name is
+    /// confirmed - only a click: the group switching it on of its own accord (a reset to its first member)
+    /// asks for nothing. Every slot after it is not interactable and shows no icon.</para>
     ///
     /// <para>The slots follow <see cref="IHeroSaveService.HeroesChanged"/> and read nothing else: whoever
     /// creates, deletes, renames or loads a hero does not need to know they exist. The list is read once
@@ -41,6 +41,9 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
 
         [Tooltip("The icon of the create slot: the first slot with no hero.")]
         [SerializeField] private Sprite createSprite;
+
+        [Tooltip("The name entry a click on the create slot opens.")]
+        [SerializeField] private HeroNamePrompt namePrompt;
 
         private string heroId;
         private bool creates;
@@ -83,7 +86,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         protected override void OnClick()
         {
             if (creates)
-                CreateHero();
+                namePrompt.Open();
             else
                 base.OnClick();
         }
@@ -102,21 +105,6 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
             // file is gone) left this slot pressed while the old hero is still the Session's.
             if (!saves.Load(heroId).Entered)
                 Refresh();
-        }
-
-        // The service raises HeroesChanged for the create and for the load, so the slots are already showing
-        // the new hero and pressing its slot. A failure before the write changed nothing and this slot was
-        // never pressed, so there is nothing to put back.
-        private static void CreateHero()
-        {
-            try
-            {
-                _ = HeroSaveService.Instance.CreateAndLoad();
-            }
-            catch (Exception exception)
-            {
-                Debug.LogError($"Could not create a hero: {exception.Message}");
-            }
         }
 
         private static void Watch()
