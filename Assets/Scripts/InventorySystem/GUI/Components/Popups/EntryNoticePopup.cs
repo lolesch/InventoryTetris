@@ -5,7 +5,7 @@ using ToolSmiths.InventorySystem.GUI.Components.Buttons;
 using ToolSmiths.InventorySystem.Services;
 using UnityEngine;
 
-namespace ToolSmiths.InventorySystem.GUI.Components.Panels
+namespace ToolSmiths.InventorySystem.GUI.Components.Popups
 {
     /// <summary>
     /// The game scene's one-time notice after a load that went wrong (<see cref="EntryNotice"/>): taken from the
@@ -13,11 +13,11 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
     /// latest save and a partial load read as one message; the names of the packages left out stay behind Show.
     /// Dismiss (the button, or the Cancel key as a <see cref="CancelRank.Popup"/> layer) closes it. Taking the
     /// notice is what drops it, so a later scene change shows nothing. The component sits on an object that
-    /// stays active; <c>popup</c> is the screen it opens.
+    /// stays active; <c>screen</c> is what it opens.
     /// </summary>
     public sealed class EntryNoticePopup : MonoBehaviour
     {
-        [SerializeField] private GameObject popup;
+        [SerializeField] private GameObject screen;
         [SerializeField] private TextMeshProUGUI message;
         [SerializeField] private TextMeshProUGUI names;
         [SerializeField] private ClickEventButton show;
@@ -32,7 +32,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
             dismiss.Clicked += Close;
 
             // A scene object survives a Play session, so it starts closed whatever the last session left.
-            popup.SetActive(false);
+            screen.SetActive(false);
 
             var notice = ServiceLocator.IsArmed ? HeroSaveService.Instance.TakeEntryNotice() : null;
 
@@ -58,7 +58,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
 
             names.gameObject.SetActive(false);
             show.gameObject.SetActive(notice.UnplacedCount != 0);
-            popup.SetActive(true);
+            screen.SetActive(true);
             cancelLayer ??= CancelChain.TryRegister(CancelRank.Popup, Cancel);
         }
 
@@ -71,7 +71,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
 
         private void Close()
         {
-            popup.SetActive(false);
+            screen.SetActive(false);
             cancelLayer?.Dispose();
             cancelLayer = null;
         }

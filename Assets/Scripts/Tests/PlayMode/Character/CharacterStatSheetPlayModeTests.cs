@@ -24,7 +24,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Character
     public sealed class CharacterStatSheetPlayModeTests
     {
         private GameObject _player;
-        private MonoBehaviour _panel;
+        private MonoBehaviour _sheet;
         private Hero _hero;
 
         private static readonly CharacterStatModifier[] Gear =
@@ -42,7 +42,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Character
             Assert.Ignore("the PLAYER prefab is loaded by path, which only the Editor can do");
 #endif
 
-            _panel = Named("CharacterStatSheet");
+            _sheet = Named("CharacterStatSheet");
             _hero = Session.Instance.Hero;
 
             yield return null;
@@ -55,7 +55,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Character
             System.Array.Find(_player.GetComponentsInChildren<MonoBehaviour>(true), c => c != null && c.GetType().Name == typeName);
 
         private MonoBehaviour[] RowComponents(bool includeInactive) =>
-            _panel.GetComponentsInChildren<MonoBehaviour>(includeInactive).Where(c => c != null && c.GetType().Name == "CharacterStatDisplay").ToArray();
+            _sheet.GetComponentsInChildren<MonoBehaviour>(includeInactive).Where(c => c != null && c.GetType().Name == "CharacterStatDisplay").ToArray();
 
         private string Sheet() =>
             string.Join("\n", RowComponents(false).Select(row => row.GetComponentInChildren<TextMeshProUGUI>(true).text));
@@ -77,17 +77,17 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Character
             yield return null;
             Assert.That(Sheet(), Is.EqualTo(before), "unequipping updates it back");
 
-            _panel.enabled = false;
+            _sheet.enabled = false;
             _hero.AddItemStats(Gear);
             yield return null;
-            Assert.That(Sheet(), Is.EqualTo(before), "a disabled panel is not listening");
+            Assert.That(Sheet(), Is.EqualTo(before), "a disabled sheet is not listening");
 
-            _panel.enabled = true;
+            _sheet.enabled = true;
             Assert.That(Sheet(), Is.EqualTo(worn), "enabling rebuilds from the hero as it is now");
 
             // The second Play entry of a session: disable, enable, again.
-            _panel.enabled = false;
-            _panel.enabled = true;
+            _sheet.enabled = false;
+            _sheet.enabled = true;
             _hero.RemoveItemStats(Gear);
             yield return null;
             Assert.That(Sheet(), Is.EqualTo(before), "re-enabling subscribed again, once");
@@ -98,13 +98,13 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Character
         {
             var made = Rows(true);
 
-            // What a Play exit does to runtime-made rows while the panel itself survives.
+            // What a Play exit does to runtime-made rows while the sheet itself survives.
             foreach (var row in RowComponents(false))
                 Object.Destroy(row.gameObject);
 
             yield return null;
-            _panel.enabled = false;
-            _panel.enabled = true;
+            _sheet.enabled = false;
+            _sheet.enabled = true;
 
             Assert.That(Rows(false), Is.EqualTo(_hero.Resources.Count + _hero.Stats.Count));
             Assert.That(Rows(true), Is.EqualTo(made), "the lost rows are made again, not made on top of a growing list");
@@ -115,11 +115,11 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Character
         {
             var old = _hero;
 
-            // The next Play entry: the boot builds a new Session, then the surviving panel is enabled again.
-            _panel.enabled = false;
+            // The next Play entry: the boot builds a new Session, then the surviving sheet is enabled again.
+            _sheet.enabled = false;
             ServiceLocator.Reset();
             GameBoot.Arm(GameBoot.Load());
-            _panel.enabled = true;
+            _sheet.enabled = true;
 
             var current = Session.Instance.Hero;
             Assert.That(current, Is.Not.SameAs(old), "the boot built a new hero");

@@ -1,6 +1,6 @@
 using Submodules.Utility.Services;
 using System.Linq;
-using ToolSmiths.InventorySystem.GUI.Components.Panels;
+using ToolSmiths.InventorySystem.GUI.Components;
 using ToolSmiths.InventorySystem.Services;
 using UnityEditor;
 using UnityEngine;

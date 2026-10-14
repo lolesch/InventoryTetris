@@ -6,7 +6,7 @@ using ToolSmiths.InventorySystem.GUI.Components.Buttons;
 using ToolSmiths.InventorySystem.Services;
 using UnityEngine;
 
-namespace ToolSmiths.InventorySystem.GUI.Components.Panels
+namespace ToolSmiths.InventorySystem.GUI.Components.Popups
 {
     /// <summary>
     /// The popup behind the Pause Menu's Save &amp; Exit and Quit Game (<see cref="SaveAndExit"/>); they differ only in

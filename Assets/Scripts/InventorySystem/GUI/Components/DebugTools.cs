@@ -8,7 +8,7 @@ using ToolSmiths.InventorySystem.Services;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace ToolSmiths.InventorySystem.GUI.Components.Panels
+namespace ToolSmiths.InventorySystem.GUI.Components
 {
     /// <summary>
     /// The dev tools (issue #118): the debug spawn, clear, sort, kill, heal and

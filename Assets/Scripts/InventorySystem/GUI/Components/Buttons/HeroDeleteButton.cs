@@ -1,6 +1,6 @@
 using Submodules.Utility.Services;
 using Submodules.Utility.UI;
-using ToolSmiths.InventorySystem.GUI.Components.Panels;
+using ToolSmiths.InventorySystem.GUI.Components.Popups;
 using ToolSmiths.InventorySystem.Services;
 using UnityEngine;
 
