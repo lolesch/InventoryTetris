@@ -224,22 +224,13 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         }
 
         /// <inheritdoc/>
-        public bool TryGetNumberOrigin(ICombatant target, out Vector2 origin)
+        public bool TryGetNumberOrigin(Coordinate position, out Vector2 origin)
         {
             origin = default;
             if (_bound == null || !_hasCenter)
                 return false;
 
-            if (target is Enemy enemy)
-            {
-                origin = _center + _projection.ToCanvas(enemy.Position, _bound.Arena.Origin);
-                return true;
-            }
-
-            if (!ReferenceEquals(target, _bound.Hero))
-                return false;
-
-            origin = _center + _projection.ToCanvas(_bound.HeroPosition, _bound.Arena.Origin);
+            origin = _center + _projection.ToCanvas(position, _bound.Arena.Origin);
             return true;
         }
 

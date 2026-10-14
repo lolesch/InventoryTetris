@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Submodules.Utility.Extensions;
 using Submodules.Utility.Tools;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
@@ -11,8 +12,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// <summary>
     /// The damage number feedback (issues #181, #213): each hit that lands - the hero's Strike and Cast on an enemy,
     /// an enemy's Strike on the hero - raises a number that rises and fades. It listens to the Encounter's
-    /// <see cref="EncounterSimulation.HitLanded"/>, which carries the target, the damage type and the amounts the
-    /// health event never knew; the hit flash and the hit shake keep listening to the enemy's health, since they only
+    /// <see cref="EncounterSimulation.HitLanded"/>, which carries the target, the damage type, the place it stood at and the
+    /// amounts the health event never knew; the hit flash and the hit shake keep listening to the enemy's health, since they only
     /// need to know a hit landed. <see cref="EnemyArena"/> binds it behind its <c>damageNumbers</c> switch.
     /// <para>
     /// A coarse frame runs several ticks and each can land a hit, so they are summed in a
@@ -23,9 +24,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// <see cref="HitEvent.Reference"/> - the best the dealer could do with that type, carried by the hit itself.
     /// </para>
     /// <para>
-    /// The killing blow: <see cref="EncounterSimulation.HitLanded"/> raises before the enemy is removed, and a
-    /// number's origin is the sim's own <see cref="Enemy.Position"/> projected by the arena, so a fallen enemy still
-    /// has one when the flush comes. A number with nowhere to rise from (no anchor) is dropped.
+    /// A number rises from <see cref="HitEvent.TargetPosition"/>, the place the hit carries, projected by the arena -
+    /// the same for the hero and an enemy, and a killing blow needs no figure left to read. A number with nowhere to
+    /// rise from (no anchor) is dropped.
     /// </para>
     /// <para>
     /// Subscribed in <see cref="Bind"/> and released in <see cref="Unbind"/>, driven from the arena's bind path and
@@ -59,7 +60,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private PrefabPool<DamageNumber> _pool;
         private RectTransform _space;
         private IDamageNumberOrigins _origins;
-        private readonly Dictionary<(ICombatant Target, DamageType Type), float> _references = new();
+        // What the frame's last hit on a key said: the scale its size is judged against and where its number starts.
+        private readonly Dictionary<(ICombatant Target, DamageType Type), (float Reference, Coordinate Place)> _stamps = new();
         private readonly List<DamageNumber> _live = new();
         private EncounterSimulation _encounter;
         private bool _hasPending;
@@ -104,7 +106,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 _encounter.HitLanded -= OnHitLanded;
 
             _hits.Flush(static (_, _, _, _) => { });
-            _references.Clear();
+            _stamps.Clear();
             _hasPending = false;
 
             for (var i = _live.Count; i-- > 0;)
@@ -122,7 +124,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             var key = (hit.Target, hit.DamageType);
             _hits.Add(key, hit.LostAmount, hit.RawAmount);
-            _references[key] = hit.Reference;
+            _stamps[key] = (hit.Reference, hit.TargetPosition);
             _hasPending = true;
         }
 
@@ -136,7 +138,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             _hasPending = false;
             _hits.Flush(ShowNumber);
-            _references.Clear();
+            _stamps.Clear();
         }
 
         private void ShowNumber((ICombatant Target, DamageType Type) key, float lost, float rawSum, int hits)
@@ -145,13 +147,14 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (!isActiveAndEnabled || _encounter == null)
                 return;
 
-            if (!_origins.TryGetNumberOrigin(key.Target, out var origin))
+            var (reference, place) = _stamps[key];
+            if (!_origins.TryGetNumberOrigin(place, out var origin))
                 return;
 
             // The size reads one hit (the frame's mean), not the sum: the reference is the best single hit, so at
             // high sim speed several ordinary hits summed would saturate it. The label still shows the summed loss.
             var raw = rawSum / Mathf.Max(1, hits);
-            var style = DamageNumberStyle.Of(raw, _references[key], key.Type,
+            var style = DamageNumberStyle.Of(raw, reference, key.Type,
                 minFontSize, maxFontSize, physicalTint, magicalTint);
 
             var number = Pool.GetObject();
