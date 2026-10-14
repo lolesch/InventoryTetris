@@ -105,8 +105,8 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             Assert.That(alphas[0], Is.EqualTo(1f - (2 * step)).Within(1e-4f), "the next: two steps");
 
             // The Ground Items List lists the same drops oldest first and fades them by the same rule.
-            var rows = Named("GroundItemsPanel").Single().GetComponentsInChildren<MonoBehaviour>()
-                .Where(c => c.GetType().Name == "GroundItemSlotDisplay")
+            var rows = Named("GroundItemsList").Single().GetComponentsInChildren<MonoBehaviour>()
+                .Where(c => c.GetType().Name == "GroundItem")
                 .Select(row => row.GetComponent<CanvasGroup>().alpha).ToList();
             Assert.That(rows, Is.EqualTo(alphas).Within(1e-4f), "one row per drop, faded like its slot");
         }

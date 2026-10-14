@@ -10,8 +10,8 @@ namespace ToolSmiths.InventorySystem.Services
         /// <summary>A held Package returns to its origin.</summary>
         Drag = 0,
 
-        /// <summary>The open menu screen closes to the one beneath it: Settings back to its menu, a confirmation dismissed, name entry back to the hero slots.</summary>
-        Modal = 1,
+        /// <summary>The open popup closes to the one beneath it: Settings back to its menu, a confirmation dismissed, name entry back to the hero slots.</summary>
+        Popup = 1,
 
         /// <summary>Any Inventory Context other than <c>None</c> returns to <c>None</c>.</summary>
         Context = 2,

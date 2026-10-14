@@ -141,7 +141,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         public IEnumerator Exit_IsShownOnNative_AndHiddenInWebGLWhereTheSavedLineTakesItsPlace()
         {
             yield return OpenMenu(withHero: true);
-            var status = Find<MonoBehaviour>("MainMenuStatus");
+            var status = Find<MonoBehaviour>("MainMenuLayout");
             var exit = Find<Selectable>("QuitGameButton").gameObject;
             var line = status.transform.Find("SavedLine").gameObject;
 
@@ -177,7 +177,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             Assert.That(text.text, Is.EqualTo("Location:\nCorpse: none\nKills: 0\nGear level:"));
         }
 
-        // The create slot is the one whose private flag says it creates; the prompt is reached by type name.
+        // The create slot is the one whose private flag says it creates; the popup is reached by type name.
         private static Selectable CreateSlot() =>
             UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include)
                 .Where(component => component.GetType().Name == "HeroSlotToggle")
@@ -191,18 +191,18 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         public IEnumerator CreateSlot_AsksForAName_AndCreatesNothingUntilItIsConfirmed()
         {
             yield return OpenMenu(withHero: true);
-            var prompt = Find<MonoBehaviour>("HeroNamePrompt");
-            var input = Member<TMP_InputField>(prompt, "input");
-            var reason = Member<TextMeshProUGUI>(prompt, "reason");
-            var confirm = Member<Component>(prompt, "confirm");
+            var popup = Find<MonoBehaviour>("HeroNamePopup");
+            var input = Member<TMP_InputField>(popup, "input");
+            var reason = Member<TextMeshProUGUI>(popup, "reason");
+            var confirm = Member<Component>(popup, "confirm");
             var heroes = Saves.List().Count;
             var active = Saves.ActiveHeroId;
-            Assert.That(prompt.gameObject.activeSelf, Is.False, "premise: the entry starts closed");
+            Assert.That(popup.gameObject.activeSelf, Is.False, "premise: the entry starts closed");
 
             Click(CreateSlot());
             yield return null;
 
-            Assert.That(prompt.gameObject.activeSelf, Is.True, "a click on the create slot opens the name entry");
+            Assert.That(popup.gameObject.activeSelf, Is.True, "a click on the create slot opens the name entry");
             Assert.That(Saves.List().Count, Is.EqualTo(heroes), "nothing is created by opening it");
             Assert.That(Saves.ActiveHeroId, Is.EqualTo(active));
 
@@ -210,7 +210,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             Click(confirm);
             yield return null;
 
-            Assert.That(prompt.gameObject.activeSelf, Is.True, "a refused name keeps the entry open");
+            Assert.That(popup.gameObject.activeSelf, Is.True, "a refused name keeps the entry open");
             Assert.That(reason.text, Does.Contain("cannot contain /"));
             Assert.That(Saves.List().Count, Is.EqualTo(heroes));
 
@@ -218,7 +218,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             Click(confirm);
             yield return null;
 
-            Assert.That(prompt.gameObject.activeSelf, Is.False);
+            Assert.That(popup.gameObject.activeSelf, Is.False);
             Assert.That(Saves.List().Count, Is.EqualTo(heroes), "a named hero is a draft: nothing is written yet");
             Assert.That(Saves.TryGetDraft(out var bran), Is.True);
             Assert.That(bran.Name, Is.EqualTo("Bran"));
@@ -230,12 +230,12 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         public IEnumerator ADraft_IsFirstSavedWhenTheGameStarts_AndIsNamedOnTheMenu()
         {
             yield return OpenMenu(withHero: false);
-            var prompt = Find<MonoBehaviour>("HeroNamePrompt");
+            var popup = Find<MonoBehaviour>("HeroNamePopup");
 
             Click(CreateSlot());
             yield return null;
-            Member<TMP_InputField>(prompt, "input").text = "Bran";
-            Click(Member<Component>(prompt, "confirm"));
+            Member<TMP_InputField>(popup, "input").text = "Bran";
+            Click(Member<Component>(popup, "confirm"));
             yield return null;
 
             Assert.That(Directory.Exists(folder) ? Directory.GetFiles(folder) : Array.Empty<string>(), Is.Empty, "naming a hero writes nothing");
@@ -261,9 +261,9 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         public IEnumerator NameEntry_ClosesOnCancel_AndCreatesNothing()
         {
             yield return OpenMenu(withHero: true);
-            var prompt = Find<MonoBehaviour>("HeroNamePrompt");
-            var input = Member<TMP_InputField>(prompt, "input");
-            var cancel = Member<Component>(prompt, "cancel");
+            var popup = Find<MonoBehaviour>("HeroNamePopup");
+            var input = Member<TMP_InputField>(popup, "input");
+            var cancel = Member<Component>(popup, "cancel");
             var heroes = Saves.List().Count;
             var active = Saves.ActiveHeroId;
 
@@ -272,7 +272,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             input.text = "Bran";
 
             Assert.That(ServiceLocator.Get<ICancelChain>().Cancel(), Is.True, "the open entry consumes the Cancel press");
-            Assert.That(prompt.gameObject.activeSelf, Is.False);
+            Assert.That(popup.gameObject.activeSelf, Is.False);
             Assert.That(ServiceLocator.Get<ICancelChain>().Cancel(), Is.False, "and a second press finds nothing at the root");
 
             Click(CreateSlot());
@@ -281,7 +281,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             Click(cancel);
             yield return null;
 
-            Assert.That(prompt.gameObject.activeSelf, Is.False, "the Cancel button closes it too");
+            Assert.That(popup.gameObject.activeSelf, Is.False, "the Cancel button closes it too");
             Assert.That(Saves.List().Count, Is.EqualTo(heroes));
             Assert.That(Saves.ActiveHeroId, Is.EqualTo(active));
         }
@@ -308,30 +308,30 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         public IEnumerator Delete_AsksFirstNamingTheHero_AndCancelDeletesNothing()
         {
             yield return OpenMenu(withHero: true);
-            var prompt = Find<MonoBehaviour>("HeroDeletePrompt");
-            var question = Member<TextMeshProUGUI>(prompt, "question");
+            var popup = Find<MonoBehaviour>("HeroDeletePopup");
+            var question = Member<TextMeshProUGUI>(popup, "question");
             var delete = Find<Selectable>("HeroDeleteButton");
             var aria = Saves.ActiveHeroId;
             Assert.That(delete.interactable, Is.True, "premise: a hero is selected");
-            Assert.That(prompt.gameObject.activeSelf, Is.False, "premise: the confirmation starts closed");
+            Assert.That(popup.gameObject.activeSelf, Is.False, "premise: the confirmation starts closed");
 
             Click(delete);
             yield return null;
 
-            Assert.That(prompt.gameObject.activeSelf, Is.True);
+            Assert.That(popup.gameObject.activeSelf, Is.True);
             Assert.That(question.text, Does.Contain("Aria"), "it names the hero");
             Assert.That(Saves.List().Count, Is.EqualTo(1), "asking deletes nothing");
 
             Assert.That(ServiceLocator.Get<ICancelChain>().Cancel(), Is.True, "the Cancel key dismisses it");
-            Assert.That(prompt.gameObject.activeSelf, Is.False);
+            Assert.That(popup.gameObject.activeSelf, Is.False);
             Assert.That(Saves.List().Single().Id, Is.EqualTo(aria));
 
             Click(delete);
             yield return null;
-            Click(Member<Component>(prompt, "cancel"));
+            Click(Member<Component>(popup, "cancel"));
             yield return null;
 
-            Assert.That(prompt.gameObject.activeSelf, Is.False, "the Cancel button dismisses it too");
+            Assert.That(popup.gameObject.activeSelf, Is.False, "the Cancel button dismisses it too");
             Assert.That(Saves.List().Single().Id, Is.EqualTo(aria));
             Assert.That(Saves.ActiveHeroId, Is.EqualTo(aria));
             Assert.That(Find<Selectable>("PlayButton").interactable, Is.True);
@@ -341,16 +341,16 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         public IEnumerator Delete_OfTheOnlyHero_LeavesNoneSelected_AndNothingToPlayOrDelete()
         {
             yield return OpenMenu(withHero: true);
-            var prompt = Find<MonoBehaviour>("HeroNamePrompt");
-            var deletePrompt = Find<MonoBehaviour>("HeroDeletePrompt");
+            var popup = Find<MonoBehaviour>("HeroNamePopup");
+            var deletePopup = Find<MonoBehaviour>("HeroDeletePopup");
             var aria = Saves.ActiveHeroId;
 
             Click(Find<Selectable>("HeroDeleteButton"));
             yield return null;
-            Click(Member<Component>(deletePrompt, "confirm"));
+            Click(Member<Component>(deletePopup, "confirm"));
             yield return null;
 
-            Assert.That(deletePrompt.gameObject.activeSelf, Is.False);
+            Assert.That(deletePopup.gameObject.activeSelf, Is.False);
             Assert.That(Saves.List(), Is.Empty);
             Assert.That(Saves.ActiveHeroId, Is.Null);
             Assert.That(Saves.LastSelectedHeroId, Is.Null, "a later quit cannot bring it back");
@@ -358,7 +358,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             Assert.That(Find<Selectable>("PlayButton").gameObject.activeSelf, Is.False);
             Assert.That(Find<Selectable>("HeroDeleteButton").gameObject.activeSelf, Is.False);
             Assert.That(Find<MonoBehaviour>("HeroShowcaseText").GetComponent<TextMeshProUGUI>().text, Is.Empty);
-            Assert.That(prompt.gameObject.activeSelf, Is.False, "and the slots did not re-select anything, or open the name entry");
+            Assert.That(popup.gameObject.activeSelf, Is.False, "and the slots did not re-select anything, or open the name entry");
             Assert.That(UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include)
                 .Where(component => component.GetType().Name == "HeroSlotToggle")
                 .Any(slot => IsOn(slot.GetComponent<Selectable>())), Is.False, "no slot is on");
@@ -370,11 +370,11 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             string bran = null;
             yield return OpenMenu(withHero: true, seed: saves => bran = saves.Create("Bran").Id);
             var aria = Saves.ActiveHeroId;
-            var deletePrompt = Find<MonoBehaviour>("HeroDeletePrompt");
+            var deletePopup = Find<MonoBehaviour>("HeroDeletePopup");
 
             Click(Find<Selectable>("HeroDeleteButton"));
             yield return null;
-            Click(Member<Component>(deletePrompt, "confirm"));
+            Click(Member<Component>(deletePopup, "confirm"));
             yield return null;
 
             Assert.That(Saves.List().Single().Id, Is.EqualTo(bran));
@@ -408,7 +408,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             var showcase = Find<MonoBehaviour>("HeroShowcaseText").GetComponent<TextMeshProUGUI>();
             var play = Find<Selectable>("PlayButton");
             var delete = Find<Selectable>("HeroDeleteButton");
-            var deletePrompt = Find<MonoBehaviour>("HeroDeletePrompt");
+            var deletePopup = Find<MonoBehaviour>("HeroDeletePopup");
             Assert.That(SlotOf(damaged).interactable, Is.True, "an unreadable slot can be chosen");
             Assert.That(SlotOf(future).interactable, Is.True);
 
@@ -438,8 +438,8 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 
             Click(delete);
             yield return null;
-            Assert.That(Member<TextMeshProUGUI>(deletePrompt, "question").text, Does.Contain("unreadable"));
-            Click(Member<Component>(deletePrompt, "confirm"));
+            Assert.That(Member<TextMeshProUGUI>(deletePopup, "question").text, Does.Contain("unreadable"));
+            Click(Member<Component>(deletePopup, "confirm"));
             yield return null;
 
             Assert.That(Directory.GetFiles(folder, "*" + future + "*"), Is.Empty, "the file and its backup are both gone");
@@ -452,7 +452,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             yield return null;
             Click(delete);
             yield return null;
-            Click(Member<Component>(deletePrompt, "confirm"));
+            Click(Member<Component>(deletePopup, "confirm"));
             yield return null;
 
             Assert.That(Directory.GetFiles(folder, "*" + damaged + "*"), Is.Empty, "a damaged file and its backup go too");

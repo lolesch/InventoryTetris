@@ -15,7 +15,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// time tick continuously while the panel is up.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class EncounterStatsPanel : MonoBehaviour
+    public sealed class EncounterStatsText : MonoBehaviour
     {
         [SerializeField] private TextMeshProUGUI combatStatsText;
         [SerializeField] private TextMeshProUGUI lastRunText;

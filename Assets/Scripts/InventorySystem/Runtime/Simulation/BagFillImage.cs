@@ -17,7 +17,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     ///
     /// Polled every <see cref="Update"/> rather than bound to the container's content event: a hero
     /// load replaces the bag, and a poll that reads the Hero each frame follows it with no rebinding
-    /// (same reasoning as <see cref="EncounterStatsPanel"/>). The image is only written when the
+    /// (same reasoning as <see cref="EncounterStatsText"/>). The image is only written when the
     /// fraction changes.
     /// </summary>
     [RequireComponent(typeof(Image))]

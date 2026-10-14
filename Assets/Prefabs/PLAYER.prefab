@@ -755,7 +755,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2732631bc6a89ca4b97a576d55128957, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Displays.CharacterStatPanel
+  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Displays.CharacterStatSheet
   rowPrefab: {fileID: 4578763057697142868}
 --- !u!1 &6596900063687829679
 GameObject:

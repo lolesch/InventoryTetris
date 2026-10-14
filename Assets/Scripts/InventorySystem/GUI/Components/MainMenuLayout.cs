@@ -3,7 +3,7 @@ using TMPro;
 using ToolSmiths.InventorySystem.Services;
 using UnityEngine;
 
-namespace ToolSmiths.InventorySystem.GUI.Displays
+namespace ToolSmiths.InventorySystem.GUI.Components
 {
     /// <summary>
     /// The Main Menu's platform and hero rules. In a browser <see cref="exitButton"/> is hidden, since quitting
@@ -12,7 +12,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
     /// and Delete are shown only with a hero to act on: a menu with none offers the hero slots alone.
     /// Acts in Play Mode only, so an enable in the Editor does not rewrite the authored buttons.
     /// </summary>
-    public sealed class MainMenuStatus : MonoBehaviour
+    public sealed class MainMenuLayout : MonoBehaviour
     {
         [Tooltip("The Exit button: hidden in WebGL.")]
         [SerializeField] private GameObject exitButton;
@@ -34,7 +34,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                 return;
 
             watched = HeroSaveService.Instance;
-            watched.HeroesChanged += Refresh;
+            watched.HeroesChanged += Repaint;
             Apply(Application.platform);
         }
 
@@ -43,7 +43,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
             if (watched == null)
                 return;
 
-            watched.HeroesChanged -= Refresh;
+            watched.HeroesChanged -= Repaint;
             watched = null;
         }
 
@@ -54,10 +54,10 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 
             exitButton.SetActive(exits);
             savedLine.gameObject.SetActive(!exits);
-            Refresh();
+            Repaint();
         }
 
-        private void Refresh()
+        private void Repaint()
         {
             savedLine.text = MainMenuFlow.SavedLine(watched) ?? string.Empty;
             playButton.SetActive(MainMenuFlow.CanPlay(watched));

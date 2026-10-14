@@ -16,12 +16,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// icon, its name in the rarity colour, a hover preview
     /// through <see cref="PreviewProvider"/> and a click that reports the Drop back. Not an
     /// <c>AbstractSlotDisplay</c> - a ground slot has no container, no cell and nothing to drag - so
-    /// it carries only the hover pattern, not the container machinery. <see cref="GroundItemsPanel"/>
+    /// it carries only the hover pattern, not the container machinery. <see cref="GroundItemsList"/>
     /// is the only intended caller of <see cref="Bind"/> and <see cref="Unbind"/>, and owns what a click does. A pooled entry is fully reset on
     /// <see cref="Unbind"/>: the next Drop finds nothing of the last one.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class GroundItemSlotDisplay : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
+    public sealed class GroundItem : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
     {
         [SerializeField] private Image icon;
         [SerializeField] private TextMeshProUGUI nameLabel;

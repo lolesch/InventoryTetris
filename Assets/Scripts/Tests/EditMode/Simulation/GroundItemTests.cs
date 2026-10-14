@@ -15,9 +15,9 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
     /// in <c>Assembly-CSharp</c>, which a test assembly cannot reference, so it is reached by type name.
     /// </summary>
     [TestFixture]
-    public sealed class GroundSlotDisplayTests
+    public sealed class GroundItemTests
     {
-        private const string TypeName = "ToolSmiths.InventorySystem.Runtime.Simulation.GroundItemSlotDisplay, Assembly-CSharp";
+        private const string TypeName = "ToolSmiths.InventorySystem.Runtime.Simulation.GroundItem, Assembly-CSharp";
         private const string PotionId = "fake.potion";
 
         private GameObject _host;

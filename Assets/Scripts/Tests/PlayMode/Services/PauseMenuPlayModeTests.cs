@@ -60,12 +60,12 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 
         private static MonoBehaviour Panel() =>
             Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include)
-                .First(component => component.GetType().Name == "PauseMenuPanel");
+                .First(component => component.GetType().Name == "PauseMenuPopup");
 
         private static T Member<T>(Component owner, string field) =>
             (T)owner.GetType().GetField(field, BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(owner);
 
-        private static GameObject Prompt() => Member<GameObject>(Panel(), "prompt");
+        private static GameObject Popup() => Member<GameObject>(Panel(), "popup");
 
         private static void SendToTheField() => Simulation.Send(GameBoot.Load().Locations.First());
 
@@ -73,17 +73,17 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         public IEnumerator Escape_WithNothingToPeel_OpensTheMenuInTown_AndEscapeAgainClosesIt()
         {
             yield return OpenExample();
-            Assert.That(Prompt().activeSelf, Is.False, "premise: the screen starts closed");
+            Assert.That(Popup().activeSelf, Is.False, "premise: the screen starts closed");
 
             yield return Tap(keyboard.escapeKey);
 
             Assert.That(Menu.IsOpen, Is.True);
-            Assert.That(Prompt().activeSelf, Is.True);
+            Assert.That(Popup().activeSelf, Is.True);
 
             yield return Tap(keyboard.escapeKey);
 
             Assert.That(Menu.IsOpen, Is.False);
-            Assert.That(Prompt().activeSelf, Is.False);
+            Assert.That(Popup().activeSelf, Is.False);
         }
 
         [UnityTest]

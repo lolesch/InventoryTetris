@@ -11,7 +11,7 @@ using UnityEngine.UI;
 namespace ToolSmiths.InventorySystem.GUI.Components.Panels
 {
     /// <summary>
-    /// The dev tools' one view (issue #118): the debug spawn, clear, sort, kill, heal and
+    /// The dev tools (issue #118): the debug spawn, clear, sort, kill, heal and
     /// amount-slider controls. Each public method is a <c>UnityEvent</c> target in a scene and
     /// does its work through a service (<see cref="IItemService"/>, <see cref="IInventoryService"/>,
     /// <see cref="ISession"/>) read on every call, so no control caches the Hero or the World
@@ -19,7 +19,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
     /// exception is the dev log of the Hero's death and damage, which follows the Hero through
     /// <see cref="ISession.HeroLoaded"/>.
     /// </summary>
-    public sealed class DebugPanel : MonoBehaviour
+    public sealed class DebugTools : MonoBehaviour
     {
         [SerializeField] private Slider amountSlider;
         [SerializeField] private TextMeshProUGUI amountText;

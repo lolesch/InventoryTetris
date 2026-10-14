@@ -164,7 +164,7 @@ namespace ToolSmiths.InventorySystem.Services
             return null;
         }
 
-        // ── debug helpers (the DebugPanel buttons, the Restock) ──────
+        // ── debug helpers (the DebugTools buttons, the Restock) ──────
 
         public ItemInstance Create(string definitionId, ItemRarity rarity) =>
             generator.Roll(config.Catalog.Definition(definitionId), rarity, 0);

@@ -206,7 +206,7 @@ namespace ToolSmiths.InventorySystem.Services
         }
 
         // The Cancel chain, with the Context layer that is the services' own. The Drag layer is the drag
-        // provider's and the Modal and Pause Menu layers the menus', so each registers itself.
+        // provider's and the Popup and Pause Menu layers the menus', so each registers itself.
         private static CancelChain BuildCancel(IInputService<GameAction> keys, IInventoryService inventory)
         {
             var chain = new CancelChain(keys);

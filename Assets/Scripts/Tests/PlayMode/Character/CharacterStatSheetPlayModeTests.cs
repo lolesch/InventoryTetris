@@ -16,12 +16,12 @@ using UnityEngine.TestTools;
 namespace ToolSmiths.InventorySystem.Tests.PlayMode.Character
 {
     /// <summary>
-    /// The stat sheet's life cycle (issues #111, #114), on the real <c>PLAYER</c> prefab. <c>CharacterStatPanel</c>
+    /// The stat sheet's life cycle (issues #111, #114), on the real <c>PLAYER</c> prefab. <c>CharacterStatSheet</c>
     /// lives in the predefined assembly, out of a test assembly's reach, so it is read by name; the boot's
     /// <c>ItemService</c> is what draws the rows' icons and its Session holds the hero, so this needs Play Mode.
     /// Run with the PlayMode filter; <c>Run All</c> in the EditMode tab does not include it.
     /// </summary>
-    public sealed class CharacterStatPanelPlayModeTests
+    public sealed class CharacterStatSheetPlayModeTests
     {
         private GameObject _player;
         private MonoBehaviour _panel;
@@ -42,7 +42,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Character
             Assert.Ignore("the PLAYER prefab is loaded by path, which only the Editor can do");
 #endif
 
-            _panel = Named("CharacterStatPanel");
+            _panel = Named("CharacterStatSheet");
             _hero = Session.Instance.Hero;
 
             yield return null;

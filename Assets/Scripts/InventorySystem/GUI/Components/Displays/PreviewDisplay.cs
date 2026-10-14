@@ -10,7 +10,6 @@ using UnityEngine.UI;
 
 namespace ToolSmiths.InventorySystem.GUI.Displays
 {
-    // TODO: inherit AbstractDisplay
     public sealed class PreviewDisplay : SimplePanel, IDisplay<(Package package, Package compareTo)>
     {
         [SerializeField] private Image icon;

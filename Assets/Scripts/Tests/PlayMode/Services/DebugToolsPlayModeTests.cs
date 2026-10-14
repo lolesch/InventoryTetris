@@ -10,11 +10,11 @@ using UnityEngine.TestTools;
 namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 {
     /// <summary>
-    /// The <c>DebugPanel</c> controls (issue #118) and its dev log of the Hero's death. The panel lives in the
+    /// The <c>DebugTools</c> controls (issue #118) and its dev log of the Hero's death. The panel lives in the
     /// predefined assembly, out of a test assembly's reach, so it is added and called by name. Needs Play Mode:
     /// the boot's Session holds the Hero and World the controls act on. Run with the PlayMode filter.
     /// </summary>
-    public sealed class DebugPanelPlayModeTests
+    public sealed class DebugToolsPlayModeTests
     {
         private GameObject _host;
         private Component _panel;
@@ -22,10 +22,10 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         [UnitySetUp]
         public IEnumerator SetUp()
         {
-            var type = System.Type.GetType("ToolSmiths.InventorySystem.GUI.Components.Panels.DebugPanel, Assembly-CSharp");
-            Assert.That(type, Is.Not.Null, "DebugPanel is in the predefined assembly");
+            var type = System.Type.GetType("ToolSmiths.InventorySystem.GUI.Components.Panels.DebugTools, Assembly-CSharp");
+            Assert.That(type, Is.Not.Null, "DebugTools is in the predefined assembly");
 
-            _host = new GameObject("DebugPanelTestHost");
+            _host = new GameObject("DebugToolsTestHost");
             _panel = _host.AddComponent(type);
 
             yield return null;

@@ -16,7 +16,6 @@ using UnityEngine.UI;
 
 namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 {
-    // TODO: inherit AbstractDisplay or rename this pattern
     [System.Serializable]
     [RequireComponent(typeof(RectTransform))]
     internal abstract class AbstractSlotDisplay : MonoBehaviour, IPointerDownHandler, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler, IPointerEnterHandler, IPointerExitHandler

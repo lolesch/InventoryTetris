@@ -25,7 +25,7 @@ using UnityEngine.TestTools;
 namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 {
     /// <summary>
-    /// The real scenes' Save &amp; Exit (issue #258): in Town it writes and loads the Main Menu with no prompt; in
+    /// The real scenes' Save &amp; Exit (issue #258): in Town it writes and loads the Main Menu with no popup; in
     /// the Field it asks first, and on confirm Recalls with the loot kept; Cancel leaves the Run untouched; a
     /// failed write stays in the game with the cause, Retry works and Exit without saving has its own confirm.
     /// Quit Game (issue #259) follows the same rule and then quits, through <see cref="GameExit.Quitter"/> so the
@@ -127,15 +127,15 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             _ = ExecuteEvents.Execute(target.gameObject, click, ExecuteEvents.pointerClickHandler);
         }
 
-        private static MonoBehaviour Prompt() => Member<MonoBehaviour>(Find("PauseMenuPanel"), "saveExitPrompt");
+        private static MonoBehaviour Popup() => Member<MonoBehaviour>(Find("PauseMenuPopup"), "saveExitPopup");
 
-        private static void ClickQuitGame() => Click(Member<Component>(Find("PauseMenuPanel"), "quitGame"));
+        private static void ClickQuitGame() => Click(Member<Component>(Find("PauseMenuPopup"), "quitGame"));
 
-        private static void ClickSaveExit() => Click(Member<Component>(Find("PauseMenuPanel"), "saveExit"));
+        private static void ClickSaveExit() => Click(Member<Component>(Find("PauseMenuPopup"), "saveExit"));
 
-        private static string PromptText() => Member<TextMeshProUGUI>(Prompt(), "message").text;
+        private static string PopupText() => Member<TextMeshProUGUI>(Popup(), "message").text;
 
-        private static void ClickPrompt(string button) => Click(Member<Component>(Prompt(), button));
+        private static void ClickPopup(string button) => Click(Member<Component>(Popup(), button));
 
         private static IEnumerator WaitForScene(string name)
         {
@@ -170,7 +170,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         private static void SendToTheField() => Simulation.Send(GameBoot.Load().Locations.First());
 
         [UnityTest]
-        public IEnumerator InTown_SaveAndExit_WritesTheHeroAndLoadsTheMenu_WithNoPrompt()
+        public IEnumerator InTown_SaveAndExit_WritesTheHeroAndLoadsTheMenu_WithNoPopup()
         {
             yield return Open("Example");
             var savedBefore = Saves.List()[0].SavedAtUtc;
@@ -179,7 +179,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 
             ClickSaveExit();
 
-            Assert.That(Prompt().gameObject.activeSelf, Is.False, "Town asks nothing");
+            Assert.That(Popup().gameObject.activeSelf, Is.False, "Town asks nothing");
             yield return WaitForScene("MainMenu");
             Assert.That(Saves.List()[0].SavedAtUtc, Is.GreaterThan(savedBefore), "the hero was written");
             Assert.That(Menu.IsOpen, Is.False);
@@ -196,14 +196,14 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 
             ClickSaveExit();
 
-            Assert.That(Prompt().gameObject.activeSelf, Is.True);
-            Assert.That(PromptText(), Is.EqualTo(SaveAndExit.FieldQuestion));
+            Assert.That(Popup().gameObject.activeSelf, Is.True);
+            Assert.That(PopupText(), Is.EqualTo(SaveAndExit.FieldQuestion));
             Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.InField), "asking ends nothing");
 
-            ClickPrompt("back");
+            ClickPopup("back");
             yield return null;
 
-            Assert.That(Prompt().gameObject.activeSelf, Is.False);
+            Assert.That(Popup().gameObject.activeSelf, Is.False);
             Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.InField), "Cancel leaves the Run untouched");
             Assert.That(Menu.IsOpen, Is.True, "and the Pause Menu stays where it was");
             Assert.That(BagHolds(helm), Is.True);
@@ -211,7 +211,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 
             ClickSaveExit();
             Assert.That(ServiceLocator.Get<ICancelChain>().Cancel(), Is.True, "the Cancel key closes the confirm too");
-            Assert.That(Prompt().gameObject.activeSelf, Is.False);
+            Assert.That(Popup().gameObject.activeSelf, Is.False);
             Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.InField));
         }
 
@@ -228,7 +228,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             yield return null;
 
             ClickSaveExit();
-            ClickPrompt("primary");
+            ClickPopup("primary");
 
             Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.InTown), "the implicit Recall");
             Assert.That(Session.Hero.Corpse.Exists, Is.False, "no Death penalty");
@@ -253,16 +253,16 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             LogAssert.Expect(LogType.Error, new Regex("Could not save hero"));
 
             ClickSaveExit();
-            ClickPrompt("primary");
+            ClickPopup("primary");
             yield return null;
 
             Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("Example"), "a failed write keeps the player in the game");
-            Assert.That(Prompt().gameObject.activeSelf, Is.True);
-            Assert.That(PromptText(), Does.Contain(SaveResult.Failed(SaveFailure.StoreFailed).Reason));
+            Assert.That(Popup().gameObject.activeSelf, Is.True);
+            Assert.That(PopupText(), Does.Contain(SaveResult.Failed(SaveFailure.StoreFailed).Reason));
             Assert.That(BagHolds(helm), Is.True, "the banked loot is still held");
 
             store.FailWrites = false;
-            ClickPrompt("primary");
+            ClickPopup("primary");
 
             yield return WaitForScene("MainMenu");
             Assert.That(Saves.List()[0].SavedAtUtc, Is.GreaterThan(DateTime.UtcNow.AddMinutes(-5)));
@@ -280,25 +280,25 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             ClickSaveExit();
             yield return null;
 
-            Assert.That(Prompt().gameObject.activeSelf, Is.True, "Town went straight through, and the failure opened the prompt");
+            Assert.That(Popup().gameObject.activeSelf, Is.True, "Town went straight through, and the failure opened the popup");
 
-            ClickPrompt("secondary");
+            ClickPopup("secondary");
             yield return null;
 
             Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("Example"), "asking is not leaving");
-            Assert.That(PromptText(), Is.EqualTo(SaveAndExit.DiscardQuestion));
+            Assert.That(PopupText(), Is.EqualTo(SaveAndExit.DiscardQuestion));
 
             Assert.That(ServiceLocator.Get<ICancelChain>().Cancel(), Is.True);
-            Assert.That(PromptText(), Does.StartWith("The hero was not saved."), "Cancel steps back to the failure");
+            Assert.That(PopupText(), Does.StartWith("The hero was not saved."), "Cancel steps back to the failure");
 
-            ClickPrompt("secondary");
-            ClickPrompt("secondary");
+            ClickPopup("secondary");
+            ClickPopup("secondary");
 
             yield return WaitForScene("MainMenu");
         }
 
         [UnityTest]
-        public IEnumerator InTown_QuitGame_WritesTheHeroThenQuits_WithNoPrompt()
+        public IEnumerator InTown_QuitGame_WritesTheHeroThenQuits_WithNoPopup()
         {
             yield return Open("Example");
             var savedBefore = Saves.List()[0].SavedAtUtc;
@@ -307,7 +307,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 
             ClickQuitGame();
 
-            Assert.That(Prompt().gameObject.activeSelf, Is.False, "Town asks nothing");
+            Assert.That(Popup().gameObject.activeSelf, Is.False, "Town asks nothing");
             Assert.That(quits, Is.EqualTo(1));
             Assert.That(savedAtTheQuit, Is.GreaterThan(savedBefore), "the hero was written before the quit");
             Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("Example"), "a quit loads no scene");
@@ -324,15 +324,15 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 
             ClickQuitGame();
 
-            Assert.That(Prompt().gameObject.activeSelf, Is.True);
-            Assert.That(PromptText(), Is.EqualTo(SaveAndExit.FieldQuestion));
+            Assert.That(Popup().gameObject.activeSelf, Is.True);
+            Assert.That(PopupText(), Is.EqualTo(SaveAndExit.FieldQuestion));
             Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.InField), "asking ends nothing");
             Assert.That(quits, Is.Zero);
 
-            ClickPrompt("back");
+            ClickPopup("back");
             yield return null;
 
-            Assert.That(Prompt().gameObject.activeSelf, Is.False);
+            Assert.That(Popup().gameObject.activeSelf, Is.False);
             Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.InField));
             Assert.That(BagHolds(helm), Is.True);
             Assert.That(quits, Is.Zero);
@@ -349,7 +349,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             var savedBefore = Saves.List()[0].SavedAtUtc;
 
             ClickQuitGame();
-            ClickPrompt("primary");
+            ClickPopup("primary");
 
             Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.InTown), "the implicit Recall");
             Assert.That(Session.Hero.Corpse.Exists, Is.False, "no Death penalty");
@@ -373,19 +373,19 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             LogAssert.Expect(LogType.Error, new Regex("Could not save hero"));
 
             ClickQuitGame();
-            ClickPrompt("primary");
+            ClickPopup("primary");
             yield return null;
 
             Assert.That(quits, Is.Zero, "a failed write quits nothing");
-            Assert.That(Prompt().gameObject.activeSelf, Is.True);
-            Assert.That(PromptText(), Does.Contain(SaveResult.Failed(SaveFailure.StoreFailed).Reason));
+            Assert.That(Popup().gameObject.activeSelf, Is.True);
+            Assert.That(PopupText(), Does.Contain(SaveResult.Failed(SaveFailure.StoreFailed).Reason));
             Assert.That(BagHolds(helm), Is.True);
 
             store.FailWrites = false;
-            ClickPrompt("primary");
+            ClickPopup("primary");
 
             Assert.That(quits, Is.EqualTo(1));
-            Assert.That(Prompt().gameObject.activeSelf, Is.False);
+            Assert.That(Popup().gameObject.activeSelf, Is.False);
         }
 
         [UnityTest]
@@ -398,12 +398,12 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             LogAssert.Expect(LogType.Error, new Regex("Could not save hero"));
 
             ClickQuitGame();
-            ClickPrompt("secondary");
+            ClickPopup("secondary");
 
-            Assert.That(PromptText(), Is.EqualTo(SaveAndExit.DiscardQuestion));
+            Assert.That(PopupText(), Is.EqualTo(SaveAndExit.DiscardQuestion));
             Assert.That(quits, Is.Zero, "asking is not quitting");
 
-            ClickPrompt("secondary");
+            ClickPopup("secondary");
 
             Assert.That(quits, Is.EqualTo(1));
 
@@ -476,7 +476,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         }
 
         private static UnityEngine.UI.Selectable ExitButton(string field) =>
-            Member<Component>(Find("PauseMenuPanel"), field).GetComponent<UnityEngine.UI.Selectable>();
+            Member<Component>(Find("PauseMenuPopup"), field).GetComponent<UnityEngine.UI.Selectable>();
 
         private static bool RequestScene(string scene) => SceneProvider.Instance.LoadScene(scene);
 
@@ -484,7 +484,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         public IEnumerator QuitGame_IsHiddenInAWebGLBuild_AndOfferedOnTheOthers()
         {
             yield return Open("Example");
-            var panel = Find("PauseMenuPanel");
+            var panel = Find("PauseMenuPopup");
             var quitGame = Member<Component>(panel, "quitGame").gameObject;
             var apply = panel.GetType().GetMethod("Apply")!;
 
