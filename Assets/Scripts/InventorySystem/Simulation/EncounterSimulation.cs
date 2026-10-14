@@ -57,13 +57,11 @@ namespace ToolSmiths.InventorySystem.Simulation
         private readonly HeroBehaviour _behaviour;
         private readonly IBagGauge _bag;
         private readonly EncounterTuning _tuning;
-        private readonly ArenaTuning _arena;
+        private readonly Arena _arena;
         private readonly IRollSource _movementRolls;
         private readonly IRollSource _hitRolls;
         private readonly CombatClock _clock;
-        private readonly List<float> _bearings = new(); // reused buffer - a spawn sorts the living bearings
         private readonly List<Enemy> _enemies = new();
-        private readonly List<Enemy> _castTargets = new(); // reused buffer — the Cast runs on a cadence
 
         private int _rosterBrute;
         private int _rosterSkirmisher;
@@ -113,8 +111,7 @@ namespace ToolSmiths.InventorySystem.Simulation
 
             _tuning = tuning ?? new EncounterTuning();
             _tuning.Validate();
-            _arena = _tuning.Arena;
-            HeroPosition = _arena.Origin;
+            _arena = new Arena(_tuning.Arena);
 
             _clock = new CombatClock(_tuning.Tick, _tuning.MaxTicksPerAdvance);
             _clock.OnTick += Step;
@@ -159,13 +156,13 @@ namespace ToolSmiths.InventorySystem.Simulation
         public int AliveEnemyCount => _enemies.Count;
 
         /// <summary>The arena the fight takes place on - its origin, radius and the unarmed Strike Range.</summary>
-        public ArenaTuning Arena => _arena;
+        public ArenaTuning Arena => _arena.Tuning;
 
         /// <summary>
         /// Where the hero stands on the arena. He starts at the origin, walks to his target on sim time and walks
         /// back when nothing lives; the arena only reads it.
         /// </summary>
-        public Coordinate HeroPosition { get; private set; }
+        public Coordinate HeroPosition => _arena.HeroPosition;
 
         /// <summary>How far from <see cref="HeroPosition"/> an enemy may stand to be aimed at by the Cast: the Cast definition's range.</summary>
         public float CastRange => _tuning.Cast.Range;
@@ -174,7 +171,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// How far from <see cref="HeroPosition"/> the hero's Strike reaches: his weapon type's range, or the
         /// arena's unarmed range while he wields none. Read live, so re-gearing changes it on the spot.
         /// </summary>
-        public float HeroStrikeRange => _hero.WeaponStrikeRange ?? _arena.HeroStrikeRange;
+        public float HeroStrikeRange => _hero.WeaponStrikeRange ?? _arena.Tuning.HeroStrikeRange;
 
         /// <summary>
         /// The enemy the hero is fighting - the one he walks to and Strikes - or null when none lives (issues #182,
@@ -315,7 +312,8 @@ namespace ToolSmiths.InventorySystem.Simulation
             // does anyone attack, against this tick's positions.
             _heroTarget = ChooseHeroTarget();
             MoveHero(dt);
-            MoveEnemies(dt);
+            for (var i = 0; i < _enemies.Count; i++)
+                _arena.WalkEnemy(_enemies[i], dt);
 
             ResolveStrike(dt);
             ResolveCast(dt);
@@ -417,7 +415,8 @@ namespace ToolSmiths.InventorySystem.Simulation
                 // desync so a Pack does not strike in lockstep
                 StrikeTimer = (float)_rolls.Next() * (1f / EnemyArchetypes.Of(archetype).AttackSpeed),
             };
-            PlaceInTheArena(enemy);
+            var bearingRoll = (float)_movementRolls.Next();
+            _arena.PlaceSpawn(enemy, _enemies, bearingRoll, stopRoll: (float)_movementRolls.Next());
             _enemies.Add(enemy);
 
             if (archetype == EnemyArchetype.Brute) _spawnedBrute++;
@@ -426,96 +425,16 @@ namespace ToolSmiths.InventorySystem.Simulation
             EnemySpawned?.Invoke(enemy);
         }
 
-        // ─── the arena ──────────────────────────────────────────────────────
-
-        // Slack on every range test: an enemy that stops exactly at its range lands on it within float error.
-        private const float RangeSlack = 0.001f;
-
-        private bool InReach(Coordinate from, Coordinate to, float range) =>
-            Coordinate.Distance(from, to) <= range + RangeSlack;
-
-        /// <summary>
-        /// Stand a fresh enemy on the spawn ring at a bearing of the sim's choosing, and fix how close it will
-        /// walk in. Both rolls come from the movement stream, bearing first.
-        /// </summary>
-        private void PlaceInTheArena(Enemy enemy)
-        {
-            var bearing = PickSpawnBearing((float)_movementRolls.Next());
-            var stopRoll = (float)_movementRolls.Next();
-
-            enemy.Bearing = bearing;
-            enemy.Position = _arena.Origin
-                + Coordinate.Rotate(new Coordinate(1f, 0f), bearing) * (_arena.Radius + _arena.SpawnMargin);
-            enemy.StopDistance = enemy.StrikeRange * (1f - _arena.StopJitter * stopRoll);
-        }
-
-        /// <summary>
-        /// The middle of the widest gap between the living enemies' bearings, strayed by the jitter; the first
-        /// such gap on a tie, and the whole circle when nobody lives. A Pack spreads out because each arrival
-        /// bisects what the last one left.
-        /// </summary>
-        private float PickSpawnBearing(float roll)
-        {
-            _bearings.Clear();
-            for (var i = 0; i < _enemies.Count; i++)
-                if (!_enemies[i].IsDown)
-                    _bearings.Add(_enemies[i].Bearing);
-            _bearings.Sort();
-
-            var start = 0f;
-            var width = 360f;
-            for (var i = 0; i < _bearings.Count; i++)
-            {
-                var end = i + 1 < _bearings.Count ? _bearings[i + 1] : _bearings[0] + 360f;
-                if (i == 0 || end - _bearings[i] > width)
-                {
-                    start = _bearings[i];
-                    width = end - _bearings[i];
-                }
-            }
-
-            return (start + width * (0.5f + (roll - 0.5f) * _arena.BearingJitter)) % 360f;
-        }
-
-        private void MoveEnemies(float dt)
-        {
-            var hero = HeroPosition;
-            for (var i = 0; i < _enemies.Count; i++)
-            {
-                var enemy = _enemies[i];
-                var step = WalkingSpeed(enemy.MovementSpeed) * dt;
-                var excess = Coordinate.Distance(enemy.Position, hero) - enemy.StopDistance;
-                if (excess <= 0f || step <= 0f) continue;
-
-                enemy.Position = Coordinate.MoveTowards(enemy.Position, hero, Math.Min(step, excess));
-            }
-        }
-
-        /// <summary>
-        /// A movement speed the sim can walk at: a stat modified below zero stands still instead of walking
-        /// backwards, and a NaN one (which every comparison refuses) stands still instead of poisoning a position.
-        /// </summary>
-        private static float WalkingSpeed(float speed) => speed > 0f ? speed : 0f;
-
         /// <summary>
         /// Walk the hero toward his target until it is within his Strike Range, never past it; with no target, walk
-        /// him home. A hero with no movement speed stands where he is.
+        /// him home.
         /// </summary>
         private void MoveHero(float dt)
         {
-            var step = WalkingSpeed(_hero.MovementSpeed) * _arena.MovementSpeedScale * dt;
-            if (step <= 0f) return;
-
             if (_heroTarget == null)
-            {
-                HeroPosition = Coordinate.MoveTowards(HeroPosition, _arena.Origin, step);
-                return;
-            }
-
-            var excess = Coordinate.Distance(HeroPosition, _heroTarget.Position) - HeroStrikeRange;
-            if (excess <= 0f) return;
-
-            HeroPosition = Coordinate.MoveTowards(HeroPosition, _heroTarget.Position, Math.Min(step, excess));
+                _arena.WalkHero(_hero.MovementSpeed, dt, _arena.Origin, 0f);
+            else
+                _arena.WalkHero(_hero.MovementSpeed, dt, _heroTarget.Position, HeroStrikeRange);
         }
 
         // ─── the hero's two attacks ──────────────────────────────────────────
@@ -526,7 +445,7 @@ namespace ToolSmiths.InventorySystem.Simulation
             var interval = 1f / _hero.AttackSpeed;
             if (_strikeTimer < interval || _enemies.Count == 0) return;
 
-            var target = _heroTarget != null && !_heroTarget.IsDown && InReach(HeroPosition, _heroTarget.Position, HeroStrikeRange)
+            var target = _heroTarget != null && !_heroTarget.IsDown && _arena.InRangeOfHero(_heroTarget.Position, HeroStrikeRange)
                 ? _heroTarget
                 : null;
             if (target == null)
@@ -560,8 +479,7 @@ namespace ToolSmiths.InventorySystem.Simulation
             if (!casting || !CanAffordCast(_hero.Resource)) return;
 
             // No one to aim at, or a shape that would catch nobody: the Cast does not fire and spends nothing.
-            var shape = _tuning.Cast.Shape.Scaled(_tuning.Cast.Size);
-            var aim = DensestCluster(shape);
+            var aim = _arena.DensestCluster(_enemies, _tuning.Cast);
             if (aim == null) return;
 
             // The Cast that leaves too little for another takes the whole remainder, so a run always ends on 0.
@@ -570,7 +488,7 @@ namespace ToolSmiths.InventorySystem.Simulation
             if (drains) _behaviour.ReleaseCastingRun();
             HeroCast?.Invoke();
 
-            var targets = InShape(shape, aim);
+            var targets = _arena.InShape(_enemies, _tuning.Cast, aim);
             for (var i = 0; i < targets.Count; i++)
             {
                 Land(_hero, targets[i], DamageType.MagicalDamage, _hero.MagicalDamage);
@@ -609,7 +527,7 @@ namespace ToolSmiths.InventorySystem.Simulation
                 enemy.StrikeTimer += dt;
                 if (enemy.StrikeTimer < interval) continue;
 
-                if (!InReach(enemy.Position, HeroPosition, enemy.StrikeRange))
+                if (!_arena.InRangeOfHero(enemy.Position, enemy.StrikeRange))
                 {
                     // Still walking in (or the hero stepped away): ready, but walking banks no burst.
                     enemy.StrikeTimer = interval;
@@ -672,7 +590,7 @@ namespace ToolSmiths.InventorySystem.Simulation
             if (current == null)
                 return BestScoring(inReachOnly: false);
 
-            if (InReach(HeroPosition, current.Position, HeroStrikeRange))
+            if (_arena.InRangeOfHero(current.Position, HeroStrikeRange))
                 return current;
 
             return BestScoring(inReachOnly: true) ?? current;
@@ -692,7 +610,7 @@ namespace ToolSmiths.InventorySystem.Simulation
             for (var i = 0; i < _enemies.Count; i++)
             {
                 var e = _enemies[i];
-                if (e.IsDown || (inReachOnly && !InReach(HeroPosition, e.Position, range))) continue;
+                if (e.IsDown || (inReachOnly && !_arena.InRangeOfHero(e.Position, range))) continue;
 
                 var score = weight * Coordinate.Distance(e.Position, _arena.Origin)
                     + (1f - weight) * Coordinate.Distance(e.Position, HeroPosition);
@@ -704,57 +622,5 @@ namespace ToolSmiths.InventorySystem.Simulation
             }
             return best;
         }
-
-        /// <summary>
-        /// The enemy the Cast is aimed at: of those within Cast Range, the one whose <paramref name="shape"/> (placed
-        /// per the anchor) holds the most enemies; a tie goes to the one nearest the hero, then the earliest spawned
-        /// (the enemies are in spawn order, so the first found keeps a tie). Null when no candidate's shape holds
-        /// anyone.
-        /// </summary>
-        private Enemy DensestCluster(AreaShape shape)
-        {
-            Enemy best = null;
-            var bestCount = 0;
-            var bestDistance = 0f;
-
-            for (var i = 0; i < _enemies.Count; i++)
-            {
-                var candidate = _enemies[i];
-                if (candidate.IsDown || !InReach(HeroPosition, candidate.Position, _tuning.Cast.Range)) continue;
-
-                var count = CountInShape(shape, candidate);
-                var distance = Coordinate.Distance(HeroPosition, candidate.Position);
-                if (count > bestCount || (count == bestCount && count > 0 && distance < bestDistance))
-                {
-                    best = candidate;
-                    bestCount = count;
-                    bestDistance = distance;
-                }
-            }
-            return best;
-        }
-
-        /// <summary>How many living enemies <see cref="InShape"/> would list, counted without building the list.</summary>
-        private int CountInShape(AreaShape shape, Enemy aim)
-        {
-            var count = 0;
-            for (var i = 0; i < _enemies.Count; i++)
-                if (Catches(shape, aim, _enemies[i]))
-                    count++;
-            return count;
-        }
-
-        /// <summary>The living enemies inside <paramref name="shape"/> placed for a Cast aimed at <paramref name="aim"/>, in spawn order.</summary>
-        private List<Enemy> InShape(AreaShape shape, Enemy aim)
-        {
-            _castTargets.Clear();
-            for (var i = 0; i < _enemies.Count; i++)
-                if (Catches(shape, aim, _enemies[i]))
-                    _castTargets.Add(_enemies[i]);
-            return _castTargets;
-        }
-
-        private bool Catches(AreaShape shape, Enemy aim, Enemy enemy) =>
-            !enemy.IsDown && shape.Contains(enemy.Position, _tuning.Cast.Anchor, HeroPosition, aim.Position);
     }
 }
