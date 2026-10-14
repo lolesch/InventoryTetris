@@ -28,18 +28,18 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// itself, so there is no moment to subscribe once and be done; and doing it in one
     /// place in <c>Update</c> leaves no <c>Awake</c>/<c>OnDisable</c> asymmetry to go silently
     /// dead on the second Play entry under disabled domain reload (<c>codebase-notes.md</c>).
-    /// Everything else is events: <see cref="EncounterSimulation.EnemySpawned"/> takes a view,
-    /// <see cref="EncounterSimulation.EnemyDefeated"/> retires it (issue #178: the view fades out for a
-    /// short sim-time interval, detached from the enemy, and is pooled when that ends), and each view
+    /// Everything else is events: <see cref="EncounterSimulation.EnemySpawned"/> takes a figure,
+    /// <see cref="EncounterSimulation.EnemyDefeated"/> retires it (issue #178: the figure fades out for a
+    /// short sim-time interval, detached from the enemy, and is pooled when that ends), and each figure
     /// follows its own enemy's health.
     ///
     /// A hero death or an auto-Recall leaves live enemies with nothing firing for them - the Run ending
-    /// nulls the Encounter, and that release-all is what empties the arena, dying views included.
+    /// nulls the Encounter, and that release-all is what empties the arena, dying figures included.
     ///
     /// The anchor is the active Location's Hero icon (its <see cref="ToggleCheckmark"/> image), resolved
     /// every frame from the Locations' <see cref="ToggleGroup"/>: it moves on a Relocate and goes null once
     /// the group resets, and whether the group's <c>ActiveMember</c> is already set when the Run is sent is
-    /// not guaranteed, so nothing is resolved at bind time. A null anchor holds the views where they are
+    /// not guaranteed, so nothing is resolved at bind time. A null anchor holds the figures where they are
     /// and shows nothing new. Positions are in the arena root's space, so this object must sit outside any
     /// face that fades or clips (the minimap's InFields). The checkmark itself is never moved; the hero figure
     /// is a separate element.
@@ -48,7 +48,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     public sealed class EnemyArena : MonoBehaviour, IDamageNumberOrigins
     {
         [SerializeField] private Figure prefab;
-        [SerializeField, Tooltip("Where the views live. Empty: this object's own RectTransform.")]
+        [SerializeField, Tooltip("Where the figures live. Empty: this object's own RectTransform.")]
         private RectTransform container;
         [SerializeField, Tooltip("The Locations' toggle group; its active member's Hero icon is the anchor.")]
         private ToggleGroup locations;
@@ -73,11 +73,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private ArenaDamageNumbers numbers;
         [SerializeField, Tooltip("Feedback: the sprite shakes on each hit. Independent of the others; off binds nothing.")]
         private bool hitShake = true;
-        [SerializeField, Tooltip("Feedback: a ring marks the enemy the hero's next Strike hits. Independent of the others.")]
+        [SerializeField, Tooltip("Feedback: a ring marks the target of the hero's latest Strike or Approach Intent. Independent of the others.")]
         private bool targetHighlight = true;
 
-        private readonly Dictionary<Enemy, Figure> _views = new();
-        // Figures whose enemy fell and that are fading out. Not in _views: no slot, no events, no highlight.
+        private readonly Dictionary<Enemy, Figure> _figures = new();
+        // Figures whose enemy fell and that are fading out. Not in _figures: no slot, no events, no highlight.
         private readonly List<DyingFigure> _dying = new();
         private readonly List<DepthEntry> _ordered = new();
         private Figure _marked;
@@ -85,7 +85,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private EncounterSimulation _bound;
         private AbstractToggle _anchorOwner;
         private RectTransform _anchor;
-        // Where the arena was last drawn (set by Place), so a number can be projected without a view to read.
+        // Where the arena was last drawn (set by Place), so a number can be projected without a figure to read.
         private Vector2 _center;
         private ArenaProjection _projection;
         private bool _hasCenter;
@@ -153,7 +153,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             // could listen - and a Send can land between frames with enemies already in. Seeding
             // oldest-first matches what the events would have built.
             for (var i = 0; i < encounter.Enemies.Count; i++)
-                SpawnView(encounter.Enemies[i]);
+                SpawnFigure(encounter.Enemies[i]);
         }
 
         private void Unbind()
@@ -166,9 +166,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             }
 
             // A sim that ended with enemies alive (hero death, auto-Recall) raised nothing for them.
-            foreach (var view in _views.Values)
-                Release(view);
-            _views.Clear();
+            foreach (var figure in _figures.Values)
+                Release(figure);
+            _figures.Clear();
             _marked = null;
 
             // No Run, no hero on the arena, and no number left listening to the sim that ended.
@@ -184,9 +184,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _dying.Clear();
         }
 
-        private void OnEnemySpawned(Enemy enemy) => SpawnView(enemy);
+        private void OnEnemySpawned(Enemy enemy) => SpawnFigure(enemy);
 
-        private void OnEnemyDefeated(Enemy enemy) => RemoveView(enemy);
+        private void OnEnemyDefeated(Enemy enemy) => RemoveFigure(enemy);
 
         private void FadeDying(float simDelta)
         {
@@ -244,15 +244,15 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         }
 
         /// <summary>Takes a pooled figure for <paramref name="enemy"/>. It stays hidden until <see cref="Place"/> puts it where the sim has the enemy.</summary>
-        private void SpawnView(Enemy enemy)
+        private void SpawnFigure(Enemy enemy)
         {
-            if (_views.ContainsKey(enemy))
+            if (_figures.ContainsKey(enemy))
                 return;
 
             var figure = Pool.GetObject();
             figure.Dress(visuals != null ? visuals.For(enemy.Archetype) : EnemyVisuals.Fallback);
             BindFigure(figure, enemy.HealthResource, enemy.Archetype.ToString());
-            _views.Add(enemy, figure);
+            _figures.Add(enemy, figure);
         }
 
         /// <summary>
@@ -260,9 +260,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// (at once when the fade is off). The killing blow's <c>CurrentHasChanged</c> fired before
         /// <c>EnemyDefeated</c>, so whatever it queued on the figure still plays during the fade.
         /// </summary>
-        private void RemoveView(Enemy enemy)
+        private void RemoveFigure(Enemy enemy)
         {
-            if (!_views.Remove(enemy, out var figure))
+            if (!_figures.Remove(enemy, out var figure))
                 return;
 
             if (figure == _marked)
@@ -292,8 +292,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         }
 
         /// <summary>
-        /// Moves the target ring to the view of <see cref="EncounterSimulation.HeroTarget"/>, the target of the hero's
-        /// latest Strike or Approach Intent, and off with no living enemy. Read from <c>_views</c> only: a dying
+        /// Moves the target ring to the figure of <see cref="EncounterSimulation.HeroTarget"/>, the target of the hero's
+        /// latest Strike or Approach Intent, and off with no living enemy. Read from <c>_figures</c> only: a dying
         /// enemy has left it, so it is never marked. Nothing is marked with the switch off or no Encounter.
         /// </summary>
         /// <param name="heroTarget">This frame's <see cref="EncounterSimulation.HeroTarget"/>, read once by <see cref="Update"/>.</param>
@@ -301,7 +301,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         {
             Figure target = null;
             if (targetHighlight && _bound != null && heroTarget != null)
-                _views.TryGetValue(heroTarget, out target);
+                _figures.TryGetValue(heroTarget, out target);
 
             if (target == _marked)
                 return;
@@ -338,7 +338,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             // Enemies face the hero; the hero faces his Strike target, and keeps his way with none.
             var moved = false;
-            foreach (var (enemy, figure) in _views)
+            foreach (var (enemy, figure) in _figures)
                 moved |= PlaceFigure(figure, enemy.Position, _bound.HeroPosition);
 
             if (heroFigure != null)
@@ -385,7 +385,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private void SortByDepth()
         {
             _ordered.Clear();
-            foreach (var figure in _views.Values)
+            foreach (var figure in _figures.Values)
                 Order(figure);
             foreach (var dying in _dying)
                 Order(dying.Figure);

@@ -4,14 +4,8 @@ using Submodules.Utility.Extensions;
 namespace ToolSmiths.InventorySystem.Simulation
 {
     /// <summary>
-    /// The tuning values of the arena the fight takes place on (spatial-combat spec): a flat disk on the
-    /// XZ plane around an <see cref="Origin"/> the hero calls home. Enemies spawn <see cref="SpawnMargin"/>
-    /// beyond its <see cref="Radius"/> and walk in. Plain tuning, like <see cref="EncounterTuning"/>: a test
-    /// overrides what it needs, the <see cref="Standard"/> placeholders are untested starting points.
-    ///
-    /// A default-constructed arena is <i>collapsed</i> (radius and margin zero): every enemy spawns on the
-    /// hero, already within any Strike Range, so the fight behaves as it did before the sim owned position.
-    /// <see cref="Standard"/> is the real arena.
+    /// The tuning of the flat disk the fight takes place on. A default-constructed arena is collapsed
+    /// (radius and margin zero): every enemy spawns on the hero, so a test sees the fight at once.
     /// </summary>
     [Serializable]
     public sealed class ArenaTuning
@@ -56,19 +50,19 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <summary>The arena the game plays on: radius 10, spawn margin 2.</summary>
         public static ArenaTuning Standard() => new() { Radius = 10f, SpawnMargin = 2f };
 
-        /// <summary>A copy with every value pulled into its range - the one place the ranges are stated.</summary>
+        /// <summary>A copy with every value pulled into its range.</summary>
         public ArenaTuning Sanitised() => new()
         {
             Origin = Origin,
             Radius = Math.Max(0f, Radius),
             SpawnMargin = Math.Max(0f, SpawnMargin),
-            StopJitter = Math.Min(Math.Max(0f, StopJitter), MaxStopJitter),
-            BearingJitter = Math.Min(Math.Max(0f, BearingJitter), 1f),
+            StopJitter = Math.Clamp(StopJitter, 0f, MaxStopJitter),
+            BearingJitter = Math.Clamp(BearingJitter, 0f, 1f),
             HeroStrikeRange = Math.Max(0f, HeroStrikeRange),
             MovementSpeedScale = Math.Max(0f, MovementSpeedScale),
         };
 
-        /// <summary>Throws when a value is outside the range <see cref="Sanitised"/> pulls it back into.</summary>
+        /// <summary>Throws when a value is outside its range.</summary>
         internal void Validate()
         {
             var sane = Sanitised();

@@ -6,18 +6,9 @@ using UnityEngine.UI;
 namespace ToolSmiths.InventorySystem.Runtime.Simulation
 {
     /// <summary>
-    /// One fighter's figure in the arena (issues #176, #208, epic #262): a sprite and a health bar, bound to one
-    /// health resource at a time. The hero has one scene object and each enemy a pooled one; both are
-    /// <see cref="EnemyArena"/>'s, the only intended caller.
-    /// <para>
-    /// The root is moved by the arena - to where the sim says the fighter stands, projected, never walked by
-    /// the figure itself (ADR-0018) - and never flipped. The sprite child is the only thing that is,
-    /// because a flipped root would mirror the bar's fill direction and its text.
-    /// </para>
-    /// <para>
-    /// A figure is fully reset on <see cref="Unbind"/>: position, facing, visibility. A stale
-    /// <c>scale.x = -1</c> on the next enemy, or on the hero's next Run, is the bug that is designed against.
-    /// </para>
+    /// One fighter's figure in the arena (issues #176, #208, epic #262): a sprite and a health bar bound to one
+    /// health resource at a time, moved by the arena and never by itself (ADR-0018). Only the sprite child is
+    /// flipped, because a flipped root would mirror the bar's fill direction and text.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(CanvasGroup))]
@@ -64,7 +55,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// <summary>The sprite's <c>scale.x</c> sign: +1 faces right, -1 faces left.</summary>
         public int FacingSign => _sign;
 
-        /// <summary>Whether the figure has been put in the arena since it was bound. Reset in <see cref="Unbind"/>.</summary>
+        /// <summary>Whether the figure has been put in the arena since it was bound.</summary>
         public bool IsPlaced => _placed;
 
         /// <summary>Whether the figure follows a health resource: false while pooled, and once it let go to fade out.</summary>
@@ -79,12 +70,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// <summary>The hit shake feedback, or null when the prefab has none.</summary>
         public HitShake HitShake => _hitShake;
 
-        /// <summary>Whether the target ring is showing on this figure. Reset in <see cref="Unbind"/>.</summary>
+        /// <summary>Whether the target ring is showing on this figure.</summary>
         public bool IsHighlighted => highlight != null && highlight.enabled;
 
         /// <summary>
-        /// Shows or hides the ring that marks the enemy the next Strike hits (#182). A figure that is not bound -
-        /// pooled, or dying - is never marked, whatever the caller asks.
+        /// Shows or hides the target ring (#182). A figure that is not bound - pooled, or dying - is never
+        /// marked, whatever the caller asks.
         /// </summary>
         public void SetHighlighted(bool on)
         {
@@ -112,10 +103,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         }
 
         /// <summary>
-        /// Let go of the health resource so the figure takes no further events from it, but let the flash and the
-        /// shake in flight play out: an enemy's killing blow raised them before it fell, and its figure fades out
-        /// where it stands. Everything the figure subscribes to on <see cref="Bind"/> is released here, so a
-        /// fading figure and a pooled one hold none.
+        /// Let go of the health resource but let the flash and shake in flight play out: a killing blow raised
+        /// them before the enemy fell, and its figure fades out where it stands.
         /// </summary>
         public void Detach()
         {
@@ -157,9 +146,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         }
 
         /// <summary>
-        /// Stand at <paramref name="canvasPosition"/> and face <paramref name="facingSign"/>, and show the figure if
-        /// this is its first placement. The arena works both out from the sim's arena (ADR-0018); the figure
-        /// only keeps them.
+        /// Stand at <paramref name="canvasPosition"/> and face <paramref name="facingSign"/>, and show the figure
+        /// on its first placement.
         /// </summary>
         /// <param name="canvasPosition">The projected position in the arena's anchored space.</param>
         /// <param name="arenaPosition">Where the fighter stands on the sim's arena; the depth sort reads it.</param>

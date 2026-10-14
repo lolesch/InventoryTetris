@@ -19,7 +19,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             Mathf.Max(minimum, 1f - (Mathf.Max(0, age - fullOpacityCount + 1) * step));
     }
 
-    /// <summary>The authored numbers of <see cref="GroundFade"/>, declared once on <c>GameConfig</c> so each view of the ground (the grid's slots, the list's rows) fades by the same rule. Read-only: a write to the asset would survive Stop.</summary>
+    /// <summary>The authored numbers of <see cref="GroundFade"/>, shared by every display of the ground. Read-only: a write to the asset would survive Stop.</summary>
     [Serializable]
     public sealed class GroundFadeSettings
     {

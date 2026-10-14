@@ -17,9 +17,8 @@ namespace ToolSmiths.InventorySystem.Simulation
     }
 
     /// <summary>
-    /// What a Brain asks of its fighter in one tick (ADR-0020). A command, not a goal; the Encounter carries it out
-    /// only when the rules allow it. An Approach names its target rather than a point, and a Cast names no aim,
-    /// because both are read when they run, after the walks that precede them in the tick.
+    /// What a Brain asks of its fighter in one tick (ADR-0020): a command the Encounter carries out only when the
+    /// rules allow it. Approach and Cast name no point, because both are read when they run.
     /// </summary>
     internal readonly struct Intent
     {
