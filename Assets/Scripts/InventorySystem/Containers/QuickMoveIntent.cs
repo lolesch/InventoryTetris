@@ -9,7 +9,7 @@ namespace ToolSmiths.InventorySystem.Inventories
     /// the resolver's table can grow without the slot displays branching on
     /// containers. <see cref="Acquire"/> is #86's source-to-hub row that must honour
     /// auto-equip - it routes through the player's acquisition entry point
-    /// (<see cref="ToolSmiths.InventorySystem.Items.IItemReceiver"/>) instead of a plain move.
+    /// (<see cref="IItemReceiver"/>) instead of a plain move.
     /// <see cref="Drop"/> (issue #63) lays the item on the Run's ground - the Hero context's one
     /// sink, and only while a Run has a ground. <see cref="PickUp"/> takes a Drop off the ground
     /// through the loot flow, which banks a coin stack rather than placing it.

@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 618981944777949682}
   - component: {fileID: 8199480174853149679}
   m_Layer: 0
-  m_Name: EnemyHealthBarDisplay
+  m_Name: HealthBarDisplay
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -49,9 +49,11 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b6f4e15c8b6ad324d9709a92f65e78d9, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.Runtime.Simulation.EnemyHealthBarDisplay
+  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.Runtime.Simulation.HealthBarDisplay
   nameLabel: {fileID: 3415545517939856560}
   healthDisplay: {fileID: 3696787328177789369}
+  shieldDisplay: {fileID: 7431933594968658485}
+  shieldRoot: {fileID: 279944300472063240}
   rarityBorder: {fileID: 4670304360892490438}
 --- !u!1 &8603842083294525897
 GameObject:
@@ -442,6 +444,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.ContentSizeFitter
   m_HorizontalFit: 2
   m_VerticalFit: 2
+--- !u!114 &7431933594968658485 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7431933594968658485, guid: 968f9697262402747aa383d02109a0c6, type: 3}
+  m_PrefabInstance: {fileID: 6251249438352480036}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 50754071f6e02e24b9e06be165c7e995, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+--- !u!1 &279944300472063240 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 279944300472063240, guid: 968f9697262402747aa383d02109a0c6, type: 3}
+  m_PrefabInstance: {fileID: 6251249438352480036}
+  m_PrefabAsset: {fileID: 0}
 --- !u!114 &3696787328177789369 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 7317582224422850205, guid: 968f9697262402747aa383d02109a0c6, type: 3}

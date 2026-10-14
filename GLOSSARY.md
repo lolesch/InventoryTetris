@@ -427,8 +427,10 @@ whether the ask is allowed. Swapping a fighter's Brain changes who it fights lik
 _Avoid_: AI (a Brain may be a player), controller, driver, behaviour (that is the **Behaviour Profile**)
 
 **Intent**:
-What a **Brain** asks of its fighter in one tick: walk toward a point in the **Arena**, **Strike**
-a target, **Cast** at a point, or - for the hero - request a **Recall**. The Encounter carries an
+What a **Brain** asks of its fighter in one tick: **Approach** a target, **Strike** a target,
+**Cast** (aimed where the Encounter finds the densest cluster, as it fires), or - for the hero -
+**Walk** to a point or request a **Recall**. An Approach names its target, not a point, so it
+follows a target that moves; a Walk stops on its point. The Encounter carries an
 Intent out only when the rules allow it (in reach, off cooldown, enough Resource); an Intent it
 refuses costs nothing.
 _Avoid_: command, order, input, action

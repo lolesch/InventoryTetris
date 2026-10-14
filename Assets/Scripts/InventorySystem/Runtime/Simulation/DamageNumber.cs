@@ -10,10 +10,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 {
     /// <summary>
     /// One rising damage figure (issue #181), pooled by <see cref="ArenaDamageNumbers"/>. It is not a child
-    /// of any <see cref="EnemyView"/>: a view fades with its death and is pooled with its enemy, and the
+    /// of any <see cref="Figure"/>: a figure fades with its death and is pooled with its enemy, and the
     /// number of the killing blow has to outlive both. It lives in the arena's space, drives itself on
     /// <i>sim</i> time (faster at x8, frozen on pause) and hands itself back when its life is over or when
-    /// the Encounter it was born in is gone (Recall, hero death, Relocate: the Run ended, so nothing lingers).
+    /// the arena dismisses it when the Encounter it was born in is gone (Recall, hero death, Relocate: the Run ended,
+    /// so nothing lingers).
     /// <para>
     /// <see cref="Show"/> sets every field - text, font size, tint, position, timers - and <see cref="Reset"/>
     /// clears them, so a pooled number carries nothing of its last use.
@@ -30,7 +31,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private float _duration;
         private float _height;
         private float _hold;
-        private EncounterSimulation _encounter;
         private Action<DamageNumber> _done;
 
         private RectTransform Rect => _rect ? _rect : _rect = (RectTransform)transform;
@@ -40,18 +40,17 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         /// <summary>
         /// Start rising from <paramref name="origin"/> (the arena's anchored space) showing
-        /// <paramref name="amount"/> at the size and tint <paramref name="style"/> gives. <paramref name="done"/> is called once, when the life ends or the
-        /// <paramref name="encounter"/> is no longer the Run's.
+        /// <paramref name="amount"/> at the size and tint <paramref name="style"/> gives. <paramref name="done"/> is called once, when the life ends or
+        /// the owner <see cref="Dismiss"/>es it.
         /// </summary>
         public void Show(Vector2 origin, float amount, DamageNumberStyle style, float duration, float height, float hold,
-            EncounterSimulation encounter, Action<DamageNumber> done)
+            Action<DamageNumber> done)
         {
             _origin = origin;
             _elapsed = 0f;
             _duration = duration;
             _height = height;
             _hold = hold;
-            _encounter = encounter;
             _done = done;
 
             label.text = DamageNumberMotion.Label(amount);
@@ -69,7 +68,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _duration = 0f;
             _height = 0f;
             _hold = 0f;
-            _encounter = null;
             _done = null;
 
             if (label != null)
@@ -84,12 +82,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (_done == null)
                 return;
 
-            if (SimulationService.Instance.Run.Encounter != _encounter)
-            {
-                Finish();
-                return;
-            }
-
             _elapsed += SimulationService.Instance.SimDelta(Time.deltaTime);
 
             if (DamageNumberMotion.IsFinished(_elapsed, _duration))
@@ -99,6 +91,13 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             }
 
             Apply();
+        }
+
+        /// <summary>End this number's life now (the arena unbound): <c>done</c> is called once. Does nothing when idle.</summary>
+        public void Dismiss()
+        {
+            if (_done != null)
+                Finish();
         }
 
         private void Finish()

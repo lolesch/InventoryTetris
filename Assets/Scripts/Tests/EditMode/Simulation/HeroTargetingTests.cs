@@ -12,8 +12,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
     /// lowest <c>w * distance from the origin + (1 - w) * distance from himself</c> when he has none, and a swap
     /// to an enemy inside his reach only when his target is outside it. Enemies are stood where a scenario needs
     /// them (the sim's position setter is internal to its test assembly) and the choice is read through
-    /// <see cref="EncounterSimulation.StrikeTarget"/>, which peeks at what the next tick will choose, and through
-    /// who takes the Strike.
+    /// <see cref="EncounterSimulation.HeroTarget"/>, the target of the latest tick's Intent (his Brain decides once
+    /// a tick, so the choice is read after one), and through who takes the Strike.
     /// </summary>
     [TestFixture]
     public sealed class HeroTargetingTests
@@ -34,8 +34,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         {
             var tuning = new EncounterTuning { Arena = ArenaTuning.Standard(), Beat = 1000f };
             tuning.Arena.HeroStrikeRange = UnarmedRange;
-            return new EncounterSimulation(hero, profile, new ConstantRollSource(0f), behaviour, tuning, bag: null,
-                movementRolls: new ConstantRollSource(0.5f));
+            return new EncounterSimulation(hero, profile, new RollStreams(new ConstantRollSource(0f), new ConstantRollSource(0.5f)),
+                behaviour, tuning);
         }
 
         private static HeroBehaviour Weighted(float originWeight) => new() { Engagement = 10, OriginWeight = originWeight };
@@ -47,6 +47,13 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         private static void Run(EncounterSimulation sim, int ticks)
         {
             for (var i = 0; i < ticks; i++) sim.Advance(Tick);
+        }
+
+        // His Brain decides at the start of a tick, from the enemies as the test stood them.
+        private static Enemy TargetAfterATick(EncounterSimulation sim)
+        {
+            sim.Advance(Tick);
+            return sim.HeroTarget;
         }
 
         // Three Skirmishers stood so the first goes down at once; returns the sim with the other two alive and the
@@ -77,24 +84,30 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             Assert.That(Coordinate.Distance(nearHome.Position, sim.Arena.Origin), Is.LessThan(Coordinate.Distance(nearMe.Position, sim.Arena.Origin)), "premise");
             Assert.That(Coordinate.Distance(nearMe.Position, h), Is.LessThan(Coordinate.Distance(nearHome.Position, h)), "premise");
 
-            Assert.That(sim.StrikeTarget, Is.SameAs(nearHome));
+            Assert.That(TargetAfterATick(sim), Is.SameAs(nearHome));
         }
 
         [Test]
         public void WithNoTarget_AZeroOriginWeight_PicksTheEnemyNearestHim_AndTheWeightIsReadLive()
         {
-            var behaviour = Weighted(1f);
-            var (sim, _, _) = HeroStandingOffTheOrigin(behaviour);
-            var h = sim.HeroPosition;
-            var nearMe = sim.Enemies[0];
-            var nearHome = sim.Enemies[1];
-            Stand(nearMe, h + new Coordinate(0f, 4f));
-            Stand(nearHome, -3f, 0f);
-            Assert.That(sim.StrikeTarget, Is.SameAs(nearHome), "premise: home pulls first");
+            (Enemy Chosen, Enemy NearMe, Enemy NearHome) ChoiceWithWeightMovedTo(float weight)
+            {
+                var behaviour = Weighted(1f); // the setup fight runs on a homebody
+                var (sim, _, _) = HeroStandingOffTheOrigin(behaviour);
+                var nearMe = sim.Enemies[0];
+                var nearHome = sim.Enemies[1];
+                Stand(nearMe, sim.HeroPosition + new Coordinate(0f, 4f));
+                Stand(nearHome, -3f, 0f);
 
-            behaviour.OriginWeight = 0f;
+                behaviour.OriginWeight = weight; // moved mid-fight, before his next choice
+                return (TargetAfterATick(sim), nearMe, nearHome);
+            }
 
-            Assert.That(sim.StrikeTarget, Is.SameAs(nearMe));
+            var homebody = ChoiceWithWeightMovedTo(1f);
+            Assert.That(homebody.Chosen, Is.SameAs(homebody.NearHome), "premise: home pulls first");
+
+            var brawler = ChoiceWithWeightMovedTo(0f);
+            Assert.That(brawler.Chosen, Is.SameAs(brawler.NearMe));
         }
 
         [Test]
@@ -111,23 +124,26 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             float Sum(Enemy e) => Coordinate.Distance(e.Position, sim.Arena.Origin) + Coordinate.Distance(e.Position, h);
             var cheaper = Sum(a) < Sum(b) ? a : b;
 
-            Assert.That(sim.StrikeTarget, Is.SameAs(cheaper));
+            Assert.That(TargetAfterATick(sim), Is.SameAs(cheaper));
         }
 
         [Test]
         public void OnATie_TheEarliestSpawnedIsChosen_WhicheverSideItStandsOn()
         {
-            var sim = Sim(Hero(speed: 0f), Profiles.Group(EnemyArchetype.Skirmisher, 2), Weighted(0.5f));
-            var first = sim.Enemies[0];
-            var second = sim.Enemies[1];
+            (Enemy Chosen, Enemy First) ChoiceWithFirstAt(float x)
+            {
+                var sim = Sim(Hero(speed: 0f), Profiles.Group(EnemyArchetype.Skirmisher, 2), Weighted(0.5f));
+                var first = sim.Enemies[0];
+                Stand(first, x, 0f);
+                Stand(sim.Enemies[1], -x, 0f);
+                return (TargetAfterATick(sim), first);
+            }
 
-            Stand(first, 4f, 0f);
-            Stand(second, -4f, 0f);
-            Assert.That(sim.StrikeTarget, Is.SameAs(first));
+            var eastFirst = ChoiceWithFirstAt(4f);
+            Assert.That(eastFirst.Chosen, Is.SameAs(eastFirst.First));
 
-            Stand(first, -4f, 0f);
-            Stand(second, 4f, 0f);
-            Assert.That(sim.StrikeTarget, Is.SameAs(first), "negative control: not geometry, spawn order");
+            var westFirst = ChoiceWithFirstAt(-4f);
+            Assert.That(westFirst.Chosen, Is.SameAs(westFirst.First), "negative control: not geometry, spawn order");
         }
 
         [Test]
@@ -138,18 +154,17 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var newcomer = sim.Enemies[1];
             Stand(target, 6f, 0f);
             Stand(newcomer, -9f, 0f);
-            sim.Advance(Tick);
-            Assert.That(sim.StrikeTarget, Is.SameAs(target), "premise: it is his target");
+            Assert.That(TargetAfterATick(sim), Is.SameAs(target), "premise: it is his target");
 
             Stand(newcomer, 0f, 3f); // nearer home than the target ever was, still outside his reach
             Assert.That(Coordinate.Distance(newcomer.Position, sim.Arena.Origin), Is.LessThan(Coordinate.Distance(target.Position, sim.Arena.Origin)), "premise");
             Assert.That(Coordinate.Distance(newcomer.Position, sim.HeroPosition), Is.GreaterThan(UnarmedRange), "premise");
             Run(sim, 3);
-            Assert.That(sim.StrikeTarget, Is.SameAs(target), "he keeps it");
+            Assert.That(sim.HeroTarget, Is.SameAs(target), "he keeps it");
 
             target.ReceivePhysical(target.MaxHealth * 100f);
 
-            Assert.That(sim.StrikeTarget, Is.SameAs(newcomer), "negative control: once it has fallen the newcomer is next");
+            Assert.That(TargetAfterATick(sim), Is.SameAs(newcomer), "negative control: once it has fallen the newcomer is next");
         }
 
         [Test]
@@ -160,8 +175,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             Stand(far, 6f, 0f);
             Stand(sim.Enemies[1], -9f, 0f);
             Stand(sim.Enemies[2], 0f, -9f);
-            sim.Advance(Tick);
-            Assert.That(sim.StrikeTarget, Is.SameAs(far), "premise: the far one is his target");
+            Assert.That(TargetAfterATick(sim), Is.SameAs(far), "premise: the far one is his target");
 
             var h = sim.HeroPosition;
             var nearerHim = sim.Enemies[1];
@@ -172,7 +186,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             Assert.That(Coordinate.Distance(nearerHome.Position, h), Is.LessThanOrEqualTo(UnarmedRange), "premise: both inside his reach");
             Assert.That(Coordinate.Distance(far.Position, h), Is.GreaterThan(UnarmedRange), "premise: his target is outside it");
 
-            Assert.That(sim.StrikeTarget, Is.SameAs(nearerHome), "the best score of those inside, not the nearest");
+            Assert.That(TargetAfterATick(sim), Is.SameAs(nearerHome), "the best score of those inside, not the nearest");
         }
 
         [Test]
@@ -189,12 +203,11 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             Stand(skirmisher, -8f, 0f);
             Stand(brute, 0f, 9f);
 
-            sim.Advance(Tick);
-            Assert.That(sim.StrikeTarget, Is.SameAs(skirmisher), "premise: he sets out for the far one");
+            Assert.That(TargetAfterATick(sim), Is.SameAs(skirmisher), "premise: he sets out for the far one");
 
             var ticks = 0;
-            while (!ReferenceEquals(sim.StrikeTarget, brute) && ticks++ < 400) sim.Advance(Tick);
-            Assert.That(sim.StrikeTarget, Is.SameAs(brute), "the closing Brute became his target");
+            while (!ReferenceEquals(sim.HeroTarget, brute) && ticks++ < 400) sim.Advance(Tick);
+            Assert.That(sim.HeroTarget, Is.SameAs(brute), "the closing Brute became his target");
             Assert.That(Coordinate.Distance(sim.HeroPosition, brute.Position), Is.LessThanOrEqualTo(UnarmedRange + 0.01f), "it came within his reach");
             Assert.That(Coordinate.Distance(sim.HeroPosition, skirmisher.Position), Is.GreaterThan(UnarmedRange), "while the Skirmisher was still out of it");
 
@@ -206,7 +219,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             Assert.That(skirmisher.Health, Is.EqualTo(skirmisher.MaxHealth), "the Skirmisher was never touched");
 
             brute.ReceivePhysical(brute.MaxHealth * 100f);
-            Assert.That(sim.StrikeTarget, Is.SameAs(skirmisher), "with the Brute down he goes back to the one he was after");
+            Assert.That(TargetAfterATick(sim), Is.SameAs(skirmisher), "with the Brute down he goes back to the one he was after");
         }
 
         [Test]
@@ -235,7 +248,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             {
                 var tuning = new EncounterTuning { Arena = ArenaTuning.Standard(), Beat = 1000f };
                 var sim = new EncounterSimulation(Hero(speed: 300f, damage: 3f), Profiles.Group(EnemyArchetype.Skirmisher, 3),
-                    new SeededRollSource(3), Weighted(0.5f), tuning, bag: null, movementRolls: new SeededRollSource(movementSeed));
+                    new RollStreams(new SeededRollSource(3), new SeededRollSource(movementSeed)), Weighted(0.5f), tuning);
                 var path = new System.Collections.Generic.List<Coordinate>();
                 for (var i = 0; i < 150; i++)
                 {

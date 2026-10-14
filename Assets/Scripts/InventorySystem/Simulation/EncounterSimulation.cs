@@ -10,61 +10,38 @@ using ToolSmiths.InventorySystem.Items;
 namespace ToolSmiths.InventorySystem.Simulation
 {
     /// <summary>
-    /// The pure Encounter simulation (ADR-0010) — a watchable auto-fight the player only tunes.
-    /// A <see cref="CombatClock"/> drives it at a fixed tick; each tick the hero resolves its
-    /// two concurrent attacks (a physical <b>Strike</b> on <c>1 / AttackSpeed</c> at the one
-    /// sticky target he walks to, a magical area <b>Cast</b> paced by Resource at the densest cluster of enemies in Cast Range),
-    /// the enemies Strike back on their own cadences, a per-Location <b>Roster</b> spawns in
-    /// (the packed archetype in <b>Packs</b>, the other singly) up to the soft
-    /// <see cref="EngagementTarget"/>, and every combatant regenerates once.
-    ///
-    /// With <see cref="EncounterTuning.DelayFirstSpawn"/> a fresh sim opens
-    /// <see cref="SimulationPhase.Arriving"/> — one spawn delay (the Location's
-    /// <c>SpawnInterval ± SpawnJitter</c>) passes before its first bodies spawn. An Encounter clears when its Roster is spent and the last
-    /// body falls; a short beat; the next Encounter. XP is delivered per kill, the moment the body
-    /// falls (<see cref="XpGained"/>) — there is no pot, so nothing carries over a clear and
-    /// nothing is forfeited on an exit. The sim runs Encounters endlessly — only the hero going
-    /// down, one of the <see cref="HeroBehaviour"/>'s own auto-Recall triggers, or an external
-    /// <see cref="Abandon"/> on Recall / Death / Relocate (issue #21) end it. Loot and coins are a
-    /// per-kill concern layered on <see cref="EnemyDefeated"/> by issue #24.
-    ///
-    /// The <see cref="HeroBehaviour"/> is the player's whole input to a Run (issue #23) and is
-    /// read live, never snapshotted, at four points: the spawn schedule refills toward
-    /// <see cref="EngagementTarget"/>, <see cref="ResolveCast"/> is gated by the
-    /// <c>CastThreshold</c> hysteresis latch, and both auto-Recall triggers — health and bag
-    /// fill — are checked once a tick, raising <see cref="RecallRequested"/>. Moving the sliders
-    /// mid-fight therefore changes the fight, which is the point of them.
-    ///
-    /// Engine-free and deterministic: every roll (arrival jitter, Roster size, spawn type, Pack
-    /// size, jitter, spawn desync) is drawn from the injected <see cref="IRollSource"/>, in that
-    /// order. The arrival-jitter roll is only drawn with <see cref="EncounterTuning.DelayFirstSpawn"/>.
-    /// It never references the hero.
-    ///
-    /// The sim owns position (spatial-combat spec): the hero starts at the <see cref="Arena"/>'s origin and each
-    /// enemy spawns on its edge, walks in on sim time and Strikes only once the hero is within its Strike Range;
-    /// the hero's Strike likewise needs its target within <see cref="HeroStrikeRange"/>. Each tick, in order, the
-    /// hero chooses his target (<see cref="HeroTargeting"/>), the hero moves, the enemies move, and attacks resolve
-    /// against the new positions. The spawn bearing and stop jitter come from a separate movement stream, so they
-    /// never shift a seeded outcome above.
-    ///
-    /// Every hit that lands (the hero's Strike and Cast, each enemy Strike) rolls its damage spread from a third
-    /// stream and is announced by <see cref="HitLanded"/> with the amount the target actually lost (issue #211).
+    /// The pure Encounter simulation (ADR-0010): a watchable auto-fight the player only tunes, engine-free and
+    /// deterministic from its injected <see cref="RollStreams"/>. A fixed-tick clock drives it; the Brains decide, the
+    /// Encounter carries out what the rules allow (ADR-0020), and the sim owns position (ADR-0018).
     /// </summary>
     public sealed class EncounterSimulation
     {
         private readonly IHeroCombatant _hero;
         private readonly EncounterProfile _profile;
-        private readonly IRollSource _rolls;
+        private readonly RollStreams _streams;
         private readonly HeroBehaviour _behaviour;
         private readonly IBagGauge _bag;
         private readonly EncounterTuning _tuning;
-        private readonly ArenaTuning _arena;
-        private readonly IRollSource _movementRolls;
-        private readonly IRollSource _hitRolls;
+        private readonly Arena _arena;
         private readonly CombatClock _clock;
-        private readonly List<float> _bearings = new(); // reused buffer - a spawn sorts the living bearings
         private readonly List<Enemy> _enemies = new();
-        private readonly List<Enemy> _castTargets = new(); // reused buffer — the Cast runs on a cadence
+        private readonly Func<Enemy, IEnemyBrain> _enemyBrains;
+        private readonly IHeroBrain _heroBrain;
+        private readonly List<Intent> _heroIntents = new(); // reused buffer - this tick's hero decisions
+        private readonly List<Intent> _asked = new(); // reused buffer - one Brain's answer
+        private readonly List<EnemyIntent> _enemyIntents = new(); // reused buffer - this tick's decisions, in enemy order
+
+        private readonly struct EnemyIntent
+        {
+            public EnemyIntent(Enemy actor, Intent intent)
+            {
+                Actor = actor;
+                Intent = intent;
+            }
+
+            public Enemy Actor { get; }
+            public Intent Intent { get; }
+        }
 
         private int _rosterBrute;
         private int _rosterSkirmisher;
@@ -72,7 +49,10 @@ namespace ToolSmiths.InventorySystem.Simulation
         private int _spawnedSkirmisher;
         private int _nextSpawnIndex;
 
-        private Enemy _heroTarget; // the sticky target the last tick chose; may have fallen since
+        private Enemy _heroTarget; // the target of the hero's latest Strike or Approach Intent
+        private bool _heroStrikeReady; // this tick's cadence flags, told to the hero's Brain and kept for carrying it out
+        private bool _heroCastBeatOpen;
+        private bool _heroAskedRecall;
 
         private float _spawnTimer;
         private float _strikeTimer;
@@ -91,38 +71,51 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// Optional — an Encounter built without one never fires the bag-full auto-Recall, which
         /// is what a fight with no storage wired to it should do.
         /// </param>
-        /// <param name="movementRolls">
-        /// The movement stream - spawn bearing and stop jitter - kept apart from <paramref name="rolls"/> so
-        /// adding or changing a movement roll can never reorder a seeded loot, roster or spawn outcome. Optional:
-        /// without one every movement roll reads 0.5 (no bearing jitter, a stop pulled in by half the jitter).
-        /// </param>
-        /// <param name="hitRolls">
-        /// The hit stream - one roll per hit, for the <see cref="EncounterTuning.DamageSpread"/> - kept apart from
-        /// <paramref name="rolls"/> and <paramref name="movementRolls"/> so a hit can never reorder a seeded outcome.
-        /// Optional: without one every hit rolls 0.5, the middle of the spread, so a hit is its base damage.
+        /// <param name="rolls">
+        /// Every roll the Encounter draws - the main stream, the movement stream (spawn bearing, stop jitter) and
+        /// the hit stream (the damage spread). The streams stay separate so a seeded outcome never reorders: see
+        /// <see cref="RollStreams"/>.
         /// </param>
         public EncounterSimulation(
             IHeroCombatant hero,
             EncounterProfile profile,
-            IRollSource rolls,
+            RollStreams rolls,
             HeroBehaviour behaviour,
             EncounterTuning tuning = null,
-            IBagGauge bag = null,
-            IRollSource movementRolls = null,
-            IRollSource hitRolls = null)
+            IBagGauge bag = null)
+            : this(hero, profile, rolls, behaviour, tuning, bag, null, null)
         {
+        }
+
+        /// <param name="enemyBrains">
+        /// Builds the Brain of each enemy as it spawns; null gives every enemy the <see cref="ChaseAndStrikeBrain"/>.
+        /// A test scripts the enemies through it.
+        /// </param>
+        /// <param name="heroBrain">
+        /// Decides the hero's moves; null gives him the <see cref="AutoHeroBrain"/>, which carries out the
+        /// <paramref name="behaviour"/>. A test scripts the hero through it.
+        /// </param>
+        internal EncounterSimulation(
+            IHeroCombatant hero,
+            EncounterProfile profile,
+            RollStreams rolls,
+            HeroBehaviour behaviour,
+            EncounterTuning tuning,
+            IBagGauge bag,
+            Func<Enemy, IEnemyBrain> enemyBrains,
+            IHeroBrain heroBrain = null)
+        {
+            _enemyBrains = enemyBrains;
             _hero = hero ?? throw new ArgumentNullException(nameof(hero));
             _profile = profile ?? throw new ArgumentNullException(nameof(profile));
-            _rolls = rolls ?? throw new ArgumentNullException(nameof(rolls));
+            _streams = rolls ?? throw new ArgumentNullException(nameof(rolls));
             _behaviour = behaviour ?? throw new ArgumentNullException(nameof(behaviour));
             _bag = bag;
-            _movementRolls = movementRolls ?? new NeutralRolls();
-            _hitRolls = hitRolls ?? new NeutralRolls();
 
             _tuning = tuning ?? new EncounterTuning();
             _tuning.Validate();
-            _arena = _tuning.Arena;
-            HeroPosition = _arena.Origin;
+            _heroBrain = heroBrain ?? new AutoHeroBrain(_behaviour, _bag, _tuning.HeroTargeting);
+            _arena = new Arena(_tuning.Arena);
 
             _clock = new CombatClock(_tuning.Tick, _tuning.MaxTicksPerAdvance);
             _clock.OnTick += Step;
@@ -138,7 +131,7 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         /// <summary>One spawn delay — the Location's interval, jittered. The arrival wait and the spawn schedule share it.</summary>
         private float NextSpawnDelay() =>
-            _profile.SpawnInterval + ((float)_rolls.Next() * 2f - 1f) * _profile.SpawnJitter;
+            _profile.SpawnInterval + ((float)_streams.Main.Next() * 2f - 1f) * _profile.SpawnJitter;
 
         /// <summary>
         /// The soft count of enemies the fight refills toward — <see cref="HeroBehaviour.Engagement"/>
@@ -156,9 +149,6 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <summary>The hero fighting this Encounter — its live magic find and item quantity (issue #24).</summary>
         public IHeroCombatant Hero => _hero;
 
-        /// <summary>The fraction a hit's damage may stray from its base (<see cref="EncounterTuning.DamageSpread"/>) - what a damage number's size reference reads (issue #213).</summary>
-        public float DamageSpread => _tuning.DamageSpread;
-
         public SimulationPhase Phase { get; private set; } = SimulationPhase.Fighting;
 
         /// <summary>Whether the first enemies are still on their way — the sim is <see cref="SimulationPhase.Arriving"/>.</summary>
@@ -170,13 +160,13 @@ namespace ToolSmiths.InventorySystem.Simulation
         public int AliveEnemyCount => _enemies.Count;
 
         /// <summary>The arena the fight takes place on - its origin, radius and the unarmed Strike Range.</summary>
-        public ArenaTuning Arena => _arena;
+        public ArenaTuning Arena => _arena.Tuning;
 
         /// <summary>
         /// Where the hero stands on the arena. He starts at the origin, walks to his target on sim time and walks
         /// back when nothing lives; the arena only reads it.
         /// </summary>
-        public Coordinate HeroPosition { get; private set; }
+        public Coordinate HeroPosition => _arena.HeroPosition;
 
         /// <summary>How far from <see cref="HeroPosition"/> an enemy may stand to be aimed at by the Cast: the Cast definition's range.</summary>
         public float CastRange => _tuning.Cast.Range;
@@ -185,16 +175,15 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// How far from <see cref="HeroPosition"/> the hero's Strike reaches: his weapon type's range, or the
         /// arena's unarmed range while he wields none. Read live, so re-gearing changes it on the spot.
         /// </summary>
-        public float HeroStrikeRange => _hero.WeaponStrikeRange ?? _arena.HeroStrikeRange;
+        public float HeroStrikeRange => _hero.WeaponStrikeRange ?? _arena.Tuning.HeroStrikeRange;
 
         /// <summary>
-        /// The enemy the hero is fighting - the one he walks to and Strikes - or null when none lives (issues #182,
-        /// #209). It is the sticky target: he keeps it until it falls, unless it stands outside his Strike Range
-        /// while another enemy stands inside it. It may be out of reach: the hero is then walking to it. A pure peek
-        /// at the choice the next tick will make, with no state of its own and no event, so it cannot disagree
-        /// with the Strike that follows. The Cast's targets are not this.
+        /// The enemy the hero is fighting - the target of his latest Strike or Approach Intent (issues #182, #209) -
+        /// or null before the first tick and whenever he named none, such as walking home with no one left. It may be
+        /// out of reach, the hero then walking to it. One that falls is swapped for the Brain's next pick at once. The
+        /// Cast's targets are not this.
         /// </summary>
-        public Enemy StrikeTarget => ChooseHeroTarget();
+        public Enemy HeroTarget => _heroTarget;
 
         /// <summary>1-based index of the Encounter currently building or being fought.</summary>
         public int CurrentEncounter { get; private set; }
@@ -307,9 +296,11 @@ namespace ToolSmiths.InventorySystem.Simulation
 
             if (Phase == SimulationPhase.Beat)
             {
-                // Nothing lives: he walks home through the quiet.
-                _heroTarget = null;
-                MoveHero(dt);
+                // Nothing lives: his Brain sends him home through the quiet. The cadences stand still.
+                DecideHero(dt, fighting: false);
+                WalkHero(dt);
+                if (EndOnRecall())
+                    return;
 
                 if (_clock.ElapsedTime >= _beatEndsAt)
                     BeginEncounter();
@@ -322,15 +313,16 @@ namespace ToolSmiths.InventorySystem.Simulation
                 _enemies[i].Regenerate(dt);
 
             // Positions advance here and nowhere else, on the tick, so they scale with sim speed and freeze at
-            // zero. In a fixed order: the hero chooses his target, the hero moves, the enemies move, and only then
-            // does anyone attack, against this tick's positions.
-            _heroTarget = ChooseHeroTarget();
-            MoveHero(dt);
-            MoveEnemies(dt);
+            // zero. In a fixed order: every Brain decides from the state at the start of the tick, the hero
+            // moves, the enemies move, and only then does anyone attack, against this tick's positions.
+            DecideEnemies(dt);
+            DecideHero(dt, fighting: true);
+            WalkHero(dt);
+            WalkEnemies(dt);
 
-            ResolveStrike(dt);
-            ResolveCast(dt);
-            ResolveEnemyStrikes(dt);
+            ExecuteHeroStrike();
+            ExecuteHeroCast();
+            ExecuteEnemyStrikes();
 
             if (_hero.IsDown)
             {
@@ -339,28 +331,36 @@ namespace ToolSmiths.InventorySystem.Simulation
                 return;
             }
 
-            // Checked after the death test, so a tick that both drops the hero below the auto-Recall
-            // fraction and kills it is a Death, not a Recall — the penalty is not dodgeable by
-            // the trigger racing it.
-            if (WantsToRecall())
-            {
-                End();
-                RecallRequested?.Invoke();
+            // Checked after the death test, so a tick that both asks for a Recall and kills the hero is a
+            // Death, not a Recall — the penalty is not dodgeable by the trigger racing it.
+            if (EndOnRecall())
                 return;
-            }
+
+            RetargetIfFallen();
 
             if (RosterSpent && _enemies.Count == 0)
                 ClearEncounter();
         }
 
-        /// <summary>
-        /// Either of <see cref="HeroBehaviour"/>'s two auto-Recall triggers (issue #23), read
-        /// against this tick's health and bag fill. With no <see cref="IBagGauge"/> wired the
-        /// bag-full trigger cannot fire — there is nothing to measure.
-        /// </summary>
-        private bool WantsToRecall() =>
-            _behaviour.ShouldRecallForHealth(_hero.HealthFraction)
-            || (_bag != null && _behaviour.ShouldRecallForBagFull(_bag.FillFraction));
+        /// <summary>The Brain decides once a tick, so a target killed this tick is swapped for its next pick now, not left a corpse until then.</summary>
+        private void RetargetIfFallen()
+        {
+            if (_heroTarget == null || !_heroTarget.IsDown)
+                return;
+
+            _heroTarget = _heroBrain.PeekTarget(new HeroView(_arena, _hero, _enemies, HeroStrikeRange, _heroStrikeReady, _heroCastBeatOpen));
+        }
+
+        /// <summary>End the fight if the hero's Brain asked for a Recall this tick, as a manual Recall would leave it.</summary>
+        private bool EndOnRecall()
+        {
+            if (!_heroAskedRecall)
+                return false;
+
+            End();
+            RecallRequested?.Invoke();
+            return true;
+        }
 
         // ─── spawning ────────────────────────────────────────────────────────
 
@@ -379,8 +379,8 @@ namespace ToolSmiths.InventorySystem.Simulation
             // The hero's Strike / Cast timers carry across the beat — each fight is not a fresh
             // cadence, it is the same hero swinging without pause (matches the /prototype).
 
-            _rosterBrute = _profile.RosterBrute.Roll(_rolls);
-            _rosterSkirmisher = _profile.RosterSkirmisher.Roll(_rolls);
+            _rosterBrute = _profile.RosterBrute.Roll(_streams.Main);
+            _rosterSkirmisher = _profile.RosterSkirmisher.Roll(_streams.Main);
 
             var left = _profile.InitialSpawn;
             foreach (var archetype in new[] { _profile.Packed, EnemyArchetypes.Other(_profile.Packed) })
@@ -408,11 +408,11 @@ namespace ToolSmiths.InventorySystem.Simulation
 
             EnemyArchetype type;
             if (remBrute > 0 && remSkirmisher > 0)
-                type = _rolls.Next() < _profile.PackedSpawnWeight ? _profile.Packed : EnemyArchetypes.Other(_profile.Packed);
+                type = _streams.Main.Next() < _profile.PackedSpawnWeight ? _profile.Packed : EnemyArchetypes.Other(_profile.Packed);
             else
                 type = remBrute > 0 ? EnemyArchetype.Brute : EnemyArchetype.Skirmisher;
 
-            var batch = type == _profile.Packed ? _profile.PackBatch.Roll(_rolls) : 1;
+            var batch = type == _profile.Packed ? _profile.PackBatch.Roll(_streams.Main) : 1;
             batch = Math.Min(batch, RosterRemaining(type));
             for (var i = 0; i < batch; i++)
                 Spawn(type);
@@ -426,9 +426,10 @@ namespace ToolSmiths.InventorySystem.Simulation
             {
                 SpawnIndex = _nextSpawnIndex++,
                 // desync so a Pack does not strike in lockstep
-                StrikeTimer = (float)_rolls.Next() * (1f / EnemyArchetypes.Of(archetype).AttackSpeed),
+                StrikeTimer = (float)_streams.Main.Next() * (1f / EnemyArchetypes.Of(archetype).AttackSpeed),
             };
-            PlaceInTheArena(enemy);
+            enemy.Brain = _enemyBrains?.Invoke(enemy) ?? ChaseAndStrikeBrain.Instance;
+            _arena.PlaceSpawn(enemy, _enemies, (float)_streams.Movement.Next(), (float)_streams.Movement.Next());
             _enemies.Add(enemy);
 
             if (archetype == EnemyArchetype.Brute) _spawnedBrute++;
@@ -437,123 +438,92 @@ namespace ToolSmiths.InventorySystem.Simulation
             EnemySpawned?.Invoke(enemy);
         }
 
-        // ─── the arena ──────────────────────────────────────────────────────
-
-        // Slack on every range test: an enemy that stops exactly at its range lands on it within float error.
-        private const float RangeSlack = 0.001f;
-
-        private bool InReach(Coordinate from, Coordinate to, float range) =>
-            Coordinate.Distance(from, to) <= range + RangeSlack;
+        // ─── the hero's Brain ────────────────────────────────────────────────
 
         /// <summary>
-        /// Stand a fresh enemy on the spawn ring at a bearing of the sim's choosing, and fix how close it will
-        /// walk in. Both rolls come from the movement stream, bearing first.
+        /// Bank this tick's time on the hero's two cadences (only while fighting; the quiet between Encounters stands
+        /// still) and ask his Brain what he wants, all from the state at the start of the tick. The Brain is told
+        /// when the Strike is ready and the Cast beat is open; whether the ask is allowed is for the carrying out.
         /// </summary>
-        private void PlaceInTheArena(Enemy enemy)
+        private void DecideHero(float dt, bool fighting)
         {
-            var bearing = PickSpawnBearing((float)_movementRolls.Next());
-            var stopRoll = (float)_movementRolls.Next();
-
-            enemy.Bearing = bearing;
-            enemy.Position = _arena.Origin
-                + Coordinate.Rotate(new Coordinate(1f, 0f), bearing) * (_arena.Radius + _arena.SpawnMargin);
-            enemy.StopDistance = enemy.StrikeRange * (1f - _arena.StopJitter * stopRoll);
-        }
-
-        /// <summary>
-        /// The middle of the widest gap between the living enemies' bearings, strayed by the jitter; the first
-        /// such gap on a tie, and the whole circle when nobody lives. A Pack spreads out because each arrival
-        /// bisects what the last one left.
-        /// </summary>
-        private float PickSpawnBearing(float roll)
-        {
-            _bearings.Clear();
-            for (var i = 0; i < _enemies.Count; i++)
-                if (!_enemies[i].IsDown)
-                    _bearings.Add(_enemies[i].Bearing);
-            _bearings.Sort();
-
-            var start = 0f;
-            var width = 360f;
-            for (var i = 0; i < _bearings.Count; i++)
+            _heroStrikeReady = false;
+            _heroCastBeatOpen = false;
+            if (fighting)
             {
-                var end = i + 1 < _bearings.Count ? _bearings[i + 1] : _bearings[0] + 360f;
-                if (i == 0 || end - _bearings[i] > width)
-                {
-                    start = _bearings[i];
-                    width = end - _bearings[i];
-                }
+                _strikeTimer += dt;
+                _heroStrikeReady = IsDue(_strikeTimer, 1f / _hero.AttackSpeed);
+                _castTimer += dt;
+                _heroCastBeatOpen = IsDue(_castTimer, _tuning.CastCadence);
             }
 
-            return (start + width * (0.5f + (roll - 0.5f) * _arena.BearingJitter)) % 360f;
-        }
+            _heroIntents.Clear();
+            _heroBrain.Decide(new HeroView(_arena, _hero, _enemies, HeroStrikeRange, _heroStrikeReady, _heroCastBeatOpen), _heroIntents);
 
-        private void MoveEnemies(float dt)
-        {
-            var hero = HeroPosition;
-            for (var i = 0; i < _enemies.Count; i++)
+            _heroTarget = null;
+            _heroAskedRecall = false;
+            for (var i = 0; i < _heroIntents.Count; i++)
             {
-                var enemy = _enemies[i];
-                var step = WalkingSpeed(enemy.MovementSpeed) * dt;
-                var excess = Coordinate.Distance(enemy.Position, hero) - enemy.StopDistance;
-                if (excess <= 0f || step <= 0f) continue;
-
-                enemy.Position = Coordinate.MoveTowards(enemy.Position, hero, Math.Min(step, excess));
+                var intent = _heroIntents[i];
+                if (intent.Kind == IntentKind.Recall)
+                    _heroAskedRecall = true;
+                else if ((intent.Kind == IntentKind.Strike || intent.Kind == IntentKind.Approach) && intent.Target is Enemy enemy)
+                    _heroTarget = enemy;
             }
         }
 
         /// <summary>
-        /// A movement speed the sim can walk at: a stat modified below zero stands still instead of walking
-        /// backwards, and a NaN one (which every comparison refuses) stands still instead of poisoning a position.
+        /// Carry out the hero's first walking Intent - one step a tick, whatever else he asked: an Approach goes
+        /// toward its target and stops within his Strike Range, a Walk stops on its point.
         /// </summary>
-        private static float WalkingSpeed(float speed) => speed > 0f ? speed : 0f;
-
-        /// <summary>
-        /// Walk the hero toward his target until it is within his Strike Range, never past it; with no target, walk
-        /// him home. A hero with no movement speed stands where he is.
-        /// </summary>
-        private void MoveHero(float dt)
+        private void WalkHero(float dt)
         {
-            var step = WalkingSpeed(_hero.MovementSpeed) * _arena.MovementSpeedScale * dt;
-            if (step <= 0f) return;
-
-            if (_heroTarget == null)
+            for (var i = 0; i < _heroIntents.Count; i++)
             {
-                HeroPosition = Coordinate.MoveTowards(HeroPosition, _arena.Origin, step);
+                var intent = _heroIntents[i];
+                if (intent.Kind == IntentKind.Walk)
+                    _arena.WalkHero(_hero.MovementSpeed, dt, intent.Point, 0f);
+                else if (intent.Kind == IntentKind.Approach && intent.Target is Enemy enemy)
+                    _arena.WalkHero(_hero.MovementSpeed, dt, enemy.Position, HeroStrikeRange);
+                else
+                    continue;
                 return;
             }
-
-            var excess = Coordinate.Distance(HeroPosition, _heroTarget.Position) - HeroStrikeRange;
-            if (excess <= 0f) return;
-
-            HeroPosition = Coordinate.MoveTowards(HeroPosition, _heroTarget.Position, Math.Min(step, excess));
-        }
-
-        private sealed class NeutralRolls : IRollSource
-        {
-            public float Next() => 0.5f;
         }
 
         // ─── the hero's two attacks ──────────────────────────────────────────
 
-        private void ResolveStrike(float dt)
+        private bool HeroAsked(IntentKind kind, out Intent asked)
         {
-            _strikeTimer += dt;
-            var interval = 1f / _hero.AttackSpeed;
-            if (_strikeTimer < interval || _enemies.Count == 0) return;
+            for (var i = 0; i < _heroIntents.Count; i++)
+                if (_heroIntents[i].Kind == kind)
+                {
+                    asked = _heroIntents[i];
+                    return true;
+                }
 
-            var target = _heroTarget != null && !_heroTarget.IsDown && InReach(HeroPosition, _heroTarget.Position, HeroStrikeRange)
-                ? _heroTarget
-                : null;
-            if (target == null)
+            asked = default;
+            return false;
+        }
+
+        /// <summary>
+        /// Carry out the hero's Strike Intent against this tick's positions. It lands only when the swing is ready
+        /// and the target is alive and in reach; one refused costs nothing.
+        /// </summary>
+        private void ExecuteHeroStrike()
+        {
+            if (!_heroStrikeReady || !HeroAsked(IntentKind.Strike, out var asked)) return;
+
+            var interval = 1f / _hero.AttackSpeed;
+            var target = asked.Target as Enemy;
+            if (target == null || target.IsDown || !_arena.InRangeOfHero(target.Position, HeroStrikeRange))
             {
-                // His target is still out of reach (he is walking to it, or it is walking in): the swing is ready
-                // and waits, but nothing banks beyond it, so arrival is one Strike, not a burst.
+                // His target is still out of reach (he is walking to it, or it is walking in).
                 _strikeTimer = interval;
                 return;
             }
 
-            _strikeTimer = Math.Min(_strikeTimer - interval, interval); // at most one Strike per tick
+            _strikeTimer = Bank(_strikeTimer, interval);
 
             Land(_hero, target, DamageType.PhysicalDamage, _hero.PhysicalDamage);
             HeroStriked?.Invoke();
@@ -562,22 +532,20 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         private bool CanAffordCast(float resource) => resource >= _hero.CastCost;
 
-        private void ResolveCast(float dt)
+        /// <summary>
+        /// Carry out the hero's Cast Intent. The cadence is the Encounter's: the beat opens once per
+        /// <see cref="EncounterTuning.CastCadence"/> whether or not he casts, and a Cast asked off the beat is refused.
+        /// </summary>
+        private void ExecuteHeroCast()
         {
-            _castTimer += dt;
-            if (_castTimer < _tuning.CastCadence) return;
+            if (!_heroCastBeatOpen) return;
 
-            _castTimer = Math.Min(_castTimer - _tuning.CastCadence, _tuning.CastCadence);
+            _castTimer = Bank(_castTimer, _tuning.CastCadence);
 
-            // The CastThreshold latch is stepped every Cast opportunity, before the affordability
-            // and target tests short-circuit: it arms on the pool charging up, however idle the beat.
-            var casting = _behaviour.ShouldCast(_hero.ResourceFraction);
-
-            if (!casting || !CanAffordCast(_hero.Resource)) return;
+            if (!HeroAsked(IntentKind.Cast, out _) || !CanAffordCast(_hero.Resource)) return;
 
             // No one to aim at, or a shape that would catch nobody: the Cast does not fire and spends nothing.
-            var shape = _tuning.Cast.Shape.Scaled(_tuning.Cast.Size);
-            var aim = DensestCluster(shape);
+            var aim = _arena.DensestCluster(_enemies, _tuning.Cast);
             if (aim == null) return;
 
             // The Cast that leaves too little for another takes the whole remainder, so a run always ends on 0.
@@ -586,7 +554,7 @@ namespace ToolSmiths.InventorySystem.Simulation
             if (drains) _behaviour.ReleaseCastingRun();
             HeroCast?.Invoke();
 
-            var targets = InShape(shape, aim);
+            var targets = _arena.InShape(_enemies, _tuning.Cast, aim);
             for (var i = 0; i < targets.Count; i++)
             {
                 Land(_hero, targets[i], DamageType.MagicalDamage, _hero.MagicalDamage);
@@ -595,39 +563,86 @@ namespace ToolSmiths.InventorySystem.Simulation
         }
 
         /// <summary>
-        /// Deal one hit and announce it: the base damage takes its spread (one roll from the hit stream, drawn for
-        /// every hit so the stream's position never depends on the tuning), the target mitigates it by
-        /// <paramref name="type"/> and reports what it lost. Not announced when the target was already down -
-        /// nothing landed.
+        /// Deal one hit and announce it. One hit-stream roll is drawn per hit, so the stream's position never
+        /// depends on the tuning; nothing is announced when the target was already down.
         /// </summary>
         private void Land(ICombatant dealer, ICombatant target, DamageType type, float baseDamage)
         {
-            var rawAmount = baseDamage * (1f + ((float)_hitRolls.Next() * 2f - 1f) * _tuning.DamageSpread);
+            var rawAmount = baseDamage * (1f + ((float)_streams.Hit.Next() * 2f - 1f) * _tuning.DamageSpread);
             var wasDown = target.IsDown;
             var lost = type == DamageType.MagicalDamage ? target.ReceiveMagical(rawAmount) : target.ReceivePhysical(rawAmount);
-            if (!wasDown)
-                HitLanded?.Invoke(new HitEvent(dealer, target, type, rawAmount, lost));
+            if (wasDown)
+                return;
+
+            var heroIsTarget = ReferenceEquals(target, _hero);
+            var reference = heroIsTarget
+                ? DamageReference.OfEnemies(_profile, type, _tuning.DamageSpread)
+                : DamageReference.OfHero(_hero, type, _tuning.DamageSpread);
+            var place = target is Enemy enemy ? enemy.Position : HeroPosition;
+            HitLanded?.Invoke(new HitEvent(dealer, target, type, rawAmount, lost, reference, place));
         }
 
-        private void ResolveEnemyStrikes(float dt)
+        // ─── the enemies' Brains ─────────────────────────────────────────────
+
+        /// <summary>
+        /// Bank this tick's time on each enemy's Strike cadence and ask its Brain what it wants, all from the state at
+        /// the start of the tick: nothing has moved or struck yet, so no Brain sees another's move.
+        /// </summary>
+        private void DecideEnemies(float dt)
         {
+            _enemyIntents.Clear();
             for (var i = 0; i < _enemies.Count; i++)
             {
                 var enemy = _enemies[i];
-                var interval = 1f / enemy.AttackSpeed;
                 enemy.StrikeTimer += dt;
-                if (enemy.StrikeTimer < interval) continue;
 
-                if (!InReach(enemy.Position, HeroPosition, enemy.StrikeRange))
-                {
-                    // Still walking in (or the hero stepped away): ready, but walking banks no burst.
-                    enemy.StrikeTimer = interval;
-                    continue;
-                }
+                _asked.Clear();
+                enemy.Brain.Decide(new EnemyView(_arena, enemy, _hero, StrikeIsReady(enemy)), _asked);
+                for (var j = 0; j < _asked.Count; j++)
+                    _enemyIntents.Add(new EnemyIntent(enemy, _asked[j]));
+            }
+        }
 
-                enemy.StrikeTimer = Math.Min(enemy.StrikeTimer - interval, interval);
+        private static bool StrikeIsReady(Enemy enemy) => IsDue(enemy.StrikeTimer, 1f / enemy.AttackSpeed);
+
+        private static bool IsDue(float timer, float interval) => !(timer < interval);
+
+        /// <summary>
+        /// The timer after a due swing: one interval paid, at most one more kept, so a tick never fires twice.
+        /// A swing that is ready but did not land waits at one interval and banks no burst, so arrival is one Strike.
+        /// </summary>
+        private static float Bank(float timer, float interval) => Math.Min(timer - interval, interval);
+
+        /// <summary>Carry out the enemies' Approach Intents; only the hero can be approached.</summary>
+        private void WalkEnemies(float dt)
+        {
+            for (var i = 0; i < _enemyIntents.Count; i++)
+            {
+                var (actor, intent) = (_enemyIntents[i].Actor, _enemyIntents[i].Intent);
+                if (intent.Kind == IntentKind.Approach && ReferenceEquals(intent.Target, _hero))
+                    _arena.WalkEnemy(actor, dt);
+            }
+        }
+
+        /// <summary>
+        /// Carry out the enemies' Strike Intents against this tick's positions. A Strike lands only when the swing is
+        /// ready and the hero is in reach; one refused costs nothing.
+        /// </summary>
+        private void ExecuteEnemyStrikes()
+        {
+            for (var i = 0; i < _enemyIntents.Count; i++)
+            {
+                var (enemy, intent) = (_enemyIntents[i].Actor, _enemyIntents[i].Intent);
+                if (intent.Kind != IntentKind.Strike || enemy.IsDown) continue;
+                if (!ReferenceEquals(intent.Target, _hero) || !StrikeIsReady(enemy)) continue;
+                if (!_arena.InRangeOfHero(enemy.Position, enemy.StrikeRange)) continue;
+
+                enemy.StrikeTimer = Bank(enemy.StrikeTimer, 1f / enemy.AttackSpeed);
                 Land(enemy, _hero, enemy.StrikeDamageType, enemy.StrikeDamage);
             }
+
+            for (var i = 0; i < _enemies.Count; i++)
+                _enemies[i].StrikeTimer = Math.Min(_enemies[i].StrikeTimer, 1f / _enemies[i].AttackSpeed);
         }
 
         // ─── kills, clears, XP ───────────────────────────────────────────────
@@ -657,113 +672,5 @@ namespace ToolSmiths.InventorySystem.Simulation
 
             EncounterCleared?.Invoke();
         }
-
-        // ─── deterministic targeting ─────────────────────────────────────────
-
-        /// <summary>
-        /// The enemy the hero fights, by the pattern <see cref="EncounterTuning.HeroTargeting"/> names. Reads
-        /// state and changes none: the tick stores the answer, <see cref="StrikeTarget"/> only peeks at it.
-        /// </summary>
-        private Enemy ChooseHeroTarget() => _tuning.HeroTargeting switch
-        {
-            HeroTargeting.WeightedProximity => WeightedProximityTarget(),
-            _ => throw new InvalidOperationException($"Unknown hero targeting {_tuning.HeroTargeting}."),
-        };
-
-        /// <summary>
-        /// Keep the target until it falls. With none, the best-scoring living enemy anywhere. A target out of
-        /// Strike Range gives way to the best-scoring enemy that is inside it, if any is; otherwise he keeps it
-        /// and walks.
-        /// </summary>
-        private Enemy WeightedProximityTarget()
-        {
-            var current = _heroTarget != null && !_heroTarget.IsDown ? _heroTarget : null;
-            if (current == null)
-                return BestScoring(inReachOnly: false);
-
-            if (InReach(HeroPosition, current.Position, HeroStrikeRange))
-                return current;
-
-            return BestScoring(inReachOnly: true) ?? current;
-        }
-
-        /// <summary>
-        /// The living enemy with the lowest <c>w * distance from the origin + (1 - w) * distance from the hero</c>,
-        /// <c>w</c> being <see cref="HeroBehaviour.OriginWeight"/> read live; the earliest spawned on a tie.
-        /// </summary>
-        private Enemy BestScoring(bool inReachOnly)
-        {
-            var weight = Math.Clamp(_behaviour.OriginWeight, 0f, 1f);
-            var range = HeroStrikeRange;
-
-            Enemy best = null;
-            var bestScore = 0f;
-            for (var i = 0; i < _enemies.Count; i++)
-            {
-                var e = _enemies[i];
-                if (e.IsDown || (inReachOnly && !InReach(HeroPosition, e.Position, range))) continue;
-
-                var score = weight * Coordinate.Distance(e.Position, _arena.Origin)
-                    + (1f - weight) * Coordinate.Distance(e.Position, HeroPosition);
-                if (best == null || score < bestScore) // strict: the earlier spawn keeps a tie
-                {
-                    best = e;
-                    bestScore = score;
-                }
-            }
-            return best;
-        }
-
-        /// <summary>
-        /// The enemy the Cast is aimed at: of those within Cast Range, the one whose <paramref name="shape"/> (placed
-        /// per the anchor) holds the most enemies; a tie goes to the one nearest the hero, then the earliest spawned
-        /// (the enemies are in spawn order, so the first found keeps a tie). Null when no candidate's shape holds
-        /// anyone.
-        /// </summary>
-        private Enemy DensestCluster(AreaShape shape)
-        {
-            Enemy best = null;
-            var bestCount = 0;
-            var bestDistance = 0f;
-
-            for (var i = 0; i < _enemies.Count; i++)
-            {
-                var candidate = _enemies[i];
-                if (candidate.IsDown || !InReach(HeroPosition, candidate.Position, _tuning.Cast.Range)) continue;
-
-                var count = CountInShape(shape, candidate);
-                var distance = Coordinate.Distance(HeroPosition, candidate.Position);
-                if (count > bestCount || (count == bestCount && count > 0 && distance < bestDistance))
-                {
-                    best = candidate;
-                    bestCount = count;
-                    bestDistance = distance;
-                }
-            }
-            return best;
-        }
-
-        /// <summary>How many living enemies <see cref="InShape"/> would list, counted without building the list.</summary>
-        private int CountInShape(AreaShape shape, Enemy aim)
-        {
-            var count = 0;
-            for (var i = 0; i < _enemies.Count; i++)
-                if (Catches(shape, aim, _enemies[i]))
-                    count++;
-            return count;
-        }
-
-        /// <summary>The living enemies inside <paramref name="shape"/> placed for a Cast aimed at <paramref name="aim"/>, in spawn order.</summary>
-        private List<Enemy> InShape(AreaShape shape, Enemy aim)
-        {
-            _castTargets.Clear();
-            for (var i = 0; i < _enemies.Count; i++)
-                if (Catches(shape, aim, _enemies[i]))
-                    _castTargets.Add(_enemies[i]);
-            return _castTargets;
-        }
-
-        private bool Catches(AreaShape shape, Enemy aim, Enemy enemy) =>
-            !enemy.IsDown && shape.Contains(enemy.Position, _tuning.Cast.Anchor, HeroPosition, aim.Position);
     }
 }

@@ -400,8 +400,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             lootFlow.Ground.StoredPackages.Where(entry => ReferenceEquals(entry.Value.Item, item))
                 .Select(entry => (Vector2Int?)entry.Key).FirstOrDefault();
 
-        private LootFlow NewLootFlow(int width, int height, params AbstractDimensionalContainer[] receiving) =>
-            NewIdleLootFlow(new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10), catalog)), NewGround(width, height), receiving);
+        private LootFlow NewLootFlow(int width, int height) =>
+            NewIdleLootFlow(new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10), catalog)), NewGround(width, height));
 
         [Test]
         public void ANewPackage_EvictsTheOldestFirst_UntilItFits()
@@ -426,7 +426,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         public void AfterAnEviction_TheSurvivorsStayInTheirCells_AndHolesAreNotCompacted()
         {
             var bag = new CharacterInventory(new Vector2Int(10, 10), catalog);
-            var lootFlow = NewIdleLootFlow(new BagItemReceiver(bag), NewGround(3, 1), bag);
+            var lootFlow = NewIdleLootFlow(new BagItemReceiver(bag), NewGround(3, 1));
             var first = Sword(1);
             var second = Sword(2);
             var third = Sword(3);
@@ -447,7 +447,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         public void ANewPackage_TakesTheFirstHoleThatFits_WithoutEvictingAnything()
         {
             var bag = new CharacterInventory(new Vector2Int(10, 10), catalog);
-            var lootFlow = NewIdleLootFlow(new BagItemReceiver(bag), NewGround(3, 1), bag);
+            var lootFlow = NewIdleLootFlow(new BagItemReceiver(bag), NewGround(3, 1));
             var first = Sword(1);
             var second = Sword(2);
             var third = Sword(3);
@@ -543,7 +543,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var bag = new CharacterInventory(new Vector2Int(1, 1), catalog);
             var held = new Package(bag, new ItemInstance(PotionId, ItemRarity.Common, 1, null), 8u);
             Assert.That(bag.TryAddToContainer(ref held), Is.True, "fixture: 8 of 10, so room for 2");
-            var lootFlow = NewIdleLootFlow(new BagItemReceiver(bag), NewGround(), bag);
+            var lootFlow = NewIdleLootFlow(new BagItemReceiver(bag), NewGround());
             var potions = new ItemInstance(PotionId, ItemRarity.Common, 1, null);
             _ = lootFlow.PlaceOnGround(new Package(null, potions, 5u));
             var changes = 0;
@@ -630,12 +630,11 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
         // ─── the Ground Items List (issue #63): the list picks up through the player ──
 
-        private LootFlow NewIdleLootFlow(BagItemReceiver player, GroundContainer ground = null,
-            params AbstractDimensionalContainer[] receiving)
+        private LootFlow NewIdleLootFlow(BagItemReceiver player, GroundContainer ground = null)
         {
             var sim = NewEncounter(OneShotHero(), Profiles.Solo(EnemyArchetype.Skirmisher));
             return new LootFlow(sim, Admitting(ItemRarity.Common), new ItemGenerator(catalog, new SeededRollSource(1)),
-                new FakeCoinDropSource(), player, NewWallet(), ground ?? NewGround(), receiving);
+                new FakeCoinDropSource(), player, NewWallet(), ground ?? NewGround());
         }
 
         private static GroundContainer NewGround(int width = 10, int height = 13) => new(new Vector2Int(width, height), catalog);

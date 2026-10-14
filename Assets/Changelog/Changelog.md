@@ -13,6 +13,7 @@
 - The main menu shows the chosen hero's name, class and level.
 - Fixed the health and resource bars not showing a higher maximum after equipping gear while the game is paused.
 - Hold Tab over an open Vendor or Healer to peek at its other tab; Alt still shows more detail on an item.
+- The hero in the field now has a health bar that shows its shield, and flashes and shakes when hit, like the enemies do.
 
 ## 0.0.5_Alpha - 2026-09-25
 

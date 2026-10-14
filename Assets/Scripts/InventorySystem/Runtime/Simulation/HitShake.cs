@@ -1,23 +1,22 @@
 using ToolSmiths.InventorySystem.Data;
-using ToolSmiths.InventorySystem.Geometry;
 using ToolSmiths.InventorySystem.Services;
-using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
+using HitShakeMaths = ToolSmiths.InventorySystem.Geometry.HitShake;
 
 namespace ToolSmiths.InventorySystem.Runtime.Simulation
 {
     /// <summary>
-    /// The hit shake feedback (issue #180): the enemy's sprite jolts each time its health drops and settles
-    /// over a short stretch of <i>sim</i> time. It sits on the <c>Sprite</c> child of the view and moves
-    /// that child's own anchored position by a local offset, never the view's root: the health bar stays
-    /// still, the arena's placement (<see cref="EnemyView.Place"/>) keeps owning the root, and the
+    /// The hit shake feedback (issue #180): a figure's sprite jolts each time its health drops and settles
+    /// over a short stretch of <i>sim</i> time. It sits on the <c>Sprite</c> child of the figure and moves
+    /// that child's own anchored position by a local offset, never the figure's root: the health bar stays
+    /// still, the arena's placement (<see cref="Figure.Place"/>) keeps owning the root, and the
     /// facing flip (a <c>localScale</c> on the same child) does not touch an anchored position, so the
     /// two compose without fighting.
     /// <para>
-    /// It listens to the enemy's own <see cref="CharacterResource.CurrentHasChanged"/>, so the sim is
-    /// untouched, and nothing else of the view knows about it: <see cref="EnemyArena"/> binds it behind its
-    /// <c>hitShake</c> switch and <see cref="EnemyView.Unbind"/> lets it go. It shares the event with
-    /// <see cref="EnemyHitFlash"/>, not a component, so either prunes alone. Pruning the feature is
+    /// It listens to the bound <see cref="CharacterResource.CurrentHasChanged"/>, so the sim is
+    /// untouched, and nothing else of the figure knows about it: <see cref="EnemyArena"/> binds it behind its
+    /// <c>hitShake</c> switch and <see cref="Figure.Unbind"/> lets it go. It shares the event with
+    /// <see cref="HitFlash"/>, not a component, so either prunes alone. Pruning the feature is
     /// deleting this component and those call sites.
     /// </para>
     /// <para>
@@ -28,7 +27,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(RectTransform))]
-    public sealed class EnemyHitShake : MonoBehaviour
+    public sealed class HitShake : MonoBehaviour
     {
         [SerializeField, Min(0f), Tooltip("Canvas units of the first kick.")]
         private float amplitude = 6f;
@@ -37,7 +36,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         [SerializeField, Min(0.01f), Tooltip("Sim seconds a shake takes to settle. Scales with sim speed and freezes on pause.")]
         private float duration = 0.2f;
 
-        private readonly HitShake _shake = new();
+        private readonly HitShakeMaths _shake = new();
         private CharacterResource _health;
         private RectTransform _rect;
         private Vector2 _rest;
@@ -51,15 +50,15 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// <summary>Whether a shake is in flight.</summary>
         public bool IsShaking => _shake.IsActive;
 
-        /// <summary>Whether this component is listening to an enemy's health.</summary>
+        /// <summary>Whether this component is listening to a health resource.</summary>
         public bool IsBound => _health != null;
 
-        /// <summary>Shake each time <paramref name="enemy"/>'s health drops.</summary>
-        public void Bind(Enemy enemy)
+        /// <summary>Shake each time <paramref name="health"/> drops.</summary>
+        public void Bind(CharacterResource health)
         {
             Unbind();
 
-            _health = enemy.HealthResource;
+            _health = health;
             _health.CurrentHasChanged += OnHealthChanged;
         }
 
@@ -87,7 +86,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         private void OnHealthChanged(float previous, float current, float total)
         {
-            if (HitShake.IsHit(previous, current))
+            if (HitShakeMaths.IsHit(previous, current))
                 _shake.Hit();
         }
 

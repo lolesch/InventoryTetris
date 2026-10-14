@@ -27,8 +27,9 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         private static EncounterTuning OnTheArena() => new() { Arena = ArenaTuning.Standard() };
 
         private static EncounterSimulation Sim(FakeHero hero, EncounterProfile profile, EncounterTuning tuning,
-            IRollSource main = null, IRollSource movement = null) => new(hero, profile, main ?? new ConstantRollSource(0f),
-            Behaviours.Engaging(10), tuning, bag: null, movementRolls: movement ?? new ConstantRollSource(0.5f));
+            IRollSource main = null, IRollSource movement = null) => new(hero, profile,
+            new RollStreams(main ?? new ConstantRollSource(0f), movement ?? new ConstantRollSource(0.5f)),
+            Behaviours.Engaging(10), tuning);
 
         private static float Distance(EncounterSimulation sim, Enemy enemy) => Coordinate.Distance(enemy.Position, sim.HeroPosition);
 
@@ -156,7 +157,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
-        public void StrikeTarget_GivesWayToAnEnemyInReach_WhenTheTargetStandsOff()
+        public void HeroTarget_GivesWayToAnEnemyInReach_WhenTheTargetStandsOff()
         {
             var profile = new EncounterProfile(
                 sourceLevel: 5, packed: EnemyArchetype.Skirmisher, rosterBrute: new IntRange(1), rosterSkirmisher: new IntRange(1),
@@ -165,12 +166,13 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var sim = Sim(Passive(), profile, OnTheArena());
             var brute = sim.Enemies.Single(e => e.Archetype == EnemyArchetype.Brute);
             var skirmisher = sim.Enemies.Single(e => e.Archetype == EnemyArchetype.Skirmisher);
-            Assert.That(sim.StrikeTarget, Is.SameAs(skirmisher), "premise: both walk in, and the earlier spawn is his target");
+            sim.Advance(Tick);
+            Assert.That(sim.HeroTarget, Is.SameAs(skirmisher), "premise: both walk in, and the earlier spawn is his target");
 
-            for (var i = 0; i < 150; i++) sim.Advance(Tick);
+            for (var i = 0; i < 149; i++) sim.Advance(Tick);
 
             Assert.That(Distance(sim, skirmisher), Is.GreaterThan(sim.HeroStrikeRange), "premise: the skirmisher stands outside his reach");
-            Assert.That(sim.StrikeTarget, Is.SameAs(brute), "the Brute is the one inside it");
+            Assert.That(sim.HeroTarget, Is.SameAs(brute), "the Brute is the one inside it");
         }
 
         [Test]

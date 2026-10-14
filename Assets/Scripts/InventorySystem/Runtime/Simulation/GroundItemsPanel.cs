@@ -27,10 +27,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     {
         [SerializeField] private GroundItemSlotDisplay prefab;
         [SerializeField] private Transform rows;
-        [SerializeField, Tooltip("The same fade as the ground grid's slots.")] private GroundFadeSettings fade = new();
 
         private readonly List<GroundItemSlotDisplay> _slots = new();
         private PrefabPool<GroundItemSlotDisplay> _pool;
+        private GroundFadeSettings _fade; // the config is read-only, so the first load stands
 
         // Lazily built rather than in Awake, which does not run again on the second Play entry
         // under disabled domain reload - the scene object survives, only OnEnable repeats.
@@ -45,6 +45,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         {
             var drops = (Container as GroundContainer)?.PackagesOldestFirst();
             var count = drops?.Count ?? 0;
+            _fade ??= GameBoot.Load().GroundFade;
 
             while (count < _slots.Count)
             {
@@ -58,7 +59,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                     _slots.Add(Pool.GetObject());
 
                 _slots[i].Bind(drops[i].Item, drops[i].Amount, ItemService.Instance.View(drops[i].Item), OnSlotClicked);
-                _slots[i].SetAlpha(fade.AlphaOf(count - 1 - i));
+                _slots[i].SetAlpha(_fade.AlphaOf(count - 1 - i));
                 _slots[i].transform.SetSiblingIndex(i);
             }
         }

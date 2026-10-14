@@ -3,6 +3,7 @@ using Submodules.Utility.Persistence;
 using Submodules.Utility.Services;
 using System;
 using ToolSmiths.InventorySystem.Inventories;
+using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -136,7 +137,8 @@ namespace ToolSmiths.InventorySystem.Services
 
             var registry = new ServiceRegistry();
 
-            // One roll source for every draw the services make, so a test seeds it once.
+            // One roll source for every draw the services make, so a test seeds it once. The Encounter's
+            // movement and hit streams are their own sources (RollStreams).
             var rolls = new UnityRollSource();
 
             var items = new ItemService(config, rolls);
@@ -152,7 +154,8 @@ namespace ToolSmiths.InventorySystem.Services
             // Both Supplies start stocked, as the Vendor's and Healer's shelves were on Awake.
             inventory.RestockTownStops();
 
-            var simulation = new SimulationService(session, items, inventory, config, rolls);
+            var simulation = new SimulationService(session, items, inventory, config,
+                new RollStreams(rolls, new UnityRollSource(), new UnityRollSource()));
             registry.Register<ISimulationService>(simulation);
 
             registry.Register<IPauseMenu>(new PauseMenu(simulation));

@@ -72,11 +72,12 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         {
             var sim = NewSim(StrikerCaster());
             var brutes = sim.Enemies.Where(e => e.Archetype == EnemyArchetype.Brute).ToList();
-            var struck = sim.StrikeTarget;
-            var strike = 5f * (1f - struck.ArmorPercent * 0.01f);
             var skirmishers = sim.Enemies.Where(e => e.Archetype == EnemyArchetype.Skirmisher).ToList();
 
             sim.Advance(0.1f);
+
+            var struck = sim.HeroTarget;
+            var strike = 5f * (1f - struck.ArmorPercent * 0.01f);
 
             foreach (var brute in brutes)
                 Assert.That(brute.MaxHealth - brute.Health - (brute == struck ? strike : 0f), Is.EqualTo(3f).Within(0.001f),
