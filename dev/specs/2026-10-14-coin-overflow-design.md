@@ -23,14 +23,14 @@ fit lie on the ground. A sale is refused only for a payout of 0, currency, a hel
 big for the Sold container. It never refuses for lack of coin room.
 
 **Coins are placed highest denomination first, on every move.** One placement order for coins, wherever they
-come from (sale payout, loot, Quick Move, a bulk move such as stashing the bag): gold, silver, copper, iron
-into the first free cells in that order. A full destination keeps the highest denominations. After
-stashing the bag, the Stash holds its coins in that order.
+come from (sale payout, loot, Quick Move): gold, silver, copper, iron into the first free cells in that
+order. A full destination keeps the highest denominations. No bulk move exists, so the bag keeping its
+coins in that order is what puts them in order in the Stash when they are shift-clicked across in turn.
 
 **A coin moved into a Wallet-backing container re-lays all its coins.** One coin shift-clicked or dropped
 into the container behind the Wallet leaves that container's coins gold first, iron last, even though
 coins the player placed by hand move. Any other container (the Stash, the Ground) puts a single coin in
-the first free cell; only coins arriving together (a payout, a bulk move) are ordered there.
+the first free cell; only coins arriving together (a payout) are ordered there.
 
 **Town gets a ground.** The `World` already owns one `GroundContainer`; a Run's `LootFlow` lays on it and
 wipes it. In Town the same container takes sale overflow and is shown in the same **Ground Items List**,
@@ -53,7 +53,8 @@ ground is full and pushes a coin stack out, the Wallet takes what it can; the re
 4. As a player, I click an overflow coin with a full bag and it stays on the ground.
 5. As a player, the coins I leave on the Town ground are gone when I Send.
 6. As a player, my coins sit gold first, iron last, wherever they came from.
-7. As a player, when I stash my bag, the Stash holds the coins gold first, iron last.
+7. As a player, when I shift-click my bag's coins into the Stash one by one, the Stash holds them gold
+   first, iron last, because the bag's coins were already in that order.
 8. As a player, a full destination keeps my highest denominations.
 9. As a player, a coin I drop into my bag ends up in order with the coins already there.
 10. As a player, a sale still refuses when it pays 0 or is currency, and says nothing has changed.
@@ -68,7 +69,7 @@ ground is full and pushes a coin stack out, the Wallet takes what it can; the re
 - The Ground context becomes reachable in Town (`InventoryContextState.IsReachableInField` and
   `SyncToPhase`), and `QuickMoveResolver`'s `groundOpen` is true in Town.
 - A single coin-placement rule lives with the coin placement code, not in each caller: the Wallet's
-  Deposit, Consolidate, a Quick Move of coins and a bulk move all go through it.
+  Deposit, Consolidate and a Quick Move of coins all go through it.
 - Tests assert container contents and balances, never event counts (ADR-0007).
 
 ## Out of scope
