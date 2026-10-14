@@ -61,5 +61,10 @@ the executor would be half-written. Rejected.
 - The glossary line that during a Run "the player never controls [the hero] directly" stays true
   while the auto-hero Brain is the only hero Brain. A player Brain is the change that reopens it.
 - A player Brain deciding at the 0.1 s tick needs its own spec; this seam does not fix the rate.
+- An Approach names its target and a Cast names no aim: both are read when they run, after the walks
+  that precede them in the tick, so the auto Brains reproduce today's seeded positions and hits. A
+  Brain that wants a chosen aim point adds it to the Cast Intent when it needs one.
+- A Recall is decided from the start-of-tick state like every Intent, so an auto-Recall trigger that
+  a tick's own damage or pick-up trips fires one tick later than when it was checked after the tick.
 - ADR-0018's "tests go through the simulation's advance entry point" still holds. New tests add
   scripted Brains for the Encounter and direct queries for the Arena.

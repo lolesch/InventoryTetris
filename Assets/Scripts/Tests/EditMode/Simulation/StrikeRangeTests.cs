@@ -157,7 +157,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
-        public void StrikeTarget_GivesWayToAnEnemyInReach_WhenTheTargetStandsOff()
+        public void HeroTarget_GivesWayToAnEnemyInReach_WhenTheTargetStandsOff()
         {
             var profile = new EncounterProfile(
                 sourceLevel: 5, packed: EnemyArchetype.Skirmisher, rosterBrute: new IntRange(1), rosterSkirmisher: new IntRange(1),
@@ -166,12 +166,13 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var sim = Sim(Passive(), profile, OnTheArena());
             var brute = sim.Enemies.Single(e => e.Archetype == EnemyArchetype.Brute);
             var skirmisher = sim.Enemies.Single(e => e.Archetype == EnemyArchetype.Skirmisher);
-            Assert.That(sim.StrikeTarget, Is.SameAs(skirmisher), "premise: both walk in, and the earlier spawn is his target");
+            sim.Advance(Tick);
+            Assert.That(sim.HeroTarget, Is.SameAs(skirmisher), "premise: both walk in, and the earlier spawn is his target");
 
-            for (var i = 0; i < 150; i++) sim.Advance(Tick);
+            for (var i = 0; i < 149; i++) sim.Advance(Tick);
 
             Assert.That(Distance(sim, skirmisher), Is.GreaterThan(sim.HeroStrikeRange), "premise: the skirmisher stands outside his reach");
-            Assert.That(sim.StrikeTarget, Is.SameAs(brute), "the Brute is the one inside it");
+            Assert.That(sim.HeroTarget, Is.SameAs(brute), "the Brute is the one inside it");
         }
 
         [Test]

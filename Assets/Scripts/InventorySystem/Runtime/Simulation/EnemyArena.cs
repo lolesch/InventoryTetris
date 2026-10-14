@@ -130,10 +130,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             SyncDamageNumbers();
 
-            // Peeked once a frame: it re-runs the sim's choice on every read.
-            var strikeTarget = _bound?.StrikeTarget;
-            Place(strikeTarget);
-            MarkTarget(strikeTarget);
+            var heroTarget = _bound?.HeroTarget;
+            Place(heroTarget);
+            MarkTarget(heroTarget);
             FadeDying(SimulationService.Instance.SimDelta(Time.deltaTime));
         }
 
@@ -293,17 +292,16 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         }
 
         /// <summary>
-        /// Moves the target ring to the view of <see cref="EncounterSimulation.StrikeTarget"/>, the hero's sticky
-        /// target: it stays on one enemy until it falls (or one comes within reach of a hero whose own is not), and is
-        /// null with no living enemy. Read from <c>_views</c> only: a dying
+        /// Moves the target ring to the view of <see cref="EncounterSimulation.HeroTarget"/>, the target of the hero's
+        /// latest Strike or Approach Intent, and off with no living enemy. Read from <c>_views</c> only: a dying
         /// enemy has left it, so it is never marked. Nothing is marked with the switch off or no Encounter.
         /// </summary>
-        /// <param name="strikeTarget">This frame's <see cref="EncounterSimulation.StrikeTarget"/>, read once by <see cref="Update"/>.</param>
-        private void MarkTarget(Enemy strikeTarget)
+        /// <param name="heroTarget">This frame's <see cref="EncounterSimulation.HeroTarget"/>, read once by <see cref="Update"/>.</param>
+        private void MarkTarget(Enemy heroTarget)
         {
             Figure target = null;
-            if (targetHighlight && _bound != null && strikeTarget != null)
-                _views.TryGetValue(strikeTarget, out target);
+            if (targetHighlight && _bound != null && heroTarget != null)
+                _views.TryGetValue(heroTarget, out target);
 
             if (target == _marked)
                 return;
@@ -318,10 +316,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         /// <summary>
         /// Puts every figure where the sim has it, projected from the arena's origin at the anchor, and turns it
-        /// toward the hero (the hero toward <paramref name="strikeTarget"/>, his Strike target as <see cref="Update"/>
+        /// toward the hero (the hero toward <paramref name="heroTarget"/>, his target as <see cref="Update"/>
         /// read it this frame). Nothing with no Encounter or no anchor.
         /// </summary>
-        private void Place(Enemy strikeTarget)
+        private void Place(Enemy heroTarget)
         {
             if (_bound == null)
                 return;
@@ -344,7 +342,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 moved |= PlaceFigure(figure, enemy.Position, _bound.HeroPosition);
 
             if (heroFigure != null)
-                moved |= PlaceFigure(heroFigure, _bound.HeroPosition, strikeTarget?.Position);
+                moved |= PlaceFigure(heroFigure, _bound.HeroPosition, heroTarget?.Position);
 
             if (moved)
                 SortByDepth();
