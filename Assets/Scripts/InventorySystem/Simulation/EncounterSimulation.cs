@@ -43,8 +43,9 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// The sim owns position (spatial-combat spec): the hero starts at the <see cref="Arena"/>'s origin and each
     /// enemy spawns on its edge, walks in on sim time and Strikes only once the hero is within its Strike Range;
     /// the hero's Strike likewise needs its target within <see cref="HeroStrikeRange"/>. Each tick, in order, the
-    /// hero chooses his target (<see cref="HeroTargeting"/>), the hero moves, the enemies move, and attacks resolve
-    /// against the new positions. The spawn bearing and stop jitter come from the movement stream.
+    /// enemies' Brains decide (<see cref="IEnemyBrain"/>, from the state at the start of the tick), the hero chooses
+    /// his target (<see cref="HeroTargeting"/>), the hero moves, the enemies move, and attacks resolve against the
+    /// new positions. The spawn bearing and stop jitter come from the movement stream.
     ///
     /// Every hit that lands (the hero's Strike and Cast, each enemy Strike) rolls its damage spread from the hit
     /// stream and is announced by <see cref="HitLanded"/> with the amount the target actually lost (issue #211).
@@ -62,6 +63,21 @@ namespace ToolSmiths.InventorySystem.Simulation
         private readonly IRollSource _hitRolls;
         private readonly CombatClock _clock;
         private readonly List<Enemy> _enemies = new();
+        private readonly Func<Enemy, IEnemyBrain> _enemyBrains;
+        private readonly List<Intent> _asked = new(); // reused buffer - one Brain's answer
+        private readonly List<EnemyIntent> _enemyIntents = new(); // reused buffer - this tick's decisions, in enemy order
+
+        private readonly struct EnemyIntent
+        {
+            public EnemyIntent(Enemy actor, Intent intent)
+            {
+                Actor = actor;
+                Intent = intent;
+            }
+
+            public Enemy Actor { get; }
+            public Intent Intent { get; }
+        }
 
         private int _rosterBrute;
         private int _rosterSkirmisher;
@@ -100,7 +116,24 @@ namespace ToolSmiths.InventorySystem.Simulation
             HeroBehaviour behaviour,
             EncounterTuning tuning = null,
             IBagGauge bag = null)
+            : this(hero, profile, rolls, behaviour, tuning, bag, null)
         {
+        }
+
+        /// <param name="enemyBrains">
+        /// Builds the Brain of each enemy as it spawns; null gives every enemy the <see cref="ChaseAndStrikeBrain"/>.
+        /// A test scripts the enemies through it.
+        /// </param>
+        internal EncounterSimulation(
+            IHeroCombatant hero,
+            EncounterProfile profile,
+            RollStreams rolls,
+            HeroBehaviour behaviour,
+            EncounterTuning tuning,
+            IBagGauge bag,
+            Func<Enemy, IEnemyBrain> enemyBrains)
+        {
+            _enemyBrains = enemyBrains;
             _hero = hero ?? throw new ArgumentNullException(nameof(hero));
             _profile = profile ?? throw new ArgumentNullException(nameof(profile));
             _rolls = rolls?.Main ?? throw new ArgumentNullException(nameof(rolls));
@@ -308,16 +341,17 @@ namespace ToolSmiths.InventorySystem.Simulation
                 _enemies[i].Regenerate(dt);
 
             // Positions advance here and nowhere else, on the tick, so they scale with sim speed and freeze at
-            // zero. In a fixed order: the hero chooses his target, the hero moves, the enemies move, and only then
-            // does anyone attack, against this tick's positions.
+            // zero. In a fixed order: every enemy Brain decides from the state at the start of the tick, the hero
+            // chooses his target, the hero moves, the enemies move, and only then does anyone attack, against this
+            // tick's positions.
+            DecideEnemies(dt);
             _heroTarget = ChooseHeroTarget();
             MoveHero(dt);
-            for (var i = 0; i < _enemies.Count; i++)
-                _arena.WalkEnemy(_enemies[i], dt);
+            WalkEnemies(dt);
 
             ResolveStrike(dt);
             ResolveCast(dt);
-            ResolveEnemyStrikes(dt);
+            ExecuteEnemyStrikes();
 
             if (_hero.IsDown)
             {
@@ -415,6 +449,7 @@ namespace ToolSmiths.InventorySystem.Simulation
                 // desync so a Pack does not strike in lockstep
                 StrikeTimer = (float)_rolls.Next() * (1f / EnemyArchetypes.Of(archetype).AttackSpeed),
             };
+            enemy.Brain = _enemyBrains?.Invoke(enemy) ?? ChaseAndStrikeBrain.Instance;
             var bearingRoll = (float)_movementRolls.Next();
             _arena.PlaceSpawn(enemy, _enemies, bearingRoll, stopRoll: (float)_movementRolls.Next());
             _enemies.Add(enemy);
@@ -518,25 +553,61 @@ namespace ToolSmiths.InventorySystem.Simulation
             HitLanded?.Invoke(new HitEvent(dealer, target, type, rawAmount, lost, reference, place));
         }
 
-        private void ResolveEnemyStrikes(float dt)
+        // ─── the enemies' Brains ─────────────────────────────────────────────
+
+        /// <summary>
+        /// Bank this tick's time on each enemy's Strike cadence and ask its Brain what it wants, all from the state at
+        /// the start of the tick: nothing has moved or struck yet, so no Brain sees another's move.
+        /// </summary>
+        private void DecideEnemies(float dt)
         {
+            _enemyIntents.Clear();
             for (var i = 0; i < _enemies.Count; i++)
             {
                 var enemy = _enemies[i];
-                var interval = 1f / enemy.AttackSpeed;
                 enemy.StrikeTimer += dt;
-                if (enemy.StrikeTimer < interval) continue;
 
-                if (!_arena.InRangeOfHero(enemy.Position, enemy.StrikeRange))
-                {
-                    // Still walking in (or the hero stepped away): ready, but walking banks no burst.
-                    enemy.StrikeTimer = interval;
-                    continue;
-                }
+                _asked.Clear();
+                enemy.Brain.Decide(new EnemyView(_arena, enemy, _hero, StrikeIsReady(enemy)), _asked);
+                for (var j = 0; j < _asked.Count; j++)
+                    _enemyIntents.Add(new EnemyIntent(enemy, _asked[j]));
+            }
+        }
 
+        private static bool StrikeIsReady(Enemy enemy) => !(enemy.StrikeTimer < 1f / enemy.AttackSpeed);
+
+        /// <summary>Carry out the enemies' Approach Intents; only the hero can be approached.</summary>
+        private void WalkEnemies(float dt)
+        {
+            for (var i = 0; i < _enemyIntents.Count; i++)
+            {
+                var (actor, intent) = (_enemyIntents[i].Actor, _enemyIntents[i].Intent);
+                if (intent.Kind == IntentKind.Approach && ReferenceEquals(intent.Target, _hero))
+                    _arena.WalkEnemy(actor, dt);
+            }
+        }
+
+        /// <summary>
+        /// Carry out the enemies' Strike Intents against this tick's positions. A Strike lands only when the swing is
+        /// ready and the hero is in reach; one refused costs nothing. A swing that is ready but did not land waits at
+        /// one interval and banks no burst, so arrival is one Strike.
+        /// </summary>
+        private void ExecuteEnemyStrikes()
+        {
+            for (var i = 0; i < _enemyIntents.Count; i++)
+            {
+                var (enemy, intent) = (_enemyIntents[i].Actor, _enemyIntents[i].Intent);
+                if (intent.Kind != IntentKind.Strike || enemy.IsDown) continue;
+                if (!ReferenceEquals(intent.Target, _hero) || !StrikeIsReady(enemy)) continue;
+                if (!_arena.InRangeOfHero(enemy.Position, enemy.StrikeRange)) continue;
+
+                var interval = 1f / enemy.AttackSpeed;
                 enemy.StrikeTimer = Math.Min(enemy.StrikeTimer - interval, interval);
                 Land(enemy, _hero, enemy.StrikeDamageType, enemy.StrikeDamage);
             }
+
+            for (var i = 0; i < _enemies.Count; i++)
+                _enemies[i].StrikeTimer = Math.Min(_enemies[i].StrikeTimer, 1f / _enemies[i].AttackSpeed);
         }
 
         // ─── kills, clears, XP ───────────────────────────────────────────────
