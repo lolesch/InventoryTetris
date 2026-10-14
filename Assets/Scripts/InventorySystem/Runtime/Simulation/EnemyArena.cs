@@ -147,7 +147,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _bound.EnemyDefeated += OnEnemyDefeated;
 
             if (heroFigure != null)
-                BindFigure(heroFigure, Session.Instance.Hero.GetResource(StatName.Health), "Hero");
+                BindFigure(heroFigure, Session.Instance.Hero.GetResource(StatName.Health), "Hero",
+                    Session.Instance.Hero.GetResource(StatName.Shield));
 
             // The first Encounter's initial batch spawns inside the sim's constructor, before this
             // could listen - and a Send can land between frames with enemies already in. Seeding
@@ -234,9 +235,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         }
 
         /// <summary>Binds <paramref name="figure"/> to <paramref name="health"/>, and the hit feedbacks behind their switches.</summary>
-        private void BindFigure(Figure figure, CharacterResource health, string label)
+        private void BindFigure(Figure figure, CharacterResource health, string label, CharacterResource shield = null)
         {
-            figure.Bind(health, label);
+            figure.Bind(health, label, shield);
             if (hitFlash && figure.HitFlash != null)
                 figure.HitFlash.Bind(health, figure.Sprite);
             if (hitShake && figure.HitShake != null)

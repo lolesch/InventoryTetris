@@ -92,10 +92,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         }
 
         /// <summary>Stand for a fighter whose health is <paramref name="health"/>, under <paramref name="label"/>. Hidden until it is first placed.</summary>
-        public void Bind(CharacterResource health, string label)
+        public void Bind(CharacterResource health, string label, CharacterResource shield = null)
         {
             _bound = true;
-            _health.Bind(health, label);
+            _health.Bind(health, label, shield);
 
             // A figure the pool just made has never been through Unbind, so it starts as the prefab was saved:
             // a ring left enabled there would show on every fresh figure, whether or not it is the target.

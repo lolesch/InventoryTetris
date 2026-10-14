@@ -119,6 +119,27 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
         }
 
         [UnityTest]
+        public IEnumerator TheHeroFigure_ShowsTheHeroShield_AndAnEnemyShowsNone()
+        {
+            Select(_locations[0]);
+            var encounter = SimulationService.Instance.Run.Encounter;
+            for (var tick = 0; encounter.Enemies.Count == 0 && tick < 100; tick++)
+                SimulationService.Instance.Tick(0.5f);
+            yield return null;
+
+            var heroBar = Child(HeroFigure(), "HealthBarDisplay");
+            Assert.That(Field(Field(heroBar, "shieldDisplay"), "_resource"), Is.SameAs(Session.Instance.Hero.GetResource(StatName.Shield)),
+                "the hero's bar follows the hero's shield");
+            Assert.That(((GameObject)Field(heroBar, "shieldRoot")).activeSelf, Is.True);
+
+            var enemyFigure = Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Exclude)
+                .First(c => c.GetType().Name == "Figure" && c != HeroFigure());
+            var enemyBar = Child(enemyFigure, "HealthBarDisplay");
+            Assert.That(Field(Field(enemyBar, "shieldDisplay"), "_resource"), Is.Null, "an enemy has no shield to follow");
+            Assert.That(((GameObject)Field(enemyBar, "shieldRoot")).activeSelf, Is.False);
+        }
+
+        [UnityTest]
         public IEnumerator EachEnemy_StandsOnAPooledFigure_BoundToItsOwnHealth()
         {
             Select(_locations[0]);
