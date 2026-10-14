@@ -51,7 +51,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// </summary>
         public static CastDefinition Standard() => new();
 
-        /// <summary>A copy with every value pulled into its range - the one place the ranges are stated.</summary>
+        /// <summary>A copy with every value pulled into its range.</summary>
         public CastDefinition Sanitised() => new()
         {
             Range = Math.Max(0f, Range),
@@ -61,7 +61,7 @@ namespace ToolSmiths.InventorySystem.Simulation
             Anchor = Anchor,
         };
 
-        /// <summary>Throws when a value is outside the range <see cref="Sanitised"/> pulls it back into.</summary>
+        /// <summary>Throws when a value is outside its range.</summary>
         internal void Validate()
         {
             var sane = Sanitised();

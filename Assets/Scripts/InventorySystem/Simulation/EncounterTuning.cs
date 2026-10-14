@@ -3,15 +3,8 @@ using System;
 namespace ToolSmiths.InventorySystem.Simulation
 {
     /// <summary>
-    /// The combat-wide constants that are <em>not</em> authored per Location — the tick rate,
-    /// the inter-Encounter beat, and the Cast's burst ceiling and definition (ADR-0010;
-    /// starting points from the issue-#18 <c>/prototype</c>). Defaults match the prototype's
-    /// tuning surface; a test overrides them to make a cadence land on round numbers.
-    ///
-    /// A plain <c>[Serializable]</c> class of public fields - the Simulation assembly stays engine-free - that
-    /// owns its defaults (<c>new</c> is the quiet one a test wants, <see cref="Standard"/> the one the game plays
-    /// on) and its ranges (<see cref="Sanitised"/>), so a tunable is declared here once and <c>GameConfig</c>
-    /// merely holds the object.
+    /// The combat-wide constants that are not authored per Location (ADR-0010). <c>new</c> is the quiet
+    /// default a test wants; <c>Standard()</c> is what the game plays on.
     /// </summary>
     [Serializable]
     public sealed class EncounterTuning
@@ -29,29 +22,24 @@ namespace ToolSmiths.InventorySystem.Simulation
         public float Beat = 1.0f;
 
         /// <summary>
-        /// Whether the first Encounter waits one spawn delay — the Location's own
-        /// <c>SpawnInterval ± SpawnJitter</c> — before its opening bodies arrive, instead of
-        /// having them at open. Off by default so a test sees the Roster the moment the sim is
-        /// built; <see cref="Standard"/> turns it on for a real Send or Relocate.
+        /// Whether the first Encounter waits one spawn delay before its opening bodies arrive. Off by
+        /// default so a test sees the Roster the moment the sim is built.
         /// </summary>
         public bool DelayFirstSpawn;
 
         /// <summary>
-        /// Minimum seconds between two Casts — the burst ceiling. Well below the steady-state
-        /// cadence (<c>CastCost / regen</c>) so there is headroom for a threshold burst. At least <see cref="MinCastCadence"/>.
+        /// Minimum seconds between two Casts, the burst ceiling. Well below the steady-state cadence so a
+        /// threshold burst has headroom.
         /// </summary>
         public float CastCadence = 0.35f;
 
         /// <summary>
-        /// The Cast's range, targeting, shape, size and anchor (issue #212). On the collapsed default
-        /// <see cref="Arena"/> every enemy stands on the hero, so it catches them all.
+        /// The Cast's range, targeting, shape, size and anchor (issue #212).
         /// </summary>
         public CastDefinition Cast = CastDefinition.Standard();
 
         /// <summary>
-        /// The arena the fight takes place on. Collapsed by default - every enemy spawns on the hero, so a
-        /// test sees the fight at once, as with <see cref="DelayFirstSpawn"/>; <see cref="Standard"/> plays on
-        /// <see cref="ArenaTuning.Standard"/>.
+        /// The arena the fight takes place on. Collapsed by default so a test sees the fight at once.
         /// </summary>
         public ArenaTuning Arena = new();
 
@@ -59,10 +47,8 @@ namespace ToolSmiths.InventorySystem.Simulation
         public HeroTargeting HeroTargeting = HeroTargeting.WeightedProximity;
 
         /// <summary>
-        /// How far one hit's damage strays from its base, as a symmetric fraction of it (issue #211): each hit
-        /// rolls a factor of <c>1 + (2 * roll - 1) * DamageSpread</c> from the hit stream, so 0.2 is +-20 %.
-        /// Zero by default - every figure is its base damage, as for a test; <see cref="Standard"/> plays on
-        /// <see cref="StandardDamageSpread"/>. Weapons will carry real minimum and maximum damage later. 0..1.
+        /// How far one hit's damage strays from its base, as a symmetric fraction of it (issue #211): 0.2 is
+        /// +-20 %. Zero by default so a test sees base damage. 0..1.
         /// </summary>
         public float DamageSpread;
 
@@ -73,8 +59,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         public int MaxTicksPerAdvance = 8;
 
         /// <summary>
-        /// The tuning the game plays on: the first Encounter waits one spawn delay, on the real arena and Cast,
-        /// with the damage spread. <c>GameConfig</c> starts from it, so a value changed here moves the game.
+        /// The tuning the game plays on; <c>GameConfig</c> starts from it, so a value changed here moves the game.
         /// </summary>
         public static EncounterTuning Standard() => new()
         {
@@ -85,8 +70,8 @@ namespace ToolSmiths.InventorySystem.Simulation
         };
 
         /// <summary>
-        /// A copy with every value, and the <see cref="Arena"/> and <see cref="Cast"/> it nests, pulled into its
-        /// range - the one place the ranges are stated. A missing Arena or Cast becomes its default.
+        /// A copy with every value, and the nested Arena and Cast, pulled into its range. A missing Arena or
+        /// Cast becomes its default.
         /// </summary>
         public EncounterTuning Sanitised() => new()
         {
@@ -97,11 +82,11 @@ namespace ToolSmiths.InventorySystem.Simulation
             Cast = (Cast ?? new CastDefinition()).Sanitised(),
             Arena = (Arena ?? new ArenaTuning()).Sanitised(),
             HeroTargeting = HeroTargeting,
-            DamageSpread = Math.Min(Math.Max(0f, DamageSpread), 1f),
+            DamageSpread = Math.Clamp(DamageSpread, 0f, 1f),
             MaxTicksPerAdvance = Math.Max(1, MaxTicksPerAdvance),
         };
 
-        /// <summary>Throws when a value is outside the range <see cref="Sanitised"/> pulls it back into.</summary>
+        /// <summary>Throws when a value is outside its range.</summary>
         internal void Validate()
         {
             if (Cast == null)

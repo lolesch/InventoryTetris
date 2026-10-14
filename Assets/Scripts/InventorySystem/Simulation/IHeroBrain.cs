@@ -10,5 +10,8 @@ namespace ToolSmiths.InventorySystem.Simulation
     internal interface IHeroBrain
     {
         void Decide(in HeroView view, List<Intent> intents);
+
+        /// <summary>The enemy it would name if asked now, or null. Changes nothing; it keeps the target ring off a corpse between ticks.</summary>
+        Enemy PeekTarget(in HeroView view);
     }
 }

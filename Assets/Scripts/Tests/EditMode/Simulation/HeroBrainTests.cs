@@ -25,6 +25,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             public ScriptedBrain(Action<HeroView, List<Intent>> decide) => _decide = decide;
 
             public void Decide(in HeroView view, List<Intent> intents) => _decide(view, intents);
+
+            public Enemy PeekTarget(in HeroView view) => null;
         }
 
         private sealed class IdleEnemyBrain : IEnemyBrain
@@ -121,6 +123,34 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             Run(sim, 1);
 
             Assert.That(sim.EnemiesDefeated, Is.EqualTo(1), "the Strike of the tick that asked for the Recall still landed");
+            Assert.That(sim.Phase, Is.EqualTo(SimulationPhase.Ended));
+        }
+
+        [Test]
+        public void ARecallIntent_IsCarriedOutInTheBeatBetweenEncounters()
+        {
+            var hero = Hero();
+            hero.AttackSpeed = 10f;
+            hero.PhysicalDamage = 1_000_000f;
+            var sim = Sim(hero, Profiles.Solo(EnemyArchetype.Skirmisher), new ScriptedBrain((view, intents) =>
+            {
+                if (view.Enemies.Count > 0)
+                {
+                    intents.Add(Intent.Approach(view.Enemies[0]));
+                    intents.Add(Intent.Strike(view.Enemies[0]));
+                }
+                else
+                    intents.Add(Intent.Recall());
+            }), Idle, new EncounterTuning { Beat = 1000f });
+            var requested = 0;
+            sim.RecallRequested += () => requested++;
+
+            Run(sim, 1);
+            Assert.That(sim.Phase, Is.EqualTo(SimulationPhase.Beat), "premise: the Encounter cleared and the beat has begun");
+
+            Run(sim, 1);
+
+            Assert.That(requested, Is.EqualTo(1), "a Recall asked in the quiet ends the Run without waiting for the beat");
             Assert.That(sim.Phase, Is.EqualTo(SimulationPhase.Ended));
         }
 

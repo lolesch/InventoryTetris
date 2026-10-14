@@ -5,11 +5,8 @@ using Submodules.Utility.Extensions;
 namespace ToolSmiths.InventorySystem.Simulation
 {
     /// <summary>
-    /// The default hero Brain: the player's <see cref="HeroBehaviour"/> carried out without the player at the controls.
-    /// He keeps one sticky target (<see cref="HeroTargeting"/>), walks to it and Strikes whenever the swing is ready,
-    /// walks home with no one to fight, Casts while the <c>CastThreshold</c> latch holds, and asks for a Recall when
-    /// one of the Behaviour Profile's triggers fires. It asks for the Strike before he has arrived and for the Cast
-    /// with no aim worth casting at; the Encounter refuses both.
+    /// The default hero Brain: the player's Behaviour Profile carried out without the player at the controls.
+    /// It asks freely (a Strike before arrival, a Cast with nothing to catch); the Encounter refuses what the rules forbid.
     /// </summary>
     internal sealed class AutoHeroBrain : IHeroBrain
     {
@@ -45,6 +42,8 @@ namespace ToolSmiths.InventorySystem.Simulation
             if (WantsToRecall(view))
                 intents.Add(Intent.Recall());
         }
+
+        public Enemy PeekTarget(in HeroView view) => Choose(view);
 
         /// <summary>
         /// Either of <see cref="HeroBehaviour"/>'s two auto-Recall triggers (issue #23). With no

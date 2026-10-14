@@ -118,6 +118,35 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
+        public void HeroTarget_MovesToTheNextEnemyAtOnce_WhenTheStrikeKilledIt()
+        {
+            var hero = Striker();
+            hero.PhysicalDamage = 1_000_000f;
+            var sim = NewSim(hero);
+            var first = sim.Enemies[0];
+            var second = sim.Enemies[1];
+
+            sim.Advance(0.1f); // one tick, one Strike, one kill
+
+            Assert.That(first.IsDown, "premise: the Strike killed its target");
+            Assert.That(sim.HeroTarget, Is.SameAs(second), "the ring does not wait for the next tick's decision");
+        }
+
+        [Test]
+        public void HeroTarget_IsNullAtOnce_WhenTheStrikeKilledTheLastEnemy()
+        {
+            var hero = Striker();
+            hero.PhysicalDamage = 1_000_000f;
+            var sim = new EncounterSimulation(hero, Profiles.Solo(EnemyArchetype.Brute), new ConstantRollSource(0f),
+                Behaviours.Engaging(10), new EncounterTuning());
+
+            sim.Advance(0.1f);
+
+            Assert.That(sim.Enemies, Is.Empty, "premise: the Strike killed the only enemy");
+            Assert.That(sim.HeroTarget, Is.Null);
+        }
+
+        [Test]
         public void HeroTarget_IsNull_WithNoEnemyInTheEncounter()
         {
             var sim = NewSim(Striker(), delayFirstSpawn: true);

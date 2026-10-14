@@ -5,10 +5,8 @@ using Submodules.Utility.Extensions;
 namespace ToolSmiths.InventorySystem.Simulation
 {
     /// <summary>
-    /// The spatial module of an Encounter (ADR-0020): where the hero stands, how a walk steps, who is within reach,
-    /// who a Cast shape covers and where a spawn goes. It answers and moves; it never decides what anyone does,
-    /// deals damage or rolls (the caller hands it a roll). The simulation still owns position (ADR-0018): it asks
-    /// the Arena and applies the answer. Enemy positions live on the <see cref="Enemy"/>, the hero's here.
+    /// The spatial module of an Encounter (ADR-0020): reach, walks, Cast coverage and spawn placement. It
+    /// answers and moves; it never decides, deals damage or rolls. Enemy positions live on the enemy, the hero's here.
     /// </summary>
     internal sealed class Arena
     {

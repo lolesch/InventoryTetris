@@ -10,34 +10,18 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.Runtime.Simulation
 {
     /// <summary>
-    /// The damage number feedback (issues #181, #213): each hit that lands - the hero's Strike and Cast on an enemy,
-    /// an enemy's Strike on the hero - raises a number that rises and fades. It listens to the Encounter's
-    /// <see cref="EncounterSimulation.HitLanded"/>, which carries the target, the damage type, the place it stood at and the
-    /// amounts the health event never knew; the hit flash and the hit shake keep listening to the enemy's health, since they only
-    /// need to know a hit landed. <see cref="EnemyArena"/> binds it behind its <c>damageNumbers</c> switch.
+    /// The damage number feedback (issues #181, #213): each hit the Encounter reports raises a number that rises and
+    /// fades. A frame's hits are summed per target and damage type, since a coarse frame runs several ticks, and a number
+    /// rises from the place the hit carries so a killing blow needs no figure left to read.
     /// <para>
-    /// A coarse frame runs several ticks and each can land a hit, so they are summed in a
-    /// <see cref="DamageAccumulator{TKey}"/> keyed by target <i>and</i> damage type and flushed once per frame: a
-    /// Strike and a Cast on one enemy give two numbers, and so do two enemies. The number shows the amount lost
-    /// (a hit the target mitigates fully shows nothing); its size and tint come from <see cref="DamageNumberStyle"/>,
-    /// the raw amount of <i>one</i> hit (the frame's mean, so a coarse frame does not saturate it) read against
-    /// <see cref="HitEvent.Reference"/> - the best the dealer could do with that type, carried by the hit itself.
-    /// </para>
-    /// <para>
-    /// A number rises from <see cref="HitEvent.TargetPosition"/>, the place the hit carries, projected by the arena -
-    /// the same for the hero and an enemy, and a killing blow needs no figure left to read. A number with nowhere to
-    /// rise from (no anchor) is dropped.
-    /// </para>
-    /// <para>
-    /// Subscribed in <see cref="Bind"/> and released in <see cref="Unbind"/>, driven from the arena's bind path and
-    /// not from <c>Awake</c>/<c>OnDisable</c>: the scene object survives a Play session under disabled domain reload
-    /// (<c>codebase-notes.md</c>). Pending damage is dropped on <see cref="Unbind"/>: the Encounter is gone.
+    /// Driven from the arena's bind path, not <c>Awake</c>/<c>OnDisable</c>: the scene object survives a Play session
+    /// under disabled domain reload (<c>codebase-notes.md</c>).
     /// </para>
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class ArenaDamageNumbers : MonoBehaviour
     {
-        [SerializeField, Tooltip("The figure that rises. It is pooled and parented in the arena, beside the views.")]
+        [SerializeField, Tooltip("The figure that rises. It is pooled and parented in the arena, beside the figures.")]
         private DamageNumber prefab;
         [SerializeField, Min(1f), Tooltip("Font size of a hit that does nothing (the bottom of the size range).")]
         private float minFontSize = 22f;
