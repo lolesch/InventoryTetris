@@ -106,6 +106,9 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <summary>Seconds banked toward this enemy's next Strike. The Encounter advances it.</summary>
         internal float StrikeTimer { get; set; }
 
+        /// <summary>What decides this enemy's moves each tick. The Encounter sets it at spawn.</summary>
+        internal IEnemyBrain Brain { get; set; }
+
         /// <summary>Monotonic spawn order — the deterministic tie-break when two enemies share HP.</summary>
         internal int SpawnIndex { get; set; }
 
