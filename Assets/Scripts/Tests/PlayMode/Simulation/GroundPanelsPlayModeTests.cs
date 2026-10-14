@@ -88,7 +88,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             SimulationService.Instance.Send(_locations[0]);
             var lootFlow = SimulationService.Instance.LootFlow;
             var grid = GroundGrid();
-            var fade = Field(FirstSlot(grid), "fade");
+            var fade = GameBoot.Load().GroundFade;
             var fresh = (int)Field(fade, "fullOpacityCount");
             var step = (float)Field(fade, "fadeStep");
 
@@ -110,9 +110,6 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
                 .Select(row => row.GetComponent<CanvasGroup>().alpha).ToList();
             Assert.That(rows, Is.EqualTo(alphas).Within(1e-4f), "one row per drop, faded like its slot");
         }
-
-        private static Component FirstSlot(Component grid) =>
-            grid.GetComponentsInChildren<MonoBehaviour>(true).First(c => c.GetType().Name == "GroundSlotDisplay");
 
         [UnityTest]
         public IEnumerator APickedUpPackage_EmptiesItsSlot_AndLeavesTheOthersWhereTheyLay()

@@ -27,7 +27,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     {
         [SerializeField] private GroundItemSlotDisplay prefab;
         [SerializeField] private Transform rows;
-        [SerializeField, Tooltip("The same fade as the ground grid's slots.")] private GroundFadeSettings fade = new();
 
         private readonly List<GroundItemSlotDisplay> _slots = new();
         private PrefabPool<GroundItemSlotDisplay> _pool;
@@ -45,6 +44,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         {
             var drops = (Container as GroundContainer)?.PackagesOldestFirst();
             var count = drops?.Count ?? 0;
+            var fade = GameBoot.Load().GroundFade;
 
             while (count < _slots.Count)
             {
