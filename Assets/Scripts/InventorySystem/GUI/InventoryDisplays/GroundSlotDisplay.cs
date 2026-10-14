@@ -17,6 +17,8 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
     [System.Serializable]
     internal sealed class GroundSlotDisplay : InventorySlotDisplay
     {
+        private GroundFadeSettings _fade; // the config is read-only, so the first load stands
+
         public override void RefreshSlotDisplay(Package package)
         {
             base.RefreshSlotDisplay(package);
@@ -25,7 +27,8 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 return;
 
             var cells = ground.CellsOldestFirst();
-            itemGroup.alpha = GameBoot.Load().GroundFade.AlphaOf(cells.Count - 1 - cells.IndexOf(Position));
+            _fade ??= GameBoot.Load().GroundFade;
+            itemGroup.alpha = _fade.AlphaOf(cells.Count - 1 - cells.IndexOf(Position));
         }
 
         protected override void MoveItem(PointerEventData eventData, Vector2 pointerPosition)

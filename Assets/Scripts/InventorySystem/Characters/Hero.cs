@@ -47,6 +47,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         private CharacterInventory _inventory;
         private CharacterInventory _stash;
         private Wallet _wallet;
+        private AbstractDimensionalContainer[] _receiving; // built once in Outfit: a pick-up reads it per call
         private HeroBehaviour _behaviour;
 
         /// <summary>A new hero from a template: every stat and resource at its base value, and full but for the XP.</summary>
@@ -169,10 +170,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             _stash = stash ?? throw new ArgumentNullException(nameof(stash));
             _wallet = wallet ?? throw new ArgumentNullException(nameof(wallet));
             _behaviour = behaviour ?? throw new ArgumentNullException(nameof(behaviour));
+            _receiving = new AbstractDimensionalContainer[] { equipment, inventory };
         }
 
-        /// <summary>What <see cref="PickUpItem"/> may write to: the Equipment and the Inventory.</summary>
-        public IReadOnlyList<AbstractDimensionalContainer> ReceivingContainers => new AbstractDimensionalContainer[] { Equipment, Inventory };
+        /// <summary>What <see cref="PickUpItem"/> may write to: the Equipment and the Inventory. Throws if the hero was never <see cref="Outfit"/>ted.</summary>
+        public IReadOnlyList<AbstractDimensionalContainer> ReceivingContainers => _receiving ?? throw NotOutfitted();
 
         /// <summary>
         /// The placement every acquisition shares: auto-equip into an empty slot, else the

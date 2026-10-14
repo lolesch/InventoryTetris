@@ -142,7 +142,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// </summary>
         /// <param name="player">Decides placement via <see cref="IItemReceiver.PickUpItem"/>; the
         /// containers it declares are enrolled, and must include the <paramref name="wallet"/>'s
-        /// so the payment rolls back with the move.</param>
+        /// so the payment rolls back with the move (the Hero's Inventory is both, as <c>SessionBuilder</c> builds it).</param>
         /// <returns>Whether the purchase went through.</returns>
         public static bool Buy(AbstractDimensionalContainer store, Vector2Int position, Package onShelf,
             Wallet wallet, float price, IItemReceiver player)
