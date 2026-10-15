@@ -66,6 +66,12 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             _ = wallet.Container.TryAddToContainer(ref package);
         }
 
+        /// The denominations in the grid, one entry per cell, in the order the container fills its cells.
+        private static CurrencyType[] CoinsInCellOrder(Wallet wallet) => wallet.Container.StoredPackages
+            .OrderBy(entry => entry.Key.x).ThenBy(entry => entry.Key.y)
+            .Select(entry => ItemView.Resolve(entry.Value.Item, catalog).Definition.CurrencyType)
+            .ToArray();
+
         private static bool HoldsCurrency(Wallet wallet) => wallet.Container.StoredPackages.Values
             .Any(package => ItemView.Resolve(package.Item, catalog).Definition.Category == ItemCategory.Currency);
 
@@ -235,6 +241,19 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         }
 
         [Test]
+        public void Deposit_IntoAnEmptyWallet_LaysGoldSilverCopperIronInCellOrder()
+        {
+            var wallet = NewWallet();
+
+            wallet.Deposit(new Currency(iron: 1u, copper: 1u, silver: 1u, gold: 1u));
+
+            Assert.That(CoinsInCellOrder(wallet), Is.EqualTo(new[]
+            {
+                CurrencyType.Gold, CurrencyType.Silver, CurrencyType.Copper, CurrencyType.Iron,
+            }));
+        }
+
+        [Test]
         public void Deposit_ThatFits_ReturnsNothing()
         {
             var wallet = NewWallet();
@@ -340,6 +359,24 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var copperCell = wallet.Container.StoredPackages
                 .Single(entry => ItemView.Resolve(entry.Value.Item, catalog).Definition.CurrencyType == CurrencyType.Copper).Key;
             Assert.That(copperCell, Is.EqualTo(firstCell), "copper sits ahead of the loose iron");
+        }
+
+        [Test]
+        public void Consolidate_LeavesTheCoinsGoldFirstIronLast_WhateverOrderTheyLay()
+        {
+            var wallet = NewWallet();
+            Seed(wallet, CurrencyType.Iron, 4u);
+            Seed(wallet, CurrencyType.Silver, 1u);
+            Seed(wallet, CurrencyType.Copper, 2u);
+            Seed(wallet, CurrencyType.Gold, 1u);
+
+            wallet.Consolidate();
+
+            Assert.That(CoinsInCellOrder(wallet), Is.EqualTo(new[]
+            {
+                CurrencyType.Gold, CurrencyType.Silver, CurrencyType.Copper, CurrencyType.Iron,
+            }));
+            Assert.That(wallet.Balance.Total, Is.EqualTo(1200u + 60u + 10u + 4u));
         }
 
         [Test]

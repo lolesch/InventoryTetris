@@ -141,7 +141,8 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         /// <summary>
         /// Folds every coin into the largest denominations that fit, leaving the remainder
-        /// loose. Value-preserving: <see cref="Balance"/> is the same before and after, so no
+        /// loose, and re-lays coins that sit out of order gold first, iron last. Value-preserving:
+        /// <see cref="Balance"/> is the same before and after, so no
         /// <see cref="OnBalanceChanged"/> is raised - only the grid repaints. The re-entrancy
         /// guard is because an <see cref="AbstractDimensionalContainer.AutoConsolidate"/>
         /// container re-enters this through <see cref="Deposit"/>.
@@ -161,8 +162,9 @@ namespace ToolSmiths.InventorySystem.Inventories
             if (consolidated.Iron == current.Iron
                 && consolidated.Copper == current.Copper
                 && consolidated.Silver == current.Silver
-                && consolidated.Gold == current.Gold)
-                return; // already canonical - don't churn the grid
+                && consolidated.Gold == current.Gold
+                && CoinsLieHighestFirst())
+                return; // already canonical and in order - don't churn the grid
 
             isConsolidating = true;
             BeginMutation();
@@ -180,6 +182,30 @@ namespace ToolSmiths.InventorySystem.Inventories
             }
 
             coins.InvokeRefresh();
+        }
+
+        /// <summary>
+        /// Whether no coin sits ahead of a more valuable one, in the order the container fills its cells
+        /// (column by column) - the order <see cref="Deposit"/> lays them in.
+        /// </summary>
+        private bool CoinsLieHighestFirst()
+        {
+            var previous = uint.MaxValue;
+
+            foreach (var entry in coins.StoredPackages.OrderBy(e => e.Key.x).ThenBy(e => e.Key.y))
+            {
+                var definition = coins.ViewOf(entry.Value.Item).Definition;
+                if (definition.Category != ItemCategory.Currency)
+                    continue;
+
+                var value = Currency.ValueOf(definition.CurrencyType);
+                if (previous < value)
+                    return false;
+
+                previous = value;
+            }
+
+            return true;
         }
 
         private void BeginMutation() => mutating++;
