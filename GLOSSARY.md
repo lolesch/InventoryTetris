@@ -149,7 +149,9 @@ _Avoid_: upgrade, merge, convert, exchange
 
 **Wallet**:
 The player's spendable money, wherever the coins physically sit. Currently not a module
-— the behaviour lives on the container.
+— the behaviour lives on the container. Coins that arrive together (a sale payout, a Pile,
+**Consolidation**) are laid gold, silver, copper, iron into the first free cells in that
+order; a container short of cells keeps the highest denominations and the Wallet hands back the rest.
 
 ## Loot
 
