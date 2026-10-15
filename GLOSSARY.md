@@ -104,7 +104,9 @@ every context. `Hero` has one row of its own: the **Inventory** drops its item o
 more: a shift-click on the ground picks the **Drop** up. A move between containers always executes — into the target container, or the
 hand if that is full. A retrieval from the **Stash** and a **Buy** go through the player's
 acquisition entry point instead, so auto-equip applies, and when nothing has room they roll
-back with nothing moved.
+back with nothing moved. A coin that comes back to the **Inventory** this way, or off the
+**Ground**, leaves the **Wallet**'s coins gold first, iron last; a coin sent to the **Stash** just
+takes the first free cell.
 _Avoid_: auto-move, transfer, quick-transfer; "shift-click" (that is the input, not the move)
 
 **Package Origin**:
@@ -152,6 +154,9 @@ The player's spendable money, wherever the coins physically sit. Currently not a
 — the behaviour lives on the container. Coins that arrive together (a sale payout, a Pile,
 **Consolidation**) are laid gold, silver, copper, iron into the first free cells in that
 order; a container short of cells keeps the highest denominations and the Wallet hands back the rest.
+A single coin the player moves into the bag, by drop or **Quick Move**, re-lays all the bag's coins that
+way, folding none; into the **Stash** or the **Ground** it takes the first free cell. So the bag's coins
+are in order, and shift-clicking them to the Stash one by one fills the Stash in order.
 
 ## Loot
 

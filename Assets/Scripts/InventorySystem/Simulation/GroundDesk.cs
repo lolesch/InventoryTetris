@@ -57,6 +57,7 @@ namespace ToolSmiths.InventorySystem.Simulation
                     return false;
 
                 _ = Ground.RemoveAtPosition(cell, new Package(Ground, stored.Item, taken));
+                _wallet.RelayIfCoin(stored.Item);
                 return true;
             }
 

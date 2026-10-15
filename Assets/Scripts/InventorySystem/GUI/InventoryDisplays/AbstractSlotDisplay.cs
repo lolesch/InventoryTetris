@@ -149,7 +149,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                     /// lands there instead of the Inventory.
                     var hero = Session.Instance.Hero;
 
-                    _ = PickUpTransaction.Run(Container, position, hero);
+                    _ = PickUpTransaction.Run(Container, position, hero, wallet: hero.Wallet);
                     return true;
 
                 case QuickMoveIntentKind.MoveToContainer:

@@ -32,9 +32,11 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// a bag add or an auto-equip inside the pick-up rolls back with everything else.</param>
         /// <param name="onAcquired">Runs only after a successful pick-up, before commit - the
         /// seam a vendor buy queues its payment through.</param>
+        /// <param name="wallet">The player's Wallet when a coin that lands in the bag must leave the bag's
+        /// coins in order (<see cref="Wallet.RelayIfCoin"/>), once the move commits.</param>
         /// <returns>Whether the Package was placed.</returns>
         public static bool Run(AbstractDimensionalContainer source, Vector2Int sourceCell,
-            IItemReceiver player, Action<ItemTransaction> onAcquired = null)
+            IItemReceiver player, Action<ItemTransaction> onAcquired = null, Wallet wallet = null)
         {
             if (source == null || player == null
                 || !source.TryGetPackageAt(sourceCell, out var stored) || !stored.IsValid)
@@ -48,6 +50,9 @@ namespace ToolSmiths.InventorySystem.Inventories
                 return false; // dispose rolls back - the item stays at sourceCell
 
             onAcquired?.Invoke(transaction);
+
+            if (wallet != null)
+                transaction.QueueEffect(() => wallet.RelayIfCoin(stored.Item));
 
             transaction.Commit();
             return true;
