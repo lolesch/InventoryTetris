@@ -23,7 +23,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         Vendor,
         Healer,
 
-        /// <summary>The Combat Panel's ground tab, open during a Run. Like every non-<c>None</c> context it brings the Hero Panel with it.</summary>
+        /// <summary>The Combat Panel's ground tab, open during a Run and, through the Ground toggle, in Town (the World's ground is there in both). Like every non-<c>None</c> context it brings the Hero Panel with it.</summary>
         Ground,
     }
 }

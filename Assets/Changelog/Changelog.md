@@ -14,6 +14,7 @@
 - Fixed the health and resource bars not showing a higher maximum after equipping gear while the game is paused.
 - Hold Tab over an open Vendor or Healer to peek at its other tab; Alt still shows more detail on an item.
 - The hero in the field now has a health bar that shows its shield, and flashes and shakes when hit, like the enemies do.
+- Town now has a ground: shift-click an item in your bag, or drop it on the ground slot, to leave it there, and click it in the Ground list to pick it up. A full bag leaves it lying, and it is gone when you Send the hero out.
 
 ## 0.0.5_Alpha - 2026-09-25
 

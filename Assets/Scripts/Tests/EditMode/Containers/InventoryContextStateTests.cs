@@ -301,6 +301,19 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         }
 
         [Test]
+        public void SyncToPhase_InTown_LeavesGroundReachable()
+        {
+            state.Set(InventoryContext.Ground);
+            var fired = 0;
+            state.Changed += _ => fired++;
+
+            state.SyncToPhase(inField: false);
+
+            Assert.That(state.Active, Is.EqualTo(InventoryContext.Ground), "the World's ground is there in Town too (#285)");
+            Assert.That(fired, Is.Zero);
+        }
+
+        [Test]
         public void SyncToPhase_InTown_LeavesReachableContextUntouched()
         {
             state.Set(InventoryContext.Stash);

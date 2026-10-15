@@ -18,7 +18,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// step with the container, and fades each row by its Drop's age like the grid's slots do. Row <c>i</c> is rebound to Drop <c>i</c> on every change, which leaves a row whose
     /// Drop and amount did not change (and its hover) untouched.
     ///
-    /// A click goes to <see cref="LootFlow.PickUpFromGround"/>, which hands the Drop to the
+    /// A click goes to <see cref="ILootGround.PickUpFromGround"/>, which hands the Drop to the
     /// player's acquisition entry point (<see cref="IItemReceiver"/>): auto-equip, else the bag,
     /// and with no room it stays on the ground and its row stays in the list.
     /// </summary>
@@ -64,7 +64,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             }
         }
 
-        private static void OnSlotClicked(ItemInstance item) => _ = SimulationService.Instance.LootFlow?.PickUpFromGround(item);
+        private static void OnSlotClicked(ItemInstance item) => _ = Session.Instance.World.LootGround.PickUpFromGround(item);
 
         // Play mode tearing the scene down may already have destroyed a row - releasing one would
         // throw, and one exception pauses the Editor.

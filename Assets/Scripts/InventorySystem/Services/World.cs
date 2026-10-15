@@ -14,12 +14,12 @@ namespace ToolSmiths.InventorySystem.Services
     public sealed class World
     {
         public World(CharacterInventory vendorSupply, CharacterInventory healerSupply, SoldContainer sold,
-            GroundContainer ground, InventoryContextState context)
+            GroundDesk groundDesk, InventoryContextState context)
         {
             VendorSupply = vendorSupply ?? throw new ArgumentNullException(nameof(vendorSupply));
             HealerSupply = healerSupply ?? throw new ArgumentNullException(nameof(healerSupply));
             Sold = sold ?? throw new ArgumentNullException(nameof(sold));
-            Ground = ground ?? throw new ArgumentNullException(nameof(ground));
+            GroundDesk = groundDesk ?? throw new ArgumentNullException(nameof(groundDesk));
             Context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
@@ -32,9 +32,18 @@ namespace ToolSmiths.InventorySystem.Services
         /// <summary>What the player sold, bought back like a Supply. Shown on each selling panel's Sold tab.</summary>
         public SoldContainer Sold { get; }
 
-        /// <summary>Where the Run's Drops lie. One for the World, so a display can bind it; the live loot flow
-        /// lays Drops on it and wipes it when the Run ends.</summary>
-        public GroundContainer Ground { get; }
+        /// <summary>Where Drops lie, in Town as in a Run. One for the World, so a display can bind it; the live
+        /// loot flow lays Drops on it, and a Run's end or the next Send wipes it.</summary>
+        public GroundContainer Ground => GroundDesk.Ground;
+
+        /// <summary>The player's hand on <see cref="Ground"/> in Town, where there is no loot flow.</summary>
+        public GroundDesk GroundDesk { get; }
+
+        /// <summary>
+        /// What a click or a drop reaches the ground through: the live loot flow during a Run, which counts
+        /// what banks toward the Run's take, else the Town's <see cref="GroundDesk"/>.
+        /// </summary>
+        public ILootGround LootGround => LootFlow ?? (ILootGround)GroundDesk;
 
         /// <summary>
         /// The Run FSM of this World. <c>null</c> on a fresh World: the simulation service builds it

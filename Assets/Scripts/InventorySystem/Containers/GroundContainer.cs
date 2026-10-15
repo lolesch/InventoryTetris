@@ -8,7 +8,7 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.Inventories
 {
     /// <summary>
-    /// The Run's ground (epic #214): a stash-sized grid of the Packages lying there. It is the
+    /// The World's ground (epic #214): a stash-sized grid of the Packages lying there. It is the
     /// <see cref="OldestOutInventory"/> that never rearranges: a Package stays in the cell it landed
     /// in, holes stay holes, and when a new Package does not fit the oldest ones are removed until it
     /// does. Both the grid and the list view read this one container.

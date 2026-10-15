@@ -3,10 +3,13 @@ using System.Linq;
 using NUnit.Framework;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
+using ToolSmiths.InventorySystem.Inventories;
+using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Locations;
 using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
@@ -141,6 +144,62 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             yield return null;
 
             Assert.That(FilledSlots(grid), Is.Empty, "a Drop on the ground when the Run ends is gone");
+        }
+
+        // ── Town (#285): the World's ground, reached through the Ground toggle ──
+
+        /// <summary>The Ground Items List's rows, as the Drops they show.</summary>
+        private static ItemInstance[] ListedDrops() =>
+            Named("GroundItemsList").Single().GetComponentsInChildren<MonoBehaviour>()
+                .Where(c => c.GetType().Name == "GroundItem")
+                .Select(row => (ItemInstance)row.GetType().GetProperty("Item").GetValue(row))
+                .ToArray();
+
+        private static void Click(GameObject target) =>
+            ExecuteEvents.Execute(target, new PointerEventData(EventSystem.current) { button = PointerEventData.InputButton.Left },
+                ExecuteEvents.pointerClickHandler);
+
+        private static bool Carried(ItemInstance item) =>
+            Session.Instance.Hero.Equipment.StoredPackages.Values.Concat(Session.Instance.Hero.Inventory.StoredPackages.Values)
+                .Any(package => ReferenceEquals(package.Item, item));
+
+        [UnityTest]
+        public IEnumerator InTown_TheGroundToggle_ShowsWhatLiesThere_AndAClickOnARowPicksItUp()
+        {
+            var world = Session.Instance.World;
+            var item = ItemService.Instance.RollEquipment();
+            Assert.That(world.LootGround.PlaceOnGround(new Package(null, item, 1u)), Is.True);
+
+            var toggle = Named("SidePanelToggle").Single(t => t.name == "GroundPanelToggle");
+            Click(toggle.gameObject);
+            yield return null;
+
+            Assert.That(InventoryService.Instance.ActiveContext, Is.EqualTo(InventoryContext.Ground));
+            Assert.That((bool)toggle.GetType().GetProperty("IsOn").GetValue(toggle), Is.True, "the toggle reads as pressed");
+            Assert.That(ListedDrops(), Is.EqualTo(new[] { item }), "the list shows the Town ground");
+
+            var row = Named("GroundItemsList").Single().GetComponentsInChildren<MonoBehaviour>()
+                .Single(c => c.GetType().Name == "GroundItem");
+            Click(row.gameObject);
+            yield return null;
+
+            Assert.That(world.Ground.StoredPackages, Is.Empty);
+            Assert.That(Carried(item), Is.True, "the click took it through the player");
+            Assert.That(ListedDrops(), Is.Empty);
+        }
+
+        [UnityTest]
+        public IEnumerator ASend_WipesWhatLayOnTheTownGround()
+        {
+            var world = Session.Instance.World;
+            Assert.That(world.LootGround.PlaceOnGround(new Package(null, ItemService.Instance.RollEquipment(), 1u)), Is.True);
+            yield return null;
+
+            SimulationService.Instance.Send(_locations[0]);
+            yield return null;
+
+            Assert.That(world.Ground.StoredPackages, Is.Empty);
+            Assert.That(ListedDrops(), Is.Empty);
         }
 
         [UnityTest]
