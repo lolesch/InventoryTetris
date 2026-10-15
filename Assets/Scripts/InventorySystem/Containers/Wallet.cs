@@ -166,6 +166,27 @@ namespace ToolSmiths.InventorySystem.Inventories
                 && CoinsLieHighestFirst())
                 return; // already canonical and in order - don't churn the grid
 
+            Lay(current, consolidated);
+        }
+
+        /// <summary>
+        /// A Package the player just moved into the bag (a drop, a shift-click): when it is a coin,
+        /// re-lays the bag's coins gold first, iron last, so a coin placed by hand ends up in order
+        /// with the rest. Folds nothing - the coins the player holds stay the coins they hold - and
+        /// leaves the coins alone for any other Package.
+        /// </summary>
+        public void RelayIfCoin(ItemInstance arrived)
+        {
+            if (coins.ViewOf(arrived).Definition.Category != ItemCategory.Currency || CoinsLieHighestFirst())
+                return;
+
+            var current = CalculateCash();
+            Lay(current, current);
+        }
+
+        /// <summary>Takes <paramref name="current"/> out of the bag and lays <paramref name="target"/> back, largest first.</summary>
+        private void Lay(Currency current, Currency target)
+        {
             isConsolidating = true;
             BeginMutation();
 
@@ -173,7 +194,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             {
                 RemoveCoins(current);
 
-                Deposit(consolidated);
+                Deposit(target);
             }
             finally
             {

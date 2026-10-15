@@ -26,6 +26,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         private const string CopperId = "test.copper";
         private const string SilverId = "test.silver";
         private const string GoldId = "test.gold";
+        private const string HelmId = "test.helm";
 
         private FakeCurrencyMinter minter;
 
@@ -38,7 +39,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
                 .With(Coin(IronId, CurrencyType.Iron))
                 .With(Coin(CopperId, CurrencyType.Copper))
                 .With(Coin(SilverId, CurrencyType.Silver))
-                .With(Coin(GoldId, CurrencyType.Gold));
+                .With(Coin(GoldId, CurrencyType.Gold))
+                .With(new TestDefinition { Id = HelmId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Helm, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u });
 
             minter = new FakeCurrencyMinter(catalog);
 
@@ -390,6 +392,69 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 
             Assert.That(wallet.Container.StoredPackages.Keys.OrderBy(p => p.x).ThenBy(p => p.y), Is.EqualTo(positionsBefore));
             Assert.That(wallet.Balance.Gold, Is.EqualTo(2u));
+        }
+
+        // ── RelayIfCoin ─────────────────────────────────────────────────────
+        // A coin the player moved into the bag (a drop, a shift-click) leaves the bag's coins gold
+        // first, iron last. Unlike Consolidate it folds nothing: the coins the player holds stay the
+        // coins they hold.
+
+        [Test]
+        public void RelayIfCoin_ACoinThatLandedBehindLowerOnes_LeavesTheCoinsGoldFirstIronLast()
+        {
+            var wallet = NewWallet();
+            Seed(wallet, CurrencyType.Iron, 4u);
+            Seed(wallet, CurrencyType.Silver, 1u);
+            Seed(wallet, CurrencyType.Gold, 1u); // the coin that just moved in lands in the first free cell
+
+            wallet.RelayIfCoin(minter.MintCurrency(CurrencyType.Gold));
+
+            Assert.That(CoinsInCellOrder(wallet), Is.EqualTo(new[]
+            {
+                CurrencyType.Gold, CurrencyType.Silver, CurrencyType.Iron,
+            }));
+            Assert.That(wallet.Balance.Total, Is.EqualTo(1200u + 60u + 4u));
+        }
+
+        [Test]
+        public void RelayIfCoin_FoldsNothing()
+        {
+            var wallet = NewWallet();
+            Seed(wallet, CurrencyType.Iron, 15u);
+            Seed(wallet, CurrencyType.Gold, 1u);
+
+            wallet.RelayIfCoin(minter.MintCurrency(CurrencyType.Gold));
+
+            Assert.That(wallet.Balance.Iron, Is.EqualTo(15u), "15 iron stay iron");
+            Assert.That(wallet.Balance.Copper, Is.Zero);
+            Assert.That(wallet.Balance.Gold, Is.EqualTo(1u));
+        }
+
+        [Test]
+        public void RelayIfCoin_AnItemThatIsNotACoin_LeavesTheCoinsWhereTheyLie()
+        {
+            var wallet = NewWallet();
+            Seed(wallet, CurrencyType.Iron, 4u);
+            Seed(wallet, CurrencyType.Gold, 1u); // hand-placed behind the iron
+
+            wallet.RelayIfCoin(new ItemInstance(HelmId, ItemRarity.Common, 1, null));
+
+            Assert.That(CoinsInCellOrder(wallet), Is.EqualTo(new[] { CurrencyType.Iron, CurrencyType.Gold }));
+        }
+
+        [Test]
+        public void RelayIfCoin_IntoAFullBag_LosesNoCoin()
+        {
+            var wallet = NewWallet(2, 1);
+            Seed(wallet, CurrencyType.Iron, 3u);
+            Seed(wallet, CurrencyType.Copper, 1u);
+            Seed(wallet, CurrencyType.Copper, 2u); // the coin that moved in stacks onto the copper pile: the bag is full
+
+            wallet.RelayIfCoin(minter.MintCurrency(CurrencyType.Copper));
+
+            Assert.That(CoinsInCellOrder(wallet), Is.EqualTo(new[] { CurrencyType.Copper, CurrencyType.Iron }));
+            Assert.That(wallet.Balance.Copper, Is.EqualTo(3u));
+            Assert.That(wallet.Balance.Iron, Is.EqualTo(3u));
         }
 
         // ── OnBalanceChanged ────────────────────────────────────────────────
