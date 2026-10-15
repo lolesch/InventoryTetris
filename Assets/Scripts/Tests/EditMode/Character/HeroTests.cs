@@ -408,7 +408,21 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Character
             hero.GainExperience(10f, monsterLevel: 1u);
 
             Assert.That(hero.Level, Is.EqualTo(2u), "10 XP from a lower-level monster is a few XP, not a wrapped uint");
-            Assert.That(hero.GetResource(StatName.Experience).CurrentValue, Is.InRange(0f, 10f));
+            Assert.That(hero.GetResource(StatName.Experience).CurrentValue, Is.EqualTo(9.9f).Within(0.001f),
+                "one level below: 1% less XP");
+        }
+
+        [Test]
+        public void GainExperience_FromAMonsterFarBelowTheHero_GainsNothing()
+        {
+            var hero = NewHero();
+            hero.RestoreLevel(150u);
+            var before = hero.GetResource(StatName.Experience).CurrentValue;
+
+            // 100 or more levels below zeroes the factor; it never goes negative.
+            hero.GainExperience(10f, monsterLevel: 1u);
+
+            Assert.That(hero.GetResource(StatName.Experience).CurrentValue, Is.EqualTo(before));
         }
 
         [Test]
