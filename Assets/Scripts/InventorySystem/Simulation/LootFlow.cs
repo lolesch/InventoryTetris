@@ -87,7 +87,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <returns>Whether the player took it. False also for an item no longer on the ground.</returns>
         public bool PickUpFromGround(ItemInstance item)
         {
-            if (!TryFindOnGround(item, out var cell, out var stored))
+            if (!Ground.TryFind(item, out var cell, out var stored))
                 return false;
 
             if (TryCoinOf(stored, out var coin))
@@ -101,30 +101,7 @@ namespace ToolSmiths.InventorySystem.Simulation
                 return true;
             }
 
-            try
-            {
-                return PickUpTransaction.Run(Ground, cell, _player); // a throw rolls back inside Run
-            }
-            catch (Exception exception)
-            {
-                PlacementFailed?.Invoke(item, exception);
-                return false;
-            }
-        }
-
-        private bool TryFindOnGround(ItemInstance item, out Vector2Int cell, out Package stored)
-        {
-            foreach (var entry in Ground.StoredPackages)
-                if (ReferenceEquals(entry.Value.Item, item))
-                {
-                    cell = entry.Key;
-                    stored = entry.Value;
-                    return true;
-                }
-
-            cell = default;
-            stored = default;
-            return false;
+            return Ground.PickUp(item, _player, (failed, exception) => PlacementFailed?.Invoke(failed, exception));
         }
 
         /// <summary>Unsubscribes from the encounter's events so the LootFlow can be collected.</summary>

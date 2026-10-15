@@ -47,6 +47,46 @@ namespace ToolSmiths.InventorySystem.Inventories
             return true;
         }
 
+        /// <summary>Finds the Package holding <paramref name="item"/> by reference: two equal items are two slots.</summary>
+        public bool TryFind(ItemInstance item, out Vector2Int cell, out Package stored)
+        {
+            foreach (var entry in StoredPackages)
+                if (ReferenceEquals(entry.Value.Item, item))
+                {
+                    cell = entry.Key;
+                    stored = entry.Value;
+                    return true;
+                }
+
+            cell = default;
+            stored = default;
+            return false;
+        }
+
+        /// <summary>
+        /// The player takes <paramref name="item"/> off the ground through the acquisition entry point
+        /// (<see cref="IItemReceiver"/>: auto-equip, else the bag). With no room, or when the player throws,
+        /// the Drop stays where it lay and the receiving containers are as they were.
+        /// </summary>
+        /// <param name="onFailed">Called with the item and the exception when the player's pick-up threw;
+        /// the caller surfaces it (the ground makes no engine calls).</param>
+        /// <returns>Whether the player took it. False also for an item no longer on the ground.</returns>
+        public bool PickUp(ItemInstance item, IItemReceiver player, Action<ItemInstance, Exception> onFailed = null)
+        {
+            if (!TryFind(item, out var cell, out _))
+                return false;
+
+            try
+            {
+                return PickUpTransaction.Run(this, cell, player); // a throw rolls back inside Run
+            }
+            catch (Exception exception)
+            {
+                onFailed?.Invoke(item, exception);
+                return false;
+            }
+        }
+
         /// <summary>The cells holding a Package, oldest first: a cell's index is its Package's age rank.</summary>
         public List<Vector2Int> CellsOldestFirst() => AgeOrder();
 
