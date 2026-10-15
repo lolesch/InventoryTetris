@@ -11,7 +11,7 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.Runtime.Simulation
 {
     /// <summary>
-    /// The Ground Items List (issue #63): one pooled <see cref="GroundItemSlotDisplay"/> per Drop
+    /// The Ground Items List (issue #63): one pooled <see cref="GroundItem"/> per Drop
     /// on the ground, oldest first, growing and shrinking as Drops land, are evicted and are picked up. It
     /// binds the ground by its role like any container display, and is the second view of that container beside the
     /// ground grid. The rows' layout group and content size fitter do the sizing; this only keeps the rows in
@@ -23,19 +23,19 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// and with no room it stays on the ground and its row stays in the list.
     /// </summary>
     [DisallowMultipleComponent]
-    internal sealed class GroundItemsPanel : AbstractContainerDisplay
+    internal sealed class GroundItemsList : AbstractContainerDisplay
     {
-        [SerializeField] private GroundItemSlotDisplay prefab;
+        [SerializeField] private GroundItem prefab;
         [SerializeField] private Transform rows;
 
-        private readonly List<GroundItemSlotDisplay> _slots = new();
-        private PrefabPool<GroundItemSlotDisplay> _pool;
+        private readonly List<GroundItem> _slots = new();
+        private PrefabPool<GroundItem> _pool;
         private GroundFadeSettings _fade; // the config is read-only, so the first load stands
 
         // Lazily built rather than in Awake, which does not run again on the second Play entry
         // under disabled domain reload - the scene object survives, only OnEnable repeats.
-        private PrefabPool<GroundItemSlotDisplay> Pool =>
-            _pool ??= new PrefabPool<GroundItemSlotDisplay>(prefab, rows != null ? rows : transform);
+        private PrefabPool<GroundItem> Pool =>
+            _pool ??= new PrefabPool<GroundItem>(prefab, rows != null ? rows : transform);
 
         // The rows follow the Drops, not the cells.
         protected override void SetupSlotDisplays() { }
@@ -68,7 +68,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         // Play mode tearing the scene down may already have destroyed a row - releasing one would
         // throw, and one exception pauses the Editor.
-        private void Release(GroundItemSlotDisplay slot)
+        private void Release(GroundItem slot)
         {
             if (slot == null)
                 return;

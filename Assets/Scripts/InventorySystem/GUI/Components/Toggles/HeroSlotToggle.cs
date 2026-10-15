@@ -1,7 +1,7 @@
 using Submodules.Utility.Services;
 using Submodules.Utility.UI;
 using System.Collections.Generic;
-using ToolSmiths.InventorySystem.GUI.Components.Panels;
+using ToolSmiths.InventorySystem.GUI.Components.Popups;
 using ToolSmiths.InventorySystem.Services;
 using UnityEngine;
 using UnityEngine.UI;
@@ -18,7 +18,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
     /// <para>A slot with a hero shows the hero's template icon, and turning it on loads the hero
     /// (<see cref="MainMenuFlow.Select"/>); one that cannot be read shows <see cref="unreadableSprite"/>
     /// instead and is selected without being loaded, so the menu can say why and offer Delete. The create slot shows <see cref="createSprite"/>, and a
-    /// <b>click</b> on it opens the <see cref="HeroNamePrompt"/>, which creates the hero once a name is
+    /// <b>click</b> on it opens the <see cref="HeroNamePopup"/>, which creates the hero once a name is
     /// confirmed - only a click: the group switching it on of its own accord (a reset to its first member)
     /// asks for nothing. Every slot after it is not interactable and shows no icon.</para>
     ///
@@ -50,7 +50,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         [SerializeField] private Sprite unreadableSprite;
 
         [Tooltip("The name entry a click on the create slot opens.")]
-        [SerializeField] private HeroNamePrompt namePrompt;
+        [SerializeField] private HeroNamePopup namePopup;
 
         private string heroId;
         private bool creates;
@@ -94,7 +94,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         protected override void OnClick()
         {
             if (creates)
-                namePrompt.Open();
+                namePopup.Open();
             else
                 base.OnClick();
         }

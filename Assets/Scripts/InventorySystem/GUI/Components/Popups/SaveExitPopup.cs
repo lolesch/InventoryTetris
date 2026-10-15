@@ -6,17 +6,17 @@ using ToolSmiths.InventorySystem.GUI.Components.Buttons;
 using ToolSmiths.InventorySystem.Services;
 using UnityEngine;
 
-namespace ToolSmiths.InventorySystem.GUI.Components.Panels
+namespace ToolSmiths.InventorySystem.GUI.Components.Popups
 {
     /// <summary>
-    /// The modal behind the Pause Menu's Save &amp; Exit and Quit Game (<see cref="SaveAndExit"/>); they differ only in
+    /// The popup behind the Pause Menu's Save &amp; Exit and Quit Game (<see cref="SaveAndExit"/>); they differ only in
     /// where a saved hero goes, the Main Menu or out of the application. In Town the button goes
     /// straight through and this stays closed unless the write fails; in the Field it first asks, since leaving
     /// ends the Run. A failed write keeps the player in the game with the cause and offers Retry and, behind its
-    /// own confirmation, Exit without saving. The component sits on the modal, which is shown by being enabled;
-    /// Cancel (the Back button or the Cancel key, as a <see cref="CancelRank.Modal"/> layer) steps back one level.
+    /// own confirmation, Exit without saving. The component sits on the popup, which is shown by being enabled;
+    /// Cancel (the Back button or the Cancel key, as a <see cref="CancelRank.Popup"/> layer) steps back one level.
     /// </summary>
-    public sealed class SaveExitPrompt : MonoBehaviour
+    public sealed class SaveExitPopup : MonoBehaviour
     {
         private enum Step
         {
@@ -62,7 +62,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
             primary.Clicked += OnPrimary;
             secondary.Clicked += OnSecondary;
             back.Clicked += Back;
-            cancelLayer = CancelChain.TryRegister(CancelRank.Modal, Cancel);
+            cancelLayer = CancelChain.TryRegister(CancelRank.Popup, Cancel);
         }
 
         private void OnDisable()
@@ -148,7 +148,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
             Show(Step.Failed);
         }
 
-        // Leaving counts only once it started: a scene load the loader declines changes nothing, so the modal and
+        // Leaving counts only once it started: a scene load the loader declines changes nothing, so the popup and
         // both Pause Menu buttons stay as they were, and pressing again tries again.
         private void Exit(Func<bool> start)
         {

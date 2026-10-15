@@ -76,9 +76,9 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             slot.Save(saved);
         }
 
-        private static MonoBehaviour Panel() =>
+        private static MonoBehaviour Notice() =>
             UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include)
-                .First(component => component.GetType().Name == "EntryNoticePanel");
+                .First(component => component.GetType().Name == "EntryNoticePopup");
 
         private static T Member<T>(Component owner, string field) =>
             (T)owner.GetType().GetField(field, BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(owner);
@@ -93,43 +93,43 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         public IEnumerator ABackupRestore_ShowsTheNoticeOnEnteringTheGame_ThenOKClosesIt()
         {
             yield return EnterGame(DamageThePrimary);
-            var panel = Panel();
-            var prompt = Member<GameObject>(panel, "prompt");
+            var notice = Notice();
+            var screen = Member<GameObject>(notice, "screen");
 
-            Assert.That(prompt.activeSelf, Is.True);
-            Assert.That(Member<TextMeshProUGUI>(panel, "message").text, Is.EqualTo(EntryNotice.BackupText));
-            Assert.That(Member<Component>(panel, "show").gameObject.activeSelf, Is.False, "no names to show");
+            Assert.That(screen.activeSelf, Is.True);
+            Assert.That(Member<TextMeshProUGUI>(notice, "message").text, Is.EqualTo(EntryNotice.BackupText));
+            Assert.That(Member<Component>(notice, "show").gameObject.activeSelf, Is.False, "no names to show");
 
-            Click(Member<Component>(panel, "dismiss"));
+            Click(Member<Component>(notice, "dismiss"));
 
-            Assert.That(prompt.activeSelf, Is.False);
+            Assert.That(screen.activeSelf, Is.False);
         }
 
         [UnityTest]
         public IEnumerator TheNotice_DoesNotShowAgainOnALaterSceneChange()
         {
             yield return EnterGame(DamageThePrimary);
-            Assert.That(Member<GameObject>(Panel(), "prompt").activeSelf, Is.True, "premise: shown on entry");
+            Assert.That(Member<GameObject>(Notice(), "screen").activeSelf, Is.True, "premise: shown on entry");
 
             yield return SceneManager.LoadSceneAsync("MainMenu");
             yield return SceneManager.LoadSceneAsync("Example");
             yield return null;
 
-            Assert.That(Member<GameObject>(Panel(), "prompt").activeSelf, Is.False);
+            Assert.That(Member<GameObject>(Notice(), "screen").activeSelf, Is.False);
         }
 
         [UnityTest]
         public IEnumerator APartialLoad_ShowsTheCount_AndTheNamesOnlyOnShow()
         {
             yield return EnterGame(LeaveAnItemWhoseDefinitionIsGone);
-            var panel = Panel();
-            var names = Member<TextMeshProUGUI>(panel, "names");
+            var notice = Notice();
+            var names = Member<TextMeshProUGUI>(notice, "names");
 
-            Assert.That(Member<GameObject>(panel, "prompt").activeSelf, Is.True);
-            Assert.That(Member<TextMeshProUGUI>(panel, "message").text, Is.EqualTo("1 item couldn't be restored"));
+            Assert.That(Member<GameObject>(notice, "screen").activeSelf, Is.True);
+            Assert.That(Member<TextMeshProUGUI>(notice, "message").text, Is.EqualTo("1 item couldn't be restored"));
             Assert.That(names.gameObject.activeSelf, Is.False, "the names wait behind Show");
 
-            var show = Member<Component>(panel, "show");
+            var show = Member<Component>(notice, "show");
             Click(show);
 
             Assert.That(names.gameObject.activeSelf, Is.True);
@@ -142,18 +142,18 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         {
             yield return EnterGame(null);
 
-            Assert.That(Member<GameObject>(Panel(), "prompt").activeSelf, Is.False);
+            Assert.That(Member<GameObject>(Notice(), "screen").activeSelf, Is.False);
         }
 
         [UnityTest]
         public IEnumerator TheCancelKey_DismissesTheNotice_AndASecondPressOpensThePauseMenu()
         {
             yield return EnterGame(DamageThePrimary);
-            var prompt = Member<GameObject>(Panel(), "prompt");
-            Assert.That(prompt.activeSelf, Is.True, "premise");
+            var screen = Member<GameObject>(Notice(), "screen");
+            Assert.That(screen.activeSelf, Is.True, "premise");
 
             Assert.That(ServiceLocator.Get<ICancelChain>().Cancel(), Is.True, "the open notice consumes the press");
-            Assert.That(prompt.activeSelf, Is.False);
+            Assert.That(screen.activeSelf, Is.False);
             Assert.That(ServiceLocator.Get<ICancelChain>().Cancel(), Is.True, "nothing left above it, the press reaches the Pause Menu");
             Assert.That(ServiceLocator.Get<IPauseMenu>().IsOpen, Is.True);
         }

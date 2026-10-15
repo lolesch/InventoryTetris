@@ -71,7 +71,7 @@ namespace names when a reference won't resolve.
   hero files. Pass it to the Play-exit check and to `-runTests -testPlatform PlayMode`; without it the
   files land under `Application.persistentDataPath/saves`, the player's real saves. EditMode tests
   never need it (`GameBoot.Build`/`Arm` default to an in-memory store).
-- **A PlayMode test cannot assume the boot's services.** `CharacterStatPanelPlayModeTests` re-arms the
+- **A PlayMode test cannot assume the boot's services.** `CharacterStatSheetPlayModeTests` re-arms the
   locator with `GameBoot.Arm(config)` (in-memory saves, no hero loaded), so a later fixture sees that,
   not the Play-entry boot. Assert boot wiring that `Arm` does not touch (`GameExit.IsInstalled`), not state.
 - **The boot's `[RuntimeInitializeOnLoadMethod]` hooks are only reachable from PlayMode.**

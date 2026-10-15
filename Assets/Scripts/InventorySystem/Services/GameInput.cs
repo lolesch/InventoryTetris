@@ -26,7 +26,7 @@ namespace ToolSmiths.InventorySystem.Services
         /// <summary>A button action went down, from whichever service is armed.</summary>
         public static event Action<GameAction> Performed;
 
-        // An open Pause Menu is modal: only Cancel, which closes it, reaches a view; the hotkeys wait.
+        // An open Pause Menu is a popup: only Cancel, which closes it, reaches a view; the hotkeys wait.
         internal static void Raise(GameAction action)
         {
             if (action != GameAction.Cancel && PauseMenuIsOpen)

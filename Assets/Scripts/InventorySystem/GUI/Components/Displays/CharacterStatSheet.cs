@@ -20,7 +20,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
     /// sheet dirty and the rebuild runs once in <see cref="LateUpdate"/>, so an item with six
     /// affixes, or a level-up that crosses several levels, costs one rebuild.
     /// </summary>
-    public sealed class CharacterStatPanel : MonoBehaviour
+    public sealed class CharacterStatSheet : MonoBehaviour
     {
         [SerializeField, Tooltip("The row every stat is shown in; the rows are made beside it.")] private CharacterStatDisplay rowPrefab;
 
@@ -78,7 +78,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 
             var shown = 0;
 
-            //TODO: extend prefabPool to support IDisplay<T> that update the Refresh(newData) before activating the object
+            //TODO: extend prefabPool to support IDisplay<T> that update the Repaint(newData) before activating the object
             foreach (var stat in _hero.Resources.Cast<CharacterStat>().Union(_hero.Stats))
             {
                 if (shown == _rows.Count)
@@ -86,7 +86,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 
                 var row = _rows[shown++];
 
-                row.Refresh(new(stat));
+                row.Repaint(new(stat));
 
                 row.gameObject.SetActive(true);
             }

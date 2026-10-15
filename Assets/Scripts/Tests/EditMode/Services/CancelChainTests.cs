@@ -39,7 +39,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             _ = chain.Register(CancelRank.PauseMenu, Layer("pause", true));
             _ = chain.Register(CancelRank.Context, Layer("context", true));
             _ = chain.Register(CancelRank.Drag, Layer("drag", true));
-            _ = chain.Register(CancelRank.Modal, Layer("modal", true));
+            _ = chain.Register(CancelRank.Popup, Layer("popup", true));
 
             Assert.That(chain.Cancel(), Is.True);
             Assert.That(heard, Is.EqualTo(new[] { "drag" }), "one press never fires two layers");
@@ -49,12 +49,12 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         public void ALayerThatDoesNotConsume_PassesThePressDown()
         {
             _ = chain.Register(CancelRank.Drag, Layer("drag", false));
-            _ = chain.Register(CancelRank.Modal, Layer("modal", false));
+            _ = chain.Register(CancelRank.Popup, Layer("popup", false));
             _ = chain.Register(CancelRank.Context, Layer("context", true));
             _ = chain.Register(CancelRank.PauseMenu, Layer("pause", true));
 
             Assert.That(chain.Cancel(), Is.True);
-            Assert.That(heard, Is.EqualTo(new[] { "drag", "modal", "context" }));
+            Assert.That(heard, Is.EqualTo(new[] { "drag", "popup", "context" }));
         }
 
         [Test]
@@ -71,21 +71,21 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         [Test]
         public void ALayerThatRegisters_IsHeard_AndOneThatLeaves_IsNot()
         {
-            var layer = chain.Register(CancelRank.Modal, Layer("modal", true));
+            var layer = chain.Register(CancelRank.Popup, Layer("popup", true));
             _ = chain.Register(CancelRank.Context, Layer("context", true));
 
             _ = chain.Cancel();
             layer.Dispose();
             _ = chain.Cancel();
 
-            Assert.That(heard, Is.EqualTo(new[] { "modal", "context" }));
+            Assert.That(heard, Is.EqualTo(new[] { "popup", "context" }));
         }
 
         [Test]
         public void WithinARank_TheLatestLayerIsAskedFirst()
         {
-            _ = chain.Register(CancelRank.Modal, Layer("settings", false));
-            _ = chain.Register(CancelRank.Modal, Layer("confirm", false));
+            _ = chain.Register(CancelRank.Popup, Layer("settings", false));
+            _ = chain.Register(CancelRank.Popup, Layer("confirm", false));
 
             _ = chain.Cancel();
 
@@ -96,16 +96,16 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         public void ALayerThatLeavesWhileItHandles_DoesNotDisturbThePress()
         {
             System.IDisposable self = null;
-            self = chain.Register(CancelRank.Modal, () =>
+            self = chain.Register(CancelRank.Popup, () =>
             {
-                heard.Add("modal");
+                heard.Add("popup");
                 self.Dispose();
                 return true;
             });
 
             Assert.That(chain.Cancel(), Is.True);
             Assert.That(chain.Cancel(), Is.False, "it closed itself, so it is gone");
-            Assert.That(heard, Is.EqualTo(new[] { "modal" }));
+            Assert.That(heard, Is.EqualTo(new[] { "popup" }));
         }
 
         [Test]

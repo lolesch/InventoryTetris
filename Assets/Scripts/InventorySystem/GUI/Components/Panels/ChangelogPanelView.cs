@@ -41,7 +41,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
             AddRows(knownIssuesBody, tabs.KnownIssues);
             AddRows(roadmapBody, tabs.Roadmap);
 
-            cancelLayer = CancelChain.TryRegister(CancelRank.Modal, Cancel);
+            cancelLayer = CancelChain.TryRegister(CancelRank.Popup, Cancel);
         }
 
         private void OnDisable()

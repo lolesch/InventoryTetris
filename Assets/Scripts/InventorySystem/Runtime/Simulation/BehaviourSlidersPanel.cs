@@ -27,7 +27,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// as soon as the panel becomes visible - including a panel the scene authors as already up.
     ///
     /// The live-encounter and last-run readouts that used to live here moved to
-    /// <see cref="EncounterStatsPanel"/> (issue #61), as its own sibling section between this
+    /// <see cref="EncounterStatsText"/> (issue #61), as its own sibling section between this
     /// panel and the enemy HP bar pool.
     /// </summary>
     public sealed class BehaviourSlidersPanel : SimplePanel

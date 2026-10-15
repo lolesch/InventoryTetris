@@ -1,6 +1,6 @@
 using Submodules.Utility.Services;
 using System.Linq;
-using ToolSmiths.InventorySystem.GUI.Components.Panels;
+using ToolSmiths.InventorySystem.GUI.Components;
 using ToolSmiths.InventorySystem.Services;
 using UnityEditor;
 using UnityEngine;
@@ -9,9 +9,9 @@ namespace ToolSmiths.InventorySystem.EditorScripts
 {
     /// <summary>
     /// The dev-invocable hero load (#114) from the Editor menu, for a scene without the
-    /// <c>DebugPanel</c> button: <see cref="DebugPanel.LoadDefault"/> builds a fresh Hero and World
+    /// <c>DebugTools</c> button: <see cref="DebugTools.LoadDefault"/> builds a fresh Hero and World
     /// from the default hero template and swaps both into the Session. Play Mode only, and refused
-    /// while a Run is in the Field - Recall first. <see cref="DebugPanel.CreateNew"/> is the same for a
+    /// while a Run is in the Field - Recall first. <see cref="DebugTools.CreateNew"/> is the same for a
     /// new saved hero: written at once, so it is a save from then on, which the default-hero load is not.
     /// </summary>
     internal static class LoadHeroMenu
@@ -21,13 +21,13 @@ namespace ToolSmiths.InventorySystem.EditorScripts
         private const string DeleteMenu = EditorMenus.Hero + "Delete Loaded Hero";
 
         [MenuItem(Menu)]
-        private static void LoadDefaultHero() => DebugPanel.LoadDefault();
+        private static void LoadDefaultHero() => DebugTools.LoadDefault();
 
         [MenuItem(Menu, true)]
         private static bool CanLoadDefaultHero() => Application.isPlaying && ServiceLocator.IsArmed;
 
         [MenuItem(NewMenu)]
-        private static void NewSavedHero() => DebugPanel.CreateNew();
+        private static void NewSavedHero() => DebugTools.CreateNew();
 
         [MenuItem(NewMenu, true)]
         private static bool CanCreateNewHero() => Application.isPlaying && ServiceLocator.IsArmed;
@@ -40,7 +40,7 @@ namespace ToolSmiths.InventorySystem.EditorScripts
 
             if (EditorUtility.DisplayDialog("Delete the loaded hero",
                     $"Delete the save of '{name}'? This cannot be undone.", "Delete", "Cancel"))
-                DebugPanel.DeleteLoaded();
+                DebugTools.DeleteLoaded();
         }
 
         // Only a hero that came from a save has one to delete.

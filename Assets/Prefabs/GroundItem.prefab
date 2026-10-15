@@ -113,7 +113,7 @@ GameObject:
   - component: {fileID: 2938690695903610728}
   - component: {fileID: 4998526235104821254}
   m_Layer: 5
-  m_Name: GroundItemSlotDisplay
+  m_Name: GroundItem
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -216,7 +216,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3c80f6cc3e4c4c64c98c05b3917f30bf, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.Runtime.Simulation.GroundItemSlotDisplay
+  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.Runtime.Simulation.GroundItem
   icon: {fileID: 2497775315227090108}
   nameLabel: {fileID: 2951222685377659474}
   rarityBorder: {fileID: 6945331985615991150}

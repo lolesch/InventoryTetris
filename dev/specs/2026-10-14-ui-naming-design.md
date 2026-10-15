@@ -28,7 +28,7 @@ component that is neither is not a display: a text, a list, a layout. A list tha
 is a bound display that happens to draw a list (`GroundItemsList`); its name follows the glossary's
 **Ground Items List**, and `AbstractContainerDisplay` names how it binds.
 
-**`IDisplay<T>` does not grow `Bind`/`Unbind`.** They are a different concern. `Refresh(T)` is "draw this
+**`IDisplay<T>` does not grow `Bind`/`Unbind`.** They are a different concern. `Repaint(T)` is "draw this
 now", stateless about where the data came from; `Bind` is a subscription with a lifetime and an `Unbind`
 that must run. Folding them in would hand `CurrencyDisplay` and `PreviewDisplay` a no-op `Unbind`, and no
 shared signature exists to fold in: `ResourceDisplay.Bind(resource, recovery)`,
@@ -66,8 +66,9 @@ becomes `CancelRank.Popup`. `Prompt`, `Modal` and `Dialog` go on the Avoid list,
 | `CancelRank.Modal` | `CancelRank.Popup` | The term. |
 
 Also: the serialized `prompt` field of the two controllers becomes `popup`; the private argument-less
-`Refresh()` of `HeroShowcaseText` and `MainMenuLayout` becomes `Repaint`, as `HeroIdentityDisplay` already
-has it, so `Refresh` keeps meaning `IDisplay<T>.Refresh`; the tests named for a renamed type are renamed
+`Refresh()` of `HeroShowcaseText` and `MainMenuLayout` stays `Refresh`, and `HeroIdentityDisplay`'s private
+`Repaint()` becomes `Refresh()`; `IDisplay<T>.Refresh(T)` (and every implementer) becomes `Repaint(T)`, so
+`Refresh` means "re-read my source and redraw" and `Repaint` means "draw this data"; the tests named for a renamed type are renamed
 with it (`DebugPanelPlayModeTests`, `CancelChainTests`' modal cases); doc comments that say "modal" say
 "popup", in `docs/agents/coding-conventions.md` too ("the hero prompts and the Changelog panel"). A class is renamed with its `.meta` so prefab and scene
 references survive; the serialized-rename rule in `coding-conventions.md` covers the field.

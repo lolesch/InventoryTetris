@@ -62,7 +62,7 @@ Judgement calls the hook cannot see; `/code-review` checks each on any change th
 component.
 
 - **A screen the player can dismiss registers with `ICancelChain`** at a `CancelRank`: the Pause Menu,
-  the hero prompts and the Changelog panel do. An unregistered screen ignores Esc.
+  the hero popups and the Changelog do. An unregistered screen ignores Esc.
 - **A list that can outgrow its rect sits in a masked `ScrollRect`**, as the Changelog tab bodies do.
 - **A display refreshes on every event that changes what it shows.** A resource bar follows the total as
   well as the current value: on `CurrentHasChanged` alone, equipping a +max-health item while paused left

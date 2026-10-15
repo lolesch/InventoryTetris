@@ -12,7 +12,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 
         [SerializeField] private TextMeshProUGUI totalText;
 
-        public void Refresh(Currency newData)
+        public void Repaint(Currency newData)
         {
             if (totalText)
                 totalText.text = $"({newData.Total})".Colored(UiColors.Muted);
@@ -23,7 +23,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
             for (var i = 0; i < Currency.Denominations.Length; i++) // a short coinDisplays array throws, not hides a row
             {
                 var type = Currency.Denominations[i]; // largest value first
-                coinDisplays[i].Refresh((type, newData.CountOf(type)));
+                coinDisplays[i].Repaint((type, newData.CountOf(type)));
             }
         }
     }

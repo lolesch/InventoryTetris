@@ -80,7 +80,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 
         [SerializeField] private TextMeshProUGUI text;
 
-        public void Refresh(CharacterStatModifierData newData)
+        public void Repaint(CharacterStatModifierData newData)
         {
             icon.sprite = newData.icon;
             text.text = newData.displayText;

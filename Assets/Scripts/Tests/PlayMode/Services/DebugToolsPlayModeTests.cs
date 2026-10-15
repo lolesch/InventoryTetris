@@ -10,23 +10,23 @@ using UnityEngine.TestTools;
 namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 {
     /// <summary>
-    /// The <c>DebugPanel</c> controls (issue #118) and its dev log of the Hero's death. The panel lives in the
+    /// The <c>DebugTools</c> controls (issue #118) and its dev log of the Hero's death. The component lives in the
     /// predefined assembly, out of a test assembly's reach, so it is added and called by name. Needs Play Mode:
     /// the boot's Session holds the Hero and World the controls act on. Run with the PlayMode filter.
     /// </summary>
-    public sealed class DebugPanelPlayModeTests
+    public sealed class DebugToolsPlayModeTests
     {
         private GameObject _host;
-        private Component _panel;
+        private Component _tools;
 
         [UnitySetUp]
         public IEnumerator SetUp()
         {
-            var type = System.Type.GetType("ToolSmiths.InventorySystem.GUI.Components.Panels.DebugPanel, Assembly-CSharp");
-            Assert.That(type, Is.Not.Null, "DebugPanel is in the predefined assembly");
+            var type = System.Type.GetType("ToolSmiths.InventorySystem.GUI.Components.DebugTools, Assembly-CSharp");
+            Assert.That(type, Is.Not.Null, "DebugTools is in the predefined assembly");
 
-            _host = new GameObject("DebugPanelTestHost");
-            _panel = _host.AddComponent(type);
+            _host = new GameObject("DebugToolsTestHost");
+            _tools = _host.AddComponent(type);
 
             yield return null;
         }
@@ -40,7 +40,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             _ = Session.Instance.TryLoad(GameBoot.Load().DefaultHero);
         }
 
-        private void Call(string method) => _panel.GetType().GetMethod(method).Invoke(_panel, null);
+        private void Call(string method) => _tools.GetType().GetMethod(method).Invoke(_tools, null);
 
         [Test]
         public void StashInventory_MovesWhatTheStashTook_OutOfTheInventory()

@@ -5,15 +5,15 @@ using ToolSmiths.InventorySystem.GUI.Components.Buttons;
 using ToolSmiths.InventorySystem.Services;
 using UnityEngine;
 
-namespace ToolSmiths.InventorySystem.GUI.Components.Panels
+namespace ToolSmiths.InventorySystem.GUI.Components.Popups
 {
     /// <summary>
-    /// The confirmation the Delete button opens: a modal over the Main Menu that names the selected hero and
+    /// The confirmation the Delete button opens: a popup over the Main Menu that names the selected hero and
     /// deletes nothing until Delete is confirmed (<see cref="MainMenuFlow.DeleteSelected"/>). It is shown by
-    /// being enabled, so the component sits on the panel itself; Cancel (the button or the Cancel key, as a
-    /// <see cref="CancelRank.Modal"/> layer) closes it and deletes nothing.
+    /// being enabled, so the component sits on the popup itself; Cancel (the button or the Cancel key, as a
+    /// <see cref="CancelRank.Popup"/> layer) closes it and deletes nothing.
     /// </summary>
-    public sealed class HeroDeletePrompt : MonoBehaviour
+    public sealed class HeroDeletePopup : MonoBehaviour
     {
         [SerializeField] private TextMeshProUGUI question;
         [SerializeField] private ClickEventButton confirm;
@@ -35,7 +35,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
             question.text = ServiceLocator.IsArmed && MainMenuFlow.TrySelected(HeroSaveService.Instance, out var hero)
                 ? MainMenuFlow.DeleteQuestion(hero)
                 : string.Empty;
-            cancelLayer = CancelChain.TryRegister(CancelRank.Modal, Cancel);
+            cancelLayer = CancelChain.TryRegister(CancelRank.Popup, Cancel);
         }
 
         private void OnDisable()
