@@ -14,7 +14,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
         [SerializeField] private Image coinIcon;
         [SerializeField] private TextMeshProUGUI amountText;
 
-        public void Refresh((CurrencyType type, uint amount) newData)
+        public void Repaint((CurrencyType type, uint amount) newData)
         {
             if (0 == newData.amount)
             {

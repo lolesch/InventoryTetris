@@ -25,21 +25,21 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
         private PrefabPool<CharacterStatModifierDisplay> itemStatPool;
         private PrefabPool<CharacterStatModifierDisplay> ItemStatPool => itemStatPool ??= new(itemStatPrefab);
 
-        public void Refresh((Package package, Package compareTo) data) => Refresh(data.package, new[] { data.compareTo });
+        public void Repaint((Package package, Package compareTo) data) => Repaint(data.package, new[] { data.compareTo });
 
         /// <param name="compareTo">The worn items equipping this one would displace, judged together; empty
         /// for a free slot, where each row shows its full effect; null for an item that is
         /// not equipment, which has nothing to compare. The worn item beside it is drawn with
-        /// <see cref="RefreshWorn"/>.</param>
-        public void Refresh(Package package, IReadOnlyList<Package> compareTo, float priceOverride = -1f) =>
+        /// <see cref="RepaintWorn"/>.</param>
+        public void Repaint(Package package, IReadOnlyList<Package> compareTo, float priceOverride = -1f) =>
             Present(package, priceOverride, (stat, earlier) => compareTo == null ? new(stat) : new(stat, compareTo, earlier));
 
         /// <summary>A worn item shown beside the hovered one. When the hovered item would displace it, the
         /// stats the hovered item lacks carry what the unequip alone costs; every other row stays plain.</summary>
-        public void RefreshWorn(Package worn, Package hovered, bool displaced) =>
+        public void RepaintWorn(Package worn, Package hovered, bool displaced) =>
             Present(worn, -1f, (stat, _) => displaced && hovered.IsValid ? new(stat, hovered.Item) : new(stat));
 
-        public void Refresh(Package package) => Present(package, -1f, (stat, _) => new(stat));
+        public void Repaint(Package package) => Present(package, -1f, (stat, _) => new(stat));
 
         private void Present(Package package, float priceOverride,
             System.Func<CharacterStatModifier, IReadOnlyList<CharacterStatModifier>, CharacterStatModifierDisplay.CharacterStatModifierData> row)
@@ -71,7 +71,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                 amount.text = 1 < package.Amount ? $"{package.Amount}/{view.StackLimit}" : string.Empty;
 
             if (goldValue)
-                goldValue.Refresh(0f <= priceOverride
+                goldValue.Repaint(0f <= priceOverride
                     ? new Currency(priceOverride)
                     : new Currency(view.SellValue * package.Amount));
 
@@ -95,7 +95,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 
                 var itemStat = ItemStatPool.GetObject(false);
 
-                itemStat.Refresh(row(stat, earlier));
+                itemStat.Repaint(row(stat, earlier));
 
                 itemStat.gameObject.SetActive(true);
 

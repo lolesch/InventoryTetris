@@ -94,7 +94,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
             compareTransform.anchoredPosition = new Vector2(mousePos.x + OffsetX, mousePos.y);
 
             if (slot is EquipmentSlotDisplay)
-                hoveredItem.Refresh(package);
+                hoveredItem.Repaint(package);
             else
             {
                 // Shift = the second slot, the same key that equips there (InventorySlotDisplay).
@@ -110,7 +110,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
                     ? VendorTransaction.BuyPrice(package.Item, ItemService.Instance.Catalog) * package.Amount
                     : -1f;
 
-                hoveredItem.Refresh(package, against, priceOverride);
+                hoveredItem.Repaint(package, against, priceOverride);
 
                 // A worn item the equip would not displace (the bow beside a free off-hand) is only listed.
                 var displaced = against ?? System.Array.Empty<Package>();
@@ -119,11 +119,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
                 var show2 = 1 < shown.Count;
                 
                 comparedItem1.gameObject.SetActive(show1);
-                comparedItem1.RefreshWorn(show1 ? shown[0] : default, package, show1 && IsDisplaced(shown[0]));
+                comparedItem1.RepaintWorn(show1 ? shown[0] : default, package, show1 && IsDisplaced(shown[0]));
 
                 // Only a two-hander has a second worn item to list (CompareTargets).
                 comparedItem2.gameObject.SetActive(show2);
-                comparedItem2.RefreshWorn(show2 ? shown[1] : default, package, show2 && IsDisplaced(shown[1]));
+                comparedItem2.RepaintWorn(show2 ? shown[1] : default, package, show2 && IsDisplaced(shown[1]));
 
                 compareGroup.reverseArrangement = !showLeft;
                 compareGroup.childAlignment = showLeft ? TextAnchor.UpperRight : TextAnchor.UpperLeft;

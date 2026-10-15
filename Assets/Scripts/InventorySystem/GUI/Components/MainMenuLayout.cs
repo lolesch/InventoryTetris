@@ -34,7 +34,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components
                 return;
 
             watched = HeroSaveService.Instance;
-            watched.HeroesChanged += Repaint;
+            watched.HeroesChanged += Refresh;
             Apply(Application.platform);
         }
 
@@ -43,7 +43,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components
             if (watched == null)
                 return;
 
-            watched.HeroesChanged -= Repaint;
+            watched.HeroesChanged -= Refresh;
             watched = null;
         }
 
@@ -54,10 +54,10 @@ namespace ToolSmiths.InventorySystem.GUI.Components
 
             exitButton.SetActive(exits);
             savedLine.gameObject.SetActive(!exits);
-            Repaint();
+            Refresh();
         }
 
-        private void Repaint()
+        private void Refresh()
         {
             savedLine.text = MainMenuFlow.SavedLine(watched) ?? string.Empty;
             playButton.SetActive(MainMenuFlow.CanPlay(watched));

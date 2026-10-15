@@ -749,7 +749,7 @@ _Avoid_: preview, hover tab, tab flip
 
 **Displays and Views**:
 A display is the visual representation of a data object, and is either pushed or bound. A *pushed* display
-implements `IDisplay<T>`: `Refresh(T)` redraws it from the data it is handed on a data change. A *bound*
+implements `IDisplay<T>`: `Repaint(T)` redraws it from the data it is handed on a data change. A *bound*
 display follows a source it was given (`Bind`/`Unbind`) or resolves itself (a container display binds by its
 role) and redraws on that source's events. It implements no interface, because the bindings share no signature
 and `Bind` is a subscription with a lifetime, not a draw. A component that is neither pushed nor bound is not a

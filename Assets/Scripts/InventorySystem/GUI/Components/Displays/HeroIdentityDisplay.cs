@@ -44,7 +44,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
             watched = null;
         }
 
-        public void Refresh(HeroIdentity identity) => label.text = identity.Exists ? Format(identity) : string.Empty;
+        public void Repaint(HeroIdentity identity) => label.text = identity.Exists ? Format(identity) : string.Empty;
 
         /// <summary>How the hero reads in this display. Only called for a hero that exists.</summary>
         protected abstract string Format(HeroIdentity identity);
@@ -59,18 +59,18 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
             Release();
 
             followed = Session.Instance.Hero;
-            followed.StatsChanged += Repaint;
-            Repaint();
+            followed.StatsChanged += Refresh;
+            Refresh();
         }
 
         private void Release()
         {
             if (followed != null)
-                followed.StatsChanged -= Repaint;
+                followed.StatsChanged -= Refresh;
 
             followed = null;
         }
 
-        private void Repaint() => Refresh(HeroIdentity.Of(watched, followed));
+        private void Refresh() => Repaint(HeroIdentity.Of(watched, followed));
     }
 }

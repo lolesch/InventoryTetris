@@ -21,27 +21,27 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
 
         private void OnEnable()
         {
-            if (!Application.isPlaying || !Session.TrySubscribeHeroLoaded(Repaint))
+            if (!Application.isPlaying || !Session.TrySubscribeHeroLoaded(Refresh))
                 return;
 
             watched = HeroSaveService.Instance;
-            watched.HeroesChanged += Repaint;
-            Repaint();
+            watched.HeroesChanged += Refresh;
+            Refresh();
         }
 
         private void OnDisable()
         {
-            Session.UnsubscribeHeroLoaded(Repaint);
+            Session.UnsubscribeHeroLoaded(Refresh);
 
             if (watched == null)
                 return;
 
-            watched.HeroesChanged -= Repaint;
+            watched.HeroesChanged -= Refresh;
             watched = null;
         }
 
         // A selected hero that cannot be read has no hero to describe; the text area says why instead.
-        private void Repaint() => label.text = MainMenuFlow.CanPlay(watched)
+        private void Refresh() => label.text = MainMenuFlow.CanPlay(watched)
             ? HeroShowcase.Text(Session.Instance.Hero, SimulationService.Instance.Locations, ItemService.Instance.Catalog)
             : MainMenuFlow.TrySelected(watched, out var selected) ? selected.UnreadableReason ?? string.Empty : string.Empty;
     }
