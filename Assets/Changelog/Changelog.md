@@ -15,6 +15,7 @@
 - Hold Tab over an open Vendor or Healer to peek at its other tab; Alt still shows more detail on an item.
 - The hero in the field now has a health bar that shows its shield, and flashes and shakes when hit, like the enemies do.
 - Town now has a ground: shift-click an item in your bag, or drop it on the ground slot, to leave it there, and click it in the Ground list to pick it up. A full bag leaves it lying, and it is gone when you Send the hero out.
+- Selling from a full bag no longer fails: the bag keeps the gold and silver first, and the coins that do not fit lie on the Town ground for you to pick up.
 
 ## 0.0.5_Alpha - 2026-09-25
 

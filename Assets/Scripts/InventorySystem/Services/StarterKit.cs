@@ -30,10 +30,8 @@ namespace ToolSmiths.InventorySystem.Services
             if (coins.Total == 0u)
                 return;
 
-            if (hero.Wallet.CanDeposit(coins))
-                hero.Wallet.Deposit(coins);
-            else
-                Debug.LogWarning($"{nameof(StarterKit)}: the Inventory has no room for the starter coins; the hero starts without them.");
+            if (0u < hero.Wallet.Deposit(coins).Total)
+                Debug.LogWarning($"{nameof(StarterKit)}: the Inventory has no room for all the starter coins; the hero starts without the rest.");
         }
 
         private static void Place(Hero hero, HeroData.StarterItem starter, IItemService items)

@@ -98,19 +98,21 @@ namespace ToolSmiths.InventorySystem.Inventories
         }
 
         /// <summary>
-        /// Banks <paramref name="amount"/> as minted coins, largest denomination first. A
-        /// denomination over its stack limit spills into further cells; a full container
-        /// drops the remainder (acknowledged - dev/specs/2026-08-26-shop-currency-followups.md
-        /// section 2). Re-consolidates afterwards when the backing container asks for it
+        /// Banks <paramref name="amount"/> as minted coins, largest denomination first, so a
+        /// container short of cells keeps the highest. A denomination over its stack limit spills
+        /// into further cells. Re-consolidates afterwards when the backing container asks for it
         /// (<see cref="AbstractDimensionalContainer.AutoConsolidate"/>).
         /// </summary>
-        public void Deposit(Currency amount)
+        /// <returns>The coins that found no cell; the caller decides where they go.</returns>
+        public Currency Deposit(Currency amount)
         {
+            var unplaced = default(Currency);
+
             BeginMutation();
             try
             {
                 foreach (var type in Currency.Denominations)
-                    AddCoins(type, amount.CountOf(type));
+                    unplaced = unplaced.With(type, AddCoins(type, amount.CountOf(type)));
 
                 if (coins.AutoConsolidate)
                     Consolidate();
@@ -120,54 +122,21 @@ namespace ToolSmiths.InventorySystem.Inventories
                 EndMutation();
             }
 
-            void AddCoins(CurrencyType type, uint count)
+            return unplaced;
+
+            uint AddCoins(CurrencyType type, uint count)
             {
                 if (0u == count)
-                    return;
+                    return 0u;
 
                 var coin = minter?.MintCurrency(type);
                 if (coin == null)
-                    return;
+                    return count;
 
                 var package = new Package(coins, coin, count);
                 _ = coins.TryAddToContainer(ref package);
+                return package.Amount;
             }
-        }
-
-        /// <summary>
-        /// Whether <see cref="Deposit"/> of <paramref name="amount"/> would bank every coin -
-        /// the answer a sale asks before it queues its payout, so it never reaches the
-        /// <see cref="Deposit"/> that silently drops what does not fit (issue #126). Reads the
-        /// backing container as it is right now: asked mid-transaction, that is the working
-        /// copy, so a payout may use the space the sale itself is freeing. Answers by placing
-        /// the coins into a scratch copy of the grid with the container's own placement rules,
-        /// so the answer and the deposit cannot drift; nothing here is touched.
-        /// </summary>
-        public bool CanDeposit(Currency amount)
-        {
-            if (minter == null || 0u == amount.Total)
-                return true; // Deposit mints nothing in either case
-
-            var scratch = new CharacterInventory(coins.Dimensions, coins.Catalog);
-
-            foreach (var entry in coins.StoredPackages)
-                scratch.StoredPackages[entry.Key] = entry.Value;
-
-            foreach (var type in Currency.Denominations)
-            {
-                var count = amount.CountOf(type);
-                var coin = 0u < count ? minter.MintCurrency(type) : null;
-
-                if (coin == null)
-                    continue; // Deposit skips an unmintable denomination the same way
-
-                var package = new Package(scratch, coin, count);
-
-                if (!scratch.TryAddToContainer(ref package))
-                    return false;
-            }
-
-            return true;
         }
 
         /// <summary>
