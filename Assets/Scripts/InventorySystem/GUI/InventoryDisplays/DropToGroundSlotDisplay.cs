@@ -20,11 +20,11 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             if (!package.IsValid)
                 return;
 
-            /// This slot drops onto the Run's ground (issue #63): the item joins the Ground Items List,
-            /// where a click picks it back up. A purchase in progress never gets here - the base
-            /// drop turns it away first. With no Run there is no ground, and the item goes back
-            /// where it came from instead of being destroyed.
-            if (!DropTransaction.Place(package, SimulationService.Instance.LootFlow))
+            /// This slot drops onto the World's ground (issues #63, #285): the item joins the Ground Items
+            /// List, where a click picks it back up. A purchase in progress never gets here - the base
+            /// drop turns it away first. A package the ground refuses goes back where it came from
+            /// instead of being destroyed.
+            if (!DropTransaction.Place(package, Session.Instance.World.LootGround))
             {
                 _ = CancelHeldDrag();
                 return;
@@ -35,9 +35,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             DragProvider.Instance.Origin.Container?.InvokeRefresh();
         }
 
-        /// The red "can't drop" tint tells the truth in Town, where there is no ground to drop on.
-        public override bool WouldAcceptDrop(Package package) =>
-            package.IsValid && SimulationService.Instance.LootFlow != null && base.WouldAcceptDrop(package);
+        public override bool WouldAcceptDrop(Package package) => package.IsValid && base.WouldAcceptDrop(package);
 
         private void Update() => CanvasGroup.interactable = DragProvider.Instance.IsDragging;
     }

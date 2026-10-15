@@ -262,6 +262,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             Placed.Add(package);
             return true;
         }
+
+        public bool PickUpFromGround(ItemInstance item) => false;
     }
 
     internal static class Profiles

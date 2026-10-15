@@ -129,16 +129,14 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                     return true;
 
                 case QuickMoveIntentKind.Drop:
-                    /// The Hero context's ground row (issue #63): the item leaves the bag for the
-                    /// Run's ground, where the Ground Items List shows it. A Run with no ground
-                    /// never resolves to this intent, so a missing loot flow is only a race
-                    /// with the Run ending - a silent no-op, the click absorbed.
-                    _ = DropTransaction.Run(Container, position, SimulationService.Instance.LootFlow);
+                    /// The Hero context's ground row (issues #63, #285): the item leaves the bag for the
+                    /// World's ground, where the Ground Items List shows it.
+                    _ = DropTransaction.Run(Container, position, Session.Instance.World.LootGround);
                     return true;
 
                 case QuickMoveIntentKind.PickUp:
                     /// The Ground context's row: the same pick-up a plain click on a ground slot makes.
-                    _ = SimulationService.Instance.LootFlow?.PickUpFromGround(package.Item);
+                    _ = Session.Instance.World.LootGround.PickUpFromGround(package.Item);
                     return true;
 
                 case QuickMoveIntentKind.Acquire:

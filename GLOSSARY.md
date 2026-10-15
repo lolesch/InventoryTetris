@@ -97,9 +97,9 @@ names a hub (the **Inventory**), one sink, and a set of sources, and every row f
 same three rules: the hub goes to the sink, the **Equipment** goes to the sink in any
 context but `Hero`, and a listed source comes back to the hub. A context with no rows
 moves nothing — the **Supply** is never a sink, and its own shift-click stays a **Buy** in
-every context. `Hero` has one row of its own: while a **Run** has a ground, the **Inventory**
-drops its item there, into the **Ground Items List**; in Town there is no ground, so `Hero`
-moves nothing. `Ground` has that row and one more: a shift-click on the ground picks the **Drop** up. A move between containers always executes — into the target container, or the
+every context. `Hero` has one row of its own: the **Inventory** drops its item on the
+**Ground**, into the **Ground Items List**, in Town as in a **Run**. `Ground` has that row and one
+more: a shift-click on the ground picks the **Drop** up. A move between containers always executes — into the target container, or the
 hand if that is full. A retrieval from the **Stash** and a **Buy** go through the player's
 acquisition entry point instead, so auto-equip applies, and when nothing has room they roll
 back with nothing moved.
@@ -184,9 +184,11 @@ it, and what the Wallet cannot take stays.
 _Avoid_: pile (that is coins), ground loot, spill, cache
 
 **Ground**:
-Where a **Run**'s **Drops** lie: one stash-sized grid per Run, wiped when the Run ends. In Town
-there is no Run and so no ground. The **Ground Items List** and a grid of the same cells on the
-Combat Panel are two views of it. What lands and what is evicted is the **Drop**'s rule.
+Where **Drops** lie: one stash-sized grid, owned by the **World**, in Town as in a **Run**. A Run's
+Drops are wiped when the Run ends. In Town the player lays an item there by Quick Move or by releasing a
+drag on the ground slot, picks it up from the **Ground Items List**, and it lies there until picked up
+and is wiped on **Send**. The **Ground Items List** and a grid of the same cells on the Combat Panel
+are two views of it. What lands and what is evicted is the **Drop**'s rule.
 _Avoid_: floor, loot area, arena (that is where the fight takes place)
 
 **Corpse**:
@@ -580,20 +582,22 @@ The single-valued enum (`None`, `Hero`, `Stash`, `Vendor`, `Healer`, `Ground`) t
 questions at once: which panels are up, and where a **Quick Move** lands. Entry points
 *request* a context; every panel *derives* its visibility from it. A context names the
 **Hero Panel** plus at most one other panel (a Town Stop's, or the **Combat Panel**'s ground
-tab for `Ground`, so that one needs the hero's bag open too), so the panel set is derived rather than
+tab for `Ground`, so that one needs the hero's bag open too; `Ground` is reachable in Town as well,
+through its toggle), so the panel set is derived rather than
 announced, and a panel that belongs to every context can never be the thing that names one
 (ADR-0013). It is held by the **World** (reached through the inventory service,
 ADR-0015) and read by the trade flow for **Quick Move**
 routing. Its members are not homogeneous and need not be — the Stash is the player's
 own storage, the Vendor is someone else's — because the only question the enum answers is
 which context is active. Run phase is not a member: only `None`, `Hero` and `Ground` are
-reachable in the field, so a Run *constrains* contexts rather than being one.
+reachable in the field, so a Run *constrains* contexts rather than being one (in Town all of them are).
 _Avoid_: Side Panel Context (retired), trade target, active panel, current context
 
 **Combat Panel**:
-The left-side panel, visible only during `InField`. Holds behaviour sliders, enemy
-health bars and encounter stats. Fades in on Send, out on Recall/Death. Exclusive with
-the **Side Panels** by Run phase, not by a toggle group.
+The left-side panel, visible during `InField`. Holds behaviour sliders, enemy
+health bars and encounter stats, and the ground tab. Fades in on Send, out on Recall/Death. Exclusive with
+the **Side Panels** by Inventory Context, not by a toggle group. In Town only its ground tab's
+context, `Ground`, opens it, through the Ground toggle.
 _Avoid_: debug panel, sim panel, fight panel
 
 **Ability Hotbar**:
@@ -610,8 +614,9 @@ is a grid container the size of the stash, and this list is its second view: bot
 packages. A package that lands, or a stack that gains items, becomes the newest; when the ground
 is full the oldest are removed until the new one fits, and nothing else is rearranged. It also
 shows what the player dropped there — by Quick Move or by releasing a drag on the ground slot,
-which evict the oldest the same way — and like any **Drop** it is gone when the Run ends. With
-no Run there is no ground, and an item released on the ground slot goes back where it came from.
+which evict the oldest the same way — and like any **Drop** it is gone when the Run ends. In Town the
+list shows the same ground, reached with the Ground toggle beside the Hero toggle, and what lies there is
+gone when the hero is **Sent**.
 _Avoid_: loot beam, drop list, world items
 
 
