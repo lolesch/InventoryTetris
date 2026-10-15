@@ -457,6 +457,35 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             Assert.That(wallet.Balance.Iron, Is.EqualTo(3u));
         }
 
+        // ── RelayIfCoinLandedIn ─────────────────────────────────────────────
+        // A drag-drop lands in whichever container the slot belongs to; only the bag's coins re-lay.
+
+        [Test]
+        public void RelayIfCoinLandedIn_TheBag_LeavesTheCoinsGoldFirstIronLast()
+        {
+            var wallet = NewWallet();
+            Seed(wallet, CurrencyType.Iron, 4u);
+            Seed(wallet, CurrencyType.Gold, 1u); // hand-placed behind the iron
+
+            wallet.RelayIfCoinLandedIn(wallet.Container, minter.MintCurrency(CurrencyType.Gold));
+
+            Assert.That(CoinsInCellOrder(wallet), Is.EqualTo(new[] { CurrencyType.Gold, CurrencyType.Iron }));
+            Assert.That(wallet.Balance.Total, Is.EqualTo(1200u + 4u));
+        }
+
+        [Test]
+        public void RelayIfCoinLandedIn_AnotherContainer_LeavesTheBagsCoinsWhereTheyLie()
+        {
+            var wallet = NewWallet();
+            var stash = new CharacterInventory(new Vector2Int(6, 6), catalog);
+            Seed(wallet, CurrencyType.Iron, 4u);
+            Seed(wallet, CurrencyType.Gold, 1u); // hand-placed behind the iron
+
+            wallet.RelayIfCoinLandedIn(stash, minter.MintCurrency(CurrencyType.Gold));
+
+            Assert.That(CoinsInCellOrder(wallet), Is.EqualTo(new[] { CurrencyType.Iron, CurrencyType.Gold }));
+        }
+
         // ── OnBalanceChanged ────────────────────────────────────────────────
 
         [Test]

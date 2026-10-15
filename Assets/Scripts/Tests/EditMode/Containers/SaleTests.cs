@@ -240,6 +240,28 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         }
 
         [Test]
+        public void ADenominationTheWalletCannotMint_IsSkipped_AndTheRestOfThePayoutLiesOnTheGround()
+        {
+            var noCopper = new TestCatalog()
+                .With(new TestDefinition { Id = HelmId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Helm, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
+                .With(new TestDefinition { Id = SilverId, Category = ItemCategory.Currency, CurrencyType = CurrencyType.Silver, Footprint = ItemSize.OneByOne, BaseStackLimit = 999u })
+                .With(new TestDefinition { Id = GoldId, Category = ItemCategory.Currency, CurrencyType = CurrencyType.Gold, Footprint = ItemSize.OneByOne, BaseStackLimit = 999u });
+            minter = new FakeCurrencyMinter(noCopper);
+            var source = Inventory();
+            var wallet = WalletOver(Inventory(1, 1));
+            SeedCash(wallet, CurrencyType.Gold, 1u); // no free cell, so the whole payout goes to the ground
+            var sold = Sold();
+            var helm = Helm(); // 80 = one silver + four copper
+            var cell = Put(source, helm);
+
+            Assert.That(Sale.TrySell(sold, wallet, ground, source, cell), Is.True);
+
+            Assert.That(Holds(sold, helm), Is.True, "the helm was sold");
+            Assert.That(Lying(CurrencyType.Silver), Is.EqualTo(1u));
+            Assert.That(lying.StoredPackages, Has.Count.EqualTo(1), "the copper that cannot be minted lies nowhere");
+        }
+
+        [Test]
         public void ThePayoutMayUseTheSpaceTheSaleFrees()
         {
             // One cell, holding the very item being sold: the payout (one silver) fits only

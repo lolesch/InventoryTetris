@@ -31,10 +31,10 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// Raised with the base-unit total of the coins each time some bank to the Wallet - a clicked stack,
         /// a stack pushed out by newer loot, or whatever <see cref="Bank"/> is asked to.
         /// </summary>
-        public event Action<long> CoinsBanked;
+        internal event Action<long> CoinsBanked;
 
         /// <summary>Raised when the player's pick-up threw for a Drop (it stays on the ground).</summary>
-        public event Action<ItemInstance, Exception> PlacementFailed;
+        internal event Action<ItemInstance, Exception> PlacementFailed;
 
         /// <summary>Lays <paramref name="package"/> on the ground; a coin stack pushed out banks first.</summary>
         public bool PlaceOnGround(Package package) => Ground.TryLand(package, BankEvicted);
@@ -69,7 +69,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// stays with the caller.
         /// </summary>
         /// <returns>How many coins the Wallet took.</returns>
-        public uint Bank(CurrencyType type, uint amount)
+        internal uint Bank(CurrencyType type, uint amount)
         {
             var taken = amount - _wallet.Deposit(Currency.Of(type, amount)).CountOf(type);
 
@@ -87,9 +87,9 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         private bool TryCoinOf(Package package, out CurrencyType type)
         {
-            var definition = Ground.ViewOf(package.Item).Definition;
-            type = definition.CurrencyType;
-            return definition.Category == ItemCategory.Currency;
+            var view = Ground.ViewOf(package.Item);
+            type = view.Definition.CurrencyType;
+            return view.IsCurrency;
         }
     }
 }
