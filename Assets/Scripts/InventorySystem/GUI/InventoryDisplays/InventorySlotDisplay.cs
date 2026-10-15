@@ -69,9 +69,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
                 transaction.Commit();
 
-                /// A coin dropped into the bag leaves the bag's coins in order; any other container keeps it where it landed.
-                if (Container == wallet.Container)
-                    wallet.RelayIfCoin(package.Item);
+                wallet.RelayIfCoinLandedIn(Container, package.Item);
             }
 
             /// A clean landing - nothing came back to the cursor, so the drag is over.

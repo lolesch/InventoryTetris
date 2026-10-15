@@ -166,7 +166,7 @@ namespace ToolSmiths.InventorySystem.Inventories
                 && CoinsLieHighestFirst())
                 return; // already canonical and in order - don't churn the grid
 
-            Lay(current, consolidated);
+            Lay(current, fold: true);
         }
 
         /// <summary>
@@ -177,15 +177,24 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// </summary>
         public void RelayIfCoin(ItemInstance arrived)
         {
-            if (coins.ViewOf(arrived).Definition.Category != ItemCategory.Currency || CoinsLieHighestFirst())
+            if (!coins.ViewOf(arrived).IsCurrency || CoinsLieHighestFirst())
                 return;
 
-            var current = CalculateCash();
-            Lay(current, current);
+            Lay(CalculateCash(), fold: false);
         }
 
-        /// <summary>Takes <paramref name="current"/> out of the bag and lays <paramref name="target"/> back, largest first.</summary>
-        private void Lay(Currency current, Currency target)
+        /// <summary>
+        /// <see cref="RelayIfCoin"/> for the destination a drag-drop landed in: only a coin that landed in
+        /// the bag (<see cref="Container"/>) re-lays it, a coin dropped anywhere else stays where it fell.
+        /// </summary>
+        public void RelayIfCoinLandedIn(AbstractDimensionalContainer destination, ItemInstance arrived)
+        {
+            if (destination == coins)
+                RelayIfCoin(arrived);
+        }
+
+        /// <summary>Takes <paramref name="current"/> out of the bag and lays it back largest first, folded upward when <paramref name="fold"/>.</summary>
+        private void Lay(Currency current, bool fold)
         {
             isConsolidating = true;
             BeginMutation();
@@ -194,7 +203,7 @@ namespace ToolSmiths.InventorySystem.Inventories
             {
                 RemoveCoins(current);
 
-                Deposit(target);
+                _ = Deposit(fold ? new Currency(current.Total) : current);
             }
             finally
             {
@@ -215,11 +224,11 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             foreach (var entry in coins.StoredPackages.OrderBy(e => e.Key.x).ThenBy(e => e.Key.y))
             {
-                var definition = coins.ViewOf(entry.Value.Item).Definition;
-                if (definition.Category != ItemCategory.Currency)
+                var view = coins.ViewOf(entry.Value.Item);
+                if (!view.IsCurrency)
                     continue;
 
-                var value = Currency.ValueOf(definition.CurrencyType);
+                var value = Currency.ValueOf(view.Definition.CurrencyType);
                 if (previous < value)
                     return false;
 
@@ -290,8 +299,8 @@ namespace ToolSmiths.InventorySystem.Inventories
                 if (!coins.StoredPackages.TryGetValue(position, out var stored))
                     continue;
 
-                var definition = coins.ViewOf(stored.Item).Definition;
-                if (definition.Category != ItemCategory.Currency || definition.CurrencyType != type)
+                var view = coins.ViewOf(stored.Item);
+                if (!view.IsCurrency || view.Definition.CurrencyType != type)
                     continue;
 
                 var take = Math.Min(amount, stored.Amount);
@@ -310,11 +319,11 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             foreach (var package in coins.StoredPackages)
             {
-                var definition = coins.ViewOf(package.Value.Item).Definition;
-                if (definition.Category != ItemCategory.Currency)
+                var view = coins.ViewOf(package.Value.Item);
+                if (!view.IsCurrency)
                     continue;
 
-                var type = definition.CurrencyType;
+                var type = view.Definition.CurrencyType;
                 cash = cash.With(type, cash.CountOf(type) + package.Value.Amount);
             }
 

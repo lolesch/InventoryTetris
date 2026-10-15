@@ -79,15 +79,13 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             var view = sold.ViewOf(held.Item);
 
-            if (IsCurrency(view))
+            if (view.IsCurrency)
                 return false;
 
             var payout = PayoutOf(view, held);
 
             return 0u != payout.Total;
         }
-
-        private static bool IsCurrency(ItemView view) => view.Definition.Category == ItemCategory.Currency;
 
         private static Currency PayoutOf(ItemView view, Package package) => new(view.SellValue * package.Amount);
 
@@ -101,7 +99,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         {
             var view = sold.ViewOf(package.Item);
 
-            if (IsCurrency(view))
+            if (view.IsCurrency)
                 return false;
 
             var payout = PayoutOf(view, package);
@@ -128,10 +126,10 @@ namespace ToolSmiths.InventorySystem.Inventories
             foreach (var type in Currency.Denominations)
             {
                 var count = coins.CountOf(type);
+                var coin = 0u < count ? wallet.MintCoin(type) : null;
 
-                if (0u < count)
-                    _ = ground.PlaceOnGround(new Package(null, wallet.MintCoin(type), count));
-            }
+                if (coin != null)
+                    _ = ground.PlaceOnGround(new Package(null, coin, count));            }
         }
     }
 }
