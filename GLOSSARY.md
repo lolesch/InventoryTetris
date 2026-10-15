@@ -74,7 +74,9 @@ Where what the player sold goes. A sale is immediate: shift-click an item, or dr
 Supply or the Sold tab, and it is paid out at once and lands here, never on the shelf. The Sold
 tab is a **Supply** - its items are bought back like any shelf, at the Markup, so a mis-click
 is recoverable but not free. It holds a limited number of Packages; a sale that needs room
-discards the oldest. A **Restock** clears it; closing a panel or changing Town Stop leaves it
+discards the oldest. A sale never refuses for lack of coin room: the **Wallet** banks the payout
+highest denomination first, and the coins the bag has no cell for lie on the **Ground**, one stack per
+denomination, highest first (a stack the full Ground pushes out banks first). A **Restock** clears it; closing a panel or changing Town Stop leaves it
 alone. One container, shown as a tab beside the Supply by every Town Stop that buys (the
 Vendor and the Healer). It belongs to the **World**, not the hero, and is not saved (ADR-0016).
 _Avoid_: sell basket, basket, cart, buyback, trade window
@@ -187,7 +189,7 @@ _Avoid_: pile (that is coins), ground loot, spill, cache
 Where **Drops** lie: one stash-sized grid, owned by the **World**, in Town as in a **Run**. A Run's
 Drops are wiped when the Run ends. In Town the player lays an item there by Quick Move or by releasing a
 drag on the ground slot, picks it up from the **Ground Items List**, and it lies there until picked up
-and is wiped on **Send**. The **Ground Items List** and a grid of the same cells on the Combat Panel
+and is wiped on **Send**; the coins a sale could not bank lie there too. The **Ground Items List** and a grid of the same cells on the Combat Panel
 are two views of it. What lands and what is evicted is the **Drop**'s rule.
 _Avoid_: floor, loot area, arena (that is where the fight takes place)
 

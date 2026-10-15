@@ -5,6 +5,7 @@
         "InventorySystem.Containers",
         "InventorySystem.Data",
         "InventorySystem.Items",
+        "InventorySystem.Simulation",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

@@ -1,13 +1,13 @@
 using ToolSmiths.InventorySystem.Data;
-using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
 
-namespace ToolSmiths.InventorySystem.Simulation
+namespace ToolSmiths.InventorySystem.Inventories
 {
     /// <summary>
     /// The World's ground as the player's hand needs it: somewhere to lay a Package, and to take one back
-    /// from. <see cref="LootFlow"/> is the implementation during a Run (it counts what banks toward the
-    /// Run's take), <see cref="GroundDesk"/> in Town; both work on the World's one <see cref="GroundContainer"/>.
+    /// from. The Run's loot flow is the implementation during a Run (it counts what banks toward the
+    /// Run's take), the ground desk in Town; both work on the World's one <see cref="GroundContainer"/>.
+    /// It lives with the containers so a <see cref="Sale"/> can lay its overflow on it.
     /// </summary>
     public interface ILootGround
     {

@@ -64,20 +64,16 @@ namespace ToolSmiths.InventorySystem.Simulation
         }
 
         /// <summary>
-        /// Deposits <paramref name="amount"/> coins to the Wallet as far as it fits; the Wallet drops what does
-        /// not fit, so the count taken is read off its balance.
+        /// Deposits <paramref name="amount"/> coins to the Wallet as far as it fits; what it has no cell for
+        /// stays with the caller.
         /// </summary>
         /// <returns>How many coins the Wallet took.</returns>
         public uint Bank(CurrencyType type, uint amount)
         {
-            var value = Currency.ValueOf(type);
-            var before = _wallet.Balance.Total;
+            var taken = amount - _wallet.Deposit(Currency.Of(type, amount)).CountOf(type);
 
-            _wallet.Deposit(Currency.Of(type, amount));
-
-            var taken = (_wallet.Balance.Total - before) / value;
             if (0u < taken)
-                CoinsBanked?.Invoke(checked((long)taken * value)); // the stack's value in iron base units (GLOSSARY.md "Base Unit")
+                CoinsBanked?.Invoke(checked((long)taken * Currency.ValueOf(type))); // the stack's value in iron base units (GLOSSARY.md "Base Unit")
 
             return taken;
         }

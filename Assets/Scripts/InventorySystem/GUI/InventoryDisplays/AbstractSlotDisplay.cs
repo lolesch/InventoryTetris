@@ -123,9 +123,12 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             {
                 case QuickMoveIntentKind.Sell:
                     /// The shift-click sale (#128): one transaction over this slot's container,
-                    /// the Sold container and the Wallet. A sale that cannot pay out is a
-                    /// silent no-op, the click absorbed like any other quick-move.
-                    _ = Sale.TrySell(Session.Instance.World.Sold, Session.Instance.Hero.Wallet, Container, position);
+                    /// the Sold container and the Wallet; coins the bag cannot hold lie on the
+                    /// ground. A sale that pays 0 is a silent no-op, the click absorbed like any
+                    /// other quick-move.
+                    var session = Session.Instance;
+
+                    _ = Sale.TrySell(session.World.Sold, session.Hero.Wallet, session.World.LootGround, Container, position);
                     return true;
 
                 case QuickMoveIntentKind.Drop:
