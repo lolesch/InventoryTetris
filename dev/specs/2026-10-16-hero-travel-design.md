@@ -32,7 +32,7 @@ view keeps the enemies only.
 | Map | When | Where |
 | --- | --- | --- |
 | Town | entering the game with Play, a hero load, a Respawn | the **Waypoint** |
-| Town | after a Return or a Retreat | the **Town Exit** |
+| Town | after a Return | the **Town Exit** |
 | Field | coming in through the Town Exit, Run or not | the **Field Exit** |
 
 The Waypoint is its own point on the Town map. It sits on the Town Exit today, and a campfire or a portal
@@ -50,7 +50,8 @@ Exit before its map is gone; that is accepted. To keep a long fade from lingerin
 stays nearly clear and rises late.
 
 **The Field Exit on a live Run is a Return.** It ends the Run with everything kept, as the ToTown button's
-Recall does today. Retreat (Auto-Recall renamed) is the same walk out, made by the hero.
+Recall does today. Auto-Recall goes: the hero never leaves a Run on his own, so a Run ends only by a
+Return or a Death.
 
 **Walking speed.** The hero's `MovementSpeed` stat, through the arena's canvas units per arena unit, so a
 walk and a fight move at one pace and faster boots walk faster in Town too. `SimSpeed` is ignored: Town has
@@ -109,21 +110,20 @@ Save & Exit selects Back in Town too, because a Town ground (#285) would be lost
    while the enemies he left fade away.
 8. As a player, I click the Field Exit during a Run, the Run ends with everything kept, and I watch my hero
    walk out while the Field map fades; in Town he stands at the Town Exit.
-9. As a player, when my hero Retreats he walks out the same way.
-10. As a player, my hero walks faster when his movement speed is higher.
-11. As a player, pausing freezes the fight but not a hero who is walking.
-12. As a player, when my hero dies I see him fall and the last hit hang in the air before a notice tells me
+9. As a player, my hero walks faster when his movement speed is higher.
+10. As a player, pausing freezes the fight but not a hero who is walking.
+11. As a player, when my hero dies I see him fall and the last hit hang in the air before a notice tells me
     where I died, what I lost and how to get my bag back.
-13. As a player, I press Enter or Esc on the Death notice, or click Respawn, and I am back in Town at the
+12. As a player, I press Enter or Esc on the Death notice, or click Respawn, and I am back in Town at the
     Waypoint with full Health.
-14. As a player, my Health globe stays empty until I Respawn.
-15. As a player, when I go back to the Field I see my corpse where I fell, and Sending there picks my bag
+13. As a player, my Health globe stays empty until I Respawn.
+14. As a player, when I go back to the Field I see my corpse where I fell, and Sending there picks my bag
     up.
-16. As a player, if I quit at the Death notice, I come back alive and lost what the Death cost, once.
-17. As a player, a corpse from an older save still shows, at its Location.
-18. As a player, pressing Enter on any popup does the safe thing: deleting a hero or leaving with loot on
+15. As a player, if I quit at the Death notice, I come back alive and lost what the Death cost, once.
+16. As a player, a corpse from an older save still shows, at its Location.
+17. As a player, pressing Enter on any popup does the safe thing: deleting a hero or leaving with loot on
     the ground needs a deliberate click.
-19. As a player, a long Minimap crossfade shows the map I am leaving until late, then switches quickly.
+18. As a player, a long Minimap crossfade shows the map I am leaving until late, then switches quickly.
 
 ## Implementation Decisions
 
@@ -135,14 +135,19 @@ Save & Exit selects Back in Town too, because a Town ground (#285) would be lost
   with `InExpo` both ways. Bumped through `dev/bump-utility.sh`.
 - A hero figure component per map (one scene object each, never pooled) owns Travel: a target point, a
   speed read from the hero, and arrival. The Field figure switches to drawing `HeroPosition` through
-  `ArenaProjection` once it has arrived and an Encounter is bound, and back to Travel on a Relocate,
-  Return or Retreat. `EnemyArena` stops binding the hero figure.
+  `ArenaProjection` once it has arrived and an Encounter is bound, and back to Travel on a Relocate or a
+  Return. `EnemyArena` stops binding the hero figure.
 - Travel targets are scene anchors: each Town Stop toggle, both Exits, the Waypoint, and each Location's
   Origin anchor. Nothing in the sim reads them (ADR-0018 is unchanged inside an Encounter).
-- Rename in code to the settled terms: `RunState.Recall` becomes `Return`, Auto-Recall and
-  `RecallRequested` become Retreat. The Town Portal spec reuses the name Recall for the new action.
-- `RunPhasePanel` no longer brings the Town face up on a Death; Respawn does. A Return and a Retreat still
-  bring it up through the phase change, with the Field figure walking to the Field Exit during the fade.
+- `RunState.Recall` is renamed `Return`; the Town Portal spec reuses the name Recall for the new action.
+- Auto-Recall is deleted, not renamed: the retreat-health and recall-bag-fill sliders
+  (`BehaviourSlidersPanel.retreatHealthSlider` / `recallBagFillSlider`, wired in `Example.unity`),
+  `HeroBehaviour.RetreatHealthFraction` / `RecallBagFillFraction` with `ShouldRecallForHealth` /
+  `ShouldRecallForBagFull`, their `GameConfig` defaults and Hero save fields, the Brain's Recall Intent and
+  `RecallRequested`. The bag gauge (`IBagGauge.FillFraction`) and its indicator (`BagFillImage`) stay. An
+  old save's two fields are ignored on load.
+- `RunPhasePanel` no longer brings the Town face up on a Death; Respawn does. A Return still brings it up
+  through the phase change, with the Field figure walking to the Field Exit during the fade.
 - The Death beat's slow-down is a transient factor in `SimulationService.SimDelta`, set by the Death and
   cleared by Respawn or a hero load, never by the `SimSpeed` slider.
 - `RunSettlement` stops reviving; `ReviveIfDown` moves to Respawn and to hero load.

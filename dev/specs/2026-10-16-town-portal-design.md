@@ -2,7 +2,7 @@
 
 Date: 2026-10-16
 Status: Settled in the 2026-10-16 hero-travel grilling. Builds on `dev/specs/2026-10-16-hero-travel-design.md`
-(Travel, the Exits, the Waypoint, Return and Retreat); land that first.
+(Travel, the Exits, the Waypoint, Return, and Auto-Recall gone); land that first.
 
 ## Problem Statement
 
@@ -13,15 +13,14 @@ end of the Run.
 
 ## Decisions
 
-**Three ways out of the Field, with different costs.**
+**Two ways out of the Field, with different costs.**
 
 | Action | How | Run | Encounter | Cost |
 | --- | --- | --- | --- | --- |
 | **Return** | the Field Exit, on a live Run | ends, everything kept | gone | the fight restarts next time |
-| **Retreat** | the hero, on a slider trigger | ends, as a Return | gone | the same; Retreat is expected to go |
 | **Recall** | `B`, the HUD button, right-click a Portal Scroll | **held** | frozen as it was | one **Portal Scroll** |
 
-A Retreat walks out on purpose, with no portal. It costs a Location restart.
+The hero never leaves on his own: Auto-Recall is gone (hero-travel spec).
 
 **A Recall holds the Run (ADR-0022).** It spends one Portal Scroll from the Inventory and opens a **Town
 Portal**. A portal sprite appears beside the Field figure, the figure moves into it while the Field map
@@ -42,8 +41,7 @@ the rest still Completes the Location.
 - A click on **any Location**, the portal's own included, is a **Relocate**. The held Encounter is
   discarded, a fresh Population is rolled, and the portal closes. That is the cost of walking out instead
   of taking the portal.
-- A held Run ends only from the Field: by a Return, a Retreat or a Death after it is resumed or
-  Relocated. Quitting also ends it (below).
+- A held Run ends only from the Field: by a Return or a Death after it is resumed or Relocated. Quitting also ends it (below).
 
 **The Run's state and where the hero is are two things.** The Run is none, **live** (the simulation ticks)
 or **held**. That decides only the Run's rules: what Send, Relocate, Recall and Return may do, whether the
@@ -51,7 +49,7 @@ simulation ticks, and when the hero saves. What can be opened follows the map th
 
 | Scope | Interactions |
 | --- | --- |
-| Hero, on both maps | Inventory, Equipment, stat sheet, quest journal |
+| Hero, on both maps | Inventory, Equipment, stat sheet; the quest log later (M2, a Side Panel) |
 | **Town map** | Stash, Vendor, Healer, the Town ground |
 | **Field map** | the **Combat Panel**: behaviour sliders, enemy health bars, encounter stats, the ground tab |
 
@@ -99,15 +97,14 @@ what it does today.
 8. As a player, with a portal open I can walk out to the Field map and back without losing the portal.
 9. As a player, with a portal open, clicking a Location starts a fresh fight there and closes the portal.
 10. As a player, clicking the Field Exit during a live Run ends it and I walk home; the fight is gone.
-11. As a player, when my hero Retreats he walks home instead of opening a portal, and the fight is gone.
-12. As a player, clearing the rest of a Location after a portal trip still Completes it.
-13. As a player, opening and closing my bag in the Field brings the Combat Panel back by itself.
-14. As a player, the Combat Panel's ground tab is empty unless I am in a live Run at the Location.
-15. As a player, coins I left on the Town ground are still there when I come back through a portal.
-16. As a player, if I quit with a portal open, the portal is still there next time and takes me to a fresh
+11. As a player, clearing the rest of a Location after a portal trip still Completes it.
+12. As a player, opening and closing my bag in the Field brings the Combat Panel back by itself.
+13. As a player, the Combat Panel's ground tab is empty unless I am in a live Run at the Location.
+14. As a player, coins I left on the Town ground are still there when I come back through a portal.
+15. As a player, if I quit with a portal open, the portal is still there next time and takes me to a fresh
     fight at that Location.
-17. As a player, the Healer always has Portal Scrolls to sell, and I find them as loot.
-18. As a new player, I start with no scrolls but enough coins to buy a few.
+16. As a player, the Healer always has Portal Scrolls to sell, and I find them as loot.
+17. As a new player, I start with no scrolls but enough coins to buy a few.
 
 ## Implementation Decisions
 
@@ -125,7 +122,6 @@ what it does today.
   (no Run) falls through to `Send`, so it needs no path of its own. A selection that mirrors the Run's
   Location instead of commanding it would fit ADR-0013 better, but it also moves `EnemyArena`'s anchor,
   `CorpseMarker` and the group's reset, so it is not part of this.
-- The Brain's Recall Intent becomes a Retreat Intent: it requests a Return, never a portal.
 - `InventoryContextState`'s reachability reads the map that is up, not the Run phase. A `Field` side of
   that state replaces `IsReachableInField`. The coin-overflow work (`integration/coin-overflow`) already
   makes `Ground` reachable in Town; reconcile with it.
@@ -148,7 +144,7 @@ what it does today.
 Which events close a Town Portal, beyond being used and a Location click while held:
 
 - A Send from the Field Exit after a relaunch, while a saved portal is still open.
-- A Return, a Retreat or a Death in a later Run, while a portal from an earlier one is still open.
+- A Return or a Death in a later Run, while a portal from an earlier one is still open.
 - Carrying open portals across Runs on purpose: several saved portal links instead of one.
 
 And:
@@ -160,6 +156,5 @@ And:
 
 - Free Recalls at waypoints in Locations (Icebox: "Waypoints at Locations").
 - Identification scrolls.
-- Removing Retreat.
 - Stock that never runs out (Icebox), so a Portal Scroll could be bought without emptying its slot.
 - Saving the Encounter so a quit could resume it.

@@ -35,6 +35,6 @@ spawn delay. Deferred: it is the fix if a walk in gets struck.
 ## Consequences
 
 - The Field figure has two modes, walking on its own and drawing the simulation's position, and a
-  Relocate, Return or Retreat switches it back to walking.
+  Relocate or a Return switches it back to walking.
 - Tests of the rules never wait for a figure; Travel is tested on its own, without a simulation.
 - A hero can be struck before his figure arrives if a walk in ever outlasts the spawn delay.

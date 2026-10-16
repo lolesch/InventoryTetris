@@ -167,7 +167,7 @@ _Avoid_: frag, takedown, defeat
 Loot lying on the ground at a Location — shed by a defeated enemy — not yet picked up.
 A recovered **Corpse** is never laid out as Drops. Drops accumulate as enemies
 fall, never as one bundle at the end; a Drop still on the ground when the Run ends is
-gone, on a Return, a Retreat or a Death alike. The ground is a stash-sized grid: a Drop lies at the cell it
+gone, on a Return or a Death alike. The ground is a stash-sized grid: a Drop lies at the cell it
 landed in and never moves, and when a new package does not fit the oldest ones are removed
 until it does (one larger than the whole grid is refused). By default a Drop lies in the
 **Ground Items List** until the player clicks it; the click goes through the player's acquisition
@@ -255,13 +255,13 @@ shared across heroes would be Account state; none is yet (ADR-0014 leaves it ope
 _Avoid_: profile, save file, user
 
 **Behaviour Profile**:
-The seven sliders the player sets on the **Hero** — how it fights, whom it picks and when it Retreats.
+The four sliders the player sets on the **Hero** — how it fights, whom it picks, what it picks up and how fast the fight runs.
 Held by the Hero and saved with it, so a hero keeps its tuning between Sessions. Live
 during a Run: the player adjusts it, the hero never decides it.
 _Avoid_: settings, preset, loadout; "config" (that is the authored `GameConfig`)
 
 **Player**:
-The person at the keyboard. They choose the Location, tune the six sliders, judge when to
+The person at the keyboard. They choose the Location, tune the four sliders, judge when to
 Recall or Return, and sort the bag in Town. Every player action is a decision *about* the hero,
 never a move *as* it — that is the whole loop.
 _Avoid_: user, you; "hero" for the one making the calls
@@ -299,7 +299,7 @@ _Avoid_: Hero State (retired: it lumped the hero's own things in with these); wo
 overworld (see **Field**); Session (the span of play, which outlives it)
 
 **Run**:
-The unit the loop turns on: from a **Send** until a **Return**, a **Retreat** or the hero's
+The unit the loop turns on: from a **Send** until a **Return** or the hero's
 **Death**, across every **Encounter** and **Relocate** in between. It is **live** while its
 Encounter runs, or **held** while the hero is in Town through a **Recall**, its Encounter
 frozen as it was; with no Run there is neither. The Run's state decides only the Run's own
@@ -337,7 +337,7 @@ is spent and the last enemy is down. XP, Loot Drops and coin Piles all arrive pe
 it ran — the clear pays nothing out, and a Run driven off mid-Encounter forfeits nothing.
 A one-second beat, then the next builds. The first Encounter of a Run opens after one
 spawn delay (the Location's `SpawnInterval ± SpawnJitter`), not at the moment of Send. A Location
-runs Encounters endlessly at a fixed difficulty; only a Return, a Retreat or Death ends the Run
+runs Encounters endlessly at a fixed difficulty; only a Return or Death ends the Run
 (issue-#18 `/prototype` pass 2, ADR-0010).
 _Avoid_: battle, fight, combat, room; wave (a Pack is one arrival *within* an Encounter)
 
@@ -370,7 +370,8 @@ _Avoid_: return (that ends the Run), teleport, port, extract, flee, escape
 The player action that ends a Run with everything earned so far kept: a click on the
 **Field Exit** while the Run is live. The hero walks out, and the Encounter he left is gone.
 On a held Run the Field Exit only brings the **Town map** back.
-_Avoid_: recall (that holds the Run), retreat (that is the hero's), extract, flee
+_Avoid_: recall (that holds the Run), Auto-Recall (retired: the hero never leaves a Run on his own),
+retreat, extract, flee
 
 **Town Portal**:
 The link a **Recall** opens, from where the hero stood to the **Waypoint**, open until it is
@@ -394,15 +395,6 @@ nothing is settled. Ground Drops at the Location left behind are gone, as at the
 Run. A Location clicked while the Run is held is a Relocate too, even the held one: the held
 Encounter is discarded and the **Town Portal** closes.
 _Avoid_: switch, travel, hop; "Return and re-Send" (that is what Relocate replaced)
-
-**Retreat**:
-A **Return** the hero makes on its own, because a behaviour slider the player set before
-or during the Run said to — health dropping to the retreat fraction, or the bag filling
-to the recall fraction. Same result as a clicked Return: everything kept, no Death penalty,
-and the Encounter is gone, since the hero walks out instead of opening a **Town Portal**. It
-is still the player's decision, made in advance; the hero never decides anything. Expected
-to go: it takes too much from the player.
-_Avoid_: Auto-Recall (retired: a Recall now holds the Run), auto-retreat, bail, panic button
 
 **Death**:
 The other way a Run ends — the hero is downed in the Field and returns to Town under a
@@ -469,7 +461,7 @@ _Avoid_: AI (a Brain may be a player), controller, driver, behaviour (that is th
 **Intent**:
 What a **Brain** asks of its fighter in one tick: **Approach** a target, **Strike** a target,
 **Cast** (aimed where the Encounter finds the densest cluster, as it fires), or - for the hero -
-**Walk** to a point or request a **Retreat**. An Approach names its target, not a point, so it
+**Walk** to a point. An Approach names its target, not a point, so it
 follows a target that moves; a Walk stops on its point. The Encounter carries an
 Intent out only when the rules allow it (in reach, off cooldown, enough Resource); an Intent it
 refuses costs nothing.

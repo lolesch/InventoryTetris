@@ -13,8 +13,8 @@ his Run waits at a Location to be resumed. Both jobs of `InField` break at once.
 
 1. **Recall holds the Run; Return ends it.** A Recall spends a Portal Scroll and holds the Run: the
    Encounter, its enemies, spawn timer and ground freeze, nothing settles, and the Town Portal resumes it
-   exactly as it was. A Return (the Field Exit on a live Run) and a Retreat end it as Recall used to, and
-   the Encounter is gone. The word Recall moves to the new action; the old one is Return.
+   exactly as it was. A Return (the Field Exit on a live Run) ends it as Recall used to, and the Encounter
+   is gone. The word Recall moves to the new action; the old one is Return.
 2. **A Run is none, live or held.** That state decides only the Run's rules: Send, Relocate, Recall,
    Return, ticking, saving. A held Run ends only from the Field (after a resume or a Relocate) or by
    quitting.
@@ -42,6 +42,7 @@ Hero save. Rejected; a fresh Encounter after a relaunch is the cost.
 - `RunPhase` gains a member and loses its panel-locking role. `InventoryContextState`'s Field
   reachability reads the map.
 - The menus' simulation freeze is renamed, so "held" means only the Run's state.
-- The Brain's Recall Intent is a Retreat Intent: a hero never opens a portal on its own.
+- The hero never leaves a Run on his own (Auto-Recall is gone, hero-travel spec), so a Run ends by a
+  Return or a Death, and never opens a portal by itself.
 - The Hero save carries one portal flag; which events close a portal is left to triage (spec, Open
   questions).
