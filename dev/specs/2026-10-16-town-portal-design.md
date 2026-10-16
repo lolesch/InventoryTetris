@@ -27,7 +27,9 @@ Portal**. A portal sprite appears beside the Field figure, the figure moves into
 fades, and the Town map comes up with the figure at the **Waypoint** beside the portal's other end. The Run
 is **held**: the Encounter, its enemies, its spawn timer and its ground are frozen as they were. Nothing
 settles. A Recall is refused in Town (no live Run), while the hero is down, during the death beat, and
-with no Portal Scroll in the Inventory. The Stash does not count.
+with no Portal Scroll in the Inventory. The Stash does not count. A **Complete** Location (the Location
+unlocks spec, #294) still allows a Recall: a Return there is free and a Recall costs a scroll, which is a
+choice. The Run is held in its Complete phase, and the resume lands back in the emptied, Complete Location.
 
 **The portal resumes the Run.** A click on the Town portal, or on the portal's marker on the Field map,
 crossfades to the Field map with the figure where it stood. The Run is live again exactly where it was held,
@@ -98,13 +100,15 @@ what it does today.
 9. As a player, with a portal open, clicking a Location starts a fresh fight there and closes the portal.
 10. As a player, clicking the Field Exit during a live Run ends it and I walk home; the fight is gone.
 11. As a player, clearing the rest of a Location after a portal trip still Completes it.
-12. As a player, opening and closing my bag in the Field brings the Combat Panel back by itself.
-13. As a player, the Combat Panel's ground tab is empty unless I am in a live Run at the Location.
-14. As a player, coins I left on the Town ground are still there when I come back through a portal.
-15. As a player, if I quit with a portal open, the portal is still there next time and takes me to a fresh
+12. As a player, after a Location Completes I can still Recall to heal or sell, and the portal brings me
+    back to the emptied, Complete Location.
+13. As a player, opening and closing my bag in the Field brings the Combat Panel back by itself.
+14. As a player, the Combat Panel's ground tab is empty unless I am in a live Run at the Location.
+15. As a player, coins I left on the Town ground are still there when I come back through a portal.
+16. As a player, if I quit with a portal open, the portal is still there next time and takes me to a fresh
     fight at that Location.
-16. As a player, the Healer always has Portal Scrolls to sell, and I find them as loot.
-17. As a new player, I start with no scrolls but enough coins to buy a few.
+17. As a player, the Healer always has Portal Scrolls to sell, and I find them as loot.
+18. As a new player, I start with no scrolls but enough coins to buy a few.
 
 ## Implementation Decisions
 
@@ -137,7 +141,9 @@ what it does today.
   change as above. The starting coins are a `GameConfig` value.
 - Tests: Recall refusals and the scroll spent, held-Run freezing (no tick advances the Encounter), resume
   continuity (same enemies, same Population progress), Relocate from held, Field Exit on live vs held,
-  context reachability by map, the save flag round-trip, and the Restock guarantee, as EditMode tests.
+  context reachability by map, the save flag round-trip, and the Restock guarantee, as EditMode tests. Recall from the
+  Complete phase and its resume into the emptied Location are tested by whichever of the Recall ticket and
+  #331 (the Population and the Complete phase) lands second.
 
 ## Open questions (for the user to triage)
 
