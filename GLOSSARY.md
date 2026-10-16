@@ -153,7 +153,7 @@ The player's spendable money, wherever the coins physically sit. Currently not a
 
 **Loot**:
 The items and coins a kill sheds. It drops live during a Run, **per kill**, not as a
-bundle handed over on Recall. XP is *not* Loot — it is delivered per kill too, but
+bundle handed over when the Run ends. XP is *not* Loot — it is delivered per kill too, but
 straight to the hero rather than as a Drop.
 _Avoid_: haul, spoils, bounty, take, rewards; XP (a separate reward, delivered straight to the hero)
 
@@ -167,7 +167,7 @@ _Avoid_: frag, takedown, defeat
 Loot lying on the ground at a Location — shed by a defeated enemy — not yet picked up.
 A recovered **Corpse** is never laid out as Drops. Drops accumulate as enemies
 fall, never as one bundle at the end; a Drop still on the ground when the Run ends is
-gone, on Recall or Death alike. The ground is a stash-sized grid: a Drop lies at the cell it
+gone, on a Return, a Retreat or a Death alike. The ground is a stash-sized grid: a Drop lies at the cell it
 landed in and never moves, and when a new package does not fit the oldest ones are removed
 until it does (one larger than the whole grid is refused). By default a Drop lies in the
 **Ground Items List** until the player clicks it; the click goes through the player's acquisition
@@ -236,7 +236,7 @@ One file holding one **Hero**, named `Name_id`: the hero's name, for the eye, an
 that never changes, which is the identity (a rename moves the file, never the id), and nothing else.
 It holds the hero's display name, the id of the template it was built from (`HeroData`: its icon and
 class name), level, the current Health, Resource, Shield and
-Experience, its total **Kills** (banked when a **Run** settles), its **Behaviour Profile**, its selected **Location** (by id), its **Corpse** if
+Experience, its total **Kills** (banked when a **Run** settles), its **Behaviour Profile**, its selected **Location** (by id), whether its **Town Portal** is open, its **Corpse** if
 it has one, and the packages in its **Equipment**, **Inventory** and **Stash** by cell
 (the **Wallet** is coins in the Inventory, so it saves with it). It never holds the **World**
 (**Supply**, the Sold container, the **Run** and its ground **Drops**, the **Inventory
@@ -244,7 +244,7 @@ Context**), authored data (the item catalog, `GameConfig`), or a derived stat: a
 from the template, level and gear on load.
 A loaded hero is the default template with the file restored over it, so a file is never a
 different shape from a new hero. It is first written when the player starts the game with a new hero
-(a **Draft**), then when a **Run** has settled and on quitting, never while a Run is in the Field.
+(a **Draft**), then when a **Run** has settled and on quitting, never while a Run is live or held.
 _Avoid_: save game, profile, character file; "save" for the **Session** (the Hero saves,
 the Session holds none)
 
@@ -255,14 +255,14 @@ shared across heroes would be Account state; none is yet (ADR-0014 leaves it ope
 _Avoid_: profile, save file, user
 
 **Behaviour Profile**:
-The seven sliders the player sets on the **Hero** — how it fights, whom it picks and when it Auto-Recalls.
+The seven sliders the player sets on the **Hero** — how it fights, whom it picks and when it Retreats.
 Held by the Hero and saved with it, so a hero keeps its tuning between Sessions. Live
 during a Run: the player adjusts it, the hero never decides it.
 _Avoid_: settings, preset, loadout; "config" (that is the authored `GameConfig`)
 
 **Player**:
 The person at the keyboard. They choose the Location, tune the six sliders, judge when to
-Recall, and sort the bag in Town. Every player action is a decision *about* the hero,
+Recall or Return, and sort the bag in Town. Every player action is a decision *about* the hero,
 never a move *as* it — that is the whole loop.
 _Avoid_: user, you; "hero" for the one making the calls
 
@@ -271,8 +271,9 @@ _Avoid_: user, you; "hero" for the one making the calls
 **Session**:
 The span of play between app start and quit. It contains many Runs and holds one
 **Hero** and its **World** at a time. The Hero is what persists: it saves and resumes
-`InTown` on the next launch; the World is never saved. A Run never spans Sessions:
-quitting mid-Run banks what the hero already picked up and discards the rest. The
+in Town on the next launch; the World is never saved. A Run never spans Sessions:
+quitting mid-Run banks what the hero already picked up and discards the rest, and a Run
+held by a **Recall** is quit the same way, leaving only its **Town Portal** open. The
 Session outlives both — loading a hero swaps the Hero and the World together and the
 Session carries on. What saves is the **Hero**, as a **Hero save**; the **Account** above
 it only lists the heroes and remembers the last one chosen, and a Stash or Wallet shared
@@ -298,19 +299,25 @@ _Avoid_: Hero State (retired: it lumped the hero's own things in with these); wo
 overworld (see **Field**); Session (the span of play, which outlives it)
 
 **Run**:
-One trip from Town to a Location and back — the unit the loop turns on. It ends in a
-Recall or the hero's Death. Its two states are named `InTown` and `InField`.
+The unit the loop turns on: from a **Send** until a **Return**, a **Retreat** or the hero's
+**Death**, across every **Encounter** and **Relocate** in between. It is **live** while its
+Encounter runs, or **held** while the hero is in Town through a **Recall**, its Encounter
+frozen as it was; with no Run there is neither. The Run's state decides only the Run's own
+rules (what Send, Relocate, Recall and Return may do, whether the simulation ticks, when the
+hero saves), never what can be opened: that follows the **Town map** or **Field map**.
 _Avoid_: expedition, sortie, mission, session (a Session is the whole playtime, not one
 trip); "run" here is the loot trip, not a test run
 
 **Field**:
-Everything on the Location side of a Run, as opposed to Town — "the hero is in the
-field" means a Run is underway.
+Everything on the Location side, as opposed to Town: where the hero is while the **Field map**
+is up. Being in the Field does not mean a Run is live: the hero stands at the **Field Exit**
+with no Run on the way out, and with a held one after a **Recall**.
 _Avoid_: the wild, outside, overworld, world map
 
 **Town**:
-The safe hub every Run starts and ends in, and where inventory management has its full
-tools. A Run *state*, never a Location.
+The safe hub, where the hero is while the **Town map** is up and where inventory management
+has its full tools. A place, not a Run state: a Run held by a **Recall** is still a Run while
+the hero stands in Town. Never a Location.
 _Avoid_: base, camp, hub, hideout; town as a map destination
 
 **Location**:
@@ -330,7 +337,7 @@ is spent and the last enemy is down. XP, Loot Drops and coin Piles all arrive pe
 it ran — the clear pays nothing out, and a Run driven off mid-Encounter forfeits nothing.
 A one-second beat, then the next builds. The first Encounter of a Run opens after one
 spawn delay (the Location's `SpawnInterval ± SpawnJitter`), not at the moment of Send. A Location
-runs Encounters endlessly at a fixed difficulty; only Recall or Death ends the Run
+runs Encounters endlessly at a fixed difficulty; only a Return, a Retreat or Death ends the Run
 (issue-#18 `/prototype` pass 2, ADR-0010).
 _Avoid_: battle, fight, combat, room; wave (a Pack is one arrival *within* an Encounter)
 
@@ -348,36 +355,69 @@ type. The knob that makes two Locations of the same source level feel different.
 _Avoid_: spawn table, wave schedule, spawner, timeline
 
 **Send**:
-The player action that starts a Run — choose a Location, commit the hero. Transitions
-`InTown → InField`.
+The player action that starts a Run — choose a Location on the **Field map**, commit the
+hero. The Run is live at once; the hero figure **Travels** there afterwards.
 _Avoid_: deploy, dispatch, embark, launch
 
 **Recall**:
-The player action that ends a Run with everything earned so far kept. Transitions
-`InField → InTown`.
-_Avoid_: retreat, extract, return, flee, escape
+The player action that takes the hero to Town mid-Run without ending it: it spends a
+**Portal Scroll** from the Inventory and opens a **Town Portal**, and the Run is held, its
+Encounter frozen, until the portal takes him back. Refused in Town, while the hero is down,
+and with no Portal Scroll in the Inventory. A dedicated button and key, as in a MOBA's recall.
+_Avoid_: return (that ends the Run), teleport, port, extract, flee, escape
+
+**Return**:
+The player action that ends a Run with everything earned so far kept: a click on the
+**Field Exit** while the Run is live. The hero walks out, and the Encounter he left is gone.
+On a held Run the Field Exit only brings the **Town map** back.
+_Avoid_: recall (that holds the Run), retreat (that is the hero's), extract, flee
+
+**Town Portal**:
+The link a **Recall** opens, from where the hero stood to the **Waypoint**, open until it is
+used. Used from Town, or from its marker on the **Field map**, it takes the hero back and
+resumes the held Run where it was, and closes. A click on any **Location** instead is a
+**Relocate** and closes it. Saved with the hero, so a portal left open survives a quit; the
+Run it held does not, so a portal used after a relaunch opens a fresh Encounter there.
+_Avoid_: portal (alone, for the scroll), gate, teleporter, waypoint (that is where it opens)
+
+**Portal Scroll**:
+The consumable a **Recall** spends, one per Recall, counted from the Inventory only. Sold by
+the Healer, which always stocks some, and dropped as **Loot**; a new hero starts with none but
+with the coins to buy a few.
+_Avoid_: town scroll, recall scroll, teleport scroll, TP
 
 **Relocate**:
 The player action that moves a live Run to another Location without ending it — the Run
-stays `InField`, the current Encounter stops and a fresh one opens at the new Location,
-and everything the Run has earned so far carries on into its one result. Not a Recall:
-nothing is settled and the hero never passes through Town. Ground Drops at the Location
-left behind are gone, as at the end of a Run.
-_Avoid_: switch, travel, hop; "Recall and re-Send" (that is what Relocate replaced)
+stays live, the current Encounter stops and a fresh one opens at the new Location,
+and everything the Run has earned so far carries on into its one result. Not a Return:
+nothing is settled. Ground Drops at the Location left behind are gone, as at the end of a
+Run. A Location clicked while the Run is held is a Relocate too, even the held one: the held
+Encounter is discarded and the **Town Portal** closes.
+_Avoid_: switch, travel, hop; "Return and re-Send" (that is what Relocate replaced)
 
-**Auto-Recall**:
-A Recall the hero performs on its own, because a behaviour slider the player set before
+**Retreat**:
+A **Return** the hero makes on its own, because a behaviour slider the player set before
 or during the Run said to — health dropping to the retreat fraction, or the bag filling
-to the recall fraction. Same transition and same result as a clicked Recall: everything
-kept, no penalty. It is still the player's decision, made in advance; the hero never
-decides anything.
-_Avoid_: auto-retreat, bail, panic button, auto-flee
+to the recall fraction. Same result as a clicked Return: everything kept, no Death penalty,
+and the Encounter is gone, since the hero walks out instead of opening a **Town Portal**. It
+is still the player's decision, made in advance; the hero never decides anything. Expected
+to go: it takes too much from the player.
+_Avoid_: Auto-Recall (retired: a Recall now holds the Run), auto-retreat, bail, panic button
 
 **Death**:
 The other way a Run ends — the hero is downed in the Field and returns to Town under a
 penalty: lost XP, a fee off banked currency, and the bag set aside as a Corpse.
-Equipped gear is never touched; not a game-over.
+Equipped gear is never touched; not a game-over. The penalty is settled the moment the hero
+goes down; the player sees him fall, then is told what was lost and where the Corpse lies, and
+stays in the Field until they **Respawn**.
 _Avoid_: defeat, loss, game over, fail, wipe
+
+**Respawn**:
+The player acknowledging a **Death**: the hero is revived at full Health and Resource and the
+Minimap crossfades back to Town, the **Hero figure** standing at the **Waypoint**. It decides
+nothing — the Death was settled when the hero went down — so it is the only way on from the
+Death notice, and backing out of the notice is a Respawn too.
+_Avoid_: revive, resurrect, continue, retry
 
 **Healer**:
 A **Town Stop** that instantly refills the hero's Health and Resource each time it is
@@ -429,7 +469,7 @@ _Avoid_: AI (a Brain may be a player), controller, driver, behaviour (that is th
 **Intent**:
 What a **Brain** asks of its fighter in one tick: **Approach** a target, **Strike** a target,
 **Cast** (aimed where the Encounter finds the densest cluster, as it fires), or - for the hero -
-**Walk** to a point or request a **Recall**. An Approach names its target, not a point, so it
+**Walk** to a point or request a **Retreat**. An Approach names its target, not a point, so it
 follows a target that moves; a Walk stops on its point. The Encounter carries an
 Intent out only when the rules allow it (in reach, off cooldown, enough Resource); an Intent it
 refuses costs nothing.
@@ -550,13 +590,45 @@ _Avoid_: resource reserve, mana gate, burst threshold
 **Minimap**:
 The centre-screen element that always shows. Two visual states — Town and Field — each
 with its own background art and button set. Drives panel open/close and Run transitions.
-_Avoid_: world map, compass, hud map
+Its two sides are the **Town map** and the **Field map**: which one is up is where the hero is,
+and what can be opened follows it — the Town Stops on the Town map, the **Combat Panel** and
+the ground on the Field map, the hero's own panels on both — never the Run's state.
+_Avoid_: world map (the **World** is the per-hero state that never saves), compass, hud map
+
+**Exit**:
+The button that leaves one side of the **Minimap** for the other, named for the side it is on:
+the **Town Exit** (labelled To Fields) and the **Field Exit** (labelled To Town). A click on it
+walks the **Hero figure** there and starts the crossfade at once, which takes input away until
+the other side is up. The two Exits are not at the same place on screen. The Field Exit on a
+live Run is a **Return**.
+_Avoid_: gate, door, portal, entrance; "ToFields exit" / "ToTown exit" (say Town Exit / Field Exit)
+
+**Waypoint**:
+The point in Town where the **Hero figure** stands when it has not walked in — on entering the
+game with **Play**, after a hero load and after a **Respawn** — and where a **Town Portal**
+opens. After a **Return** the hero figure stands at the **Town Exit** instead, having come in
+through it.
+_Avoid_: spawn point, campfire, start, hearth
+
+**Hero figure**:
+The hero drawn on a side of the **Minimap**, one per side, each fading with its side. In the
+Field it stands where the **Arena** has the hero while an **Encounter** runs, and **Travels**
+otherwise.
+_Avoid_: avatar, token, icon (the Hero icon is a Location's marker)
+
+**Travel**:
+A **Hero figure**'s walk outside an **Encounter** — to a **Town Stop**, an **Exit** or a
+**Location** — at the hero's movement speed. It is only shown: what the click asked for has
+already happened, and nothing waits for the figure to arrive. A new click turns it toward the
+new place.
+_Avoid_: walk (a **Walk** is an **Intent** inside an Encounter), move, path
 
 **Town Stop**:
 One clickable point on the Minimap's Town side — the **Stash**, the **Vendor** and the
 **Healer** today. Exactly one is open at a time, each showing its own **Side Panel**. A
-Town Stop is not a **Location**: Locations are the Field destinations a Run is **Sent** to,
-and the hero never walks to a Town Stop — the player clicks it.
+Town Stop is not a **Location**: Locations are the Field destinations a Run is **Sent** to.
+A click opens the Stop at once; the hero figure walking there afterwards is only shown, and
+nothing waits on it.
 _Avoid_: location, node, station, shop, destination
 
 **Hero Panel**:
@@ -586,14 +658,17 @@ announced, and a panel that belongs to every context can never be the thing that
 ADR-0015) and read by the trade flow for **Quick Move**
 routing. Its members are not homogeneous and need not be — the Stash is the player's
 own storage, the Vendor is someone else's — because the only question the enum answers is
-which context is active. Run phase is not a member: only `None`, `Hero` and `Ground` are
-reachable in the field, so a Run *constrains* contexts rather than being one.
+which context is active. Neither the Run nor the map is a member: the map that is up
+*constrains* contexts. On the **Field map** only `None`, `Hero` and `Ground` are reachable,
+and `None` there shows the **Combat Panel**, so closing the hero's bag brings it back.
 _Avoid_: Side Panel Context (retired), trade target, active panel, current context
 
 **Combat Panel**:
-The left-side panel, visible only during `InField`. Holds behaviour sliders, enemy
-health bars and encounter stats. Fades in on Send, out on Recall/Death. Exclusive with
-the **Side Panels** by Run phase, not by a toggle group.
+The left-side panel of the **Field map**: shown there on the `None` and `Ground` contexts,
+derived like a **Side Panel**, never by the Run's state. Holds behaviour sliders, enemy
+health bars, encounter stats and the ground tab. The ground shows only while the Run is
+live; with no Run, or a held one, it is empty — a held Location's ground is seen by going
+back there.
 _Avoid_: debug panel, sim panel, fight panel
 
 **Ability Hotbar**:
@@ -669,9 +744,9 @@ back out of a screen and does nothing at the root.
 _Avoid_: Escape (that is the usual key), close, back
 
 **Save & Exit**:
-Leaving the **Session** for the Main Menu. In the Field it first ends the Run with a **Recall**, so
+Leaving the **Session** for the Main Menu. With a Run live or held it first ends it as a **Return** does, so
 everything the hero holds is kept and there is no Death penalty, then writes the **Hero save**. The
-player is asked to confirm only in the Field. It is the one action that tells the player their
+player is asked to confirm only while a Run is live or held. It is the one action that tells the player their
 progress is safe to leave.
 _Avoid_: quit, exit (the Main Menu's Exit closes the application), abandon
 
@@ -760,5 +835,13 @@ _Avoid_: calling a list, a text or a layout a display unless it is pushed or bou
 A screen opened over the one beneath it, which **Cancel** closes. It is shown either by being enabled, so it
 resets each time it opens (the hero name entry, the delete and Save & Exit confirmations, the entry notice, the
 **Pause Menu**), or as a **Panel**, so it fades (the **Changelog**). Each registers a Cancel layer while it is
-open: the **Pause Menu** on its own rank, every other Popup on the Popup rank.
+open: the **Pause Menu** on its own rank, every other Popup on the Popup rank. A Popup that asks for a choice opens with
+one button selected, which Enter presses: the yes option, unless it would delete or discard something,
+when it is the no option (the hero delete and **Save & Exit** select their way back).
+
+**Notice**:
+A **Popup** with exactly one button, because there is nothing to choose: the button is selected when
+it opens, and Enter and **Cancel** both press it. The **Death** notice (its button is **Respawn**) and
+the entry notice are Notices.
+_Avoid_: message box, alert, dialog, toast
 _Avoid_: modal, dialog, prompt, overlay (that names the scrim, and not every Popup has one)
