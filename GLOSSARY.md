@@ -223,8 +223,9 @@ _Avoid_: no-drop chance, miss, empty
 **Hero**:
 The single persistent character — the one that fights — and everything that is its own:
 its stats, level and XP, its lifetime count of **Kills**, its **Equipment**, **Inventory** and **Stash**, its **Wallet**,
-its **Behaviour Profile**, the **Location** it is set to be Sent to, and its **Corpse** if
-it has one. That is the whole of what saves, and nothing the hero does not own does.
+its **Behaviour Profile**, the **Location** it is set to be Sent to, the **Unlockables** it
+has **Completed**, and its **Corpse** if it has one. That is the whole of what saves, and
+nothing the hero does not own does.
 During a Run the player never controls it directly; they set its Behaviour Profile and
 its gear and it fights autonomously. One hero per Session; several can be saved and one
 loaded (which replaces the Hero and the **World**, see **Session**), chosen on the
@@ -236,7 +237,8 @@ One file holding one **Hero**, named `Name_id`: the hero's name, for the eye, an
 that never changes, which is the identity (a rename moves the file, never the id), and nothing else.
 It holds the hero's display name, the id of the template it was built from (`HeroData`: its icon and
 class name), level, the current Health, Resource, Shield and
-Experience, its total **Kills** (banked when a **Run** settles), its **Behaviour Profile**, its selected **Location** (by id), whether its **Town Portal** is open, its **Corpse** if
+Experience, its total **Kills** (banked when a **Run** settles), its **Behaviour Profile**, its selected **Location** (by id), whether its **Town Portal** is open,
+the **Unlockables** it has **Completed** (by id; every other **Unlock State** is derived from them), its **Corpse** if
 it has one, and the packages in its **Equipment**, **Inventory** and **Stash** by cell
 (the **Wallet** is coins in the Inventory, so it saves with it). It never holds the **World**
 (**Supply**, the Sold container, the **Run** and its ground **Drops**, the **Inventory
@@ -244,7 +246,8 @@ Context**), authored data (the item catalog, `GameConfig`), or a derived stat: a
 from the template, level and gear on load.
 A loaded hero is the default template with the file restored over it, so a file is never a
 different shape from a new hero. It is first written when the player starts the game with a new hero
-(a **Draft**), then when a **Run** has settled and on quitting, never while a Run is live or held.
+(a **Draft**), then when a **Run** has settled, on quitting, and the moment a **Location** or **Quest**
+**Completes**, even mid-Run (what a quit at that moment would write); otherwise never while a Run is live or held.
 _Avoid_: save game, profile, character file; "save" for the **Session** (the Hero saves,
 the Session holds none)
 
@@ -321,12 +324,13 @@ the hero stands in Town. Never a Location.
 _Avoid_: base, camp, hub, hideout; town as a map destination
 
 **Location**:
-One authored field destination the hero can be Sent to. It carries the source level, the
-loot table a Run there rolls against, which enemy **archetype** it **Packs**, and its
-**Roster** and **Spawn Profile**. Its source level is fixed, never scaled to the hero:
-Locations form a difficulty ladder a geared hero outgrows. Two for the MVP — Thornwood
-(low source level, Brute-packed, a bag run) and Ashfall (high, Skirmisher-packed, a
-gear-gated wall).
+One authored field destination the hero can be Sent to, once it is **Active**. It carries
+the source level, the loot table a Run there rolls against, which enemy **archetype** it
+**Packs**, its **Roster** and **Spawn Profile**, and its **Population**. An **Unlockable**: it is
+**Complete** for a hero once the hero clears its whole Population in one Send. Its source level
+is fixed, never scaled to the hero: Locations form a difficulty ladder a geared hero outgrows.
+Two for the MVP — Thornwood (low source level, Brute-packed, a bag run) and Ashfall (high,
+Skirmisher-packed, a gear-gated wall).
 _Avoid_: level, zone, area, stage, node, dungeon, map
 
 **Encounter**:
@@ -336,10 +340,18 @@ archetype in **Packs**, the other singly — pressure mounts, and it clears when
 is spent and the last enemy is down. XP, Loot Drops and coin Piles all arrive per kill as
 it ran — the clear pays nothing out, and a Run driven off mid-Encounter forfeits nothing.
 A one-second beat, then the next builds. The first Encounter of a Run opens after one
-spawn delay (the Location's `SpawnInterval ± SpawnJitter`), not at the moment of Send. A Location
-runs Encounters endlessly at a fixed difficulty; only a Return or Death ends the Run
-(issue-#18 `/prototype` pass 2, ADR-0010).
-_Avoid_: battle, fight, combat, room; wave (a Pack is one arrival *within* an Encounter)
+spawn delay (the Location's `SpawnInterval ± SpawnJitter`), not at the moment of Send. A Send
+fields the Location's **Population** of Encounters and no more; once the last one clears, the
+Location is **Complete** and the hero idles where it stands until the player Returns, Recalls or
+clicks another Location. Only Return or Death ends the Run.
+_Avoid_: battle, fight, combat, room; wave (a Pack is one arrival *within* an Encounter);
+"complete" for an Encounter (an Encounter **clears**; a Location **Completes**)
+
+**Population**:
+How many **Encounters** one Send to a **Location** fields: authored on the Location as a
+range with jitter, rolled fresh on every Send and Relocate, so a Location repopulates each
+time the hero goes there. The Location's size, in the sense of a map's size.
+_Avoid_: wave count, depth, floor count, map size
 
 **Roster**:
 The enemies one Encounter will field — authored on the Location as a `[min,max]` count
@@ -378,7 +390,7 @@ The link a **Recall** opens, from where the hero stood to the **Waypoint**, open
 used. Used from Town, or from its marker on the **Field map**, it takes the hero back and
 resumes the held Run where it was, and closes. A click on any **Location** instead is a
 **Relocate** and closes it. Saved with the hero, so a portal left open survives a quit; the
-Run it held does not, so a portal used after a relaunch opens a fresh Encounter there.
+Run it held does not, so a portal used after a relaunch Sends there with a fresh **Population**.
 _Avoid_: portal (alone, for the scroll), gate, teleporter, waypoint (that is where it opens)
 
 **Portal Scroll**:
@@ -389,7 +401,7 @@ _Avoid_: town scroll, recall scroll, teleport scroll, TP
 
 **Relocate**:
 The player action that moves a live Run to another Location without ending it — the Run
-stays live, the current Encounter stops and a fresh one opens at the new Location,
+stays live, the current Encounter stops and a fresh **Population** is rolled at the new Location,
 and everything the Run has earned so far carries on into its one result. Not a Return:
 nothing is settled. Ground Drops at the Location left behind are gone, as at the end of a
 Run. A Location clicked while the Run is held is a Relocate too, even the held one: the held
@@ -418,11 +430,51 @@ Its **Side Panel** shows its own **Supply** of consumables, bought like the Vend
 has a **Sold tab** of its own.
 _Avoid_: shrine, fountain, well
 
+## Progression
+
+**Unlockable**:
+Anything a hero opens by progressing: every **Location**, every **Quest**, and a **Town Stop**
+only when one is authored as locked (the Vendor; the Stash and the Healer are always open and are
+not Unlockables). Each has an **Unlock State** per hero, and a Location or Quest names the
+Unlockables it **Unlocks**.
+_Avoid_: node, gate, content, feature
+
+**Unlock State**:
+Where an **Unlockable** stands for one hero: **Hidden**, **Locked**, **Active**, **Complete**,
+in that order, and it only ever moves forward. Hidden is not shown; Locked is shown but cannot
+be used, because something that Unlocks it is Active but has not reached the state it needs;
+Active can be used (a Location Sent to, a Quest worked on, a Town Stop opened); Complete is
+Active and done. "Active" in a rule means Active or Complete. Only Complete is saved; the
+other states follow from it.
+_Avoid_: unlocked, available, open, enabled, discovered (say Active); finished, done,
+cleared (say Complete)
+
+**Unlock**:
+The link from one **Unlockable** to another: when the first reaches **Active**, or reaches
+**Complete**, the second becomes Active. Authored on the first, the one that does the
+unlocking. An Unlockable listed by several becomes Active when any one of them gets there; an
+Unlockable no Unlock names is Active from the start.
+_Avoid_: requirement, prerequisite, dependency, parent (as a domain word)
+
+**Complete**:
+The last **Unlock State**: a **Location** whose whole **Population** the hero cleared in one
+Send, or a **Quest** whose objective was met while it was **Active**. Recorded on the hero at
+the moment it happens, never inferred later. A **Town Stop** never Completes.
+_Avoid_: full clear, cleared (for a Location), finished, done, beaten
+
+**Quest**:
+An authored **Unlockable** with one objective: another Unlockable reaching **Complete** while
+the Quest is **Active** — "Free the merchant" Completes when Thornwood does. It exists to
+Unlock things: Locations, Town Stops and further Quests. Only a Completion that happens while
+the Quest is Active counts, so a Quest that asks for something the hero did earlier asks for
+it again.
+_Avoid_: mission, task, objective (the objective is the Quest's condition), achievement
+
 ## Combat
 
 What happens inside an Encounter. Settled by the grilling of 2026-09-02 and the issue-#18
 `/prototype`, which ran twice (ADR-0010): fixed Roster, endless Encounters at fixed
-difficulty, **two enemy archetypes** (Brute / Skirmisher) with a Location Packing one,
+difficulty (since replaced by a **Population** per Send), **two enemy archetypes** (Brute / Skirmisher) with a Location Packing one,
 XP settling per Encounter clear. The packed archetype decides which build a Location
 favours — single-target **physical** counters a Brute pack, area **magical** counters a
 Skirmisher swarm, **hybrid** is the safe middle that owns neither. Combat constants have
@@ -620,7 +672,8 @@ One clickable point on the Minimap's Town side — the **Stash**, the **Vendor**
 **Healer** today. Exactly one is open at a time, each showing its own **Side Panel**. A
 Town Stop is not a **Location**: Locations are the Field destinations a Run is **Sent** to.
 A click opens the Stop at once; the hero figure walking there afterwards is only shown, and
-nothing waits on it.
+nothing waits on it. A Town Stop authored as locked (the Vendor) is an **Unlockable** that never
+Completes, opened by a Quest or Location reaching a state; the others are simply open.
 _Avoid_: location, node, station, shop, destination
 
 **Hero Panel**:
