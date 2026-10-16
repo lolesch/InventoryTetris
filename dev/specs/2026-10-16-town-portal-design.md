@@ -116,6 +116,15 @@ what it does today.
 - A Recall is a `RunState` transition, live to held. It needs a Portal Scroll taken from the Inventory
   through a transaction, so a refused Recall spends nothing. A resume is held to live. A Relocate from
   held discards the frozen Encounter.
+- A resume selects the Location's toggle without re-Sending. `LocationToggle.OnToggle` reconciles with
+  the Run instead of always commanding it: if the Run is already live at its Location, it does nothing.
+  The resume calls `Run.Resume()` first, then `SyncToggle(true)` on that toggle, so the arena anchor (the
+  group's active member) and the highlight follow while the `OnToggle` this fires finds nothing to do. A
+  Location click while the Run is held is still a Relocate, because the guard covers only a live Run. A
+  click on the selected Location already stops in `AbstractToggle.Apply`. A portal used after a relaunch
+  (no Run) falls through to `Send`, so it needs no path of its own. A selection that mirrors the Run's
+  Location instead of commanding it would fit ADR-0013 better, but it also moves `EnemyArena`'s anchor,
+  `CorpseMarker` and the group's reset, so it is not part of this.
 - The Brain's Recall Intent becomes a Retreat Intent: it requests a Return, never a portal.
 - `InventoryContextState`'s reachability reads the map that is up, not the Run phase. A `Field` side of
   that state replaces `IsReachableInField`. The coin-overflow work (`integration/coin-overflow`) already
