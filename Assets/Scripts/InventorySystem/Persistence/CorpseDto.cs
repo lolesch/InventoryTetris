@@ -4,7 +4,7 @@ using ToolSmiths.InventorySystem.Items;
 namespace ToolSmiths.InventorySystem.Persistence
 {
     /// <summary>
-    /// The Hero's Corpse as it is saved: the stable id of the Location it lies at, and its items.
+    /// The Hero's Corpse as it is saved: the stable id of the Location it lies at, and its packages.
     /// An empty <see cref="locationId"/> means no Corpse. (<c>JsonUtility</c> writes an unset nested
     /// object as an empty one, so absence is carried by the id, not by a null.)
     /// </summary>
@@ -18,6 +18,13 @@ namespace ToolSmiths.InventorySystem.Persistence
         public float fallX;
         public float fallZ;
 
+        /// <summary>What the hero wore, keyed by the slot cell it lay in.</summary>
+        public PackageDto[] worn = Array.Empty<PackageDto>();
+
+        /// <summary>What the bag held, coins included, keyed by the cell it lay in.</summary>
+        public PackageDto[] bag = Array.Empty<PackageDto>();
+
+        /// <summary>Items with no remembered cell (a save from before the Corpse kept them), one each.</summary>
         public ItemInstanceDto[] items = Array.Empty<ItemInstanceDto>();
     }
 }

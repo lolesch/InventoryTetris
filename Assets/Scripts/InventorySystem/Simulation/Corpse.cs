@@ -14,14 +14,14 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// Re-entering that Location <see cref="TryRecover"/>s it back out as Drops, clearing the
     /// Corpse - any other Location leaves it untouched.
     ///
-    /// Pure state: nothing here touches a live bag or the ground. <see cref="Bury"/>'s
-    /// <c>bagContents</c> must already be the bag's contents only - equipped gear is a caller
-    /// contract, never filtered here, because this module cannot see <c>CharacterEquipment</c>.
-    /// Recovery leftovers are <see cref="Bury"/>ed again at the same Location, never put on the
-    /// ground; reading and clearing the bag is <c>RunSettlement</c>'s port.
+    /// Pure state: nothing here touches a live bag or the ground. It holds whatever the hero wore
+    /// and carried, coins included, each with the cell it lay in, so a recovery restores the
+    /// layout; reading and clearing the hero is <c>RunSettlement</c>'s port. Recovery leftovers
+    /// are buried again at the same Location, never put on the ground.
     /// </summary>
     public sealed class Corpse
     {
+        private CorpseEntry[] _entries = Array.Empty<CorpseEntry>();
         private ItemInstance[] _items = Array.Empty<ItemInstance>();
 
         /// <summary>Whether an unclaimed Corpse currently exists.</summary>
@@ -36,25 +36,36 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// </summary>
         public Coordinate? FallPosition { get; private set; }
 
-        /// <summary>The Corpse's contents, or empty while none exists.</summary>
+        /// <summary>The Corpse's packages with the cell each lay in, or empty while none exists.</summary>
+        public IReadOnlyList<CorpseEntry> Entries => _entries;
+
+        /// <summary>The item of each of <see cref="Entries"/>, or empty while none exists.</summary>
         public IReadOnlyList<ItemInstance> Items => _items;
 
         /// <summary>
-        /// Set aside <paramref name="bagContents"/> as the Corpse at <paramref name="location"/> -
+        /// Set aside <paramref name="contents"/> as the Corpse at <paramref name="location"/> -
         /// the hand-off a Death triggers. Replaces any Corpse already there outright, discarding
         /// its contents, even if <paramref name="location"/> is the same one. <c>null</c> or
         /// empty contents still create a Corpse - Death sets one aside every time, empty-handed
         /// or not. <paramref name="fell"/> is where the hero went down, or <c>null</c> for none known.
         /// </summary>
-        public void Bury(EncounterProfile location, IReadOnlyList<ItemInstance> bagContents, Coordinate? fell = null)
+        public void Bury(EncounterProfile location, IReadOnlyList<CorpseEntry> contents, Coordinate? fell = null)
         {
             if (location == null) throw new ArgumentNullException(nameof(location));
 
             Location = location;
             FallPosition = fell;
-            _items = bagContents != null && bagContents.Count > 0 ? bagContents.ToArray() : Array.Empty<ItemInstance>();
+            _entries = contents != null && contents.Count > 0 ? contents.ToArray() : Array.Empty<CorpseEntry>();
+            _items = _entries.Select(entry => entry.Item).ToArray();
             Changed?.Invoke();
         }
+
+        /// <summary>
+        /// <see cref="Bury(EncounterProfile, IReadOnlyList{CorpseEntry}, Coordinate?)"/> for items with no remembered
+        /// place: one each, laid back as fresh pick-ups.
+        /// </summary>
+        public void BuryItems(EncounterProfile location, IReadOnlyList<ItemInstance> items, Coordinate? fell = null) =>
+            Bury(location, items?.Select(item => new CorpseEntry(item, 1u)).ToArray(), fell);
 
         /// <summary>Raised after the Corpse was buried, replaced or recovered, so a marker repaints on change.</summary>
         public event Action Changed;
@@ -65,19 +76,20 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// Location - or no Corpse at all - leaves it untouched and returns <c>false</c> with
         /// <paramref name="drops"/> empty.
         /// </summary>
-        public bool TryRecover(EncounterProfile location, out IReadOnlyList<ItemInstance> drops)
+        public bool TryRecover(EncounterProfile location, out IReadOnlyList<CorpseEntry> drops)
         {
             if (location == null) throw new ArgumentNullException(nameof(location));
 
             if (Location != location)
             {
-                drops = Array.Empty<ItemInstance>();
+                drops = Array.Empty<CorpseEntry>();
                 return false;
             }
 
-            drops = _items;
+            drops = _entries;
             Location = null;
             FallPosition = null;
+            _entries = Array.Empty<CorpseEntry>();
             _items = Array.Empty<ItemInstance>();
             Changed?.Invoke();
             return true;

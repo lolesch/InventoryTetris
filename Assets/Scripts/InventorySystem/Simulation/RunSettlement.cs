@@ -6,10 +6,10 @@ namespace ToolSmiths.InventorySystem.Simulation
 {
     /// <summary>
     /// The ADR-0009 <i>Death is corpse-recovery, not haul-forfeit</i> rules, in one engine-free
-    /// place. <see cref="Settle"/> runs the Death penalty - bury the bag's non-currency contents
-    /// as the one <see cref="Corpse"/> tagged with the fall Location, charge the currency fee,
-    /// forfeit the XP.<see cref="Recover"/> is the other half: re-entering the
-    /// Corpse's own Location lays it back out into the bag, and what does not fit stays on the
+    /// place. <see cref="Settle"/> runs the Death penalty - charge the currency fee, bury everything
+    /// the hero wore and carried (coins included) as the one <see cref="Corpse"/> tagged with the
+    /// fall Location, forfeit the XP. <see cref="Recover"/> is the other half: re-entering the
+    /// Corpse's own Location puts it all back where it lay, and what does not fit stays on the
     /// Corpse, re-buried at the same Location.
     ///
     /// Everything Unity-typed - the live bag, the Wallet, the character sheet - sits behind
@@ -44,8 +44,8 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// Apply the Death penalty for <paramref name="result"/> at <paramref name="location"/>
         /// (the memoized <see cref="EncounterProfile"/> for the fall Location, or <c>null</c> when
         /// none was selected). A no-op unless <paramref name="result"/> is a
-        /// <see cref="RunOutcome.Died"/>. Order matters: the bag is emptied into the Corpse before
-        /// the fee and XP are taken. The hero is left down: the revive is Respawn's.
+        /// <see cref="RunOutcome.Died"/>. Order matters: the fee is taken before the hero is emptied
+        /// into the Corpse. The hero is left down and bare: the revive is Respawn's.
         /// With no <paramref name="location"/> the fee is still charged but nothing is buried and
         /// no XP is forfeited - there is no Location to recover a Corpse from.
         /// </summary>
@@ -54,13 +54,13 @@ namespace ToolSmiths.InventorySystem.Simulation
             if (result.Outcome != RunOutcome.Died)
                 return;
 
-            var contents = _bag.TakeNonCurrencyContents();
-
-            if (location != null)
-                _corpse.Bury(location, contents, result.FallPosition);
-
+            // The fee comes out of the wallet first, so the Corpse carries what is left of the coins.
             if (result.CurrencyFee > 0L)
                 _ledger.ChargeFee(result.CurrencyFee);
+
+            // With no Location there is no Corpse to recover, so the hero is not stripped either.
+            if (location != null)
+                _corpse.Bury(location, _bag.TakeEverything(), result.FallPosition);
 
             if (result.XpLost > 0 && location != null)
                 _ledger.ForfeitXp(result.XpLost);
@@ -68,7 +68,7 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         /// <summary>
         /// Re-entering <paramref name="location"/>: if the standing Corpse is tagged with it, lay
-        /// its contents back out into the bag, and whatever does not fit is re-buried at the same
+        /// its contents back to where they lay, and whatever does not fit is re-buried at the same
         /// Location for a later recovery - never put on the ground. A no-op with no Corpse or a
         /// Location that is not the Corpse's.
         /// </summary>
@@ -80,11 +80,12 @@ namespace ToolSmiths.InventorySystem.Simulation
             if (!_corpse.TryRecover(location, out var drops))
                 return;
 
-            var stranded = new List<ItemInstance>();
-            foreach (var item in drops)
+            var stranded = new List<CorpseEntry>();
+            foreach (var entry in drops)
             {
-                if (!_bag.TryStore(item))
-                    stranded.Add(item);
+                var left = _bag.Restore(entry);
+                if (left > 0u)
+                    stranded.Add(entry.WithAmount(left));
             }
 
             if (stranded.Count > 0)

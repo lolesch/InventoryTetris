@@ -7,6 +7,7 @@ using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Locations;
 using ToolSmiths.InventorySystem.Persistence;
 using ToolSmiths.InventorySystem.Services;
+using ToolSmiths.InventorySystem.Simulation;
 using UnityEditor;
 using UnityEngine;
 
@@ -108,7 +109,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         {
             var before = NewGame();
             var sword = Gear(before);
-            before.Session.Hero.Corpse.Bury(before.Simulation.Locations.ProfileFor(thornwood), new[] { sword });
+            before.Session.Hero.Corpse.BuryItems(before.Simulation.Locations.ProfileFor(thornwood), new[] { sword });
             var saved = ThroughText(CorpseMapper.ToDto(before.Session.Hero.Corpse, before.Simulation.Locations));
             var after = NewGame();
 
@@ -132,10 +133,28 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
+        public void ACorpseSavedAndRestored_KeepsWhatWasWornAndWhereEachPackageLay()
+        {
+            var before = NewGame();
+            var worn = new CorpseEntry(Gear(before), 1u, CorpseSource.Equipment, 4, 0);
+            var carried = new CorpseEntry(Gear(before), 1u, CorpseSource.Bag, 2, 1);
+            before.Session.Hero.Corpse.Bury(before.Simulation.Locations.ProfileFor(thornwood), new[] { worn, carried });
+            var saved = ThroughText(CorpseMapper.ToDto(before.Session.Hero.Corpse, before.Simulation.Locations));
+            var after = NewGame();
+
+            var report = CorpseMapper.Restore(saved, after.Session.Hero.Corpse, after.Simulation.Locations, after.Items.Catalog);
+
+            Assert.That(report.IsClean, Is.True);
+            var entries = after.Session.Hero.Corpse.Entries;
+            Assert.That(entries.Select(entry => (entry.Source, entry.X, entry.Y, entry.Amount)),
+                Is.EqualTo(new[] { (CorpseSource.Equipment, 4, 0, 1u), (CorpseSource.Bag, 2, 1, 1u) }));
+        }
+
+        [Test]
         public void TheRestoredCorpse_UsesTheProfileTheServiceMemoizes()
         {
             var before = NewGame();
-            before.Session.Hero.Corpse.Bury(before.Simulation.Locations.ProfileFor(ashfen), new[] { Gear(before) });
+            before.Session.Hero.Corpse.BuryItems(before.Simulation.Locations.ProfileFor(ashfen), new[] { Gear(before) });
             var saved = ThroughText(CorpseMapper.ToDto(before.Session.Hero.Corpse, before.Simulation.Locations));
             var after = NewGame();
 
@@ -192,7 +211,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         public void ACorpseWithNoItems_StillComesBackAsACorpse()
         {
             var before = NewGame();
-            before.Session.Hero.Corpse.Bury(before.Simulation.Locations.ProfileFor(thornwood), Array.Empty<ItemInstance>());
+            before.Session.Hero.Corpse.BuryItems(before.Simulation.Locations.ProfileFor(thornwood), Array.Empty<ItemInstance>());
             var saved = ThroughText(CorpseMapper.ToDto(before.Session.Hero.Corpse, before.Simulation.Locations));
             var after = NewGame();
 
@@ -206,7 +225,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         public void ACorpseSavedAndRestored_KeepsWhereTheHeroFell()
         {
             var before = NewGame();
-            before.Session.Hero.Corpse.Bury(before.Simulation.Locations.ProfileFor(thornwood), Array.Empty<ItemInstance>(), new Submodules.Utility.Extensions.Coordinate(3.5f, -2f));
+            before.Session.Hero.Corpse.BuryItems(before.Simulation.Locations.ProfileFor(thornwood), Array.Empty<ItemInstance>(), new Submodules.Utility.Extensions.Coordinate(3.5f, -2f));
             var saved = ThroughText(CorpseMapper.ToDto(before.Session.Hero.Corpse, before.Simulation.Locations));
             var after = NewGame();
 
@@ -243,7 +262,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             var before = NewGame();
             var sword = Gear(before);
             var unlisted = Location("unlisted");
-            before.Session.Hero.Corpse.Bury(before.Simulation.Locations.ProfileFor(unlisted), new[] { sword });
+            before.Session.Hero.Corpse.BuryItems(before.Simulation.Locations.ProfileFor(unlisted), new[] { sword });
 
             var saved = ThroughText(CorpseMapper.ToDto(before.Session.Hero.Corpse, before.Simulation.Locations));
 

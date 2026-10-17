@@ -11,7 +11,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         public void TheText_NamesTheLocation_TheXpLost_AndTheFeeInItsCoins()
         {
             Assert.That(DeathNotice.TextFor("Thornwood", 120, 34L),
-                Is.EqualTo("You fell in Thornwood. You lost 120 XP and a fee of 6 copper and 4 iron. Your bag lies where you fell; go back to pick it up."));
+                Is.EqualTo("You fell in Thornwood. You lost 120 XP and a fee of 6 copper and 4 iron. Your gear, bag and coins lie where you fell; go back to pick them up."));
         }
 
         [Test]

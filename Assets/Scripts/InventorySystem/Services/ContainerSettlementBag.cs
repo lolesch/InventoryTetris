@@ -1,16 +1,18 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using ToolSmiths.InventorySystem.Data.Enums;
+using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Runtime.Character;
 using ToolSmiths.InventorySystem.Simulation;
+using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Services
 {
     /// <summary>
-    /// Binds <see cref="ISettlementBag"/> to a <see cref="Hero"/>: its Inventory for the Corpse
-    /// burial, and its acquisition entry point for recovery. Built over the hero the settlement
+    /// Binds <see cref="ISettlementBag"/> to a <see cref="Hero"/>: its Equipment and Inventory for the
+    /// Corpse burial, and the same two cells for the recovery. Built over the hero the settlement
     /// is for, so a hero load needs nothing re-pointed - the next settlement is built over the new one.
     /// </summary>
     public sealed class ContainerSettlementBag : ISettlementBag
@@ -21,34 +23,57 @@ namespace ToolSmiths.InventorySystem.Services
             _hero = hero ?? throw new ArgumentNullException(nameof(hero));
 
         /// <summary>
-        /// One pass over the bag: collect every non-currency package's contents (a stack of
-        /// <c>N</c> yields <c>N</c> instances), remove them, hand the contents back for the Corpse.
-        /// Coins stay with the Wallet; equipped gear never lives in the bag.
+        /// One pass over the worn gear and the bag: every package becomes an entry keyed by its cell
+        /// (the bag's coins among them - the Wallet is the bag's coin cells), then both are emptied. The
+        /// Equipment's removal hook takes the worn gear's stats off with it.
         /// </summary>
-        public IReadOnlyList<ItemInstance> TakeNonCurrencyContents()
+        public IReadOnlyList<CorpseEntry> TakeEverything()
         {
-            var bag = _hero.Inventory;
-
-            var doomed = bag.StoredPackages
-                .Where(entry => bag.ViewOf(entry.Value.Item).Definition.Category != ItemCategory.Currency)
-                .ToList();
-
-            var contents = doomed
-                .SelectMany(entry => Enumerable.Repeat(entry.Value.Item, (int)entry.Value.Amount))
+            var contents = Entries(_hero.Equipment, CorpseSource.Equipment)
+                .Concat(Entries(_hero.Inventory, CorpseSource.Bag))
                 .ToArray();
 
-            foreach (var entry in doomed)
-                _ = bag.RemoveAtPosition(entry.Key, entry.Value);
+            _hero.Equipment.RemoveAll();
+            _hero.Inventory.RemoveAll();
 
             return contents;
         }
 
         /// <summary>
-        /// Through the hero's acquisition entry point, so a recovered piece of gear auto-equips
-        /// into an empty slot exactly as a fresh Drop does - not a raw bag add. <c>false</c> when
-        /// it fits nowhere, so <see cref="RunSettlement.Recover"/> re-buries the item
-        /// rather than losing it.
+        /// At the remembered cell when it is free, else anywhere the item still goes: worn gear through the
+        /// acquisition entry point (an empty slot, else the bag), a bag item into the bag alone, so nothing
+        /// the hero carried equips itself. A save from before cells were kept (<see cref="CorpseSource.Unknown"/>)
+        /// recovers as a fresh pick-up.
         /// </summary>
-        public bool TryStore(ItemInstance item) => _hero.PickUpItem(item, 1u);
+        public uint Restore(CorpseEntry entry)
+        {
+            var package = new Package(null, entry.Item, entry.Amount);
+            var cell = new Vector2Int(entry.X, entry.Y);
+
+            switch (entry.Source)
+            {
+                case CorpseSource.Equipment:
+                    _ = _hero.Equipment.TryAddAtPosition(cell, ref package);
+                    if (package.Amount > 0u)
+                        _ = ItemAcquisition.TryPlace(ref package, _hero.Equipment, _hero.Inventory);
+                    break;
+
+                case CorpseSource.Bag:
+                    _ = _hero.Inventory.TryAddAtPosition(cell, ref package);
+                    if (package.Amount > 0u)
+                        _ = _hero.Inventory.TryAddToContainer(ref package);
+                    break;
+
+                default:
+                    _ = ItemAcquisition.TryPlace(ref package, _hero.Equipment, _hero.Inventory);
+                    break;
+            }
+
+            return package.Amount;
+        }
+
+        private static IEnumerable<CorpseEntry> Entries(AbstractDimensionalContainer container, CorpseSource source) =>
+            container.StoredPackages.Select(entry =>
+                new CorpseEntry(entry.Value.Item, entry.Value.Amount, source, entry.Key.x, entry.Key.y));
     }
 }

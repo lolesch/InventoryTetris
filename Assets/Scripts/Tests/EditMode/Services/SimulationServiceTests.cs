@@ -1076,8 +1076,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(session.World.VendorSupply.StoredPackages, Is.Empty);
         }
 
-        // A recovered piece of gear goes through the acquisition entry point, so it auto-equips into
-        // an empty slot exactly as a fresh Drop does - held means in the bag or on the hero.
+        // Held means in the bag or on the hero.
         private static bool Holds(Hero hero, ItemInstance item) =>
             hero.Inventory.StoredPackages.Any(entry => entry.Value.Item == item)
             || hero.Equipment.StoredPackages.Any(entry => entry.Value.Item == item);
@@ -1096,6 +1095,54 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             Assert.That(hero.Corpse.Exists, Is.False);
             Assert.That(Holds(hero, item), Is.True);
+        }
+
+        [Test]
+        public void ADeath_StripsTheHeroBare_ToTheCorpse_CoinsIncluded()
+        {
+            var hero = session.Hero;
+            var worn = items.RollEquipment(EquipmentType.Chest);
+            var package = new Package(null, worn, 1u);
+            Assert.That(hero.Equipment.AutoEquip(ref package), Is.True);
+            _ = PutInBag();
+            _ = hero.Wallet.Deposit(new Currency(500u));
+            Assert.That(hero.Wallet.Balance.Total, Is.GreaterThan(0u), "the test hero has coins to lose");
+
+            DieAndSettle();
+
+            Assert.That(hero.Equipment.StoredPackages, Is.Empty);
+            Assert.That(hero.Inventory.StoredPackages, Is.Empty);
+            Assert.That(hero.Wallet.Balance.Total, Is.Zero);
+            Assert.That(hero.Corpse.Items, Has.Member(worn));
+        }
+
+        [Test]
+        public void Recovery_PutsEverythingBackWhereItLay_ABagItemStaysInTheBagEvenWithAFreeSlot()
+        {
+            var hero = session.Hero;
+            var worn = items.RollEquipment(EquipmentType.Chest);
+            var wornPackage = new Package(null, worn, 1u);
+            Assert.That(hero.Equipment.AutoEquip(ref wornPackage), Is.True);
+            var wornCell = hero.Equipment.StoredPackages.Single().Key;
+
+            var carried = items.RollEquipment(EquipmentType.Helm);
+            var carriedPackage = new Package(null, carried, 1u);
+            var carriedCell = new Vector2Int(2, 1);
+            Assert.That(hero.Inventory.TryAddAtPosition(carriedCell, ref carriedPackage), Is.True);
+
+            _ = hero.Wallet.Deposit(new Currency(500u));
+            var balance = hero.Wallet.Balance.Total;
+
+            DieAndSettle();
+            service.Respawn();
+            service.Send(thornwood);
+
+            Assert.That(hero.Corpse.Exists, Is.False);
+            Assert.That(hero.Equipment.StoredPackages[wornCell].Item, Is.SameAs(worn));
+            Assert.That(hero.Inventory.StoredPackages[carriedCell].Item, Is.SameAs(carried));
+            Assert.That(hero.Equipment.StoredPackages.Values.Select(stored => stored.Item), Has.No.Member(carried),
+                "the bag item did not equip itself into the free slot");
+            Assert.That(hero.Wallet.Balance.Total, Is.EqualTo(balance));
         }
 
         [Test]

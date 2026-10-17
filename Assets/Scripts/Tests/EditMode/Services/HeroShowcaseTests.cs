@@ -109,7 +109,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         [Test]
         public void Text_NamesTheLocationAWaitingCorpseLiesAt()
         {
-            game.Hero.Corpse.Bury(game.Simulation.Locations.ProfileFor(thornwood), null);
+            game.Hero.Corpse.BuryItems(game.Simulation.Locations.ProfileFor(thornwood), null);
 
             Assert.That(Text(), Does.Contain("Corpse: Thornwood\n"));
         }

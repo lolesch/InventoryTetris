@@ -1,27 +1,26 @@
 using System.Collections.Generic;
-using ToolSmiths.InventorySystem.Items;
 
 namespace ToolSmiths.InventorySystem.Simulation
 {
     /// <summary>
-    /// The hero's bag as <see cref="RunSettlement"/> needs to see it (ADR-0009): read and empty
-    /// its non-currency contents on a Death, and offer a single item back on a recovery. The
-    /// engine binds this to the live <c>CharacterInventory</c>; a test binds an in-memory list.
-    /// Coins and equipped gear are never this port's concern - a Death fee is the Wallet's
-    /// (<see cref="ISettlementLedger"/>), equipped gear is never touched.
+    /// What the hero wears and carries as <see cref="RunSettlement"/> needs to see it (ADR-0009):
+    /// read and empty all of it on a Death - gear, bag and coins, each with the cell it lay in - and
+    /// offer one package back on a recovery. The engine binds this to the live equipment and
+    /// inventory; a test binds an in-memory list. A Death fee is the Wallet's
+    /// (<see cref="ISettlementLedger"/>) and is taken before this is read.
     /// </summary>
     public interface ISettlementBag
     {
         /// <summary>
-        /// Collect the bag's non-currency contents and remove them - a stack of <c>N</c> yields
-        /// <c>N</c> instances, so a later recovery re-stacks to the same count. Currency stays put.
+        /// Collect everything the hero wears and carries and remove it, so he is left bare. A stack
+        /// of <c>N</c> is one entry of amount <c>N</c>.
         /// </summary>
-        IReadOnlyList<ItemInstance> TakeNonCurrencyContents();
+        IReadOnlyList<CorpseEntry> TakeEverything();
 
         /// <summary>
-        /// Try to fit one recovered <paramref name="item"/> back into the bag. <c>false</c> when
-        /// it does not fit - the caller then strands it on the ground or re-buries it.
+        /// Put <paramref name="entry"/> back where it lay when that cell is free, else wherever it fits
+        /// (a bag item never auto-equips). Returns how much of the stack found no room, <c>0</c> when all did.
         /// </summary>
-        bool TryStore(ItemInstance item);
+        uint Restore(CorpseEntry entry);
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using NUnit.Framework;
 using Submodules.Utility.Extensions;
 using ToolSmiths.InventorySystem.Data.Enums;
@@ -42,7 +43,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var location = Thornwood();
             var bagContents = new[] { Item("sword"), Item("shield") };
 
-            corpse.Bury(location, bagContents);
+            corpse.BuryItems(location, bagContents);
 
             Assert.That(corpse.Exists, Is.True);
             Assert.That(corpse.Location, Is.SameAs(location));
@@ -55,7 +56,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var corpse = new Corpse();
             var location = Thornwood();
 
-            corpse.Bury(location, Array.Empty<ItemInstance>());
+            corpse.BuryItems(location, Array.Empty<ItemInstance>());
 
             Assert.That(corpse.Exists, Is.True, "a Corpse exists on every Death, even an empty-handed one");
             Assert.That(corpse.Items, Is.Empty);
@@ -66,7 +67,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         {
             var corpse = new Corpse();
 
-            corpse.Bury(Thornwood(), null);
+            corpse.BuryItems(Thornwood(), null);
 
             Assert.That(corpse.Exists, Is.True);
             Assert.That(corpse.Items, Is.Empty);
@@ -77,7 +78,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         {
             var corpse = new Corpse();
 
-            corpse.Bury(Thornwood(), new[] { Item("sword") }, new Coordinate(3.5f, -2f));
+            corpse.BuryItems(Thornwood(), new[] { Item("sword") }, new Coordinate(3.5f, -2f));
 
             Assert.That(corpse.FallPosition, Is.EqualTo(new Coordinate(3.5f, -2f)));
         }
@@ -87,7 +88,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         {
             var corpse = new Corpse();
 
-            corpse.Bury(Thornwood(), new[] { Item("sword") });
+            corpse.BuryItems(Thornwood(), new[] { Item("sword") });
 
             Assert.That(corpse.FallPosition, Is.Null);
         }
@@ -97,7 +98,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         {
             var corpse = new Corpse();
             var location = Thornwood();
-            corpse.Bury(location, new[] { Item("sword") }, new Coordinate(1f, 1f));
+            corpse.BuryItems(location, new[] { Item("sword") }, new Coordinate(1f, 1f));
 
             corpse.TryRecover(location, out _);
 
@@ -109,17 +110,17 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         {
             var corpse = new Corpse();
 
-            Assert.That(() => corpse.Bury(null, Array.Empty<ItemInstance>()), Throws.ArgumentNullException);
+            Assert.That(() => corpse.BuryItems(null, Array.Empty<ItemInstance>()), Throws.ArgumentNullException);
         }
 
         [Test]
         public void ASecondBury_ReplacesTheCorpse_DiscardingWhatWasThereBefore()
         {
             var corpse = new Corpse();
-            corpse.Bury(Thornwood(), new[] { Item("first-death-sword") });
+            corpse.BuryItems(Thornwood(), new[] { Item("first-death-sword") });
 
             var secondLocation = Ashfen();
-            corpse.Bury(secondLocation, new[] { Item("second-death-shield") });
+            corpse.BuryItems(secondLocation, new[] { Item("second-death-shield") });
 
             Assert.That(corpse.Location, Is.SameAs(secondLocation));
             Assert.That(corpse.Items, Has.Length.EqualTo(1));
@@ -131,9 +132,9 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         {
             var corpse = new Corpse();
             var location = Thornwood();
-            corpse.Bury(location, new[] { Item("first-death-sword") });
+            corpse.BuryItems(location, new[] { Item("first-death-sword") });
 
-            corpse.Bury(location, new[] { Item("second-death-shield") });
+            corpse.BuryItems(location, new[] { Item("second-death-shield") });
 
             Assert.That(corpse.Items, Has.Length.EqualTo(1));
             Assert.That(corpse.Items[0].DefinitionId, Is.EqualTo("second-death-shield"));
@@ -147,12 +148,12 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var corpse = new Corpse();
             var location = Thornwood();
             var bagContents = new[] { Item("sword"), Item("shield") };
-            corpse.Bury(location, bagContents);
+            corpse.BuryItems(location, bagContents);
 
             var recovered = corpse.TryRecover(location, out var drops);
 
             Assert.That(recovered, Is.True);
-            Assert.That(drops, Is.EqualTo(bagContents));
+            Assert.That(drops.Select(drop => drop.Item), Is.EqualTo(bagContents));
         }
 
         [Test]
@@ -160,7 +161,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         {
             var corpse = new Corpse();
             var location = Thornwood();
-            corpse.Bury(location, new[] { Item("sword") });
+            corpse.BuryItems(location, new[] { Item("sword") });
 
             corpse.TryRecover(location, out _);
 
@@ -176,15 +177,15 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var location = Thornwood();
             var sword = Item("sword");
             var shield = Item("shield");
-            corpse.Bury(location, new[] { sword, shield });
+            corpse.BuryItems(location, new[] { sword, shield });
             corpse.TryRecover(location, out _);
 
-            corpse.Bury(location, new[] { shield });
+            corpse.BuryItems(location, new[] { shield });
 
             Assert.That(corpse.Location, Is.SameAs(location));
             Assert.That(corpse.Items, Is.EqualTo(new[] { shield }));
             Assert.That(corpse.TryRecover(location, out var drops), Is.True);
-            Assert.That(drops, Is.EqualTo(new[] { shield }));
+            Assert.That(drops.Select(drop => drop.Item), Is.EqualTo(new[] { shield }));
         }
 
         [Test]
@@ -193,7 +194,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var corpse = new Corpse();
             var buried = Thornwood();
             var bagContents = new[] { Item("sword") };
-            corpse.Bury(buried, bagContents);
+            corpse.BuryItems(buried, bagContents);
 
             var recovered = corpse.TryRecover(Ashfen(), out var drops);
 
@@ -207,7 +208,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var corpse = new Corpse();
             var buried = Thornwood();
             var bagContents = new[] { Item("sword") };
-            corpse.Bury(buried, bagContents);
+            corpse.BuryItems(buried, bagContents);
 
             corpse.TryRecover(Ashfen(), out _);
 
@@ -223,7 +224,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var changes = 0;
             corpse.Changed += () => changes++;
 
-            corpse.Bury(Thornwood(), new[] { Item("sword") });
+            corpse.BuryItems(Thornwood(), new[] { Item("sword") });
             Assert.That(changes, Is.EqualTo(1), "buried");
 
             _ = corpse.TryRecover(Ashfen(), out _);

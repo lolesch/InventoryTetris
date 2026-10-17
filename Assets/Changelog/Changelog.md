@@ -20,7 +20,8 @@
 - Leaving Town through the Town Exit now shows your hero walking towards it while the Town map fades slowly into the Field map.
 - Picking another Location mid-fight sends the hero walking there from where he stood, and the enemies he left behind fade out.
 - Your corpse now lies where your hero fell, on the Field map, before you send him back for it.
-- When your hero dies, a notice tells you where he fell, what it cost and that your bag lies there; Respawn (button, Enter or Cancel) brings him back to town at full health.
+- When your hero dies, a notice tells you where he fell, what it cost and that your gear, bag and coins lie there; Respawn (button, Enter or Cancel) brings him back to town at full health.
+- A death now takes everything your hero wore and carried, coins included, and he respawns bare; recovering the corpse puts each item back where it was, and a bag item no longer equips itself.
 - When your hero falls, the last damage numbers now drift by in slow motion for a moment.
 - Leaving the Field through its Exit now shows your hero walking out while the Field map fades; in Town he comes in standing at the Town Exit.
 - When your hero falls, he lies where he fell while the fight stands still, then your corpse appears there and the death notice opens.

@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using Submodules.Utility.Extensions;
 using ToolSmiths.InventorySystem.Data.Enums;
@@ -190,6 +193,86 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             Assert.That(bag.Stored, Is.Empty);
             Assert.That(settlement.Corpse.Location, Is.SameAs(thornwood));
             Assert.That(settlement.Corpse.Items, Is.EqualTo(new[] { a, b }));
+        }
+
+        [Test]
+        public void Recover_HandsEachEntryBackWithItsPlace_AndAStackKeepsItsAmount()
+        {
+            var sword = new CorpseEntry(Item("sword"), 1u, CorpseSource.Equipment, 3, 0);
+            var coins = new CorpseEntry(Item("coins"), 40u, CorpseSource.Bag, 0, 2);
+            var bag = new InMemorySettlementBag(new[] { sword, coins });
+            var settlement = new RunSettlement(bag, new RecordingSettlementLedger());
+            var thornwood = Thornwood();
+            settlement.Settle(Death(), thornwood);
+
+            settlement.Recover(thornwood);
+
+            Assert.That(bag.Offered, Is.EqualTo(new[] { sword, coins }));
+            Assert.That(settlement.Corpse.Exists, Is.False);
+        }
+
+        [Test]
+        public void Recover_WithAStackThatPartlyFits_ReBuriesTheRestAtTheSamePlace()
+        {
+            var coins = new CorpseEntry(Item("coins"), 40u, CorpseSource.Bag, 0, 2);
+            var bag = new InMemorySettlementBag(new[] { coins }) { Capacity = 0 };
+            var settlement = new RunSettlement(bag, new RecordingSettlementLedger());
+            var thornwood = Thornwood();
+            settlement.Settle(Death(), thornwood);
+            bag.Capacity = 15;
+
+            settlement.Recover(thornwood);
+
+            var left = settlement.Corpse.Entries.Single();
+            Assert.That(left.Amount, Is.EqualTo(25u));
+            Assert.That((left.Source, left.X, left.Y), Is.EqualTo((CorpseSource.Bag, 0, 2)));
+        }
+
+        [Test]
+        public void Settle_TakesTheFeeBeforeTheHeroIsEmptied_SoTheCorpseCarriesWhatIsLeft()
+        {
+            var order = new List<string>();
+            var bag = new OrderRecordingBag(order);
+            var ledger = new OrderRecordingLedger(order);
+            var settlement = new RunSettlement(bag, ledger);
+
+            settlement.Settle(Death(currencyFee: 10L), Thornwood());
+
+            Assert.That(order, Is.EqualTo(new[] { "fee", "take" }));
+        }
+
+        [Test]
+        public void Settle_WithNoLocation_LeavesTheHeroDressed()
+        {
+            var order = new List<string>();
+            var settlement = new RunSettlement(new OrderRecordingBag(order), new RecordingSettlementLedger());
+
+            settlement.Settle(Death(), location: null);
+
+            Assert.That(order, Is.Empty, "nothing to recover from, so nothing is taken");
+        }
+
+        private sealed class OrderRecordingBag : ISettlementBag
+        {
+            private readonly List<string> _order;
+            public OrderRecordingBag(List<string> order) => _order = order;
+
+            public IReadOnlyList<CorpseEntry> TakeEverything()
+            {
+                _order.Add("take");
+                return Array.Empty<CorpseEntry>();
+            }
+
+            public uint Restore(CorpseEntry entry) => 0u;
+        }
+
+        private sealed class OrderRecordingLedger : ISettlementLedger
+        {
+            private readonly List<string> _order;
+            public OrderRecordingLedger(List<string> order) => _order = order;
+
+            public void ChargeFee(long baseUnits) => _order.Add("fee");
+            public void ForfeitXp(int xp) { }
         }
 
         [Test]

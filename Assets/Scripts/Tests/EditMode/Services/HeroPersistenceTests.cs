@@ -94,7 +94,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             hero.Behaviour.LootFilterMinimum = ItemRarity.Rare;
 
             hero.SelectedLocation = thornwood;
-            hero.Corpse.Bury(game.Simulation.Locations.ProfileFor(ashfen),
+            hero.Corpse.BuryItems(game.Simulation.Locations.ProfileFor(ashfen),
                 new[] { new ItemInstance(Equipment(game, EquipmentType.Boots).Id, ItemRarity.Magic, 3, null) },
                 new Submodules.Utility.Extensions.Coordinate(3.5f, -2f));
 

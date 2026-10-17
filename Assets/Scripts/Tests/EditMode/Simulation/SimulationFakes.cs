@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Inventories;
@@ -193,38 +194,48 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
     // ─── run settlement (finding #2) ──────────────────────────────────────────
 
     /// <summary>
-    /// An in-memory <see cref="ISettlementBag"/>. Seeded with the contents a Death would find;
-    /// <see cref="TryStore"/> refuses once <see cref="Capacity"/> instances are held (a
-    /// <c>null</c> capacity never fills). <see cref="TakeNonCurrencyContents"/> hands the seeded
-    /// contents back once and leaves the bag empty — currency is the port's caller's problem,
-    /// not modelled here.
+    /// An in-memory <see cref="ISettlementBag"/>. Seeded with the entries a Death would find (items
+    /// seeded bare have no remembered place); <see cref="Restore"/> refuses once <see cref="Capacity"/>
+    /// units are held (a <c>null</c> capacity never fills). <see cref="TakeEverything"/> hands the seeded
+    /// contents back once and leaves the bag empty.
     /// </summary>
     internal sealed class InMemorySettlementBag : ISettlementBag
     {
-        private readonly List<ItemInstance> _contents;
+        private readonly List<CorpseEntry> _contents;
 
-        public InMemorySettlementBag(params ItemInstance[] contents) => _contents = new List<ItemInstance>(contents);
+        public InMemorySettlementBag(params ItemInstance[] contents) =>
+            _contents = contents.Select(item => new CorpseEntry(item, 1u)).ToList();
 
-        /// <summary>Instances <see cref="TryStore"/> accepts before it starts refusing. <c>null</c> = unbounded.</summary>
+        public InMemorySettlementBag(IEnumerable<CorpseEntry> contents) => _contents = new List<CorpseEntry>(contents);
+
+        /// <summary>Units <see cref="Restore"/> accepts before it starts refusing. <c>null</c> = unbounded.</summary>
         public int? Capacity { get; set; }
 
-        /// <summary>Everything <see cref="TryStore"/> has accepted, in order.</summary>
+        /// <summary>Every unit <see cref="Restore"/> has accepted, in order.</summary>
         public List<ItemInstance> Stored { get; } = new();
 
-        public IReadOnlyList<ItemInstance> TakeNonCurrencyContents()
+        /// <summary>Each entry <see cref="Restore"/> was offered, with the place it asked for.</summary>
+        public List<CorpseEntry> Offered { get; } = new();
+
+        public IReadOnlyList<CorpseEntry> TakeEverything()
         {
             var taken = _contents.ToArray();
             _contents.Clear();
             return taken;
         }
 
-        public bool TryStore(ItemInstance item)
+        public uint Restore(CorpseEntry entry)
         {
-            if (Capacity is { } cap && Stored.Count >= cap)
-                return false;
+            Offered.Add(entry);
 
-            Stored.Add(item);
-            return true;
+            var left = entry.Amount;
+            while (left > 0u && !(Capacity is { } cap && Stored.Count >= cap))
+            {
+                Stored.Add(entry.Item);
+                left--;
+            }
+
+            return left;
         }
     }
 
