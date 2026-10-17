@@ -99,6 +99,8 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             Assert.That(screen.activeSelf, Is.True);
             Assert.That(Member<TextMeshProUGUI>(notice, "message").text, Is.EqualTo(EntryNotice.BackupText));
             Assert.That(Member<Component>(notice, "show").gameObject.activeSelf, Is.False, "no names to show");
+            Assert.That(EventSystem.current.currentSelectedGameObject, Is.SameAs(Member<Component>(notice, "dismiss").gameObject),
+                "the notice's one button is selected, so Enter presses it");
 
             Click(Member<Component>(notice, "dismiss"));
 

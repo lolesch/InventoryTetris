@@ -3,6 +3,7 @@
     "rootNamespace": "",
     "references": [
         "Utility",
+        "Utility.UI",
         "Utility.Persistence",
         "Utility.Bindings",
         "Unity.InputSystem",

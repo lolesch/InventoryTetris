@@ -12,7 +12,8 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Popups
     /// The name entry the create slot opens: a popup over the hero slots that creates nothing until a valid
     /// name is confirmed (<see cref="MainMenuFlow.CreateHero"/>) and names the reason when it is not. It is
     /// shown by being enabled, so the component sits on the popup itself; Cancel (the button or the Cancel
-    /// key, as a <see cref="CancelRank.Popup"/> layer) closes it and creates nothing.
+    /// key, as a <see cref="CancelRank.Popup"/> layer) closes it and creates nothing. The name field stays the
+    /// selection so typing works; Enter in it is Confirm (<c>onSubmit</c>), the Popup's default press.
     /// </summary>
     public sealed class HeroNamePopup : MonoBehaviour
     {
