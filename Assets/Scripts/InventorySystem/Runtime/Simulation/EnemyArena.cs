@@ -45,7 +45,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// is a separate element.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class EnemyArena : MonoBehaviour, IDamageNumberOrigins
+    public sealed class EnemyArena : MonoBehaviour, IDamageNumberOrigins, IArenaSpace
     {
         [SerializeField] private Figure prefab;
         [SerializeField, Tooltip("Where the figures live. Empty: this object's own RectTransform.")]
@@ -213,6 +213,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             else if (!wanted && numbers.IsBound)
                 numbers.Unbind();
         }
+
+        /// <inheritdoc/>
+        public ArenaProjection Projection => new(arenaScale, tilt);
+
+        /// <inheritdoc/>
+        public RectTransform LocationAnchor => ResolveAnchor();
 
         /// <inheritdoc/>
         public bool TryGetNumberOrigin(Coordinate position, out Vector2 origin)

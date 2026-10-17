@@ -869,6 +869,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.Runtime.Simulation.HeroFigure
   arena: {fileID: 900000012}
   facingDeadZoneUnits: 0.75
+  fieldExit: {fileID: 318019181}
+  map: {fileID: 1426694739}
 --- !u!1 &64018610
 GameObject:
   m_ObjectHideFlags: 0

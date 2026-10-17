@@ -33,6 +33,9 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
         [TearDown]
         public void TearDown()
         {
+            Time.timeScale = 1f;
+            SimulationService.Instance.SetPaused(false);
+
             if (SimulationService.Instance.Run.Phase == RunPhase.InField)
                 _ = SimulationService.Instance.Return();
 
@@ -77,22 +80,130 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             toggle.GetType().GetMethod("SetToggle").Invoke(toggle, new object[] { true });
         }
 
+        // The Field map's hero figure component (issue #323): the one that Travels, beside the Figure it draws with.
+        private static Component Travel() =>
+            Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include).Single(c => c.GetType().Name == "HeroFigure");
+
+        private static bool IsWalking() => (bool)Property(Travel(), "IsWalking");
+
+        private static RectTransform FieldExit() =>
+            Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include)
+                .First(c => c.GetType().Name == "ToTownButton").GetComponent<RectTransform>();
+
+        private static RectTransform LocationIcon(LocationConfig location) =>
+            Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include)
+                .First(c => c.GetType().Name == "LocationToggle" && Equals(c.GetType().GetProperty("Location").GetValue(c), location))
+                .GetComponent<RectTransform>();
+
+        // Where the figure is drawn, in world space: compared with an anchor's world centre, not a restatement of the figure's own maths.
+        private static Vector2 FigureAt() => HeroFigure().transform.position;
+
+        private static Vector2 CentreOf(RectTransform anchor) => anchor.TransformPoint(anchor.rect.center);
+
+        // Brings the Field map up as the To Fields button does, and waits for its fade, which the figure follows.
+        private static IEnumerator ShowTheFieldMap()
+        {
+            var face = Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include).Single(c => c.GetType().Name == "FieldFacePanel");
+            face.GetType().GetMethod("ToggleState").Invoke(face, new object[] { true });
+            for (var frame = 0; !(bool)Property(face, "IsExtended") && frame < 600; frame++)
+                yield return null;
+            yield return null;
+        }
+
+        // A walk is seconds long: run it at speed so the test does not wait on it.
+        private static IEnumerator WaitForArrival()
+        {
+            Time.timeScale = 20f;
+            yield return null; // the figure starts its walk on the frame after the Send
+            for (var frame = 0; IsWalking() && frame < 3000; frame++)
+                yield return null;
+
+            Time.timeScale = 1f;
+            Assert.That(IsWalking(), Is.False, "the walk ended");
+        }
+
         [UnityTest]
-        public IEnumerator TheHeroFigure_IsShownWhileARunLasts_AndHiddenAndFacingRightWhenItEnds()
+        public IEnumerator TheHeroFigure_StandsAtTheFieldExitWhenTheMapComesUp_AndAgainAfterAReturn()
         {
             var figure = HeroFigure();
             Assert.That(figure.GetType().Name, Is.EqualTo("Figure"), "one component serves hero and enemy");
-            Assert.That(figure.GetComponent<CanvasGroup>().alpha, Is.EqualTo(0f), "no Run, no hero on the arena");
+
+            yield return ShowTheFieldMap();
+            Assert.That(figure.GetComponent<CanvasGroup>().alpha, Is.EqualTo(1f), "it fades with the map, which is up");
+            Assert.That(Vector2.Distance(FigureAt(), CentreOf(FieldExit())), Is.LessThan(0.01f), "no Run: at the Field Exit");
 
             Select(_locations[0]);
-            yield return null;
-            Assert.That(figure.GetComponent<CanvasGroup>().alpha, Is.EqualTo(1f), "bound when the Encounter binds");
-            Assert.That((bool)Property(figure, "IsPlaced"), Is.True);
+            yield return WaitForArrival();
+            Assert.That(Vector2.Distance(FigureAt(), CentreOf(FieldExit())), Is.GreaterThan(1f), "the Send took it away");
 
             _ = SimulationService.Instance.Return();
             yield return null;
-            Assert.That(figure.GetComponent<CanvasGroup>().alpha, Is.EqualTo(0f), "hidden when it is released");
-            Assert.That((int)Property(figure, "FacingSign"), Is.EqualTo(1), "and the next Run starts facing right");
+            Assert.That(Vector2.Distance(FigureAt(), CentreOf(FieldExit())), Is.LessThan(0.01f), "a Return puts it back at the Field Exit");
+        }
+
+        [UnityTest]
+        public IEnumerator TheHeroFigure_FadesWithTheFieldMap()
+        {
+            yield return null;
+            Assert.That(HeroFigure().GetComponent<CanvasGroup>().alpha, Is.EqualTo(0f), "the map is not up");
+
+            yield return ShowTheFieldMap();
+            Assert.That(HeroFigure().GetComponent<CanvasGroup>().alpha, Is.EqualTo(1f));
+        }
+
+        [UnityTest]
+        public IEnumerator ASend_WalksTheFigureFromTheFieldExitToTheLocation_ThenItFollowsTheFight()
+        {
+            yield return ShowTheFieldMap();
+
+            Select(_locations[0]);
+            yield return null;
+            Assert.That(IsWalking(), Is.True, "the Send starts a walk");
+            Assert.That(Vector2.Distance(FigureAt(), CentreOf(FieldExit())), Is.LessThan(Vector2.Distance(CentreOf(FieldExit()), CentreOf(LocationIcon(_locations[0])))),
+                "not there yet");
+            Assert.That(SimulationService.Instance.Run.Phase, Is.EqualTo(RunPhase.InField), "the Run starts at the click, not on arrival");
+
+            yield return WaitForArrival();
+            Assert.That(Vector2.Distance(FigureAt(), CentreOf(LocationIcon(_locations[0]))), Is.LessThan(0.01f), "arrived at the Location");
+
+            var encounter = SimulationService.Instance.Run.Encounter;
+            yield return null;
+            var arguments = new object[] { encounter.HeroPosition, null };
+            _ = (bool)Arena().GetType().GetMethod("TryGetNumberOrigin").Invoke(Arena(), arguments);
+            Assert.That(Vector2.Distance(((RectTransform)HeroFigure().transform).anchoredPosition, (Vector2)arguments[1]), Is.LessThan(0.01f),
+                "then it draws the simulation's hero");
+        }
+
+        [UnityTest]
+        public IEnumerator PausingDuringTheWalkIn_LeavesTheFigureWalking()
+        {
+            yield return ShowTheFieldMap();
+            Select(_locations[0]);
+            yield return null;
+
+            SimulationService.Instance.SetPaused(true);
+            Assert.That(SimulationService.Instance.IsPaused, Is.True);
+            var before = FigureAt();
+            yield return new WaitForSeconds(0.3f);
+
+            Assert.That(IsWalking(), Is.True, "still walking");
+            Assert.That(Vector2.Distance(FigureAt(), before), Is.GreaterThan(1f), "and moving");
+        }
+
+        [UnityTest]
+        public IEnumerator ARefusedSend_LeavesTheFigureWhereItStands()
+        {
+            yield return ShowTheFieldMap();
+            Select(_locations[0]);
+            yield return WaitForArrival();
+            yield return null;
+            var before = FigureAt();
+
+            Assert.Throws<System.InvalidOperationException>(() => SimulationService.Instance.Send(_locations[1]), "a Run is already in the Field");
+            yield return null;
+
+            Assert.That(IsWalking(), Is.False, "a refused Send starts no walk");
+            Assert.That(Vector2.Distance(FigureAt(), before), Is.LessThan(5f), "the figure stays in the fight");
         }
 
         [Test]
@@ -110,6 +221,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             var encounter = SimulationService.Instance.Run.Encounter;
             for (var tick = 0; encounter.Enemies.Count == 0 && tick < 100; tick++)
                 SimulationService.Instance.Tick(0.5f);
+            yield return WaitForArrival();
             yield return null;
 
             var arguments = new object[] { encounter.HeroPosition, null };
