@@ -21148,7 +21148,7 @@ MonoBehaviour:
   <PreviousMember>k__BackingField: {fileID: 1393504392}
   <UserCanClear>k__BackingField: 1
   <SystemCanClear>k__BackingField: 1
-  <ResetWithParentPanel>k__BackingField: 0
+  <ResetWithParentPanel>k__BackingField: 1
 --- !u!1001 &1444363989
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -36713,9 +36713,9 @@ RectTransform:
   - {fileID: 5857211981016691184}
   m_Father: {fileID: 1106788606}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 150, y: -30}
   m_SizeDelta: {x: 60, y: 60}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &7022399921103937152
