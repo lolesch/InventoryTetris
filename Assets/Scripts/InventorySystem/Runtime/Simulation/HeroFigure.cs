@@ -17,7 +17,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// fight, where it stands where the simulation has the hero (ADR-0018), projected by the arena that draws the enemies.
     ///
     /// A Send walks it from the Field Exit to the Location, a Relocate from where it was drawn in the old fight to
-    /// the new Location, then it follows the fight. The Encounter is not held for the walk. Like the arena, only the
+    /// the new Location, then it follows the fight. A Return (issue #328) walks it out from where it was drawn to the
+    /// Field Exit, the Run already over. The Encounter is not held for the walk. Like the arena, only the
     /// binding is polled: the Run's current Encounter against the one held, once a frame, and a phase change or a new
     /// Encounter on the same Run is what tells a Send or a Relocate from a hero load that brought a Run in
     /// mid-fight. It updates after the arena in the same frame, so the arena has placed its own figures first.
@@ -98,7 +99,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _phase = run.Phase;
 
             SyncHero();
-            SyncEncounter(run.Encounter, sent, relocated);
+            SyncEncounter(run.Encounter, sent, relocated, run.LastResult is { Outcome: RunOutcome.Returned });
 
             // A Send's walk starts once the Location's anchor can be read, as the arena waits for it too.
             if (_awaitingLocation && ArenaSpace.LocationAnchor != null)
@@ -148,14 +149,21 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             StandAt(fieldExit);
         }
 
-        private void SyncEncounter(EncounterSimulation encounter, bool sent, bool relocated)
+        private void SyncEncounter(EncounterSimulation encounter, bool sent, bool relocated, bool returned)
         {
             if (encounter == _bound)
                 return;
 
+            var wasBound = _bound != null;
             _bound = encounter;
             if (encounter == null)
-                StandAt(fieldExit);
+            {
+                // A Return walks out from where the fight last drew him; a Death or a hero load stands him at the Exit.
+                if (returned && wasBound)
+                    TravelTo(fieldExit);
+                else
+                    StandAt(fieldExit);
+            }
             else if (sent || relocated)
             {
                 // A Relocate leaves the figure drawn where the old fight had it; both walks start once the Location's anchor can be read.
