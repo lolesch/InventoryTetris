@@ -570,14 +570,14 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
-        public void ARecall_DrivesASave_WithTheBankedLootInTheBag()
+        public void AReturn_DrivesASave_WithTheBankedLootInTheBag()
         {
             var setup = LoadedHero(out var id);
             setup.Game.Simulation.Send(thornwood);
             PutPotionsInBag(setup, 3u);
             Tick();
 
-            _ = setup.Game.Simulation.Recall();
+            _ = setup.Game.Simulation.Return();
 
             var next = NewSetup();
             _ = next.Saves.Load(id);
@@ -596,14 +596,14 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             PutPotionsInBag(setup, 1u);
             setup.Game.Simulation.Send(thornwood);
-            _ = setup.Game.Simulation.Recall();
+            _ = setup.Game.Simulation.Return();
             setup.Game.Simulation.Send(thornwood);
             setup.Game.Hero.GetResource(StatName.Health).DepleteCurrent();
             TickUntilHome(setup);
 
             Assert.That(seen, Is.EqualTo(new[]
             {
-                (RunOutcome.Recalled, RunPhase.InTown, false),
+                (RunOutcome.Returned, RunPhase.InTown, false),
                 (RunOutcome.Died, RunPhase.InTown, true),
             }));
         }
@@ -634,7 +634,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             setup.Game.Simulation.Send(thornwood);
             setup.Game.Hero.Wallet.Deposit(new Currency(50u));
 
-            _ = setup.Game.Simulation.Recall();
+            _ = setup.Game.Simulation.Return();
 
             var list = setup.Saves.List().ToDictionary(hero => hero.Id);
             Assert.That(list[second.Id].SavedAtUtc, Is.EqualTo(now));
@@ -677,7 +677,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
                 .Sum(p => (int)p.Amount);
 
         [Test]
-        public void APackageOnTheCursorAtARecall_IsBackAtItsOrigin_AndInTheSave()
+        public void APackageOnTheCursorAtAReturn_IsBackAtItsOrigin_AndInTheSave()
         {
             var setup = LoadedHero(out var id);
             var wallet = setup.Game.Hero.Wallet.Balance.Total;
@@ -686,7 +686,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             setup.Saves.AddBeforeSave(() => held = ReturnToOrigin.Return(held, inventory, cell, inventory));
             setup.Game.Simulation.Send(thornwood);
 
-            _ = setup.Game.Simulation.Recall();
+            _ = setup.Game.Simulation.Return();
 
             Assert.That(held.IsValid, Is.False, "the package found a home");
             var next = NewSetup();

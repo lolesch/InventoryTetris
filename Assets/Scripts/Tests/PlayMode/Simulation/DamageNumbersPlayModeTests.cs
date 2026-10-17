@@ -37,7 +37,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
         public void TearDown()
         {
             if (SimulationService.Instance.Run.Phase == RunPhase.InField)
-                _ = SimulationService.Instance.Recall();
+                _ = SimulationService.Instance.Return();
 
             _ = Session.Instance.TryLoad(GameBoot.Load().DefaultHero);
         }
@@ -150,7 +150,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             yield return UntilAHit((_, _) => true, hits);
             Assert.That(RisingFrom(), Is.Not.Empty, "a number is rising");
 
-            _ = SimulationService.Instance.Recall();
+            _ = SimulationService.Instance.Return();
             yield return null;
 
             Assert.That(RisingFrom(), Is.Empty);

@@ -7,7 +7,7 @@ namespace ToolSmiths.InventorySystem.Services
 {
     /// <summary>
     /// The state service over the Hero and the World (ADR-0015): the Run, its loot flow, the Send /
-    /// Relocate / Recall transitions and the tick that drives them. It reads the current Hero and
+    /// Relocate / Return transitions and the tick that drives them. It reads the current Hero and
     /// World off the <see cref="ISession"/> on every call and caches neither - the Run lives on the
     /// World and the Corpse and selected Location on the Hero - so a hero load changes what it
     /// operates on without it noticing. The tick is hosted by <see cref="GameLoop"/>.
@@ -33,7 +33,7 @@ namespace ToolSmiths.InventorySystem.Services
         /// <summary>
         /// Raised once, after a Run has ended and everything its end does has been applied: the Run is
         /// back in Town, and on a Death the bag is already buried in the Corpse and the penalty paid. A
-        /// Recall raises it the same way. The Run's own ended event fires earlier, inside the Death
+        /// Return raises it the same way. The Run's own ended event fires earlier, inside the Death
         /// handling, so a save hooked to that one would write a hero with no Corpse and a full bag.
         /// This one is the service's, not the Run's, so it survives a World swap: a subscriber attaches
         /// once.
@@ -49,7 +49,7 @@ namespace ToolSmiths.InventorySystem.Services
         void Send(LocationConfig location);
 
         /// <summary>
-        /// Move the live Run to <paramref name="location"/> without a Recall. Throws unless a Run is
+        /// Move the live Run to <paramref name="location"/> without a Return. Throws unless a Run is
         /// live with its hero up. Like <see cref="Send"/>, lays the Hero's Corpse back out when the new
         /// Location is where it fell.
         /// </summary>
@@ -66,10 +66,10 @@ namespace ToolSmiths.InventorySystem.Services
         event Action CorpseChanged;
 
         /// <summary>End the Run with everything kept. Refused once the hero is down - that ends in a Death.</summary>
-        RunResult Recall();
+        RunResult Return();
 
         /// <summary>
-        /// Ends a live Run so the game can close in Town: a Recall, or the Death when the hero is already
+        /// Ends a live Run so the game can close in Town: a Return, or the Death when the hero is already
         /// down, in that order of precedence the tick uses. Raises <see cref="RunSettled"/> like either
         /// does. Nothing happens when no Run is in the Field.
         /// </summary>
@@ -79,7 +79,7 @@ namespace ToolSmiths.InventorySystem.Services
         /// <summary>
         /// Whether the live Run is frozen: <see cref="Tick"/> does nothing at all while it is true, so
         /// the Encounter, the Hero's regeneration and both ways home stand still. Only a Run in the
-        /// Field can be paused, and the Run's end (Recall or Death) or the next <see cref="Send"/>
+        /// Field can be paused, and the Run's end (Return or Death) or the next <see cref="Send"/>
         /// clears it, so it is never true in Town.
         /// </summary>
         bool IsPaused { get; }
