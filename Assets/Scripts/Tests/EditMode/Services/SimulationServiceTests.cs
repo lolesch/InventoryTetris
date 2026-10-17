@@ -241,34 +241,75 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
-        public void HeroContextQuickMove_DropsToTheGround_OnlyWhileARunHasOne()
+        public void HeroContextQuickMove_DropsToTheGround_InTownAndInARun()
         {
             session.World.Context.Set(InventoryContext.Hero);
             var bag = session.Hero.Inventory;
 
-            Assert.That(inventory.QuickMoveFor(bag).Kind, Is.EqualTo(QuickMoveIntentKind.None), "Town has no ground (issue #63)");
+            Assert.That(inventory.QuickMoveFor(bag).Kind, Is.EqualTo(QuickMoveIntentKind.Drop), "Town has the World's ground");
 
             service.Send(thornwood);
             Assert.That(inventory.QuickMoveFor(bag).Kind, Is.EqualTo(QuickMoveIntentKind.Drop));
 
             _ = service.Return();
-            Assert.That(inventory.QuickMoveFor(bag).Kind, Is.EqualTo(QuickMoveIntentKind.None), "the Run's end takes the ground with it");
+            Assert.That(inventory.QuickMoveFor(bag).Kind, Is.EqualTo(QuickMoveIntentKind.Drop), "back in Town it is still there");
         }
 
         [Test]
-        public void GroundContextQuickMove_PicksUpFromTheGround_OnlyWhileARunHasOne()
+        public void GroundContextQuickMove_PicksUpFromTheGround_InTownAndInARun()
         {
             session.World.Context.Set(InventoryContext.Ground);
             var ground = session.World.Ground;
 
-            Assert.That(inventory.QuickMoveFor(ground).Kind, Is.EqualTo(QuickMoveIntentKind.None), "Town has no ground (issue #63)");
+            Assert.That(inventory.QuickMoveFor(ground).Kind, Is.EqualTo(QuickMoveIntentKind.PickUp), "Town has the World's ground");
+            Assert.That(inventory.QuickMoveFor(session.Hero.Inventory).Kind, Is.EqualTo(QuickMoveIntentKind.Drop));
 
             service.Send(thornwood);
             Assert.That(inventory.QuickMoveFor(ground).Kind, Is.EqualTo(QuickMoveIntentKind.PickUp));
             Assert.That(inventory.QuickMoveFor(session.Hero.Inventory).Kind, Is.EqualTo(QuickMoveIntentKind.Drop));
+        }
+
+        [Test]
+        public void TheTownGround_TakesADropFromTheBag_AndGivesItBackOnAClick()
+        {
+            var hero = session.Hero;
+            hero.Equipment.autoEquip = false;
+            var sword = items.RollEquipment();
+            var package = new Package(null, sword, 1u);
+            Assert.That(hero.Inventory.TryAddToContainer(ref package), Is.True);
+
+            _ = DropTransaction.Run(hero.Inventory, hero.Inventory.StoredPackages.Keys.Single(), session.World.LootGround);
+
+            Assert.That(hero.Inventory.StoredPackages, Is.Empty);
+            Assert.That(session.World.Ground.PackagesOldestFirst().Select(p => p.Item), Is.EqualTo(new[] { sword }));
+
+            Assert.That(session.World.LootGround.PickUpFromGround(sword), Is.True);
+
+            Assert.That(session.World.Ground.StoredPackages, Is.Empty);
+            Assert.That(hero.Inventory.StoredPackages.Values.Select(p => p.Item), Is.EqualTo(new[] { sword }));
+        }
+
+        [Test]
+        public void TheGroundAClickReaches_IsTheLootFlowInARun_AndTheTownDeskOtherwise()
+        {
+            Assert.That(session.World.LootGround, Is.SameAs(session.World.GroundDesk));
+
+            service.Send(thornwood);
+            Assert.That(session.World.LootGround, Is.SameAs(service.LootFlow), "the Run counts what banks toward its take");
 
             _ = service.Return();
-            Assert.That(inventory.QuickMoveFor(ground).Kind, Is.EqualTo(QuickMoveIntentKind.None));
+            Assert.That(session.World.LootGround, Is.SameAs(session.World.GroundDesk));
+        }
+
+        [Test]
+        public void Send_WipesTheTownGround()
+        {
+            _ = session.World.LootGround.PlaceOnGround(new Package(null, items.RollEquipment(), 1u));
+            Assert.That(session.World.Ground.StoredPackages, Is.Not.Empty, "fixture: something lies in Town");
+
+            service.Send(thornwood);
+
+            Assert.That(session.World.Ground.StoredPackages, Is.Empty);
         }
 
         [Test]

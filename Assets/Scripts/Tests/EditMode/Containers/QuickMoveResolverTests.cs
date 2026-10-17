@@ -21,7 +21,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
     /// and the Hero context has no Town Stop, so it has no sink at all. It is asserted here
     /// rather than left implicit, because "a Quick Move with only the Hero Panel open does
     /// nothing" is a stated outcome of #85, not an oversight. The one exception is #63's
-    /// ground row: in a Run, a backpack shift-click drops to the ground. The Healer gained the
+    /// ground row: a backpack shift-click drops to the ground, in Town (#285) as in a Run. The Healer gained the
     /// Vendor's sale rows in #121.</para>
     /// </summary>
     [TestFixture]
@@ -43,8 +43,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 
         private QuickMoveIntent Resolve(InventoryContext context, AbstractDimensionalContainer source,
             AbstractDimensionalContainer backpack, AbstractDimensionalContainer stash,
-            AbstractDimensionalContainer equipment, AbstractDimensionalContainer store, bool groundOpen = false)
-            => QuickMoveResolver.Resolve(context, source, backpack, stash, equipment, store, healerSupply, sold, ground, groundOpen);
+            AbstractDimensionalContainer equipment, AbstractDimensionalContainer store)
+            => QuickMoveResolver.Resolve(context, source, backpack, stash, equipment, store, healerSupply, sold, ground);
 
         // ── Stash open: backpack ↔ Stash, equipment → Stash (byte-for-byte as today) ──
 
@@ -108,22 +108,12 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.None));
         }
 
-        // ── Hero context: no rows in Town, deliberately (issue #85); the ground is its one sink in a Run (issue #63) ──
-
-        [TestCase(nameof(backpack))]
-        [TestCase(nameof(stash))]
-        [TestCase(nameof(equipment))]
-        public void HeroContext_PlayerContainer_DoesNothing_WhenThereIsNoGround(string sourceName)
-        {
-            var intent = Resolve(InventoryContext.Hero, SourceOf(sourceName), backpack, stash, equipment, store);
-
-            Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.None));
-        }
+        // ── Hero context: no Town Stop, deliberately (issue #85); the ground is its one sink (issues #63, #285) ──
 
         [Test]
-        public void HeroContext_Backpack_DropsTheItemToTheGround_WhenARunHasOne()
+        public void HeroContext_Backpack_DropsTheItemToTheGround()
         {
-            var intent = Resolve(InventoryContext.Hero, backpack, backpack, stash, equipment, store, groundOpen: true);
+            var intent = Resolve(InventoryContext.Hero, backpack, backpack, stash, equipment, store);
 
             Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.Drop));
             Assert.That(intent.Target, Is.Null);
@@ -131,11 +121,11 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 
         [TestCase(nameof(stash))]
         [TestCase(nameof(equipment))]
-        public void HeroContext_OtherPlayerContainers_StillDoNothing_WithAGround(string sourceName)
+        public void HeroContext_OtherPlayerContainers_DoNothing(string sourceName)
         {
             // Equipment keeps the Hero exemption from rule two: unequipping to the dirt on a stray
             // shift-click would duplicate right-click, and the Stash is not on screen in this context.
-            var intent = Resolve(InventoryContext.Hero, SourceOf(sourceName), backpack, stash, equipment, store, groundOpen: true);
+            var intent = Resolve(InventoryContext.Hero, SourceOf(sourceName), backpack, stash, equipment, store);
 
             Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.None));
         }
@@ -145,7 +135,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         [Test]
         public void GroundContext_Backpack_DropsTheItemToTheGround()
         {
-            var intent = Resolve(InventoryContext.Ground, backpack, backpack, stash, equipment, store, groundOpen: true);
+            var intent = Resolve(InventoryContext.Ground, backpack, backpack, stash, equipment, store);
 
             Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.Drop));
         }
@@ -153,7 +143,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         [Test]
         public void GroundContext_TheGround_PicksTheDropUp()
         {
-            var intent = Resolve(InventoryContext.Ground, ground, backpack, stash, equipment, store, groundOpen: true);
+            var intent = Resolve(InventoryContext.Ground, ground, backpack, stash, equipment, store);
 
             Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.PickUp));
             Assert.That(intent.Target, Is.Null);
@@ -163,22 +153,15 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         [TestCase(nameof(equipment))]
         public void GroundContext_OtherPlayerContainers_DoNothing(string sourceName)
         {
-            var intent = Resolve(InventoryContext.Ground, SourceOf(sourceName), backpack, stash, equipment, store, groundOpen: true);
+            var intent = Resolve(InventoryContext.Ground, SourceOf(sourceName), backpack, stash, equipment, store);
 
             Assert.That(intent.Kind, Is.EqualTo(QuickMoveIntentKind.None));
         }
 
         [Test]
-        public void GroundContext_WithNoGroundOpen_DoesNothing()
-        {
-            Assert.That(Resolve(InventoryContext.Ground, backpack, backpack, stash, equipment, store).Kind, Is.EqualTo(QuickMoveIntentKind.None));
-            Assert.That(Resolve(InventoryContext.Ground, ground, backpack, stash, equipment, store).Kind, Is.EqualTo(QuickMoveIntentKind.None));
-        }
-
-        [Test]
         public void TheGround_PicksNothingUp_OutsideTheGroundContext()
         {
-            Assert.That(Resolve(InventoryContext.Hero, ground, backpack, stash, equipment, store, groundOpen: true).Kind,
+            Assert.That(Resolve(InventoryContext.Hero, ground, backpack, stash, equipment, store).Kind,
                 Is.EqualTo(QuickMoveIntentKind.None));
         }
 
@@ -188,9 +171,9 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         [TestCase(InventoryContext.Healer, QuickMoveIntentKind.Sell)]
         public void AnotherContext_IsUnchangedByTheGround(InventoryContext context, QuickMoveIntentKind expected = QuickMoveIntentKind.None)
         {
-            var withGround = Resolve(context, backpack, backpack, stash, equipment, store, groundOpen: true);
+            var intent = Resolve(context, backpack, backpack, stash, equipment, store);
 
-            Assert.That(withGround.Kind, Is.EqualTo(expected), "the ground is the Hero context's sink, not a second sink elsewhere");
+            Assert.That(intent.Kind, Is.EqualTo(expected), "the ground is the Hero context's sink, not a second sink elsewhere");
         }
 
         // ── Vendor open: shift-click sells through the Sale (#128, replacing #33's staging) ──

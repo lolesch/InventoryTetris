@@ -25,25 +25,22 @@ namespace ToolSmiths.InventorySystem.Inventories
     ///
     /// <para><see cref="InventoryContext.Hero"/> has no Town Stop, so no sink of its own: the Hero
     /// Panel's sink would be Equipment, but that row would duplicate right-click and has no ticket
-    /// (#86's stated out-of-scope). Its one row is the ground (issue #63): while a Run has a
-    /// ground, a shift-click on the backpack drops the item there. Equipment stays out of it -
-    /// rule two's Hero exemption holds, so a stray shift-click never unequips to the dirt. With
-    /// no ground (Town) the Hero context resolves to nothing, a stated outcome, not an omission.
-    /// It never reaches <see cref="Route"/>. <see cref="InventoryContext.Ground"/> has the same drop
-    /// row and one more: a shift-click on the ground itself picks the Drop up, through the loot flow.</para>
+    /// (#86's stated out-of-scope). Its one row is the ground (issues #63, #285): a shift-click on the
+    /// backpack drops the item there, in Town as in a Run - the World always has a ground. Equipment
+    /// stays out of it - rule two's Hero exemption holds, so a stray shift-click never unequips to the
+    /// dirt. It never reaches <see cref="Route"/>. <see cref="InventoryContext.Ground"/> has the same drop
+    /// row and one more: a shift-click on the ground itself picks the Drop up.</para>
     /// </summary>
     public static class QuickMoveResolver
     {
         /// <param name="sold">The Sold container (issue #126) - a Supply, so a shift-click on it
         /// is a Buy in every context.</param>
-        /// <param name="ground">The Run's ground, the source of the Ground context's one pick-up row.</param>
-        /// <param name="groundOpen">Whether a Run has a ground to drop on (issue #63): true in the
-        /// Field, false in Town.</param>
+        /// <param name="ground">The World's ground, the source of the Ground context's one pick-up row.</param>
         public static QuickMoveIntent Resolve(InventoryContext context, AbstractDimensionalContainer source,
             AbstractDimensionalContainer backpack, AbstractDimensionalContainer stash,
             AbstractDimensionalContainer equipment, AbstractDimensionalContainer store,
             AbstractDimensionalContainer healerSupply, AbstractDimensionalContainer sold,
-            AbstractDimensionalContainer ground, bool groundOpen = false)
+            AbstractDimensionalContainer ground)
         {
             if (source == store || source == healerSupply || source == sold)
                 return QuickMoveIntent.Buy;
@@ -52,9 +49,9 @@ namespace ToolSmiths.InventorySystem.Inventories
 
             return context switch
             {
-                InventoryContext.Hero or InventoryContext.Ground when groundOpen && source == hub => QuickMoveIntent.Drop,
+                InventoryContext.Hero or InventoryContext.Ground when source == hub => QuickMoveIntent.Drop,
 
-                InventoryContext.Ground when groundOpen && source == ground => QuickMoveIntent.PickUp,
+                InventoryContext.Ground when source == ground => QuickMoveIntent.PickUp,
 
                 InventoryContext.Stash => Route(source, hub, equipment,
                     sink: QuickMoveIntent.MoveTo(stash),

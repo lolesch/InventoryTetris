@@ -1,9 +1,11 @@
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
+using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
@@ -25,6 +27,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         private const string SwordId = "test.sword";
         private const string HelmId = "test.helm";
         private const string GreatswordId = "test.greatsword";
+        private const string BeltId = "test.belt";
         private const string CopperId = "test.copper";
         private const string SilverId = "test.silver";
         private const string GoldId = "test.gold";
@@ -35,6 +38,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 
         private static TestCatalog catalog;
         private FakeCurrencyMinter minter;
+        private GroundContainer lying;
+        private ILootGround ground;
 
         [SetUp]
         public void SetCatalog()
@@ -43,6 +48,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
                 .With(new TestDefinition { Id = SwordId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Sword, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
                 .With(new TestDefinition { Id = HelmId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Helm, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
                 .With(new TestDefinition { Id = GreatswordId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Sword, Footprint = ItemSize.TwoByOne, BaseStackLimit = 1u })
+                .With(new TestDefinition { Id = BeltId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Belt, Footprint = ItemSize.TwoByOne, BaseStackLimit = 1u })
                 .With(new TestDefinition { Id = IronId, Category = ItemCategory.Currency, CurrencyType = CurrencyType.Iron, Footprint = ItemSize.OneByOne, BaseStackLimit = 999u })
                 .With(new TestDefinition { Id = CopperId, Category = ItemCategory.Currency, CurrencyType = CurrencyType.Copper, Footprint = ItemSize.OneByOne, BaseStackLimit = 999u })
                 .With(new TestDefinition { Id = SilverId, Category = ItemCategory.Currency, CurrencyType = CurrencyType.Silver, Footprint = ItemSize.OneByOne, BaseStackLimit = 999u })
@@ -68,6 +74,9 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         /// A 2x1 Rare greatsword worth 6 * 35 = 210, wide enough to need two 1x1 cells.
         private static ItemInstance Greatsword() => new(GreatswordId, ItemRarity.Rare, 9, new[] { Affix(StatName.PhysicalDamage, 6f) });
 
+        /// A 2x1 Rare belt valued at armor * 20 base units; 66 -> 1320 = one gold + two silver.
+        private static ItemInstance Belt(float armor) => new(BeltId, ItemRarity.Rare, 5, new[] { Affix(StatName.Armor, armor) });
+
         /// A helm with no affixes: it prices at 0 and is never a sale.
         private static ItemInstance Worthless() => new(HelmId, ItemRarity.Common, 0, null);
 
@@ -78,7 +87,35 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         private static CharacterEquipment Equipment(IStatReceiver stats = null) => new(new Vector2Int(14, 1), catalog, stats);
         private static SoldContainer Sold(int width = 4, int height = 4) => new(new Vector2Int(width, height), catalog);
 
-        private Wallet WalletOver(AbstractDimensionalContainer coins) => new(coins, minter);
+        /// A Wallet over <paramref name="coins"/>, with an empty ground to sell onto: <see cref="lying"/> is
+        /// what lies there, <see cref="ground"/> is the desk a Sale lays through.
+        private Wallet WalletOver(AbstractDimensionalContainer coins, int groundWidth = 4, int groundHeight = 4)
+        {
+            var wallet = new Wallet(coins, minter);
+
+            lying = new GroundContainer(new Vector2Int(groundWidth, groundHeight), catalog);
+            ground = new GroundDesk(lying, new NoPlayer(), wallet);
+
+            return wallet;
+        }
+
+        /// The coins of one denomination lying on the ground, however many stacks hold them.
+        private uint Lying(CurrencyType type) => (uint)lying.StoredPackages.Values
+            .Where(package => ItemView.Resolve(package.Item, catalog).Definition.CurrencyType == type)
+            .Sum(package => (int)package.Amount);
+
+        /// The denominations lying on the ground, oldest first: the order the Sale laid them in.
+        private CurrencyType[] LyingOldestFirst() => lying.PackagesOldestFirst()
+            .Select(package => ItemView.Resolve(package.Item, catalog).Definition.CurrencyType)
+            .ToArray();
+
+        /// The player's hand is never reached by a Sale; the ground desk only needs one to exist.
+        private sealed class NoPlayer : IItemReceiver
+        {
+            public IReadOnlyList<AbstractDimensionalContainer> ReceivingContainers => System.Array.Empty<AbstractDimensionalContainer>();
+
+            public bool PickUpItem(ItemInstance item, uint amount) => false;
+        }
 
         private void SeedCash(Wallet wallet, CurrencyType type, uint count)
         {
@@ -110,7 +147,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var sword = Sword();
             var cell = Put(inventory, sword);
 
-            Assert.That(Sale.TrySell(sold, wallet, inventory, cell), Is.True);
+            Assert.That(Sale.TrySell(sold, wallet, ground, inventory, cell), Is.True);
 
             Assert.That(Holds(inventory, sword), Is.False, "the sword left the Inventory");
             Assert.That(Holds(sold, sword), Is.True, "and sits in the Sold container");
@@ -128,7 +165,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             _ = Put(inventory, sword);
             var helmCell = Put(inventory, helm);
 
-            Assert.That(Sale.TrySell(sold, wallet, inventory, helmCell), Is.True);
+            Assert.That(Sale.TrySell(sold, wallet, ground, inventory, helmCell), Is.True);
 
             Assert.That(Holds(inventory, sword), Is.True, "the other item was not touched");
             Assert.That(Holds(inventory, helm), Is.False);
@@ -152,7 +189,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var slot = equipment.StoredPackages.Keys.Single();
             stats.Added.Clear();
 
-            Assert.That(Sale.TrySell(sold, wallet, equipment, slot), Is.True);
+            Assert.That(Sale.TrySell(sold, wallet, ground, equipment, slot), Is.True);
 
             Assert.That(equipment.StoredPackages, Is.Empty, "the slot was vacated");
             Assert.That(Holds(sold, helm), Is.True, "the helm is in the Sold container");
@@ -165,39 +202,63 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         {
             var stats = new FakeStatReceiver();
             var equipment = Equipment(stats);
-            var wallet = WalletOver(Inventory(1, 1));
-            SeedCash(wallet, CurrencyType.Gold, 1u); // the wallet is full: an 80 payout cannot land
-            var sold = Sold();
-            var helm = Helm();
+            var wallet = WalletOver(Inventory());
+            var sold = Sold(1, 1); // a 2x1 greatsword can never fit
+            var greatsword = Greatsword();
 
-            var worn = new Package(null, helm, 1u);
+            var worn = new Package(null, greatsword, 1u);
             _ = equipment.TryAddToContainer(ref worn);
             var slot = equipment.StoredPackages.Keys.Single();
             stats.Added.Clear();
 
-            Assert.That(Sale.TrySell(sold, wallet, equipment, slot), Is.False);
+            Assert.That(Sale.TrySell(sold, wallet, ground, equipment, slot), Is.False);
 
-            Assert.That(Holds(equipment, helm), Is.True, "still worn");
+            Assert.That(Holds(equipment, greatsword), Is.True, "still worn");
             Assert.That(stats.Removed, Is.Empty, "no affix was lifted by a sale that never happened");
+            Assert.That(lying.StoredPackages, Is.Empty, "and no coin lies on the ground");
         }
 
-        // ── the payout must fit, else nothing happens ──────────────────────
+        // ── a payout that does not fit lies on the ground ──────────────────
 
         [Test]
-        public void APayoutThatDoesNotFit_LeavesEveryContainerAndTheWalletUntouched()
+        public void APayoutThatFindsNoCell_LiesOnTheGround_AndTheSaleGoesThrough()
         {
             var source = Inventory();
             var wallet = WalletOver(Inventory(1, 1));
             SeedCash(wallet, CurrencyType.Gold, 1u); // no free cell, no copper/silver pile to merge into
             var sold = Sold();
-            var helm = Helm();
+            var helm = Helm(); // 80 = one silver + four copper
             var cell = Put(source, helm);
 
-            Assert.That(Sale.TrySell(sold, wallet, source, cell), Is.False);
+            Assert.That(Sale.TrySell(sold, wallet, ground, source, cell), Is.True);
 
-            Assert.That(Holds(source, helm), Is.True, "the helm stayed in its source");
-            Assert.That(sold.StoredPackages, Is.Empty, "nothing reached the Sold container");
-            Assert.That(wallet.Balance.Total, Is.EqualTo(Currency.ironToGold), "no coin was dropped or paid");
+            Assert.That(Holds(sold, helm), Is.True, "the helm was sold");
+            Assert.That(Holds(source, helm), Is.False);
+            Assert.That(wallet.Balance.Total, Is.EqualTo(Currency.ironToGold), "the full wallet banked nothing");
+            Assert.That(Lying(CurrencyType.Silver), Is.EqualTo(1u));
+            Assert.That(Lying(CurrencyType.Copper), Is.EqualTo(4u));
+        }
+
+        [Test]
+        public void ADenominationTheWalletCannotMint_IsSkipped_AndTheRestOfThePayoutLiesOnTheGround()
+        {
+            var noCopper = new TestCatalog()
+                .With(new TestDefinition { Id = HelmId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Helm, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
+                .With(new TestDefinition { Id = SilverId, Category = ItemCategory.Currency, CurrencyType = CurrencyType.Silver, Footprint = ItemSize.OneByOne, BaseStackLimit = 999u })
+                .With(new TestDefinition { Id = GoldId, Category = ItemCategory.Currency, CurrencyType = CurrencyType.Gold, Footprint = ItemSize.OneByOne, BaseStackLimit = 999u });
+            minter = new FakeCurrencyMinter(noCopper);
+            var source = Inventory();
+            var wallet = WalletOver(Inventory(1, 1));
+            SeedCash(wallet, CurrencyType.Gold, 1u); // no free cell, so the whole payout goes to the ground
+            var sold = Sold();
+            var helm = Helm(); // 80 = one silver + four copper
+            var cell = Put(source, helm);
+
+            Assert.That(Sale.TrySell(sold, wallet, ground, source, cell), Is.True);
+
+            Assert.That(Holds(sold, helm), Is.True, "the helm was sold");
+            Assert.That(Lying(CurrencyType.Silver), Is.EqualTo(1u));
+            Assert.That(lying.StoredPackages, Has.Count.EqualTo(1), "the copper that cannot be minted lies nowhere");
         }
 
         [Test]
@@ -211,11 +272,97 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var helm = Helm(armor: 3f); // 60 base units = one silver
             var cell = Put(inventory, helm);
 
-            Assert.That(Sale.TrySell(sold, wallet, inventory, cell), Is.True);
+            Assert.That(Sale.TrySell(sold, wallet, ground, inventory, cell), Is.True);
 
             Assert.That(Holds(sold, helm), Is.True);
             Assert.That(wallet.Balance.Silver, Is.EqualTo(1u));
             Assert.That(wallet.Balance.Total, Is.EqualTo(Currency.ironToSilver));
+        }
+
+        [Test]
+        public void ABeltSoldFromAFullBag_PaysIntoTheTwoCellsItFrees()
+        {
+            // 4x1 bag: the 2x1 belt and two helms. The payout, one gold + two silver (1320), is
+            // two piles; the belt frees two cells, so it fits.
+            var inventory = Inventory(4, 1);
+            var wallet = WalletOver(inventory);
+            var sold = Sold();
+            var belt = Belt(66f);
+            var beltCell = Put(inventory, belt);
+            _ = Put(inventory, Helm());
+            _ = Put(inventory, Helm());
+
+            Assert.That(inventory.StoredPackages, Has.Count.EqualTo(3), "the bag is full");
+            Assert.That(Sale.TrySell(sold, wallet, ground, inventory, beltCell), Is.True);
+
+            Assert.That(Holds(sold, belt), Is.True);
+            Assert.That(wallet.Balance.Total, Is.EqualTo(1320u));
+        }
+
+        [Test]
+        public void ABeltWhosePayoutNeedsMorePilesThanItFrees_BanksTheHighestAndLeavesTheCopperOnTheGround()
+        {
+            // 1340 = one gold + two silver + four copper: three piles, two freed cells.
+            var inventory = Inventory(4, 1);
+            var wallet = WalletOver(inventory);
+            var sold = Sold();
+            var belt = Belt(67f);
+            var beltCell = Put(inventory, belt);
+            _ = Put(inventory, Helm());
+            _ = Put(inventory, Helm());
+
+            Assert.That(Sale.TrySell(sold, wallet, ground, inventory, beltCell), Is.True);
+
+            Assert.That(Holds(sold, belt), Is.True);
+            Assert.That(wallet.Balance.Gold, Is.EqualTo(1u));
+            Assert.That(wallet.Balance.Silver, Is.EqualTo(2u));
+            Assert.That(wallet.Balance.Copper, Is.Zero, "the copper found no cell");
+            Assert.That(Lying(CurrencyType.Copper), Is.EqualTo(4u), "it lies on the ground");
+            Assert.That(lying.StoredPackages, Has.Count.EqualTo(1), "and only the copper does");
+        }
+
+        [Test]
+        public void ADropSaleWhosePayoutNeedsMorePilesThanTheBagHas_LaysTheRestOnTheGround_HighestFirst()
+        {
+            // 3x1 bag, two helms, one free cell. The belt in hand pays gold + two silver + four copper.
+            var inventory = Inventory(3, 1);
+            var wallet = WalletOver(inventory);
+            var sold = Sold();
+            var belt = Belt(67f);
+            _ = Put(inventory, Helm());
+            _ = Put(inventory, Helm());
+
+            Assert.That(Sale.CanSellHeld(sold, new Package(null, belt, 1u)), Is.True, "no forbidden tint");
+            Assert.That(Sale.TrySellHeld(sold, wallet, ground, new Package(null, belt, 1u)), Is.True);
+
+            Assert.That(Holds(sold, belt), Is.True);
+            Assert.That(wallet.Balance.Gold, Is.EqualTo(1u));
+            Assert.That(wallet.Balance.Silver + wallet.Balance.Copper, Is.Zero, "one cell, so only the gold banked");
+            Assert.That(LyingOldestFirst(), Is.EqualTo(new[] { CurrencyType.Silver, CurrencyType.Copper }), "highest laid first");
+            Assert.That(Lying(CurrencyType.Silver), Is.EqualTo(2u));
+            Assert.That(Lying(CurrencyType.Copper), Is.EqualTo(4u));
+        }
+
+        [Test]
+        public void ACoinStackTheFullGroundPushesOut_BanksIntoTheWallet()
+        {
+            // The ground holds one cell. It starts with 3 iron; the sale's copper evicts them, and the
+            // bag's iron pile takes them back. 4x1 bag: belt (2 cells), helm, one iron.
+            var inventory = Inventory(4, 1);
+            var wallet = WalletOver(inventory, groundWidth: 1, groundHeight: 1);
+            SeedCash(wallet, CurrencyType.Iron, 1u);
+            var sold = Sold();
+            var belt = Belt(67f);
+            var beltCell = Put(inventory, belt);
+            _ = Put(inventory, Helm());
+            _ = ground.PlaceOnGround(new Package(null, minter.MintCurrency(CurrencyType.Iron), 3u));
+
+            Assert.That(inventory.StoredPackages, Has.Count.EqualTo(3), "belt, helm and the iron pile: the bag is full");
+            Assert.That(Sale.TrySell(sold, wallet, ground, inventory, beltCell), Is.True);
+
+            Assert.That(Lying(CurrencyType.Copper), Is.EqualTo(4u), "the copper took the only ground cell");
+            Assert.That(Lying(CurrencyType.Iron), Is.Zero);
+            Assert.That(wallet.Balance.Iron, Is.EqualTo(4u), "the evicted iron banked onto the pile in the bag");
         }
 
         [Test]
@@ -227,11 +374,12 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var worthless = Worthless();
             var cell = Put(source, worthless);
 
-            Assert.That(Sale.TrySell(sold, wallet, source, cell), Is.False);
+            Assert.That(Sale.TrySell(sold, wallet, ground, source, cell), Is.False);
 
             Assert.That(Holds(source, worthless), Is.True);
             Assert.That(sold.StoredPackages, Is.Empty);
             Assert.That(wallet.Balance.Total, Is.Zero);
+            Assert.That(lying.StoredPackages, Is.Empty);
         }
 
         // ── eviction: oldest first, the sale order is the only ledger ──────
@@ -245,10 +393,10 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var first = Sword();
             var second = Helm();
             var third = Helm(armor: 5f);
-            _ = Sale.TrySell(sold, wallet, source, Put(source, first));
-            _ = Sale.TrySell(sold, wallet, source, Put(source, second));
+            _ = Sale.TrySell(sold, wallet, ground, source, Put(source, first));
+            _ = Sale.TrySell(sold, wallet, ground, source, Put(source, second));
 
-            Assert.That(Sale.TrySell(sold, wallet, source, Put(source, third)), Is.True,
+            Assert.That(Sale.TrySell(sold, wallet, ground, source, Put(source, third)), Is.True,
                 "a sale always succeeds when it can pay out, even into a full Sold container");
 
             Assert.That(Holds(sold, first), Is.False, "the oldest fell off");
@@ -266,12 +414,12 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var oldest = Sword();
             var middle = Helm();
             var newest = Helm(armor: 5f);
-            _ = Sale.TrySell(sold, wallet, source, Put(source, oldest));
-            _ = Sale.TrySell(sold, wallet, source, Put(source, middle));
-            _ = Sale.TrySell(sold, wallet, source, Put(source, newest));
+            _ = Sale.TrySell(sold, wallet, ground, source, Put(source, oldest));
+            _ = Sale.TrySell(sold, wallet, ground, source, Put(source, middle));
+            _ = Sale.TrySell(sold, wallet, ground, source, Put(source, newest));
             var wide = Greatsword();
 
-            Assert.That(Sale.TrySell(sold, wallet, source, Put(source, wide)), Is.True);
+            Assert.That(Sale.TrySell(sold, wallet, ground, source, Put(source, wide)), Is.True);
 
             Assert.That(Holds(sold, wide), Is.True);
             Assert.That(Holds(sold, oldest), Is.False, "the oldest went first");
@@ -286,16 +434,17 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var wallet = WalletOver(Inventory());
             var sold = Sold(1, 1);
             var resident = Helm();
-            _ = Sale.TrySell(sold, wallet, source, Put(source, resident));
+            _ = Sale.TrySell(sold, wallet, ground, source, Put(source, resident));
             var wide = Greatsword();
             var cell = Put(source, wide);
             var balance = wallet.Balance.Total;
 
-            Assert.That(Sale.TrySell(sold, wallet, source, cell), Is.False, "2x1 cannot fit a 1x1 Sold container");
+            Assert.That(Sale.TrySell(sold, wallet, ground, source, cell), Is.False, "2x1 cannot fit a 1x1 Sold container");
 
             Assert.That(Holds(source, wide), Is.True, "the greatsword stayed");
             Assert.That(Holds(sold, resident), Is.True, "and nothing was evicted for a sale that could not happen");
             Assert.That(wallet.Balance.Total, Is.EqualTo(balance));
+            Assert.That(lying.StoredPackages, Is.Empty);
         }
 
         // ── currency is not for sale ───────────────────────────────────────
@@ -309,11 +458,12 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var coins = Copper();
             var cell = Put(inventory, coins, 5u);
 
-            Assert.That(Sale.TrySell(sold, wallet, inventory, cell), Is.False);
+            Assert.That(Sale.TrySell(sold, wallet, ground, inventory, cell), Is.False);
 
             Assert.That(CountOf(inventory, coins), Is.EqualTo(5u), "the coins stayed");
             Assert.That(sold.StoredPackages, Is.Empty);
             Assert.That(wallet.Balance.Total, Is.Zero, "nothing was paid for money");
+            Assert.That(lying.StoredPackages, Is.Empty);
         }
 
         [Test]
@@ -323,8 +473,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var sold = Sold();
             var held = new Package(null, Copper(), 5u);
 
-            Assert.That(Sale.CanSellHeld(sold, wallet, held), Is.False, "so the drop target shows the forbidden tint");
-            Assert.That(Sale.TrySellHeld(sold, wallet, held), Is.False);
+            Assert.That(Sale.CanSellHeld(sold, held), Is.False, "so the drop target shows the forbidden tint");
+            Assert.That(Sale.TrySellHeld(sold, wallet, ground, held), Is.False);
 
             Assert.That(sold.StoredPackages, Is.Empty);
             Assert.That(wallet.Balance.Total, Is.Zero);
@@ -345,13 +495,13 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var b = Helm();
             var c = Helm(armor: 5f);
             var d = Helm(armor: 6f);
-            _ = Sale.TrySell(sold, wallet, source, Put(source, a));
-            _ = Sale.TrySell(sold, wallet, source, Put(source, b));
-            _ = Sale.TrySell(sold, wallet, source, Put(source, c));
+            _ = Sale.TrySell(sold, wallet, ground, source, Put(source, a));
+            _ = Sale.TrySell(sold, wallet, ground, source, Put(source, b));
+            _ = Sale.TrySell(sold, wallet, ground, source, Put(source, c));
             var bCell = CellOf(sold, b);
             _ = sold.RemoveAtPosition(bCell, sold.StoredPackages[bCell]); // bought back: a gap in the middle
 
-            Assert.That(Sale.TrySell(sold, wallet, source, Put(source, d)), Is.True);
+            Assert.That(Sale.TrySell(sold, wallet, ground, source, Put(source, d)), Is.True);
 
             var cellA = CellOf(sold, a);
             var cellC = CellOf(sold, c);
@@ -371,15 +521,15 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var b = Helm();
             var c = Helm(armor: 5f);
             var d = Helm(armor: 6f);
-            _ = Sale.TrySell(sold, wallet, source, Put(source, a));
-            _ = Sale.TrySell(sold, wallet, source, Put(source, b));
-            _ = Sale.TrySell(sold, wallet, source, Put(source, c));
+            _ = Sale.TrySell(sold, wallet, ground, source, Put(source, a));
+            _ = Sale.TrySell(sold, wallet, ground, source, Put(source, b));
+            _ = Sale.TrySell(sold, wallet, ground, source, Put(source, c));
             var bCell = CellOf(sold, b);
             _ = sold.RemoveAtPosition(bCell, sold.StoredPackages[bCell]);
-            _ = Sale.TrySell(sold, wallet, source, Put(source, d)); // fills the grid again: a, c, d
+            _ = Sale.TrySell(sold, wallet, ground, source, Put(source, d)); // fills the grid again: a, c, d
 
             var e = Helm(armor: 7f);
-            Assert.That(Sale.TrySell(sold, wallet, source, Put(source, e)), Is.True);
+            Assert.That(Sale.TrySell(sold, wallet, ground, source, Put(source, e)), Is.True);
 
             Assert.That(Holds(sold, a), Is.False, "a was the oldest");
             Assert.That(Holds(sold, c) && Holds(sold, d) && Holds(sold, e), Is.True);
@@ -394,14 +544,14 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var a = Sword();
             var b = Helm();
             var c = Helm(armor: 5f);
-            _ = Sale.TrySell(sold, wallet, source, Put(source, a));
-            _ = Sale.TrySell(sold, wallet, source, Put(source, b));
-            _ = Sale.TrySell(sold, wallet, source, Put(source, c));
+            _ = Sale.TrySell(sold, wallet, ground, source, Put(source, a));
+            _ = Sale.TrySell(sold, wallet, ground, source, Put(source, b));
+            _ = Sale.TrySell(sold, wallet, ground, source, Put(source, c));
             var bCell = CellOf(sold, b);
             _ = sold.RemoveAtPosition(bCell, sold.StoredPackages[bCell]);
             var cellC = CellOf(sold, c);
 
-            Assert.That(Sale.TrySell(sold, wallet, source, Put(source, Worthless())), Is.False);
+            Assert.That(Sale.TrySell(sold, wallet, ground, source, Put(source, Worthless())), Is.False);
 
             Assert.That(CellOf(sold, c), Is.EqualTo(cellC), "a sale that pays nothing moved nothing, the gap included");
         }
@@ -415,10 +565,11 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var sold = Sold();
             var held = new Package(null, Sword(), 1u); // lifted off a shelf: a purchase in progress
 
-            Assert.That(Sale.TrySellHeld(sold, wallet, held, carriedPrice: 315f), Is.False);
+            Assert.That(Sale.TrySellHeld(sold, wallet, ground, held, carriedPrice: 315f), Is.False);
 
             Assert.That(sold.StoredPackages, Is.Empty);
             Assert.That(wallet.Balance.Total, Is.Zero, "nobody is paid for something not yet owned");
+            Assert.That(lying.StoredPackages, Is.Empty);
         }
 
         [Test]
@@ -428,7 +579,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var sold = Sold();
             var sword = Sword();
 
-            Assert.That(Sale.TrySellHeld(sold, wallet, new Package(null, sword, 1u)), Is.True);
+            Assert.That(Sale.TrySellHeld(sold, wallet, ground, new Package(null, sword, 1u)), Is.True);
 
             Assert.That(Holds(sold, sword), Is.True);
             Assert.That(wallet.Balance.Total, Is.EqualTo(SwordValue));
@@ -439,43 +590,35 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         [Test]
         public void CanSellHeld_IsTrue_ForAPlayerPackageThatPaysAndFits()
         {
-            var wallet = WalletOver(Inventory());
-
-            Assert.That(Sale.CanSellHeld(Sold(), wallet, new Package(null, Sword(), 1u)), Is.True);
+            Assert.That(Sale.CanSellHeld(Sold(), new Package(null, Sword(), 1u)), Is.True);
         }
 
         [Test]
         public void CanSellHeld_IsFalse_ForAPurchaseInProgress()
         {
-            var wallet = WalletOver(Inventory());
-
-            Assert.That(Sale.CanSellHeld(Sold(), wallet, new Package(null, Sword(), 1u), carriedPrice: 315f), Is.False);
+            Assert.That(Sale.CanSellHeld(Sold(), new Package(null, Sword(), 1u), carriedPrice: 315f), Is.False);
         }
 
         [Test]
         public void CanSellHeld_IsFalse_WhenThePayoutIsZero()
         {
-            var wallet = WalletOver(Inventory());
-
-            Assert.That(Sale.CanSellHeld(Sold(), wallet, new Package(null, Worthless(), 1u)), Is.False);
+            Assert.That(Sale.CanSellHeld(Sold(), new Package(null, Worthless(), 1u)), Is.False);
         }
 
         [Test]
-        public void CanSellHeld_IsFalse_WhenThePayoutWouldNotFit()
+        public void CanSellHeld_IsTrue_EvenWhenThePayoutHasNoCellInTheBag()
         {
             var wallet = WalletOver(Inventory(1, 1));
             SeedCash(wallet, CurrencyType.Gold, 1u); // no free cell, no copper/silver pile to merge into
 
-            Assert.That(Sale.CanSellHeld(Sold(), wallet, new Package(null, Helm(), 1u)), Is.False);
+            Assert.That(Sale.CanSellHeld(Sold(), new Package(null, Helm(), 1u)), Is.True, "the coins lie on the ground");
         }
 
         [Test]
         public void CanSellHeld_IsFalse_ForNothingInHand_OrNoSoldContainer()
         {
-            var wallet = WalletOver(Inventory());
-
-            Assert.That(Sale.CanSellHeld(Sold(), wallet, default), Is.False);
-            Assert.That(Sale.CanSellHeld(null, wallet, new Package(null, Sword(), 1u)), Is.False);
+            Assert.That(Sale.CanSellHeld(Sold(), default), Is.False);
+            Assert.That(Sale.CanSellHeld(null, new Package(null, Sword(), 1u)), Is.False);
         }
 
         [Test]
@@ -488,9 +631,9 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             {
                 var wallet = WalletOver(Inventory());
                 var sold = Sold();
-                var asked = Sale.CanSellHeld(sold, wallet, held);
+                var asked = Sale.CanSellHeld(sold, held);
 
-                Assert.That(Sale.TrySellHeld(sold, wallet, held), Is.EqualTo(asked));
+                Assert.That(Sale.TrySellHeld(sold, wallet, ground, held), Is.EqualTo(asked));
             }
         }
 
@@ -503,7 +646,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var wallet = WalletOver(Inventory());
             var sold = Sold();
 
-            Assert.That(Sale.TrySell(sold, wallet, source, new Vector2Int(2, 2)), Is.False);
+            Assert.That(Sale.TrySell(sold, wallet, ground, source, new Vector2Int(2, 2)), Is.False);
 
             Assert.That(sold.StoredPackages, Is.Empty);
             Assert.That(wallet.Balance.Total, Is.Zero);
@@ -517,7 +660,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var sword = Sword();
             var cell = Put(sold, sword);
 
-            Assert.That(Sale.TrySell(sold, wallet, sold, cell), Is.False, "a bought-back item is a Buy, not a sale");
+            Assert.That(Sale.TrySell(sold, wallet, ground, sold, cell), Is.False, "a bought-back item is a Buy, not a sale");
 
             Assert.That(Holds(sold, sword), Is.True);
             Assert.That(wallet.Balance.Total, Is.Zero);
@@ -532,7 +675,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var wallet = WalletOver(inventory);
             var sold = Sold();
             var sword = Sword();
-            _ = Sale.TrySell(sold, wallet, inventory, Put(inventory, sword));
+            _ = Sale.TrySell(sold, wallet, ground, inventory, Put(inventory, sword));
             var cell = sold.StoredPackages.Keys.Single();
             var price = VendorTransaction.BuyPrice(sword, catalog);
 

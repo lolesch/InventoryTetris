@@ -23,6 +23,10 @@
 - When your hero falls, the last damage numbers now drift by in slow motion for a moment.
 - Leaving the Field through its Exit now shows your hero walking out while the Field map fades; in Town he comes in standing at the Town Exit.
 - When your hero falls, he lies where he fell while the fight stands still, then your corpse appears there and the death notice opens.
+- Town now has a ground: shift-click an item in your bag, or drop it on the ground slot, to leave it there, and click it in the Ground list to pick it up. A full bag leaves it lying, and it is gone when you Send the hero out.
+- Selling from a full bag no longer fails: the bag keeps the gold and silver first, and the coins that do not fit lie on the Town ground for you to pick up.
+- Consolidate now also puts your coins in order, gold first and iron last, even when they were already in the biggest denominations.
+- A coin you drop or shift-click into your bag now falls into that order too, so shift-clicking your coins to the Stash one by one fills it gold first.
 
 ## 0.0.5_Alpha - 2026-09-25
 

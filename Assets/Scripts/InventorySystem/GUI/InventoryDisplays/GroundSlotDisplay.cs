@@ -11,7 +11,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
     /// <summary>
     /// A cell of the ground grid (epic #214). It looks and hovers like a stash cell, but the ground lends
     /// nothing to the cursor: a click takes the drop through the acquisition entry point, like a row of the
-    /// list, and a dropped item lands through the Run's ground rather than into this cell. Older drops are
+    /// list, and a dropped item lands through the World's ground rather than into this cell. Older drops are
     /// drawn fainter, relative to the other drops and not to time.
     /// </summary>
     [System.Serializable]
@@ -36,7 +36,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             if (!TryBeginMove(out _, out var package))
                 return;
 
-            _ = SimulationService.Instance.LootFlow?.PickUpFromGround(package.Item);
+            _ = Session.Instance.World.LootGround.PickUpFromGround(package.Item);
 
             SyncPreviewAfterMove();
         }
@@ -46,7 +46,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             if (!package.IsValid)
                 return;
 
-            if (!DropTransaction.Place(package, SimulationService.Instance.LootFlow))
+            if (!DropTransaction.Place(package, Session.Instance.World.LootGround))
             {
                 _ = CancelHeldDrag();
                 return;
@@ -57,7 +57,6 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             DragProvider.Instance.Origin.Container?.InvokeRefresh();
         }
 
-        public override bool WouldAcceptDrop(Package package) =>
-            package.IsValid && SimulationService.Instance.LootFlow != null && base.WouldAcceptDrop(package);
+        public override bool WouldAcceptDrop(Package package) => package.IsValid && base.WouldAcceptDrop(package);
     }
 }

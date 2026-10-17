@@ -37,6 +37,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         private readonly ICoinDropSource _coins;
         private readonly IItemReceiver _player;
         private readonly Wallet _wallet;
+        private readonly GroundDesk _desk;
 
         public LootFlow(
             EncounterSimulation encounter,
@@ -53,8 +54,11 @@ namespace ToolSmiths.InventorySystem.Simulation
             _coins = coins ?? throw new ArgumentNullException(nameof(coins));
             _player = player ?? throw new ArgumentNullException(nameof(player));
             _wallet = wallet ?? throw new ArgumentNullException(nameof(wallet));
-            Ground = ground ?? throw new ArgumentNullException(nameof(ground));
+            _desk = new GroundDesk(ground, player, wallet);
+            Ground = ground;
 
+            _desk.CoinsBanked += banked => CoinsBanked?.Invoke(banked);
+            _desk.PlacementFailed += (item, exception) => PlacementFailed?.Invoke(item, exception);
             _encounter.EnemyDefeated += OnEnemyDefeated;
         }
 
@@ -85,47 +89,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// the one that goes.
         /// </summary>
         /// <returns>Whether the player took it. False also for an item no longer on the ground.</returns>
-        public bool PickUpFromGround(ItemInstance item)
-        {
-            if (!TryFindOnGround(item, out var cell, out var stored))
-                return false;
-
-            if (TryCoinOf(stored, out var coin))
-            {
-                // Coins bank rather than go through the entry point; what the Wallet cannot take stays.
-                var taken = Bank(coin, stored.Amount);
-                if (taken == 0u)
-                    return false;
-
-                _ = Ground.RemoveAtPosition(cell, new Package(Ground, stored.Item, taken));
-                return true;
-            }
-
-            try
-            {
-                return PickUpTransaction.Run(Ground, cell, _player); // a throw rolls back inside Run
-            }
-            catch (Exception exception)
-            {
-                PlacementFailed?.Invoke(item, exception);
-                return false;
-            }
-        }
-
-        private bool TryFindOnGround(ItemInstance item, out Vector2Int cell, out Package stored)
-        {
-            foreach (var entry in Ground.StoredPackages)
-                if (ReferenceEquals(entry.Value.Item, item))
-                {
-                    cell = entry.Key;
-                    stored = entry.Value;
-                    return true;
-                }
-
-            cell = default;
-            stored = default;
-            return false;
-        }
+        public bool PickUpFromGround(ItemInstance item) => _desk.PickUpFromGround(item);
 
         /// <summary>Unsubscribes from the encounter's events so the LootFlow can be collected.</summary>
         public void Dispose() => _encounter.EnemyDefeated -= OnEnemyDefeated;
@@ -135,7 +99,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// evicting the oldest Packages when it is full. A stack lands as one Package.
         /// </summary>
         /// <returns>False, with the ground untouched, for a Package larger than the whole ground.</returns>
-        public bool PlaceOnGround(Package package) => Land(package);
+        public bool PlaceOnGround(Package package) => _desk.PlaceOnGround(package);
 
         /// <summary>
         /// Raised with the base-unit total of the coins each time some bank to the Wallet - a picked-up
@@ -231,14 +195,11 @@ namespace ToolSmiths.InventorySystem.Simulation
                 return;
 
             if (_behaviour.AutoPickup && _behaviour.AdmitsCoin(type))
-                amount -= Bank(type, amount);
+                amount -= _desk.Bank(type, amount);
 
             if (0u < amount)
                 _ = LandNew(_wallet.MintCoin(type), amount);
         }
-
-        /// <summary>Lays <paramref name="package"/> on the ground; a coin stack pushed out banks first.</summary>
-        private bool Land(Package package) => Ground.TryLand(package, BankEvicted);
 
         /// <summary>
         /// Lands a fresh Drop, or says through <see cref="PlacementFailed"/> that it could not: a null
@@ -246,45 +207,13 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// </summary>
         private bool LandNew(ItemInstance item, uint amount)
         {
-            if (item != null && Land(new Package(null, item, amount)))
+            if (item != null && _desk.PlaceOnGround(new Package(null, item, amount)))
                 return true;
 
             PlacementFailed?.Invoke(item, new InvalidOperationException(item == null
                 ? "A Drop could not land on the ground: the Wallet cannot mint the coin."
                 : $"A Drop could not land on the ground: {item.DefinitionId} does not fit it."));
             return false;
-        }
-
-        private void BankEvicted(Package evicted)
-        {
-            if (TryCoinOf(evicted, out var type))
-                _ = Bank(type, evicted.Amount);
-        }
-
-        private bool TryCoinOf(Package package, out CurrencyType type)
-        {
-            var definition = Ground.ViewOf(package.Item).Definition;
-            type = definition.CurrencyType;
-            return definition.Category == ItemCategory.Currency;
-        }
-
-        /// <summary>
-        /// Deposits <paramref name="amount"/> coins to the Wallet as far as it fits; the Wallet drops what does
-        /// not fit, so the count taken is read off its balance, and reports it as the Run's take.
-        /// </summary>
-        /// <returns>How many coins the Wallet took.</returns>
-        private uint Bank(CurrencyType type, uint amount)
-        {
-            var value = Currency.ValueOf(type);
-            var before = _wallet.Balance.Total;
-
-            _wallet.Deposit(Currency.Of(type, amount));
-
-            var taken = (_wallet.Balance.Total - before) / value;
-            if (0u < taken)
-                CoinsBanked?.Invoke(checked((long)taken * value)); // the Pile's value in iron base units (GLOSSARY.md "Base Unit")
-
-            return taken;
         }
 
         /// <summary>The archetype's base roll count plus the hero's <c>IncreasedItemQuantity</c> bonus.</summary>
