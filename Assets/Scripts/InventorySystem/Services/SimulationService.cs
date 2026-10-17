@@ -54,7 +54,7 @@ namespace ToolSmiths.InventorySystem.Services
             locations = new LocationRegistry(config.Locations);
 
             // A loaded hero starts a fresh life: whatever slow-down the last one left is gone.
-            session.HeroLoaded += () => deathSlowdownLeft = 0f;
+            session.HeroLoaded += EndDeathBeat;
         }
 
         public ILocationRegistry Locations => locations;
@@ -154,7 +154,7 @@ namespace ToolSmiths.InventorySystem.Services
             if (hero.IsDead)
                 hero.Heal();
 
-            deathSlowdownLeft = 0f;
+            EndDeathBeat();
             Respawned?.Invoke();
         }
 
@@ -200,6 +200,18 @@ namespace ToolSmiths.InventorySystem.Services
 
         public float ViewTimeFactor => deathSlowdownLeft > 0f ? Mathf.Clamp01(config.DeathSlowdownFactor) : 1f;
 
+        public bool DeathBeatPlaying => deathSlowdownLeft > 0f;
+
+        public event Action DeathBeatEnded;
+
+        private void EndDeathBeat()
+        {
+            var played = DeathBeatPlaying;
+            deathSlowdownLeft = 0f;
+            if (played)
+                DeathBeatEnded?.Invoke();
+        }
+
         public float SimDelta(float deltaSeconds) =>
             IsPaused || IsHeld ? 0f : deltaSeconds * Mathf.Max(0f, session.Hero.Behaviour.SimSpeed) * ViewTimeFactor;
 
@@ -216,7 +228,12 @@ namespace ToolSmiths.InventorySystem.Services
             var dt = SimDelta(deltaSeconds);
 
             // Counted in real time, once per frame: SimDelta is asked by many views and cannot own the clock.
-            deathSlowdownLeft = Mathf.Max(0f, deathSlowdownLeft - deltaSeconds);
+            if (DeathBeatPlaying)
+            {
+                deathSlowdownLeft = Mathf.Max(0f, deathSlowdownLeft - deltaSeconds);
+                if (!DeathBeatPlaying)
+                    DeathBeatEnded?.Invoke();
+            }
 
             // Hosted by GameLoop, so this runs after every MonoBehaviour.Update of the frame: a panel
             // that polls the Run in Update sees the previous frame's tick, never a half-stepped one.
@@ -307,10 +324,11 @@ namespace ToolSmiths.InventorySystem.Services
             if (result.Outcome != RunOutcome.Died)
                 return;
 
+            // Before the settlement, so the Corpse's marker, told of it there, already knows to wait out the beat.
+            deathSlowdownLeft = Mathf.Max(0f, config.DeathSlowdownSeconds);
+
             var fell = hero.SelectedLocation;
             SettlementFor(hero).Settle(result, fell != null ? ProfileFor(fell) : null);
-
-            deathSlowdownLeft = Mathf.Max(0f, config.DeathSlowdownSeconds);
 
             RunSettled?.Invoke(result);
         }

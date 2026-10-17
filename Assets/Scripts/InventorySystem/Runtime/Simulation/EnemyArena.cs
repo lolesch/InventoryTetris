@@ -34,7 +34,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// follows its own enemy's health.
     ///
     /// A hero death leaves live enemies with nothing firing for them - the Run ending
-    /// nulls the Encounter, and that release-all is what empties the arena, dying figures included.
+    /// nulls the Encounter. The arena keeps its figures standing for the Death beat, then that release-all
+    /// empties it, dying figures included.
     /// A Relocate leaves the Run alive, so the enemies of the Encounter it left fade out as defeated ones do.
     ///
     /// The anchor is the active Location's Hero icon (its <see cref="ToggleCheckmark"/> image), resolved
@@ -125,7 +126,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         {
             var run = SimulationService.Instance.Run;
             var encounter = run.Encounter;
-            if (encounter != _bound)
+
+            // A Death ended the Run, but the fight stays on screen, frozen, for the Death beat; its end releases it.
+            var frozen = encounter == null && _bound != null && SimulationService.Instance.DeathBeatPlaying;
+            if (encounter != _bound && !frozen)
             {
                 // A Relocate swaps the Encounter inside one Run: its enemies fade out. Anything else ended the Run.
                 Unbind(fadeOut: encounter != null && _bound != null && run == _run);

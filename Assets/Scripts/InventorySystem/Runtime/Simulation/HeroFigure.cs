@@ -22,6 +22,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// binding is polled: the Run's current Encounter against the one held, once a frame, and a phase change or a new
     /// Encounter on the same Run is what tells a Send or a Relocate from a hero load that brought a Run in
     /// mid-fight. It updates after the arena in the same frame, so the arena has placed its own figures first.
+    ///
+    /// A Death (issue #329) ends the fight but leaves the hero down: the figure lies where he fell for the Death beat,
+    /// then goes, leaving the Corpse marker there. A Respawn stands it up at the Field Exit again.
     /// </summary>
     [DefaultExecutionOrder(10)]
     [DisallowMultipleComponent]
@@ -45,6 +48,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             Standing,
             Walking,
             Following,
+            Fallen,
         }
 
         private readonly IHeroTravel _travel = new HeroTravel(default);
@@ -99,7 +103,17 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _phase = run.Phase;
 
             SyncHero();
-            SyncEncounter(run.Encounter, sent, relocated, run.LastResult is { Outcome: RunOutcome.Returned });
+
+            // A hero who is down with no fight left lies where he fell until Respawn stands him up.
+            if (_hero.IsDead && run.Encounter == null)
+                Fall();
+            else
+            {
+                if (_mode == Mode.Fallen)
+                    GetUp();
+
+                SyncEncounter(run.Encounter, sent, relocated, run.LastResult is { Outcome: RunOutcome.Returned });
+            }
 
             // A Send's walk starts once the Location's anchor can be read, as the arena waits for it too.
             if (_awaitingLocation && ArenaSpace.LocationAnchor != null)
@@ -109,10 +123,13 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             {
                 case Mode.Walking: Walk(); break;
                 case Mode.Following: Follow(); break;
+                case Mode.Fallen: break;
                 default: Stand(); break;
             }
 
-            Figure.SetAlpha(map != null ? map.alpha : 1f);
+            // When the Death beat ends the fallen figure is gone: the Corpse marker is what lies there now.
+            var gone = _mode == Mode.Fallen && !SimulationService.Instance.DeathBeatPlaying;
+            Figure.SetAlpha(gone ? 0f : map != null ? map.alpha : 1f);
         }
 
         // Update never runs while disabled, so a disabled map would hold a figure no one can retire.
@@ -174,6 +191,28 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             }
             else
                 _mode = Mode.Following;
+        }
+
+        // The arena holds the ended Encounter through the Death beat, so the hero's last position is still projectable.
+        private void Fall()
+        {
+            if (_mode != Mode.Fallen)
+            {
+                _mode = Mode.Fallen;
+                _target = null;
+                _awaitingLocation = false;
+                Figure.LieDown();
+            }
+
+            if (_bound != null && Projection.TryGetNumberOrigin(_bound.HeroPosition, out var canvas))
+                Figure.Place(canvas, _bound.HeroPosition, Figure.FacingSign);
+        }
+
+        private void GetUp()
+        {
+            Figure.GetUp();
+            _bound = null;
+            StandAt(fieldExit);
         }
 
         private void Stand()
