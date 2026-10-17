@@ -12,7 +12,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// its <see cref="AbstractToggle.RadioGroup"/>, which resets itself when the face it sits under
     /// has finished fading out (<see cref="ToggleGroup.ResetWithParentPanel"/>) - a
     /// selection never outlives the panel that showed it. That ties the clear to the face rather
-    /// than to the Run phase: on Death or Recall the highlight lasts one fade longer than the phase,
+    /// than to the Run phase: on Death or Return the highlight lasts one fade longer than the phase,
     /// and <see cref="RunPhasePanel"/> is what guarantees the face does go.
     /// </summary>
     public sealed class LocationToggle : AbstractToggle
@@ -28,7 +28,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             if (simulation.Run.HeroIsDown) return;
 
-            // Switching mid-Run moves the live Run — no Recall, so the Run never passes through
+            // Switching mid-Run moves the live Run — no Return, so the Run never passes through
             // Town (which would collapse the InFields face and clear this very toggle with it).
             if (simulation.Run.Phase == RunPhase.InField)
                 simulation.Relocate(Location);

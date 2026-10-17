@@ -119,7 +119,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             after.Simulation.Send(ashfen);
             Assert.That(after.Session.Hero.Corpse.Exists, Is.True, "another Location leaves it alone");
-            _ = after.Simulation.Recall();
+            _ = after.Simulation.Return();
 
             after.Simulation.Send(thornwood);
 

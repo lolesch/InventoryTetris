@@ -210,7 +210,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         public void TryLoad_AfterTheRunEnded_Succeeds()
         {
             SimulationService.Instance.Send(Location());
-            _ = SimulationService.Instance.Recall();
+            _ = SimulationService.Instance.Return();
 
             Assert.That(Session.Instance.TryLoad(data), Is.True);
         }

@@ -5,8 +5,8 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// <summary>
     /// The Run finite-state machine (issue #21; spec <i>The RunState machine</i>). Two states —
     /// <see cref="RunPhase.InTown"/> and <see cref="RunPhase.InField"/>; <see cref="Send"/> opens
-    /// a Run at a Location, <see cref="Recall"/> and <see cref="HandleDeath"/> close it. Send and
-    /// Recall are instant — there is no <c>Traveling</c> state — and Death is not a game-over,
+    /// a Run at a Location, <see cref="Return"/> and <see cref="HandleDeath"/> close it. Send and
+    /// Return are instant — there is no <c>Traveling</c> state — and Death is not a game-over,
     /// only a penalised trip back to Town.
     ///
     /// While <see cref="RunPhase.InField"/> a single <see cref="EncounterSimulation"/> runs the
@@ -70,7 +70,7 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         /// <summary>
         /// Whether the hero has been downed in the current Run. The sim has ended and the only
-        /// way out is <see cref="HandleDeath"/> — <see cref="Recall"/> is refused. <c>false</c>
+        /// way out is <see cref="HandleDeath"/> — <see cref="Return"/> is refused. <c>false</c>
         /// while <see cref="RunPhase.InTown"/>.
         /// </summary>
         public bool HeroIsDown => _heroDown;
@@ -79,7 +79,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// Whether the hero's own <see cref="HeroBehaviour"/> has asked to come home this Run —
         /// one of its auto-Recall triggers fired (issue #23). The sim has already stopped; the Run
         /// is still <see cref="RunPhase.InField"/> until a caller acts on this with
-        /// <see cref="Recall"/>, which is the engine-side driver's job so the transition happens
+        /// <see cref="Return"/>, which is the engine-side driver's job so the transition happens
         /// outside the tick that raised it. <c>false</c> while <see cref="RunPhase.InTown"/>.
         /// </summary>
         public bool RecallRequested => _recallRequested;
@@ -91,10 +91,10 @@ namespace ToolSmiths.InventorySystem.Simulation
         public RunResult? LastResult { get; private set; }
 
         /// <summary>
-        /// Raised once a Run ends, on both outcomes — <see cref="Recall"/> and
+        /// Raised once a Run ends, on both outcomes — <see cref="Return"/> and
         /// <see cref="HandleDeath"/> alike. The loot flow (issue #24) subscribes to clear
         /// whatever Drops are still on the ground, per GLOSSARY.md's Drop entry: "a Drop still
-        /// on the ground when the Run ends is gone, on Recall or Death alike."
+        /// on the ground when the Run ends is gone, on Return or Death alike."
         /// </summary>
         public event Action RunEnded;
 
@@ -125,7 +125,7 @@ namespace ToolSmiths.InventorySystem.Simulation
 
             if (location == null) throw new ArgumentNullException(nameof(location));
             if (Phase != RunPhase.InTown)
-                throw new InvalidOperationException("A Run is already in the Field — Recall or HandleDeath before Sending again.");
+                throw new InvalidOperationException("A Run is already in the Field — Return or HandleDeath before Sending again.");
 
             var encounter = _startEncounter(location)
                 ?? throw new InvalidOperationException("The encounter factory returned null.");
@@ -144,7 +144,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <summary>
         /// Move the live Run to <paramref name="location"/> without ending it — stays
         /// <see cref="RunPhase.InField"/>, stops the current Encounter and starts a fresh one there.
-        /// This is not a Recall: the Run's totals (<see cref="CurrencyBanked"/>, kills, XP, clears,
+        /// This is not a Return: the Run's totals (<see cref="CurrencyBanked"/>, kills, XP, clears,
         /// duration) carry on into the one <see cref="RunResult"/> the Run eventually freezes, and
         /// no <see cref="RunEnded"/> or <see cref="PhaseChanged"/> is raised (<see cref="Relocated"/>
         /// is). Refused in Town (nothing to move) and once the hero is down (that Run ends in
@@ -202,16 +202,16 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         /// <summary>
         /// End the Run with everything kept — <see cref="RunPhase.InField"/> →
-        /// <see cref="RunPhase.InTown"/>, freezing and returning a <see cref="RunOutcome.Recalled"/>
+        /// <see cref="RunPhase.InTown"/>, freezing and returning a <see cref="RunOutcome.Returned"/>
         /// result. Refused once the hero is down: that Run ends in <see cref="HandleDeath"/>.
         /// </summary>
-        public RunResult Recall()
+        public RunResult Return()
         {
             RequireInField();
             if (_heroDown)
-                throw new InvalidOperationException("The hero is down — the Run ends in HandleDeath, not a Recall.");
+                throw new InvalidOperationException("The hero is down — the Run ends in HandleDeath, not a Return.");
 
-            var result = RunResult.Recalled(FreezeEncounter(), _currencyBanked);
+            var result = RunResult.Returned(FreezeEncounter(), _currencyBanked);
             EndRun(result);
             return result;
         }
@@ -221,7 +221,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// freezing and returning a <see cref="RunOutcome.Died"/> result. Refused unless the hero
         /// is actually down (<see cref="HeroIsDown"/>): that guard is what stops a driver bug from
         /// imposing the Death penalty on a Run that is still winnable — a live hero's Run only
-        /// ever ends in <see cref="Recall"/>.
+        /// ever ends in <see cref="Return"/>.
         ///
         /// On top of the kept accumulation it computes the penalty: <see cref="RunResult.XpLost"/>
         /// is <see cref="RunPenalty.XpLossFraction"/> of <paramref name="xpTowardNextLevel"/>,
@@ -233,7 +233,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         {
             RequireInField();
             if (!_heroDown)
-                throw new InvalidOperationException("The hero is not down — the Run ends in Recall, not HandleDeath.");
+                throw new InvalidOperationException("The hero is not down — the Run ends in Return, not HandleDeath.");
             if (xpTowardNextLevel < 0)
                 throw new ArgumentOutOfRangeException(nameof(xpTowardNextLevel), xpTowardNextLevel, "Progress toward the next level cannot be negative.");
 

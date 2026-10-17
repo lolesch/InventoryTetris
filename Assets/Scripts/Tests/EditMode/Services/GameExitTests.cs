@@ -82,7 +82,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
-        public void AQuitInTheField_RecallsTheRun_BanksWhatTheHeroHolds_AndSavesAHeroInTown()
+        public void AQuitInTheField_ReturnsTheRun_BanksWhatTheHeroHolds_AndSavesAHeroInTown()
         {
             var (game, saves, id) = Playing();
             game.Simulation.Send(thornwood);
@@ -91,7 +91,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             GameExit.SaveHero(game.Simulation, saves);
 
             Assert.That(game.Simulation.Run.Phase, Is.EqualTo(RunPhase.InTown));
-            Assert.That(game.Simulation.Run.LastResult?.Outcome, Is.EqualTo(RunOutcome.Recalled));
+            Assert.That(game.Simulation.Run.LastResult?.Outcome, Is.EqualTo(RunOutcome.Returned));
             var next = Reloaded(id);
             Assert.That(PotionsHeld(next.Game), Is.EqualTo(3), "the Run's loot is banked in the file");
             Assert.That(next.Game.Hero.Corpse.Exists, Is.False);

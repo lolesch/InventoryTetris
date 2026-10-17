@@ -155,7 +155,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components
             if (Session.Instance.TryLoad(GameBoot.Load().DefaultHero))
                 Debug.Log("Loaded a new Hero and World from the default hero.");
             else
-                Debug.LogWarning("A Run is in the Field: Recall before loading a hero.");
+                Debug.LogWarning("A Run is in the Field: Return before loading a hero.");
         }
 
         /// <summary>A new saved hero from the default template, written at once and then played, so unlike
@@ -168,7 +168,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components
             if (HeroSaveService.Instance.CreateAndLoad().Entered)
                 Debug.Log("Created a new saved hero and loaded it.");
             else
-                Debug.LogWarning("A Run is in the Field: Recall before loading a hero. The new hero was saved and is in the hero list.");
+                Debug.LogWarning("A Run is in the Field: Return before loading a hero. The new hero was saved and is in the hero list.");
         }
 
         /// <summary>Deletes the loaded hero's save and moves on like a launch does: the newest hero that
@@ -189,7 +189,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components
             if (saves.LoadLastOrCreate().Entered)
                 Debug.Log("Deleted the loaded hero and loaded the next one.");
             else
-                Debug.LogWarning("A Run is in the Field: the save is deleted, but its hero is still the Session's and is not saved. Recall before loading another.");
+                Debug.LogWarning("A Run is in the Field: the save is deleted, but its hero is still the Session's and is not saved. Return before loading another.");
         }
 
         // The Hero the dev log lines below are bound to: the death, depletion and damage reactions
