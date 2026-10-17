@@ -11,14 +11,12 @@ namespace ToolSmiths.InventorySystem.Simulation
     internal sealed class AutoHeroBrain : IHeroBrain
     {
         private readonly HeroBehaviour _behaviour;
-        private readonly IBagGauge _bag;
         private readonly HeroTargeting _targeting;
         private Enemy _target; // the sticky target the last tick chose; may have fallen since
 
-        public AutoHeroBrain(HeroBehaviour behaviour, IBagGauge bag, HeroTargeting targeting)
+        public AutoHeroBrain(HeroBehaviour behaviour, HeroTargeting targeting)
         {
             _behaviour = behaviour ?? throw new ArgumentNullException(nameof(behaviour));
-            _bag = bag;
             _targeting = targeting;
         }
 
@@ -38,20 +36,9 @@ namespace ToolSmiths.InventorySystem.Simulation
             // charging up, however idle the beat.
             if (view.CastBeatOpen && _behaviour.ShouldCast(view.ResourceFraction))
                 intents.Add(Intent.Cast());
-
-            if (WantsToRecall(view))
-                intents.Add(Intent.Recall());
         }
 
         public Enemy PeekTarget(in HeroView view) => Choose(view);
-
-        /// <summary>
-        /// Either of <see cref="HeroBehaviour"/>'s two auto-Recall triggers (issue #23). With no
-        /// <see cref="IBagGauge"/> wired the bag-full trigger cannot fire - there is nothing to measure.
-        /// </summary>
-        private bool WantsToRecall(in HeroView view) =>
-            _behaviour.ShouldRecallForHealth(view.HealthFraction)
-            || (_bag != null && _behaviour.ShouldRecallForBagFull(_bag.FillFraction));
 
         private Enemy Choose(in HeroView view) => _targeting switch
         {

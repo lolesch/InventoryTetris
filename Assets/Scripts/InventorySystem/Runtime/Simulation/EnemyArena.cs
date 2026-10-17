@@ -33,7 +33,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// short sim-time interval, detached from the enemy, and is pooled when that ends), and each figure
     /// follows its own enemy's health.
     ///
-    /// A hero death or an auto-Recall leaves live enemies with nothing firing for them - the Run ending
+    /// A hero death leaves live enemies with nothing firing for them - the Run ending
     /// nulls the Encounter, and that release-all is what empties the arena, dying figures included.
     ///
     /// The anchor is the active Location's Hero icon (its <see cref="ToggleCheckmark"/> image), resolved
@@ -162,7 +162,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 _bound = null;
             }
 
-            // A sim that ended with enemies alive (hero death, auto-Recall) raised nothing for them.
+            // A sim that ended with enemies alive (hero death) raised nothing for them.
             foreach (var figure in _figures.Values)
                 Release(figure);
             _figures.Clear();

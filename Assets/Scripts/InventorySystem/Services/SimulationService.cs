@@ -184,7 +184,7 @@ namespace ToolSmiths.InventorySystem.Services
 
         public void Tick(float deltaSeconds)
         {
-            // A frozen Run stands still whole: no regeneration, no Encounter, no auto-Recall.
+            // A frozen Run stands still whole: no regeneration, no Encounter.
             if (IsPaused || IsHeld)
                 return;
 
@@ -205,14 +205,10 @@ namespace ToolSmiths.InventorySystem.Services
 
             _ = run.Advance(dt);
 
-            // Both exits are read after the tick, never inside it: the sim raises its signal and
-            // stops, and the RunState transition happens out here. Death is tested first so a tick
-            // that trips both is a Death - the penalty is not dodgeable by an auto-Recall trigger
-            // racing it.
+            // The death is read after the tick, never inside it: the sim raises its signal and
+            // stops, and the RunState transition happens out here.
             if (run.HeroIsDown)
                 HandleHeroDeath(hero, run);
-            else if (run.RecallRequested)
-                _ = Return();
         }
 
         private RunState BuildRun(World world)
@@ -243,11 +239,11 @@ namespace ToolSmiths.InventorySystem.Services
             ReleaseLoot(world);
 
             // The behaviour goes in by reference, not as a snapshot of its values: the sliders
-            // write it live, and Engagement, the Cast threshold and both retreat triggers are all
-            // read off it inside the tick (issue #23). The hero arrives to a quiet Location - the
+            // write it live, and Engagement and the Cast threshold are read off it inside the tick
+            // (issue #23). The hero arrives to a quiet Location - the
             // first bodies wait one spawn delay.
             var encounter = new EncounterSimulation(combatant, profile, rolls, hero.Behaviour,
-                config.Tuning.Sanitised(), new ContainerBagGauge(hero.Inventory));
+                config.Tuning.Sanitised());
 
             // XP is delivered per kill, independent of the loot flow (issue #44). GainExperience's
             // monsterLevel is the hero's own current level so its balancing term is neutral - the

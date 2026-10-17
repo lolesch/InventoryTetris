@@ -26,14 +26,12 @@ namespace ToolSmiths.InventorySystem.Simulation
         private readonly Func<EncounterProfile, EncounterSimulation> _startEncounter;
         private readonly RunPenalty _penalty;
         private readonly Action _onHeroDowned;
-        private readonly Action _onRecallRequested;
 
         private EncounterSimulation _encounter;
         private EncounterProfile _location;
         private EncounterTotals _carried; // totals of the Encounters a Relocate left behind
         private long _currencyBanked;
         private bool _heroDown;
-        private bool _recallRequested;
 
         // ─── construction ───────────────────────────────────────────────────
 
@@ -48,7 +46,6 @@ namespace ToolSmiths.InventorySystem.Simulation
             _startEncounter = startEncounter ?? throw new ArgumentNullException(nameof(startEncounter));
             _penalty = penalty;
             _onHeroDowned = OnHeroDowned;
-            _onRecallRequested = OnRecallRequested;
         }
 
         // ─── state ──────────────────────────────────────────────────────────
@@ -74,15 +71,6 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// while <see cref="RunPhase.InTown"/>.
         /// </summary>
         public bool HeroIsDown => _heroDown;
-
-        /// <summary>
-        /// Whether the hero's own <see cref="HeroBehaviour"/> has asked to come home this Run —
-        /// one of its auto-Recall triggers fired (issue #23). The sim has already stopped; the Run
-        /// is still <see cref="RunPhase.InField"/> until a caller acts on this with
-        /// <see cref="Return"/>, which is the engine-side driver's job so the transition happens
-        /// outside the tick that raised it. <c>false</c> while <see cref="RunPhase.InTown"/>.
-        /// </summary>
-        public bool RecallRequested => _recallRequested;
 
         /// <summary>
         /// The result of the most recently finished Run, or <c>null</c> if none has finished yet
@@ -133,7 +121,6 @@ namespace ToolSmiths.InventorySystem.Simulation
             _location = location;
             _encounter = encounter;
             _encounter.HeroDowned += _onHeroDowned;
-            _encounter.RecallRequested += _onRecallRequested;
             ResetRunTotals();
             LastResult = null;
 
@@ -163,13 +150,10 @@ namespace ToolSmiths.InventorySystem.Simulation
 
             _carried = FreezeEncounter();
             _encounter.HeroDowned -= _onHeroDowned;
-            _encounter.RecallRequested -= _onRecallRequested;
 
             _location = location;
             _encounter = encounter;
             _encounter.HeroDowned += _onHeroDowned;
-            _encounter.RecallRequested += _onRecallRequested;
-            _recallRequested = false;
 
             Relocated?.Invoke();
         }
@@ -254,8 +238,6 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         private void OnHeroDowned() => _heroDown = true;
 
-        private void OnRecallRequested() => _recallRequested = true;
-
         private void RequireInField()
         {
             if (Phase != RunPhase.InField)
@@ -276,13 +258,11 @@ namespace ToolSmiths.InventorySystem.Simulation
             _carried = default;
             _currencyBanked = 0L;
             _heroDown = false;
-            _recallRequested = false;
         }
 
         private void EndRun(RunResult result)
         {
             _encounter.HeroDowned -= _onHeroDowned;
-            _encounter.RecallRequested -= _onRecallRequested;
             _encounter = null;
             _location = null;
             ResetRunTotals();
