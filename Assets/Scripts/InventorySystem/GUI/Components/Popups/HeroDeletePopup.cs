@@ -36,6 +36,9 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Popups
                 ? MainMenuFlow.DeleteQuestion(hero)
                 : string.Empty;
             cancelLayer = CancelChain.TryRegister(CancelRank.Popup, Cancel);
+
+            // Enter deletes nothing: Cancel is the selected button.
+            _ = PopupFocus.SelectDefault(cancel);
         }
 
         private void OnDisable()

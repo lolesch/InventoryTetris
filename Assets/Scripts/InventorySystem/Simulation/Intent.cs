@@ -12,8 +12,6 @@ namespace ToolSmiths.InventorySystem.Simulation
         Walk,
         /// <summary>Hero only: Cast, if the Encounter allows it.</summary>
         Cast,
-        /// <summary>Hero only: end the fight as a Recall, unless the hero went down this tick.</summary>
-        Recall,
     }
 
     /// <summary>
@@ -44,7 +42,5 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         /// <summary>A Cast at the densest cluster in range, found when the Cast fires; the Encounter refuses it with nobody to catch.</summary>
         public static Intent Cast() => new(IntentKind.Cast);
-
-        public static Intent Recall() => new(IntentKind.Recall);
     }
 }

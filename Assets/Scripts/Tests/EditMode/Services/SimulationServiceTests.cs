@@ -366,17 +366,16 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
-        public void Tick_AutoRecalls_WhenTheBehaviourProfileSaysRetreat_AndRestocks()
+        public void Tick_DoesNotRecall_WhateverTheBehaviourProfileSaysRetreat()
         {
-            session.World.VendorSupply.RemoveAll();
+            session.Hero.IsInvincible = true;
             session.Hero.Behaviour.RetreatHealthFraction = 1f;
             service.Send(thornwood);
 
-            TickUntilHome();
+            for (var i = 0; i < 100; i++)
+                service.Tick(0.5f);
 
-            Assert.That(service.Run.LastResult?.Outcome, Is.EqualTo(RunOutcome.Returned));
-            Assert.That(session.Hero.Corpse.Exists, Is.False);
-            Assert.That(session.World.VendorSupply.StoredPackages, Is.Not.Empty);
+            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.InField), "a Run ends only by a Return or a Death");
         }
 
         [Test]
@@ -837,6 +836,21 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             Assert.That(service.CorpseLiesAt(thornwood), Is.False, "replaced");
             Assert.That(service.CorpseLiesAt(ashfen), Is.True);
+        }
+
+        // ── the walk in Town (ADR-0021) ──────────────────────────────────────
+
+        [Test]
+        public void HeroWalkingSpeed_IsPositiveInTown_AndRisesInStepWithTheMovementStat()
+        {
+            var stat = session.Hero.GetStat(StatName.MovementSpeed);
+            var before = service.HeroWalkingSpeed;
+            var statBefore = stat.TotalValue;
+            Assert.That(before, Is.GreaterThan(0f), "premise: the default hero walks");
+
+            stat.AddModifier(new StatModifier(new Vector2Int(0, 1000), 100f));
+
+            Assert.That(service.HeroWalkingSpeed / before, Is.EqualTo((statBefore + 100f) / statBefore).Within(1e-4f));
         }
 
         // ── reaching it ──────────────────────────────────────────────────────

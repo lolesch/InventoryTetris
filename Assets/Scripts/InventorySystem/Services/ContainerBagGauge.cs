@@ -7,12 +7,12 @@ namespace ToolSmiths.InventorySystem.Services
 {
     /// <summary>
     /// The <see cref="IBagGauge"/> adapter over a real container (issue #23) — the one thing the
-    /// engine-free sim needs to know about storage, so the bag-full auto-Recall can fire.
+    /// bag-fill bar needs to know about storage.
     ///
     /// Fill is measured in <em>cells</em>, not packages: this is a Tetris grid, so a bag holding
     /// three 2×2 items is half-full at 6×4, and a bag holding twelve 1×1 coins is half-full too.
     /// A stack counts once — it occupies its footprint whatever its Amount. Reads the container
-    /// live on every call; the sim asks once a tick and nothing caches the answer.
+    /// live on every call; nothing caches the answer.
     /// </summary>
     public sealed class ContainerBagGauge : IBagGauge
     {

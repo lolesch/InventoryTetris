@@ -116,16 +116,15 @@ namespace ToolSmiths.InventorySystem.Services
         float SimDelta(float deltaSeconds);
 
         /// <summary>
-        /// Arena units per second the hero walks, in a fight and on a Hero figure's Travel alike (ADR-0021):
-        /// his <c>MovementSpeed</c> stat through the config's scale. Needs no Run, so Town reads it too, and
-        /// ignores sim speed and Pause because Travel is not the fight.
+        /// Arena units per second the hero walks, read live off his <c>MovementSpeed</c> stat: what an Encounter
+        /// walks him at and what a Hero figure Travels at in Town (ADR-0021). Never negative.
         /// </summary>
         float HeroWalkingSpeed { get; }
 
         /// <summary>
         /// One frame of the simulation, <paramref name="deltaSeconds"/> of real time: the Hero's
         /// regeneration (Town and Field alike), the Encounter while a Run is in the Field, and the
-        /// Run's two ways home (a Death, or the Behaviour Profile's auto-Recall). Scaled by the
+        /// Run's way home on a Death. Scaled by the
         /// Behaviour Profile's sim speed here, never through <c>Time.timeScale</c> (ADR-0008).
         /// Does nothing while <see cref="IsPaused"/> or <see cref="IsHeld"/>.
         /// </summary>

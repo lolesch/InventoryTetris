@@ -45,113 +45,12 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             FakeHero hero, EncounterProfile profile, IHeroBrain brain, Func<Enemy, IEnemyBrain> enemyBrains = null,
             EncounterTuning tuning = null, HeroBehaviour behaviour = null) =>
             new(hero, profile, new RollStreams(new ConstantRollSource(0f), new ConstantRollSource(0.5f), new SeededRollSource(7)),
-                behaviour ?? Behaviours.Engaging(10), tuning, bag: null, enemyBrains: enemyBrains, heroBrain: brain);
+                behaviour ?? Behaviours.Engaging(10), tuning, enemyBrains: enemyBrains, heroBrain: brain);
 
         private static void Run(EncounterSimulation sim, int ticks)
         {
             for (var i = 0; i < ticks; i++)
                 sim.Advance(Tick);
-        }
-
-        // ─── Recall ──────────────────────────────────────────────────────────
-
-        [Test]
-        public void ARecallIntent_EndsTheFight_AndRaisesRecallRequestedOnce()
-        {
-            var sim = Sim(Hero(), Profiles.Solo(EnemyArchetype.Brute), new ScriptedBrain((view, intents) => intents.Add(Intent.Recall())), Idle);
-            var requested = 0;
-            sim.RecallRequested += () => requested++;
-
-            Run(sim, 5);
-
-            Assert.That(requested, Is.EqualTo(1));
-            Assert.That(sim.Phase, Is.EqualTo(SimulationPhase.Ended));
-        }
-
-        [Test]
-        public void ATickThatKillsTheHeroAndAsksForARecall_IsADeath()
-        {
-            int TicksUntilHeroDies()
-            {
-                var fragile = Hero();
-                fragile.Health = fragile.MaxHealth = 1f;
-                var probe = Sim(fragile, Profiles.Solo(EnemyArchetype.Brute), new ScriptedBrain((view, intents) => { }));
-                var ticks = 0;
-                while (!fragile.IsDown && ticks < 500)
-                {
-                    probe.Advance(Tick);
-                    ticks++;
-                }
-                return ticks;
-            }
-
-            var deathTick = TicksUntilHeroDies();
-            Assert.That(deathTick, Is.InRange(2, 499), "premise: the Brute does kill a one-health hero, after a few ticks");
-
-            var hero = Hero();
-            hero.Health = hero.MaxHealth = 1f;
-            var calls = 0;
-            var sim = Sim(hero, Profiles.Solo(EnemyArchetype.Brute), new ScriptedBrain((view, intents) =>
-            {
-                if (++calls == deathTick) intents.Add(Intent.Recall());
-            }));
-            var downed = 0;
-            var requested = 0;
-            sim.HeroDowned += () => downed++;
-            sim.RecallRequested += () => requested++;
-
-            Run(sim, deathTick + 5);
-
-            Assert.That(calls, Is.EqualTo(deathTick), "premise: the Recall was asked on the very tick the hero fell");
-            Assert.That(downed, Is.EqualTo(1));
-            Assert.That(requested, Is.Zero, "the Death is not dodgeable by a Recall racing it");
-        }
-
-        [Test]
-        public void ARecallIntent_IsCarriedOutAfterTheTicksStrikesLand()
-        {
-            var hero = Hero();
-            hero.AttackSpeed = 10f;
-            hero.PhysicalDamage = 1_000_000f;
-            var sim = Sim(hero, Profiles.Solo(EnemyArchetype.Skirmisher), new ScriptedBrain((view, intents) =>
-            {
-                intents.Add(Intent.Approach(view.Enemies[0]));
-                intents.Add(Intent.Strike(view.Enemies[0]));
-                intents.Add(Intent.Recall());
-            }), Idle);
-
-            Run(sim, 1);
-
-            Assert.That(sim.EnemiesDefeated, Is.EqualTo(1), "the Strike of the tick that asked for the Recall still landed");
-            Assert.That(sim.Phase, Is.EqualTo(SimulationPhase.Ended));
-        }
-
-        [Test]
-        public void ARecallIntent_IsCarriedOutInTheBeatBetweenEncounters()
-        {
-            var hero = Hero();
-            hero.AttackSpeed = 10f;
-            hero.PhysicalDamage = 1_000_000f;
-            var sim = Sim(hero, Profiles.Solo(EnemyArchetype.Skirmisher), new ScriptedBrain((view, intents) =>
-            {
-                if (view.Enemies.Count > 0)
-                {
-                    intents.Add(Intent.Approach(view.Enemies[0]));
-                    intents.Add(Intent.Strike(view.Enemies[0]));
-                }
-                else
-                    intents.Add(Intent.Recall());
-            }), Idle, new EncounterTuning { Beat = 1000f });
-            var requested = 0;
-            sim.RecallRequested += () => requested++;
-
-            Run(sim, 1);
-            Assert.That(sim.Phase, Is.EqualTo(SimulationPhase.Beat), "premise: the Encounter cleared and the beat has begun");
-
-            Run(sim, 1);
-
-            Assert.That(requested, Is.EqualTo(1), "a Recall asked in the quiet ends the Run without waiting for the beat");
-            Assert.That(sim.Phase, Is.EqualTo(SimulationPhase.Ended));
         }
 
         // ─── Strike ──────────────────────────────────────────────────────────

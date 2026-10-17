@@ -67,7 +67,13 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Popups
         /// <summary>Lays the menu out for <paramref name="platform"/>; the enable passes the real one.</summary>
         public void Apply(RuntimePlatform platform) => quitGame.gameObject.SetActive(GameExit.CanQuit(platform));
 
-        private void Show(bool open) => screen.SetActive(open);
+        private void Show(bool open)
+        {
+            screen.SetActive(open);
+
+            if (open)
+                _ = PopupFocus.SelectDefault(resume);
+        }
 
         private void Close() => menu.Close();
 

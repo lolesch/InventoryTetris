@@ -8,8 +8,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
     /// The <see cref="HeroBehaviour"/> is the player's whole input to a Run (issue #23), and
     /// these are the tests that cross <see cref="EncounterSimulation"/>'s interface to prove it
     /// lands: Engagement re-read every spawn tick, the CastThreshold latch gating
-    /// <c>ResolveCast</c>, and both retreat triggers raising
-    /// <see cref="EncounterSimulation.RecallRequested"/>.
+    /// <c>ResolveCast</c>, and the retreat fraction no longer ending a Run (ADR-0021).
     ///
     /// <see cref="HeroBehaviourTests"/> covers the predicates in isolation — that they compute
     /// the right answer. These cover that the sim asks them, which is the part a slider a player
@@ -199,7 +198,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
                 "40 % is under the raised threshold, so no new casting run starts");
         }
 
-        // ─── the retreat triggers ────────────────────────────────────────────
+        // ─── no Auto-Recall (ADR-0021) ───────────────────────────────────────
 
         private static FakeHero WoundedHero(float healthFraction)
         {
@@ -210,7 +209,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
-        public void RetreatHealth_AtTheThreshold_RequestsARecallAndStopsTheFight()
+        public void AHeroBelowTheRetreatHealth_KeepsFighting()
         {
             var behaviour = Behaviours.Engaging(5);
             behaviour.RetreatHealthFraction = 0.3f;
@@ -218,149 +217,23 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var sim = new EncounterSimulation(WoundedHero(0.25f), Profiles.Group(EnemyArchetype.Skirmisher, 3),
                 new ConstantRollSource(0f), behaviour);
 
-            var requested = 0;
-            sim.RecallRequested += () => requested++;
-
-            Run(sim, 1);
-
-            Assert.That(requested, Is.EqualTo(1));
-            Assert.That(sim.Phase, Is.EqualTo(SimulationPhase.Ended), "the fight stops where the slider said");
-        }
-
-        [Test]
-        public void RetreatHealth_AboveTheThreshold_KeepsFighting()
-        {
-            var behaviour = Behaviours.Engaging(5);
-            behaviour.RetreatHealthFraction = 0.3f;
-
-            var sim = new EncounterSimulation(WoundedHero(0.5f), Profiles.Group(EnemyArchetype.Skirmisher, 3),
-                new ConstantRollSource(0f), behaviour);
-
-            var requested = 0;
-            sim.RecallRequested += () => requested++;
-
             Run(sim, 50);
 
-            Assert.That(requested, Is.Zero);
-            Assert.That(sim.Phase, Is.EqualTo(SimulationPhase.Fighting));
+            Assert.That(sim.Phase, Is.EqualTo(SimulationPhase.Fighting), "a Run ends only by a Return or a Death");
         }
 
         [Test]
-        public void RetreatHealth_UnsetByDefault_NeverFires()
+        public void AHeroGoingDown_IsADeath()
         {
-            var sim = new EncounterSimulation(WoundedHero(0.01f), Profiles.Group(EnemyArchetype.Skirmisher, 3),
+            var sim = new EncounterSimulation(WoundedHero(0f), Profiles.Group(EnemyArchetype.Skirmisher, 3),
                 new ConstantRollSource(0f), Behaviours.Engaging(5));
 
-            var requested = 0;
-            sim.RecallRequested += () => requested++;
-
-            Run(sim, 50);
-
-            Assert.That(requested, Is.Zero, "a 0 retreat fraction is inert — only a dead hero reaches it");
-        }
-
-        [Test]
-        public void ARetreat_KeepsTheXpTheKillAlreadyDelivered_JustAsAnAbandonWould()
-        {
-            var hero = WoundedHero(0.25f);
-            hero.PhysicalDamage = 1_000_000f;
-            hero.AttackSpeed = 10f; // one Strike on the first tick
-
-            var behaviour = Behaviours.Engaging(5);
-            behaviour.RetreatHealthFraction = 0.3f;
-
-            var sim = new EncounterSimulation(hero, Profiles.Group(EnemyArchetype.Skirmisher, 2),
-                new ConstantRollSource(0f), behaviour);
-
-            Run(sim, 1); // Strike fells one of the two, then the retreat trigger fires
-
-            Assert.That(sim.EnemiesDefeated, Is.EqualTo(1), "the kill landed before the retreat check");
-            Assert.That(sim.SettledXp, Is.GreaterThan(0), "the kill's XP arrived the tick it fell, so the retreat cannot take it back");
-        }
-
-        [Test]
-        public void AHeroGoingDown_IsADeath_NotARetreat()
-        {
-            var hero = WoundedHero(0f); // down, and far below the retreat fraction
-
-            var behaviour = Behaviours.Engaging(5);
-            behaviour.RetreatHealthFraction = 0.3f;
-
-            var sim = new EncounterSimulation(hero, Profiles.Group(EnemyArchetype.Skirmisher, 3),
-                new ConstantRollSource(0f), behaviour);
-
             var downed = 0;
-            var requested = 0;
             sim.HeroDowned += () => downed++;
-            sim.RecallRequested += () => requested++;
 
             Run(sim, 5);
 
             Assert.That(downed, Is.EqualTo(1));
-            Assert.That(requested, Is.Zero, "the Death penalty is not dodgeable by a retreat racing it");
-        }
-
-        // ─── the bag-full trigger ────────────────────────────────────────────
-
-        [Test]
-        public void BagFull_FillingMidFight_RequestsARecall()
-        {
-            var bag = new FakeBagGauge { FillFraction = 0.5f };
-
-            var behaviour = Behaviours.Engaging(5);
-            behaviour.RecallBagFillFraction = 0.9f;
-
-            var sim = new EncounterSimulation(PassiveHero(), Profiles.Group(EnemyArchetype.Skirmisher, 3),
-                new ConstantRollSource(0f), behaviour, null, bag);
-
-            var requested = 0;
-            sim.RecallRequested += () => requested++;
-
-            Run(sim, 10);
-            Assert.That(requested, Is.Zero, "half full is under the bar");
-
-            bag.FillFraction = 0.95f;
-            Run(sim, 1);
-
-            Assert.That(requested, Is.EqualTo(1));
-            Assert.That(sim.Phase, Is.EqualTo(SimulationPhase.Ended));
-        }
-
-        [Test]
-        public void BagFull_WithNoGaugeWired_NeverFires()
-        {
-            var behaviour = Behaviours.Engaging(5);
-            behaviour.RecallBagFillFraction = 0f; // fires for any fill at all — if it can measure one
-
-            var sim = new EncounterSimulation(PassiveHero(), Profiles.Group(EnemyArchetype.Skirmisher, 3),
-                new ConstantRollSource(0f), behaviour);
-
-            var requested = 0;
-            sim.RecallRequested += () => requested++;
-
-            Run(sim, 50);
-
-            Assert.That(requested, Is.Zero, "no gauge, nothing to measure, no trigger");
-        }
-
-        [Test]
-        public void BagFull_LeftAtItsDefault_NeedsARealFull()
-        {
-            var bag = new FakeBagGauge { FillFraction = 0.99f };
-
-            var sim = new EncounterSimulation(PassiveHero(), Profiles.Group(EnemyArchetype.Skirmisher, 3),
-                new ConstantRollSource(0f), Behaviours.Engaging(5), null, bag);
-
-            var requested = 0;
-            sim.RecallRequested += () => requested++;
-
-            Run(sim, 50);
-            Assert.That(requested, Is.Zero, "the 1f default is inert short of a bag with no room left");
-
-            bag.FillFraction = 1f;
-            Run(sim, 1);
-
-            Assert.That(requested, Is.EqualTo(1));
         }
     }
 }

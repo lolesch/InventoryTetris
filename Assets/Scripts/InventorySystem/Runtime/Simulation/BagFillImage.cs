@@ -10,9 +10,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 {
     /// <summary>
     /// Mirrors the hero bag's fill onto an <see cref="Image"/>'s <see cref="Image.fillAmount"/> —
-    /// the same <see cref="IBagGauge.FillFraction"/> the bag-full auto-Recall reads
-    /// (<see cref="HeroBehaviour.ShouldRecallForBagFull"/>), so the bar and the trigger can never
-    /// disagree. The image must use <see cref="Image.Type.Filled"/>; it is switched to it on
+    /// the <see cref="IBagGauge.FillFraction"/>. The image must use <see cref="Image.Type.Filled"/>; it is switched to it on
     /// <see cref="Reset"/>/<see cref="OnValidate"/> when still on a different type.
     ///
     /// Polled every <see cref="Update"/> rather than bound to the container's content event: a hero

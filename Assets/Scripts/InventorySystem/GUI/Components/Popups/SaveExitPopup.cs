@@ -91,6 +91,9 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Popups
                     Set(SaveAndExit.DiscardQuestion, primary: null, secondary: "Exit without saving", back: "Back");
                     break;
             }
+
+            // Enter steps back: leaving, retrying and discarding each need a deliberate click.
+            _ = PopupFocus.SelectDefault(back);
         }
 
         private void Set(string text, string primary, string secondary, string back)

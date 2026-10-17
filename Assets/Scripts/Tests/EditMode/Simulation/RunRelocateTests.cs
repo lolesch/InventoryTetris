@@ -199,27 +199,6 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             Assert.That(result.Duration, Is.EqualTo(0f));
         }
 
-        [Test]
-        public void ARecallRequestedByTheOldEncounter_DoesNotFollowTheRunToTheNewLocation()
-        {
-            var behaviour = Behaviours.Engaging(10);
-            behaviour.RetreatHealthFraction = 0.3f;
-            var hero = new FakeHero
-            {
-                MaxHealth = 100f, Health = 25f, PhysicalDamage = 0f, MagicalDamage = 0f,
-                AttackSpeed = 0.01f, ArmorPercent = 100f, MagicResistPercent = 100f, Resource = 0f, Level = 5,
-            };
-            var run = NewRun(hero, behaviour: behaviour);
-            run.Send(Skirmishers(3));
-            run.Advance(0.1f);
-            Assert.That(run.RecallRequested, Is.True, "setup: the retreat trigger fired");
-
-            hero.Health = 100f; // the hero is healthy again by the time the player switches
-            run.Relocate(Skirmishers(3));
-
-            Assert.That(run.RecallRequested, Is.False);
-        }
-
         // ─── refusals ────────────────────────────────────────────────────────
 
         [Test]
