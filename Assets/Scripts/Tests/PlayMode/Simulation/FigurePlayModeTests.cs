@@ -1,12 +1,14 @@
 using System.Collections;
 using System.Linq;
 using NUnit.Framework;
+using Submodules.Utility.UI;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Locations;
 using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
@@ -130,7 +132,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
         }
 
         [UnityTest]
-        public IEnumerator TheHeroFigure_StandsAtTheFieldExitWhenTheMapComesUp_AndAgainAfterAReturn()
+        public IEnumerator TheHeroFigure_StandsAtTheFieldExitWhenTheMapComesUp_AndWalksBackToItAfterAReturn()
         {
             var figure = HeroFigure();
             Assert.That(figure.GetType().Name, Is.EqualTo("Figure"), "one component serves hero and enemy");
@@ -145,7 +147,74 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
 
             _ = SimulationService.Instance.Return();
             yield return null;
-            Assert.That(Vector2.Distance(FigureAt(), CentreOf(FieldExit())), Is.LessThan(0.01f), "a Return puts it back at the Field Exit");
+            Assert.That(IsWalking(), Is.True, "a Return walks it out, it does not snap");
+
+            yield return WaitForArrival();
+            Assert.That(Vector2.Distance(FigureAt(), CentreOf(FieldExit())), Is.LessThan(0.01f), "and it ends at the Field Exit");
+        }
+
+        private static CanvasGroup Face(string name) => GameObject.Find(name).GetComponent<CanvasGroup>();
+
+        // A press on a button as the pointer makes it: the Field Exit is the ToTownButton, the Town Exit the ToFieldsButton.
+        private static void Press(string name) =>
+            GameObject.Find(name).GetComponent<AbstractButton>()
+                .OnPointerClick(new PointerEventData(EventSystem.current) { button = PointerEventData.InputButton.Left });
+
+        private static IEnumerator UntilAlpha(CanvasGroup group, float alpha)
+        {
+            var until = Time.realtimeSinceStartup + 10f;
+            while (!Mathf.Approximately(group.alpha, alpha) && Time.realtimeSinceStartup < until)
+                yield return null;
+
+            Assert.That(group.alpha, Is.EqualTo(alpha).Within(0.001f));
+        }
+
+        [UnityTest]
+        public IEnumerator AClickOnTheFieldExit_DuringARun_EndsTheRunWithEverythingKept_AndWalksTheFigureOutFromTheFight()
+        {
+            Press("ToFieldsButton");
+            yield return UntilAlpha(Face("InFields"), 1f);
+            Select(_locations[0]);
+            yield return WaitForArrival();
+            var encounter = SimulationService.Instance.Run.Encounter;
+            for (var tick = 0; encounter.Enemies.Count == 0 && tick < 100; tick++)
+                SimulationService.Instance.Tick(0.5f);
+            yield return null;
+            var stood = FigureAt();
+            var exit = CentreOf(FieldExit());
+            Assert.That(Vector2.Distance(stood, exit), Is.GreaterThan(1f), "premise: the fight is away from the Exit");
+
+            Press("ToTownButton");
+            yield return null;
+
+            var run = SimulationService.Instance.Run;
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.InTown), "the Run ends at the click");
+            Assert.That(run.LastResult?.Outcome, Is.EqualTo(RunOutcome.Returned));
+            Assert.That(Session.Instance.Hero.Corpse.Exists, Is.False, "a Return keeps everything");
+            Assert.That(IsWalking(), Is.True, "he walks out, not the Relocate walk to a Location");
+            Assert.That(Vector2.Distance(FigureAt(), stood), Is.LessThan(Vector2.Distance(stood, exit) / 2f), "from where he stood in the fight");
+            Assert.That(Face("InFields").alpha, Is.GreaterThan(0.85f), "the Field map still holds while he walks");
+
+            yield return WaitForArrival();
+            Assert.That(Vector2.Distance(FigureAt(), CentreOf(FieldExit())), Is.LessThan(0.01f), "he reached the Exit");
+            yield return UntilAlpha(Face("InTown"), 1f);
+        }
+
+        [UnityTest]
+        public IEnumerator AClickOnTheFieldExit_WithNoRun_GoesBackToTown_AndEndsNothing()
+        {
+            Press("ToFieldsButton");
+            yield return UntilAlpha(Face("InFields"), 1f);
+            var run = SimulationService.Instance.Run;
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.InTown), "premise: no Run");
+
+            Press("ToTownButton");
+            yield return UntilAlpha(Face("InTown"), 1f);
+
+            Assert.That(SimulationService.Instance.Run, Is.SameAs(run));
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.InTown));
+            Assert.That(run.LastResult, Is.Null, "nothing ended");
+            Assert.That(IsWalking(), Is.False);
         }
 
         [UnityTest]

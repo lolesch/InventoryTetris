@@ -18,6 +18,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     {
         [SerializeField, Tooltip("Where the figure stands when it has not walked in: entering the game, a hero load, a Respawn. Its own point; it sits on the Exit today.")]
         private RectTransform waypoint;
+        [SerializeField, Tooltip("Where the figure stands after a Return, having come in through the Exit: the Town Exit button.")]
+        private RectTransform townExit;
         [SerializeField, Tooltip("The arena whose canvas scale turns the hero's walking speed (arena units) into canvas units.")]
         private EnemyArena arena;
 
@@ -39,22 +41,39 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         // Subscribed here, not in Awake: with the scene reload off, only OnEnable runs again on the next Play entry.
         private void OnEnable()
         {
-            _ = Session.TrySubscribeHeroLoaded(PlaceAtWaypoint);
+            if (Session.TrySubscribeHeroLoaded(OnHeroLoaded))
+            {
+                SimulationService.Instance.RunSettled += OnRunSettled;
+                SimulationService.Instance.Respawned += OnRespawned;
+            }
 
-            // A Respawn lands at the Waypoint, wherever the hero fell.
-            if (ServiceLocator.IsArmed)
-                SimulationService.Instance.Respawned += PlaceAtWaypoint;
-
-            PlaceAtWaypoint();
+            Enter(TownEntry.Play);
         }
 
         private void OnDisable()
         {
-            Session.UnsubscribeHeroLoaded(PlaceAtWaypoint);
-
+            Session.UnsubscribeHeroLoaded(OnHeroLoaded);
             if (ServiceLocator.IsArmed)
-                SimulationService.Instance.Respawned -= PlaceAtWaypoint;
+            {
+                SimulationService.Instance.RunSettled -= OnRunSettled;
+                SimulationService.Instance.Respawned -= OnRespawned;
+            }
         }
+
+        private void OnHeroLoaded() => Enter(TownEntry.Load);
+
+        private void OnRespawned() => Enter(TownEntry.Respawn);
+
+        // A Respawn lands at the Waypoint, wherever the hero fell. A Return brings him in through the Exit;
+        // a Death leaves him where he fell until then.
+        private void OnRunSettled(RunResult result)
+        {
+            if (result.Outcome == RunOutcome.Returned)
+                Enter(TownEntry.Return);
+        }
+
+        private void Enter(TownEntry entry) =>
+            Place(TownStartPoint.For(entry) == TownStand.TownExit ? townExit : waypoint);
 
         private void Update()
         {

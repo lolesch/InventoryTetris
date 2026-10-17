@@ -21,6 +21,7 @@
 - Your corpse now lies where your hero fell, on the Field map, before you send him back for it.
 - When your hero dies, a notice tells you where he fell, what it cost and that your bag lies there; Respawn (button, Enter or Cancel) brings him back to town at full health.
 - When your hero falls, the last damage numbers now drift by in slow motion for a moment.
+- Leaving the Field through its Exit now shows your hero walking out while the Field map fades; in Town he comes in standing at the Town Exit.
 
 ## 0.0.5_Alpha - 2026-09-25
 

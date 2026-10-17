@@ -272,6 +272,51 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             Assert.That(IsWalking(figure), Is.False);
         }
 
+        // The Waypoint sits on the Town Exit today; moved off it, "at the Waypoint" and "at the Town Exit" tell apart.
+        private static void MoveTheWaypointOffTheExit() => Named("Waypoint").position += new Vector3(0f, 300f, 0f);
+
+        [UnityTest]
+        public IEnumerator AfterAReturn_TheFigureStandsAtTheTownExit_NotTheWaypoint()
+        {
+            yield return OpenExample();
+            MoveTheWaypointOffTheExit();
+            var figure = Figure();
+
+            SimulationService.Instance.Send(GameBoot.Load().Locations.First());
+            _ = SimulationService.Instance.Return();
+
+            Assert.That(Apart(figure, Named("ToFieldsButton")), Is.LessThan(1f), "he came in through the Exit");
+            Assert.That(Apart(figure, Named("Waypoint")), Is.GreaterThan(AtTheStop));
+            Assert.That(IsWalking(figure), Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator AfterARespawn_TheFigureStandsAtTheWaypoint()
+        {
+            yield return OpenExample();
+            MoveTheWaypointOffTheExit();
+            var figure = Figure();
+            _ = figure.GetType().GetMethod("Place").Invoke(figure, new object[] { Named("ToFieldsButton") });
+            Assert.That(Apart(figure, Named("Waypoint")), Is.GreaterThan(AtTheStop), "premise: he is away from the Waypoint");
+
+            SimulationService.Instance.Respawn();
+
+            Assert.That(Apart(figure, Named("Waypoint")), Is.LessThan(1f));
+        }
+
+        [UnityTest]
+        public IEnumerator AfterAHeroLoad_TheFigureStandsAtTheWaypoint()
+        {
+            yield return OpenExample();
+            MoveTheWaypointOffTheExit();
+            var figure = Figure();
+            _ = figure.GetType().GetMethod("Place").Invoke(figure, new object[] { Named("ToFieldsButton") });
+
+            _ = Session.Instance.TryLoad(GameBoot.Load().DefaultHero);
+
+            Assert.That(Apart(figure, Named("Waypoint")), Is.LessThan(1f));
+        }
+
         [UnityTest]
         public IEnumerator AClickOnAStopThatDoesNotOpen_LeavesTheFigureWhereItStands()
         {
