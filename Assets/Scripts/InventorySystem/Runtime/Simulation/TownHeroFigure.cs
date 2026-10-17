@@ -14,7 +14,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     [DisallowMultipleComponent]
     public sealed class TownHeroFigure : MonoBehaviour, ITownHeroFigure
     {
-        [SerializeField, Tooltip("Where the figure stands when it has not walked in: entering the game, a hero load, a Respawn. Its own point; it sits on the Exit today.")]
+        [SerializeField, Tooltip("Where the figure stands when it has not walked in: entering the game, a hero load, a Respawn. Empty: the Town Exit.")]
         private RectTransform waypoint;
         [SerializeField, Tooltip("Where the figure stands after a Return, having come in through the Exit: the Town Exit button.")]
         private RectTransform townExit;
@@ -73,8 +73,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 Enter(TownEntry.Return);
         }
 
+        private RectTransform Waypoint => waypoint ? waypoint : townExit;
+
         private void Enter(TownEntry entry) =>
-            Place(TownStartPoint.For(entry) == TownStand.TownExit ? townExit : waypoint);
+            Place(TownStartPoint.For(entry) == TownStand.TownExit ? townExit : Waypoint);
 
         private void Update()
         {
@@ -87,7 +89,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         }
 
         /// <inheritdoc/>
-        public void PlaceAtWaypoint() => Place(waypoint);
+        public void PlaceAtWaypoint() => Place(Waypoint);
 
         /// <inheritdoc/>
         public void Place(RectTransform point)
