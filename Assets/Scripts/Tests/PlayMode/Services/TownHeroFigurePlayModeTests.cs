@@ -299,6 +299,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             _ = figure.GetType().GetMethod("Place").Invoke(figure, new object[] { Named("ToFieldsButton") });
             Assert.That(Apart(figure, Named("Waypoint")), Is.GreaterThan(AtTheStop), "premise: he is away from the Waypoint");
 
+            Session.Instance.Hero.GetResource(StatName.Health).DepleteCurrent();
             SimulationService.Instance.Respawn();
 
             Assert.That(Apart(figure, Named("Waypoint")), Is.LessThan(1f));

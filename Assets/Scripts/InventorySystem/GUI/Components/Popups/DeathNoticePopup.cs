@@ -66,7 +66,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Popups
                 return;
 
             var fell = Session.Instance.Hero.SelectedLocation;
-            message.text = DeathNotice.TextFor(fell.DisplayName, result.XpLost, result.CurrencyFee);
+            message.text = DeathNotice.TextFor(fell ? fell.DisplayName : null, result.XpLost, result.CurrencyFee);
             waiting = true;
 
             if (!SimulationService.Instance.DeathBeatPlaying)

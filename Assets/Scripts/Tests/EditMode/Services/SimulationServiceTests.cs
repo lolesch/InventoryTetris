@@ -799,6 +799,17 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
+        public void Respawn_OnALivingHero_RaisesNothing()
+        {
+            var raised = 0;
+            service.Respawned += () => raised++;
+
+            service.Respawn();
+
+            Assert.That(raised, Is.Zero);
+        }
+
+        [Test]
         public void Respawn_KeepsTheCorpseAndWhatTheDeathCost()
         {
             var hero = session.Hero;

@@ -15,6 +15,12 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
+        public void WithoutALocation_TheNoticeStillReads_AsTheField()
+        {
+            Assert.That(DeathNotice.TextFor(null, 5, 0L), Does.StartWith("You fell in the field. You lost 5 XP"));
+        }
+
+        [Test]
         public void TheFee_ListsEachCoinLargestFirst_AndLeavesOutTheOnesWithNone()
         {
             // 1 gold (1200) + 3 silver (180) + 4 iron

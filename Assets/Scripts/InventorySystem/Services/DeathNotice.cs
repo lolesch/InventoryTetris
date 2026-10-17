@@ -9,8 +9,9 @@ namespace ToolSmiths.InventorySystem.Services
     /// </summary>
     public static class DeathNotice
     {
+        /// <param name="location">Where the hero fell; null or empty when no Location was selected, which reads as "the field".</param>
         public static string TextFor(string location, int xpLost, long fee) =>
-            $"You fell in {location}. You lost {xpLost} XP and a fee of {FeeText(fee)}. Your bag lies where you fell; go back to pick it up.";
+            $"You fell in {(string.IsNullOrEmpty(location) ? "the field" : location)}. You lost {xpLost} XP and a fee of {FeeText(fee)}. Your bag lies where you fell; go back to pick it up.";
 
         /// <summary>The fee in the ladder's coins, largest first and only the ones it holds: "1 gold, 3 silver and 4 iron".</summary>
         public static string FeeText(long fee)
