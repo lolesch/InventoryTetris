@@ -14,6 +14,8 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
     {
         [SerializeField, Tooltip("The Town map's Hero figure, which walks to this Exit as the Town map fades.")]
         private TownHeroFigure heroFigure;
+        [SerializeField, Tooltip("Where the figure stands at the Exit. Empty: this button's own centre.")]
+        private RectTransform travelPoint;
 
         protected override void OnClick()
         {
@@ -21,7 +23,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
             InventoryService.Instance.SyncContextToPhase(true);
 
             if (heroFigure != null)
-                heroFigure.TravelTo((RectTransform)transform);
+                heroFigure.TravelTo(travelPoint ? travelPoint : (RectTransform)transform);
         }
     }
 }

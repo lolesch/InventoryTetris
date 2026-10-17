@@ -35,7 +35,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// the Death beat, then releases them all. A Relocate leaves the Run alive, so the old Encounter's enemies fade
     /// out as defeated ones do.
     ///
-    /// The anchor is the active Location's Hero icon (its <see cref="ToggleCheckmark"/> image), resolved every frame
+    /// The anchor is the active Location's <see cref="LocationToggle.TravelPoint"/>, resolved every frame
     /// from the Locations' <see cref="ToggleGroup"/>: it moves on a Relocate and goes null once the group resets, and
     /// the group's <c>ActiveMember</c> is not guaranteed to be set when the Run is sent. A null anchor holds the
     /// figures where they are. Positions are in the arena root's space, so this object must sit outside any face
@@ -388,8 +388,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (member != _anchorOwner)
             {
                 _anchorOwner = member;
-                //var checkmark = member.GetComponentInChildren<ToggleCheckmark>(true);
-                _anchor = (RectTransform) member.transform; //checkmark != null ? (RectTransform)checkmark.transform : null;
+                _anchor = member is LocationToggle location ? location.TravelPoint : (RectTransform)member.transform;
             }
 
             return _anchor;

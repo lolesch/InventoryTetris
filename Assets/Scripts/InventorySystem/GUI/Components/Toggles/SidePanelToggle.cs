@@ -66,6 +66,8 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         [Tooltip("The Town map's Hero figure, which Travels to this Stop each time a click or the hotkey opens it " +
                  "(ADR-0021). Empty for the Hero Panel's toggle, which is no place on the map.")]
         [SerializeField] private TownHeroFigure heroFigure;
+        [Tooltip("Where the Hero figure stands at this Stop. Empty: this toggle's own centre.")]
+        [SerializeField] private RectTransform travelPoint;
 
         protected override void OnClick() => UserToggle();
 
@@ -173,7 +175,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
             if (wasOn && !IsOn)
                 panel.RequestContext(false);
             else if (!wasOn && IsOn && heroFigure != null && panel.IsUpIn(InventoryService.Instance.ActiveContext))
-                heroFigure.TravelTo((RectTransform)transform);
+                heroFigure.TravelTo(travelPoint ? travelPoint : (RectTransform)transform);
         }
 
 #if UNITY_EDITOR

@@ -20,10 +20,16 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         [field: Space]
         [field: FormerlySerializedAs("location"), SerializeField] public LocationConfig Location { get; private set; }
 
+        [SerializeField, Tooltip("Where the hero stands at this Location, and where its arena is drawn (ADR-0021). Empty: this toggle's own centre.")]
+        private RectTransform travelPoint;
+
+        /// <summary>The rect whose centre is this Location on the map: the hero walks to it and the arena is drawn there.</summary>
+        public RectTransform TravelPoint => travelPoint ? travelPoint : (RectTransform)transform;
+
         protected override void OnToggle()
         {
             if (!IsOn) return;
-            
+
             var simulation = SimulationService.Instance;
 
             // After a Death the Run's down flag is reset but the hero stays dead until Respawn, while this face still shows.
