@@ -109,8 +109,6 @@ namespace ToolSmiths.InventorySystem.Services
         {
             SimSpeed = Mathf.Max(1f, config.SimSpeed),
             Engagement = Mathf.Max(1, config.Engagement),
-            RetreatHealthFraction = Mathf.Clamp01(config.RetreatHealthFraction),
-            RecallBagFillFraction = Mathf.Clamp01(config.RecallBagFillFraction),
             CastThreshold = Mathf.Clamp01(config.CastThreshold),
             OriginWeight = Mathf.Clamp01(config.OriginWeight),
             LootFilterMinimum = config.LootFilterMinimum,

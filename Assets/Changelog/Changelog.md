@@ -15,6 +15,7 @@
 - Hold Tab over an open Vendor or Healer to peek at its other tab; Alt still shows more detail on an item.
 - The hero in the field now has a health bar that shows its shield, and flashes and shakes when hit, like the enemies do.
 - Your hero now stands on the Town map and walks to whichever Town Stop you open, by click or hotkey; faster boots make him walk faster.
+- The hero no longer recalls to town on his own, so the Retreat HP and Recall Bag sliders are gone; a Run ends when you return him or he dies.
 
 ## 0.0.5_Alpha - 2026-09-25
 

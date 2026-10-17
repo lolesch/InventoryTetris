@@ -209,13 +209,10 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
-        public void AHeroBelowTheRetreatHealth_KeepsFighting()
+        public void AWoundedHero_KeepsFighting()
         {
-            var behaviour = Behaviours.Engaging(5);
-            behaviour.RetreatHealthFraction = 0.3f;
-
             var sim = new EncounterSimulation(WoundedHero(0.25f), Profiles.Group(EnemyArchetype.Skirmisher, 3),
-                new ConstantRollSource(0f), behaviour);
+                new ConstantRollSource(0f), Behaviours.Engaging(5));
 
             Run(sim, 50);
 

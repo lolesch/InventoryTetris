@@ -64,7 +64,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
         private static string Diagnose()
         {
             var panel = Panel();
-            var slider = Field(panel, "retreatHealthSlider");
+            var slider = Field(panel, "resourceReserveSlider");
             var changed = (System.Delegate)Field(slider, "OnValueChanged");
             var group = panel.GetComponent<CanvasGroup>();
             var radio = Field(panel, "<RadioGroup>k__BackingField");
@@ -80,14 +80,8 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
         {
             var behaviour = Session.Instance.Hero.Behaviour;
 
-            var landed = Drag("retreatHealthSlider", 0.77f);
-            Assert.That(behaviour.RetreatHealthFraction, Is.EqualTo(landed).Within(1e-4f), $"retreat health, {when}: {Diagnose()}");
-
-            landed = Drag("recallBagFillSlider", 0.33f);
-            Assert.That(behaviour.RecallBagFillFraction, Is.EqualTo(landed).Within(1e-4f), $"recall bag fill, {when}");
-
-            landed = Drag("resourceReserveSlider", 0.61f);
-            Assert.That(behaviour.CastThreshold, Is.EqualTo(landed).Within(1e-4f), $"cast threshold, {when}");
+            var landed = Drag("resourceReserveSlider", 0.61f);
+            Assert.That(behaviour.CastThreshold, Is.EqualTo(landed).Within(1e-4f), $"cast threshold, {when}: {Diagnose()}");
 
             landed = Drag("originWeightSlider", 0.19f);
             Assert.That(behaviour.OriginWeight, Is.EqualTo(landed).Within(1e-4f), $"origin weight, {when}");

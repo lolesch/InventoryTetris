@@ -55,14 +55,12 @@ namespace ToolSmiths.InventorySystem.Persistence
         public ContainerDto stash = new();
     }
 
-    /// <summary>The seven Behaviour Profile values. The loot filter is an enum, so it is stored by name.</summary>
+    /// <summary>The five Behaviour Profile values. The loot filter is an enum, so it is stored by name.</summary>
     [Serializable]
     public sealed class BehaviourDto
     {
         public float simSpeed = 1f;
         public int engagement = 1;
-        public float retreatHealthFraction;
-        public float recallBagFillFraction = 1f;
         public float castThreshold;
         public float originWeight = HeroBehaviour.DefaultOriginWeight; // a save from before the slider reads as its default
         public string lootFilterMinimum = string.Empty;

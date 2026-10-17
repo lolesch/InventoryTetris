@@ -70,8 +70,6 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(config.CastCost, Is.EqualTo(16f));
             Assert.That(config.SimSpeed, Is.EqualTo(1f));
             Assert.That(config.Engagement, Is.EqualTo(3));
-            Assert.That(config.RetreatHealthFraction, Is.Zero);
-            Assert.That(config.RecallBagFillFraction, Is.EqualTo(1f));
             Assert.That(config.CastThreshold, Is.Zero);
             Assert.That(config.OriginWeight, Is.EqualTo(0.5f), "home and nearness pull equally");
             Assert.That(config.LootFilterMinimum, Is.EqualTo(ItemRarity.Common));

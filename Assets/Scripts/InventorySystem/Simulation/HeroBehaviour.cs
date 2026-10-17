@@ -5,13 +5,11 @@ using ToolSmiths.InventorySystem.Data.Enums;
 namespace ToolSmiths.InventorySystem.Simulation
 {
     /// <summary>
-    /// The seven slider-fed values that steer the hero through a Run (issue #23; spec
+    /// The five slider-fed values that steer the hero through a Run (issue #23; spec
     /// <i>HeroBehaviour</i>; <see cref="OriginWeight"/> joined for issue #209), held in the Session save and written by the sliders on their
-    /// change event (issue #27) — read live here, never polled by value snapshot.
+    /// change event (issue #27) — read live here, never polled by value snapshot. The hero never leaves
+    /// a Run on his own (ADR-0021), so no retreat value is among them.
     ///
-    /// <see cref="RetreatHealthFraction"/> and <see cref="RecallBagFillFraction"/> are no longer read by
-    /// the sim: the hero never leaves a Run on his own (ADR-0021). They stay for the UI and the save
-    /// until they are removed.
     /// <see cref="ShouldCast"/> is the <see cref="CastThreshold"/> hysteresis latch (ADR-0010):
     /// hold below the fraction, then Cast every opportunity until the pool is drained to 0, then
     /// wait back up to the fraction — it never gates the Strike, because the
@@ -25,12 +23,6 @@ namespace ToolSmiths.InventorySystem.Simulation
     public sealed class HeroBehaviour
     {
         private bool _castingRun;
-
-        /// <summary>Stored only: nothing reads it since Auto-Recall went (ADR-0021).</summary>
-        public float RetreatHealthFraction { get; set; }
-
-        /// <summary>Stored only: nothing reads it since Auto-Recall went (ADR-0021).</summary>
-        public float RecallBagFillFraction { get; set; } = 1f;
 
         /// <summary>
         /// The <see cref="ShouldCast"/> hysteresis latch's rising edge — charge Resource to this

@@ -72,8 +72,6 @@ namespace ToolSmiths.InventorySystem.Persistence
             var behaviour = hero.Behaviour;
             behaviour.SimSpeed = saved.simSpeed;
             behaviour.Engagement = saved.engagement;
-            behaviour.RetreatHealthFraction = saved.retreatHealthFraction;
-            behaviour.RecallBagFillFraction = saved.recallBagFillFraction;
             behaviour.CastThreshold = saved.castThreshold;
             behaviour.OriginWeight = saved.originWeight;
 
