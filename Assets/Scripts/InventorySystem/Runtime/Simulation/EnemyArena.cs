@@ -12,13 +12,13 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.Runtime.Simulation
 {
     /// <summary>
-    /// Owns the pooled enemy <see cref="Figure"/>s and the hero's one scene <see cref="Figure"/> standing on the
-    /// sim's arena, drawn around the Hero icon, and keeps one figure per living enemy of the live Encounter (issues
-    /// #94, #176, #208, #266). It replaces the combat panel's enemy HP bar list: the pooling and the binding are
-    /// what <c>EnemyHealthBarPool</c> had. The pool, the death fade and the target ring are the enemies' only.
+    /// Owns the pooled enemy <see cref="Figure"/>s standing on the sim's arena, drawn around the Hero icon, and
+    /// keeps one figure per living enemy of the live Encounter (issues #94, #176, #208, #266). It replaces the
+    /// combat panel's enemy HP bar list: the pooling and the binding are what <c>EnemyHealthBarPool</c> had. The
+    /// hero's figure is the Field map's own (<see cref="HeroFigure"/>, #316), placed through this arena's projection.
     ///
     /// The simulation owns position (ADR-0018): this only projects it. Each frame every figure is placed at
-    /// <see cref="Enemy.Position"/> (the hero at <see cref="EncounterSimulation.HeroPosition"/>) through an
+    /// <see cref="Enemy.Position"/> through an
     /// <see cref="ArenaProjection"/> of <c>arenaScale</c> and <c>tilt</c>, relative to the arena's
     /// <see cref="ArenaTuning.Origin"/>, which is drawn at the anchor. Nothing here walks, rolls or steers.
     ///
@@ -53,8 +53,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         [SerializeField, Tooltip("The Locations' toggle group; its active member's Hero icon is the anchor.")]
         private ToggleGroup locations;
         [SerializeField] private EnemyVisuals visuals;
-        [SerializeField, Tooltip("The hero as a figure on the arena: a separate element, so the Hero icon (the arena's origin) stays put. One scene object, never pooled. Optional.")]
-        private Figure heroFigure;
         [SerializeField, Min(0.01f), Tooltip("Canvas units one arena unit spans along the horizontal axis.")]
         private float arenaScale = 16f;
         [SerializeField, Range(0f, 1f), Tooltip("The depth axis against the horizontal one: 1 draws the arena top-down, less flattens it. Drawing only; the rules use arena distances.")]
@@ -130,9 +128,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             SyncDamageNumbers();
 
-            var heroTarget = _bound?.HeroTarget;
-            Place(heroTarget);
-            MarkTarget(heroTarget);
+            Place();
+            MarkTarget(_bound?.HeroTarget);
             FadeDying(SimulationService.Instance.SimDelta(Time.deltaTime));
         }
 
@@ -145,10 +142,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _bound = encounter;
             _bound.EnemySpawned += OnEnemySpawned;
             _bound.EnemyDefeated += OnEnemyDefeated;
-
-            if (heroFigure != null)
-                BindFigure(heroFigure, Session.Instance.Hero.GetResource(StatName.Health), "Hero",
-                    Session.Instance.Hero.GetResource(StatName.Shield));
 
             // The first Encounter's initial batch spawns inside the sim's constructor, before this
             // could listen - and a Send can land between frames with enemies already in. Seeding
@@ -172,9 +165,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _figures.Clear();
             _marked = null;
 
-            // No Run, no hero on the arena, and no number left listening to the sim that ended.
-            if (heroFigure != null)
-                heroFigure.Unbind();
+            // No Run, and no number left listening to the sim that ended.
             if (numbers != null)
                 numbers.Unbind();
             _hasCenter = false;
@@ -297,7 +288,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// latest Strike or Approach Intent, and off with no living enemy. Read from <c>_figures</c> only: a dying
         /// enemy has left it, so it is never marked. Nothing is marked with the switch off or no Encounter.
         /// </summary>
-        /// <param name="heroTarget">This frame's <see cref="EncounterSimulation.HeroTarget"/>, read once by <see cref="Update"/>.</param>
         private void MarkTarget(Enemy heroTarget)
         {
             Figure target = null;
@@ -316,11 +306,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         }
 
         /// <summary>
-        /// Puts every figure where the sim has it, projected from the arena's origin at the anchor, and turns it
-        /// toward the hero (the hero toward <paramref name="heroTarget"/>, his target as <see cref="Update"/>
-        /// read it this frame). Nothing with no Encounter or no anchor.
+        /// Puts every enemy figure where the sim has it, projected from the arena's origin at the anchor, and turns
+        /// it toward the hero. Nothing with no Encounter or no anchor.
         /// </summary>
-        private void Place(Enemy heroTarget)
+        private void Place()
         {
             if (_bound == null)
                 return;
@@ -337,13 +326,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _center = center;
             _projection = new ArenaProjection(arenaScale, tilt);
 
-            // Enemies face the hero; the hero faces his Strike target, and keeps his way with none.
+            // Enemies face the hero.
             var moved = false;
             foreach (var (enemy, figure) in _figures)
                 moved |= PlaceFigure(figure, enemy.Position, _bound.HeroPosition);
-
-            if (heroFigure != null)
-                moved |= PlaceFigure(heroFigure, _bound.HeroPosition, heroTarget?.Position);
 
             if (moved)
                 SortByDepth();
@@ -390,7 +376,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 Order(figure);
             foreach (var dying in _dying)
                 Order(dying.Figure);
-            Order(heroFigure);
 
             _ordered.Sort(CompareDepth);
 

@@ -57,7 +57,11 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
 
         private static object Property(object target, string name) => target.GetType().GetProperty(name).GetValue(target);
 
-        private static Component HeroFigure() => (Component)Field(Arena(), "heroFigure");
+        // The Field map's own hero figure (issue #316): a HeroFigure component on the Figure, not a slot of the arena.
+        private static Component HeroFigure() =>
+            Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include)
+                .Single(c => c.GetType().Name == "HeroFigure")
+                .GetComponents<MonoBehaviour>().Single(c => c.GetType().Name == "Figure");
 
         private static Component Child(Component figure, string typeName) =>
             figure.GetComponentsInChildren<MonoBehaviour>(true).Single(c => c.GetType().Name == typeName);
@@ -89,6 +93,31 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             yield return null;
             Assert.That(figure.GetComponent<CanvasGroup>().alpha, Is.EqualTo(0f), "hidden when it is released");
             Assert.That((int)Property(figure, "FacingSign"), Is.EqualTo(1), "and the next Run starts facing right");
+        }
+
+        [Test]
+        public void TheArenaView_BindsNoHeroFigure()
+        {
+            var fields = Arena().GetType().GetFields(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+            Assert.That(fields.Where(f => f.FieldType.Name == "Figure" && f.Name != "prefab" && f.IsDefined(typeof(SerializeField), true)), Is.Empty,
+                "the pooled prefab is the arena's only Figure slot; the hero's is the Field map's");
+        }
+
+        [UnityTest]
+        public IEnumerator TheHeroFigure_StandsWhereTheSimulationProjectsTheHero()
+        {
+            Select(_locations[0]);
+            var encounter = SimulationService.Instance.Run.Encounter;
+            for (var tick = 0; encounter.Enemies.Count == 0 && tick < 100; tick++)
+                SimulationService.Instance.Tick(0.5f);
+            yield return null;
+
+            var arguments = new object[] { encounter.HeroPosition, null };
+            var projected = (bool)Arena().GetType().GetMethod("TryGetNumberOrigin").Invoke(Arena(), arguments);
+            var rect = (RectTransform)HeroFigure().transform;
+
+            Assert.That(projected, Is.True);
+            Assert.That(Vector2.Distance(rect.anchoredPosition, (Vector2)arguments[1]), Is.LessThan(0.01f));
         }
 
         [UnityTest]
