@@ -74,7 +74,9 @@ Where what the player sold goes. A sale is immediate: shift-click an item, or dr
 Supply or the Sold tab, and it is paid out at once and lands here, never on the shelf. The Sold
 tab is a **Supply** - its items are bought back like any shelf, at the Markup, so a mis-click
 is recoverable but not free. It holds a limited number of Packages; a sale that needs room
-discards the oldest. A **Restock** clears it; closing a panel or changing Town Stop leaves it
+discards the oldest. A sale never refuses for lack of coin room: the **Wallet** banks the payout
+highest denomination first, and the coins the bag has no cell for lie on the **Ground**, one stack per
+denomination, highest first (a stack the full Ground pushes out banks first). A **Restock** clears it; closing a panel or changing Town Stop leaves it
 alone. One container, shown as a tab beside the Supply by every Town Stop that buys (the
 Vendor and the Healer). It belongs to the **World**, not the hero, and is not saved (ADR-0016).
 _Avoid_: sell basket, basket, cart, buyback, trade window
@@ -97,12 +99,14 @@ names a hub (the **Inventory**), one sink, and a set of sources, and every row f
 same three rules: the hub goes to the sink, the **Equipment** goes to the sink in any
 context but `Hero`, and a listed source comes back to the hub. A context with no rows
 moves nothing — the **Supply** is never a sink, and its own shift-click stays a **Buy** in
-every context. `Hero` has one row of its own: while a **Run** has a ground, the **Inventory**
-drops its item there, into the **Ground Items List**; in Town there is no ground, so `Hero`
-moves nothing. `Ground` has that row and one more: a shift-click on the ground picks the **Drop** up. A move between containers always executes — into the target container, or the
+every context. `Hero` has one row of its own: the **Inventory** drops its item on the
+**Ground**, into the **Ground Items List**, in Town as in a **Run**. `Ground` has that row and one
+more: a shift-click on the ground picks the **Drop** up. A move between containers always executes — into the target container, or the
 hand if that is full. A retrieval from the **Stash** and a **Buy** go through the player's
 acquisition entry point instead, so auto-equip applies, and when nothing has room they roll
-back with nothing moved.
+back with nothing moved. A coin that comes back to the **Inventory** this way, or off the
+**Ground**, leaves the **Wallet**'s coins gold first, iron last; a coin sent to the **Stash** just
+takes the first free cell.
 _Avoid_: auto-move, transfer, quick-transfer; "shift-click" (that is the input, not the move)
 
 **Package Origin**:
@@ -147,7 +151,12 @@ _Avoid_: upgrade, merge, convert, exchange
 
 **Wallet**:
 The player's spendable money, wherever the coins physically sit. Currently not a module
-— the behaviour lives on the container.
+— the behaviour lives on the container. Coins that arrive together (a sale payout, a Pile,
+**Consolidation**) are laid gold, silver, copper, iron into the first free cells in that
+order; a container short of cells keeps the highest denominations and the Wallet hands back the rest.
+A single coin the player moves into the bag, by drop or **Quick Move**, re-lays all the bag's coins that
+way, folding none; into the **Stash** or the **Ground** it takes the first free cell. So the bag's coins
+are in order, and shift-clicking them to the Stash one by one fills the Stash in order.
 
 ## Loot
 
@@ -184,9 +193,11 @@ it, and what the Wallet cannot take stays.
 _Avoid_: pile (that is coins), ground loot, spill, cache
 
 **Ground**:
-Where a **Run**'s **Drops** lie: one stash-sized grid per Run, wiped when the Run ends. In Town
-there is no Run and so no ground. The **Ground Items List** and a grid of the same cells on the
-Combat Panel are two views of it. What lands and what is evicted is the **Drop**'s rule.
+Where **Drops** lie: one stash-sized grid, owned by the **World**, in Town as in a **Run**. A Run's
+Drops are wiped when the Run ends. In Town the player lays an item there by Quick Move or by releasing a
+drag on the ground slot, picks it up from the **Ground Items List**, and it lies there until picked up
+and is wiped on **Send**; the coins a sale could not bank lie there too. The **Ground Items List** and a grid of the same cells on the Combat Panel
+are two views of it. What lands and what is evicted is the **Drop**'s rule.
 _Avoid_: floor, loot area, arena (that is where the fight takes place)
 
 **Corpse**:
@@ -697,7 +708,8 @@ The single-valued enum (`None`, `Hero`, `Stash`, `Vendor`, `Healer`, `Ground`) t
 questions at once: which panels are up, and where a **Quick Move** lands. Entry points
 *request* a context; every panel *derives* its visibility from it. A context names the
 **Hero Panel** plus at most one other panel (a Town Stop's, or the **Combat Panel**'s ground
-tab for `Ground`, so that one needs the hero's bag open too), so the panel set is derived rather than
+tab for `Ground`, so that one needs the hero's bag open too; `Ground` is reachable in Town as well,
+through its toggle), so the panel set is derived rather than
 announced, and a panel that belongs to every context can never be the thing that names one
 (ADR-0013). It is held by the **World** (reached through the inventory service,
 ADR-0015) and read by the trade flow for **Quick Move**
@@ -705,7 +717,8 @@ routing. Its members are not homogeneous and need not be — the Stash is the pl
 own storage, the Vendor is someone else's — because the only question the enum answers is
 which context is active. Neither the Run nor the map is a member: the map that is up
 *constrains* contexts. On the **Field map** only `None`, `Hero` and `Ground` are reachable,
-and `None` there shows the **Combat Panel**, so closing the hero's bag brings it back.
+and `None` there shows the **Combat Panel**, so closing the hero's bag brings it back. In Town
+all of them are, `Ground` included, through its toggle.
 _Avoid_: Side Panel Context (retired), trade target, active panel, current context
 
 **Combat Panel**:
@@ -713,7 +726,7 @@ The left-side panel of the **Field map**: shown there on the `None` and `Ground`
 derived like a **Side Panel**, never by the Run's state. Holds behaviour sliders, enemy
 health bars, encounter stats and the ground tab. The ground shows only while the Run is
 live; with no Run, or a held one, it is empty — a held Location's ground is seen by going
-back there.
+back there. In Town the ground is the Town ground, opened by the Ground toggle.
 _Avoid_: debug panel, sim panel, fight panel
 
 **Ability Hotbar**:
@@ -730,8 +743,9 @@ is a grid container the size of the stash, and this list is its second view: bot
 packages. A package that lands, or a stack that gains items, becomes the newest; when the ground
 is full the oldest are removed until the new one fits, and nothing else is rearranged. It also
 shows what the player dropped there — by Quick Move or by releasing a drag on the ground slot,
-which evict the oldest the same way — and like any **Drop** it is gone when the Run ends. With
-no Run there is no ground, and an item released on the ground slot goes back where it came from.
+which evict the oldest the same way — and like any **Drop** it is gone when the Run ends. In Town the
+list shows the same ground, reached with the Ground toggle beside the Hero toggle, and what lies there is
+gone when the hero is **Sent**.
 _Avoid_: loot beam, drop list, world items
 
 

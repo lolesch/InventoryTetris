@@ -68,6 +68,8 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                     return;
 
                 transaction.Commit();
+
+                wallet.RelayIfCoinLandedIn(Container, package.Item);
             }
 
             /// A clean landing - nothing came back to the cursor, so the drag is over.

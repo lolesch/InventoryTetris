@@ -153,9 +153,8 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         /// same slots. It accepts a purchase in progress - from any shelf - as a free return to
         /// its origin, never a sale: nobody is paid for something not yet owned. It accepts a
         /// player-owned Package as a sale, and refuses it, which shows the forbidden tint, when
-        /// the payout would not fit or would be 0, or the item is currency
-        /// (<see cref="Sale.CanSellHeld"/>); releasing on that tint sends the item back to its
-        /// origin.
+        /// the payout would be 0 or the item is currency (<see cref="Sale.CanSellHeld"/>);
+        /// releasing on that tint sends the item back to its origin.
         /// </summary>
         public override bool WouldAcceptDrop(Package package)
         {
@@ -165,9 +164,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             if (DragProvider.Instance.IsHoldingPurchase)
                 return true;
 
-            var session = Session.Instance;
-
-            return Sale.CanSellHeld(session.World.Sold, session.Hero.Wallet, package);
+            return Sale.CanSellHeld(Session.Instance.World.Sold, package);
         }
 
         protected override void DropItem(Package package)
@@ -183,7 +180,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             /// drop: the item goes back where it came from, not under the cursor.
             var session = Session.Instance;
 
-            if (!Sale.TrySellHeld(session.World.Sold, session.Hero.Wallet, package))
+            if (!Sale.TrySellHeld(session.World.Sold, session.Hero.Wallet, session.World.LootGround, package))
             {
                 _ = CancelHeldDrag();
                 return;

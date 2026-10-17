@@ -21,8 +21,9 @@ a free cancel.
 
 - **One transaction.** A sale is one `ItemTransaction` over the source, the Sold container and
   the Wallet, and it wholly happens or leaves all three untouched (`Sale`). A sale that cannot
-  pay out (0 payout, a payout the Wallet cannot bank, a Package too big for the Sold
-  container) is refused, never half done. A full Sold container discards its oldest Packages
+  pay out (0 payout, currency, a Package too big for the Sold container) is refused, never
+  half done. A payout the Wallet has no cell for is not a refusal: the coins that do not fit
+  lie on the ground (`dev/specs/2026-10-14-coin-overflow-design.md`). A full Sold container discards its oldest Packages
   to make room, so a sale that can pay out always succeeds.
 - **The Sold container is a Supply.** It is bought back by shift-click, right-click or drag
   into the Inventory exactly like a shelf, and `QuickMoveResolver` treats it as one more shelf.

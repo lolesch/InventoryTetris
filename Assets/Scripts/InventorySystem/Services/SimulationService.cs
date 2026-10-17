@@ -322,16 +322,15 @@ namespace ToolSmiths.InventorySystem.Services
                 inventory.RestockTownStops();
         }
 
-        /// <summary>Retire the World's live loot flow: unsubscribe first, then clear its ground Drops.</summary>
+        /// <summary>
+        /// Retire the World's live loot flow, if any: unsubscribe first. Then clear the ground, which in Town
+        /// holds what the player left there: a Send wipes it as a Run's end wipes the Run's Drops.
+        /// </summary>
         private static void ReleaseLoot(World world)
         {
-            var lootFlow = world.LootFlow;
-            if (lootFlow == null)
-                return;
-
-            lootFlow.Dispose();
-            lootFlow.ClearGround();
+            world.LootFlow?.Dispose();
             world.LootFlow = null;
+            world.Ground.RemoveAll();
         }
     }
 }

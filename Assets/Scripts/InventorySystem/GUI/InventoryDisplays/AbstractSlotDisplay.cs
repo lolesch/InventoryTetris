@@ -123,22 +123,23 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             {
                 case QuickMoveIntentKind.Sell:
                     /// The shift-click sale (#128): one transaction over this slot's container,
-                    /// the Sold container and the Wallet. A sale that cannot pay out is a
-                    /// silent no-op, the click absorbed like any other quick-move.
-                    _ = Sale.TrySell(Session.Instance.World.Sold, Session.Instance.Hero.Wallet, Container, position);
+                    /// the Sold container and the Wallet; coins the bag cannot hold lie on the
+                    /// ground. A sale that pays 0 is a silent no-op, the click absorbed like any
+                    /// other quick-move.
+                    var session = Session.Instance;
+
+                    _ = Sale.TrySell(session.World.Sold, session.Hero.Wallet, session.World.LootGround, Container, position);
                     return true;
 
                 case QuickMoveIntentKind.Drop:
-                    /// The Hero context's ground row (issue #63): the item leaves the bag for the
-                    /// Run's ground, where the Ground Items List shows it. A Run with no ground
-                    /// never resolves to this intent, so a missing loot flow is only a race
-                    /// with the Run ending - a silent no-op, the click absorbed.
-                    _ = DropTransaction.Run(Container, position, SimulationService.Instance.LootFlow);
+                    /// The Hero context's ground row (issues #63, #285): the item leaves the bag for the
+                    /// World's ground, where the Ground Items List shows it.
+                    _ = DropTransaction.Run(Container, position, Session.Instance.World.LootGround);
                     return true;
 
                 case QuickMoveIntentKind.PickUp:
                     /// The Ground context's row: the same pick-up a plain click on a ground slot makes.
-                    _ = SimulationService.Instance.LootFlow?.PickUpFromGround(package.Item);
+                    _ = Session.Instance.World.LootGround.PickUpFromGround(package.Item);
                     return true;
 
                 case QuickMoveIntentKind.Acquire:
@@ -148,7 +149,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                     /// lands there instead of the Inventory.
                     var hero = Session.Instance.Hero;
 
-                    _ = PickUpTransaction.Run(Container, position, hero);
+                    _ = PickUpTransaction.Run(Container, position, hero, wallet: hero.Wallet);
                     return true;
 
                 case QuickMoveIntentKind.MoveToContainer:

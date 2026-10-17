@@ -122,25 +122,5 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             Assert.That(ground.Placed, Is.Empty);
         }
 
-        [Test]
-        public void Place_WithNoGround_ReportsItSoTheCallerKeepsTheItem()
-        {
-            var sword = new ItemInstance(SwordId, ItemRarity.Common, 1, null);
-
-            Assert.That(DropTransaction.Place(new Package(null, sword, 1u), null), Is.False,
-                "the ground slot sends the item back instead of deleting it");
-        }
-
-        [Test]
-        public void Run_WithNoGround_LeavesTheItemWhereItWas()
-        {
-            _ = Store(SwordId, 1u);
-
-            var dropped = DropTransaction.Run(bag, Vector2Int.zero, null);
-
-            Assert.That(dropped, Is.False, "a Run in Town has no ground to drop on");
-            Assert.That(bag.TryGetPackageAt(Vector2Int.zero, out var stored), Is.True);
-            Assert.That(stored.IsValid, Is.True);
-        }
     }
 }
