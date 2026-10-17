@@ -89,8 +89,6 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             hero.Behaviour.SimSpeed = 3.5f;
             hero.Behaviour.Engagement = 4;
-            hero.Behaviour.RetreatHealthFraction = 0.25f;
-            hero.Behaviour.RecallBagFillFraction = 0.75f;
             hero.Behaviour.CastThreshold = 0.6f;
             hero.Behaviour.OriginWeight = 0.8f;
             hero.Behaviour.LootFilterMinimum = ItemRarity.Rare;
@@ -145,8 +143,6 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             Assert.That(now.Behaviour.SimSpeed, Is.EqualTo(3.5f));
             Assert.That(now.Behaviour.Engagement, Is.EqualTo(4));
-            Assert.That(now.Behaviour.RetreatHealthFraction, Is.EqualTo(0.25f));
-            Assert.That(now.Behaviour.RecallBagFillFraction, Is.EqualTo(0.75f));
             Assert.That(now.Behaviour.CastThreshold, Is.EqualTo(0.6f));
             Assert.That(now.Behaviour.OriginWeight, Is.EqualTo(0.8f));
             Assert.That(now.Behaviour.LootFilterMinimum, Is.EqualTo(ItemRarity.Rare));
@@ -183,6 +179,31 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(after.Session.TryLoad(JsonUtility.FromJson<HeroDto>(oldText), after.Simulation.Locations, out _), Is.True);
 
             Assert.That(after.Hero.TotalKills, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void ASavedHero_NoLongerCarriesTheAutoRecallFractions()
+        {
+            var text = JsonUtility.ToJson(Snapshot(PlayedGame()));
+
+            Assert.That(text, Does.Not.Contain("retreatHealthFraction"));
+            Assert.That(text, Does.Not.Contain("recallBagFillFraction"));
+        }
+
+        [Test]
+        public void ASaveWrittenWithTheAutoRecallFractions_LoadsWithThemIgnored()
+        {
+            var before = PlayedGame();
+            var oldText = JsonUtility.ToJson(Snapshot(before))
+                .Replace("\"castThreshold\":", "\"retreatHealthFraction\":0.25,\"recallBagFillFraction\":0.75,\"castThreshold\":");
+            Assert.That(oldText, Does.Contain("recallBagFillFraction"), "premise: the text is a pre-removal save");
+            var after = TestGame.Create(config);
+
+            Assert.That(after.Session.TryLoad(JsonUtility.FromJson<HeroDto>(oldText), after.Simulation.Locations, out var report), Is.True);
+
+            Assert.That(report.IsClean, Is.True);
+            Assert.That(after.Hero.Behaviour.CastThreshold, Is.EqualTo(0.6f));
+            Assert.That(after.Hero.Behaviour.SimSpeed, Is.EqualTo(3.5f));
         }
 
         [Test]

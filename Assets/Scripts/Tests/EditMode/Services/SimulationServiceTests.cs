@@ -353,10 +353,9 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
-        public void Tick_DoesNotRecall_WhateverTheBehaviourProfileSaysRetreat()
+        public void Tick_DoesNotRecall_OnItsOwn()
         {
             session.Hero.IsInvincible = true;
-            session.Hero.Behaviour.RetreatHealthFraction = 1f;
             service.Send(thornwood);
 
             for (var i = 0; i < 100; i++)

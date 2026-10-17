@@ -522,7 +522,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
                 Resource = 0f,
                 Level = 5,
             };
-            var run = NewRun(hero, behaviour: new HeroBehaviour { Engagement = 10, RetreatHealthFraction = 0.3f });
+            var run = NewRun(hero, behaviour: new HeroBehaviour { Engagement = 10 });
             run.Send(Skirmishers(3));
 
             for (var i = 0; i < 50; i++) run.Advance(0.1f);

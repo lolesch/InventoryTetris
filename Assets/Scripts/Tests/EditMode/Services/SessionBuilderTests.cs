@@ -91,8 +91,6 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             Assert.That(behaviour.SimSpeed, Is.EqualTo(config.SimSpeed));
             Assert.That(behaviour.Engagement, Is.EqualTo(config.Engagement));
-            Assert.That(behaviour.RetreatHealthFraction, Is.EqualTo(config.RetreatHealthFraction));
-            Assert.That(behaviour.RecallBagFillFraction, Is.EqualTo(config.RecallBagFillFraction));
             Assert.That(behaviour.CastThreshold, Is.EqualTo(config.CastThreshold));
             Assert.That(behaviour.OriginWeight, Is.EqualTo(config.OriginWeight));
             Assert.That(behaviour.LootFilterMinimum, Is.EqualTo(config.LootFilterMinimum));

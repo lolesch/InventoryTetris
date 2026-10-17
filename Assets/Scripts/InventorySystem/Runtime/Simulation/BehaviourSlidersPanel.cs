@@ -7,7 +7,7 @@ using UnityEngine.Serialization;
 namespace ToolSmiths.InventorySystem.Runtime.Simulation
 {
     /// <summary>
-    /// Six sliders and the <c>AutoPickup</c> debug toggle (issue #63) wired to <see cref="HeroBehaviour"/> (issue #27). Each slider writes its
+    /// Four sliders and the <c>AutoPickup</c> debug toggle (issue #63) wired to <see cref="HeroBehaviour"/> (issue #27). Each slider writes its
     /// value on its <see cref="AbstractSlider.OnValueChanged"/> event — read live, never polled — and
     /// shows its own readout. The sim-speed slider uses a logarithmic response curve: a slider
     /// position of 0 maps to 1x, and 1 maps to ~8x, giving fine control at low speeds where the
@@ -33,8 +33,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     public sealed class BehaviourSlidersPanel : SimplePanel
     {
         [Header("Hero behaviour sliders")]
-        [SerializeField] private ValueSlider retreatHealthSlider;
-        [SerializeField] private ValueSlider recallBagFillSlider;
         [SerializeField] private ValueSlider resourceReserveSlider;
         [SerializeField, Tooltip("0 fights what is nearest the hero, 1 what is nearest the origin (spatial-combat spec).")]
         private ValueSlider originWeightSlider;
@@ -84,8 +82,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         private void SetSliderListeners(bool add)
         {
-            Wire(retreatHealthSlider, ChangeHealthThreshold, add);
-            Wire(recallBagFillSlider, ChangeBagFillThreshold, add);
             Wire(resourceReserveSlider, ChangeCastThreshold, add);
             Wire(originWeightSlider, ChangeOriginWeight, add);
             Wire(lootFilterSlider, ChangeLootFilter, add);
@@ -119,23 +115,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         {
             if (_behaviour == null) return;
 
-            if (retreatHealthSlider != null) retreatHealthSlider.SetValueWithoutNotify(_behaviour.RetreatHealthFraction);
-            if (recallBagFillSlider != null) recallBagFillSlider.SetValueWithoutNotify(_behaviour.RecallBagFillFraction);
             if (resourceReserveSlider != null) resourceReserveSlider.SetValueWithoutNotify(_behaviour.CastThreshold);
             if (originWeightSlider != null) originWeightSlider.SetValueWithoutNotify(_behaviour.OriginWeight);
             if (lootFilterSlider != null) lootFilterSlider.SetStepIndexWithoutNotify(HeroBehaviour.RarityIndex(_behaviour.LootFilterMinimum));
             if (simSpeedSlider != null) simSpeedSlider.SetSimSpeedWithoutNotify(_behaviour.SimSpeed);
             if (autoPickupToggle != null) autoPickupToggle.SyncToggle(_behaviour.AutoPickup);
-        }
-
-        private void ChangeHealthThreshold(float value)
-        {
-            if (_behaviour != null) _behaviour.RetreatHealthFraction = value;
-        }
-
-        private void ChangeBagFillThreshold(float value)
-        {
-            if (_behaviour != null) _behaviour.RecallBagFillFraction = value;
         }
 
         private void ChangeCastThreshold(float value)

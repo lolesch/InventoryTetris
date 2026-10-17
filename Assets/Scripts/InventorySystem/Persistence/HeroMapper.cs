@@ -38,8 +38,6 @@ namespace ToolSmiths.InventorySystem.Persistence
                 {
                     simSpeed = behaviour.SimSpeed,
                     engagement = behaviour.Engagement,
-                    retreatHealthFraction = behaviour.RetreatHealthFraction,
-                    recallBagFillFraction = behaviour.RecallBagFillFraction,
                     castThreshold = behaviour.CastThreshold,
                     originWeight = behaviour.OriginWeight,
                     lootFilterMinimum = behaviour.LootFilterMinimum.ToString(),

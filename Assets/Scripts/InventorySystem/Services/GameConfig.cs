@@ -116,8 +116,6 @@ namespace ToolSmiths.InventorySystem.Services
         [field: Header("Simulation: Behaviour Profile defaults")]
         [field: SerializeField, Range(1f, 8f)] public float SimSpeed { get; private set; } = 1f;
         [field: SerializeField, Min(1)] public int Engagement { get; private set; } = 3;
-        [field: SerializeField, Range(0f, 1f)] public float RetreatHealthFraction { get; private set; }
-        [field: SerializeField, Range(0f, 1f)] public float RecallBagFillFraction { get; private set; } = 1f;
         [field: SerializeField, Range(0f, 1f)] public float CastThreshold { get; private set; }
         [field: SerializeField, Range(0f, 1f), Tooltip("How strongly home pulls against nearness when the hero picks a target: 0 fights what is nearest him, 1 what is nearest the origin.")]
         public float OriginWeight { get; private set; } = HeroBehaviour.DefaultOriginWeight;

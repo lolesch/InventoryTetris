@@ -14,6 +14,7 @@
 - Fixed the health and resource bars not showing a higher maximum after equipping gear while the game is paused.
 - Hold Tab over an open Vendor or Healer to peek at its other tab; Alt still shows more detail on an item.
 - The hero in the field now has a health bar that shows its shield, and flashes and shakes when hit, like the enemies do.
+- The hero no longer recalls to town on his own, so the Retreat HP and Recall Bag sliders are gone; a Run ends when you recall him or he dies.
 
 ## 0.0.5_Alpha - 2026-09-25
 
