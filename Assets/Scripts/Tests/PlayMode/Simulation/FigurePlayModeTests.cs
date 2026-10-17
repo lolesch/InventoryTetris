@@ -402,13 +402,25 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             Assert.That((bool)Property(flash, "IsBound"), Is.True);
             Assert.That((bool)Property(shake, "IsBound"), Is.True);
 
-            _ = Health().RemoveFromCurrent(1f);
+            // The flash follows Hero.DamageReceived, so a hit the Shield soaks flashes too; the shake follows Health.
+            var hero = Session.Instance.Hero;
+            var shield = hero.GetResource(StatName.Shield);
+            shield.RefillCurrent();
+            _ = hero.ReceiveDamage(DamageType.PhysicalDamage, 1f);
+            Assert.That((float)Property(flash, "Intensity"), Is.GreaterThan(0f), "a hit the shield absorbs flashes the hero");
+
+            for (var frame = 0; (float)Property(flash, "Intensity") > 0f && frame < 600; frame++)
+                yield return null;
+            Assert.That((float)Property(flash, "Intensity"), Is.EqualTo(0f), "the flash has faded");
+
+            shield.DepleteCurrent();
+            _ = hero.ReceiveDamage(DamageType.PhysicalDamage, 1f);
             Assert.That((float)Property(flash, "Intensity"), Is.GreaterThan(0f), "a hit flashes the hero");
             Assert.That((bool)Property(shake, "IsShaking"), Is.True, "and shakes it");
 
             for (var frame = 0; (float)Property(flash, "Intensity") > 0f && frame < 600; frame++)
                 yield return null;
-            Assert.That((float)Property(flash, "Intensity"), Is.EqualTo(0f), "the flash has faded");
+            Assert.That((float)Property(flash, "Intensity"), Is.EqualTo(0f), "the flash has faded again");
 
             Health().RefillCurrent();
             Assert.That((float)Property(flash, "Intensity"), Is.EqualTo(0f), "regeneration does not flash");
