@@ -2,7 +2,7 @@
 
 Date: 2026-10-17
 Status: Settled in the 2026-10-17 grilling of "What makes a Run risky?" (#295, map #293). The numbers are
-placeholders the balance sweep (#296) tunes. The Recall's opening lives in
+placeholders the balance sweep (#296) started and the re-sweep (#349) fixes. The Recall's opening lives in
 `dev/specs/2026-10-16-town-portal-design.md`; land that spec with or before this one.
 
 ## Problem Statement
@@ -16,7 +16,7 @@ happens.
 
 **The hero's survival is the loot's job.** The game is a loot simulation, so the lever is enemy strength
 against the hero's equipment. A hero with nothing equipped fails at a Location; the same hero in good gear
-of that Location's item level clears it.
+from that Location's drops clears it.
 
 **A level-up grows the hero, it does not heal him.** No Health or Resource refill. Each level adds a small,
 fixed set of base increases from one growth table, the same for every hero, kept small next to gear so the
@@ -36,9 +36,11 @@ common and cheap, as in Diablo II: a trip to Town costs time not spent farming. 
 opening: the portal takes about half a second of sim time to open while the hero keeps fighting, and a Death
 in that window is a Death (town-portal spec).
 
-**The ladder.** A Location's item level is its source level, and a harder Location pays more XP per kill
-through its archetypes' XP curves over source level (the ±1%-per-level term stays as it is). Item level caps
-how far a Location's loot carries a hero, with neighbouring bands overlapping: the best Thornwood gear can
+**The ladder.** A Location drops items across an item-level range whose top sits above its source level, so
+its best drop is ahead of the area: the item that carries a hero into the next Location comes from farming
+this one (#296). A harder Location pays more XP per kill through its archetypes' XP curves over source level
+(the ±1%-per-level term stays as it is). Item level caps how far a Location's loot carries a hero, with
+neighbouring bands overlapping: the best Thornwood gear can
 clear Ashfall, typical Thornwood gear cannot. Ashfall is a gear-gated **step**, not a wall: a hero fresh
 from Thornwood survives part of it, Returns before dying, and grows on Ashfall's own drops. How item level
 caps an affix (ranges or pools) waits on "What each Rarity is for".
