@@ -22,12 +22,17 @@ end of the Run.
 
 The hero never leaves on his own: Auto-Recall is gone (hero-travel spec).
 
-**A Recall holds the Run (ADR-0022).** It spends one Portal Scroll from the Inventory and opens a **Town
-Portal**. A portal sprite appears beside the Field figure, the figure moves into it while the Field map
-fades, and the Town map comes up with the figure at the **Waypoint** beside the portal's other end. The Run
-is **held**: the Encounter, its enemies, its spawn timer and its ground are frozen as they were. Nothing
-settles. A Recall is refused in Town (no live Run), while the hero is down, during the death beat, and
-with no Portal Scroll in the Inventory. The Stash does not count. A **Complete** Location (the Location
+**A Recall holds the Run (ADR-0022).** It spends one Portal Scroll from the Inventory at once and opens a
+**Town Portal** beside the Field figure. The portal takes about 0.5 s of sim time to open (tuning; it
+scales with sim speed and stops on pause). Through the opening the Run stays live: the Encounter ticks, the
+hero keeps fighting and hits still land. That half second is what a Recall risks (the Run-risk spec,
+`dev/specs/2026-10-17-run-risk-levers-design.md`). Only a Death cancels an opening Recall, and the scroll
+is gone with it. Return, Relocate and a second Recall are refused while the portal opens. Once it is open
+the Run is **held**: the Encounter, its enemies, its spawn timer and its ground are frozen as they were,
+and nothing settles. Then the figure moves into the portal (about 0.5 s, shown only, ADR-0021), the Field
+map crossfades, and the Town map comes up with the figure at the **Waypoint** beside the portal's other
+end. A Recall is refused in Town (no live Run), while the hero is down, during the death beat, and with no
+Portal Scroll in the Inventory. The Stash does not count. A **Complete** Location (the Location
 unlocks spec, #294) still allows a Recall: a Return there is free and a Recall costs a scroll, which is a
 choice. The Run is held in its Complete phase, and the resume lands back in the emptied, Complete Location.
 
@@ -109,13 +114,17 @@ what it does today.
     fight at that Location.
 17. As a player, the Healer always has Portal Scrolls to sell, and I find them as loot.
 18. As a new player, I start with no scrolls but enough coins to buy a few.
+19. As a player, after I press `B` my hero keeps fighting while the portal opens, and if he dies before it
+    is open, the scroll is gone and it is an ordinary Death.
 
 ## Implementation Decisions
 
 - `RunPhase` becomes none / live / held. The menus' freeze (`SimulationService.SetHeld`) keeps its own flag
   and is renamed, so "held" means only the Run's state.
-- A Recall is a `RunState` transition, live to held. It needs a Portal Scroll taken from the Inventory
-  through a transaction, so a refused Recall spends nothing. A resume is held to live. A Relocate from
+- A Recall is a `RunState` transition, live to held, through an opening the simulation times: the scroll
+  is taken from the Inventory through a transaction when the Recall starts, so a refused Recall spends
+  nothing; the Run goes held when the opening's sim-time timer runs out (a `GameConfig` value), and a Death
+  first ends the Run as usual. The figure's walk into the portal is presentation after the hold. A resume is held to live. A Relocate from
   held discards the frozen Encounter.
 - A resume selects the Location's toggle without re-Sending. `LocationToggle.OnToggle` reconciles with
   the Run instead of always commanding it: if the Run is already live at its Location, it does nothing.
@@ -139,7 +148,8 @@ what it does today.
   Location's anchor, as the `CorpseMarker` is.
 - `ConsumableType`, the Location loot tables, `Consumable Type Distribution.asset` and the Healer's Restock
   change as above. The starting coins are a `GameConfig` value.
-- Tests: Recall refusals and the scroll spent, held-Run freezing (no tick advances the Encounter), resume
+- Tests: Recall refusals and the scroll spent, the opening (the Encounter ticks through it, a Death in it
+  ends the Run with the scroll spent, Return and Relocate are refused in it), held-Run freezing (no tick advances the Encounter), resume
   continuity (same enemies, same Population progress), Relocate from held, Field Exit on live vs held,
   context reachability by map, the save flag round-trip, and the Restock guarantee, as EditMode tests. Recall from the
   Complete phase and its resume into the emptied Location are tested by whichever of the Recall ticket and
@@ -156,7 +166,8 @@ Which events close a Town Portal, beyond being used and a Location click while h
 And:
 
 - Does the hero regenerate in Town while the Run is held? Today a frozen Run stops regeneration too. The
-  Healer refills anyway, so this only matters for a hero who skips the Healer.
+  Healer refills anyway, and a new hero has no base regeneration (Run-risk spec), so this only matters for
+  a hero with regeneration on gear who skips the Healer.
 
 ## Out of scope
 
