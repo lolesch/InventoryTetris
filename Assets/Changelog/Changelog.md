@@ -20,6 +20,7 @@
 - Picking another Location mid-fight sends the hero walking there from where he stood, and the enemies he left behind fade out.
 - Your corpse now lies where your hero fell, on the Field map, before you send him back for it.
 - When your hero dies, a notice tells you where he fell, what it cost and that your bag lies there; Respawn (button, Enter or Cancel) brings him back to town at full health.
+- When your hero falls, the last damage numbers now drift by in slow motion for a moment.
 
 ## 0.0.5_Alpha - 2026-09-25
 

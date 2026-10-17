@@ -140,6 +140,13 @@ namespace ToolSmiths.InventorySystem.Services
         float HeroWalkingSpeed { get; }
 
         /// <summary>
+        /// The factor the view's time runs at: the tuned slow-down for a short real-time span after a Death, 1
+        /// otherwise. Already inside <see cref="SimDelta"/>; exposed so the Death beat can tell when it is over.
+        /// Cleared early by <see cref="Respawn"/> and a hero load, and never touches the Behaviour Profile's sim speed.
+        /// </summary>
+        float ViewTimeFactor { get; }
+
+        /// <summary>
         /// One frame of the simulation, <paramref name="deltaSeconds"/> of real time: the Hero's
         /// regeneration (Town and Field alike), the Encounter while a Run is in the Field, and the
         /// Run's way home on a Death. Scaled by the

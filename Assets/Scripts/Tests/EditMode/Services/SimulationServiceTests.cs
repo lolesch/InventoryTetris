@@ -816,6 +816,68 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(hero.Wallet.Balance.Total, Is.EqualTo(balance));
         }
 
+        // ── the Death slow-down ──────────────────────────────────────────────
+
+        // Tuned at 0.25x for 1.5 s of real time (the GameConfig defaults).
+        private void DieAndSettle()
+        {
+            service.Send(thornwood);
+            session.Hero.GetResource(StatName.Health).DepleteCurrent();
+            TickUntilHome();
+        }
+
+        [Test]
+        public void ADeath_SlowsTheViewsTime_ForTheTunedRealTime_ThenBackToNormal()
+        {
+            Assert.That(service.ViewTimeFactor, Is.EqualTo(1f), "no Death yet");
+
+            DieAndSettle();
+
+            Assert.That(service.ViewTimeFactor, Is.EqualTo(0.25f));
+            Assert.That(service.SimDelta(1f), Is.EqualTo(0.25f).Within(1e-5f));
+
+            service.Tick(1f);
+            Assert.That(service.SimDelta(1f), Is.EqualTo(0.25f).Within(1e-5f), "1 s of the 1.5 s has passed");
+
+            service.Tick(0.6f);
+            Assert.That(service.ViewTimeFactor, Is.EqualTo(1f));
+            Assert.That(service.SimDelta(1f), Is.EqualTo(1f).Within(1e-5f));
+        }
+
+        [Test]
+        public void TheDeathSlowDown_MultipliesTheSimSpeed_AndNeverWritesIt()
+        {
+            session.Hero.Behaviour.SimSpeed = 4f;
+
+            DieAndSettle();
+
+            Assert.That(service.SimDelta(1f), Is.EqualTo(1f).Within(1e-5f), "4x speed, slowed to a quarter");
+            service.Tick(5f);
+            Assert.That(session.Hero.Behaviour.SimSpeed, Is.EqualTo(4f));
+            Assert.That(service.SimDelta(1f), Is.EqualTo(4f).Within(1e-5f));
+        }
+
+        [Test]
+        public void Respawn_ClearsTheDeathSlowDown_Early()
+        {
+            DieAndSettle();
+
+            service.Respawn();
+
+            Assert.That(service.ViewTimeFactor, Is.EqualTo(1f));
+            Assert.That(service.SimDelta(1f), Is.EqualTo(1f).Within(1e-5f));
+        }
+
+        [Test]
+        public void AHeroLoad_ClearsTheDeathSlowDown_Early()
+        {
+            DieAndSettle();
+
+            Assert.That(session.TryLoad(GameBoot.Load().DefaultHero), Is.True);
+
+            Assert.That(service.ViewTimeFactor, Is.EqualTo(1f));
+        }
+
         [Test]
         public void ADeath_DoesNotRestockTheShops()
         {
