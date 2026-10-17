@@ -7,13 +7,10 @@ using UnityEngine.UI;
 namespace ToolSmiths.InventorySystem.Runtime.Simulation
 {
     /// <summary>
-    /// The Corpse variant of the Hero icon: shown under its <see cref="LocationToggle"/> while the Hero's
-    /// Corpse lies at that Location, whether or not the Location is selected. It stands where the hero fell,
-    /// projected by the <see cref="EnemyArena"/>'s scale and tilt around the toggle's centre, which is the
-    /// arena's anchor, so it sits where the hero's figure stands on that Location. It is a sibling of the Hero icon's <c>ToggleCheckmark</c>, never that image, so the
-    /// arena's anchor and the normal Hero icon are untouched. It repaints on
-    /// <see cref="ISimulationService.CorpseChanged"/>, and after a Death it waits for the Death beat to end
-    /// (<see cref="ISimulationService.DeathBeatEnded"/>), since the hero's figure is lying where it will appear.
+    /// The Corpse variant of the Hero icon: shown under its <see cref="LocationToggle"/> while the Hero's Corpse lies
+    /// at that Location, selected or not. It stands where the hero fell, projected around the toggle's centre (the
+    /// arena's anchor), and after a Death it waits for the Death beat to end, since the hero's figure lies where it
+    /// will appear.
     /// </summary>
     [RequireComponent(typeof(Image))]
     public sealed class CorpseMarker : MonoBehaviour
@@ -23,6 +20,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         private Image image;
         private LocationToggle toggle;
+        private Vector2 _offset;
+        private (Matrix4x4 matrix, Vector2 centre)? _placedAgainst;
 
         private void Awake()
         {
@@ -64,12 +63,30 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (!image.enabled)
                 return;
 
-            // The toggle's centre is the arena's anchor, and the marker's own parent (the Hero icon) is not
-            // centred on it, so the offset is applied in the toggle's space and the result placed by world position.
             var fell = Session.Instance.Hero.Corpse.FallPosition;
-            var offset = ArenaLayout.CorpseOffset(fell, simulation.ArenaOrigin, arena.Projection);
+            _offset = ArenaLayout.CorpseOffset(fell, simulation.ArenaOrigin, arena.Projection);
+            _placedAgainst = null;
+            Follow();
+        }
+
+        // A toggle that scales (the selected one) or moves carries its centre and offset with it.
+        private void LateUpdate()
+        {
+            if (image.enabled)
+                Follow();
+        }
+
+        // The toggle's centre is the arena's anchor, and the marker's own parent (the Hero icon) is not centred on
+        // it, so the offset is applied in the toggle's space and the result placed by world position.
+        private void Follow()
+        {
             var anchor = (RectTransform)toggle.transform;
-            transform.position = anchor.TransformPoint(anchor.rect.center) + anchor.TransformVector(offset);
+            var state = (anchor.localToWorldMatrix, anchor.rect.center);
+            if (_placedAgainst == state)
+                return;
+
+            _placedAgainst = state;
+            transform.position = anchor.TransformPoint(anchor.rect.center) + anchor.TransformVector(_offset);
         }
     }
 }

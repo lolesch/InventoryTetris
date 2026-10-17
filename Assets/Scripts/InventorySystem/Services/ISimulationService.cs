@@ -45,7 +45,7 @@ namespace ToolSmiths.InventorySystem.Services
         /// Send the hero to <paramref name="location"/>: <see cref="RunPhase.InTown"/> to
         /// <see cref="RunPhase.InField"/>. Selects the Location on the Hero, opens the Run and, if the
         /// Hero's Corpse is at exactly this Location, lays it back out (to the bag where it fits, else
-        /// the ground).
+        /// the ground). Throws while the hero is down: a Death leaves him so until <see cref="Respawn"/>.
         /// </summary>
         void Send(LocationConfig location);
 
@@ -56,11 +56,7 @@ namespace ToolSmiths.InventorySystem.Services
         /// </summary>
         void Relocate(LocationConfig location);
 
-        /// <summary>
-        /// Whether the Hero's Corpse lies at <paramref name="location"/>. What the Hero icon's Corpse
-        /// marker under each Location toggle reads: it holds whether or not that Location is selected,
-        /// and is false once the Corpse is recovered or replaced by a Death elsewhere.
-        /// </summary>
+        /// <summary>Whether the Hero's Corpse lies at <paramref name="location"/>, selected or not.</summary>
         bool CorpseLiesAt(LocationConfig location);
 
         /// <summary>The Origin every Location's arena is centred on, the frame a Corpse's fall position is kept in.</summary>
@@ -82,16 +78,12 @@ namespace ToolSmiths.InventorySystem.Services
 
         /// <summary>
         /// The way back from a Death: revives the hero at full Health and Resource and raises
-        /// <see cref="Respawned"/>. A Death settles the moment the hero goes down but leaves him at 0 Health
-        /// in Town; this is the only thing that stands him up again (a hero load revives too). Does nothing
-        /// to a hero who is not down, but still raises <see cref="Respawned"/>.
+        /// <see cref="Respawned"/>. A Death leaves him at 0 Health in Town; only this (or a hero load) stands him
+        /// up. Does nothing to a hero who is not down.
         /// </summary>
         void Respawn();
 
-        /// <summary>
-        /// Raised by <see cref="Respawn"/> with the hero up. The Town map comes up on it: a Death alone no
-        /// longer brings it. Belongs to the service, so a subscriber attaches once across hero loads.
-        /// </summary>
+        /// <summary>Raised by <see cref="Respawn"/> with the hero up. Belongs to the service, so a subscriber attaches once across hero loads.</summary>
         event Action Respawned;
 
         /// <summary>
@@ -141,21 +133,19 @@ namespace ToolSmiths.InventorySystem.Services
 
         /// <summary>
         /// The factor the view's time runs at: the tuned slow-down for a short real-time span after a Death, 1
-        /// otherwise. Already inside <see cref="SimDelta"/>; exposed so the Death beat can tell when it is over.
-        /// Cleared early by <see cref="Respawn"/> and a hero load, and never touches the Behaviour Profile's sim speed.
+        /// otherwise. Already inside <see cref="SimDelta"/>; cleared early by <see cref="Respawn"/> and a hero load.
         /// </summary>
         float ViewTimeFactor { get; }
 
         /// <summary>
-        /// Whether the Death beat is under way: from the moment a Death settles until its slow-down runs out or is
-        /// cleared. The views hold what the Death shows back until it ends: the arena keeps its figures, the hero's
-        /// figure lies where it fell, and the Corpse marker and the Death notice wait.
+        /// Whether the Death beat is under way, from a Death until its slow-down runs out or is cleared. The views
+        /// hold what the Death shows back until it ends.
         /// </summary>
         bool DeathBeatPlaying { get; }
 
         /// <summary>
-        /// Raised once when <see cref="DeathBeatPlaying"/> goes from true to false, however it ended: the slow-down ran
-        /// out, <see cref="Respawn"/> or a hero load cleared it. A subscriber that needs the hero still down asks him.
+        /// Raised once when <see cref="DeathBeatPlaying"/> goes from true to false, however it ended. A subscriber
+        /// that needs the hero still down asks him.
         /// </summary>
         event Action DeathBeatEnded;
 

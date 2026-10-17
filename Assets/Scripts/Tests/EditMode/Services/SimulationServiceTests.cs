@@ -827,6 +827,77 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(hero.Wallet.Balance.Total, Is.EqualTo(balance));
         }
 
+        [Test]
+        public void ASend_BeforeRespawn_IsRefused_AndPaysNoSecondPenaltyNorOverwritesTheCorpse()
+        {
+            var hero = session.Hero;
+            _ = PutInBag();
+            service.Send(thornwood);
+            hero.GetResource(StatName.Health).DepleteCurrent();
+            TickUntilHome();
+            var corpseItems = hero.Corpse.Items.Count;
+            var experience = hero.GetResource(StatName.Experience).CurrentValue;
+            var balance = hero.Wallet.Balance.Total;
+            var settled = 0;
+            service.RunSettled += _ => settled++;
+
+            Assert.Throws<InvalidOperationException>(() => service.Send(ashfen), "the hero is still down");
+            service.Tick(0.5f);
+
+            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.InTown), "no new Run");
+            Assert.That(hero.SelectedLocation, Is.SameAs(thornwood), "the Location the Death was judged against");
+            Assert.That(hero.Corpse.Items.Count, Is.EqualTo(corpseItems));
+            Assert.That(hero.GetResource(StatName.Experience).CurrentValue, Is.EqualTo(experience));
+            Assert.That(hero.Wallet.Balance.Total, Is.EqualTo(balance));
+            Assert.That(settled, Is.Zero, "no second Death settled");
+        }
+
+        [Test]
+        public void ASend_AfterRespawn_StartsANewRun()
+        {
+            service.Send(thornwood);
+            session.Hero.GetResource(StatName.Health).DepleteCurrent();
+            TickUntilHome();
+
+            service.Respawn();
+            service.Send(ashfen);
+
+            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.InField));
+            Assert.That(session.Hero.SelectedLocation, Is.SameAs(ashfen));
+        }
+
+        [Test]
+        public void ARelocate_BeforeRespawn_IsRefused()
+        {
+            service.Send(thornwood);
+            session.Hero.GetResource(StatName.Health).DepleteCurrent();
+            TickUntilHome();
+
+            Assert.Throws<InvalidOperationException>(() => service.Relocate(ashfen));
+
+            Assert.That(session.Hero.SelectedLocation, Is.SameAs(thornwood));
+        }
+
+        [Test]
+        public void ASecondDeath_CannotArrive_DuringTheFirstDeathsBeat()
+        {
+            var hero = session.Hero;
+            _ = PutInBag();
+            service.Send(thornwood);
+            hero.GetResource(StatName.Health).DepleteCurrent();
+            TickUntilHome();
+            var settled = 0;
+            service.RunSettled += _ => settled++;
+            Assert.That(service.DeathBeatPlaying, Is.True, "premise: inside the beat");
+
+            Assert.Throws<InvalidOperationException>(() => service.Send(ashfen));
+            for (var i = 0; i < 10; i++)
+                service.Tick(0.1f);
+
+            Assert.That(settled, Is.Zero);
+            Assert.That(hero.Corpse.Items.Count, Is.EqualTo(1), "the first Corpse still holds the bag");
+        }
+
         // ── the Death slow-down ──────────────────────────────────────────────
 
         // Tuned at 0.25x for 1.5 s of real time (the GameConfig defaults).

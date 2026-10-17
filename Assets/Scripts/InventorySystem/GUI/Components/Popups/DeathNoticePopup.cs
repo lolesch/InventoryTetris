@@ -9,12 +9,9 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.GUI.Components.Popups
 {
     /// <summary>
-    /// The Notice that opens after a Death (<see cref="DeathNotice"/>, spec <i>hero travel</i>): the Run's result in
-    /// words and one button, Respawn, which is the selected button, so Enter and the Cancel key press it
-    /// (<see cref="PopupFocus.OpenNotice(Submodules.Utility.UI.AbstractButton)"/>). Respawn is the only way on: it
-    /// revives the hero at the Waypoint and the notice closes on <see cref="ISimulationService.Respawned"/>, however
-    /// that was raised. It opens when the Death beat ends (<see cref="ISimulationService.DeathBeatEnded"/>), not when the
-    /// Death settles. The component sits on an object that stays active; <c>screen</c> is what it opens.
+    /// The Notice that opens once the Death beat ends, telling the player what the Death cost. Respawn is its one
+    /// button and the only way on, so Enter and Cancel both press it. The component stays active; <c>screen</c> is
+    /// what it opens.
     /// </summary>
     public sealed class DeathNoticePopup : MonoBehaviour
     {

@@ -28,9 +28,9 @@ namespace ToolSmiths.InventorySystem.Services
         }
 
         /// <summary>
-        /// Opens a Notice on <paramref name="button"/>: selects it, and registers a <see cref="CancelRank.Popup"/>
-        /// layer that presses it, so Esc and Enter both dismiss it. The layer consumes the press even when the
-        /// button cannot be pressed, so the Pause Menu behind stays shut. Dispose the result when the Notice closes.
+        /// Opens a Notice on <paramref name="button"/>: selects it and routes Esc to it, so Esc and Enter both dismiss
+        /// it. The press is consumed even if the button cannot be pressed, so the Pause Menu behind stays shut.
+        /// Dispose the result when the Notice closes.
         /// </summary>
         /// <returns>The layer, or <c>null</c> when the services are not armed (an enable in Edit Mode).</returns>
         public static IDisposable OpenNotice(AbstractButton button) =>

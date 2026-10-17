@@ -155,6 +155,23 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
         }
 
         [UnityTest]
+        public IEnumerator ALocationPickedDuringTheBeat_SendsNobody_AndLeavesTheCorpseAlone()
+        {
+            yield return DieInTheFight();
+            Assert.That(Simulation.DeathBeatPlaying, Is.True, "premise: inside the beat");
+            var corpse = Session.Instance.Hero.Corpse;
+            var fell = corpse.FallPosition;
+            var toggle = Named("LocationToggle").First(c => !Equals(Property(c, "Location"), _location));
+
+            _ = toggle.GetType().GetMethod("SetToggle").Invoke(toggle, new object[] { true });
+            yield return null;
+
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.InTown), "a dead hero is not Sent");
+            Assert.That(Session.Instance.Hero.SelectedLocation, Is.EqualTo(_location), "the Location the Death was judged against");
+            Assert.That(corpse.FallPosition, Is.EqualTo(fell), "the first Corpse stands");
+        }
+
+        [UnityTest]
         public IEnumerator DuringTheBeat_TheEnemyFiguresStandFrozen()
         {
             yield return DieInTheFight();

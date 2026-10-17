@@ -10,21 +10,12 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.Runtime.Simulation
 {
     /// <summary>
-    /// The Field map's own hero <see cref="Figure"/> (issues #316, #323, epic #344): one scene object, never pooled,
-    /// owned by the map rather than bound by <see cref="EnemyArena"/>. It follows the hero for as long as the map is
-    /// up and fades with it. It has three ways of being drawn: standing at an anchor (the Field Exit when the map comes
-    /// up), walking to one (Travel, ADR-0021: shown, never simulated, so Pause leaves it walking), and following the
-    /// fight, where it stands where the simulation has the hero (ADR-0018), projected by the arena that draws the enemies.
-    ///
-    /// A Send walks it from the Field Exit to the Location, a Relocate from where it was drawn in the old fight to
-    /// the new Location, then it follows the fight. A Return (issue #328) walks it out from where it was drawn to the
-    /// Field Exit, the Run already over. The Encounter is not held for the walk. Like the arena, only the
-    /// binding is polled: the Run's current Encounter against the one held, once a frame, and a phase change or a new
-    /// Encounter on the same Run is what tells a Send or a Relocate from a hero load that brought a Run in
-    /// mid-fight. It updates after the arena in the same frame, so the arena has placed its own figures first.
-    ///
-    /// A Death (issue #329) ends the fight but leaves the hero down: the figure lies where he fell for the Death beat,
-    /// then goes, leaving the Corpse marker there. A Respawn stands it up at the Field Exit again.
+    /// The Field map's own hero <see cref="Figure"/>: one scene object that follows the hero while the map is up and
+    /// fades with it. It stands at an anchor, walks to one (Travel, ADR-0021: shown, never simulated, so Pause leaves
+    /// it walking) or follows the fight, projected by the arena (ADR-0018). A Death lays it where he fell for the
+    /// Death beat; a Respawn stands it up at the Field Exit. It polls the Run's Encounter once a frame, since a
+    /// phase change or a new Encounter is the only way to tell a Send or a Relocate from a hero load mid-fight, and
+    /// updates after the arena so the arena has placed its own figures first.
     /// </summary>
     [DefaultExecutionOrder(10)]
     [DisallowMultipleComponent]
@@ -61,6 +52,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private RectTransform _standAt;
         private RectTransform _target;
         private bool _awaitingLocation;
+        private Vector2? _fallenAt;
 
         private Figure Figure => _figure ? _figure : _figure = GetComponent<Figure>();
 
@@ -198,6 +190,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         }
 
         // The arena holds the ended Encounter through the Death beat, so the hero's last position is still projectable.
+        // He does not move, so he is placed when first projectable and again only if the arena's drawing moves.
         private void Fall()
         {
             if (_mode != Mode.Fallen)
@@ -205,11 +198,15 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 _mode = Mode.Fallen;
                 _target = null;
                 _awaitingLocation = false;
+                _fallenAt = null;
                 Figure.LieDown();
             }
 
-            if (_bound != null && Projection.TryGetNumberOrigin(_bound.HeroPosition, out var canvas))
-                Figure.Place(canvas, _bound.HeroPosition, Figure.FacingSign);
+            if (_bound == null || !Projection.TryGetNumberOrigin(_bound.HeroPosition, out var canvas) || _fallenAt == canvas)
+                return;
+
+            Figure.Place(canvas, _bound.HeroPosition, Figure.FacingSign);
+            _fallenAt = canvas;
         }
 
         private void GetUp()
@@ -239,8 +236,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             var goal = LocalCentre(_target);
             _travel.Retarget(new Coordinate(goal));
 
-            var speed = SimulationService.Instance.HeroWalkingSpeed * ArenaSpace.Projection.CanvasUnitsPerArenaUnit;
-            var arrived = _travel.Advance(speed, Time.deltaTime);
+            var arrived = _travel.Advance(ArenaSpace.HeroCanvasSpeed, Time.deltaTime);
 
             var at = new Vector2(_travel.Position.x, _travel.Position.z);
             Figure.Place(at, ArenaOf(at), ArenaLayout.FacingSign(at.x, goal.x, Figure.FacingSign, WalkFacingDeadZone));

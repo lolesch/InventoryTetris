@@ -21,7 +21,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
             InventoryService.Instance.SyncContextToPhase(true);
 
             if (heroFigure != null)
-                ((ITownHeroFigure)heroFigure).TravelTo((RectTransform)transform);
+                heroFigure.TravelTo((RectTransform)transform);
         }
     }
 }

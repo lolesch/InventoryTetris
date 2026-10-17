@@ -77,6 +77,11 @@ namespace ToolSmiths.InventorySystem.Services
 
             var hero = session.Hero;
 
+            // A Death leaves the hero down in Town until Respawn, with the Run's own down flag already reset; a
+            // Location click in that Death beat would otherwise Send him to a second Death and bury over the Corpse.
+            if (hero.IsDead)
+                throw new InvalidOperationException("The hero is down - Respawn before a new Run is Sent.");
+
             var profile = ProfileFor(location);
             Run.Send(profile);
 

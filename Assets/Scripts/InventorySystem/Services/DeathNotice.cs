@@ -16,12 +16,19 @@ namespace ToolSmiths.InventorySystem.Services
         /// <summary>The fee in the ladder's coins, largest first and only the ones it holds: "1 gold, 3 silver and 4 iron".</summary>
         public static string FeeText(long fee)
         {
-            var coins = new Currency((uint)fee);
+            // Counted in long here: a Currency holds uint counts from a uint total, which wraps for a big fee.
             var parts = new List<string>();
+            var rest = fee;
 
             foreach (var type in Currency.Denominations)
-                if (coins.CountOf(type) != 0u)
-                    parts.Add($"{coins.CountOf(type)} {type.ToString().ToLowerInvariant()}");
+            {
+                var worth = Currency.ValueOf(type);
+                var count = rest / worth;
+                rest %= worth;
+
+                if (count != 0L)
+                    parts.Add($"{count} {type.ToString().ToLowerInvariant()}");
+            }
 
             return parts.Count switch
             {

@@ -173,7 +173,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
             if (wasOn && !IsOn)
                 panel.RequestContext(false);
             else if (!wasOn && IsOn && heroFigure != null && panel.IsUpIn(InventoryService.Instance.ActiveContext))
-                ((ITownHeroFigure)heroFigure).TravelTo((RectTransform)transform);
+                heroFigure.TravelTo((RectTransform)transform);
         }
 
 #if UNITY_EDITOR

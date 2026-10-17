@@ -29,6 +29,13 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
+        public void AFeeAboveWhatAUintHolds_ReadsInFull_NotWrapped()
+        {
+            // 4294967296 = 2^32 = 3579139 gold (4294966800) + 496 left: 8 silver, 3 copper, 1 iron
+            Assert.That(DeathNotice.FeeText(uint.MaxValue + 1L), Is.EqualTo("3579139 gold, 8 silver, 3 copper and 1 iron"));
+        }
+
+        [Test]
         public void ANothingFee_ReadsAsZeroIron()
         {
             Assert.That(DeathNotice.FeeText(0L), Is.EqualTo("0 iron"));

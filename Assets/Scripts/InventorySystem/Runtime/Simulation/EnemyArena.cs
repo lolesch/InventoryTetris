@@ -12,10 +12,8 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.Runtime.Simulation
 {
     /// <summary>
-    /// Owns the pooled enemy <see cref="Figure"/>s standing on the sim's arena, drawn around the Hero icon, and
-    /// keeps one figure per living enemy of the live Encounter (issues #94, #176, #208, #266). It replaces the
-    /// combat panel's enemy HP bar list: the pooling and the binding are what <c>EnemyHealthBarPool</c> had. The
-    /// hero's figure is the Field map's own (<see cref="HeroFigure"/>, #316), placed through this arena's projection.
+    /// Owns the pooled enemy <see cref="Figure"/>s standing on the sim's arena, drawn around the Hero icon: one per
+    /// living enemy of the live Encounter. The hero's figure is the map's own, placed through this arena's projection.
     ///
     /// The simulation owns position (ADR-0018): this only projects it. Each frame every figure is placed at
     /// <see cref="Enemy.Position"/> through an
@@ -33,18 +31,15 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// short sim-time interval, detached from the enemy, and is pooled when that ends), and each figure
     /// follows its own enemy's health.
     ///
-    /// A hero death leaves live enemies with nothing firing for them - the Run ending
-    /// nulls the Encounter. The arena keeps its figures standing for the Death beat, then that release-all
-    /// empties it, dying figures included.
-    /// A Relocate leaves the Run alive, so the enemies of the Encounter it left fade out as defeated ones do.
+    /// A Death nulls the Encounter, so nothing fires for the live enemies: the arena keeps its figures standing for
+    /// the Death beat, then releases them all. A Relocate leaves the Run alive, so the old Encounter's enemies fade
+    /// out as defeated ones do.
     ///
-    /// The anchor is the active Location's Hero icon (its <see cref="ToggleCheckmark"/> image), resolved
-    /// every frame from the Locations' <see cref="ToggleGroup"/>: it moves on a Relocate and goes null once
-    /// the group resets, and whether the group's <c>ActiveMember</c> is already set when the Run is sent is
-    /// not guaranteed, so nothing is resolved at bind time. A null anchor holds the figures where they are
-    /// and shows nothing new. Positions are in the arena root's space, so this object must sit outside any
-    /// face that fades or clips (the minimap's InFields). The checkmark itself is never moved; the hero figure
-    /// is a separate element.
+    /// The anchor is the active Location's Hero icon (its <see cref="ToggleCheckmark"/> image), resolved every frame
+    /// from the Locations' <see cref="ToggleGroup"/>: it moves on a Relocate and goes null once the group resets, and
+    /// the group's <c>ActiveMember</c> is not guaranteed to be set when the Run is sent. A null anchor holds the
+    /// figures where they are. Positions are in the arena root's space, so this object must sit outside any face
+    /// that fades or clips (the minimap's InFields).
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class EnemyArena : MonoBehaviour, IDamageNumberOrigins, IArenaSpace
@@ -112,9 +107,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 Tie = transform.GetSiblingIndex();
             }
         }
-
-        /// <summary>Canvas units one arena unit spans along the horizontal axis: what a walk outside the Encounter is scaled by.</summary>
-        public float CanvasUnitsPerArenaUnit => arenaScale;
 
         private RectTransform Root => container != null ? container : (RectTransform)transform;
 
@@ -239,6 +231,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         /// <inheritdoc/>
         public ArenaProjection Projection => new(arenaScale, tilt);
+
+        /// <inheritdoc/>
+        public float HeroCanvasSpeed => SimulationService.Instance.HeroWalkingSpeed * arenaScale;
 
         /// <inheritdoc/>
         public RectTransform LocationAnchor => ResolveAnchor();

@@ -5,20 +5,9 @@ using ToolSmiths.InventorySystem.Data.Enums;
 namespace ToolSmiths.InventorySystem.Simulation
 {
     /// <summary>
-    /// The five slider-fed values that steer the hero through a Run (issue #23; spec
-    /// <i>HeroBehaviour</i>; <see cref="OriginWeight"/> joined for issue #209), held in the Session save and written by the sliders on their
-    /// change event (issue #27) — read live here, never polled by value snapshot. The hero never leaves
-    /// a Run on his own (ADR-0021), so no retreat value is among them.
-    ///
-    /// <see cref="ShouldCast"/> is the <see cref="CastThreshold"/> hysteresis latch (ADR-0010):
-    /// hold below the fraction, then Cast every opportunity until the pool is drained to 0, then
-    /// wait back up to the fraction — it never gates the Strike, because the
-    /// Strike never asks it. <see cref="AdmitsItem"/> and
-    /// <see cref="AdmitsCoin"/> are the loot filter, reading a coin denomination's fixed Rarity
-    /// off GLOSSARY.md's Denomination ladder (iron Common … gold Unique). <see cref="Engagement"/>
-    /// is re-read by the sim's spawn schedule every spawn tick, so raising it mid-Run refills
-    /// toward the new target; <see cref="SimSpeed"/> is plain storage the clock adapter (issue
-    /// #26) reads directly.
+    /// The slider-fed values that steer the hero through a Run, held in the Session save and written by the sliders
+    /// on their change event. Read live, never polled by value snapshot, so a slider moved mid-Run takes effect at
+    /// once. The hero never leaves a Run on his own (ADR-0021).
     /// </summary>
     public sealed class HeroBehaviour
     {

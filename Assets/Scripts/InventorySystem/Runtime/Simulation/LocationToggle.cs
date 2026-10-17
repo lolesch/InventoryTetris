@@ -26,7 +26,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             
             var simulation = SimulationService.Instance;
 
-            if (simulation.Run.HeroIsDown) return;
+            // After a Death the Run's down flag is reset but the hero stays dead until Respawn, while this face still shows.
+            if (simulation.Run.HeroIsDown || Session.Instance.Hero.IsDead) return;
 
             // Switching mid-Run moves the live Run — no Return, so the Run never passes through
             // Town (which would collapse the InFields face and clear this very toggle with it).

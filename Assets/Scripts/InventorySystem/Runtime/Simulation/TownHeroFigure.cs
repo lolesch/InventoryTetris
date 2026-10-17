@@ -7,11 +7,9 @@ using UnityEngine;
 namespace ToolSmiths.InventorySystem.Runtime.Simulation
 {
     /// <summary>
-    /// The hero drawn on the Town map and walking it (ADR-0021, epic #344), under the face that fades with that map.
-    /// It is not the Field map's <see cref="HeroFigure"/>, which binds the Encounter hero. It owns a
-    /// <see cref="HeroTravel"/> in its parent's local canvas space, advances it each frame at the hero's walking
-    /// speed (the sim's pace through the arena's canvas scale, so a walk and a fight move alike), and nothing waits
-    /// for it to arrive. Pause freezes the fight, not this walk.
+    /// The hero drawn on the Town map and walking it (ADR-0021), in its parent's canvas space. It walks at the sim's
+    /// pace through the arena's canvas scale, so a walk and a fight move alike; nothing waits for it to arrive and
+    /// Pause does not stop it.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class TownHeroFigure : MonoBehaviour, ITownHeroFigure
@@ -32,6 +30,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private RectTransform Map => _map ? _map : _map = (RectTransform)transform.parent;
 
         private RectTransform Rect => _rect ? _rect : _rect = (RectTransform)transform;
+
+        private IArenaSpace ArenaSpace => arena;
 
         /// <inheritdoc/>
         public bool IsWalking => _travel.IsWalking;
@@ -82,8 +82,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 return;
 
             var from = _travel.Position;
-            var speed = SimulationService.Instance.HeroWalkingSpeed * arena.CanvasUnitsPerArenaUnit;
-            _ = _travel.Advance(speed, Time.deltaTime);
+            _ = _travel.Advance(ArenaSpace.HeroCanvasSpeed, Time.deltaTime);
             Show(from);
         }
 
