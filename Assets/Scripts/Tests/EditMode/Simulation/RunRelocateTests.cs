@@ -5,7 +5,7 @@ using ToolSmiths.InventorySystem.Simulation;
 namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 {
     /// <summary>
-    /// <see cref="RunState.Relocate"/> — switching Location mid-Run without a Recall. The Run
+    /// <see cref="RunState.Relocate"/> — switching Location mid-Run without a Return. The Run
     /// stays <c>InField</c> and never passes through Town, the live Encounter is swapped for a
     /// fresh one at the new Location, and the Run's totals carry on into the one
     /// <see cref="RunResult"/> it eventually freezes.
@@ -75,7 +75,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
-        public void Relocate_IsNotARecall_NoRunEnded_NoPhaseChange_ButRelocatedIsRaised()
+        public void Relocate_IsNotAReturn_NoRunEnded_NoPhaseChange_ButRelocatedIsRaised()
         {
             var run = NewRun(OneShotHero());
             run.Send(Skirmishers(3));
@@ -130,9 +130,9 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var xpAfter = run.Encounter.SettledXp;
             var durationAfter = run.Encounter.Duration;
 
-            var result = run.Recall();
+            var result = run.Return();
 
-            Assert.That(result.Outcome, Is.EqualTo(RunOutcome.Recalled));
+            Assert.That(result.Outcome, Is.EqualTo(RunOutcome.Returned));
             Assert.That(result.XpSettled, Is.EqualTo(xpBefore + xpAfter));
             Assert.That(result.EnemiesDefeated, Is.EqualTo(killsBefore + 1));
             Assert.That(result.CurrencyBanked, Is.EqualTo(350), "the Run's take is not reset by a Relocate");
@@ -150,7 +150,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             Assert.That(run.Encounter.EncountersCleared, Is.EqualTo(1));
 
             run.Relocate(Skirmishers(2));
-            var result = run.Recall();
+            var result = run.Return();
 
             Assert.That(result.EncountersCleared, Is.EqualTo(1));
         }
@@ -189,35 +189,14 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             run.Send(Skirmishers(5));
             run.Advance(0.1f);
             run.Relocate(Skirmishers(5));
-            run.Recall();
+            run.Return();
 
             run.Send(Skirmishers(5));
-            var result = run.Recall();
+            var result = run.Return();
 
             Assert.That(result.XpSettled, Is.EqualTo(0));
             Assert.That(result.EnemiesDefeated, Is.EqualTo(0));
             Assert.That(result.Duration, Is.EqualTo(0f));
-        }
-
-        [Test]
-        public void ARecallRequestedByTheOldEncounter_DoesNotFollowTheRunToTheNewLocation()
-        {
-            var behaviour = Behaviours.Engaging(10);
-            behaviour.RetreatHealthFraction = 0.3f;
-            var hero = new FakeHero
-            {
-                MaxHealth = 100f, Health = 25f, PhysicalDamage = 0f, MagicalDamage = 0f,
-                AttackSpeed = 0.01f, ArmorPercent = 100f, MagicResistPercent = 100f, Resource = 0f, Level = 5,
-            };
-            var run = NewRun(hero, behaviour: behaviour);
-            run.Send(Skirmishers(3));
-            run.Advance(0.1f);
-            Assert.That(run.RecallRequested, Is.True, "setup: the retreat trigger fired");
-
-            hero.Health = 100f; // the hero is healthy again by the time the player switches
-            run.Relocate(Skirmishers(3));
-
-            Assert.That(run.RecallRequested, Is.False);
         }
 
         // ─── refusals ────────────────────────────────────────────────────────
@@ -273,7 +252,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             Assert.That(run.Encounter, Is.SameAs(encounter));
             Assert.That(run.Location, Is.SameAs(first));
             Assert.That(encounter.Phase, Is.Not.EqualTo(SimulationPhase.Ended), "the old Encounter was not stopped");
-            Assert.That(run.Recall().EnemiesDefeated, Is.EqualTo(1));
+            Assert.That(run.Return().EnemiesDefeated, Is.EqualTo(1));
         }
 
         [Test]
@@ -301,7 +280,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
                 run.Advance(0.1f); // 1 kill per Location
                 run.Relocate(Skirmishers(5));
             }
-            var result = run.Recall();
+            var result = run.Return();
 
             Assert.That(result.EnemiesDefeated, Is.EqualTo(4));
         }

@@ -147,12 +147,6 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         public static HeroBehaviour Engaging(int engagement) => new() { Engagement = engagement };
     }
 
-    /// <summary>An <see cref="IBagGauge"/> whose fill a test sets directly, and re-sets mid-fight.</summary>
-    internal sealed class FakeBagGauge : IBagGauge
-    {
-        public float FillFraction { get; set; }
-    }
-
     // ─── loot acquisition (#103) ──────────────────────────────────────────────
 
     /// <summary>
@@ -239,11 +233,9 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
     {
         public long? FeeCharged { get; private set; }
         public int? XpForfeited { get; private set; }
-        public int ReviveCalls { get; private set; }
 
         public void ChargeFee(long baseUnits) => FeeCharged = baseUnits;
         public void ForfeitXp(int xp) => XpForfeited = xp;
-        public void ReviveIfDown() => ReviveCalls++;
     }
 
     /// <summary>An <see cref="ILootGround"/> that just collects what it is handed, or refuses it when told to.</summary>

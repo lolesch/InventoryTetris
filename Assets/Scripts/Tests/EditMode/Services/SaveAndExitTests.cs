@@ -20,8 +20,8 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 {
     /// <summary>
     /// What the Pause Menu's Save &amp; Exit does, without a scene: in Town it writes and asks for the menu, in the
-    /// Field it asks first and then Recalls with the loot kept, and a failed write keeps the player in the game
-    /// with the cause. The Run's own Recall is a save point too, so the explicit write that follows is the one
+    /// Field it asks first and then Returns with the loot kept, and a failed write keeps the player in the game
+    /// with the cause. The Run's own Return is a save point too, so the explicit write that follows is the one
     /// whose result the player is told.
     /// </summary>
     [TestFixture]
@@ -122,7 +122,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
-        public void InTheField_ALeaveRecallsWithTheLootKept_WritesTheHero_AndLoadsTheMenu()
+        public void InTheField_ALeaveReturnsWithTheLootKept_WritesTheHero_AndLoadsTheMenu()
         {
             game.Simulation.Send(thornwood);
             GivePotions(3u);
@@ -133,7 +133,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(result.Wrote, Is.True);
             Assert.That(game.Simulation.Run.Phase, Is.EqualTo(RunPhase.InTown));
             Assert.That(menuLoads, Is.EqualTo(1));
-            Assert.That(game.Hero.Corpse.Exists, Is.False, "a Recall, not a Death");
+            Assert.That(game.Hero.Corpse.Exists, Is.False, "a Return, not a Death");
 
             var next = TestGame.Create(config);
             var nextSaves = next.SavesOver(config, inner, () => now);
@@ -154,7 +154,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
-        public void AFailedWrite_KeepsThePlayerInTheGame_NamesTheCause_AndTheRunIsAlreadyRecalled()
+        public void AFailedWrite_KeepsThePlayerInTheGame_NamesTheCause_AndTheRunIsAlreadyReturned()
         {
             game.Simulation.Send(thornwood);
             GivePotions(3u);

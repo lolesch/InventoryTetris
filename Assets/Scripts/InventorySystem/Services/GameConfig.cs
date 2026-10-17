@@ -116,8 +116,6 @@ namespace ToolSmiths.InventorySystem.Services
         [field: Header("Simulation: Behaviour Profile defaults")]
         [field: SerializeField, Range(1f, 8f)] public float SimSpeed { get; private set; } = 1f;
         [field: SerializeField, Min(1)] public int Engagement { get; private set; } = 3;
-        [field: SerializeField, Range(0f, 1f)] public float RetreatHealthFraction { get; private set; }
-        [field: SerializeField, Range(0f, 1f)] public float RecallBagFillFraction { get; private set; } = 1f;
         [field: SerializeField, Range(0f, 1f)] public float CastThreshold { get; private set; }
         [field: SerializeField, Range(0f, 1f), Tooltip("How strongly home pulls against nearness when the hero picks a target: 0 fights what is nearest him, 1 what is nearest the origin.")]
         public float OriginWeight { get; private set; } = HeroBehaviour.DefaultOriginWeight;
@@ -129,6 +127,12 @@ namespace ToolSmiths.InventorySystem.Services
 
         [field: SerializeField, Range(0f, 1f)] public float XpLossFraction { get; private set; } = 0.25f;
         [field: SerializeField, Range(0f, 1f)] public float CurrencyFeeFraction { get; private set; } = 0.5f;
+
+        [field: SerializeField, Range(0f, 1f), Tooltip("The factor the view's time runs at after a Death, so the last damage number drifts.")]
+        public float DeathSlowdownFactor { get; private set; } = 0.25f;
+
+        [field: SerializeField, Min(0f), Tooltip("How many real seconds the Death slow-down lasts.")]
+        public float DeathSlowdownSeconds { get; private set; } = 1.5f;
 
         [field: Header("Simulation: Encounter tuning (placeholders, untested starting points)")]
         [field: SerializeField, Tooltip("The arena, the Cast, the damage spread and the combat clock an Encounter plays on. A value outside what the sim accepts is pulled back into range when the Encounter is built, so a hand-edited asset cannot make a Send throw.")]

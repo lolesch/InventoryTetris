@@ -29,13 +29,5 @@ namespace ToolSmiths.InventorySystem.Services
             if (xp > 0)
                 _ = _hero.GetResource(StatName.Experience).RemoveFromCurrent(xp);
         }
-
-        public void ReviveIfDown()
-        {
-            if (!_hero.IsDead)
-                return;
-
-            _hero.Heal();
-        }
     }
 }

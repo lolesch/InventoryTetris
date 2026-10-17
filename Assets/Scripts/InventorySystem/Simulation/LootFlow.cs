@@ -76,7 +76,7 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         /// <summary>
         /// Discards every Drop still on the ground - the Run-end rule (GLOSSARY.md "Drop": "a
-        /// Drop still on the ground when the Run ends is gone, on Recall or Death alike").
+        /// Drop still on the ground when the Run ends is gone, on Return or Death alike").
         /// </summary>
         public void ClearGround() => Ground.RemoveAll();
 

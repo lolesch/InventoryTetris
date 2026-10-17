@@ -51,6 +51,11 @@ namespace ToolSmiths.InventorySystem.Persistence
             hero.GetResource(StatName.Shield).RestoreCurrent(dto.shield);
             hero.GetResource(StatName.Experience).RestoreCurrent(dto.experience);
 
+            // A Death saves the hero down (Respawn is what revives him), so a save written there loads up.
+            // The penalty was settled before that save and is not applied again.
+            if (hero.IsDead)
+                hero.Heal();
+
             // 5. The sliders, the Location the next Send goes to, and the lifetime Kill count.
             RestoreBehaviour(dto.behaviour, hero);
             hero.SelectedLocation = locations.Find(dto.selectedLocationId);
@@ -67,8 +72,6 @@ namespace ToolSmiths.InventorySystem.Persistence
             var behaviour = hero.Behaviour;
             behaviour.SimSpeed = saved.simSpeed;
             behaviour.Engagement = saved.engagement;
-            behaviour.RetreatHealthFraction = saved.retreatHealthFraction;
-            behaviour.RecallBagFillFraction = saved.recallBagFillFraction;
             behaviour.CastThreshold = saved.castThreshold;
             behaviour.OriginWeight = saved.originWeight;
 

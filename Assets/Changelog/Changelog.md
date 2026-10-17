@@ -14,6 +14,16 @@
 - Fixed the health and resource bars not showing a higher maximum after equipping gear while the game is paused.
 - Hold Tab over an open Vendor or Healer to peek at its other tab; Alt still shows more detail on an item.
 - The hero in the field now has a health bar that shows its shield, and flashes and shakes when hit, like the enemies do.
+- Your hero now stands on the Town map and walks to whichever Town Stop you open, by click or hotkey; faster boots make him walk faster.
+- The hero's walks on the Town and Field maps now follow the speed slider, and carry on while the game is paused.
+- The hero no longer recalls to town on his own, so the Retreat HP and Recall Bag sliders are gone; a Run ends when you return him or he dies.
+- Leaving Town through the Town Exit now shows your hero walking towards it while the Town map fades slowly into the Field map.
+- Picking another Location mid-fight sends the hero walking there from where he stood, and the enemies he left behind fade out.
+- Your corpse now lies where your hero fell, on the Field map, before you send him back for it.
+- When your hero dies, a notice tells you where he fell, what it cost and that your bag lies there; Respawn (button, Enter or Cancel) brings him back to town at full health.
+- When your hero falls, the last damage numbers now drift by in slow motion for a moment.
+- Leaving the Field through its Exit now shows your hero walking out while the Field map fades; in Town he comes in standing at the Town Exit.
+- When your hero falls, he lies where he fell while the fight stands still, then your corpse appears there and the death notice opens.
 - Town now has a ground: shift-click an item in your bag, or drop it on the ground slot, to leave it there, and click it in the Ground list to pick it up. A full bag leaves it lying, and it is gone when you Send the hero out.
 - Selling from a full bag no longer fails: the bag keeps the gold and silver first, and the coins that do not fit lie on the Town ground for you to pick up.
 - Consolidate now also puts your coins in order, gold first and iron last, even when they were already in the biggest denominations.

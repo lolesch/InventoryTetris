@@ -5,38 +5,13 @@ using ToolSmiths.InventorySystem.Data.Enums;
 namespace ToolSmiths.InventorySystem.Simulation
 {
     /// <summary>
-    /// The seven slider-fed values that steer the hero through a Run (issue #23; spec
-    /// <i>HeroBehaviour</i>; <see cref="OriginWeight"/> joined for issue #209), held in the Session save and written by the sliders on their
-    /// change event (issue #27) — read live here, never polled by value snapshot.
-    ///
-    /// <see cref="ShouldRecallForHealth"/> and <see cref="ShouldRecallForBagFull"/> are the pure
-    /// predicates the hero's Brain asks every tick; its Recall Intent makes <see cref="EncounterSimulation"/>
-    /// raise the <see cref="EncounterSimulation.RecallRequested"/> signal the engine-side driver turns
-    /// into a <see cref="RunState.Recall"/>.
-    /// <see cref="ShouldCast"/> is the <see cref="CastThreshold"/> hysteresis latch (ADR-0010):
-    /// hold below the fraction, then Cast every opportunity until the pool is drained to 0, then
-    /// wait back up to the fraction — it never gates the Strike, because the
-    /// Strike never asks it. <see cref="AdmitsItem"/> and
-    /// <see cref="AdmitsCoin"/> are the loot filter, reading a coin denomination's fixed Rarity
-    /// off GLOSSARY.md's Denomination ladder (iron Common … gold Unique). <see cref="Engagement"/>
-    /// is re-read by the sim's spawn schedule every spawn tick, so raising it mid-Run refills
-    /// toward the new target; <see cref="SimSpeed"/> is plain storage the clock adapter (issue
-    /// #26) reads directly.
+    /// The slider-fed values that steer the hero through a Run, held in the Session save and written by the sliders
+    /// on their change event. Read live, never polled by value snapshot, so a slider moved mid-Run takes effect at
+    /// once. The hero never leaves a Run on his own (ADR-0021).
     /// </summary>
     public sealed class HeroBehaviour
     {
         private bool _castingRun;
-
-        /// <summary>Auto-Recall fires at or below this hero health fraction.</summary>
-        public float RetreatHealthFraction { get; set; }
-
-        /// <summary>
-        /// Auto-Recall fires at or above this bag fill fraction. Defaults to 1f — a bag with no
-        /// room left — so an unwritten value is as inert as <see cref="RetreatHealthFraction"/>'s
-        /// zero. A 0f written here does fire for any fill at all, empty bag included; that is the
-        /// slider's bottom position and it reads as "come home the moment anything drops".
-        /// </summary>
-        public float RecallBagFillFraction { get; set; } = 1f;
 
         /// <summary>
         /// The <see cref="ShouldCast"/> hysteresis latch's rising edge — charge Resource to this
@@ -70,12 +45,6 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         /// <summary>The spawn-refill target the Encounter sim (issue #20) reads every spawn tick.</summary>
         public int Engagement { get; set; }
-
-        /// <summary>Auto-Recall trigger: the hero's health has dropped to or below <see cref="RetreatHealthFraction"/>.</summary>
-        public bool ShouldRecallForHealth(float healthFraction) => healthFraction <= RetreatHealthFraction;
-
-        /// <summary>Auto-Recall trigger: the bag has filled to or above <see cref="RecallBagFillFraction"/>.</summary>
-        public bool ShouldRecallForBagFull(float bagFillFraction) => bagFillFraction >= RecallBagFillFraction;
 
         /// <summary>
         /// Starts a casting run once <paramref name="resourceFraction"/> charges up to the threshold;

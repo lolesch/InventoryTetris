@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Linq;
 using NUnit.Framework;
+using Submodules.Utility.Tools.Tweening;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Inventories;
@@ -12,6 +13,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
+using UnityEngine.TestTools.Utils;
 using UnityEngine.UI;
 
 namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
@@ -42,7 +44,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
         {
             // The services outlive the test with domain reload off: end its Run and hand the next test a fresh Hero.
             if (SimulationService.Instance.Run.Phase == RunPhase.InField)
-                _ = SimulationService.Instance.Recall();
+                _ = SimulationService.Instance.Return();
 
             _ = Session.Instance.TryLoad(GameBoot.Load().DefaultHero);
         }
@@ -140,7 +142,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             Land(SimulationService.Instance.LootFlow, 2);
             var grid = GroundGrid();
 
-            _ = SimulationService.Instance.Recall();
+            _ = SimulationService.Instance.Return();
             yield return null;
 
             Assert.That(FilledSlots(grid), Is.Empty, "a Drop on the ground when the Run ends is gone");
@@ -221,15 +223,59 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             for (var tick = 0; SimulationService.Instance.Run.Phase == RunPhase.InField && tick < DeathTimeoutTicks; tick++)
                 SimulationService.Instance.Tick(0.5f);
 
+            // The marker waits for the Death beat; its own timing is DeathBeatPlayModeTests'.
+            SimulationService.Instance.Tick(2f);
             yield return null;
 
             Assert.That(SimulationService.Instance.Run.Phase, Is.EqualTo(RunPhase.InTown), "the Hero died and went home");
             Assert.That(MarkerAt(_locations[0]).enabled, Is.True, "the Corpse lies where the Hero fell");
             Assert.That(MarkerAt(_locations[1]).enabled, Is.False, "and nowhere else");
 
+            SimulationService.Instance.Respawn();
             SimulationService.Instance.Send(_locations[0]);
             yield return null;
             Assert.That(MarkerAt(_locations[0]).enabled, Is.False, "recovered");
+        }
+
+        [UnityTest]
+        public IEnumerator TheCorpseMarker_FollowsItsToggle_WhenTheToggleMovesOrScales()
+        {
+            SimulationService.Instance.Send(_locations[0]);
+            yield return null;
+            Session.Instance.Hero.GetResource(StatName.Health).DepleteCurrent();
+            for (var tick = 0; SimulationService.Instance.Run.Phase == RunPhase.InField && tick < DeathTimeoutTicks; tick++)
+                SimulationService.Instance.Tick(0.5f);
+
+            SimulationService.Instance.Tick(2f);
+            yield return null;
+
+            var marker = Named("CorpseMarker").First(m => ToggleLocation(m) == _locations[0]);
+            Assert.That(marker.GetComponent<Image>().enabled, Is.True, "premise: the Corpse is marked");
+            var toggle = (RectTransform)marker.GetComponentsInParent<MonoBehaviour>(true)
+                .First(c => c.GetType().Name == "LocationToggle").transform;
+
+            // In the toggle's own units, so a panel scaling above it (a fade-in) cannot move the expectation.
+            Vector2 FromToggleCentre() =>
+                (marker.transform.position - toggle.TransformPoint(toggle.rect.center)) / toggle.lossyScale.x;
+
+            var before = FromToggleCentre();
+            Assert.That(before.magnitude, Is.GreaterThan(1f), "premise: the marker is off the toggle's centre, so a scale shows");
+
+            toggle.position += new Vector3(40f, 25f, 0f);
+            yield return null;
+            yield return null;
+            Assert.That(FromToggleCentre(), Is.EqualTo(before).Using(new Vector2EqualityComparer(0.01f)), "moved with the toggle");
+
+            // Scaled about its pivot, the toggle's centre and the offset from it both grow: the marker is stale if it stays put.
+            var markerAt = marker.transform.position;
+            Tween.Kill(toggle); // the toggle's own hover/selected scale tween would overwrite the scale set here
+            var scaleBefore = toggle.lossyScale.x;
+            toggle.localScale *= 1.5f;
+            yield return null;
+            yield return null;
+            Assert.That(toggle.lossyScale.x, Is.EqualTo(scaleBefore * 1.5f).Within(1e-3f), "premise: the toggle stays scaled");
+            Assert.That(marker.transform.position, Is.Not.EqualTo(markerAt).Using(new Vector3EqualityComparer(0.01f)), "the marker moved with the scale");
+            Assert.That(FromToggleCentre(), Is.EqualTo(before).Using(new Vector2EqualityComparer(0.01f)), "and sits at the same place on the toggle");
         }
 
         private static LocationConfig ToggleLocation(Component marker)

@@ -11,7 +11,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Popups
     /// The game scene's one-time notice after a load that went wrong (<see cref="EntryNotice"/>): taken from the
     /// save service when the scene enables, and shown in a popup only if there is something to say. A damaged
     /// latest save and a partial load read as one message; the names of the packages left out stay behind Show.
-    /// Dismiss (the button, or the Cancel key as a <see cref="CancelRank.Popup"/> layer) closes it. Taking the
+    /// Dismiss closes it; it is the selected button, and the Cancel key presses it (<see cref="PopupFocus.OpenNotice(Submodules.Utility.UI.AbstractButton)"/>). Taking the
     /// notice is what drops it, so a later scene change shows nothing. The component sits on an object that
     /// stays active; <c>screen</c> is what it opens.
     /// </summary>
@@ -59,7 +59,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Popups
             names.gameObject.SetActive(false);
             show.gameObject.SetActive(notice.UnplacedCount != 0);
             screen.SetActive(true);
-            cancelLayer ??= CancelChain.TryRegister(CancelRank.Popup, Cancel);
+            cancelLayer ??= PopupFocus.OpenNotice(dismiss);
         }
 
         private void ShowNames()
@@ -74,12 +74,6 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Popups
             screen.SetActive(false);
             cancelLayer?.Dispose();
             cancelLayer = null;
-        }
-
-        private bool Cancel()
-        {
-            Close();
-            return true;
         }
     }
 }

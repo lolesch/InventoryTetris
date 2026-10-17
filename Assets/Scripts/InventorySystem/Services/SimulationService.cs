@@ -1,3 +1,4 @@
+using Submodules.Utility.Extensions;
 using Submodules.Utility.Services;
 using System;
 using System.Collections.Generic;
@@ -51,6 +52,9 @@ namespace ToolSmiths.InventorySystem.Services
 
             generator = new ItemGenerator(items.Catalog, rolls.Main);
             locations = new LocationRegistry(config.Locations);
+
+            // A loaded hero starts a fresh life: whatever slow-down the last one left is gone.
+            session.HeroLoaded += EndDeathBeat;
         }
 
         public ILocationRegistry Locations => locations;
@@ -72,6 +76,11 @@ namespace ToolSmiths.InventorySystem.Services
                 throw new ArgumentNullException(nameof(location));
 
             var hero = session.Hero;
+
+            // A Death leaves the hero down in Town until Respawn, with the Run's own down flag already reset; a
+            // Location click in that Death beat would otherwise Send him to a second Death and bury over the Corpse.
+            if (hero.IsDead)
+                throw new InvalidOperationException("The hero is down - Respawn before a new Run is Sent.");
 
             var profile = ProfileFor(location);
             Run.Send(profile);
@@ -109,6 +118,8 @@ namespace ToolSmiths.InventorySystem.Services
             return corpse.Exists && corpse.Location == ProfileFor(location);
         }
 
+        public Coordinate ArenaOrigin => config.Tuning.Arena.Origin;
+
         public event Action CorpseChanged
         {
             add => session.Hero.Corpse.Changed += value;
@@ -117,9 +128,9 @@ namespace ToolSmiths.InventorySystem.Services
 
         public event Action<RunResult> RunSettled;
 
-        public RunResult Recall()
+        public RunResult Return()
         {
-            var result = Run.Recall();
+            var result = Run.Return();
             RunSettled?.Invoke(result);
 
             return result;
@@ -135,9 +146,23 @@ namespace ToolSmiths.InventorySystem.Services
             if (run.HeroIsDown)
                 HandleHeroDeath(session.Hero, run);
             else
-                _ = Recall();
+                _ = Return();
 
             return true;
+        }
+
+        public event Action Respawned;
+
+        public void Respawn()
+        {
+            // A stray call (a double click on the Respawn button) finds the hero already up: nothing to do.
+            var hero = session.Hero;
+            if (!hero.IsDead)
+                return;
+
+            hero.Heal();
+            EndDeathBeat();
+            Respawned?.Invoke();
         }
 
         // Transient, like the Run it freezes: never saved, and read through IsPaused so a flag left
@@ -176,17 +201,49 @@ namespace ToolSmiths.InventorySystem.Services
             held = value;
         }
 
+        // Real seconds of the Death slow-down still to run. Transient and the service's, not the sim
+        // speed slider's: it is set by a Death and cleared by Respawn or a hero load.
+        private float deathSlowdownLeft;
+
+        public float ViewTimeFactor => deathSlowdownLeft > 0f ? Mathf.Clamp01(config.DeathSlowdownFactor) : 1f;
+
+        public bool DeathBeatPlaying => deathSlowdownLeft > 0f;
+
+        public event Action DeathBeatEnded;
+
+        private void EndDeathBeat()
+        {
+            var played = DeathBeatPlaying;
+            deathSlowdownLeft = 0f;
+            if (played)
+                DeathBeatEnded?.Invoke();
+        }
+
         public float SimDelta(float deltaSeconds) =>
-            IsPaused || IsHeld ? 0f : deltaSeconds * Mathf.Max(0f, session.Hero.Behaviour.SimSpeed);
+            IsPaused || IsHeld ? 0f : deltaSeconds * Mathf.Max(0f, session.Hero.Behaviour.SimSpeed) * ViewTimeFactor;
+
+        public float WalkDelta(float deltaSeconds) =>
+            deltaSeconds * Mathf.Max(0f, session.Hero.Behaviour.SimSpeed);
+
+        public float HeroWalkingSpeed =>
+            Mathf.Max(0f, session.Hero.GetStatValue(StatName.MovementSpeed)) * Mathf.Max(0f, config.Tuning.Arena.MovementSpeedScale);
 
         public void Tick(float deltaSeconds)
         {
-            // A frozen Run stands still whole: no regeneration, no Encounter, no auto-Recall.
+            // A frozen Run stands still whole: no regeneration, no Encounter.
             if (IsPaused || IsHeld)
                 return;
 
             var hero = session.Hero;
             var dt = SimDelta(deltaSeconds);
+
+            // Counted in real time, once per frame: SimDelta is asked by many views and cannot own the clock.
+            if (DeathBeatPlaying)
+            {
+                deathSlowdownLeft = Mathf.Max(0f, deathSlowdownLeft - deltaSeconds);
+                if (!DeathBeatPlaying)
+                    DeathBeatEnded?.Invoke();
+            }
 
             // Hosted by GameLoop, so this runs after every MonoBehaviour.Update of the frame: a panel
             // that polls the Run in Update sees the previous frame's tick, never a half-stepped one.
@@ -202,14 +259,10 @@ namespace ToolSmiths.InventorySystem.Services
 
             _ = run.Advance(dt);
 
-            // Both exits are read after the tick, never inside it: the sim raises its signal and
-            // stops, and the RunState transition happens out here. Death is tested first so a tick
-            // that trips both is a Death - the penalty is not dodgeable by an auto-Recall trigger
-            // racing it.
+            // The death is read after the tick, never inside it: the sim raises its signal and
+            // stops, and the RunState transition happens out here.
             if (run.HeroIsDown)
                 HandleHeroDeath(hero, run);
-            else if (run.RecallRequested)
-                _ = Recall();
         }
 
         private RunState BuildRun(World world)
@@ -240,11 +293,11 @@ namespace ToolSmiths.InventorySystem.Services
             ReleaseLoot(world);
 
             // The behaviour goes in by reference, not as a snapshot of its values: the sliders
-            // write it live, and Engagement, the Cast threshold and both retreat triggers are all
-            // read off it inside the tick (issue #23). The hero arrives to a quiet Location - the
+            // write it live, and Engagement and the Cast threshold are read off it inside the tick
+            // (issue #23). The hero arrives to a quiet Location - the
             // first bodies wait one spawn delay.
             var encounter = new EncounterSimulation(combatant, profile, rolls, hero.Behaviour,
-                config.Tuning.Sanitised(), new ContainerBagGauge(hero.Inventory));
+                config.Tuning.Sanitised());
 
             // XP is delivered per kill, independent of the loot flow (issue #44). GainExperience's
             // monsterLevel is the hero's own current level so its balancing term is neutral - the
@@ -281,6 +334,9 @@ namespace ToolSmiths.InventorySystem.Services
             if (result.Outcome != RunOutcome.Died)
                 return;
 
+            // Before the settlement, so the Corpse's marker, told of it there, already knows to wait out the beat.
+            deathSlowdownLeft = Mathf.Max(0f, config.DeathSlowdownSeconds);
+
             var fell = hero.SelectedLocation;
             SettlementFor(hero).Settle(result, fell != null ? ProfileFor(fell) : null);
 
@@ -304,7 +360,7 @@ namespace ToolSmiths.InventorySystem.Services
 
         private void OnRunEnded(World world, RunState run)
         {
-            // GLOSSARY.md "Drop": a Drop still on the ground when the Run ends is gone, on Recall or
+            // GLOSSARY.md "Drop": a Drop still on the ground when the Run ends is gone, on Return or
             // Death alike (issue #44).
             ReleaseLoot(world);
 
@@ -313,12 +369,12 @@ namespace ToolSmiths.InventorySystem.Services
             if (run.LastResult is { } result)
                 session.Hero.AddKills(result.EnemiesDefeated);
 
-            // Home is never paused or held, Recall and Death alike.
+            // Home is never paused or held, Return and Death alike.
             SetPaused(false);
             held = false;
 
-            // Coming home by Recall brings the shops new stock; a Death does not.
-            if (run.LastResult is { Outcome: RunOutcome.Recalled })
+            // Coming home by Return brings the shops new stock; a Death does not.
+            if (run.LastResult is { Outcome: RunOutcome.Returned })
                 inventory.RestockTownStops();
         }
 

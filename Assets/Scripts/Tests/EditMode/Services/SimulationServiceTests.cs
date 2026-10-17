@@ -110,6 +110,19 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             _ = so.ApplyModifiedPropertiesWithoutUndo();
         }
 
+        // ── the pace a Hero figure walks at (ADR-0021) ───────────────────────
+
+        [Test]
+        public void TheHeroWalkingSpeed_IsHisMovementStatTimesTheConfigsScale_WithNoRunNeeded()
+        {
+            // The default hero's 325 at the standard 0.01 is the 3.25 arena units per second the fight walks at.
+            Assert.That(service.HeroWalkingSpeed, Is.EqualTo(3.25f).Within(1e-4f));
+
+            SetConfig("Arena.MovementSpeedScale", 0.02f);
+
+            Assert.That(service.HeroWalkingSpeed, Is.EqualTo(6.5f).Within(1e-4f));
+        }
+
         // The damage spread the Encounter plays on, read off the first hit it lands: the hit's reference scale
         // against the same reference taken with no spread.
         private float SpreadOfTheFirstHit()
@@ -195,7 +208,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(SpreadOfTheFirstHit(), Is.EqualTo(1f).Within(1e-4f));
         }
 
-        // ── Send / Recall ────────────────────────────────────────────────────
+        // ── Send / Return ────────────────────────────────────────────────────
 
         [Test]
         public void Send_SelectsTheLocationOnTheHero_AndOpensTheRunWithALootFlow()
@@ -210,7 +223,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
-        public void TheGround_IsTheWorldsOneContainer_ThroughSendRelocateAndRecall()
+        public void TheGround_IsTheWorldsOneContainer_ThroughSendRelocateAndReturn()
         {
             var ground = session.World.Ground;
             Assert.That(inventory.ContainerFor(ContainerRole.Ground), Is.SameAs(ground), "a display binds it by role");
@@ -222,7 +235,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             service.Relocate(ashfen);
             Assert.That(service.LootFlow.Ground, Is.SameAs(ground), "the new loot flow lays on the same container");
 
-            _ = service.Recall();
+            _ = service.Return();
             Assert.That(ground.StoredPackages, Is.Empty, "a Drop on the ground when the Run ends is gone");
             Assert.That(inventory.ContainerFor(ContainerRole.Ground), Is.SameAs(ground));
         }
@@ -238,7 +251,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             service.Send(thornwood);
             Assert.That(inventory.QuickMoveFor(bag).Kind, Is.EqualTo(QuickMoveIntentKind.Drop));
 
-            _ = service.Recall();
+            _ = service.Return();
             Assert.That(inventory.QuickMoveFor(bag).Kind, Is.EqualTo(QuickMoveIntentKind.Drop), "back in Town it is still there");
         }
 
@@ -284,7 +297,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             service.Send(thornwood);
             Assert.That(session.World.LootGround, Is.SameAs(service.LootFlow), "the Run counts what banks toward its take");
 
-            _ = service.Recall();
+            _ = service.Return();
             Assert.That(session.World.LootGround, Is.SameAs(session.World.GroundDesk));
         }
 
@@ -300,16 +313,16 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
-        public void Recall_EndsTheRun_RetiresTheLootFlow_AndRestocksTheShops()
+        public void Return_EndsTheRun_RetiresTheLootFlow_AndRestocksTheShops()
         {
             session.World.VendorSupply.RemoveAll();
             service.Send(thornwood);
 
-            _ = service.Recall();
+            _ = service.Return();
 
             Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.InTown));
             Assert.That(service.LootFlow, Is.Null);
-            Assert.That(session.World.VendorSupply.StoredPackages, Is.Not.Empty, "a Recall brings the shops new stock");
+            Assert.That(session.World.VendorSupply.StoredPackages, Is.Not.Empty, "a Return brings the shops new stock");
         }
 
         [Test]
@@ -394,17 +407,15 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
-        public void Tick_AutoRecalls_WhenTheBehaviourProfileSaysRetreat_AndRestocks()
+        public void Tick_DoesNotRecall_OnItsOwn()
         {
-            session.World.VendorSupply.RemoveAll();
-            session.Hero.Behaviour.RetreatHealthFraction = 1f;
+            session.Hero.IsInvincible = true;
             service.Send(thornwood);
 
-            TickUntilHome();
+            for (var i = 0; i < 100; i++)
+                service.Tick(0.5f);
 
-            Assert.That(service.Run.LastResult?.Outcome, Is.EqualTo(RunOutcome.Recalled));
-            Assert.That(session.Hero.Corpse.Exists, Is.False);
-            Assert.That(session.World.VendorSupply.StoredPackages, Is.Not.Empty);
+            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.InField), "a Run ends only by a Return or a Death");
         }
 
         [Test]
@@ -462,6 +473,21 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             service.SetPaused(true);
 
             Assert.That(service.SimDelta(0.1f), Is.EqualTo(0f));
+        }
+
+        [Test]
+        public void WalkDelta_ScalesRealTime_ByTheSimSpeed_AndIgnoresPauseAndHold()
+        {
+            session.Hero.Behaviour.SimSpeed = 4f;
+
+            Assert.That(service.WalkDelta(0.1f), Is.EqualTo(0.4f).Within(1e-5f), "in Town too, where no Run is live");
+
+            service.Send(thornwood);
+            service.SetPaused(true);
+            service.SetHeld(true);
+
+            Assert.That(service.SimDelta(0.1f), Is.EqualTo(0f), "premise: the Run is frozen");
+            Assert.That(service.WalkDelta(0.1f), Is.EqualTo(0.4f).Within(1e-5f), "a shown walk goes on");
         }
 
         [Test]
@@ -578,7 +604,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             service.Send(thornwood);
             service.SetHeld(true);
 
-            _ = service.Recall();
+            _ = service.Return();
             service.Send(thornwood);
 
             Assert.That(service.IsHeld, Is.False, "a hold left over from the last Run does not freeze the next");
@@ -592,7 +618,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             var raised = new List<bool>();
             service.PausedChanged += raised.Add;
 
-            _ = service.Recall();
+            _ = service.Return();
 
             Assert.That(service.IsPaused, Is.False);
             Assert.That(raised, Is.EqualTo(new[] { false }));
@@ -711,12 +737,12 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
-        public void ARecall_FoldsTheRunsKillsIntoTheHerosLifetimeCount_Once()
+        public void AReturn_FoldsTheRunsKillsIntoTheHerosLifetimeCount_Once()
         {
             var kills = SendAndTickUntilAKill();
             Assert.That(session.Hero.TotalKills, Is.EqualTo(0), "a Run in the Field has not been folded yet");
 
-            var result = service.Recall();
+            var result = service.Return();
             service.Tick(0.5f);
             service.Tick(0.5f);
 
@@ -742,12 +768,12 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         {
             var first = SendAndTickUntilAKill();
             service.Relocate(ashfen);
-            _ = service.Recall();
+            _ = service.Return();
             Assert.That(session.Hero.TotalKills, Is.GreaterThanOrEqualTo(first), "the Relocate carried the first Encounter's kills into the Run");
             var afterFirst = session.Hero.TotalKills;
 
             _ = SendAndTickUntilAKill();
-            _ = service.Recall();
+            _ = service.Return();
 
             Assert.That(session.Hero.TotalKills, Is.EqualTo(afterFirst + service.Run.LastResult?.EnemiesDefeated));
         }
@@ -766,7 +792,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
                 .Select(entry => entry.Value.Item);
 
         [Test]
-        public void ADeath_BuriesTheBagOnTheHerosCorpse_RevivesAndReturnsToTown()
+        public void ADeath_BuriesTheBagOnTheHerosCorpse_AndLeavesTheHeroDownInTown()
         {
             var hero = session.Hero;
             _ = PutInBag();
@@ -780,8 +806,262 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(hero.Corpse.Exists, Is.True);
             Assert.That(hero.Corpse.Items.Count, Is.EqualTo(1));
             Assert.That(NonCurrencyInBag(hero), Is.Empty);
-            Assert.That(hero.IsDead, Is.False, "the settlement revives the hero");
+            Assert.That(hero.IsDead, Is.True, "the settlement does not revive; Respawn does");
             Assert.That(service.LootFlow, Is.Null);
+        }
+
+        [Test]
+        public void TheHero_StaysDownThroughTownTicks_UntilRespawn()
+        {
+            service.Send(thornwood);
+            session.Hero.GetResource(StatName.Health).DepleteCurrent();
+            TickUntilHome();
+
+            service.Tick(5f);
+
+            Assert.That(session.Hero.GetResource(StatName.Health).CurrentValue, Is.Zero);
+        }
+
+        [Test]
+        public void Respawn_RevivesTheHeroAtFullHealthAndResource()
+        {
+            var hero = session.Hero;
+            service.Send(thornwood);
+            hero.GetResource(StatName.Health).DepleteCurrent();
+            hero.GetResource(StatName.Resource).DepleteCurrent();
+            TickUntilHome();
+
+            service.Respawn();
+
+            var health = hero.GetResource(StatName.Health);
+            var resource = hero.GetResource(StatName.Resource);
+            Assert.That(hero.IsDead, Is.False);
+            Assert.That(health.CurrentValue, Is.EqualTo(health.TotalValue));
+            Assert.That(resource.CurrentValue, Is.EqualTo(resource.TotalValue));
+        }
+
+        [Test]
+        public void Respawn_RaisesRespawned_AfterTheReviveAndOnlyOnce()
+        {
+            service.Send(thornwood);
+            session.Hero.GetResource(StatName.Health).DepleteCurrent();
+            TickUntilHome();
+            var seen = new List<bool>();
+            service.Respawned += () => seen.Add(session.Hero.IsDead);
+
+            service.Respawn();
+
+            Assert.That(seen, Is.EqualTo(new[] { false }), "raised once, with the hero already up");
+        }
+
+        [Test]
+        public void Respawn_OnALivingHero_RaisesNothing()
+        {
+            var raised = 0;
+            service.Respawned += () => raised++;
+
+            service.Respawn();
+
+            Assert.That(raised, Is.Zero);
+        }
+
+        [Test]
+        public void Respawn_KeepsTheCorpseAndWhatTheDeathCost()
+        {
+            var hero = session.Hero;
+            _ = PutInBag();
+            service.Send(thornwood);
+            hero.GetResource(StatName.Health).DepleteCurrent();
+            TickUntilHome();
+            var experience = hero.GetResource(StatName.Experience).CurrentValue;
+            var balance = hero.Wallet.Balance.Total;
+
+            service.Respawn();
+
+            Assert.That(hero.Corpse.Exists, Is.True);
+            Assert.That(hero.GetResource(StatName.Experience).CurrentValue, Is.EqualTo(experience));
+            Assert.That(hero.Wallet.Balance.Total, Is.EqualTo(balance));
+        }
+
+        [Test]
+        public void ASend_BeforeRespawn_IsRefused_AndPaysNoSecondPenaltyNorOverwritesTheCorpse()
+        {
+            var hero = session.Hero;
+            _ = PutInBag();
+            service.Send(thornwood);
+            hero.GetResource(StatName.Health).DepleteCurrent();
+            TickUntilHome();
+            var corpseItems = hero.Corpse.Items.Count;
+            var experience = hero.GetResource(StatName.Experience).CurrentValue;
+            var balance = hero.Wallet.Balance.Total;
+            var settled = 0;
+            service.RunSettled += _ => settled++;
+
+            Assert.Throws<InvalidOperationException>(() => service.Send(ashfen), "the hero is still down");
+            service.Tick(0.5f);
+
+            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.InTown), "no new Run");
+            Assert.That(hero.SelectedLocation, Is.SameAs(thornwood), "the Location the Death was judged against");
+            Assert.That(hero.Corpse.Items.Count, Is.EqualTo(corpseItems));
+            Assert.That(hero.GetResource(StatName.Experience).CurrentValue, Is.EqualTo(experience));
+            Assert.That(hero.Wallet.Balance.Total, Is.EqualTo(balance));
+            Assert.That(settled, Is.Zero, "no second Death settled");
+        }
+
+        [Test]
+        public void ASend_AfterRespawn_StartsANewRun()
+        {
+            service.Send(thornwood);
+            session.Hero.GetResource(StatName.Health).DepleteCurrent();
+            TickUntilHome();
+
+            service.Respawn();
+            service.Send(ashfen);
+
+            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.InField));
+            Assert.That(session.Hero.SelectedLocation, Is.SameAs(ashfen));
+        }
+
+        [Test]
+        public void ARelocate_BeforeRespawn_IsRefused()
+        {
+            service.Send(thornwood);
+            session.Hero.GetResource(StatName.Health).DepleteCurrent();
+            TickUntilHome();
+
+            Assert.Throws<InvalidOperationException>(() => service.Relocate(ashfen));
+
+            Assert.That(session.Hero.SelectedLocation, Is.SameAs(thornwood));
+        }
+
+        [Test]
+        public void ASecondDeath_CannotArrive_DuringTheFirstDeathsBeat()
+        {
+            var hero = session.Hero;
+            _ = PutInBag();
+            service.Send(thornwood);
+            hero.GetResource(StatName.Health).DepleteCurrent();
+            TickUntilHome();
+            var settled = 0;
+            service.RunSettled += _ => settled++;
+            Assert.That(service.DeathBeatPlaying, Is.True, "premise: inside the beat");
+
+            Assert.Throws<InvalidOperationException>(() => service.Send(ashfen));
+            for (var i = 0; i < 10; i++)
+                service.Tick(0.1f);
+
+            Assert.That(settled, Is.Zero);
+            Assert.That(hero.Corpse.Items.Count, Is.EqualTo(1), "the first Corpse still holds the bag");
+        }
+
+        // ── the Death slow-down ──────────────────────────────────────────────
+
+        // Tuned at 0.25x for 1.5 s of real time (the GameConfig defaults).
+        private void DieAndSettle()
+        {
+            service.Send(thornwood);
+            session.Hero.GetResource(StatName.Health).DepleteCurrent();
+            TickUntilHome();
+        }
+
+        [Test]
+        public void ADeath_SlowsTheViewsTime_ForTheTunedRealTime_ThenBackToNormal()
+        {
+            Assert.That(service.ViewTimeFactor, Is.EqualTo(1f), "no Death yet");
+
+            DieAndSettle();
+
+            Assert.That(service.ViewTimeFactor, Is.EqualTo(0.25f));
+            Assert.That(service.SimDelta(1f), Is.EqualTo(0.25f).Within(1e-5f));
+
+            service.Tick(1f);
+            Assert.That(service.SimDelta(1f), Is.EqualTo(0.25f).Within(1e-5f), "1 s of the 1.5 s has passed");
+
+            service.Tick(0.6f);
+            Assert.That(service.ViewTimeFactor, Is.EqualTo(1f));
+            Assert.That(service.SimDelta(1f), Is.EqualTo(1f).Within(1e-5f));
+        }
+
+        [Test]
+        public void TheDeathSlowDown_MultipliesTheSimSpeed_AndNeverWritesIt()
+        {
+            session.Hero.Behaviour.SimSpeed = 4f;
+
+            DieAndSettle();
+
+            Assert.That(service.SimDelta(1f), Is.EqualTo(1f).Within(1e-5f), "4x speed, slowed to a quarter");
+            service.Tick(5f);
+            Assert.That(session.Hero.Behaviour.SimSpeed, Is.EqualTo(4f));
+            Assert.That(service.SimDelta(1f), Is.EqualTo(4f).Within(1e-5f));
+        }
+
+        [Test]
+        public void Respawn_ClearsTheDeathSlowDown_Early()
+        {
+            DieAndSettle();
+
+            service.Respawn();
+
+            Assert.That(service.ViewTimeFactor, Is.EqualTo(1f));
+            Assert.That(service.SimDelta(1f), Is.EqualTo(1f).Within(1e-5f));
+        }
+
+        [Test]
+        public void AHeroLoad_ClearsTheDeathSlowDown_Early()
+        {
+            DieAndSettle();
+
+            Assert.That(session.TryLoad(GameBoot.Load().DefaultHero), Is.True);
+
+            Assert.That(service.ViewTimeFactor, Is.EqualTo(1f));
+        }
+
+        // ── the Death beat ───────────────────────────────────────────────────
+
+        [Test]
+        public void TheDeathBeat_PlaysFromTheDeath_UntilTheSlowDownRunsOut_ThenSaysSoOnce()
+        {
+            var ended = 0;
+            service.DeathBeatEnded += () => ended++;
+            Assert.That(service.DeathBeatPlaying, Is.False, "no Death yet");
+
+            DieAndSettle();
+
+            Assert.That(service.DeathBeatPlaying, Is.True);
+            service.Tick(1f);
+            Assert.That(ended, Is.Zero, "1 s of the 1.5 s has passed");
+
+            service.Tick(0.6f);
+            service.Tick(1f);
+
+            Assert.That(service.DeathBeatPlaying, Is.False);
+            Assert.That(ended, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void TheDeathBeat_AlreadyPlays_WhenTheCorpseIsLaid_SoItsMarkerCanWait()
+        {
+            var playingWhenLaid = false;
+            _ = PutInBag();
+            service.CorpseChanged += () => playingWhenLaid = service.DeathBeatPlaying;
+
+            DieAndSettle();
+
+            Assert.That(playingWhenLaid, Is.True);
+        }
+
+        [Test]
+        public void Respawn_EndsTheDeathBeat_Early_AndSaysSo()
+        {
+            var ended = 0;
+            DieAndSettle();
+            service.DeathBeatEnded += () => ended++;
+
+            service.Respawn();
+            service.Respawn();
+
+            Assert.That(service.DeathBeatPlaying, Is.False);
+            Assert.That(ended, Is.EqualTo(1), "once, for the beat that was playing");
         }
 
         [Test]
@@ -810,6 +1090,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             service.Send(thornwood);
             hero.GetResource(StatName.Health).DepleteCurrent();
             TickUntilHome();
+            service.Respawn();
 
             service.Send(thornwood);
 
@@ -825,6 +1106,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             service.Send(thornwood);
             hero.GetResource(StatName.Health).DepleteCurrent();
             TickUntilHome();
+            service.Respawn();
 
             service.Send(ashfen);
 
@@ -842,6 +1124,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             service.Send(thornwood);
             session.Hero.GetResource(StatName.Health).DepleteCurrent();
             TickUntilHome();
+            service.Respawn();
 
             Assert.That(service.CorpseLiesAt(thornwood), Is.True);
             Assert.That(service.CorpseLiesAt(ashfen), Is.False);
@@ -858,6 +1141,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             service.Send(thornwood);
             session.Hero.GetResource(StatName.Health).DepleteCurrent();
             TickUntilHome();
+            service.Respawn();
 
             service.Send(ashfen);
             session.Hero.GetResource(StatName.Health).DepleteCurrent();
@@ -865,6 +1149,21 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             Assert.That(service.CorpseLiesAt(thornwood), Is.False, "replaced");
             Assert.That(service.CorpseLiesAt(ashfen), Is.True);
+        }
+
+        // ── the walk in Town (ADR-0021) ──────────────────────────────────────
+
+        [Test]
+        public void HeroWalkingSpeed_IsPositiveInTown_AndRisesInStepWithTheMovementStat()
+        {
+            var stat = session.Hero.GetStat(StatName.MovementSpeed);
+            var before = service.HeroWalkingSpeed;
+            var statBefore = stat.TotalValue;
+            Assert.That(before, Is.GreaterThan(0f), "premise: the default hero walks");
+
+            stat.AddModifier(new StatModifier(new Vector2Int(0, 1000), 100f));
+
+            Assert.That(service.HeroWalkingSpeed / before, Is.EqualTo((statBefore + 100f) / statBefore).Within(1e-4f));
         }
 
         // ── reaching it ──────────────────────────────────────────────────────

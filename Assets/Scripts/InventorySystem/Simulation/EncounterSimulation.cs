@@ -20,7 +20,6 @@ namespace ToolSmiths.InventorySystem.Simulation
         private readonly EncounterProfile _profile;
         private readonly RollStreams _streams;
         private readonly HeroBehaviour _behaviour;
-        private readonly IBagGauge _bag;
         private readonly EncounterTuning _tuning;
         private readonly Arena _arena;
         private readonly CombatClock _clock;
@@ -52,7 +51,6 @@ namespace ToolSmiths.InventorySystem.Simulation
         private Enemy _heroTarget; // the target of the hero's latest Strike or Approach Intent
         private bool _heroStrikeReady; // this tick's cadence flags, told to the hero's Brain and kept for carrying it out
         private bool _heroCastBeatOpen;
-        private bool _heroAskedRecall;
 
         private float _spawnTimer;
         private float _strikeTimer;
@@ -62,14 +60,8 @@ namespace ToolSmiths.InventorySystem.Simulation
         private float _endedAt;
 
         /// <param name="behaviour">
-        /// The player's live steering (issue #23) — Engagement, the Cast threshold and both
-        /// auto-Recall triggers. Held by reference, not copied: a slider moved mid-fight lands
-        /// on the next tick.
-        /// </param>
-        /// <param name="bag">
-        /// How full the hero's bag is, for <see cref="HeroBehaviour.ShouldRecallForBagFull"/>.
-        /// Optional — an Encounter built without one never fires the bag-full auto-Recall, which
-        /// is what a fight with no storage wired to it should do.
+        /// The player's live steering (issue #23) — Engagement and the Cast threshold. Held by
+        /// reference, not copied: a slider moved mid-fight lands on the next tick.
         /// </param>
         /// <param name="rolls">
         /// Every roll the Encounter draws - the main stream, the movement stream (spawn bearing, stop jitter) and
@@ -81,9 +73,8 @@ namespace ToolSmiths.InventorySystem.Simulation
             EncounterProfile profile,
             RollStreams rolls,
             HeroBehaviour behaviour,
-            EncounterTuning tuning = null,
-            IBagGauge bag = null)
-            : this(hero, profile, rolls, behaviour, tuning, bag, null, null)
+            EncounterTuning tuning = null)
+            : this(hero, profile, rolls, behaviour, tuning, null, null)
         {
         }
 
@@ -101,7 +92,6 @@ namespace ToolSmiths.InventorySystem.Simulation
             RollStreams rolls,
             HeroBehaviour behaviour,
             EncounterTuning tuning,
-            IBagGauge bag,
             Func<Enemy, IEnemyBrain> enemyBrains,
             IHeroBrain heroBrain = null)
         {
@@ -110,11 +100,10 @@ namespace ToolSmiths.InventorySystem.Simulation
             _profile = profile ?? throw new ArgumentNullException(nameof(profile));
             _streams = rolls ?? throw new ArgumentNullException(nameof(rolls));
             _behaviour = behaviour ?? throw new ArgumentNullException(nameof(behaviour));
-            _bag = bag;
 
             _tuning = tuning ?? new EncounterTuning();
             _tuning.Validate();
-            _heroBrain = heroBrain ?? new AutoHeroBrain(_behaviour, _bag, _tuning.HeroTargeting);
+            _heroBrain = heroBrain ?? new AutoHeroBrain(_behaviour, _tuning.HeroTargeting);
             _arena = new Arena(_tuning.Arena);
 
             _clock = new CombatClock(_tuning.Tick, _tuning.MaxTicksPerAdvance);
@@ -228,19 +217,6 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <summary>Raised the tick the hero's health reaches 0.</summary>
         public event Action HeroDowned;
 
-        /// <summary>
-        /// Raised the tick one of <see cref="HeroBehaviour"/>'s auto-Recall triggers fires —
-        /// health at or below <c>RetreatHealthFraction</c>, or the bag filled to
-        /// <c>RecallBagFillFraction</c> (issue #23). The fight is already stopped and its
-        /// stopped by the time this raises, exactly as a manual Recall would
-        /// leave it; the engine-side driver turns the signal into <see cref="RunState.Recall"/>
-        /// so the Run ends down the one path, with everything kept.
-        ///
-        /// Raised at most once per Encounter — the sim has <see cref="SimulationPhase.Ended"/>
-        /// and stops stepping, so a driver that ignores it simply leaves a stopped fight.
-        /// </summary>
-        public event Action RecallRequested;
-
         /// <summary>Raised each tick the hero lands a physical Strike — the Ability hotbar's flash (issue #62).</summary>
         public event Action HeroStriked;
 
@@ -266,7 +242,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         }
 
         /// <summary>
-        /// End the fight — the Run was Recalled, Relocated or the hero Died (issue #21). XP is
+        /// End the fight — the Run was Returned, Relocated or the hero Died (issue #21). XP is
         /// delivered per kill, so there is nothing in flight to settle or lose. Idempotent.
         /// </summary>
         public void Abandon()
@@ -299,8 +275,6 @@ namespace ToolSmiths.InventorySystem.Simulation
                 // Nothing lives: his Brain sends him home through the quiet. The cadences stand still.
                 DecideHero(dt, fighting: false);
                 WalkHero(dt);
-                if (EndOnRecall())
-                    return;
 
                 if (_clock.ElapsedTime >= _beatEndsAt)
                     BeginEncounter();
@@ -331,11 +305,6 @@ namespace ToolSmiths.InventorySystem.Simulation
                 return;
             }
 
-            // Checked after the death test, so a tick that both asks for a Recall and kills the hero is a
-            // Death, not a Recall — the penalty is not dodgeable by the trigger racing it.
-            if (EndOnRecall())
-                return;
-
             RetargetIfFallen();
 
             if (RosterSpent && _enemies.Count == 0)
@@ -349,17 +318,6 @@ namespace ToolSmiths.InventorySystem.Simulation
                 return;
 
             _heroTarget = _heroBrain.PeekTarget(new HeroView(_arena, _hero, _enemies, HeroStrikeRange, _heroStrikeReady, _heroCastBeatOpen));
-        }
-
-        /// <summary>End the fight if the hero's Brain asked for a Recall this tick, as a manual Recall would leave it.</summary>
-        private bool EndOnRecall()
-        {
-            if (!_heroAskedRecall)
-                return false;
-
-            End();
-            RecallRequested?.Invoke();
-            return true;
         }
 
         // ─── spawning ────────────────────────────────────────────────────────
@@ -461,13 +419,10 @@ namespace ToolSmiths.InventorySystem.Simulation
             _heroBrain.Decide(new HeroView(_arena, _hero, _enemies, HeroStrikeRange, _heroStrikeReady, _heroCastBeatOpen), _heroIntents);
 
             _heroTarget = null;
-            _heroAskedRecall = false;
             for (var i = 0; i < _heroIntents.Count; i++)
             {
                 var intent = _heroIntents[i];
-                if (intent.Kind == IntentKind.Recall)
-                    _heroAskedRecall = true;
-                else if ((intent.Kind == IntentKind.Strike || intent.Kind == IntentKind.Approach) && intent.Target is Enemy enemy)
+                if ((intent.Kind == IntentKind.Strike || intent.Kind == IntentKind.Approach) && intent.Target is Enemy enemy)
                     _heroTarget = enemy;
             }
         }

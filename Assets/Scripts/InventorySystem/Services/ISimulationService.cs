@@ -1,3 +1,4 @@
+using Submodules.Utility.Extensions;
 using Submodules.Utility.Services;
 using System;
 using ToolSmiths.InventorySystem.Locations;
@@ -7,7 +8,7 @@ namespace ToolSmiths.InventorySystem.Services
 {
     /// <summary>
     /// The state service over the Hero and the World (ADR-0015): the Run, its loot flow, the Send /
-    /// Relocate / Recall transitions and the tick that drives them. It reads the current Hero and
+    /// Relocate / Return transitions and the tick that drives them. It reads the current Hero and
     /// World off the <see cref="ISession"/> on every call and caches neither - the Run lives on the
     /// World and the Corpse and selected Location on the Hero - so a hero load changes what it
     /// operates on without it noticing. The tick is hosted by <see cref="GameLoop"/>.
@@ -33,7 +34,7 @@ namespace ToolSmiths.InventorySystem.Services
         /// <summary>
         /// Raised once, after a Run has ended and everything its end does has been applied: the Run is
         /// back in Town, and on a Death the bag is already buried in the Corpse and the penalty paid. A
-        /// Recall raises it the same way. The Run's own ended event fires earlier, inside the Death
+        /// Return raises it the same way. The Run's own ended event fires earlier, inside the Death
         /// handling, so a save hooked to that one would write a hero with no Corpse and a full bag.
         /// This one is the service's, not the Run's, so it survives a World swap: a subscriber attaches
         /// once.
@@ -44,32 +45,31 @@ namespace ToolSmiths.InventorySystem.Services
         /// Send the hero to <paramref name="location"/>: <see cref="RunPhase.InTown"/> to
         /// <see cref="RunPhase.InField"/>. Selects the Location on the Hero, opens the Run and, if the
         /// Hero's Corpse is at exactly this Location, lays it back out (to the bag where it fits, else
-        /// the ground).
+        /// the ground). Throws while the hero is down: a Death leaves him so until <see cref="Respawn"/>.
         /// </summary>
         void Send(LocationConfig location);
 
         /// <summary>
-        /// Move the live Run to <paramref name="location"/> without a Recall. Throws unless a Run is
+        /// Move the live Run to <paramref name="location"/> without a Return. Throws unless a Run is
         /// live with its hero up. Like <see cref="Send"/>, lays the Hero's Corpse back out when the new
         /// Location is where it fell.
         /// </summary>
         void Relocate(LocationConfig location);
 
-        /// <summary>
-        /// Whether the Hero's Corpse lies at <paramref name="location"/>. What the Hero icon's Corpse
-        /// marker under each Location toggle reads: it holds whether or not that Location is selected,
-        /// and is false once the Corpse is recovered or replaced by a Death elsewhere.
-        /// </summary>
+        /// <summary>Whether the Hero's Corpse lies at <paramref name="location"/>, selected or not.</summary>
         bool CorpseLiesAt(LocationConfig location);
+
+        /// <summary>The Origin every Location's arena is centred on, the frame a Corpse's fall position is kept in.</summary>
+        Coordinate ArenaOrigin { get; }
 
         /// <summary>Raised when the Hero's Corpse is buried, replaced or recovered.</summary>
         event Action CorpseChanged;
 
         /// <summary>End the Run with everything kept. Refused once the hero is down - that ends in a Death.</summary>
-        RunResult Recall();
+        RunResult Return();
 
         /// <summary>
-        /// Ends a live Run so the game can close in Town: a Recall, or the Death when the hero is already
+        /// Ends a live Run so the game can close in Town: a Return, or the Death when the hero is already
         /// down, in that order of precedence the tick uses. Raises <see cref="RunSettled"/> like either
         /// does. Nothing happens when no Run is in the Field.
         /// </summary>
@@ -77,9 +77,19 @@ namespace ToolSmiths.InventorySystem.Services
         bool LeaveField();
 
         /// <summary>
+        /// The way back from a Death: revives the hero at full Health and Resource and raises
+        /// <see cref="Respawned"/>. A Death leaves him at 0 Health in Town; only this (or a hero load) stands him
+        /// up. Does nothing to a hero who is not down.
+        /// </summary>
+        void Respawn();
+
+        /// <summary>Raised by <see cref="Respawn"/> with the hero up. Belongs to the service, so a subscriber attaches once across hero loads.</summary>
+        event Action Respawned;
+
+        /// <summary>
         /// Whether the live Run is frozen: <see cref="Tick"/> does nothing at all while it is true, so
         /// the Encounter, the Hero's regeneration and both ways home stand still. Only a Run in the
-        /// Field can be paused, and the Run's end (Recall or Death) or the next <see cref="Send"/>
+        /// Field can be paused, and the Run's end (Return or Death) or the next <see cref="Send"/>
         /// clears it, so it is never true in Town.
         /// </summary>
         bool IsPaused { get; }
@@ -116,9 +126,40 @@ namespace ToolSmiths.InventorySystem.Services
         float SimDelta(float deltaSeconds);
 
         /// <summary>
+        /// The sim seconds <paramref name="deltaSeconds"/> of real time is worth to a walk the hero is shown taking
+        /// (ADR-0021): <see cref="SimDelta"/> without the freeze, since a Pause does not stop a walk. Scales with the
+        /// Behaviour Profile's sim speed, so a faster sim walks faster.
+        /// </summary>
+        float WalkDelta(float deltaSeconds);
+
+        /// <summary>
+        /// Arena units per second the hero walks, read live off his <c>MovementSpeed</c> stat: what an Encounter
+        /// walks him at and what a Hero figure Travels at in Town (ADR-0021). Never negative.
+        /// </summary>
+        float HeroWalkingSpeed { get; }
+
+        /// <summary>
+        /// The factor the view's time runs at: the tuned slow-down for a short real-time span after a Death, 1
+        /// otherwise. Already inside <see cref="SimDelta"/>; cleared early by <see cref="Respawn"/> and a hero load.
+        /// </summary>
+        float ViewTimeFactor { get; }
+
+        /// <summary>
+        /// Whether the Death beat is under way, from a Death until its slow-down runs out or is cleared. The views
+        /// hold what the Death shows back until it ends.
+        /// </summary>
+        bool DeathBeatPlaying { get; }
+
+        /// <summary>
+        /// Raised once when <see cref="DeathBeatPlaying"/> goes from true to false, however it ended. A subscriber
+        /// that needs the hero still down asks him.
+        /// </summary>
+        event Action DeathBeatEnded;
+
+        /// <summary>
         /// One frame of the simulation, <paramref name="deltaSeconds"/> of real time: the Hero's
         /// regeneration (Town and Field alike), the Encounter while a Run is in the Field, and the
-        /// Run's two ways home (a Death, or the Behaviour Profile's auto-Recall). Scaled by the
+        /// Run's way home on a Death. Scaled by the
         /// Behaviour Profile's sim speed here, never through <c>Time.timeScale</c> (ADR-0008).
         /// Does nothing while <see cref="IsPaused"/> or <see cref="IsHeld"/>.
         /// </summary>

@@ -6,9 +6,9 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 {
     /// <summary>
     /// The <see cref="RunState"/> FSM (issue #21). Two states — <c>InTown</c> and
-    /// <c>InField</c>; <c>Send</c> opens a Run at a Location, <c>Recall</c> and
+    /// <c>InField</c>; <c>Send</c> opens a Run at a Location, <c>Return</c> and
     /// <c>HandleDeath</c> close it. On close it freezes a <see cref="RunResult"/> read off the
-    /// live <see cref="EncounterSimulation"/>: a <c>Recalled</c> result carries the full
+    /// live <see cref="EncounterSimulation"/>: a <c>Returned</c> result carries the full
     /// accumulation, a <c>Died</c> result adds the <c>XpLost</c> / <c>CurrencyFee</c> penalty.
     /// Loot and coins settle live during the Run (issue #24 feeds <see cref="RunState.BankCurrency"/>);
     /// the result is a summary, not a delivery.
@@ -55,11 +55,10 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             RunPenalty penalty = default,
             EncounterTuning tuning = null,
             int engagement = 10,
-            HeroBehaviour behaviour = null,
-            IBagGauge bag = null) =>
+            HeroBehaviour behaviour = null) =>
             new(profile => new EncounterSimulation(
                     hero, profile, new ConstantRollSource(0f),
-                    behaviour ?? Behaviours.Engaging(engagement), tuning ?? new EncounterTuning(), bag),
+                    behaviour ?? Behaviours.Engaging(engagement), tuning ?? new EncounterTuning()),
                 penalty);
 
         private static EncounterProfile Skirmishers(int count) =>
@@ -93,12 +92,12 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
-        public void Recall_ReturnsToTown_AndDropsTheLocationAndEncounter()
+        public void Return_ReturnsToTown_AndDropsTheLocationAndEncounter()
         {
             var run = NewRun(OneShotHero());
             run.Send(Skirmishers(3));
 
-            run.Recall();
+            run.Return();
 
             Assert.That(run.Phase, Is.EqualTo(RunPhase.InTown));
             Assert.That(run.Location, Is.Null);
@@ -140,11 +139,11 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
-        public void Recall_WhileInTown_Throws()
+        public void Return_WhileInTown_Throws()
         {
             var run = NewRun(OneShotHero());
 
-            Assert.That(() => run.Recall(), Throws.InvalidOperationException);
+            Assert.That(() => run.Return(), Throws.InvalidOperationException);
         }
 
         [Test]
@@ -162,7 +161,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             run.Send(Skirmishers(3));
 
             Assert.That(() => run.HandleDeath(100), Throws.InvalidOperationException,
-                "a live hero's Run only ends in Recall — HandleDeath is not a 'give up' button");
+                "a live hero's Run only ends in Return — HandleDeath is not a 'give up' button");
             Assert.That(run.Phase, Is.EqualTo(RunPhase.InField), "the refused HandleDeath must not half-end the Run");
         }
 
@@ -220,11 +219,26 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
+        public void HandleDeath_RecordsWhereTheHeroFell()
+        {
+            var tuning = new EncounterTuning { Arena = new ArenaTuning { Origin = new Submodules.Utility.Extensions.Coordinate(7f, -3f) } };
+            var run = NewRun(FrailHero(), tuning: tuning);
+            run.Send(Skirmishers(4));
+            DriveHeroDown(run);
+            var fell = run.Encounter.HeroPosition;
+            Assert.That(fell, Is.Not.EqualTo(default(Submodules.Utility.Extensions.Coordinate)), "setup: the hero fell away from the world's zero");
+
+            var result = run.HandleDeath(0);
+
+            Assert.That(result.FallPosition, Is.EqualTo(fell));
+        }
+
+        [Test]
         public void Send_ClearsThePreviousRunsLastResult()
         {
             var run = NewRun(OneShotHero());
             run.Send(Skirmishers(3));
-            run.Recall();
+            run.Return();
             Assert.That(run.LastResult, Is.Not.Null, "sanity check — the first Run did finish");
 
             run.Send(Skirmishers(3));
@@ -246,7 +260,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var settledMidRun = run.Encounter.SettledXp;
             Assert.That(settledMidRun, Is.GreaterThan(0));
 
-            var result = run.Recall();
+            var result = run.Return();
             Assert.That(result.XpSettled, Is.EqualTo(settledMidRun));
             Assert.That(result.EncountersCleared, Is.EqualTo(3));
         }
@@ -262,7 +276,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
             Assert.That(run.CurrencyBanked, Is.EqualTo(750));
 
-            var result = run.Recall();
+            var result = run.Return();
             Assert.That(result.CurrencyBanked, Is.EqualTo(750));
         }
 
@@ -294,10 +308,10 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
                 "the Run's take is frozen once the hero is down, for HandleDeath to read");
         }
 
-        // ─── the Recalled outcome ────────────────────────────────────────────
+        // ─── the Returned outcome ────────────────────────────────────────────
 
         [Test]
-        public void Recall_FreezesARecalledResult_CarryingTheFullAccumulation()
+        public void Return_FreezesAReturnedResult_CarryingTheFullAccumulation()
         {
             var run = NewRun(OneShotHero(), tuning: ShortBeat());
             run.Send(Skirmishers(2));
@@ -311,21 +325,21 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var defeated = run.Encounter.EnemiesDefeated;
             var duration = run.Encounter.Duration;
 
-            var result = run.Recall();
+            var result = run.Return();
 
-            Assert.That(result.Outcome, Is.EqualTo(RunOutcome.Recalled));
+            Assert.That(result.Outcome, Is.EqualTo(RunOutcome.Returned));
             Assert.That(result.XpSettled, Is.EqualTo(settled));
             Assert.That(result.CurrencyBanked, Is.EqualTo(1234));
             Assert.That(result.EnemiesDefeated, Is.EqualTo(defeated));
             Assert.That(result.EncountersCleared, Is.EqualTo(cleared));
             Assert.That(result.Duration, Is.EqualTo(duration).Within(0.0001f));
-            Assert.That(result.XpLost, Is.EqualTo(0), "no penalty on a Recall");
-            Assert.That(result.CurrencyFee, Is.EqualTo(0), "no penalty on a Recall");
+            Assert.That(result.XpLost, Is.EqualTo(0), "no penalty on a Return");
+            Assert.That(result.CurrencyFee, Is.EqualTo(0), "no penalty on a Return");
             Assert.That(run.LastResult, Is.EqualTo(result));
         }
 
         [Test]
-        public void Recall_MidEncounter_KeepsTheXpOfTheKillsSoFar()
+        public void Return_MidEncounter_KeepsTheXpOfTheKillsSoFar()
         {
             var run = NewRun(OneShotHero(), tuning: LongBeat());
             run.Send(Skirmishers(5));
@@ -335,7 +349,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var earned = run.Encounter.SettledXp;
             Assert.That(earned, Is.GreaterThan(0));
 
-            var result = run.Recall();
+            var result = run.Return();
 
             Assert.That(result.XpSettled, Is.EqualTo(earned), "XP is per kill — nothing waits on a clear");
             Assert.That(result.EncountersCleared, Is.EqualTo(0));
@@ -388,22 +402,22 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
-        public void WhenTheHeroIsDowned_TheRunReportsIt_AndRecallIsRefused()
+        public void WhenTheHeroIsDowned_TheRunReportsIt_AndReturnIsRefused()
         {
             var run = NewRun(FrailHero());
             run.Send(Skirmishers(4));
             DriveHeroDown(run);
 
             Assert.That(run.Encounter.Phase, Is.EqualTo(SimulationPhase.Ended));
-            Assert.That(() => run.Recall(), Throws.InvalidOperationException,
-                "a downed hero ends the Run in Death, not a Recall");
+            Assert.That(() => run.Return(), Throws.InvalidOperationException,
+                "a downed hero ends the Run in Death, not a Return");
 
             var result = run.HandleDeath(xpTowardNextLevel: 0);
             Assert.That(result.Outcome, Is.EqualTo(RunOutcome.Died));
         }
 
         [Test]
-        public void ADiedResult_CarriesTheSameRunTotalsAsARecall_PlusThePenalty()
+        public void ADiedResult_CarriesTheSameRunTotalsAsAReturn_PlusThePenalty()
         {
             var hero = OneShotHero();
             var run = NewRun(hero, penalty: new RunPenalty(0.5f, 0.5f), tuning: LongBeat());
@@ -438,14 +452,14 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
             run.Send(Skirmishers(3));
             run.BankCurrency(900);
-            var first = run.Recall();
+            var first = run.Return();
             Assert.That(first.CurrencyBanked, Is.EqualTo(900));
 
             run.Send(Skirmishers(3));
             Assert.That(run.CurrencyBanked, Is.EqualTo(0), "a fresh Run starts from zero");
 
             run.BankCurrency(50);
-            var second = run.Recall();
+            var second = run.Return();
             Assert.That(second.CurrencyBanked, Is.EqualTo(50));
         }
 
@@ -464,7 +478,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         // ─── RunEnded (issue #24's ground-Drop clearing hook) ───────────────
 
         [Test]
-        public void Recall_RaisesRunEnded()
+        public void Return_RaisesRunEnded()
         {
             var run = NewRun(OneShotHero());
             run.Send(Skirmishers(3));
@@ -472,7 +486,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var raised = 0;
             run.RunEnded += () => raised++;
 
-            run.Recall();
+            run.Return();
 
             Assert.That(raised, Is.EqualTo(1));
         }
@@ -506,106 +520,30 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             Assert.That(raised, Is.EqualTo(0));
         }
 
-        // ─── the behaviour's own retreat (issue #23) ─────────────────────────
-
-        /// <summary>A hero already under a 0.3 retreat fraction, that neither deals nor takes damage.</summary>
-        private static FakeHero RetreatingHero() => new()
-        {
-            MaxHealth = 100f,
-            Health = 25f,
-            PhysicalDamage = 0f,
-            MagicalDamage = 0f,
-            AttackSpeed = 0.01f,
-            ArmorPercent = 100f,
-            MagicResistPercent = 100f, // a Skirmisher Strikes magically
-            Resource = 0f,
-            Level = 5,
-        };
-
-        private static HeroBehaviour RetreatsAt(float healthFraction) => new()
-        {
-            Engagement = 10,
-            RetreatHealthFraction = healthFraction,
-        };
+        // ─── no Auto-Recall (ADR-0021) ───────────────────────────────────────
 
         [Test]
-        public void ARetreatTrigger_MarksTheRunAsWantingToComeHome_WithoutEndingItItself()
+        public void AHeroUnderTheRetreatHealth_StaysInTheField()
         {
-            var run = NewRun(RetreatingHero(), behaviour: RetreatsAt(0.3f));
-            run.Send(Skirmishers(3));
-
-            run.Advance(0.1f);
-
-            Assert.That(run.RecallRequested, Is.True);
-            Assert.That(run.Phase, Is.EqualTo(RunPhase.InField),
-                "the sim only asks — the transition is the driver's, outside the tick that raised it");
-        }
-
-        [Test]
-        public void RecallRequested_IsFalse_WhileTheHeroIsHealthy()
-        {
-            var run = NewRun(RetreatingHero(), behaviour: RetreatsAt(0.1f));
+            var hero = new FakeHero
+            {
+                MaxHealth = 100f,
+                Health = 25f,
+                PhysicalDamage = 0f,
+                MagicalDamage = 0f,
+                AttackSpeed = 0.01f,
+                ArmorPercent = 100f,
+                MagicResistPercent = 100f, // a Skirmisher Strikes magically
+                Resource = 0f,
+                Level = 5,
+            };
+            var run = NewRun(hero, behaviour: new HeroBehaviour { Engagement = 10 });
             run.Send(Skirmishers(3));
 
             for (var i = 0; i < 50; i++) run.Advance(0.1f);
 
-            Assert.That(run.RecallRequested, Is.False);
-        }
-
-        [Test]
-        public void RecallingAfterARetreatRequest_EndsTheRunWithEverythingKept()
-        {
-            var run = NewRun(RetreatingHero(), behaviour: RetreatsAt(0.3f));
-            run.Send(Skirmishers(3));
-            run.BankCurrency(120);
-            run.Advance(0.1f);
-
-            var ended = 0;
-            run.RunEnded += () => ended++;
-
-            var result = run.Recall();
-
-            Assert.That(result.Outcome, Is.EqualTo(RunOutcome.Recalled), "a retreat is a Recall, not a Death");
-            Assert.That(result.CurrencyBanked, Is.EqualTo(120));
-            Assert.That(result.XpLost, Is.EqualTo(0));
-            Assert.That(result.CurrencyFee, Is.EqualTo(0));
-            Assert.That(run.Phase, Is.EqualTo(RunPhase.InTown));
-            Assert.That(ended, Is.EqualTo(1), "down the one existing RunEnded path");
-        }
-
-        [Test]
-        public void RecallRequested_DoesNotSurvive_IntoTheNextRun()
-        {
-            var behaviour = RetreatsAt(0.3f);
-            var run = NewRun(RetreatingHero(), behaviour: behaviour);
-
-            run.Send(Skirmishers(3));
-            run.Advance(0.1f);
-            _ = run.Recall();
-            Assert.That(run.RecallRequested, Is.False, "cleared on the way out");
-
-            behaviour.RetreatHealthFraction = 0f; // the player pulled the slider back down
-            run.Send(Skirmishers(3));
-
-            Assert.That(run.RecallRequested, Is.False);
-        }
-
-        [Test]
-        public void ABagFullTrigger_ReachesTheRunTheSameWay()
-        {
-            var bag = new FakeBagGauge { FillFraction = 0.2f };
-            var behaviour = new HeroBehaviour { Engagement = 10, RecallBagFillFraction = 0.8f };
-
-            var run = NewRun(RetreatingHero(), behaviour: behaviour, bag: bag);
-            run.Send(Skirmishers(3));
-
-            run.Advance(0.1f);
-            Assert.That(run.RecallRequested, Is.False);
-
-            bag.FillFraction = 0.85f;
-            run.Advance(0.1f);
-
-            Assert.That(run.RecallRequested, Is.True);
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.InField));
+            Assert.That(run.Encounter.Phase, Is.EqualTo(SimulationPhase.Fighting), "the Run ends only by a Return or a Death");
         }
     }
 }

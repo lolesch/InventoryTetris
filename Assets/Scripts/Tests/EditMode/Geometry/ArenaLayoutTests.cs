@@ -1,5 +1,7 @@
 using NUnit.Framework;
+using Submodules.Utility.Extensions;
 using ToolSmiths.InventorySystem.Geometry;
+using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Tests.EditMode.Geometry
 {
@@ -33,6 +35,26 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Geometry
         {
             Assert.That(ArenaLayout.FacingSign(100f, 105f, -1, 5f), Is.EqualTo(1));
             Assert.That(ArenaLayout.FacingSign(100f, 95f, 1, 5f), Is.EqualTo(-1));
+        }
+
+        [Test]
+        public void CorpseOffset_IsWhereTheHeroFell_ProjectedAroundTheOrigin()
+        {
+            var projection = new ArenaProjection(10f, 0.5f);
+
+            // Fell 2 right and 4 deeper than the Origin (3, -1): 20 canvas units right, 4 * 10 * 0.5 up.
+            var offset = ArenaLayout.CorpseOffset(new Coordinate(5f, 3f), new Coordinate(3f, -1f), projection);
+
+            Assert.That(offset.x, Is.EqualTo(20f).Within(Eps));
+            Assert.That(offset.y, Is.EqualTo(20f).Within(Eps));
+        }
+
+        [Test]
+        public void CorpseOffset_WithNoRecordedFall_IsTheLocationsCentre()
+        {
+            var offset = ArenaLayout.CorpseOffset(null, new Coordinate(3f, -1f), new ArenaProjection(10f, 0.5f));
+
+            Assert.That(offset, Is.EqualTo(Vector2.zero));
         }
 
         [Test]

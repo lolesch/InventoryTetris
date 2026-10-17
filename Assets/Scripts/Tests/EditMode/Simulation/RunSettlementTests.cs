@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using Submodules.Utility.Extensions;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Simulation;
@@ -10,7 +11,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
     /// <see cref="RunSettlement"/>'s interface (finding #2 of the 2026-09-08 architecture
     /// review — these rules had zero coverage while they lived in the scene's simulation component).
     /// A Death buries the bag's non-currency contents as the one Location-tagged Corpse, charges
-    /// the currency fee, forfeits the XP and revives the hero; re-entering that Location lays the
+    /// the currency fee and forfeits the XP (the revive is Respawn's); re-entering that Location lays the
     /// Corpse back out, to the bag where it fits and re-burying what does not.
     /// </summary>
     [TestFixture]
@@ -21,27 +22,26 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         private static EncounterProfile Thornwood() => Profiles.Solo(EnemyArchetype.Skirmisher);
         private static EncounterProfile Ashfen() => Profiles.Solo(EnemyArchetype.Brute);
 
-        private static RunResult Death(long currencyFee = 0L, int xpLost = 0) =>
-            RunResult.Died(new EncounterTotals(0, 0, 0, 0f), currencyBanked: 0L, xpLost: xpLost, currencyFee: currencyFee);
+        private static RunResult Death(long currencyFee = 0L, int xpLost = 0, Coordinate fell = default) =>
+            RunResult.Died(new EncounterTotals(0, 0, 0, 0f), currencyBanked: 0L, xpLost: xpLost, currencyFee: currencyFee, fell: fell);
 
-        private static RunResult Recall() =>
-            RunResult.Recalled(new EncounterTotals(0, 0, 0, 0f), currencyBanked: 0L);
+        private static RunResult Return() =>
+            RunResult.Returned(new EncounterTotals(0, 0, 0, 0f), currencyBanked: 0L);
 
         // ─── Settle: only on a Death ─────────────────────────────────────────
 
         [Test]
-        public void Settle_OnARecall_DoesNothing()
+        public void Settle_OnAReturn_DoesNothing()
         {
             var bag = new InMemorySettlementBag(Item("sword"));
             var ledger = new RecordingSettlementLedger();
             var settlement = new RunSettlement(bag, ledger);
 
-            settlement.Settle(Recall(), Thornwood());
+            settlement.Settle(Return(), Thornwood());
 
             Assert.That(settlement.Corpse.Exists, Is.False);
             Assert.That(ledger.FeeCharged, Is.Null);
             Assert.That(ledger.XpForfeited, Is.Null);
-            Assert.That(ledger.ReviveCalls, Is.Zero);
         }
 
         // ─── Settle: the Corpse ─────────────────────────────────────────────
@@ -58,6 +58,30 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             Assert.That(settlement.Corpse.Exists, Is.True);
             Assert.That(settlement.Corpse.Location, Is.SameAs(thornwood));
             Assert.That(settlement.Corpse.Items.Count, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void Settle_OnADeath_BuriesTheCorpseWhereTheHeroFell()
+        {
+            var settlement = new RunSettlement(new InMemorySettlementBag(Item("sword")), new RecordingSettlementLedger());
+
+            settlement.Settle(Death(fell: new Coordinate(4f, -6f)), Thornwood());
+
+            Assert.That(settlement.Corpse.FallPosition, Is.EqualTo(new Coordinate(4f, -6f)));
+        }
+
+        [Test]
+        public void Recover_WithALeftover_ReBuriesItWhereTheHeroFell()
+        {
+            var bag = new InMemorySettlementBag(Item("a"), Item("b")) { Capacity = 0 };
+            var settlement = new RunSettlement(bag, new RecordingSettlementLedger());
+            var thornwood = Thornwood();
+            settlement.Settle(Death(fell: new Coordinate(4f, -6f)), thornwood);
+
+            settlement.Recover(thornwood);
+
+            Assert.That(settlement.Corpse.Exists, Is.True);
+            Assert.That(settlement.Corpse.FallPosition, Is.EqualTo(new Coordinate(4f, -6f)));
         }
 
         [Test]
@@ -98,17 +122,6 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
             Assert.That(ledger.FeeCharged, Is.Null);
             Assert.That(ledger.XpForfeited, Is.Null);
-        }
-
-        [Test]
-        public void Settle_AlwaysRevivesTheHero()
-        {
-            var ledger = new RecordingSettlementLedger();
-            var settlement = new RunSettlement(new InMemorySettlementBag(), ledger);
-
-            settlement.Settle(Death(), Thornwood());
-
-            Assert.That(ledger.ReviveCalls, Is.EqualTo(1));
         }
 
         // ─── Recover ───────────────────────────────────────────────────────

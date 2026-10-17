@@ -32,8 +32,6 @@ MonoBehaviour:
   <GroundSize>k__BackingField: {x: 10, y: 13}
   <SimSpeed>k__BackingField: 1
   <Engagement>k__BackingField: 3
-  <RetreatHealthFraction>k__BackingField: 0
-  <RecallBagFillFraction>k__BackingField: 1
   <CastThreshold>k__BackingField: 0
   <LootFilterMinimum>k__BackingField: 5
   <CastCost>k__BackingField: 16

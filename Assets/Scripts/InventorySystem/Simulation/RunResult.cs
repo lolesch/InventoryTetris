@@ -1,3 +1,5 @@
+using Submodules.Utility.Extensions;
+
 namespace ToolSmiths.InventorySystem.Simulation
 {
     /// <summary>
@@ -22,8 +24,10 @@ namespace ToolSmiths.InventorySystem.Simulation
             long currencyFee,
             int enemiesDefeated,
             int encountersCleared,
-            float duration)
+            float duration,
+            Coordinate fallPosition = default)
         {
+            FallPosition = fallPosition;
             Outcome = outcome;
             XpSettled = xpSettled;
             CurrencyBanked = currencyBanked;
@@ -46,17 +50,20 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <summary>
         /// <see cref="RunOutcome.Died"/> only — the hero's progress toward the next level that
         /// the Death penalty forfeits (<see cref="RunPenalty.XpLossFraction"/> of it). Zero on a
-        /// Recall. The adapter (issue #26) subtracts this from the hero's XP.
+        /// Return. The adapter (issue #26) subtracts this from the hero's XP.
         /// </summary>
         public int XpLost { get; }
 
         /// <summary>
         /// <see cref="RunOutcome.Died"/> only — currency withdrawn from the Wallet as the Death
         /// fee (<see cref="RunPenalty.CurrencyFeeFraction"/> of <see cref="CurrencyBanked"/>, base
-        /// units, never more than was banked). Zero on a Recall. A separate line — it does not
+        /// units, never more than was banked). Zero on a Return. A separate line — it does not
         /// reduce <see cref="CurrencyBanked"/>.
         /// </summary>
         public long CurrencyFee { get; }
+
+        /// <summary><see cref="RunOutcome.Died"/> only - the arena position the hero went down at, which the Corpse remembers. Unset on a Return.</summary>
+        public Coordinate FallPosition { get; }
 
         /// <summary>Every enemy that fell this Run, across every Encounter.</summary>
         public int EnemiesDefeated { get; }
@@ -67,15 +74,15 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <summary>Tick-quantised simulation time this Run lasted (<c>CombatClock.ElapsedTime</c>), summed.</summary>
         public float Duration { get; }
 
-        /// <summary>Freeze a <see cref="RunOutcome.Recalled"/> result — the full accumulation, no penalty.</summary>
-        internal static RunResult Recalled(EncounterTotals totals, long currencyBanked) =>
-            new(RunOutcome.Recalled, totals.XpSettled, currencyBanked, 0, 0L,
+        /// <summary>Freeze a <see cref="RunOutcome.Returned"/> result — the full accumulation, no penalty.</summary>
+        internal static RunResult Returned(EncounterTotals totals, long currencyBanked) =>
+            new(RunOutcome.Returned, totals.XpSettled, currencyBanked, 0, 0L,
                 totals.EnemiesDefeated, totals.EncountersCleared, totals.Duration);
 
         /// <summary>Freeze a <see cref="RunOutcome.Died"/> result — the accumulation plus the penalty.</summary>
-        internal static RunResult Died(EncounterTotals totals, long currencyBanked, int xpLost, long currencyFee) =>
+        internal static RunResult Died(EncounterTotals totals, long currencyBanked, int xpLost, long currencyFee, Coordinate fell = default) =>
             new(RunOutcome.Died, totals.XpSettled, currencyBanked, xpLost, currencyFee,
-                totals.EnemiesDefeated, totals.EncountersCleared, totals.Duration);
+                totals.EnemiesDefeated, totals.EncountersCleared, totals.Duration, fell);
     }
 
     /// <summary>

@@ -8,7 +8,7 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// The ADR-0009 <i>Death is corpse-recovery, not haul-forfeit</i> rules, in one engine-free
     /// place. <see cref="Settle"/> runs the Death penalty - bury the bag's non-currency contents
     /// as the one <see cref="Corpse"/> tagged with the fall Location, charge the currency fee,
-    /// forfeit the XP, revive the hero. <see cref="Recover"/> is the other half: re-entering the
+    /// forfeit the XP.<see cref="Recover"/> is the other half: re-entering the
     /// Corpse's own Location lays it back out into the bag, and what does not fit stays on the
     /// Corpse, re-buried at the same Location.
     ///
@@ -45,7 +45,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// (the memoized <see cref="EncounterProfile"/> for the fall Location, or <c>null</c> when
         /// none was selected). A no-op unless <paramref name="result"/> is a
         /// <see cref="RunOutcome.Died"/>. Order matters: the bag is emptied into the Corpse before
-        /// the fee and XP are taken, and the revive is last so the hero is left full and Sendable.
+        /// the fee and XP are taken. The hero is left down: the revive is Respawn's.
         /// With no <paramref name="location"/> the fee is still charged but nothing is buried and
         /// no XP is forfeited - there is no Location to recover a Corpse from.
         /// </summary>
@@ -57,15 +57,13 @@ namespace ToolSmiths.InventorySystem.Simulation
             var contents = _bag.TakeNonCurrencyContents();
 
             if (location != null)
-                _corpse.Bury(location, contents);
+                _corpse.Bury(location, contents, result.FallPosition);
 
             if (result.CurrencyFee > 0L)
                 _ledger.ChargeFee(result.CurrencyFee);
 
             if (result.XpLost > 0 && location != null)
                 _ledger.ForfeitXp(result.XpLost);
-
-            _ledger.ReviveIfDown();
         }
 
         /// <summary>
@@ -76,6 +74,9 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// </summary>
         public void Recover(EncounterProfile location)
         {
+            // Read before the recovery clears it: the leftovers lie where the hero fell.
+            var fell = _corpse.FallPosition;
+
             if (!_corpse.TryRecover(location, out var drops))
                 return;
 
@@ -87,7 +88,7 @@ namespace ToolSmiths.InventorySystem.Simulation
             }
 
             if (stranded.Count > 0)
-                _corpse.Bury(location, stranded);
+                _corpse.Bury(location, stranded, fell);
         }
     }
 }

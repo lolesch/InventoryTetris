@@ -1,3 +1,4 @@
+using Submodules.Utility.Services;
 using Submodules.Utility.UI;
 using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Simulation;
@@ -15,12 +16,13 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// while still <see cref="RunPhase.InTown"/>, and a <see cref="RunPhase"/>-driven panel would
     /// keep it hidden through exactly that preview. Entering the Field is always a deliberate UI
     /// action (<c>ToFieldsButton</c> fades InFields in, a Location Send commits) with no
-    /// involuntary edge to catch. Leaving is not: Death ends the Run without any button click, so
+    /// involuntary edge to catch. Leaving is not: a Return ends the Run without any button click, so
     /// InTown needs its own route back in. Authored here for <see cref="RunPhase.InTown"/>, its
     /// <see cref="SimplePanel.Expand"/> goes through the InTown/InFields <see cref="PanelGroup"/>
-    /// on Death exactly as a real To Town click would, which is what fades InFields (and, via its
+    /// on a Return exactly as a real To Town click would, which is what fades InFields (and, via its
     /// own cascade, the Combat Panel) back out without either of them needing to hear about
-    /// <see cref="RunPhase"/> themselves.</para>
+    /// <see cref="RunPhase"/> themselves. A Death does not bring it up: the hero is still down, and
+    /// <see cref="ISimulationService.Respawn"/> does.</para>
     /// </summary>
     public sealed class RunPhasePanel : SimplePanel
     {
@@ -41,6 +43,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 return;
 
             _ = Session.TrySubscribeHeroLoaded(BindRun);
+            SimulationService.Instance.Respawned += Resync;
 
             BindRun();
         }
@@ -51,6 +54,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             base.OnDisable();
 
             Session.UnsubscribeHeroLoaded(BindRun);
+            if (ServiceLocator.IsArmed)
+                SimulationService.Instance.Respawned -= Resync;
 
             ReleaseRun();
         }
@@ -75,6 +80,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _run = null;
         }
 
-        private void SyncToPhase(RunPhase phase) => ToggleState(phase == activeDuring);
+        // A Death ends the Run but leaves the hero down; the Town map waits for Respawn.
+        private void SyncToPhase(RunPhase phase) =>
+            ToggleState(phase == activeDuring && !Session.Instance.Hero.IsDead);
+
+        private void Resync() => SyncToPhase(_run.Phase);
     }
 }

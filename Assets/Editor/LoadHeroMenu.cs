@@ -11,7 +11,7 @@ namespace ToolSmiths.InventorySystem.EditorScripts
     /// The dev-invocable hero load (#114) from the Editor menu, for a scene without the
     /// <c>DebugTools</c> button: <see cref="DebugTools.LoadDefault"/> builds a fresh Hero and World
     /// from the default hero template and swaps both into the Session. Play Mode only, and refused
-    /// while a Run is in the Field - Recall first. <see cref="DebugTools.CreateNew"/> is the same for a
+    /// while a Run is in the Field - Return first. <see cref="DebugTools.CreateNew"/> is the same for a
     /// new saved hero: written at once, so it is a save from then on, which the default-hero load is not.
     /// </summary>
     internal static class LoadHeroMenu

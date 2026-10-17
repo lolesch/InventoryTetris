@@ -119,7 +119,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             after.Simulation.Send(ashfen);
             Assert.That(after.Session.Hero.Corpse.Exists, Is.True, "another Location leaves it alone");
-            _ = after.Simulation.Recall();
+            _ = after.Simulation.Return();
 
             after.Simulation.Send(thornwood);
 
@@ -200,6 +200,32 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             Assert.That(after.Session.Hero.Corpse.Exists, Is.True);
             Assert.That(after.Session.Hero.Corpse.Items, Is.Empty);
+        }
+
+        [Test]
+        public void ACorpseSavedAndRestored_KeepsWhereTheHeroFell()
+        {
+            var before = NewGame();
+            before.Session.Hero.Corpse.Bury(before.Simulation.Locations.ProfileFor(thornwood), Array.Empty<ItemInstance>(), new Submodules.Utility.Extensions.Coordinate(3.5f, -2f));
+            var saved = ThroughText(CorpseMapper.ToDto(before.Session.Hero.Corpse, before.Simulation.Locations));
+            var after = NewGame();
+
+            _ = CorpseMapper.Restore(saved, after.Session.Hero.Corpse, after.Simulation.Locations, after.Items.Catalog);
+
+            Assert.That(after.Session.Hero.Corpse.FallPosition, Is.EqualTo(new Submodules.Utility.Extensions.Coordinate(3.5f, -2f)));
+        }
+
+        [Test]
+        public void ACorpseFromAnOlderSave_HasNoFallPosition_SoItLoadsAtTheOrigin()
+        {
+            const string older = "{\"locationId\":\"thornwood\",\"items\":[]}";
+            var saved = JsonUtility.FromJson<CorpseDto>(older);
+            var game = NewGame();
+
+            _ = CorpseMapper.Restore(saved, game.Session.Hero.Corpse, game.Simulation.Locations, game.Items.Catalog);
+
+            Assert.That(game.Session.Hero.Corpse.Exists, Is.True);
+            Assert.That(game.Session.Hero.Corpse.FallPosition, Is.Null);
         }
 
         [Test]

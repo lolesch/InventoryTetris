@@ -570,14 +570,40 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
-        public void ARecall_DrivesASave_WithTheBankedLootInTheBag()
+        public void AHeroSavedWhileDown_LoadsRevived_WithTheDeathsCostPaidOnce()
+        {
+            var setup = LoadedHero(out var id);
+            PutPotionsInBag(setup, 3u);
+            setup.Game.Simulation.Send(thornwood);
+            setup.Game.Hero.GetResource(StatName.Health).DepleteCurrent();
+            TickUntilHome(setup);
+            var down = setup.Game.Hero;
+            Assume.That(down.IsDead, Is.True, "the Death leaves him down until Respawn, and the save was written then");
+            var experience = down.GetResource(StatName.Experience).CurrentValue;
+            var balance = down.Wallet.Balance.Total;
+
+            var next = NewSetup();
+            _ = next.Saves.Load(id);
+
+            var loaded = next.Game.Hero;
+            Assert.That(loaded.IsDead, Is.False);
+            Assert.That(loaded.GetResource(StatName.Health).CurrentValue, Is.EqualTo(loaded.GetResource(StatName.Health).TotalValue));
+            Assert.That(loaded.GetResource(StatName.Resource).CurrentValue, Is.EqualTo(loaded.GetResource(StatName.Resource).TotalValue));
+            Assert.That(loaded.Corpse.Exists, Is.True, "the penalty stands");
+            Assert.That(loaded.GetResource(StatName.Experience).CurrentValue, Is.EqualTo(experience));
+            Assert.That(loaded.Wallet.Balance.Total, Is.EqualTo(balance));
+            Assert.That(BagHoldsPotions(loaded), Is.False, "the bag stays on the Corpse");
+        }
+
+        [Test]
+        public void AReturn_DrivesASave_WithTheBankedLootInTheBag()
         {
             var setup = LoadedHero(out var id);
             setup.Game.Simulation.Send(thornwood);
             PutPotionsInBag(setup, 3u);
             Tick();
 
-            _ = setup.Game.Simulation.Recall();
+            _ = setup.Game.Simulation.Return();
 
             var next = NewSetup();
             _ = next.Saves.Load(id);
@@ -596,14 +622,14 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             PutPotionsInBag(setup, 1u);
             setup.Game.Simulation.Send(thornwood);
-            _ = setup.Game.Simulation.Recall();
+            _ = setup.Game.Simulation.Return();
             setup.Game.Simulation.Send(thornwood);
             setup.Game.Hero.GetResource(StatName.Health).DepleteCurrent();
             TickUntilHome(setup);
 
             Assert.That(seen, Is.EqualTo(new[]
             {
-                (RunOutcome.Recalled, RunPhase.InTown, false),
+                (RunOutcome.Returned, RunPhase.InTown, false),
                 (RunOutcome.Died, RunPhase.InTown, true),
             }));
         }
@@ -634,7 +660,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             setup.Game.Simulation.Send(thornwood);
             setup.Game.Hero.Wallet.Deposit(new Currency(50u));
 
-            _ = setup.Game.Simulation.Recall();
+            _ = setup.Game.Simulation.Return();
 
             var list = setup.Saves.List().ToDictionary(hero => hero.Id);
             Assert.That(list[second.Id].SavedAtUtc, Is.EqualTo(now));
@@ -677,7 +703,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
                 .Sum(p => (int)p.Amount);
 
         [Test]
-        public void APackageOnTheCursorAtARecall_IsBackAtItsOrigin_AndInTheSave()
+        public void APackageOnTheCursorAtAReturn_IsBackAtItsOrigin_AndInTheSave()
         {
             var setup = LoadedHero(out var id);
             var wallet = setup.Game.Hero.Wallet.Balance.Total;
@@ -686,7 +712,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             setup.Saves.AddBeforeSave(() => held = ReturnToOrigin.Return(held, inventory, cell, inventory));
             setup.Game.Simulation.Send(thornwood);
 
-            _ = setup.Game.Simulation.Recall();
+            _ = setup.Game.Simulation.Return();
 
             Assert.That(held.IsValid, Is.False, "the package found a home");
             var next = NewSetup();
