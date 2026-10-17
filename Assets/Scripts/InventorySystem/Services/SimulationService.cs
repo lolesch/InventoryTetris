@@ -1,3 +1,4 @@
+using Submodules.Utility.Extensions;
 using Submodules.Utility.Services;
 using System;
 using System.Collections.Generic;
@@ -108,6 +109,8 @@ namespace ToolSmiths.InventorySystem.Services
             var corpse = session.Hero.Corpse;
             return corpse.Exists && corpse.Location == ProfileFor(location);
         }
+
+        public Coordinate ArenaOrigin => config.Tuning.Arena.Origin;
 
         public event Action CorpseChanged
         {

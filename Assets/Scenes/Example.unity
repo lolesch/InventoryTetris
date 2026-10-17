@@ -1082,6 +1082,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c0a7e1f4b2d94e6f8a31d5b7c9e20f64, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.Runtime.Simulation.CorpseMarker
+  arena: {fileID: 900000012}
 --- !u!114 &82676877
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -24894,6 +24895,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c0a7e1f4b2d94e6f8a31d5b7c9e20f64, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.Runtime.Simulation.CorpseMarker
+  arena: {fileID: 900000012}
 --- !u!114 &1770603405
 MonoBehaviour:
   m_ObjectHideFlags: 0

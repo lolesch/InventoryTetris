@@ -1,3 +1,4 @@
+using Submodules.Utility.Extensions;
 using Submodules.Utility.Services;
 using System;
 using ToolSmiths.InventorySystem.Locations;
@@ -61,6 +62,9 @@ namespace ToolSmiths.InventorySystem.Services
         /// and is false once the Corpse is recovered or replaced by a Death elsewhere.
         /// </summary>
         bool CorpseLiesAt(LocationConfig location);
+
+        /// <summary>The Origin every Location's arena is centred on, the frame a Corpse's fall position is kept in.</summary>
+        Coordinate ArenaOrigin { get; }
 
         /// <summary>Raised when the Hero's Corpse is buried, replaced or recovered.</summary>
         event Action CorpseChanged;

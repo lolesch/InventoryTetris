@@ -1,3 +1,4 @@
+using Submodules.Utility.Extensions;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Geometry
@@ -19,6 +20,13 @@ namespace ToolSmiths.InventorySystem.Geometry
         /// <param name="elapsed">Sim seconds since the death.</param>
         public static float DyingAlpha(float elapsed, float duration) =>
             duration <= 0f ? 0f : Mathf.Clamp01(1f - (elapsed / duration));
+
+        /// <summary>
+        /// Where a Corpse is drawn from its Location's anchor: the point the hero fell at, projected around the arena's
+        /// <paramref name="origin"/>. With no recorded fall (a save from before it was kept) it lies at the Origin, the centre.
+        /// </summary>
+        public static Vector2 CorpseOffset(Coordinate? fell, Coordinate origin, ArenaProjection projection) =>
+            projection.ToCanvas(fell ?? origin, origin);
 
         /// <summary>
         /// The sprite's <c>scale.x</c>: +1 when the hero stands to the right of the enemy, -1 to the left. Both
