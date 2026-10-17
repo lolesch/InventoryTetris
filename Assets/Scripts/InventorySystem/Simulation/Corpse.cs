@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Submodules.Utility.Extensions;
 using ToolSmiths.InventorySystem.Items;
 
 namespace ToolSmiths.InventorySystem.Simulation
@@ -29,6 +30,12 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <summary>The Location the Corpse is tagged with, or <c>null</c> while none exists.</summary>
         public EncounterProfile Location { get; private set; }
 
+        /// <summary>
+        /// The arena position the hero went down at, in the arena's own coordinates. <c>null</c> when none
+        /// was recorded (a save from before it was kept): the Corpse then lies at the arena's Origin.
+        /// </summary>
+        public Coordinate? FallPosition { get; private set; }
+
         /// <summary>The Corpse's contents, or empty while none exists.</summary>
         public IReadOnlyList<ItemInstance> Items => _items;
 
@@ -37,13 +44,14 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// the hand-off a Death triggers. Replaces any Corpse already there outright, discarding
         /// its contents, even if <paramref name="location"/> is the same one. <c>null</c> or
         /// empty contents still create a Corpse - Death sets one aside every time, empty-handed
-        /// or not.
+        /// or not. <paramref name="fell"/> is where the hero went down, or <c>null</c> for none known.
         /// </summary>
-        public void Bury(EncounterProfile location, IReadOnlyList<ItemInstance> bagContents)
+        public void Bury(EncounterProfile location, IReadOnlyList<ItemInstance> bagContents, Coordinate? fell = null)
         {
             if (location == null) throw new ArgumentNullException(nameof(location));
 
             Location = location;
+            FallPosition = fell;
             _items = bagContents != null && bagContents.Count > 0 ? bagContents.ToArray() : Array.Empty<ItemInstance>();
             Changed?.Invoke();
         }
@@ -69,6 +77,7 @@ namespace ToolSmiths.InventorySystem.Simulation
 
             drops = _items;
             Location = null;
+            FallPosition = null;
             _items = Array.Empty<ItemInstance>();
             Changed?.Invoke();
             return true;

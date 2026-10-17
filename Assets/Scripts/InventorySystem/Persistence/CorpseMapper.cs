@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Submodules.Utility.Extensions;
 using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Simulation;
 
@@ -29,6 +30,9 @@ namespace ToolSmiths.InventorySystem.Persistence
             return new CorpseDto
             {
                 locationId = locations.TryGetId(corpse.Location, out var locationId) ? locationId : string.Empty,
+                hasFall = corpse.FallPosition.HasValue,
+                fallX = corpse.FallPosition?.x ?? 0f,
+                fallZ = corpse.FallPosition?.z ?? 0f,
                 items = corpse.Items.Select(item => item.ToDto()).ToArray(),
             };
         }
@@ -84,7 +88,7 @@ namespace ToolSmiths.InventorySystem.Persistence
                 }
             }
 
-            target.Bury(profile, items);
+            target.Bury(profile, items, dto.hasFall ? new Coordinate(dto.fallX, dto.fallZ) : null);
             return new RestoreReport(skipped);
         }
 

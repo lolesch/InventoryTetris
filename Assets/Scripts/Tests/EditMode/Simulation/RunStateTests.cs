@@ -219,6 +219,21 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
+        public void HandleDeath_RecordsWhereTheHeroFell()
+        {
+            var tuning = new EncounterTuning { Arena = new ArenaTuning { Origin = new Submodules.Utility.Extensions.Coordinate(7f, -3f) } };
+            var run = NewRun(FrailHero(), tuning: tuning);
+            run.Send(Skirmishers(4));
+            DriveHeroDown(run);
+            var fell = run.Encounter.HeroPosition;
+            Assert.That(fell, Is.Not.EqualTo(default(Submodules.Utility.Extensions.Coordinate)), "setup: the hero fell away from the world's zero");
+
+            var result = run.HandleDeath(0);
+
+            Assert.That(result.FallPosition, Is.EqualTo(fell));
+        }
+
+        [Test]
         public void Send_ClearsThePreviousRunsLastResult()
         {
             var run = NewRun(OneShotHero());

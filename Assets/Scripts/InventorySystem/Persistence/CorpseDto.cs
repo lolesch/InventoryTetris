@@ -12,6 +12,12 @@ namespace ToolSmiths.InventorySystem.Persistence
     public sealed class CorpseDto
     {
         public string locationId = string.Empty;
+
+        /// <summary>Whether <see cref="fallX"/> and <see cref="fallZ"/> were recorded; a save from before they were has neither and loads at the Origin.</summary>
+        public bool hasFall;
+        public float fallX;
+        public float fallZ;
+
         public ItemInstanceDto[] items = Array.Empty<ItemInstanceDto>();
     }
 }
