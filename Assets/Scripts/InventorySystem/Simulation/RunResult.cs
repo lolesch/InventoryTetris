@@ -1,3 +1,5 @@
+using Submodules.Utility.Extensions;
+
 namespace ToolSmiths.InventorySystem.Simulation
 {
     /// <summary>
@@ -22,8 +24,10 @@ namespace ToolSmiths.InventorySystem.Simulation
             long currencyFee,
             int enemiesDefeated,
             int encountersCleared,
-            float duration)
+            float duration,
+            Coordinate fallPosition = default)
         {
+            FallPosition = fallPosition;
             Outcome = outcome;
             XpSettled = xpSettled;
             CurrencyBanked = currencyBanked;
@@ -58,6 +62,9 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// </summary>
         public long CurrencyFee { get; }
 
+        /// <summary><see cref="RunOutcome.Died"/> only - the arena position the hero went down at, which the Corpse remembers. Unset on a Return.</summary>
+        public Coordinate FallPosition { get; }
+
         /// <summary>Every enemy that fell this Run, across every Encounter.</summary>
         public int EnemiesDefeated { get; }
 
@@ -73,9 +80,9 @@ namespace ToolSmiths.InventorySystem.Simulation
                 totals.EnemiesDefeated, totals.EncountersCleared, totals.Duration);
 
         /// <summary>Freeze a <see cref="RunOutcome.Died"/> result — the accumulation plus the penalty.</summary>
-        internal static RunResult Died(EncounterTotals totals, long currencyBanked, int xpLost, long currencyFee) =>
+        internal static RunResult Died(EncounterTotals totals, long currencyBanked, int xpLost, long currencyFee, Coordinate fell = default) =>
             new(RunOutcome.Died, totals.XpSettled, currencyBanked, xpLost, currencyFee,
-                totals.EnemiesDefeated, totals.EncountersCleared, totals.Duration);
+                totals.EnemiesDefeated, totals.EncountersCleared, totals.Duration, fell);
     }
 
     /// <summary>

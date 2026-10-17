@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using Submodules.Utility.Extensions;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Simulation;
@@ -21,8 +22,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         private static EncounterProfile Thornwood() => Profiles.Solo(EnemyArchetype.Skirmisher);
         private static EncounterProfile Ashfen() => Profiles.Solo(EnemyArchetype.Brute);
 
-        private static RunResult Death(long currencyFee = 0L, int xpLost = 0) =>
-            RunResult.Died(new EncounterTotals(0, 0, 0, 0f), currencyBanked: 0L, xpLost: xpLost, currencyFee: currencyFee);
+        private static RunResult Death(long currencyFee = 0L, int xpLost = 0, Coordinate fell = default) =>
+            RunResult.Died(new EncounterTotals(0, 0, 0, 0f), currencyBanked: 0L, xpLost: xpLost, currencyFee: currencyFee, fell: fell);
 
         private static RunResult Return() =>
             RunResult.Returned(new EncounterTotals(0, 0, 0, 0f), currencyBanked: 0L);
@@ -57,6 +58,30 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             Assert.That(settlement.Corpse.Exists, Is.True);
             Assert.That(settlement.Corpse.Location, Is.SameAs(thornwood));
             Assert.That(settlement.Corpse.Items.Count, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void Settle_OnADeath_BuriesTheCorpseWhereTheHeroFell()
+        {
+            var settlement = new RunSettlement(new InMemorySettlementBag(Item("sword")), new RecordingSettlementLedger());
+
+            settlement.Settle(Death(fell: new Coordinate(4f, -6f)), Thornwood());
+
+            Assert.That(settlement.Corpse.FallPosition, Is.EqualTo(new Coordinate(4f, -6f)));
+        }
+
+        [Test]
+        public void Recover_WithALeftover_ReBuriesItWhereTheHeroFell()
+        {
+            var bag = new InMemorySettlementBag(Item("a"), Item("b")) { Capacity = 0 };
+            var settlement = new RunSettlement(bag, new RecordingSettlementLedger());
+            var thornwood = Thornwood();
+            settlement.Settle(Death(fell: new Coordinate(4f, -6f)), thornwood);
+
+            settlement.Recover(thornwood);
+
+            Assert.That(settlement.Corpse.Exists, Is.True);
+            Assert.That(settlement.Corpse.FallPosition, Is.EqualTo(new Coordinate(4f, -6f)));
         }
 
         [Test]

@@ -97,7 +97,8 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             hero.SelectedLocation = thornwood;
             hero.Corpse.Bury(game.Simulation.Locations.ProfileFor(ashfen),
-                new[] { new ItemInstance(Equipment(game, EquipmentType.Boots).Id, ItemRarity.Magic, 3, null) });
+                new[] { new ItemInstance(Equipment(game, EquipmentType.Boots).Id, ItemRarity.Magic, 3, null) },
+                new Submodules.Utility.Extensions.Coordinate(3.5f, -2f));
 
             return game;
         }
@@ -154,6 +155,8 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(now.SelectedLocation, Is.SameAs(thornwood));
 
             Assert.That(now.Corpse.Exists, Is.True);
+            Assert.That(now.Corpse.FallPosition, Is.EqualTo(was.Corpse.FallPosition));
+            Assert.That(now.Corpse.FallPosition, Is.EqualTo(new Submodules.Utility.Extensions.Coordinate(3.5f, -2f)));
             Assert.That(now.Corpse.Items.Select(item => item.DefinitionId), Is.EqualTo(was.Corpse.Items.Select(item => item.DefinitionId)));
         }
 

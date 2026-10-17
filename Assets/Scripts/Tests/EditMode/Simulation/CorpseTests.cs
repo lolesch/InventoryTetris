@@ -1,5 +1,6 @@
 using System;
 using NUnit.Framework;
+using Submodules.Utility.Extensions;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Simulation;
@@ -69,6 +70,38 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
             Assert.That(corpse.Exists, Is.True);
             Assert.That(corpse.Items, Is.Empty);
+        }
+
+        [Test]
+        public void Bury_RemembersWhereTheHeroFell()
+        {
+            var corpse = new Corpse();
+
+            corpse.Bury(Thornwood(), new[] { Item("sword") }, new Coordinate(3.5f, -2f));
+
+            Assert.That(corpse.FallPosition, Is.EqualTo(new Coordinate(3.5f, -2f)));
+        }
+
+        [Test]
+        public void Bury_WithoutAFallPosition_HasNone_SoItLiesAtTheOrigin()
+        {
+            var corpse = new Corpse();
+
+            corpse.Bury(Thornwood(), new[] { Item("sword") });
+
+            Assert.That(corpse.FallPosition, Is.Null);
+        }
+
+        [Test]
+        public void TryRecover_ForgetsTheFallPosition()
+        {
+            var corpse = new Corpse();
+            var location = Thornwood();
+            corpse.Bury(location, new[] { Item("sword") }, new Coordinate(1f, 1f));
+
+            corpse.TryRecover(location, out _);
+
+            Assert.That(corpse.FallPosition, Is.Null);
         }
 
         [Test]

@@ -57,7 +57,7 @@ namespace ToolSmiths.InventorySystem.Simulation
             var contents = _bag.TakeNonCurrencyContents();
 
             if (location != null)
-                _corpse.Bury(location, contents);
+                _corpse.Bury(location, contents, result.FallPosition);
 
             if (result.CurrencyFee > 0L)
                 _ledger.ChargeFee(result.CurrencyFee);
@@ -74,6 +74,9 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// </summary>
         public void Recover(EncounterProfile location)
         {
+            // Read before the recovery clears it: the leftovers lie where the hero fell.
+            var fell = _corpse.FallPosition;
+
             if (!_corpse.TryRecover(location, out var drops))
                 return;
 
@@ -85,7 +88,7 @@ namespace ToolSmiths.InventorySystem.Simulation
             }
 
             if (stranded.Count > 0)
-                _corpse.Bury(location, stranded);
+                _corpse.Bury(location, stranded, fell);
         }
     }
 }

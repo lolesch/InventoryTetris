@@ -245,7 +245,7 @@ namespace ToolSmiths.InventorySystem.Simulation
             var xpLost = (int)Math.Round((double)_penalty.XpLossFraction * xpTowardNextLevel, MidpointRounding.AwayFromZero);
             var currencyFee = (long)Math.Round((double)_penalty.CurrencyFeeFraction * _currencyBanked, MidpointRounding.AwayFromZero);
 
-            var result = RunResult.Died(totals, _currencyBanked, xpLost, currencyFee);
+            var result = RunResult.Died(totals, _currencyBanked, xpLost, currencyFee, _encounter.HeroPosition);
             EndRun(result);
             return result;
         }
