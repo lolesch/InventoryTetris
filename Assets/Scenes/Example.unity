@@ -869,7 +869,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.Runtime.Simulation.HeroFigure
   arena: {fileID: 900000012}
   facingDeadZoneUnits: 0.75
-  fieldExit: {fileID: 318019181}
   map: {fileID: 1426694739}
 --- !u!1 &64018610
 GameObject:
@@ -4268,7 +4267,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.Runtime.Simulation.TownHeroFigure
   waypoint: {fileID: 1942472514}
-  townExit: {fileID: 219529307}
   arena: {fileID: 900000012}
 --- !u!114 &296961780
 MonoBehaviour:
@@ -4797,6 +4795,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f98d042f31de68e4fb5d397e3fc27182, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.Runtime.Simulation.GoVentureButton
+  heroFigure: {fileID: 56875748}
+  travelPoint: {fileID: 0}
   m_Navigation:
     m_Mode: 3
     m_WrapAround: 0

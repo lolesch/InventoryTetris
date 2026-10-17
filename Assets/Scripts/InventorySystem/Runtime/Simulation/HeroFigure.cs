@@ -29,8 +29,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private EnemyArena arena;
         [SerializeField, Min(0f), Tooltip("Arena units of horizontal offset from the hero's target under which the figure keeps the way it faces.")]
         private float facingDeadZoneUnits = 0.75f;
-        [SerializeField, Tooltip("Where the figure stands when the Field map comes up.")]
-        private RectTransform fieldExit;
         [SerializeField, Tooltip("The Field map's canvas group. The figure fades with it. Empty: always opaque.")]
         private CanvasGroup map;
 
@@ -51,6 +49,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private Mode _mode;
         private RectTransform _standAt;
         private RectTransform _target;
+        // The Field Exit, announced by its button: where the figure stands when the Field map comes up.
+        private RectTransform _exit;
         private bool _awaitingLocation;
         private Vector2? _fallenAt;
 
@@ -62,6 +62,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         /// <inheritdoc/>
         public bool IsWalking => _mode == Mode.Walking;
+
+        /// <inheritdoc/>
+        public void SetExit(RectTransform exit) => _exit = exit;
 
         /// <inheritdoc/>
         public void StandAt(RectTransform anchor)
@@ -159,7 +162,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (Figure.HitShake != null)
                 Figure.HitShake.Bind(health);
 
-            StandAt(fieldExit);
+            StandAt(_exit);
         }
 
         private void SyncEncounter(EncounterSimulation encounter, bool sent, bool relocated, bool returned)
@@ -172,10 +175,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (encounter == null)
             {
                 // A Return walks out from where the fight last drew him; a Death or a hero load stands him at the Exit.
-                if (returned && wasBound)
-                    TravelTo(fieldExit);
+                if (returned && wasBound && _exit != null)
+                    TravelTo(_exit);
                 else
-                    StandAt(fieldExit);
+                    StandAt(_exit);
             }
             else if (sent || relocated)
             {
@@ -213,7 +216,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         {
             Figure.GetUp();
             _bound = null;
-            StandAt(fieldExit);
+            StandAt(_exit);
         }
 
         private void Stand()

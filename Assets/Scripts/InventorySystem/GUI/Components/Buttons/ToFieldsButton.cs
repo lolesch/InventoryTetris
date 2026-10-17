@@ -17,13 +17,24 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
         [SerializeField, Tooltip("Where the figure stands at the Exit. Empty: this button's own centre.")]
         private RectTransform travelPoint;
 
+        // Announces the Exit's point to the figure, which stands there after a Return.
+        protected override void OnEnable()
+        {
+            base.OnEnable();
+
+            if (heroFigure != null)
+                heroFigure.SetExit(TravelPoint);
+        }
+
+        private RectTransform TravelPoint => travelPoint ? travelPoint : (RectTransform)transform;
+
         protected override void OnClick()
         {
             base.OnClick();
             InventoryService.Instance.SyncContextToPhase(true);
 
             if (heroFigure != null)
-                heroFigure.TravelTo(travelPoint ? travelPoint : (RectTransform)transform);
+                heroFigure.TravelTo(TravelPoint);
         }
     }
 }

@@ -16,13 +16,18 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     {
         [SerializeField, Tooltip("Where the figure stands when it has not walked in: entering the game, a hero load, a Respawn. Empty: the Town Exit.")]
         private RectTransform waypoint;
-        [SerializeField, Tooltip("Where the figure stands after a Return, having come in through the Exit: the Town Exit button.")]
-        private RectTransform townExit;
         [SerializeField, Tooltip("The arena whose canvas scale turns the hero's walking speed (arena units) into canvas units.")]
         private EnemyArena arena;
 
         // Standing at the origin until the first Place, so a walk query or TravelTo before OnEnable is safe.
         private IHeroTravel _travel = new HeroTravel(default);
+
+        // The Town Exit, announced by its button: where the figure stands after a Return.
+        private RectTransform _exit;
+        // Where the figure stands while it is not walking: the point it was placed at or walked to, else the entry's.
+        private RectTransform _standAt;
+        private RectTransform _target;
+        private TownStand _stand = TownStand.Waypoint;
         private RectTransform _rect;
         private RectTransform _map;
 
@@ -73,34 +78,84 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 Enter(TownEntry.Return);
         }
 
-        private RectTransform Waypoint => waypoint ? waypoint : townExit;
+        private RectTransform Waypoint => waypoint ? waypoint : _exit;
 
-        private void Enter(TownEntry entry) =>
-            Place(TownStartPoint.For(entry) == TownStand.TownExit ? townExit : Waypoint);
+        private RectTransform StandPoint => _standAt ? _standAt : _stand == TownStand.TownExit ? _exit : Waypoint;
+
+        /// <inheritdoc/>
+        public void SetExit(RectTransform exit) => _exit = exit;
+
+        private void Enter(TownEntry entry)
+        {
+            _stand = TownStartPoint.For(entry);
+            _standAt = null;
+            _target = null;
+            Settle(force: true);
+        }
 
         private void Update()
         {
             if (!_travel.IsWalking)
+            {
+                Settle(force: false);
                 return;
+            }
 
             var from = _travel.Position;
-            _ = _travel.Advance(ArenaSpace.HeroCanvasSpeed, SimulationService.Instance.WalkDelta(Time.deltaTime));
+            var arrived = _travel.Advance(ArenaSpace.HeroCanvasSpeed, SimulationService.Instance.WalkDelta(Time.deltaTime));
             Show(from);
+
+            if (arrived)
+            {
+                _standAt = _target;
+                _target = null;
+            }
         }
 
-        /// <inheritdoc/>
-        public void PlaceAtWaypoint() => Place(Waypoint);
-
-        /// <inheritdoc/>
-        public void Place(RectTransform point)
+        // A standing figure keeps to its point, re-read every frame: the canvas has not laid its rects out when the
+        // figure first enables, and a point that moves later takes the figure with it. Nothing while no point is known.
+        private void Settle(bool force)
         {
+            var point = StandPoint;
+            if (point == null)
+                return;
+
             var at = Local(point);
+            if (!force && Coordinate.Distance(at, _travel.Position) < 1e-3f)
+                return;
+
             _travel = new HeroTravel(at);
             Show(at);
         }
 
         /// <inheritdoc/>
-        public void TravelTo(RectTransform point) => _travel.Retarget(Local(point));
+        public void PlaceAtWaypoint()
+        {
+            _stand = TownStand.Waypoint;
+            _standAt = null;
+            _target = null;
+            Settle(force: true);
+        }
+
+        /// <inheritdoc/>
+        public void Place(RectTransform point)
+        {
+            _standAt = point;
+            _target = null;
+            Settle(force: true);
+        }
+
+        /// <inheritdoc/>
+        public void TravelTo(RectTransform point)
+        {
+            _target = point;
+            _standAt = null;
+            _travel.Retarget(Local(point));
+
+            // Already there: nothing walks, so it stands at the point it was sent to.
+            if (!_travel.IsWalking)
+                Place(point);
+        }
 
         // The point's centre in the space the figure walks in.
         private Coordinate Local(RectTransform point)

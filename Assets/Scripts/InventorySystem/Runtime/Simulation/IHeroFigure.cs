@@ -11,6 +11,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// <summary>Whether a walk is under way. False once the figure has arrived, or was placed.</summary>
         bool IsWalking { get; }
 
+        /// <summary>The Field Exit, announced by its button: where the figure stands when the Field map comes up and walks out on a Return.</summary>
+        void SetExit(RectTransform exit);
+
         /// <summary>Appear at <paramref name="anchor"/> and stand there, as the figure does at the Field Exit.</summary>
         void StandAt(RectTransform anchor);
 

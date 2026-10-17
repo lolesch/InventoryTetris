@@ -319,6 +319,21 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         }
 
         [UnityTest]
+        public IEnumerator AStandingFigure_FollowsItsPointWhenThePointMoves()
+        {
+            yield return OpenExample();
+            var figure = Figure();
+            var waypoint = Named("Waypoint");
+            Assert.That(Apart(figure, waypoint), Is.LessThan(1f), "premise: he stands at the Waypoint");
+
+            // A canvas that lays out after the figure enabled, or a point moved in the Editor, must not leave him behind.
+            waypoint.anchoredPosition += new Vector2(150f, 90f);
+            yield return null;
+
+            Assert.That(Apart(figure, waypoint), Is.LessThan(1f));
+        }
+
+        [UnityTest]
         public IEnumerator AClickOnAStopThatDoesNotOpen_LeavesTheFigureWhereItStands()
         {
             yield return OpenExample();

@@ -1,4 +1,5 @@
 using Submodules.Utility.UI;
+using ToolSmiths.InventorySystem.Runtime.Simulation;
 using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
@@ -15,6 +16,20 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
     [DisallowMultipleComponent]
     public sealed class ToTownButton : PanelButton
     {
+        [SerializeField, Tooltip("The Field map's Hero figure, which stands at this Exit when the map comes up and walks out to it on a Return.")]
+        private HeroFigure heroFigure;
+        [SerializeField, Tooltip("Where the figure stands at the Exit. Empty: this button's own centre.")]
+        private RectTransform travelPoint;
+
+        // Announces the Exit's point to the figure.
+        protected override void OnEnable()
+        {
+            base.OnEnable();
+
+            if (heroFigure != null)
+                heroFigure.SetExit(travelPoint ? travelPoint : (RectTransform)transform);
+        }
+
         protected override void OnClick()
         {
             base.OnClick();
