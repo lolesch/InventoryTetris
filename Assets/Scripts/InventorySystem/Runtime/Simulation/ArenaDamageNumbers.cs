@@ -127,7 +127,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         private void ShowNumber((ICombatant Target, DamageType Type) key, float lost, float rawSum, int hits)
         {
-            // Unbound (the Run ended: Recall, hero death, Relocate) or the arena is going down: nothing is shown.
+            // Unbound (the Run ended: Return, hero death, Relocate) or the arena is going down: nothing is shown.
             if (!isActiveAndEnabled || _encounter == null)
                 return;
 

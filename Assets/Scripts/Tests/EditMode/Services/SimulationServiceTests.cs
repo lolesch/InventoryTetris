@@ -195,7 +195,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(SpreadOfTheFirstHit(), Is.EqualTo(1f).Within(1e-4f));
         }
 
-        // ── Send / Recall ────────────────────────────────────────────────────
+        // ── Send / Return ────────────────────────────────────────────────────
 
         [Test]
         public void Send_SelectsTheLocationOnTheHero_AndOpensTheRunWithALootFlow()
@@ -210,7 +210,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
-        public void TheGround_IsTheWorldsOneContainer_ThroughSendRelocateAndRecall()
+        public void TheGround_IsTheWorldsOneContainer_ThroughSendRelocateAndReturn()
         {
             var ground = session.World.Ground;
             Assert.That(inventory.ContainerFor(ContainerRole.Ground), Is.SameAs(ground), "a display binds it by role");
@@ -222,7 +222,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             service.Relocate(ashfen);
             Assert.That(service.LootFlow.Ground, Is.SameAs(ground), "the new loot flow lays on the same container");
 
-            _ = service.Recall();
+            _ = service.Return();
             Assert.That(ground.StoredPackages, Is.Empty, "a Drop on the ground when the Run ends is gone");
             Assert.That(inventory.ContainerFor(ContainerRole.Ground), Is.SameAs(ground));
         }
@@ -238,7 +238,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             service.Send(thornwood);
             Assert.That(inventory.QuickMoveFor(bag).Kind, Is.EqualTo(QuickMoveIntentKind.Drop));
 
-            _ = service.Recall();
+            _ = service.Return();
             Assert.That(inventory.QuickMoveFor(bag).Kind, Is.EqualTo(QuickMoveIntentKind.None), "the Run's end takes the ground with it");
         }
 
@@ -254,21 +254,21 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(inventory.QuickMoveFor(ground).Kind, Is.EqualTo(QuickMoveIntentKind.PickUp));
             Assert.That(inventory.QuickMoveFor(session.Hero.Inventory).Kind, Is.EqualTo(QuickMoveIntentKind.Drop));
 
-            _ = service.Recall();
+            _ = service.Return();
             Assert.That(inventory.QuickMoveFor(ground).Kind, Is.EqualTo(QuickMoveIntentKind.None));
         }
 
         [Test]
-        public void Recall_EndsTheRun_RetiresTheLootFlow_AndRestocksTheShops()
+        public void Return_EndsTheRun_RetiresTheLootFlow_AndRestocksTheShops()
         {
             session.World.VendorSupply.RemoveAll();
             service.Send(thornwood);
 
-            _ = service.Recall();
+            _ = service.Return();
 
             Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.InTown));
             Assert.That(service.LootFlow, Is.Null);
-            Assert.That(session.World.VendorSupply.StoredPackages, Is.Not.Empty, "a Recall brings the shops new stock");
+            Assert.That(session.World.VendorSupply.StoredPackages, Is.Not.Empty, "a Return brings the shops new stock");
         }
 
         [Test]
@@ -361,7 +361,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             TickUntilHome();
 
-            Assert.That(service.Run.LastResult?.Outcome, Is.EqualTo(RunOutcome.Recalled));
+            Assert.That(service.Run.LastResult?.Outcome, Is.EqualTo(RunOutcome.Returned));
             Assert.That(session.Hero.Corpse.Exists, Is.False);
             Assert.That(session.World.VendorSupply.StoredPackages, Is.Not.Empty);
         }
@@ -537,7 +537,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             service.Send(thornwood);
             service.SetHeld(true);
 
-            _ = service.Recall();
+            _ = service.Return();
             service.Send(thornwood);
 
             Assert.That(service.IsHeld, Is.False, "a hold left over from the last Run does not freeze the next");
@@ -551,7 +551,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             var raised = new List<bool>();
             service.PausedChanged += raised.Add;
 
-            _ = service.Recall();
+            _ = service.Return();
 
             Assert.That(service.IsPaused, Is.False);
             Assert.That(raised, Is.EqualTo(new[] { false }));
@@ -670,12 +670,12 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
-        public void ARecall_FoldsTheRunsKillsIntoTheHerosLifetimeCount_Once()
+        public void AReturn_FoldsTheRunsKillsIntoTheHerosLifetimeCount_Once()
         {
             var kills = SendAndTickUntilAKill();
             Assert.That(session.Hero.TotalKills, Is.EqualTo(0), "a Run in the Field has not been folded yet");
 
-            var result = service.Recall();
+            var result = service.Return();
             service.Tick(0.5f);
             service.Tick(0.5f);
 
@@ -701,12 +701,12 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         {
             var first = SendAndTickUntilAKill();
             service.Relocate(ashfen);
-            _ = service.Recall();
+            _ = service.Return();
             Assert.That(session.Hero.TotalKills, Is.GreaterThanOrEqualTo(first), "the Relocate carried the first Encounter's kills into the Run");
             var afterFirst = session.Hero.TotalKills;
 
             _ = SendAndTickUntilAKill();
-            _ = service.Recall();
+            _ = service.Return();
 
             Assert.That(session.Hero.TotalKills, Is.EqualTo(afterFirst + service.Run.LastResult?.EnemiesDefeated));
         }

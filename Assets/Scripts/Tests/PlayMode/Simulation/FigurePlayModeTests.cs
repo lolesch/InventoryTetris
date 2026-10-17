@@ -34,7 +34,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
         public void TearDown()
         {
             if (SimulationService.Instance.Run.Phase == RunPhase.InField)
-                _ = SimulationService.Instance.Recall();
+                _ = SimulationService.Instance.Return();
 
             _ = Session.Instance.TryLoad(GameBoot.Load().DefaultHero);
         }
@@ -89,7 +89,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             Assert.That(figure.GetComponent<CanvasGroup>().alpha, Is.EqualTo(1f), "bound when the Encounter binds");
             Assert.That((bool)Property(figure, "IsPlaced"), Is.True);
 
-            _ = SimulationService.Instance.Recall();
+            _ = SimulationService.Instance.Return();
             yield return null;
             Assert.That(figure.GetComponent<CanvasGroup>().alpha, Is.EqualTo(0f), "hidden when it is released");
             Assert.That((int)Property(figure, "FacingSign"), Is.EqualTo(1), "and the next Run starts facing right");

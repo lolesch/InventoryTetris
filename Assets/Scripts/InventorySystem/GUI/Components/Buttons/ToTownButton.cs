@@ -7,9 +7,9 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
 {
     /// <summary>
     /// To Town: fades the Town face back in unconditionally (<see cref="PanelButton.OnClick"/>) -
-    /// covering both a real Recall and backing out of a Go Venture preview, where no Run exists
-    /// yet to Recall. Only Recalls when a Run is actually live
-    /// (<see cref="RunPhase.InField"/>) - <see cref="RunState.Recall"/> requires exactly that and
+    /// covering both a real Return and backing out of a Go Venture preview, where no Run exists
+    /// yet to Return. Only Returns when a Run is actually live
+    /// (<see cref="RunPhase.InField"/>) - <see cref="RunState.Return"/> requires exactly that and
     /// throws otherwise, which the preview-cancel path would hit on every click without this guard.
     /// </summary>
     [DisallowMultipleComponent]
@@ -22,7 +22,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
             var simulation = SimulationService.Instance;
 
             if (simulation.Run.Phase == RunPhase.InField)
-                _ = simulation.Recall();
+                _ = simulation.Return();
         }
     }
 }

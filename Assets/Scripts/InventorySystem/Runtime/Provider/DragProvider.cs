@@ -148,7 +148,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         }
 
         /// <summary>
-        /// A Recall or a Death can fire while a drag is in progress, and the save that follows would not
+        /// A Return or a Death can fire while a drag is in progress, and the save that follows would not
         /// find the held Package in any container. The save service runs this first: the drag ends as a
         /// cancel does (<see cref="CancelDrag"/>) - back at its origin cell, or in the bag when that is
         /// taken, never destroyed and never touching the Wallet. When it finds no room it throws, which
@@ -175,7 +175,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         /// <summary>
         /// Any context other than the Vendor means the Vendor is no longer the one open, and a
         /// purchase in flight has nowhere to belong. Reading it that way rather than as "the
-        /// Vendor closed" is what makes Send, Recall, Death, Go Venture and closing the Hero
+        /// Vendor closed" is what makes Send, Return, Death, Go Venture and closing the Hero
         /// Panel each count, and it is why a Stash-to-Vendor handover is safe: that publishes one
         /// change, to the Vendor, so an in-flight purchase stays on the cursor.
         /// </summary>

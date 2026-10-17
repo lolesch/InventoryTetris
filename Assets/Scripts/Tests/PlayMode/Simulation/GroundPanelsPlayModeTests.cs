@@ -39,7 +39,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
         {
             // The services outlive the test with domain reload off: end its Run and hand the next test a fresh Hero.
             if (SimulationService.Instance.Run.Phase == RunPhase.InField)
-                _ = SimulationService.Instance.Recall();
+                _ = SimulationService.Instance.Return();
 
             _ = Session.Instance.TryLoad(GameBoot.Load().DefaultHero);
         }
@@ -137,7 +137,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             Land(SimulationService.Instance.LootFlow, 2);
             var grid = GroundGrid();
 
-            _ = SimulationService.Instance.Recall();
+            _ = SimulationService.Instance.Return();
             yield return null;
 
             Assert.That(FilledSlots(grid), Is.Empty, "a Drop on the ground when the Run ends is gone");

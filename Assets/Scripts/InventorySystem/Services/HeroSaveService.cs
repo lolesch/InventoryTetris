@@ -51,7 +51,7 @@ namespace ToolSmiths.InventorySystem.Services
         public static IHeroSaveService Instance => ServiceLocator.Get<IHeroSaveService>();
 
         /// <param name="simulation">Its Location registry resolves the Location ids a save holds, and its
-        /// <see cref="ISimulationService.RunSettled"/> is a save point: a Recall and a Death each write the hero.
+        /// <see cref="ISimulationService.RunSettled"/> is a save point: a Return and a Death each write the hero.
         /// The subscription is made once, here; the service is one instance, so a hero load or a World swap
         /// never needs it re-made.</param>
         /// <param name="utcNow">The clock for the saved-at stamp; the system clock when null.</param>
