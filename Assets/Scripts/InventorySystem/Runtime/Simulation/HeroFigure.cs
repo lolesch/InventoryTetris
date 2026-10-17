@@ -51,6 +51,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private RectTransform _target;
         // The Field Exit, announced by its button: where the figure stands when the Field map comes up.
         private RectTransform _exit;
+        private bool _standsAtExit;
         private bool _awaitingLocation;
         private Vector2? _fallenAt;
 
@@ -63,16 +64,27 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// <inheritdoc/>
         public bool IsWalking => _mode == Mode.Walking;
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// The Field Exit, announced by its button: where the figure stands when the Field map comes up and walks out on
+        /// a Return. Held as a stance, not a rect, so an exit announced after the figure first stood still takes him.
+        /// </summary>
         public void SetExit(RectTransform exit) => _exit = exit;
 
         /// <inheritdoc/>
         public void StandAt(RectTransform anchor)
         {
-            _standAt = anchor;
+            _standsAtExit = anchor != null && anchor == _exit;
+            _standAt = _standsAtExit ? null : anchor;
             _target = null;
             _awaitingLocation = false;
             _mode = Mode.Standing;
+        }
+
+        // Stands at the Exit, whichever rect it is when he is drawn; none announced yet draws nothing.
+        private void StandAtExit()
+        {
+            StandAt(null);
+            _standsAtExit = true;
         }
 
         /// <inheritdoc/>
@@ -162,7 +174,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (Figure.HitShake != null)
                 Figure.HitShake.Bind(health);
 
-            StandAt(_exit);
+            if (_exit == null)
+                Debug.LogWarning($"{name}: no Field Exit announced - wire the ToTownButton's Hero Figure to this figure, or he is not drawn until one is.", this);
+
+            StandAtExit();
         }
 
         private void SyncEncounter(EncounterSimulation encounter, bool sent, bool relocated, bool returned)
@@ -178,7 +193,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 if (returned && wasBound && _exit != null)
                     TravelTo(_exit);
                 else
-                    StandAt(_exit);
+                    StandAtExit();
             }
             else if (sent || relocated)
             {
@@ -216,15 +231,16 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         {
             Figure.GetUp();
             _bound = null;
-            StandAt(_exit);
+            StandAtExit();
         }
 
         private void Stand()
         {
-            if (_standAt == null)
+            var anchor = _standsAtExit ? _exit : _standAt;
+            if (anchor == null)
                 return;
 
-            var at = LocalCentre(_standAt);
+            var at = LocalCentre(anchor);
             Figure.Place(at, ArenaOf(at), Figure.FacingSign);
         }
 
@@ -232,7 +248,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         {
             if (_target == null)
             {
-                StandAt(_standAt);
+                StandAt(_standsAtExit ? _exit : _standAt);
                 return;
             }
 

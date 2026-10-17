@@ -14,9 +14,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// <summary>Where the figure stands, in the local space of the rect it sits under.</summary>
         Vector2 Position { get; }
 
-        /// <summary>The Town Exit, announced by its button: where the figure stands after a Return.</summary>
-        void SetExit(RectTransform exit);
-
         /// <summary>Stand at the Waypoint with no walk, as on entering the game, a hero load or a Respawn.</summary>
         void PlaceAtWaypoint();
 

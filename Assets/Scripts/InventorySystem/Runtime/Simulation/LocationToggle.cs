@@ -24,7 +24,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private RectTransform travelPoint;
 
         /// <summary>The rect whose centre is this Location on the map: the hero walks to it and the arena is drawn there.</summary>
-        public RectTransform TravelPoint => travelPoint ? travelPoint : (RectTransform)transform;
+        public RectTransform TravelPoint => this.TravelPointOr(travelPoint);
 
         protected override void OnToggle()
         {

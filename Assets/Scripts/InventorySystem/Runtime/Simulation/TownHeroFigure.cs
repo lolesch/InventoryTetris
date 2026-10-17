@@ -82,7 +82,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         private RectTransform StandPoint => _standAt ? _standAt : _stand == TownStand.TownExit ? _exit : Waypoint;
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// The Town Exit, announced by its button: where the figure stands after a Return. Held as a stance, not a rect,
+        /// so an exit announced after the figure stood, or announced anew, still takes him with it.
+        /// </summary>
         public void SetExit(RectTransform exit) => _exit = exit;
 
         private void Enter(TownEntry entry)
@@ -91,6 +94,15 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _standAt = null;
             _target = null;
             Settle(force: true);
+        }
+
+        // Stands at <paramref name="point"/> from now on: the Exit as the Exit stance, any other point as itself.
+        private void StandAtPoint(RectTransform point)
+        {
+            var atExit = point == _exit;
+            _stand = atExit ? TownStand.TownExit : _stand;
+            _standAt = atExit ? null : point;
+            _target = null;
         }
 
         private void Update()
@@ -106,10 +118,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             Show(from);
 
             if (arrived)
-            {
-                _standAt = _target;
-                _target = null;
-            }
+                StandAtPoint(_target);
         }
 
         // A standing figure keeps to its point, re-read every frame: the canvas has not laid its rects out when the
@@ -129,19 +138,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         }
 
         /// <inheritdoc/>
-        public void PlaceAtWaypoint()
-        {
-            _stand = TownStand.Waypoint;
-            _standAt = null;
-            _target = null;
-            Settle(force: true);
-        }
+        public void PlaceAtWaypoint() => Enter(TownEntry.Play);
 
         /// <inheritdoc/>
         public void Place(RectTransform point)
         {
-            _standAt = point;
-            _target = null;
+            StandAtPoint(point);
             Settle(force: true);
         }
 

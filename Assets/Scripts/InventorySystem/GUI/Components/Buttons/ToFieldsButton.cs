@@ -23,10 +23,8 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
             base.OnEnable();
 
             if (heroFigure != null)
-                heroFigure.SetExit(TravelPoint);
+                heroFigure.SetExit(this.TravelPointOr(travelPoint));
         }
-
-        private RectTransform TravelPoint => travelPoint ? travelPoint : (RectTransform)transform;
 
         protected override void OnClick()
         {
@@ -34,7 +32,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
             InventoryService.Instance.SyncContextToPhase(true);
 
             if (heroFigure != null)
-                heroFigure.TravelTo(TravelPoint);
+                heroFigure.TravelTo(this.TravelPointOr(travelPoint));
         }
     }
 }

@@ -476,6 +476,21 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
+        public void WalkDelta_ScalesRealTime_ByTheSimSpeed_AndIgnoresPauseAndHold()
+        {
+            session.Hero.Behaviour.SimSpeed = 4f;
+
+            Assert.That(service.WalkDelta(0.1f), Is.EqualTo(0.4f).Within(1e-5f), "in Town too, where no Run is live");
+
+            service.Send(thornwood);
+            service.SetPaused(true);
+            service.SetHeld(true);
+
+            Assert.That(service.SimDelta(0.1f), Is.EqualTo(0f), "premise: the Run is frozen");
+            Assert.That(service.WalkDelta(0.1f), Is.EqualTo(0.4f).Within(1e-5f), "a shown walk goes on");
+        }
+
+        [Test]
         public void Pausing_RaisesPausedChanged_OncePerChange_AndLeavesTheSimSpeedAlone()
         {
             session.Hero.Behaviour.SimSpeed = 4f;

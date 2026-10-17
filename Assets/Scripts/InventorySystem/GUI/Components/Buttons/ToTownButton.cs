@@ -27,7 +27,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
             base.OnEnable();
 
             if (heroFigure != null)
-                heroFigure.SetExit(travelPoint ? travelPoint : (RectTransform)transform);
+                heroFigure.SetExit(this.TravelPointOr(travelPoint));
         }
 
         protected override void OnClick()

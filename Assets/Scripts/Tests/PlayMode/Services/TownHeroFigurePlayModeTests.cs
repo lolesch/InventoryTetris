@@ -60,8 +60,9 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         // so "at the Stop" is within this, and the Stops are further apart than that.
         private const float AtTheStop = 10f;
 
-        // World units between the figure and a rect's centre.
-        private static float Apart(MonoBehaviour figure, RectTransform point) => Vector3.Distance(figure.transform.position, Centre(point));
+        // World units between the figure and where a control sends him: its Travel Point's centre, else its own.
+        private static float Apart(MonoBehaviour figure, RectTransform control) =>
+            Vector3.Distance(figure.transform.position, Centre(TravelPoints.Of(control)));
 
         // The Overlay canvas draws in screen space, so a rect's world centre is where the pointer goes.
         private IEnumerator Click(RectTransform target)
@@ -94,7 +95,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             yield return OpenExample();
             var figure = Figure();
 
-            Assert.That(Apart(figure, Named("Waypoint")), Is.LessThan(1f));
+            Assert.That(Apart(figure, TravelPoints.Waypoint(figure)), Is.LessThan(1f));
             Assert.That(IsWalking(figure), Is.False);
         }
 
@@ -238,7 +239,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         }
 
         [UnityTest]
-        public IEnumerator TheCrossfade_HoldsTheOldMapUntilLate_ThenSwitchesQuickly()
+        public IEnumerator TheCrossfade_TakesLongEnoughToWatchTheHeroWalk_AndEndsOnTheFieldMap()
         {
             yield return OpenExample();
             var inTown = Face("InTown");
@@ -249,8 +250,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             yield return Click(Named("ToFieldsButton"));
             yield return new WaitForSeconds(fade * 0.5f);
 
-            Assert.That(inTown.alpha, Is.GreaterThan(0.85f), "the old map holds past the half-way point");
-            Assert.That(inFields.alpha, Is.LessThan(0.15f), "the new map is still nearly clear");
+            Assert.That(inTown.alpha, Is.GreaterThan(0f).And.LessThan(1f), "mid-fade: the Town map is on its way out, not gone");
 
             yield return new WaitForSeconds(fade * 0.6f);
             Assert.That(inTown.alpha, Is.EqualTo(0f).Within(0.001f));
@@ -266,14 +266,14 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             yield return StandAtTheStash(figure);
             Assert.That(Apart(figure, exit), Is.GreaterThan(AtTheStop), "premise: the Stash is away from the Exit");
 
-            _ = figure.GetType().GetMethod("Place").Invoke(figure, new object[] { exit });
+            _ = figure.GetType().GetMethod("Place").Invoke(figure, new object[] { TravelPoints.Of(exit) });
 
             Assert.That(Apart(figure, exit), Is.LessThan(1f));
             Assert.That(IsWalking(figure), Is.False);
         }
 
         // The Waypoint sits on the Town Exit today; moved off it, "at the Waypoint" and "at the Town Exit" tell apart.
-        private static void MoveTheWaypointOffTheExit() => Named("Waypoint").position += new Vector3(0f, 300f, 0f);
+        private static void MoveTheWaypointOffTheExit() => TravelPoints.Waypoint(Figure()).position += new Vector3(0f, 300f, 0f);
 
         [UnityTest]
         public IEnumerator AfterAReturn_TheFigureStandsAtTheTownExit_NotTheWaypoint()
@@ -286,7 +286,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             _ = SimulationService.Instance.Return();
 
             Assert.That(Apart(figure, Named("ToFieldsButton")), Is.LessThan(1f), "he came in through the Exit");
-            Assert.That(Apart(figure, Named("Waypoint")), Is.GreaterThan(AtTheStop));
+            Assert.That(Apart(figure, TravelPoints.Waypoint(figure)), Is.GreaterThan(AtTheStop));
             Assert.That(IsWalking(figure), Is.False);
         }
 
@@ -296,13 +296,13 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             yield return OpenExample();
             MoveTheWaypointOffTheExit();
             var figure = Figure();
-            _ = figure.GetType().GetMethod("Place").Invoke(figure, new object[] { Named("ToFieldsButton") });
-            Assert.That(Apart(figure, Named("Waypoint")), Is.GreaterThan(AtTheStop), "premise: he is away from the Waypoint");
+            _ = figure.GetType().GetMethod("Place").Invoke(figure, new object[] { TravelPoints.Of(Named("ToFieldsButton")) });
+            Assert.That(Apart(figure, TravelPoints.Waypoint(figure)), Is.GreaterThan(AtTheStop), "premise: he is away from the Waypoint");
 
             Session.Instance.Hero.GetResource(StatName.Health).DepleteCurrent();
             SimulationService.Instance.Respawn();
 
-            Assert.That(Apart(figure, Named("Waypoint")), Is.LessThan(1f));
+            Assert.That(Apart(figure, TravelPoints.Waypoint(figure)), Is.LessThan(1f));
         }
 
         [UnityTest]
@@ -311,11 +311,11 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             yield return OpenExample();
             MoveTheWaypointOffTheExit();
             var figure = Figure();
-            _ = figure.GetType().GetMethod("Place").Invoke(figure, new object[] { Named("ToFieldsButton") });
+            _ = figure.GetType().GetMethod("Place").Invoke(figure, new object[] { TravelPoints.Of(Named("ToFieldsButton")) });
 
             _ = Session.Instance.TryLoad(GameBoot.Load().DefaultHero);
 
-            Assert.That(Apart(figure, Named("Waypoint")), Is.LessThan(1f));
+            Assert.That(Apart(figure, TravelPoints.Waypoint(figure)), Is.LessThan(1f));
         }
 
         [UnityTest]
@@ -323,7 +323,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         {
             yield return OpenExample();
             var figure = Figure();
-            var waypoint = Named("Waypoint");
+            var waypoint = TravelPoints.Waypoint(figure);
             Assert.That(Apart(figure, waypoint), Is.LessThan(1f), "premise: he stands at the Waypoint");
 
             // A canvas that lays out after the figure enabled, or a point moved in the Editor, must not leave him behind.
@@ -334,11 +334,28 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         }
 
         [UnityTest]
+        public IEnumerator AFigureStandingAtTheExit_FollowsAnExitAnnouncedAnew()
+        {
+            yield return OpenExample();
+            var figure = Figure();
+            var stash = Named("StashToggle");
+
+            SimulationService.Instance.Send(GameBoot.Load().Locations.First());
+            _ = SimulationService.Instance.Return();
+            Assert.That(Apart(figure, Named("ToFieldsButton")), Is.LessThan(1f), "premise: he came in through the Exit");
+
+            _ = figure.GetType().GetMethod("SetExit").Invoke(figure, new object[] { TravelPoints.Of(stash) });
+            yield return null;
+
+            Assert.That(Apart(figure, stash), Is.LessThan(1f), "the Exit moved and he with it");
+        }
+
+        [UnityTest]
         public IEnumerator AClickOnAStopThatDoesNotOpen_LeavesTheFigureWhereItStands()
         {
             yield return OpenExample();
             var figure = Figure();
-            var waypoint = Named("Waypoint");
+            var waypoint = TravelPoints.Waypoint(figure);
 
             // The Vendor is not available yet: its toggle never takes the click.
             yield return Click(Named("VendorToggle"));

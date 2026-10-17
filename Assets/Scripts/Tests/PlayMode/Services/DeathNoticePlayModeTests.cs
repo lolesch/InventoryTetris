@@ -77,7 +77,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         {
             var figure = Figure();
             var stash = (RectTransform)GameObject.Find("StashToggle").transform;
-            var waypoint = (RectTransform)GameObject.Find("Waypoint").transform;
+            var waypoint = TravelPoints.Waypoint(figure);
 
             Hero.GetStat(StatName.MovementSpeed).AddModifier(new StatModifier(new Vector2Int(0, 100000), 325f));
             _ = figure.GetType().GetMethod("TravelTo").Invoke(figure, new object[] { stash });
@@ -94,7 +94,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             Assert.That(Hero.IsDead, Is.False);
 
             var figure = Figure();
-            var waypoint = (RectTransform)GameObject.Find("Waypoint").transform;
+            var waypoint = TravelPoints.Waypoint(figure);
             Assert.That(Vector3.Distance(figure.transform.position, waypoint.TransformPoint(waypoint.rect.center)), Is.LessThan(1f),
                 "at the Waypoint");
             Assert.That((bool)figure.GetType().GetProperty("IsWalking").GetValue(figure), Is.False, "and standing");

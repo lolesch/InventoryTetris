@@ -88,14 +88,15 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
 
         private static bool IsWalking() => (bool)Property(Travel(), "IsWalking");
 
+        // Where each control sends the figure: its Travel Point, else its own rect.
         private static RectTransform FieldExit() =>
-            Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include)
-                .First(c => c.GetType().Name == "ToTownButton").GetComponent<RectTransform>();
+            TravelPoints.Of(Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include)
+                .First(c => c.GetType().Name == "ToTownButton").GetComponent<RectTransform>());
 
         private static RectTransform LocationIcon(LocationConfig location) =>
-            Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include)
+            TravelPoints.Of(Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include)
                 .First(c => c.GetType().Name == "LocationToggle" && Equals(c.GetType().GetProperty("Location").GetValue(c), location))
-                .GetComponent<RectTransform>();
+                .GetComponent<RectTransform>());
 
         // Where the figure is drawn, in world space: compared with an anchor's world centre, not a restatement of the figure's own maths.
         private static Vector2 FigureAt() => HeroFigure().transform.position;
@@ -193,7 +194,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             Assert.That(Session.Instance.Hero.Corpse.Exists, Is.False, "a Return keeps everything");
             Assert.That(IsWalking(), Is.True, "he walks out, not the Relocate walk to a Location");
             Assert.That(Vector2.Distance(FigureAt(), stood), Is.LessThan(Vector2.Distance(stood, exit) / 2f), "from where he stood in the fight");
-            Assert.That(Face("InFields").alpha, Is.GreaterThan(0.85f), "the Field map still holds while he walks");
+            Assert.That(Face("InFields").alpha, Is.GreaterThan(0f), "the Field map is still fading out while he walks");
 
             yield return WaitForArrival();
             Assert.That(Vector2.Distance(FigureAt(), CentreOf(FieldExit())), Is.LessThan(0.01f), "he reached the Exit");

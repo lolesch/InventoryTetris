@@ -197,7 +197,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             yield return null;
 
             Assert.That(IsLyingDown(), Is.False, "the figure stands again");
-            var exit = (RectTransform)Named("ToTownButton").First().transform;
+            var exit = TravelPoints.Of((RectTransform)Named("ToTownButton").First().transform);
             Assert.That(Vector2.Distance(HeroFigure().transform.position, exit.TransformPoint(exit.rect.center)), Is.LessThan(1f),
                 "at the Field Exit, as for any Run");
         }
