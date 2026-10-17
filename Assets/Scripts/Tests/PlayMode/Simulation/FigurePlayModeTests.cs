@@ -206,6 +206,84 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             Assert.That(Vector2.Distance(FigureAt(), before), Is.LessThan(5f), "the figure stays in the fight");
         }
 
+        // The pooled figures that are up now: the live enemies' and the fading ones, not the hero's.
+        private static Component[] EnemyFigures() =>
+            Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Exclude)
+                .Where(c => c.GetType().Name == "Figure" && c != HeroFigure()).ToArray();
+
+        private IEnumerator FightAtTheFirstLocation(LocationConfig location)
+        {
+            yield return ShowTheFieldMap();
+            Select(location);
+            yield return WaitForArrival();
+
+            var encounter = SimulationService.Instance.Run.Encounter;
+            for (var tick = 0; encounter.Enemies.Count == 0 && tick < 100; tick++)
+                SimulationService.Instance.Tick(0.5f);
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator ARelocate_WalksTheFigureFromWhereItStoodInTheFight_ToTheNewLocation_ThenItFollowsTheNewFight()
+        {
+            yield return FightAtTheFirstLocation(_locations[0]);
+            var stood = FigureAt();
+            var oldEncounter = SimulationService.Instance.Run.Encounter;
+
+            Select(_locations[1]);
+            yield return null;
+
+            Assert.That(SimulationService.Instance.Run.Encounter, Is.Not.SameAs(oldEncounter), "the Relocate takes effect at the click");
+            Assert.That(IsWalking(), Is.True, "the Relocate starts a walk");
+            var distance = Vector2.Distance(stood, CentreOf(LocationIcon(_locations[1])));
+            Assert.That(Vector2.Distance(FigureAt(), stood), Is.LessThan(distance / 2f), "it leaves from where it stood, not at the new Location");
+
+            yield return WaitForArrival();
+            Assert.That(Vector2.Distance(FigureAt(), CentreOf(LocationIcon(_locations[1]))), Is.LessThan(0.01f), "arrived at the new Location");
+
+            var encounter = SimulationService.Instance.Run.Encounter;
+            yield return null;
+            var arguments = new object[] { encounter.HeroPosition, null };
+            _ = (bool)Arena().GetType().GetMethod("TryGetNumberOrigin").Invoke(Arena(), arguments);
+            Assert.That(Vector2.Distance(((RectTransform)HeroFigure().transform).anchoredPosition, (Vector2)arguments[1]), Is.LessThan(0.01f),
+                "then it draws the new fight");
+        }
+
+        [UnityTest]
+        public IEnumerator ARelocate_FadesTheLeftEncountersEnemiesOut_InsteadOfRemovingThemAtOnce()
+        {
+            yield return FightAtTheFirstLocation(_locations[0]);
+            var left = EnemyFigures();
+            Assert.That(left, Is.Not.Empty, "enemies were up");
+
+            Select(_locations[1]);
+            yield return null;
+
+            Assert.That(left.All(figure => figure != null && figure.gameObject.activeInHierarchy), Is.True, "they do not vanish");
+            Assert.That(left.Any(figure => figure.GetComponent<CanvasGroup>().alpha < 1f), Is.True, "they fade");
+            Assert.That(left.All(figure => !(bool)Property(figure, "IsBound")), Is.True, "and no longer follow the fight left behind");
+
+            Time.timeScale = 20f;
+            for (var frame = 0; left.Any(figure => figure.gameObject.activeInHierarchy && !(bool)Property(figure, "IsBound")) && frame < 600; frame++)
+                yield return null;
+            Time.timeScale = 1f;
+
+            Assert.That(left.Any(figure => figure.gameObject.activeInHierarchy && !(bool)Property(figure, "IsBound")), Is.False, "then they are gone");
+        }
+
+        [UnityTest]
+        public IEnumerator ARefusedRelocate_LeavesTheFigureInTheFight()
+        {
+            yield return FightAtTheFirstLocation(_locations[0]);
+            var before = FigureAt();
+
+            Assert.Throws<System.ArgumentNullException>(() => SimulationService.Instance.Relocate(null), "no Location to go to");
+            yield return null;
+
+            Assert.That(IsWalking(), Is.False, "a refused Relocate starts no walk");
+            Assert.That(Vector2.Distance(FigureAt(), before), Is.LessThan(5f), "the figure stays in the fight");
+        }
+
         [Test]
         public void TheArenaView_BindsNoHeroFigure()
         {

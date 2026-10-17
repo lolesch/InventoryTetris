@@ -35,6 +35,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     ///
     /// A hero death leaves live enemies with nothing firing for them - the Run ending
     /// nulls the Encounter, and that release-all is what empties the arena, dying figures included.
+    /// A Relocate leaves the Run alive, so the enemies of the Encounter it left fade out as defeated ones do.
     ///
     /// The anchor is the active Location's Hero icon (its <see cref="ToggleCheckmark"/> image), resolved
     /// every frame from the Locations' <see cref="ToggleGroup"/>: it moves on a Relocate and goes null once
@@ -81,6 +82,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private Figure _marked;
         private PrefabPool<Figure> _pool;
         private EncounterSimulation _bound;
+        private RunState _run;
         private AbstractToggle _anchorOwner;
         private RectTransform _anchor;
         // Where the arena was last drawn (set by Place), so a number can be projected without a figure to read.
@@ -121,13 +123,17 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         private void Update()
         {
-            var encounter = SimulationService.Instance.Run.Encounter;
+            var run = SimulationService.Instance.Run;
+            var encounter = run.Encounter;
             if (encounter != _bound)
             {
-                Unbind();
+                // A Relocate swaps the Encounter inside one Run: its enemies fade out. Anything else ended the Run.
+                Unbind(fadeOut: encounter != null && _bound != null && run == _run);
                 if (encounter != null)
                     Bind(encounter);
             }
+
+            _run = run;
 
             SyncDamageNumbers();
 
@@ -153,7 +159,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 SpawnFigure(encounter.Enemies[i]);
         }
 
-        private void Unbind()
+        // fadeOut: the live enemies fade as defeated ones do; else the Run ended and nothing lingers.
+        private void Unbind(bool fadeOut = false)
         {
             if (_bound != null)
             {
@@ -162,9 +169,23 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 _bound = null;
             }
 
-            // A sim that ended with enemies alive (hero death) raised nothing for them.
+            // Fades already under way go back at once, so the ones started below are the only ones left.
+            foreach (var dying in _dying)
+                Release(dying.Figure);
+            _dying.Clear();
+
+            if (fadeOut && _marked != null)
+                _marked.SetHighlighted(false);
+
+            // A sim that ended with enemies alive (hero death, Relocate) raised nothing for them.
             foreach (var figure in _figures.Values)
-                Release(figure);
+            {
+                if (fadeOut)
+                    Retire(figure);
+                else
+                    Release(figure);
+            }
+
             _figures.Clear();
             _marked = null;
 
@@ -172,11 +193,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (numbers != null)
                 numbers.Unbind();
             _hasCenter = false;
-
-            // The Run ended, so no fade lingers: dying figures go back at once too.
-            foreach (var dying in _dying)
-                Release(dying.Figure);
-            _dying.Clear();
         }
 
         private void OnEnemySpawned(Enemy enemy) => SpawnFigure(enemy);
@@ -269,6 +285,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (figure == _marked)
                 _marked = null;
 
+            Retire(figure);
+        }
+
+        // Fades the figure out where it stands, then pools it (at once when the fade is off).
+        private void Retire(Figure figure)
+        {
             if (figure != null && deathFade && deathFadeSeconds > 0f)
             {
                 figure.Detach();
