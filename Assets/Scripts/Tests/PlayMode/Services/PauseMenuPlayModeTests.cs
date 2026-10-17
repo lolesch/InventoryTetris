@@ -79,6 +79,8 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 
             Assert.That(Menu.IsOpen, Is.True);
             Assert.That(ScreenObject().activeSelf, Is.True);
+            Assert.That(EventSystem.current.currentSelectedGameObject, Is.SameAs(Member<Component>(Popup(), "resume").gameObject),
+                "Resume is selected, so Enter closes the menu");
 
             yield return Tap(keyboard.escapeKey);
 
