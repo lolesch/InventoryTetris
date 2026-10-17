@@ -321,6 +321,8 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             Assert.That(popup.gameObject.activeSelf, Is.True);
             Assert.That(question.text, Does.Contain("Aria"), "it names the hero");
             Assert.That(Saves.List().Count, Is.EqualTo(1), "asking deletes nothing");
+            Assert.That(EventSystem.current.currentSelectedGameObject, Is.SameAs(Member<Component>(popup, "cancel").gameObject),
+                "Cancel is selected, so Enter deletes nothing");
 
             Assert.That(ServiceLocator.Get<ICancelChain>().Cancel(), Is.True, "the Cancel key dismisses it");
             Assert.That(popup.gameObject.activeSelf, Is.False);

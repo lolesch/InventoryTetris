@@ -199,6 +199,8 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             Assert.That(Popup().gameObject.activeSelf, Is.True);
             Assert.That(PopupText(), Is.EqualTo(SaveAndExit.FieldQuestion));
             Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.InField), "asking ends nothing");
+            Assert.That(EventSystem.current.currentSelectedGameObject, Is.SameAs(Member<Component>(Popup(), "back").gameObject),
+                "Back is selected, so Enter leaves nothing");
 
             ClickPopup("back");
             yield return null;
