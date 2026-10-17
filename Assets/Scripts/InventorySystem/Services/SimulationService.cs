@@ -179,6 +179,9 @@ namespace ToolSmiths.InventorySystem.Services
         public float SimDelta(float deltaSeconds) =>
             IsPaused || IsHeld ? 0f : deltaSeconds * Mathf.Max(0f, session.Hero.Behaviour.SimSpeed);
 
+        public float HeroWalkingSpeed =>
+            Mathf.Max(0f, session.Hero.GetStatValue(StatName.MovementSpeed)) * Mathf.Max(0f, config.Tuning.Arena.MovementSpeedScale);
+
         public void Tick(float deltaSeconds)
         {
             // A frozen Run stands still whole: no regeneration, no Encounter, no auto-Recall.
