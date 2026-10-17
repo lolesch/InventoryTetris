@@ -201,12 +201,13 @@ are two views of it. What lands and what is evicted is the **Drop**'s rule.
 _Avoid_: floor, loot area, arena (that is where the fight takes place)
 
 **Corpse**:
-The hero's bag, set aside at the Location where they were downed. Death empties the bag
-into the Corpse; recovering it means re-entering that Location and picking the items
-back up — through the same acquisition entry point as a **Drop**, so gear auto-equips into
-an empty slot. What does not fit stays on the Corpse, re-buried at the same Location to come
-back for; a recovery never lays anything on the ground. The Corpse is bag-only: equipped gear
-is untouched. There is only ever one — a second Death destroys any Corpse still unclaimed —
+Everything the hero wore and carried — worn gear, bag and coins — set aside at the Location
+where they were downed, each package with the cell it lay in. Death leaves the hero bare;
+recovering the Corpse means re-entering that Location, and each package goes back where it
+lay: worn gear to its slot, a bag item to its bag cell (it never equips itself), coins to
+their cells. A package whose place is taken goes wherever it still fits, worn gear to an
+empty slot first. What does not fit stays on the Corpse, re-buried at the same Location to come
+back for; a recovery never lays anything on the ground. There is only ever one — a second Death destroys any Corpse still unclaimed —
 and it belongs to the **Hero**: it saves with it and persists between Sessions until
 recovered.
 _Avoid_: grave, body, loot bag; remains (reserved for a possible future enemy corpse)
@@ -428,8 +429,8 @@ _Avoid_: switch, travel, hop; "Return and re-Send" (that is what Relocate replac
 
 **Death**:
 The other way a Run ends — the hero is downed in the Field and returns to Town under a
-penalty: lost XP, a fee off banked currency, and the bag set aside as a Corpse.
-Equipped gear is never touched; not a game-over. The penalty is settled the moment the hero
+penalty: lost XP, a fee off banked currency, and everything the hero wore and carried
+(coins included) set aside as a Corpse, leaving him bare; not a game-over. The penalty is settled the moment the hero
 goes down; the player sees him fall, then is told what was lost and where the Corpse lies, and
 stays in the Field until they **Respawn**.
 _Avoid_: defeat, loss, game over, fail, wipe

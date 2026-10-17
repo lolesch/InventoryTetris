@@ -10,10 +10,11 @@ the haul, Death loses most of it" (immediate forfeit). A domain pass had also se
 that loot lifecycle is per-Run: nothing on the ground survives a Run ending, on Recall
 or Death alike.
 
-Death does **not** forfeit the Run's loot outright. Equipped gear is never touched. The
-penalty is lost XP, a fee off banked currency, and the bag's contents set aside as a
-**Corpse** at the Location where the hero was downed. The Corpse is recovered by
-re-entering that Location and picking the items back up. There is only one Corpse; a
+Death does **not** forfeit the Run's loot outright. The penalty is lost XP, a fee off banked
+currency, and everything the hero wore and carried (worn gear, bag and the remaining coins)
+set aside as a **Corpse** at the Location where the hero was downed, leaving him bare. The
+Corpse is recovered by re-entering that Location, where each package returns to the cell it
+lay in. There is only one Corpse; a
 second Death before recovery destroys the unclaimed one; it persists between Sessions.
 
 A flat forfeit is clean but punishing enough to discourage pushing at all; no material
@@ -35,5 +36,9 @@ at the harder Location is only recoverable by surviving there again.
   simple.
 - Recovery leftovers stay on the Corpse: what the bag cannot take is re-buried at the same
   Location, never laid on the ground (floor-loot spec, 2026-10-08).
+- Amended 2026-10-17: the Corpse first held the bag only and left equipped gear and the wallet
+  with the hero, and a recovery put items through the pick-up path, so bag items auto-equipped.
+  It now carries gear and coins too, each with its cell, and restores the layout; a bag item
+  never equips itself.
 - Harsh for an MVP by the owner's own assessment; accepted now, revisitable once the
   loop is played.
