@@ -110,6 +110,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             }
         }
 
+        /// <summary>How this arena draws an arena position, so a mark outside it (the Corpse's) shares its scale and tilt.</summary>
+        public ArenaProjection Projection => new(arenaScale, tilt);
+
         private RectTransform Root => container != null ? container : (RectTransform)transform;
 
         // Lazily built rather than in Awake, which does not run again on the second Play entry
