@@ -15,6 +15,7 @@
 - Hold Tab over an open Vendor or Healer to peek at its other tab; Alt still shows more detail on an item.
 - The hero in the field now has a health bar that shows its shield, and flashes and shakes when hit, like the enemies do.
 - Your hero now stands on the Town map and walks to whichever Town Stop you open, by click or hotkey; faster boots make him walk faster.
+- Leaving Town through the Town Exit now shows your hero walking towards it while the Town map fades slowly into the Field map.
 
 ## 0.0.5_Alpha - 2026-09-25
 

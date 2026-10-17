@@ -3058,6 +3058,7 @@ MonoBehaviour:
   tooltip: 
   tooltipLabel: {fileID: 0}
   panel: {fileID: 1426694742}
+  heroFigure: {fileID: 296961779}
 --- !u!114 &219529309
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -20748,7 +20749,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.Runtime.Simulation.FieldFacePanel
   <RadioGroup>k__BackingField: {fileID: 2144819085}
-  <FadeDuration>k__BackingField: 0.25
+  <FadeDuration>k__BackingField: 1.5
+  expandEase: 10
+  collapseEase: 10
   scaleFrom: 2
   moveFrom: {x: 0, y: -100}
   combatPanel: {fileID: 235697930}
@@ -25070,7 +25073,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.Runtime.Simulation.RunPhasePanel
   <RadioGroup>k__BackingField: {fileID: 2144819085}
-  <FadeDuration>k__BackingField: 0.25
+  <FadeDuration>k__BackingField: 1.5
+  expandEase: 10
+  collapseEase: 10
   scaleFrom: 0
   moveFrom: {x: 0, y: 100}
   activeDuring: 0
