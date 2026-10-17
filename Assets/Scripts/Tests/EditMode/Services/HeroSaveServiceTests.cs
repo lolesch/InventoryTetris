@@ -570,6 +570,32 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
+        public void AHeroSavedWhileDown_LoadsRevived_WithTheDeathsCostPaidOnce()
+        {
+            var setup = LoadedHero(out var id);
+            PutPotionsInBag(setup, 3u);
+            setup.Game.Simulation.Send(thornwood);
+            setup.Game.Hero.GetResource(StatName.Health).DepleteCurrent();
+            TickUntilHome(setup);
+            var down = setup.Game.Hero;
+            Assume.That(down.IsDead, Is.True, "the Death leaves him down until Respawn, and the save was written then");
+            var experience = down.GetResource(StatName.Experience).CurrentValue;
+            var balance = down.Wallet.Balance.Total;
+
+            var next = NewSetup();
+            _ = next.Saves.Load(id);
+
+            var loaded = next.Game.Hero;
+            Assert.That(loaded.IsDead, Is.False);
+            Assert.That(loaded.GetResource(StatName.Health).CurrentValue, Is.EqualTo(loaded.GetResource(StatName.Health).TotalValue));
+            Assert.That(loaded.GetResource(StatName.Resource).CurrentValue, Is.EqualTo(loaded.GetResource(StatName.Resource).TotalValue));
+            Assert.That(loaded.Corpse.Exists, Is.True, "the penalty stands");
+            Assert.That(loaded.GetResource(StatName.Experience).CurrentValue, Is.EqualTo(experience));
+            Assert.That(loaded.Wallet.Balance.Total, Is.EqualTo(balance));
+            Assert.That(BagHoldsPotions(loaded), Is.False, "the bag stays on the Corpse");
+        }
+
+        [Test]
         public void AReturn_DrivesASave_WithTheBankedLootInTheBag()
         {
             var setup = LoadedHero(out var id);
