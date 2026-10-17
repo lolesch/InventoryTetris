@@ -51,6 +51,8 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             for (var tick = 0; Simulation.Run.Phase == RunPhase.InField && tick < DeathTimeoutTicks; tick++)
                 Simulation.Tick(0.5f);
 
+            // The notice waits for the Death beat; its own timing is DeathBeatPlayModeTests'.
+            Simulation.Tick(2f);
             yield return null;
             Assert.That(result.Outcome, Is.EqualTo(RunOutcome.Died), "premise: the hero died");
         }

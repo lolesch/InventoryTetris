@@ -12,7 +12,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// projected by the <see cref="EnemyArena"/>'s scale and tilt around the toggle's centre, which is the
     /// arena's anchor, so it sits where the hero's figure stands on that Location. It is a sibling of the Hero icon's <c>ToggleCheckmark</c>, never that image, so the
     /// arena's anchor and the normal Hero icon are untouched. It repaints on
-    /// <see cref="ISimulationService.CorpseChanged"/>.
+    /// <see cref="ISimulationService.CorpseChanged"/>, and after a Death it waits for the Death beat to end
+    /// (<see cref="ISimulationService.DeathBeatEnded"/>), since the hero's figure is lying where it will appear.
     /// </summary>
     [RequireComponent(typeof(Image))]
     public sealed class CorpseMarker : MonoBehaviour
@@ -41,6 +42,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 return;
 
             SimulationService.Instance.CorpseChanged += Refresh;
+            SimulationService.Instance.DeathBeatEnded += Refresh;
             Refresh();
         }
 
@@ -48,13 +50,17 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         {
             // The service is gone while Play Mode tears the scene down.
             if (toggle != null && arena != null && ServiceLocator.IsArmed)
+            {
                 SimulationService.Instance.CorpseChanged -= Refresh;
+                SimulationService.Instance.DeathBeatEnded -= Refresh;
+            }
         }
 
         private void Refresh()
         {
+            // The Corpse is laid the moment the hero goes down, but the figure lying there is what shows until the Death beat ends.
             var simulation = SimulationService.Instance;
-            image.enabled = simulation.CorpseLiesAt(toggle.Location);
+            image.enabled = !simulation.DeathBeatPlaying && simulation.CorpseLiesAt(toggle.Location);
             if (!image.enabled)
                 return;
 

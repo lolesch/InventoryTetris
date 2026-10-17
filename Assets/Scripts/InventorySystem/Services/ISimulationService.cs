@@ -147,6 +147,19 @@ namespace ToolSmiths.InventorySystem.Services
         float ViewTimeFactor { get; }
 
         /// <summary>
+        /// Whether the Death beat is under way: from the moment a Death settles until its slow-down runs out or is
+        /// cleared. The views hold what the Death shows back until it ends: the arena keeps its figures, the hero's
+        /// figure lies where it fell, and the Corpse marker and the Death notice wait.
+        /// </summary>
+        bool DeathBeatPlaying { get; }
+
+        /// <summary>
+        /// Raised once when <see cref="DeathBeatPlaying"/> goes from true to false, however it ended: the slow-down ran
+        /// out, <see cref="Respawn"/> or a hero load cleared it. A subscriber that needs the hero still down asks him.
+        /// </summary>
+        event Action DeathBeatEnded;
+
+        /// <summary>
         /// One frame of the simulation, <paramref name="deltaSeconds"/> of real time: the Hero's
         /// regeneration (Town and Field alike), the Encounter while a Run is in the Field, and the
         /// Run's way home on a Death. Scaled by the

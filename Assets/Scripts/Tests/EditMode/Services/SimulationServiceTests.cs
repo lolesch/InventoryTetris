@@ -878,6 +878,54 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(service.ViewTimeFactor, Is.EqualTo(1f));
         }
 
+        // ── the Death beat ───────────────────────────────────────────────────
+
+        [Test]
+        public void TheDeathBeat_PlaysFromTheDeath_UntilTheSlowDownRunsOut_ThenSaysSoOnce()
+        {
+            var ended = 0;
+            service.DeathBeatEnded += () => ended++;
+            Assert.That(service.DeathBeatPlaying, Is.False, "no Death yet");
+
+            DieAndSettle();
+
+            Assert.That(service.DeathBeatPlaying, Is.True);
+            service.Tick(1f);
+            Assert.That(ended, Is.Zero, "1 s of the 1.5 s has passed");
+
+            service.Tick(0.6f);
+            service.Tick(1f);
+
+            Assert.That(service.DeathBeatPlaying, Is.False);
+            Assert.That(ended, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void TheDeathBeat_AlreadyPlays_WhenTheCorpseIsLaid_SoItsMarkerCanWait()
+        {
+            var playingWhenLaid = false;
+            _ = PutInBag();
+            service.CorpseChanged += () => playingWhenLaid = service.DeathBeatPlaying;
+
+            DieAndSettle();
+
+            Assert.That(playingWhenLaid, Is.True);
+        }
+
+        [Test]
+        public void Respawn_EndsTheDeathBeat_Early_AndSaysSo()
+        {
+            var ended = 0;
+            DieAndSettle();
+            service.DeathBeatEnded += () => ended++;
+
+            service.Respawn();
+            service.Respawn();
+
+            Assert.That(service.DeathBeatPlaying, Is.False);
+            Assert.That(ended, Is.EqualTo(1), "once, for the beat that was playing");
+        }
+
         [Test]
         public void ADeath_DoesNotRestockTheShops()
         {

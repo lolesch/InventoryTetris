@@ -70,6 +70,26 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// <summary>The hit shake feedback, or null when the prefab has none.</summary>
         public HitShake HitShake => _hitShake;
 
+        /// <summary>Whether the figure lies down (<see cref="LieDown"/>): the Death beat's pose.</summary>
+        public bool IsLyingDown { get; private set; }
+
+        /// <summary>
+        /// Turns the sprite onto its back, head toward the way it faces: the hero's pose when he falls. Placing the figure
+        /// keeps it, so it lies where it is put until <see cref="GetUp"/> or <see cref="Unbind"/>.
+        /// </summary>
+        public void LieDown()
+        {
+            IsLyingDown = true;
+            _sprite.localRotation = Quaternion.Euler(0f, 0f, -90f * _sign);
+        }
+
+        /// <summary>Stands the sprite upright again.</summary>
+        public void GetUp()
+        {
+            IsLyingDown = false;
+            _sprite.localRotation = Quaternion.identity;
+        }
+
         /// <summary>Whether the target ring is showing on this figure.</summary>
         public bool IsHighlighted => highlight != null && highlight.enabled;
 
@@ -138,8 +158,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _sign = 1;
 
             // OnDisable also runs as Play mode tears the scene down, when the children may already be gone.
+            IsLyingDown = false;
             if (_sprite != null)
+            {
                 _sprite.localScale = Vector3.one;
+                _sprite.localRotation = Quaternion.identity;
+            }
 
             Rect.anchoredPosition = Vector2.zero;
             _visibility.alpha = 0f;
