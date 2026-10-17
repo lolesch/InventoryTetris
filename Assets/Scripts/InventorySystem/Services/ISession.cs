@@ -28,7 +28,7 @@ namespace ToolSmiths.InventorySystem.Services
         /// Builds a Hero from <paramref name="data"/> and a World around it, and swaps both in. The
         /// rule for a live Run is to <b>refuse</b>: while the Run is <c>InField</c> this returns
         /// <c>false</c> and changes nothing, because ending it here would settle a Run (a Death's
-        /// penalty, a Recall's Restock) nobody asked for. Recall first, then load. In Town, with or
+        /// penalty, a Return's Restock) nobody asked for. Return first, then load. In Town, with or
         /// without a Run built yet, it succeeds. A build that throws leaves the current pair in place.
         /// </summary>
         bool TryLoad(HeroData data);

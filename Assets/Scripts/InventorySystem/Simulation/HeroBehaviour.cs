@@ -12,7 +12,7 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// <see cref="ShouldRecallForHealth"/> and <see cref="ShouldRecallForBagFull"/> are the pure
     /// predicates the hero's Brain asks every tick; its Recall Intent makes <see cref="EncounterSimulation"/>
     /// raise the <see cref="EncounterSimulation.RecallRequested"/> signal the engine-side driver turns
-    /// into a <see cref="RunState.Recall"/>.
+    /// into a <see cref="RunState.Return"/>.
     /// <see cref="ShouldCast"/> is the <see cref="CastThreshold"/> hysteresis latch (ADR-0010):
     /// hold below the fraction, then Cast every opportunity until the pool is drained to 0, then
     /// wait back up to the fraction — it never gates the Strike, because the

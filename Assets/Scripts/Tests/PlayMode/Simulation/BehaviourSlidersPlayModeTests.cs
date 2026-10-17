@@ -32,7 +32,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
         public void TearDown()
         {
             if (SimulationService.Instance.Run.Phase == RunPhase.InField)
-                _ = SimulationService.Instance.Recall();
+                _ = SimulationService.Instance.Return();
 
             _ = Session.Instance.TryLoad(GameBoot.Load().DefaultHero);
         }
@@ -114,7 +114,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
         {
             SimulationService.Instance.Send(_locations[0]);
             yield return null;
-            _ = SimulationService.Instance.Recall();
+            _ = SimulationService.Instance.Return();
             yield return null;
 
             SimulationService.Instance.Send(_locations[0]);

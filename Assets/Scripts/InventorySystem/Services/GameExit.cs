@@ -8,7 +8,7 @@ namespace ToolSmiths.InventorySystem.Services
 {
     /// <summary>
     /// Saves the hero when the game closes. A quit raises <see cref="Application.quitting"/>, and so does
-    /// an Editor Stop; the handler ends a live Run first (a Recall banks what the hero holds, a hero
+    /// an Editor Stop; the handler ends a live Run first (a Return banks what the hero holds, a hero
     /// already down takes its Death) and then writes, so closing the game mid-Run never throws the
     /// run away and never leaves a hero in the Field.
     ///
