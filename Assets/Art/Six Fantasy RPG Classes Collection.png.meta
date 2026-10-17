@@ -1,0 +1,418 @@
+fileFormatVersion: 2
+guid: c8d49961e3328b14ba65adb4c6de94f7
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 7759782383866569923
+    second: Six Fantasy RPG Classes Collection_0
+  - first:
+      213: 6050844458327348251
+    second: Six Fantasy RPG Classes Collection_1
+  - first:
+      213: -7999271573710462582
+    second: Six Fantasy RPG Classes Collection_2
+  - first:
+      213: 7105085567547366905
+    second: Six Fantasy RPG Classes Collection_3
+  - first:
+      213: -5939207279709814258
+    second: Six Fantasy RPG Classes Collection_4
+  - first:
+      213: -2366972670018835673
+    second: Six Fantasy RPG Classes Collection_5
+  - first:
+      213: -3791201998229676157
+    second: Six Fantasy RPG Classes Collection_6
+  - first:
+      213: 2455240492057361962
+    second: Six Fantasy RPG Classes Collection_7
+  - first:
+      213: -2492923324319769548
+    second: Six Fantasy RPG Classes Collection_8
+  - first:
+      213: 6334345385383703993
+    second: Six Fantasy RPG Classes Collection_9
+  - first:
+      213: 8931442896420305043
+    second: Six Fantasy RPG Classes Collection_10
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Six Fantasy RPG Classes Collection_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 327
+        width: 557
+        height: 697
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3c463bc07f840bb60800000000000000
+      internalID: 7759782383866569923
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Six Fantasy RPG Classes Collection_1
+      rect:
+        serializedVersion: 2
+        x: 482
+        y: 925
+        width: 9
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b141eb1e9fae8f350800000000000000
+      internalID: 6050844458327348251
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Six Fantasy RPG Classes Collection_2
+      rect:
+        serializedVersion: 2
+        x: 564
+        y: 501
+        width: 439
+        height: 514
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a81ab1bb2e0ecf090800000000000000
+      internalID: -7999271573710462582
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Six Fantasy RPG Classes Collection_3
+      rect:
+        serializedVersion: 2
+        x: 1000
+        y: 455
+        width: 521
+        height: 555
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9fd5a68eda55a9260800000000000000
+      internalID: 7105085567547366905
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Six Fantasy RPG Classes Collection_4
+      rect:
+        serializedVersion: 2
+        x: 1492
+        y: 665
+        width: 42
+        height: 57
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e028b754272b39da0800000000000000
+      internalID: -5939207279709814258
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Six Fantasy RPG Classes Collection_5
+      rect:
+        serializedVersion: 2
+        x: 1422
+        y: 519
+        width: 15
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 72b287ab5e2d62fd0800000000000000
+      internalID: -2366972670018835673
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Six Fantasy RPG Classes Collection_6
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 371
+        width: 23
+        height: 31
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 38fd4c78ed1f26bc0800000000000000
+      internalID: -3791201998229676157
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Six Fantasy RPG Classes Collection_7
+      rect:
+        serializedVersion: 2
+        x: 62
+        y: 15
+        width: 431
+        height: 469
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a2efb371834c21220800000000000000
+      internalID: 2455240492057361962
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Six Fantasy RPG Classes Collection_8
+      rect:
+        serializedVersion: 2
+        x: 542
+        y: 9
+        width: 451
+        height: 507
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 43c52a1d17b576dd0800000000000000
+      internalID: -2492923324319769548
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Six Fantasy RPG Classes Collection_9
+      rect:
+        serializedVersion: 2
+        x: 998
+        y: 0
+        width: 529
+        height: 511
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9b53e64319d18e750800000000000000
+      internalID: 6334345385383703993
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Six Fantasy RPG Classes Collection_10
+      rect:
+        serializedVersion: 2
+        x: 1480
+        y: 36
+        width: 7
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 39871d45efbd2fb70800000000000000
+      internalID: 8931442896420305043
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      Six Fantasy RPG Classes Collection_0: 7759782383866569923
+      Six Fantasy RPG Classes Collection_1: 6050844458327348251
+      Six Fantasy RPG Classes Collection_10: 8931442896420305043
+      Six Fantasy RPG Classes Collection_2: -7999271573710462582
+      Six Fantasy RPG Classes Collection_3: 7105085567547366905
+      Six Fantasy RPG Classes Collection_4: -5939207279709814258
+      Six Fantasy RPG Classes Collection_5: -2366972670018835673
+      Six Fantasy RPG Classes Collection_6: -3791201998229676157
+      Six Fantasy RPG Classes Collection_7: 2455240492057361962
+      Six Fantasy RPG Classes Collection_8: -2492923324319769548
+      Six Fantasy RPG Classes Collection_9: 6334345385383703993
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
