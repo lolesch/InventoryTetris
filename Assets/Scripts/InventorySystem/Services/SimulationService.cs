@@ -117,9 +117,9 @@ namespace ToolSmiths.InventorySystem.Services
 
         public event Action<RunResult> RunSettled;
 
-        public RunResult Recall()
+        public RunResult Return()
         {
-            var result = Run.Recall();
+            var result = Run.Return();
             RunSettled?.Invoke(result);
 
             return result;
@@ -135,7 +135,7 @@ namespace ToolSmiths.InventorySystem.Services
             if (run.HeroIsDown)
                 HandleHeroDeath(session.Hero, run);
             else
-                _ = Recall();
+                _ = Return();
 
             return true;
         }
@@ -209,7 +209,7 @@ namespace ToolSmiths.InventorySystem.Services
             if (run.HeroIsDown)
                 HandleHeroDeath(hero, run);
             else if (run.RecallRequested)
-                _ = Recall();
+                _ = Return();
         }
 
         private RunState BuildRun(World world)
@@ -304,7 +304,7 @@ namespace ToolSmiths.InventorySystem.Services
 
         private void OnRunEnded(World world, RunState run)
         {
-            // GLOSSARY.md "Drop": a Drop still on the ground when the Run ends is gone, on Recall or
+            // GLOSSARY.md "Drop": a Drop still on the ground when the Run ends is gone, on Return or
             // Death alike (issue #44).
             ReleaseLoot(world);
 
@@ -313,12 +313,12 @@ namespace ToolSmiths.InventorySystem.Services
             if (run.LastResult is { } result)
                 session.Hero.AddKills(result.EnemiesDefeated);
 
-            // Home is never paused or held, Recall and Death alike.
+            // Home is never paused or held, Return and Death alike.
             SetPaused(false);
             held = false;
 
-            // Coming home by Recall brings the shops new stock; a Death does not.
-            if (run.LastResult is { Outcome: RunOutcome.Recalled })
+            // Coming home by Return brings the shops new stock; a Death does not.
+            if (run.LastResult is { Outcome: RunOutcome.Returned })
                 inventory.RestockTownStops();
         }
 

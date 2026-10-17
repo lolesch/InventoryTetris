@@ -26,7 +26,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 {
     /// <summary>
     /// The real scenes' Save &amp; Exit (issue #258): in Town it writes and loads the Main Menu with no popup; in
-    /// the Field it asks first, and on confirm Recalls with the loot kept; Cancel leaves the Run untouched; a
+    /// the Field it asks first, and on confirm Returns with the loot kept; Cancel leaves the Run untouched; a
     /// failed write stays in the game with the cause, Retry works and Exit without saving has its own confirm.
     /// Quit Game (issue #259) follows the same rule and then quits, through <see cref="GameExit.Quitter"/> so the
     /// test run survives it, and is hidden in a WebGL build.
@@ -230,7 +230,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             ClickSaveExit();
             ClickPopup("primary");
 
-            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.InTown), "the implicit Recall");
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.InTown), "the implicit Return");
             Assert.That(Session.Hero.Corpse.Exists, Is.False, "no Death penalty");
             yield return WaitForScene("MainMenu");
 
@@ -339,7 +339,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         }
 
         [UnityTest]
-        public IEnumerator InTheField_QuitGame_RecallsAndSavesTheLoot_BeforeItQuits()
+        public IEnumerator InTheField_QuitGame_ReturnsAndSavesTheLoot_BeforeItQuits()
         {
             yield return Open("Example");
             SendToTheField();
@@ -351,7 +351,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             ClickQuitGame();
             ClickPopup("primary");
 
-            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.InTown), "the implicit Recall");
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.InTown), "the implicit Return");
             Assert.That(Session.Hero.Corpse.Exists, Is.False, "no Death penalty");
             Assert.That(quits, Is.EqualTo(1));
             Assert.That(savedAtTheQuit, Is.GreaterThan(savedBefore), "written before the quit");

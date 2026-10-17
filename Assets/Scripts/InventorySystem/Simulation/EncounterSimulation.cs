@@ -232,8 +232,8 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// Raised the tick one of <see cref="HeroBehaviour"/>'s auto-Recall triggers fires —
         /// health at or below <c>RetreatHealthFraction</c>, or the bag filled to
         /// <c>RecallBagFillFraction</c> (issue #23). The fight is already stopped and its
-        /// stopped by the time this raises, exactly as a manual Recall would
-        /// leave it; the engine-side driver turns the signal into <see cref="RunState.Recall"/>
+        /// stopped by the time this raises, exactly as a manual Return would
+        /// leave it; the engine-side driver turns the signal into <see cref="RunState.Return"/>
         /// so the Run ends down the one path, with everything kept.
         ///
         /// Raised at most once per Encounter — the sim has <see cref="SimulationPhase.Ended"/>
@@ -266,7 +266,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         }
 
         /// <summary>
-        /// End the fight — the Run was Recalled, Relocated or the hero Died (issue #21). XP is
+        /// End the fight — the Run was Returned, Relocated or the hero Died (issue #21). XP is
         /// delivered per kill, so there is nothing in flight to settle or lose. Idempotent.
         /// </summary>
         public void Abandon()
@@ -332,7 +332,7 @@ namespace ToolSmiths.InventorySystem.Simulation
             }
 
             // Checked after the death test, so a tick that both asks for a Recall and kills the hero is a
-            // Death, not a Recall — the penalty is not dodgeable by the trigger racing it.
+            // Death, not a Return — the penalty is not dodgeable by the trigger racing it.
             if (EndOnRecall())
                 return;
 
@@ -351,7 +351,7 @@ namespace ToolSmiths.InventorySystem.Simulation
             _heroTarget = _heroBrain.PeekTarget(new HeroView(_arena, _hero, _enemies, HeroStrikeRange, _heroStrikeReady, _heroCastBeatOpen));
         }
 
-        /// <summary>End the fight if the hero's Brain asked for a Recall this tick, as a manual Recall would leave it.</summary>
+        /// <summary>End the fight if the hero's Brain asked for a Recall this tick, as a manual Return would leave it.</summary>
         private bool EndOnRecall()
         {
             if (!_heroAskedRecall)

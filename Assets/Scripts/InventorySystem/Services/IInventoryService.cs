@@ -34,7 +34,7 @@ namespace ToolSmiths.InventorySystem.Services
 
         /// <summary>
         /// Drops the active context to <see cref="InventoryContext.None"/> if the Run phase just made it
-        /// unreachable (see <see cref="InventoryContextState.SyncToPhase"/>) - the Send/Recall/Death/
+        /// unreachable (see <see cref="InventoryContextState.SyncToPhase"/>) - the Send/Return/Death/
         /// Go-Venture side of phase reachability (#84).
         /// </summary>
         void SyncContextToPhase(bool inField);
@@ -65,7 +65,7 @@ namespace ToolSmiths.InventorySystem.Services
         /// <summary>The Healer's Restock: refills its shelf, and clears the Sold container (#128).</summary>
         void RestockHealerSupply();
 
-        /// <summary>Both Town Stops' Restock, run when a Run is Recalled: both shelves, and the Sold container once.</summary>
+        /// <summary>Both Town Stops' Restock, run when a Run is Returned: both shelves, and the Sold container once.</summary>
         void RestockTownStops();
     }
 }

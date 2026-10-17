@@ -4,7 +4,7 @@ namespace ToolSmiths.InventorySystem.Simulation
     public enum RunOutcome
     {
         /// <summary>The player pulled the hero out. Everything settled so far is kept, no penalty.</summary>
-        Recalled,
+        Returned,
 
         /// <summary>The hero was downed. The accumulation is kept, plus an XP loss and a currency fee.</summary>
         Died,
