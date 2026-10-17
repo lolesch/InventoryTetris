@@ -2,6 +2,7 @@ using Submodules.Utility.Services;
 using Submodules.Utility.UI;
 using ToolSmiths.InventorySystem.GUI.Components.Panels;
 using ToolSmiths.InventorySystem.Inventories;
+using ToolSmiths.InventorySystem.Runtime.Simulation;
 using ToolSmiths.InventorySystem.Services;
 using UnityEngine;
 
@@ -61,6 +62,10 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
                  "of reach while the InTown face is hidden, whereas the Hero Panel's toggle sits under " +
                  "the HUD and keeps its hotkey in the field. The key itself is the player's to rebind.")]
         [SerializeField] private GameAction hotkey = GameAction.None;
+
+        [Tooltip("The Town map's Hero figure, which Travels to this Stop each time a click or the hotkey opens it " +
+                 "(ADR-0021). Empty for the Hero Panel's toggle, which is no place on the map.")]
+        [SerializeField] private TownHeroFigure heroFigure;
 
         protected override void OnClick() => UserToggle();
 
@@ -167,6 +172,8 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
             SetToggle(!wasOn);
             if (wasOn && !IsOn)
                 panel.RequestContext(false);
+            else if (!wasOn && IsOn && heroFigure != null && panel.IsUpIn(InventoryService.Instance.ActiveContext))
+                ((ITownHeroFigure)heroFigure).TravelTo((RectTransform)transform);
         }
 
 #if UNITY_EDITOR

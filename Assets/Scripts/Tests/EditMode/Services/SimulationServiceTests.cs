@@ -826,6 +826,21 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(service.CorpseLiesAt(ashfen), Is.True);
         }
 
+        // ── the walk in Town (ADR-0021) ──────────────────────────────────────
+
+        [Test]
+        public void HeroWalkingSpeed_IsPositiveInTown_AndRisesInStepWithTheMovementStat()
+        {
+            var stat = session.Hero.GetStat(StatName.MovementSpeed);
+            var before = service.HeroWalkingSpeed;
+            var statBefore = stat.TotalValue;
+            Assert.That(before, Is.GreaterThan(0f), "premise: the default hero walks");
+
+            stat.AddModifier(new StatModifier(new Vector2Int(0, 1000), 100f));
+
+            Assert.That(service.HeroWalkingSpeed / before, Is.EqualTo((statBefore + 100f) / statBefore).Within(1e-4f));
+        }
+
         // ── reaching it ──────────────────────────────────────────────────────
 
         [Test]

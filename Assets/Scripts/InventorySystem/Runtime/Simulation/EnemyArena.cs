@@ -110,6 +110,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             }
         }
 
+        /// <summary>Canvas units one arena unit spans along the horizontal axis: what a walk outside the Encounter is scaled by.</summary>
+        public float CanvasUnitsPerArenaUnit => arenaScale;
+
         private RectTransform Root => container != null ? container : (RectTransform)transform;
 
         // Lazily built rather than in Awake, which does not run again on the second Play entry

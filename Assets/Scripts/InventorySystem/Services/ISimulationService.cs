@@ -116,6 +116,12 @@ namespace ToolSmiths.InventorySystem.Services
         float SimDelta(float deltaSeconds);
 
         /// <summary>
+        /// Arena units per second the hero walks, read live off his <c>MovementSpeed</c> stat: what an Encounter
+        /// walks him at and what a Hero figure Travels at in Town (ADR-0021). Never negative.
+        /// </summary>
+        float HeroWalkingSpeed { get; }
+
+        /// <summary>
         /// One frame of the simulation, <paramref name="deltaSeconds"/> of real time: the Hero's
         /// regeneration (Town and Field alike), the Encounter while a Run is in the Field, and the
         /// Run's two ways home (a Death, or the Behaviour Profile's auto-Recall). Scaled by the
