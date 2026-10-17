@@ -3679,8 +3679,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Components.Panels.SidePanel
   <RadioGroup>k__BackingField: {fileID: 347723239}
   <FadeDuration>k__BackingField: 0.15
-  expandEase: 6
-  collapseEase: 4
+  ease: 6
   scaleFrom: 1
   moveFrom: {x: -640, y: 0}
   inventoryContext: 5
@@ -9411,8 +9410,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.Runtime.Simulation.BehaviourSlidersPanel
   <RadioGroup>k__BackingField: {fileID: 453985514}
   <FadeDuration>k__BackingField: 0.2
-  expandEase: 6
-  collapseEase: 4
+  ease: 6
   scaleFrom: 1
   moveFrom: {x: 0, y: 0}
   resourceReserveSlider: {fileID: 803048410}
@@ -10376,8 +10374,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Components.Panels.SidePanel
   <RadioGroup>k__BackingField: {fileID: 347723239}
   <FadeDuration>k__BackingField: 0.15
-  expandEase: 6
-  collapseEase: 4
+  ease: 6
   scaleFrom: 1
   moveFrom: {x: -640, y: 0}
   inventoryContext: 3
@@ -15330,8 +15327,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Utility.UI::Submodules.Utility.UI.SimplePanel
   <RadioGroup>k__BackingField: {fileID: 1116774828}
   <FadeDuration>k__BackingField: 0.2
-  expandEase: 6
-  collapseEase: 4
+  ease: 6
   scaleFrom: 1
   moveFrom: {x: 0, y: 0}
 --- !u!114 &1023377237
@@ -18200,8 +18196,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Utility.UI::Submodules.Utility.UI.SimplePanel
   <RadioGroup>k__BackingField: {fileID: 453985514}
   <FadeDuration>k__BackingField: 0.2
-  expandEase: 6
-  collapseEase: 4
+  ease: 6
   scaleFrom: 1
   moveFrom: {x: 0, y: 0}
 --- !u!1001 &1267847925
@@ -20823,8 +20818,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.Runtime.Simulation.FieldFacePanel
   <RadioGroup>k__BackingField: {fileID: 2144819085}
   <FadeDuration>k__BackingField: 1.2
-  expandEase: 11
-  collapseEase: 11
+  ease: 11
   scaleFrom: 2
   moveFrom: {x: 0, y: -100}
   combatPanel: {fileID: 235697930}
@@ -22268,8 +22262,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Components.Panels.SidePanel
   <RadioGroup>k__BackingField: {fileID: 347723239}
   <FadeDuration>k__BackingField: 0.15
-  expandEase: 6
-  collapseEase: 4
+  ease: 6
   scaleFrom: 1
   moveFrom: {x: -640, y: 0}
   inventoryContext: 2
@@ -22890,8 +22883,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Components.Panels.SidePanel
   <RadioGroup>k__BackingField: {fileID: 0}
   <FadeDuration>k__BackingField: 0.15
-  expandEase: 6
-  collapseEase: 4
+  ease: 6
   scaleFrom: 1
   moveFrom: {x: 640, y: 0}
   inventoryContext: 1
@@ -25393,8 +25385,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.Runtime.Simulation.RunPhasePanel
   <RadioGroup>k__BackingField: {fileID: 2144819085}
   <FadeDuration>k__BackingField: 1.2
-  expandEase: 11
-  collapseEase: 11
+  ease: 11
   scaleFrom: 0
   moveFrom: {x: -20, y: 0}
   activeDuring: 0
@@ -27967,8 +27958,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Utility.UI::Submodules.Utility.UI.SimplePanel
   <RadioGroup>k__BackingField: {fileID: 1116774828}
   <FadeDuration>k__BackingField: 0.2
-  expandEase: 6
-  collapseEase: 4
+  ease: 6
   scaleFrom: 1
   moveFrom: {x: 0, y: 0}
 --- !u!114 &1909361634
@@ -28695,8 +28685,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Utility.UI::Submodules.Utility.UI.SimplePanel
   <RadioGroup>k__BackingField: {fileID: 1921830476}
   <FadeDuration>k__BackingField: 0.2
-  expandEase: 6
-  collapseEase: 4
+  ease: 6
   scaleFrom: 1
   moveFrom: {x: 0, y: 0}
 --- !u!114 &1967687301
@@ -28918,8 +28907,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Utility.UI::Submodules.Utility.UI.SimplePanel
   <RadioGroup>k__BackingField: {fileID: 1921830476}
   <FadeDuration>k__BackingField: 0.2
-  expandEase: 6
-  collapseEase: 4
+  ease: 6
   scaleFrom: 1
   moveFrom: {x: 0, y: 0}
 --- !u!114 &1970015443
@@ -30881,8 +30869,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Components.Panels.SidePanel
   <RadioGroup>k__BackingField: {fileID: 347723239}
   <FadeDuration>k__BackingField: 0.15
-  expandEase: 6
-  collapseEase: 4
+  ease: 6
   scaleFrom: 1
   moveFrom: {x: -640, y: 0}
   inventoryContext: 4
@@ -32177,8 +32164,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Components.Panels.SidePanel
   <RadioGroup>k__BackingField: {fileID: 347723239}
   <FadeDuration>k__BackingField: 0.15
-  expandEase: 6
-  collapseEase: 4
+  ease: 6
   scaleFrom: 1
   moveFrom: {x: 640, y: 0}
   inventoryContext: 0
