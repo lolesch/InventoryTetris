@@ -15,6 +15,7 @@
 - Hold Tab over an open Vendor or Healer to peek at its other tab; Alt still shows more detail on an item.
 - The hero in the field now has a health bar that shows its shield, and flashes and shakes when hit, like the enemies do.
 - Your corpse now lies where your hero fell, on the Field map, before you send him back for it.
+- When your hero falls, the last damage numbers now drift by in slow motion for a moment.
 
 ## 0.0.5_Alpha - 2026-09-25
 

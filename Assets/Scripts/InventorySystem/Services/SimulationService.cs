@@ -52,6 +52,9 @@ namespace ToolSmiths.InventorySystem.Services
 
             generator = new ItemGenerator(items.Catalog, rolls.Main);
             locations = new LocationRegistry(config.Locations);
+
+            // A loaded hero starts a fresh life: whatever slow-down the last one left is gone.
+            session.HeroLoaded += () => deathSlowdownLeft = 0f;
         }
 
         public ILocationRegistry Locations => locations;
@@ -151,6 +154,7 @@ namespace ToolSmiths.InventorySystem.Services
             if (hero.IsDead)
                 hero.Heal();
 
+            deathSlowdownLeft = 0f;
             Respawned?.Invoke();
         }
 
@@ -190,8 +194,14 @@ namespace ToolSmiths.InventorySystem.Services
             held = value;
         }
 
+        // Real seconds of the Death slow-down still to run. Transient and the service's, not the sim
+        // speed slider's: it is set by a Death and cleared by Respawn or a hero load.
+        private float deathSlowdownLeft;
+
+        public float ViewTimeFactor => deathSlowdownLeft > 0f ? Mathf.Clamp01(config.DeathSlowdownFactor) : 1f;
+
         public float SimDelta(float deltaSeconds) =>
-            IsPaused || IsHeld ? 0f : deltaSeconds * Mathf.Max(0f, session.Hero.Behaviour.SimSpeed);
+            IsPaused || IsHeld ? 0f : deltaSeconds * Mathf.Max(0f, session.Hero.Behaviour.SimSpeed) * ViewTimeFactor;
 
         public void Tick(float deltaSeconds)
         {
@@ -201,6 +211,9 @@ namespace ToolSmiths.InventorySystem.Services
 
             var hero = session.Hero;
             var dt = SimDelta(deltaSeconds);
+
+            // Counted in real time, once per frame: SimDelta is asked by many views and cannot own the clock.
+            deathSlowdownLeft = Mathf.Max(0f, deathSlowdownLeft - deltaSeconds);
 
             // Hosted by GameLoop, so this runs after every MonoBehaviour.Update of the frame: a panel
             // that polls the Run in Update sees the previous frame's tick, never a half-stepped one.
@@ -297,6 +310,8 @@ namespace ToolSmiths.InventorySystem.Services
 
             var fell = hero.SelectedLocation;
             SettlementFor(hero).Settle(result, fell != null ? ProfileFor(fell) : null);
+
+            deathSlowdownLeft = Mathf.Max(0f, config.DeathSlowdownSeconds);
 
             RunSettled?.Invoke(result);
         }
