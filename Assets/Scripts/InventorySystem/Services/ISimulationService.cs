@@ -77,6 +77,20 @@ namespace ToolSmiths.InventorySystem.Services
         bool LeaveField();
 
         /// <summary>
+        /// The way back from a Death: revives the hero at full Health and Resource and raises
+        /// <see cref="Respawned"/>. A Death settles the moment the hero goes down but leaves him at 0 Health
+        /// in Town; this is the only thing that stands him up again (a hero load revives too). Does nothing
+        /// to a hero who is not down, but still raises <see cref="Respawned"/>.
+        /// </summary>
+        void Respawn();
+
+        /// <summary>
+        /// Raised by <see cref="Respawn"/> with the hero up. The Town map comes up on it: a Death alone no
+        /// longer brings it. Belongs to the service, so a subscriber attaches once across hero loads.
+        /// </summary>
+        event Action Respawned;
+
+        /// <summary>
         /// Whether the live Run is frozen: <see cref="Tick"/> does nothing at all while it is true, so
         /// the Encounter, the Hero's regeneration and both ways home stand still. Only a Run in the
         /// Field can be paused, and the Run's end (Return or Death) or the next <see cref="Send"/>

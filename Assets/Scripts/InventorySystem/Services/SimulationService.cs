@@ -140,6 +140,17 @@ namespace ToolSmiths.InventorySystem.Services
             return true;
         }
 
+        public event Action Respawned;
+
+        public void Respawn()
+        {
+            var hero = session.Hero;
+            if (hero.IsDead)
+                hero.Heal();
+
+            Respawned?.Invoke();
+        }
+
         // Transient, like the Run it freezes: never saved, and read through IsPaused so a flag left
         // over from another World (a hero load mid-Run) cannot freeze a Run it does not belong to.
         private bool paused;

@@ -168,6 +168,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             Assert.That(MarkerAt(_locations[0]).enabled, Is.True, "the Corpse lies where the Hero fell");
             Assert.That(MarkerAt(_locations[1]).enabled, Is.False, "and nowhere else");
 
+            SimulationService.Instance.Respawn();
             SimulationService.Instance.Send(_locations[0]);
             yield return null;
             Assert.That(MarkerAt(_locations[0]).enabled, Is.False, "recovered");

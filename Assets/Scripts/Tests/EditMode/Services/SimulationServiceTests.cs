@@ -724,7 +724,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
                 .Select(entry => entry.Value.Item);
 
         [Test]
-        public void ADeath_BuriesTheBagOnTheHerosCorpse_RevivesAndReturnsToTown()
+        public void ADeath_BuriesTheBagOnTheHerosCorpse_AndLeavesTheHeroDownInTown()
         {
             var hero = session.Hero;
             _ = PutInBag();
@@ -738,8 +738,70 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(hero.Corpse.Exists, Is.True);
             Assert.That(hero.Corpse.Items.Count, Is.EqualTo(1));
             Assert.That(NonCurrencyInBag(hero), Is.Empty);
-            Assert.That(hero.IsDead, Is.False, "the settlement revives the hero");
+            Assert.That(hero.IsDead, Is.True, "the settlement does not revive; Respawn does");
             Assert.That(service.LootFlow, Is.Null);
+        }
+
+        [Test]
+        public void TheHero_StaysDownThroughTownTicks_UntilRespawn()
+        {
+            service.Send(thornwood);
+            session.Hero.GetResource(StatName.Health).DepleteCurrent();
+            TickUntilHome();
+
+            service.Tick(5f);
+
+            Assert.That(session.Hero.GetResource(StatName.Health).CurrentValue, Is.Zero);
+        }
+
+        [Test]
+        public void Respawn_RevivesTheHeroAtFullHealthAndResource()
+        {
+            var hero = session.Hero;
+            service.Send(thornwood);
+            hero.GetResource(StatName.Health).DepleteCurrent();
+            hero.GetResource(StatName.Resource).DepleteCurrent();
+            TickUntilHome();
+
+            service.Respawn();
+
+            var health = hero.GetResource(StatName.Health);
+            var resource = hero.GetResource(StatName.Resource);
+            Assert.That(hero.IsDead, Is.False);
+            Assert.That(health.CurrentValue, Is.EqualTo(health.TotalValue));
+            Assert.That(resource.CurrentValue, Is.EqualTo(resource.TotalValue));
+        }
+
+        [Test]
+        public void Respawn_RaisesRespawned_AfterTheReviveAndOnlyOnce()
+        {
+            service.Send(thornwood);
+            session.Hero.GetResource(StatName.Health).DepleteCurrent();
+            TickUntilHome();
+            var seen = new List<bool>();
+            service.Respawned += () => seen.Add(session.Hero.IsDead);
+
+            service.Respawn();
+
+            Assert.That(seen, Is.EqualTo(new[] { false }), "raised once, with the hero already up");
+        }
+
+        [Test]
+        public void Respawn_KeepsTheCorpseAndWhatTheDeathCost()
+        {
+            var hero = session.Hero;
+            _ = PutInBag();
+            service.Send(thornwood);
+            hero.GetResource(StatName.Health).DepleteCurrent();
+            TickUntilHome();
+            var experience = hero.GetResource(StatName.Experience).CurrentValue;
+            var balance = hero.Wallet.Balance.Total;
+
+            service.Respawn();
+
+            Assert.That(hero.Corpse.Exists, Is.True);
+            Assert.That(hero.GetResource(StatName.Experience).CurrentValue, Is.EqualTo(experience));
+            Assert.That(hero.Wallet.Balance.Total, Is.EqualTo(balance));
         }
 
         [Test]
@@ -768,6 +830,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             service.Send(thornwood);
             hero.GetResource(StatName.Health).DepleteCurrent();
             TickUntilHome();
+            service.Respawn();
 
             service.Send(thornwood);
 
@@ -783,6 +846,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             service.Send(thornwood);
             hero.GetResource(StatName.Health).DepleteCurrent();
             TickUntilHome();
+            service.Respawn();
 
             service.Send(ashfen);
 
@@ -800,6 +864,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             service.Send(thornwood);
             session.Hero.GetResource(StatName.Health).DepleteCurrent();
             TickUntilHome();
+            service.Respawn();
 
             Assert.That(service.CorpseLiesAt(thornwood), Is.True);
             Assert.That(service.CorpseLiesAt(ashfen), Is.False);
@@ -816,6 +881,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             service.Send(thornwood);
             session.Hero.GetResource(StatName.Health).DepleteCurrent();
             TickUntilHome();
+            service.Respawn();
 
             service.Send(ashfen);
             session.Hero.GetResource(StatName.Health).DepleteCurrent();
