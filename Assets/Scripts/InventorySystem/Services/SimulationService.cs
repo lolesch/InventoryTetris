@@ -222,6 +222,9 @@ namespace ToolSmiths.InventorySystem.Services
         public float SimDelta(float deltaSeconds) =>
             IsPaused || IsHeld ? 0f : deltaSeconds * Mathf.Max(0f, session.Hero.Behaviour.SimSpeed) * ViewTimeFactor;
 
+        public float WalkDelta(float deltaSeconds) =>
+            deltaSeconds * Mathf.Max(0f, session.Hero.Behaviour.SimSpeed);
+
         public float HeroWalkingSpeed =>
             Mathf.Max(0f, session.Hero.GetStatValue(StatName.MovementSpeed)) * Mathf.Max(0f, config.Tuning.Arena.MovementSpeedScale);
 

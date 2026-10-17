@@ -82,7 +82,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 return;
 
             var from = _travel.Position;
-            _ = _travel.Advance(ArenaSpace.HeroCanvasSpeed, Time.deltaTime);
+            _ = _travel.Advance(ArenaSpace.HeroCanvasSpeed, SimulationService.Instance.WalkDelta(Time.deltaTime));
             Show(from);
         }
 

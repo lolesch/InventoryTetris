@@ -126,6 +126,13 @@ namespace ToolSmiths.InventorySystem.Services
         float SimDelta(float deltaSeconds);
 
         /// <summary>
+        /// The sim seconds <paramref name="deltaSeconds"/> of real time is worth to a walk the hero is shown taking
+        /// (ADR-0021): <see cref="SimDelta"/> without the freeze, since a Pause does not stop a walk. Scales with the
+        /// Behaviour Profile's sim speed, so a faster sim walks faster.
+        /// </summary>
+        float WalkDelta(float deltaSeconds);
+
+        /// <summary>
         /// Arena units per second the hero walks, read live off his <c>MovementSpeed</c> stat: what an Encounter
         /// walks him at and what a Hero figure Travels at in Town (ADR-0021). Never negative.
         /// </summary>

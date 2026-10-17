@@ -236,7 +236,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             var goal = LocalCentre(_target);
             _travel.Retarget(new Coordinate(goal));
 
-            var arrived = _travel.Advance(ArenaSpace.HeroCanvasSpeed, Time.deltaTime);
+            var arrived = _travel.Advance(ArenaSpace.HeroCanvasSpeed, SimulationService.Instance.WalkDelta(Time.deltaTime));
 
             var at = new Vector2(_travel.Position.x, _travel.Position.z);
             Figure.Place(at, ArenaOf(at), ArenaLayout.FacingSign(at.x, goal.x, Figure.FacingSign, WalkFacingDeadZone));
