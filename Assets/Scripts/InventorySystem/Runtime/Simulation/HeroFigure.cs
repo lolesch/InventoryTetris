@@ -158,7 +158,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             var health = hero.GetResource(StatName.Health);
             Figure.Bind(health, "Hero", hero.GetResource(StatName.Shield));
             if (Figure.HitFlash != null)
-                Figure.HitFlash.Bind(health, Figure.Sprite);
+                Figure.HitFlash.Bind(hero, Figure.Sprite);
             if (Figure.HitShake != null)
                 Figure.HitShake.Bind(health);
 

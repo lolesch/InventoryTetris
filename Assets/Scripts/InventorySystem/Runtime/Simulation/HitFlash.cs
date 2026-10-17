@@ -1,5 +1,7 @@
 using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Geometry;
+using ToolSmiths.InventorySystem.Runtime.Character;
 using ToolSmiths.InventorySystem.Services;
 using UnityEngine;
 using UnityEngine.UI;
@@ -41,12 +43,13 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         private readonly HitFlashRamp _ramp = new();
         private CharacterResource _health;
+        private Hero _hero;
 
         /// <summary>The flash in flight, 0 when the sprite is normal.</summary>
         public float Intensity => _ramp.Intensity;
 
-        /// <summary>Whether this component is listening to a health resource.</summary>
-        public bool IsBound => _health != null;
+        /// <summary>Whether this component is listening to a health resource or a hero.</summary>
+        public bool IsBound => _health != null || _hero != null;
 
         /// <summary>Flash <paramref name="sprite"/> each time <paramref name="health"/> drops.</summary>
         public void Bind(CharacterResource health, Sprite sprite)
@@ -63,16 +66,39 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         }
 
         /// <summary>
+        /// Flash <paramref name="sprite"/> each time <paramref name="hero"/> takes a hit that costs Shield or
+        /// Health. Listens to <see cref="Hero.DamageReceived"/> rather than the Health resource, so a hit the
+        /// Shield soaks still flashes; a fully mitigated hit (nothing lost) does not.
+        /// </summary>
+        public void Bind(Hero hero, Sprite sprite)
+        {
+            Unbind();
+
+            if (sprite == null)
+                return;
+
+            silhouette.sprite = sprite;
+            _hero = hero;
+            _hero.DamageReceived += OnDamageReceived;
+        }
+
+        /// <summary>
         /// Stop listening but let the flash in flight finish: a dying view takes no more hits, yet the
         /// killing blow's flash (raised before the defeat) should still play. Safe when unbound.
         /// </summary>
         public void Detach()
         {
-            if (_health == null)
-                return;
+            if (_health != null)
+            {
+                _health.CurrentHasChanged -= OnHealthChanged;
+                _health = null;
+            }
 
-            _health.CurrentHasChanged -= OnHealthChanged;
-            _health = null;
+            if (_hero != null)
+            {
+                _hero.DamageReceived -= OnDamageReceived;
+                _hero = null;
+            }
         }
 
         /// <summary>Stop listening and clear the tint: a pooled view must start un-tinted. Safe when unbound.</summary>
@@ -87,6 +113,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private void OnHealthChanged(float previous, float current, float total)
         {
             if (HitFlashRamp.IsHit(previous, current))
+                _ramp.Hit();
+        }
+
+        private void OnDamageReceived(DamageType damageType, float absorbed, float lost)
+        {
+            if (absorbed > 0f || lost > 0f)
                 _ramp.Hit();
         }
 
