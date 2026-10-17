@@ -243,6 +243,11 @@ loaded (which replaces the Hero and the **World**, see **Session**), chosen on t
 **Heroes screen**.
 _Avoid_: character, unit, avatar, champion; "player" for the thing in the Field
 
+**Level-up**:
+The **Hero** reaching its next level from XP. It adds a small, fixed growth to the hero's base
+stats, the same for every hero, and heals nothing: the hero's survival is its gear's job.
+_Avoid_: ding; "level" for a **Location**'s source level
+
 **Hero save**:
 One file holding one **Hero**, named `Name_id`: the hero's name, for the eye, and a generated id
 that never changes, which is the identity (a rename moves the file, never the id), and nothing else.
@@ -341,7 +346,7 @@ the source level, the loot table a Run there rolls against, which enemy **archet
 **Complete** for a hero once the hero clears its whole Population in one Send. Its source level
 is fixed, never scaled to the hero: Locations form a difficulty ladder a geared hero outgrows.
 Two for the MVP — Thornwood (low source level, Brute-packed, a bag run) and Ashfall (high,
-Skirmisher-packed, a gear-gated wall).
+Skirmisher-packed, a gear-gated step: clearable in gear of its level, survivable in part without it).
 _Avoid_: level, zone, area, stage, node, dungeon, map
 
 **Encounter**:
@@ -384,7 +389,9 @@ _Avoid_: deploy, dispatch, embark, launch
 
 **Recall**:
 The player action that takes the hero to Town mid-Run without ending it: it spends a
-**Portal Scroll** from the Inventory and opens a **Town Portal**, and the Run is held, its
+**Portal Scroll** from the Inventory at once and opens a **Town Portal** beside the hero. The
+portal takes a moment to open, during which the Run stays live and the hero keeps fighting;
+only a **Death** in that moment cancels it, scroll gone. Once open, the Run is held, its
 Encounter frozen, until the portal takes him back. Refused in Town, while the hero is down,
 and with no Portal Scroll in the Inventory. A dedicated button and key, as in a MOBA's recall.
 _Avoid_: return (that ends the Run), teleport, port, extract, flee, escape
