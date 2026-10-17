@@ -330,3 +330,10 @@ spatial (spec `dev/specs/2026-10-08-spatial-combat-design.md`).
 The "Brute is targeted by the Cast / Skirmisher by the Strike" table row and the auto-focus reasoning in the second
 amendment are history: a Skirmisher swarm is now a clump for the area Cast to catch, not a lowest-HP queue for the
 Strike. Cadence, cost and the `CastThreshold` latch are unchanged.
+
+## Amended by ADR-0023
+
+The Run-scale bullet under *Finite vs endless* ("endless Encounters, no cap, no rescale") is superseded: a Send
+fields a **Population** of Encounters, and the Location is **Complete** after the last clear
+(`docs/adr/0023-a-send-fields-a-population-and-progress-is-one-unlock-graph.md`). The Encounter-scale bullet,
+the fixed Roster and the no-rescale rule stand.

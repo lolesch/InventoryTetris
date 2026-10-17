@@ -326,6 +326,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
 
             //TODO: design exp gain
             // Signed: both levels are uint, so a monster below the hero would wrap to ~4 billion.
+            // The factor is +-1% per level of difference, floored at 0 (no XP from 100+ levels below).
             var levelDifference = (float)monsterLevel - Level;
             var levelBalanceExp = exp * Mathf.Max(0f, 1f + levelDifference / 100f);
             var experience = GetResource(StatName.Experience);

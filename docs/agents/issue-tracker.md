@@ -42,6 +42,35 @@ done when its PR merges and closes it; "built" lives in the issue, the PR, the A
 
 Labels carry the rest of an issue's state (`needs-triage`, `ready-for-agent`, `ready-for-human`).
 
+## Wayfinding operations
+
+`/wayfinder` keeps its map and decision tickets on GitHub's **native** sub-issues and issue
+dependencies, so the GitHub UI draws the frontier. Implementation tickets keep the
+`## Blocked by` body convention above; a decision ticket never carries that section, and an
+implementation ticket is never wired with native blocking. `dev/frontier.py` skips `wayfinder:*`
+issues for that reason.
+
+The REST calls take an issue's database **id**, not its number:
+`gh api repos/lolesch/InventoryTetris/issues/<n> --jq .id`.
+
+- **Create the map**: `gh issue create --label wayfinder:map --title "..." --body-file <file>`.
+- **Create a ticket**: `gh issue create --label wayfinder:<research|prototype|grilling|task> ...`,
+  then make it a child of the map:
+  `gh api -X POST repos/lolesch/InventoryTetris/issues/<map>/sub_issues -F sub_issue_id=<ticket id>`.
+- **List the map's tickets**: `gh api "repos/lolesch/InventoryTetris/issues/<map>/sub_issues?per_page=100"`.
+- **Block a ticket** (second pass, once every ticket has an id):
+  `gh api -X POST repos/lolesch/InventoryTetris/issues/<blocked>/dependencies/blocked_by -F issue_id=<blocker id>`.
+  Read with `GET .../issues/<n>/dependencies/blocked_by`; remove with
+  `gh api -X DELETE repos/lolesch/InventoryTetris/issues/<blocked>/dependencies/blocked_by/<blocker id>`.
+- **Claim a ticket**: `gh issue edit <n> --add-assignee @me`, before any work.
+- **Frontier**: `python dev/frontier.py --map <map>` lists the map's open tickets as `FRONTIER`,
+  `claimed by`, or `blocked by`.
+- **Resolve**: `gh issue comment <n>` with the answer, `gh issue close <n>`, then append the
+  context pointer to the map's Decisions so far with `gh issue edit <map> --body-file <file>`.
+
+A spec a map arrives at still goes to `dev/specs/` (CLAUDE.md). A research ticket's subagent
+needs the user's yes like any other (CLAUDE.md); without it, resolve the ticket inline.
+
 ## Standing notes
 
 - **The Services spec** (`dev/specs/2026-10-01-services-over-providers-design.md`) still says
