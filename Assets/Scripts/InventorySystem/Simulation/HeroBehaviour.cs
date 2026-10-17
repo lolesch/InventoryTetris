@@ -9,10 +9,9 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// <i>HeroBehaviour</i>; <see cref="OriginWeight"/> joined for issue #209), held in the Session save and written by the sliders on their
     /// change event (issue #27) — read live here, never polled by value snapshot.
     ///
-    /// <see cref="ShouldRecallForHealth"/> and <see cref="ShouldRecallForBagFull"/> are the pure
-    /// predicates the hero's Brain asks every tick; its Recall Intent makes <see cref="EncounterSimulation"/>
-    /// raise the <see cref="EncounterSimulation.RecallRequested"/> signal the engine-side driver turns
-    /// into a <see cref="RunState.Return"/>.
+    /// <see cref="RetreatHealthFraction"/> and <see cref="RecallBagFillFraction"/> are no longer read by
+    /// the sim: the hero never leaves a Run on his own (ADR-0021). They stay for the UI and the save
+    /// until they are removed.
     /// <see cref="ShouldCast"/> is the <see cref="CastThreshold"/> hysteresis latch (ADR-0010):
     /// hold below the fraction, then Cast every opportunity until the pool is drained to 0, then
     /// wait back up to the fraction — it never gates the Strike, because the
@@ -27,15 +26,10 @@ namespace ToolSmiths.InventorySystem.Simulation
     {
         private bool _castingRun;
 
-        /// <summary>Auto-Recall fires at or below this hero health fraction.</summary>
+        /// <summary>Stored only: nothing reads it since Auto-Recall went (ADR-0021).</summary>
         public float RetreatHealthFraction { get; set; }
 
-        /// <summary>
-        /// Auto-Recall fires at or above this bag fill fraction. Defaults to 1f — a bag with no
-        /// room left — so an unwritten value is as inert as <see cref="RetreatHealthFraction"/>'s
-        /// zero. A 0f written here does fire for any fill at all, empty bag included; that is the
-        /// slider's bottom position and it reads as "come home the moment anything drops".
-        /// </summary>
+        /// <summary>Stored only: nothing reads it since Auto-Recall went (ADR-0021).</summary>
         public float RecallBagFillFraction { get; set; } = 1f;
 
         /// <summary>
@@ -70,12 +64,6 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         /// <summary>The spawn-refill target the Encounter sim (issue #20) reads every spawn tick.</summary>
         public int Engagement { get; set; }
-
-        /// <summary>Auto-Recall trigger: the hero's health has dropped to or below <see cref="RetreatHealthFraction"/>.</summary>
-        public bool ShouldRecallForHealth(float healthFraction) => healthFraction <= RetreatHealthFraction;
-
-        /// <summary>Auto-Recall trigger: the bag has filled to or above <see cref="RecallBagFillFraction"/>.</summary>
-        public bool ShouldRecallForBagFull(float bagFillFraction) => bagFillFraction >= RecallBagFillFraction;
 
         /// <summary>
         /// Starts a casting run once <paramref name="resourceFraction"/> charges up to the threshold;

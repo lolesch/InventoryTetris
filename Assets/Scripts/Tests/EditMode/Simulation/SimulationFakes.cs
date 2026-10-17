@@ -147,12 +147,6 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         public static HeroBehaviour Engaging(int engagement) => new() { Engagement = engagement };
     }
 
-    /// <summary>An <see cref="IBagGauge"/> whose fill a test sets directly, and re-sets mid-fight.</summary>
-    internal sealed class FakeBagGauge : IBagGauge
-    {
-        public float FillFraction { get; set; }
-    }
-
     // ─── loot acquisition (#103) ──────────────────────────────────────────────
 
     /// <summary>

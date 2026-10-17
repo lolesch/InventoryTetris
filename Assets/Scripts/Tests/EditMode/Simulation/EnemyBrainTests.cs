@@ -35,7 +35,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
         private static EncounterSimulation Sim(FakeHero hero, EncounterProfile profile, Func<Enemy, IEnemyBrain> brains) =>
             new(hero, profile, new RollStreams(new ConstantRollSource(0f), new ConstantRollSource(0.5f), new SeededRollSource(7)),
-                Behaviours.Engaging(10), OnTheArena(), bag: null, enemyBrains: brains);
+                Behaviours.Engaging(10), OnTheArena(), enemyBrains: brains);
 
         private static void RunSeconds(EncounterSimulation sim, float seconds)
         {

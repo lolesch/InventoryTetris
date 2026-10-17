@@ -118,7 +118,7 @@ namespace ToolSmiths.InventorySystem.Services
         /// <summary>
         /// One frame of the simulation, <paramref name="deltaSeconds"/> of real time: the Hero's
         /// regeneration (Town and Field alike), the Encounter while a Run is in the Field, and the
-        /// Run's two ways home (a Death, or the Behaviour Profile's auto-Recall). Scaled by the
+        /// Run's way home on a Death. Scaled by the
         /// Behaviour Profile's sim speed here, never through <c>Time.timeScale</c> (ADR-0008).
         /// Does nothing while <see cref="IsPaused"/> or <see cref="IsHeld"/>.
         /// </summary>

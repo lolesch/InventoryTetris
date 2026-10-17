@@ -16,58 +16,6 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
     [TestFixture]
     public sealed class HeroBehaviourTests
     {
-        // ─── retreat ────────────────────────────────────────────────────────
-
-        [Test]
-        public void RetreatTrigger_AboveTheThreshold_DoesNotFire()
-        {
-            var behaviour = new HeroBehaviour { RetreatHealthFraction = 0.3f };
-
-            Assert.That(behaviour.ShouldRecallForHealth(0.31f), Is.False);
-        }
-
-        [Test]
-        public void RetreatTrigger_ExactlyAtTheThreshold_Fires()
-        {
-            var behaviour = new HeroBehaviour { RetreatHealthFraction = 0.3f };
-
-            Assert.That(behaviour.ShouldRecallForHealth(0.3f), Is.True);
-        }
-
-        [Test]
-        public void RetreatTrigger_BelowTheThreshold_Fires()
-        {
-            var behaviour = new HeroBehaviour { RetreatHealthFraction = 0.3f };
-
-            Assert.That(behaviour.ShouldRecallForHealth(0.1f), Is.True);
-        }
-
-        // ─── bag-fill ───────────────────────────────────────────────────────
-
-        [Test]
-        public void BagFillTrigger_BelowTheThreshold_DoesNotFire()
-        {
-            var behaviour = new HeroBehaviour { RecallBagFillFraction = 0.9f };
-
-            Assert.That(behaviour.ShouldRecallForBagFull(0.89f), Is.False);
-        }
-
-        [Test]
-        public void BagFillTrigger_ExactlyAtTheThreshold_Fires()
-        {
-            var behaviour = new HeroBehaviour { RecallBagFillFraction = 0.9f };
-
-            Assert.That(behaviour.ShouldRecallForBagFull(0.9f), Is.True);
-        }
-
-        [Test]
-        public void BagFillTrigger_AboveTheThreshold_Fires()
-        {
-            var behaviour = new HeroBehaviour { RecallBagFillFraction = 0.9f };
-
-            Assert.That(behaviour.ShouldRecallForBagFull(1f), Is.True);
-        }
-
         // ─── CastThreshold hysteresis ──────────────────────────────────────
 
         [Test]
