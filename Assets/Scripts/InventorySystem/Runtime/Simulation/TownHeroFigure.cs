@@ -1,4 +1,5 @@
 using Submodules.Utility.Extensions;
+using Submodules.Utility.Services;
 using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
@@ -40,10 +41,20 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         {
             _ = Session.TrySubscribeHeroLoaded(PlaceAtWaypoint);
 
+            // A Respawn lands at the Waypoint, wherever the hero fell.
+            if (ServiceLocator.IsArmed)
+                SimulationService.Instance.Respawned += PlaceAtWaypoint;
+
             PlaceAtWaypoint();
         }
 
-        private void OnDisable() => Session.UnsubscribeHeroLoaded(PlaceAtWaypoint);
+        private void OnDisable()
+        {
+            Session.UnsubscribeHeroLoaded(PlaceAtWaypoint);
+
+            if (ServiceLocator.IsArmed)
+                SimulationService.Instance.Respawned -= PlaceAtWaypoint;
+        }
 
         private void Update()
         {
