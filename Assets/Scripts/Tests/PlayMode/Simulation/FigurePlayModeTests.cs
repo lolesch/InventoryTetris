@@ -107,6 +107,13 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             face.GetType().GetMethod("ToggleState").Invoke(face, new object[] { true });
             for (var frame = 0; !(bool)Property(face, "IsExtended") && frame < 600; frame++)
                 yield return null;
+
+            // IsExtended turns true as the fade starts; the scene's fade is slow (#326), so wait for it to land.
+            var group = HeroFigure().GetComponent<CanvasGroup>();
+            var until = Time.realtimeSinceStartup + 10f;
+            while (group.alpha < 1f && Time.realtimeSinceStartup < until)
+                yield return null;
+
             yield return null;
         }
 

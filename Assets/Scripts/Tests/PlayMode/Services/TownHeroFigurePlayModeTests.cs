@@ -2,6 +2,7 @@ using System.Collections;
 using System.Linq;
 using NUnit.Framework;
 using Submodules.Utility.Services;
+using Submodules.Utility.UI;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Inventories;
@@ -188,6 +189,87 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             Assert.That(IsWalking(figure), Is.True, "premise: the fast walk is still on");
 
             Assert.That(fast, Is.GreaterThan(slow * 1.5f), $"slow {slow}, fast {fast}");
+        }
+
+        // The figure from the Waypoint (which sits on the Town Exit today) out to the Stash and back at rest there,
+        // so a later walk to the Exit has a distance to cover.
+        private IEnumerator StandAtTheStash(MonoBehaviour figure)
+        {
+            yield return Click(Named("StashToggle"));
+            Hasten(5000f);
+            yield return UntilArrived(figure);
+        }
+
+        private static CanvasGroup Face(string name) => GameObject.Find(name).GetComponent<CanvasGroup>();
+
+        [UnityTest]
+        public IEnumerator AClickOnTheTownExit_WalksTheFigureTowardsIt_WhileTheTownMapFades()
+        {
+            yield return OpenExample();
+            var figure = Figure();
+            var exit = Named("ToFieldsButton");
+            yield return StandAtTheStash(figure);
+            var before = Apart(figure, exit);
+
+            yield return Click(exit);
+            yield return new WaitForSeconds(0.1f);
+
+            Assert.That(IsWalking(figure), Is.True);
+            Assert.That(Apart(figure, exit), Is.LessThan(before), "walking towards the Exit");
+            Assert.That(Face("InTown").blocksRaycasts, Is.False, "the fading Town map takes input away");
+            Assert.That(Face("InFields").alpha, Is.LessThan(1f), "the Field map is on its way up, not there yet");
+        }
+
+        [UnityTest]
+        public IEnumerator AClickDuringTheFade_DoesNotRetargetTheFigure()
+        {
+            yield return OpenExample();
+            var figure = Figure();
+            var exit = Named("ToFieldsButton");
+            yield return StandAtTheStash(figure);
+
+            yield return Click(exit);
+            yield return Click(Named("HealerToggle"));
+            yield return Click(Named("StashToggle"));
+
+            Assert.That(Context, Is.Not.EqualTo(InventoryContext.Healer), "the Healer was out of reach");
+            yield return UntilArrived(figure);
+            Assert.That(Apart(figure, exit), Is.LessThan(AtTheStop), "ended at the Exit");
+        }
+
+        [UnityTest]
+        public IEnumerator TheCrossfade_HoldsTheOldMapUntilLate_ThenSwitchesQuickly()
+        {
+            yield return OpenExample();
+            var inTown = Face("InTown");
+            var inFields = Face("InFields");
+            var fade = GameObject.Find("InTown").GetComponent<SimplePanel>().FadeDuration;
+            Assert.That(fade, Is.GreaterThanOrEqualTo(1f), "long enough to watch the hero walk");
+
+            yield return Click(Named("ToFieldsButton"));
+            yield return new WaitForSeconds(fade * 0.5f);
+
+            Assert.That(inTown.alpha, Is.GreaterThan(0.85f), "the old map holds past the half-way point");
+            Assert.That(inFields.alpha, Is.LessThan(0.15f), "the new map is still nearly clear");
+
+            yield return new WaitForSeconds(fade * 0.6f);
+            Assert.That(inTown.alpha, Is.EqualTo(0f).Within(0.001f));
+            Assert.That(inFields.alpha, Is.EqualTo(1f).Within(0.001f));
+        }
+
+        [UnityTest]
+        public IEnumerator PlacingTheFigureAtAPoint_StandsItThereWithNoWalk()
+        {
+            yield return OpenExample();
+            var figure = Figure();
+            var exit = Named("ToFieldsButton");
+            yield return StandAtTheStash(figure);
+            Assert.That(Apart(figure, exit), Is.GreaterThan(AtTheStop), "premise: the Stash is away from the Exit");
+
+            _ = figure.GetType().GetMethod("Place").Invoke(figure, new object[] { exit });
+
+            Assert.That(Apart(figure, exit), Is.LessThan(1f));
+            Assert.That(IsWalking(figure), Is.False);
         }
 
         [UnityTest]

@@ -57,9 +57,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         }
 
         /// <inheritdoc/>
-        public void PlaceAtWaypoint()
+        public void PlaceAtWaypoint() => Place(waypoint);
+
+        /// <inheritdoc/>
+        public void Place(RectTransform point)
         {
-            var at = Local(waypoint);
+            var at = Local(point);
             _travel = new HeroTravel(at);
             Show(at);
         }
