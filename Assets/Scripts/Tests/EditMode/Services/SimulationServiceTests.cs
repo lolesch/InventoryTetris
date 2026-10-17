@@ -110,6 +110,19 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             _ = so.ApplyModifiedPropertiesWithoutUndo();
         }
 
+        // ── the pace a Hero figure walks at (ADR-0021) ───────────────────────
+
+        [Test]
+        public void TheHeroWalkingSpeed_IsHisMovementStatTimesTheConfigsScale_WithNoRunNeeded()
+        {
+            // The default hero's 325 at the standard 0.01 is the 3.25 arena units per second the fight walks at.
+            Assert.That(service.HeroWalkingSpeed, Is.EqualTo(3.25f).Within(1e-4f));
+
+            SetConfig("Arena.MovementSpeedScale", 0.02f);
+
+            Assert.That(service.HeroWalkingSpeed, Is.EqualTo(6.5f).Within(1e-4f));
+        }
+
         // The damage spread the Encounter plays on, read off the first hit it lands: the hit's reference scale
         // against the same reference taken with no spread.
         private float SpreadOfTheFirstHit()
