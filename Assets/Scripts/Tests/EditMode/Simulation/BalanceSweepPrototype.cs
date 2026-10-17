@@ -1,8 +1,10 @@
 // PROTOTYPE (#296, map #293) - throwaway balance sweep. Lives on branch prototype/296-balance-sweep only; never merge.
 // Runs the real EncounterSimulation headless with a SweepHero that carries the Run-risk levers of
 // dev/specs/2026-10-17-run-risk-levers-design.md (no level-up heal, base Health regen 0, a flat growth table),
-// a Location Population (ADR-0023), a Recall whose portal opens over 0.5 s of sim time, and a gear + loot model
-// with a Fail Bucket. Writes dev/prototypes/2026-10-17-balance-sweep/sweep-output.md.
+// a Location Population (ADR-0023) and a Recall whose portal opens over 0.5 s of sim time. Loot is the real thing:
+// the real ItemGenerator over the real Item Catalog asset, the authored Thornwood / Ashfall category and rarity
+// odds, real affix pools, and the real stat math (flat, then percent-add, then percent-mult). Writes
+// dev/prototypes/2026-10-17-balance-sweep/out-*.md.
 //
 //   dev/run-tests.sh EditMode BalanceSweepPrototype
 using System;
@@ -11,7 +13,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using NUnit.Framework;
+using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
+using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Simulation;
 
 namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation.BalanceSweep
@@ -20,173 +24,299 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation.BalanceSweep
 
     internal static class Knobs
     {
-        public static string Preset = "proposed";
-        public static readonly string[] Presets = { "middle" };
+        // The starter hero. Stats absent here are 0. The live DefaultHero.asset is
+        // Health 640, Armor 26, MR 30, Phys 59, Mag 0, AS 0.658, Resource 280 @ 7/s, Health regen 3.5.
+        public static readonly Dictionary<StatName, float> Base = new()
+        {
+            [StatName.Health] = 400, [StatName.Armor] = 12, [StatName.MagicResist] = 12,
+            [StatName.PhysicalDamage] = 32, [StatName.MagicalDamage] = 14, [StatName.AttackSpeed] = 0.75f,
+            [StatName.HealthRegeneration] = 0, [StatName.Resource] = 200, [StatName.ResourceRegeneration] = 6,
+            [StatName.MovementSpeed] = 325,
+        };
+
+        // Flat, per level reached past 1. No heal.
+        public static readonly Dictionary<StatName, float> Growth = new()
+        {
+            [StatName.Health] = 20, [StatName.PhysicalDamage] = 2.5f, [StatName.MagicalDamage] = 2.5f, [StatName.Resource] = 8,
+        };
+
         public static int ThornwoodPopulation = 5, AshfallPopulation = 6, CurvePopulation = 5;
 
-        // The live DefaultHero.asset, with Health Regeneration 0 (run-risk spec).
-        public static readonly HeroStats LiveBase = new()
-        {
-            Health = 640, Armor = 26, MagicResist = 30, Physical = 59, Magical = 0, AttackSpeed = 0.658f,
-            HealthRegen = 0, Resource = 280, ResourceRegen = 7, MovementSpeed = 325,
-        };
+        // Mitigation: 0 = the live linear percent (Hero.CalculateReceivingDamage, clamped 0..100);
+        // K > 0 = diminishing, R / (R + K), so no stack of Armor or Magic Resist reaches immunity.
+        public static float MitigationK = 100f;
 
-        public static readonly HeroStats ProposedBase = new()
-        {
-            Health = 200, Armor = 0, MagicResist = 0, Physical = 14, Magical = 0, AttackSpeed = 0.9f,
-            HealthRegen = 0, Resource = 100, ResourceRegen = 5, MovementSpeed = 325,
-        };
-
-        public static readonly HeroStats ProposedGrowth = new() { Health = 12, Physical = 1.2f, Magical = 1.2f, Resource = 5 };
-
-        public static readonly HeroStats MiddleBase = new()
-        {
-            Health = 400, Armor = 12, MagicResist = 12, Physical = 32, Magical = 14, AttackSpeed = 0.75f,
-            HealthRegen = 0, Resource = 200, ResourceRegen = 6, MovementSpeed = 325,
-        };
-
-        public static readonly HeroStats MiddleGrowth = new() { Health = 20, Physical = 2.5f, Magical = 2.5f, Resource = 8 };
-
-        public static HeroStats Base => Preset switch { "live" => LiveBase, "middle" => MiddleBase, _ => ProposedBase };
-        public static HeroStats Growth => Preset switch { "live" => default, "middle" => MiddleGrowth, _ => ProposedGrowth };
-
-        // Gear: an item's power is itemLevel x rarity multiplier x roll; a slot turns power into stats.
-        public const int WeaponSlot = 0, ArmorSlots = 6, JewelrySlots = 4, Slots = 1 + ArmorSlots + JewelrySlots;
-        public static float WeaponDamagePerPower = 4.0f;
-        public static float ArmorHealthPerPower = 9f;
-        public static float ArmorResistPerPower = 0.8f; // Armor and Magic Resist each, percent points
-        public static float JewelryRegenPerPower = 0.06f;
-        public static float JewelryDamagePerPower = 0.8f;
-        public static float JewelryAttackSpeedPerPower = 0.0f;
-
-        public static float RarityMultiplier(ItemRarity r) => r switch
-        {
-            ItemRarity.Common => 0.6f,
-            ItemRarity.Magic => 0.8f,
-            ItemRarity.Rare => 1.0f,
-            ItemRarity.Unique => 1.3f,
-            _ => 0f,
-        };
-
-        public const float TypicalQuality = 0.8f; // a kit of average Magic items
-        public const float GoodQuality = 1.1f;    // a kit of high-rolled Rares
-
-        // Loot: the Fail Bucket is a weight beside the authored rarity quantities (160/80/40/20).
-        public static float FailWeight = 900f;
-        public static readonly (ItemRarity rarity, float weight)[] RarityWeights =
-        {
-            (ItemRarity.Common, 160f), (ItemRarity.Magic, 80f), (ItemRarity.Rare, 40f), (ItemRarity.Unique, 2f),
-        };
+        public static float Mitigation(float resist) =>
+            MitigationK > 0f ? Math.Max(0f, resist) / (Math.Max(0f, resist) + MitigationK) : Math.Clamp(resist, 0f, 100f) / 100f;
 
         public const float RecallAt = 0.35f;     // a played hero opens a portal at this Health fraction
         public const float PortalOpening = 0.5f; // sim seconds the portal takes to open (town-portal spec)
         public const float TownTrip = 15f;       // sim seconds a trip to the Healer and back costs
-        public const float SendCap = 600f;       // a careless Send that neither dies nor Completes by then is stopped
+        public const float SendCap = 600f;
         public const float XpLossFraction = 0.25f;
         public const int Engagement = 3;
         public const int CastCost = 16;
         public const int Seeds = 8;
         public const int CampaignSeeds = 20;
+        public const int CampaignMaxSends = 30;
+
+        // A potion is not built (effects model, #298; belt, #300). A played hero drinks one at RecallAt before he
+        // opens a portal, if he carries one; it heals this fraction of his Health at once. The careless hero never does.
+        public const float PotionHealFraction = 0.35f;
+        public const int PotionCarry = 8; // two belt columns of four
+    }
+
+    // ─── loot variants ──────────────────────────────────────────────────────────────────────────
+
+    internal sealed class Table : LootTable
+    {
+        public IReadOnlyList<float> CategoryOdds { get; set; }
+        public IReadOnlyList<float> RarityOdds { get; set; }
+
+        // Enum declaration order: ItemCategory NONE, Consumable, Equipment, Currency;
+        // ItemRarity NoDrop, Common, Magic, Rare, Unique.
+        public static Table Of(float consumable, float equipment, float currency, float fail, float common, float magic, float rare, float unique) => new()
+        {
+            CategoryOdds = Normalized(0f, consumable, equipment, currency),
+            RarityOdds = Normalized(fail, common, magic, rare, unique),
+        };
+
+        private static IReadOnlyList<float> Normalized(params float[] w)
+        {
+            var sum = w.Sum();
+            return w.Select(x => x / sum).ToArray();
+        }
+    }
+
+    internal sealed class LootVariant
+    {
+        public string Name;
+        public string Description;
+        public Table Thornwood, Ashfall;
+        public bool RarityPicksUniqueDefinition; // false: the live generator's uniform pick over every definition
+        public float ItemLevelScale;              // flat affix value x (1 + scale x (itemLevel - 1)); live code: 0
+        public int[] ThornwoodDeck, AshfallDeck;  // card counts NoDrop, Common, Magic, Rare, Unique: dealt without replacement, reshuffled when spent
+
+        public int[] DeckFor(Loc loc) => loc.S <= 3 ? ThornwoodDeck : AshfallDeck;
+
+        public Table TableFor(Loc loc) => loc.S <= 3 ? Thornwood : Ashfall;
+
+        public static readonly LootVariant Live = new()
+        {
+            Name = "live",
+            Description = "The code and data as they are: authored tables (Fail Bucket 0), the generator's uniform pick over all 180 definitions (156 are Uniques), no item-level scaling.",
+            Thornwood = Table.Of(1, 4, 1, 0, 160, 80, 40, 20),
+            Ashfall = Table.Of(1, 6, 1, 0, 80, 80, 60, 30),
+            RarityPicksUniqueDefinition = false,
+            ItemLevelScale = 0f,
+        };
+
+        public static readonly LootVariant Proposed = new()
+        {
+            Name = "proposed",
+            Description = "Fail Bucket ~76% of kills; the rarity roll comes first and only a Unique roll picks a Unique definition (~1 in 500 kills); flat affixes scale +25% per item level past 1.",
+            Thornwood = Table.Of(1, 4, 1, 950, 160, 80, 40, 2.5f),
+            Ashfall = Table.Of(1, 6, 1, 800, 80, 80, 60, 3f),
+            RarityPicksUniqueDefinition = true,
+            ItemLevelScale = 0.25f,
+        };
+
+        public static readonly LootVariant Deck = new()
+        {
+            Name = "deck",
+            Description = "Proposed, with the rarity dealt from a card deck of 1000 per Location per hero (760 NoDrop, 2 Unique): exactly 1 Unique in every 500 kills, and no long dry streak.",
+            Thornwood = Table.Of(1, 4, 1, 950, 160, 80, 40, 2.5f),
+            Ashfall = Table.Of(1, 6, 1, 800, 80, 80, 60, 3f),
+            RarityPicksUniqueDefinition = true,
+            ItemLevelScale = 0.25f,
+            ThornwoodDeck = new[] { 760, 128, 64, 46, 2 },
+            AshfallDeck = new[] { 760, 80, 80, 78, 2 },
+        };
+
+        public static readonly LootVariant[] All = { Live, Proposed, Deck };
+    }
+
+    internal sealed class Looter
+    {
+        private static IItemCatalog _catalog;
+        private readonly LootVariant _variant;
+        private readonly ItemGenerator _generator;
+        private readonly Random _rng;
+
+        public Looter(LootVariant variant, int seed)
+        {
+            _variant = variant;
+            _rng = new Random(seed * 17 + 5);
+            _generator = new ItemGenerator(Catalog, new SeededRollSource(seed));
+        }
+
+        public static IItemCatalog Catalog => _catalog ??= UnityEditor.AssetDatabase.LoadAssetAtPath<ItemCatalogAsset>(
+            "Assets/Scripts/InventorySystem/Data/ItemDefinitions/Item Catalog.asset")
+            ?? throw new InvalidOperationException("Item Catalog asset not found");
+
+        public static ItemDefinition Definition(ItemInstance item) => Catalog.Definition(item.DefinitionId);
+
+        /// <summary>One kill's drop (each archetype rolls once), or null for the Fail Bucket.</summary>
+        public ItemInstance Roll(Loc loc)
+        {
+            var table = _variant.TableFor(loc);
+            if (!_variant.RarityPicksUniqueDefinition)
+            {
+                try { return _generator.Roll(new RollContext(table, loc.S, 0f)); }
+                catch (InvalidOperationException) { return null; } // LootFlow: a NoDrop roll throws, "no items this kill"
+            }
+
+            var category = Sample(table.CategoryOdds, new[] { ItemCategory.NONE, ItemCategory.Consumable, ItemCategory.Equipment, ItemCategory.Currency });
+            var rarity = _variant.DeckFor(loc) is { } deck
+                ? Deal(loc.S, deck)
+                : Sample(table.RarityOdds, new[] { ItemRarity.NoDrop, ItemRarity.Common, ItemRarity.Magic, ItemRarity.Rare, ItemRarity.Unique });
+            if (rarity == ItemRarity.NoDrop) return null;
+            var wantUnique = rarity == ItemRarity.Unique;
+            var pool = Catalog.OfCategory(category).Where(d => d.IsUnique == wantUnique).ToList();
+            if (pool.Count == 0) pool = Catalog.OfCategory(category).ToList();
+            return _generator.Roll(pool[_rng.Next(pool.Count)], rarity, loc.S);
+        }
+
+        private readonly Dictionary<int, List<ItemRarity>> _decks = new();
+
+        private ItemRarity Deal(int key, int[] counts)
+        {
+            if (!_decks.TryGetValue(key, out var deck) || deck.Count == 0)
+            {
+                var rarities = new[] { ItemRarity.NoDrop, ItemRarity.Common, ItemRarity.Magic, ItemRarity.Rare, ItemRarity.Unique };
+                deck = new List<ItemRarity>();
+                for (var i = 0; i < counts.Length; i++) deck.AddRange(Enumerable.Repeat(rarities[i], counts[i]));
+                for (var i = deck.Count - 1; i > 0; i--) { var j = _rng.Next(i + 1); (deck[i], deck[j]) = (deck[j], deck[i]); }
+                _decks[key] = deck;
+            }
+            var card = deck[^1];
+            deck.RemoveAt(deck.Count - 1);
+            return card;
+        }
+
+        private T Sample<T>(IReadOnlyList<float> odds, T[] outcomes)
+        {
+            var x = (float)_rng.NextDouble();
+            for (var i = 0; i < odds.Count; i++)
+            {
+                if (x < odds[i]) return outcomes[i];
+                x -= odds[i];
+            }
+            return outcomes[^1];
+        }
+
+        public float ScaleOf(ItemInstance item) => 1f + _variant.ItemLevelScale * Math.Max(0, item.ItemLevel - 1);
     }
 
     // ─── the hero ───────────────────────────────────────────────────────────────────────────────
 
-    internal struct HeroStats
-    {
-        public float Health, Armor, MagicResist, Physical, Magical, AttackSpeed, HealthRegen, Resource, ResourceRegen, MovementSpeed;
-
-        public static HeroStats operator +(HeroStats a, HeroStats b) => new()
-        {
-            Health = a.Health + b.Health, Armor = a.Armor + b.Armor, MagicResist = a.MagicResist + b.MagicResist,
-            Physical = a.Physical + b.Physical, Magical = a.Magical + b.Magical, AttackSpeed = a.AttackSpeed + b.AttackSpeed,
-            HealthRegen = a.HealthRegen + b.HealthRegen, Resource = a.Resource + b.Resource,
-            ResourceRegen = a.ResourceRegen + b.ResourceRegen, MovementSpeed = a.MovementSpeed + b.MovementSpeed,
-        };
-
-        public HeroStats Scaled(float k) => new()
-        {
-            Health = Health * k, Armor = Armor * k, MagicResist = MagicResist * k, Physical = Physical * k, Magical = Magical * k,
-            AttackSpeed = AttackSpeed * k, HealthRegen = HealthRegen * k, Resource = Resource * k,
-            ResourceRegen = ResourceRegen * k, MovementSpeed = MovementSpeed * k,
-        };
-    }
-
     internal enum Build { Physical, Magical }
 
-    internal sealed class Kit
+    internal sealed class Gear
     {
-        public readonly float[] Power = new float[Knobs.Slots];
+        public readonly Dictionary<string, (ItemInstance item, float scale)> Equipped = new();
 
-        public static Kit None => new();
-
-        public static Kit At(int itemLevel, float quality)
+        public Gear Clone()
         {
-            var kit = new Kit();
-            for (var i = 0; i < Knobs.Slots; i++) kit.Power[i] = itemLevel * quality;
-            return kit;
+            var g = new Gear();
+            foreach (var kv in Equipped) g.Equipped[kv.Key] = kv.Value;
+            return g;
         }
 
-        public Kit Clone()
+        // 14 slots, as the Equipment container (GameConfig EquipmentSize 14).
+        public static string[] SlotsFor(EquipmentType type) => type switch
         {
-            var k = new Kit();
-            Array.Copy(Power, k.Power, Power.Length);
-            return k;
-        }
-
-        public float Average => Power.Average();
-
-        public HeroStats Stats(Build build)
-        {
-            var s = new HeroStats();
-            var weaponDamage = Power[Knobs.WeaponSlot] * Knobs.WeaponDamagePerPower;
-            var jewelDamage = 0f;
-            for (var i = 1; i <= Knobs.ArmorSlots; i++)
-            {
-                s.Health += Power[i] * Knobs.ArmorHealthPerPower;
-                s.Armor += Power[i] * Knobs.ArmorResistPerPower;
-                s.MagicResist += Power[i] * Knobs.ArmorResistPerPower;
-            }
-            for (var i = 1 + Knobs.ArmorSlots; i < Knobs.Slots; i++)
-            {
-                s.HealthRegen += Power[i] * Knobs.JewelryRegenPerPower;
-                jewelDamage += Power[i] * Knobs.JewelryDamagePerPower;
-                s.AttackSpeed += Power[i] * Knobs.JewelryAttackSpeedPerPower;
-            }
-            if (build == Build.Physical) s.Physical += weaponDamage + jewelDamage;
-            else s.Magical += weaponDamage + jewelDamage;
-            return s;
-        }
+            EquipmentType.Ring => new[] { "Ring1", "Ring2" },
+            EquipmentType.Amulet => new[] { "Amulet" },
+            EquipmentType.Shield or EquipmentType.Quiver => new[] { "OffHand" },
+            EquipmentType.Sword or EquipmentType.Bow or EquipmentType.Crossbow or EquipmentType.GreatSword => new[] { "MainHand" },
+            EquipmentType.NONE => Array.Empty<string>(),
+            _ => new[] { type.ToString() },
+        };
     }
 
     internal sealed class SweepHero : IHeroCombatant
     {
-        private HeroStats _total;
-        private Kit _kit;
+        private readonly Dictionary<StatName, float> _total = new();
+        private Gear _gear;
 
-        public SweepHero(Build build, int level, Kit kit)
+        public SweepHero(Build build, int level, Gear gear = null)
         {
             Build = build;
             Level = level;
-            _kit = kit ?? Kit.None;
+            _gear = gear ?? new Gear();
             Refresh();
             FullHeal();
         }
 
         public Build Build { get; }
-        public HeroStats Total => _total;
-        public Kit Kit
+        public Gear Gear
         {
-            get => _kit;
-            set { _kit = value; Refresh(); }
+            get => _gear;
+            set { _gear = value; Refresh(); }
         }
 
-        public int Levels { get; private set; } // level-ups this hero took since the counter was read
+        public int Potions { get; set; }
         public float XpIntoLevel { get; private set; }
 
-        private void Refresh()
+        public float Stat(StatName s) => _total.TryGetValue(s, out var v) ? v : 0f;
+
+        private void Refresh() => Compute(_gear, _total);
+
+        // MutableFloat: (base + sum of flat) x (1 + sum of percent-add / 100) x product of (1 + percent-mult / 100).
+        public void Compute(Gear gear, Dictionary<StatName, float> into)
         {
-            _total = Knobs.Base + Knobs.Growth.Scaled(Level - 1) + _kit.Stats(Build);
-            if (Build == Build.Magical && _total.Physical > 0) _total.Physical *= 0.5f; // a caster still swings, weakly
+            var flat = new Dictionary<StatName, float>();
+            var pct = new Dictionary<StatName, float>();
+            var mult = new Dictionary<StatName, float>();
+            foreach (var kv in Knobs.Base) flat[kv.Key] = kv.Value;
+            foreach (var kv in Knobs.Growth) flat[kv.Key] = flat.GetValueOrDefault(kv.Key) + kv.Value * (Level - 1);
+            foreach (var (item, scale) in gear.Equipped.Values)
+                foreach (var affix in item.Affixes)
+                {
+                    var m = affix.Modifier;
+                    switch (m.Type)
+                    {
+                        case StatModifierType.FlatAdd: flat[affix.Stat] = flat.GetValueOrDefault(affix.Stat) + m.Value * scale; break;
+                        case StatModifierType.PercentAdd: pct[affix.Stat] = pct.GetValueOrDefault(affix.Stat) + m.Value; break;
+                        case StatModifierType.PercentMult: mult[affix.Stat] = (mult.TryGetValue(affix.Stat, out var p) ? p : 1f) * (1f + m.Value / 100f); break;
+                    }
+                }
+            into.Clear();
+            foreach (var s in flat.Keys.Concat(pct.Keys).Concat(mult.Keys).Distinct())
+                into[s] = flat.GetValueOrDefault(s) * (1f + pct.GetValueOrDefault(s) / 100f) * (mult.TryGetValue(s, out var mm) ? mm : 1f);
+            if (Build == Build.Magical && into.ContainsKey(StatName.PhysicalDamage)) into[StatName.PhysicalDamage] *= 0.5f; // a caster swings weakly
+        }
+
+        /// <summary>How good a gear set is for this hero: effective Health x damage per second (Strike + Cast).</summary>
+        public float Score(Gear gear)
+        {
+            var t = new Dictionary<StatName, float>();
+            Compute(gear, t);
+            float S(StatName s) => t.TryGetValue(s, out var v) ? v : 0f;
+            var taken = (1f - Knobs.Mitigation(S(StatName.Armor)) + 1f - Knobs.Mitigation(S(StatName.MagicResist))) / 2f;
+            var ehp = S(StatName.Health) / Math.Max(0.05f, taken) + S(StatName.HealthRegeneration) * 60f;
+            var castsPerSecond = S(StatName.ResourceRegeneration) / Knobs.CastCost;
+            var dps = S(StatName.PhysicalDamage) * S(StatName.AttackSpeed) + S(StatName.MagicalDamage) * castsPerSecond * 1.5f;
+            return ehp * dps;
+        }
+
+        public bool Offer(ItemInstance item, float scale)
+        {
+            var def = Looter.Definition(item);
+            if (def.Category != ItemCategory.Equipment) return false;
+            var best = _gear;
+            var bestScore = Score(_gear);
+            foreach (var slot in Gear.SlotsFor(def.EquipmentType))
+            {
+                var trial = _gear.Clone();
+                trial.Equipped[slot] = (item, scale);
+                var s = Score(trial);
+                if (s > bestScore) { best = trial; bestScore = s; }
+            }
+            if (ReferenceEquals(best, _gear)) return false;
+            Gear = best;
+            return true;
         }
 
         public static float BarMax(int level)
@@ -203,7 +333,6 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation.BalanceSweep
             {
                 XpIntoLevel -= BarMax(Level);
                 Level++;
-                Levels++;
                 Refresh(); // the growth, and no heal (run-risk spec)
             }
         }
@@ -217,36 +346,31 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation.BalanceSweep
         }
 
         public float Health { get; set; }
-        public float MaxHealth => _total.Health;
+        public float MaxHealth => Stat(StatName.Health);
         public float HealthFraction => MaxHealth <= 0f ? 0f : Math.Clamp(Health / MaxHealth, 0f, 1f);
         public bool IsDown => Health <= 0f;
-
         public float Resource { get; set; }
-        public float MaxResource => _total.Resource;
+        public float MaxResource => Stat(StatName.Resource);
         public float ResourceFraction => MaxResource <= 0f ? 0f : Math.Clamp(Resource / MaxResource, 0f, 1f);
-        public float PhysicalDamage => _total.Physical;
-        public float AttackSpeed => _total.AttackSpeed;
-        public float MagicalDamage => _total.Magical;
+        public float PhysicalDamage => Stat(StatName.PhysicalDamage);
+        public float AttackSpeed => Stat(StatName.AttackSpeed);
+        public float MagicalDamage => Stat(StatName.MagicalDamage);
         public float CastCost => Knobs.CastCost;
-        public float MovementSpeed => _total.MovementSpeed;
+        public float MovementSpeed => Stat(StatName.MovementSpeed);
         public float? WeaponStrikeRange => null;
         public int Level { get; private set; }
         public float MagicFind => 0f;
         public float IncreasedItemQuantity => 0f;
 
-        public float DamageTaken { get; set; }
-
-        public float ReceivePhysical(float raw) => Take(raw, _total.Armor);
-        public float ReceiveMagical(float raw) => Take(raw, _total.MagicResist);
+        public float ReceivePhysical(float raw) => Take(raw, Stat(StatName.Armor));
+        public float ReceiveMagical(float raw) => Take(raw, Stat(StatName.MagicResist));
 
         // Hero.CalculateReceivingDamage: linear percent, clamped 0..100.
         private float Take(float raw, float resist)
         {
             if (raw <= 0f || Health <= 0f) return 0f;
-            var mitigated = raw * (1f - Math.Clamp(resist, 0f, 100f) * 0.01f);
-            var lost = Math.Min(Health, mitigated);
+            var lost = Math.Min(Health, raw * (1f - Knobs.Mitigation(resist)));
             Health -= lost;
-            DamageTaken += lost;
             return lost;
         }
 
@@ -254,8 +378,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation.BalanceSweep
 
         public void Regenerate(float dt)
         {
-            if (Health > 0f) Health = Math.Min(MaxHealth, Health + _total.HealthRegen * dt);
-            Resource = Math.Min(MaxResource, Resource + _total.ResourceRegen * dt);
+            if (Health > 0f) Health = Math.Min(MaxHealth, Health + Stat(StatName.HealthRegeneration) * dt);
+            Resource = Math.Min(MaxResource, Resource + Stat(StatName.ResourceRegeneration) * dt);
         }
     }
 
@@ -269,6 +393,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation.BalanceSweep
         public IntRange Brute, Skirmisher, PackBatch;
         public float PackedWeight, Interval;
         public int Population;
+
+        public int KillsPerSend => Population * (Brute.Min + Skirmisher.Min);
 
         public EncounterProfile Profile() => new(S, Packed, Brute, Skirmisher, PackBatch, PackedWeight, Interval,
             FakeLootTable.ForCategory(ItemCategory.Equipment), 0f, 2);
@@ -286,8 +412,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation.BalanceSweep
             PackBatch = new IntRange(3, 5), PackedWeight = 0.7f, Interval = 3.6f, Population = population,
         };
 
-        public static Loc Thornwood(int population) { var l = BrutePacked(2, population); l.Name = "Thornwood"; return l; }
-        public static Loc Ashfall(int population) { var l = SkirmisherPacked(5, population); l.Name = "Ashfall"; return l; }
+        public static Loc Thornwood() { var l = BrutePacked(2, Knobs.ThornwoodPopulation); l.Name = "Thornwood"; return l; }
+        public static Loc Ashfall() { var l = SkirmisherPacked(5, Knobs.AshfallPopulation); l.Name = "Ashfall"; return l; }
     }
 
     // ─── one Send ───────────────────────────────────────────────────────────────────────────────
@@ -296,32 +422,27 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation.BalanceSweep
 
     internal sealed class SendResult
     {
-        public bool Completed, Died, DiedOpening, Capped;
+        public bool Completed, Died, DiedOpening;
         public float Time, CompleteTime = -1f;
-        public int Encounters, Kills, BruteKills, SkirmisherKills, Trips, LevelsGained, Xp;
-        public float DamageTaken;
-        public readonly List<ItemRarity> Drops = new();
+        public int Encounters, Kills, Trips, PotionsDrunk;
+        public readonly List<ItemInstance> Drops = new();
     }
 
     internal static class Sender
     {
-        // keepGoing: a careless Send keeps fighting past its Population, so one run measures both the Complete and the
-        // time to die.
-        public static SendResult Run(SweepHero hero, Loc loc, Policy policy, int seed, bool keepGoing = false, Random loot = null)
+        public static SendResult Run(SweepHero hero, Loc loc, Policy policy, int seed, bool keepGoing = false, Looter looter = null)
         {
             var r = new SendResult();
             var behaviour = new HeroBehaviour { Engagement = Knobs.Engagement };
             var streams = new RollStreams(new SeededRollSource(seed), new SeededRollSource(seed * 7 + 1), new SeededRollSource(seed * 13 + 2));
             var sim = new EncounterSimulation(hero, loc.Profile(), streams, behaviour, EncounterTuning.Standard());
-            var levelsBefore = hero.Level;
-            hero.DamageTaken = 0f;
 
-            sim.XpGained += xp => { hero.GainXp(xp); r.Xp += xp; };
-            sim.EnemyDefeated += e =>
+            sim.XpGained += hero.GainXp;
+            sim.EnemyDefeated += _ =>
             {
                 r.Kills++;
-                if (e.Archetype == EnemyArchetype.Brute) r.BruteKills++; else r.SkirmisherKills++;
-                if (loot != null) r.Drops.Add(Loot.Roll(loot));
+                var item = looter?.Roll(loc);
+                if (item != null) r.Drops.Add(item);
             };
 
             const float dt = 0.1f;
@@ -333,12 +454,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation.BalanceSweep
                 hero.Regenerate(dt);
                 t += dt;
 
-                if (hero.IsDown)
-                {
-                    r.Died = true;
-                    r.DiedOpening = opening >= 0f;
-                    break;
-                }
+                if (hero.IsDown) { r.Died = true; r.DiedOpening = opening >= 0f; break; }
 
                 if (sim.EncountersCleared >= loc.Population && r.CompleteTime < 0f)
                 {
@@ -347,57 +463,31 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation.BalanceSweep
                     if (!keepGoing) break;
                 }
 
-                if (policy == Policy.Played)
+                if (policy == Policy.Played && opening < 0f && hero.HealthFraction <= Knobs.RecallAt)
                 {
-                    if (opening < 0f && hero.HealthFraction <= Knobs.RecallAt) opening = t;
-                    if (opening >= 0f && t - opening >= Knobs.PortalOpening)
+                    if (hero.Potions > 0)
                     {
-                        // The Run holds, frozen; the Healer is free; the portal takes him back into the same fight.
-                        hero.FullHeal();
-                        r.Trips++;
-                        opening = -1f;
+                        hero.Potions--;
+                        r.PotionsDrunk++;
+                        hero.Health = Math.Min(hero.MaxHealth, hero.Health + hero.MaxHealth * Knobs.PotionHealFraction);
                     }
+                    else opening = t;
                 }
 
-                if (t >= Knobs.SendCap) { r.Capped = true; break; }
+                if (opening >= 0f && t - opening >= Knobs.PortalOpening)
+                {
+                    // The Run holds, frozen; the Healer is free; the portal takes him back into the same fight.
+                    hero.FullHeal();
+                    r.Trips++;
+                    opening = -1f;
+                }
+
+                if (t >= Knobs.SendCap) break;
             }
 
             r.Time = t + r.Trips * Knobs.TownTrip;
             r.Encounters = sim.EncountersCleared;
-            r.LevelsGained = hero.Level - levelsBefore;
-            r.DamageTaken = hero.DamageTaken;
             return r;
-        }
-    }
-
-    internal static class Loot
-    {
-        public static ItemRarity Roll(Random rng)
-        {
-            var total = Knobs.FailWeight + Knobs.RarityWeights.Sum(w => w.weight);
-            var x = rng.NextDouble() * total;
-            if (x < Knobs.FailWeight) return ItemRarity.NoDrop;
-            x -= Knobs.FailWeight;
-            foreach (var (rarity, weight) in Knobs.RarityWeights)
-            {
-                if (x < weight) return rarity;
-                x -= weight;
-            }
-            return Knobs.RarityWeights[^1].rarity;
-        }
-
-        // Equip each drop into a random slot if it beats what is there. Item level = the Location's source level.
-        public static void Equip(SweepHero hero, IEnumerable<ItemRarity> drops, int itemLevel, Random rng)
-        {
-            var kit = hero.Kit.Clone();
-            foreach (var rarity in drops)
-            {
-                if (rarity == ItemRarity.NoDrop) continue;
-                var slot = rng.Next(Knobs.Slots);
-                var power = itemLevel * Knobs.RarityMultiplier(rarity) * (0.8f + 0.4f * (float)rng.NextDouble());
-                if (power > kit.Power[slot]) kit.Power[slot] = power;
-            }
-            hero.Kit = kit;
         }
     }
 
@@ -409,7 +499,10 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation.BalanceSweep
         private StringBuilder _out = new();
 
         [Test, Timeout(3_600_000)]
-        public void Sweep1Authored() => Section("authored", () => { HeroTable(); EnemyTable(); AuthoredTable(); });
+        public void Sweep0Census() => Section("census", Census);
+
+        [Test, Timeout(3_600_000)]
+        public void Sweep1Authored() => Section("authored", AuthoredTable);
 
         [Test, Timeout(3_600_000)]
         public void Sweep2Curve() => Section("curve", CurveTable);
@@ -417,185 +510,233 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation.BalanceSweep
         [Test, Timeout(3_600_000)]
         public void Sweep3Campaign() => Section("campaign", Campaign);
 
-        private void Section(string name, Action body)
+        private void Section(string name, Action<LootVariant> body)
         {
-            foreach (var preset in Knobs.Presets)
+            _out = new StringBuilder();
+            _out.AppendLine($"# Balance sweep (#296) - {name}");
+            _out.AppendLine();
+            _out.AppendLine($"Generated {DateTime.Now:yyyy-MM-dd HH:mm}. Real `EncounterSimulation`, `EncounterTuning.Standard()`, Engagement {Knobs.Engagement}. " +
+                            $"Careless = no Recall, no potion. Played = at {Knobs.RecallAt:P0} Health drink a potion if carried (+{Knobs.PotionHealFraction:P0}), else Recall: the portal opens over {Knobs.PortalOpening} s, a trip costs {Knobs.TownTrip} s.");
+            _out.AppendLine();
+            HeroBlock();
+            foreach (var variant in LootVariant.All)
             {
-                Knobs.Preset = preset;
-                _out = new StringBuilder();
-                _out.AppendLine($"# Balance sweep (#296) - {name}, preset `{Knobs.Preset}`");
+                _out.AppendLine($"## Loot `{variant.Name}`");
                 _out.AppendLine();
-                _out.AppendLine($"Generated {DateTime.Now:yyyy-MM-dd HH:mm}. Real `EncounterSimulation`, `EncounterTuning.Standard()`, Engagement {Knobs.Engagement}, " +
-                                $"{Knobs.Seeds} seeds a cell. Careless = no Recall, no potion. Played = Recall at {Knobs.RecallAt:P0} Health, portal opens over {Knobs.PortalOpening} s, a trip costs {Knobs.TownTrip} s. TTD capped at {Knobs.SendCap} s.");
+                _out.AppendLine(variant.Description);
                 _out.AppendLine();
-                body();
-                var dir = Path.Combine(UnityEngine.Application.dataPath, "..", "dev", "prototypes", "2026-10-17-balance-sweep");
-                Directory.CreateDirectory(dir);
-                File.WriteAllText(Path.Combine(dir, $"out-{name}-{Knobs.Preset}.md"), _out.ToString());
+                body(variant);
             }
+            var dir = Path.Combine(UnityEngine.Application.dataPath, "..", "dev", "prototypes", "2026-10-17-balance-sweep");
+            Directory.CreateDirectory(dir);
+            File.WriteAllText(Path.Combine(dir, $"out-{name}.md"), _out.ToString());
         }
 
-        private void HeroTable()
+        private void HeroBlock()
         {
-            var b = Knobs.Base;
-            var g = Knobs.Growth;
-            _out.AppendLine("## Hero");
-            _out.AppendLine();
-            _out.AppendLine("| | Health | Armor % | MR % | Phys | Mag | AS | HP regen | Resource | Res regen |");
-            _out.AppendLine("|---|---|---|---|---|---|---|---|---|---|");
-            _out.AppendLine($"| base | {b.Health} | {b.Armor} | {b.MagicResist} | {b.Physical} | {b.Magical} | {b.AttackSpeed} | {b.HealthRegen} | {b.Resource} | {b.ResourceRegen} |");
-            _out.AppendLine($"| per level | {g.Health} | {g.Armor} | {g.MagicResist} | {g.Physical} | {g.Magical} | {g.AttackSpeed} | {g.HealthRegen} | {g.Resource} | {g.ResourceRegen} |");
-            foreach (var (label, kit) in new[] { ("typical kit ilvl 2", Kit.At(2, Knobs.TypicalQuality)), ("good kit ilvl 2", Kit.At(2, Knobs.GoodQuality)), ("typical kit ilvl 5", Kit.At(5, Knobs.TypicalQuality)), ("good kit ilvl 5", Kit.At(5, Knobs.GoodQuality)), ("good kit ilvl 10", Kit.At(10, Knobs.GoodQuality)) })
-            {
-                var k = kit.Stats(Build.Physical);
-                _out.AppendLine($"| {label} (phys) | +{k.Health:0} | +{k.Armor:0.#} | +{k.MagicResist:0.#} | +{k.Physical:0.#} | +{k.Magical:0.#} | +{k.AttackSpeed:0.##} | +{k.HealthRegen:0.##} | | |");
-            }
-            _out.AppendLine();
-            _out.AppendLine("XP bar: " + string.Join(", ", Enumerable.Range(1, 10).Select(l => $"L{l} {SweepHero.BarMax(l):0}")));
+            _out.AppendLine("Hero base: " + string.Join(", ", Knobs.Base.Select(kv => $"{kv.Key} {kv.Value}")) + ".");
+            _out.AppendLine("Per level: " + string.Join(", ", Knobs.Growth.Select(kv => $"{kv.Key} +{kv.Value}")) + ". XP bar: " +
+                            string.Join(", ", Enumerable.Range(1, 8).Select(l => $"L{l} {SweepHero.BarMax(l):0}")) + ".");
+            _out.AppendLine($"Populations: Thornwood {Knobs.ThornwoodPopulation}, Ashfall {Knobs.AshfallPopulation}, synthetic {Knobs.CurvePopulation}. Mitigation: {(Knobs.MitigationK > 0 ? $"R / (R + {Knobs.MitigationK})" : "linear percent, clamped")}.");
             _out.AppendLine();
         }
 
-        private void EnemyTable()
+        // ─── what the loot is ───────────────────────────────────────────────────────────────────
+
+        private void Census(LootVariant variant)
         {
-            _out.AppendLine("## Enemies per source level (archetype curves, live)");
-            _out.AppendLine();
-            _out.AppendLine("| S = ilvl | Brute HP | Brute hit | Brute raw DPS | Brute XP | Skirm HP | Skirm hit | Skirm raw DPS | Skirm XP | XP / Encounter (B-packed) | XP / Encounter (S-packed) |");
-            _out.AppendLine("|---|---|---|---|---|---|---|---|---|---|---|");
-            for (var s = 1; s <= 10; s++)
+            const int kills = 20000;
+            foreach (var loc in new[] { Loc.Thornwood(), Loc.Ashfall() })
             {
-                var br = EnemyArchetypes.Brute;
-                var sk = EnemyArchetypes.Skirmisher;
-                var xpB = 9 * br.Xp.At(s) + 5 * sk.Xp.At(s);
-                var xpS = 4 * br.Xp.At(s) + 13 * sk.Xp.At(s);
-                _out.AppendLine($"| {s} | {br.Health.At(s):0} | {br.Damage.At(s):0.0} | {br.Damage.At(s) * br.AttackSpeed:0.0} | {br.Xp.At(s):0} | {sk.Health.At(s):0} | {sk.Damage.At(s):0.0} | {sk.Damage.At(s) * sk.AttackSpeed:0.0} | {sk.Xp.At(s):0} | {xpB:0} | {xpS:0} |");
+                var looter = new Looter(variant, 42);
+                var drops = new List<ItemInstance>();
+                var fails = 0;
+                for (var i = 0; i < kills; i++)
+                {
+                    var item = looter.Roll(loc);
+                    if (item == null) fails++; else drops.Add(item);
+                }
+                var defs = drops.Select(d => (item: d, def: Looter.Definition(d))).ToList();
+                var equipment = defs.Where(x => x.def.Category == ItemCategory.Equipment).ToList();
+                var potions = defs.Count(x => x.def.ConsumableType == ConsumableType.Potion);
+                var perSend = loc.KillsPerSend / (float)kills;
+
+                _out.AppendLine($"### {loc.Name} (item level {loc.S}), {kills} kills, {loc.KillsPerSend} kills a Send");
+                _out.AppendLine();
+                _out.AppendLine($"- Drop per kill: {(kills - fails) / (float)kills:P1} (Fail Bucket {fails / (float)kills:P1}); a Send drops ~{(kills - fails) * perSend:0.0} items: " +
+                                $"{equipment.Count * perSend:0.0} equipment, {potions * perSend:0.0} potions.");
+                _out.AppendLine("- Category: " + string.Join(", ", defs.GroupBy(x => x.def.Category).OrderBy(g => g.Key).Select(g => $"{g.Key} {g.Count() / (float)drops.Count:P0}")));
+                _out.AppendLine("- Consumables a Send: " + string.Join(", ", defs.Where(x => x.def.Category == ItemCategory.Consumable).GroupBy(x => x.def.ConsumableType).Select(g => $"{g.Key} {g.Count() * perSend:0.0}")));
+                _out.AppendLine("- Equipment rarity: " + string.Join(", ", equipment.GroupBy(x => x.item.Rarity).OrderBy(g => g.Key).Select(g => $"{g.Key} {g.Count() / (float)equipment.Count:P1}")) +
+                                $"; on a Unique **definition**: {equipment.Count(x => x.def.IsUnique) / (float)Math.Max(1, equipment.Count):P0} (1 in {kills / Math.Max(1f, equipment.Count(x => x.def.IsUnique)):0} kills).");
+                _out.AppendLine();
+                _out.AppendLine("| equipment type | share | affixes it can roll (stat: range, type) | mean rolled value per drop |");
+                _out.AppendLine("|---|---|---|---|");
+                foreach (var g in equipment.GroupBy(x => x.def.EquipmentType).OrderBy(g => g.Key))
+                {
+                    var pool = g.First().def.AffixPool;
+                    var poolText = string.Join("; ", pool.Select(a => $"{a.Stat}: {a.RangeMin}-{a.RangeMax} {(a.ModifierType == StatModifierType.FlatAdd ? "flat" : a.ModifierType == StatModifierType.PercentAdd ? "%" : a.ModifierType.ToString())}"));
+                    var means = g.SelectMany(x => x.item.Affixes.Select(a => (a.Stat, a.Modifier.Type, v: a.Modifier.Value * (a.Modifier.Type == StatModifierType.FlatAdd ? looter.ScaleOf(x.item) : 1f))))
+                        .GroupBy(a => (a.Stat, a.Type)).Select(s => $"{s.Key.Stat} {s.Sum(a => a.v) / g.Count():0.#}{(s.Key.Type == StatModifierType.FlatAdd ? "" : "%")}");
+                    _out.AppendLine($"| {g.Key} | {g.Count() / (float)equipment.Count:P0} | {poolText} | {string.Join(", ", means)} |");
+                }
+                _out.AppendLine();
             }
-            _out.AppendLine();
         }
+
+        // ─── farmed gear ────────────────────────────────────────────────────────────────────────
+
+        /// <summary>The gear a hero holds after farming <paramref name="sends"/> Sends' worth of kills at <paramref name="loc"/>, equipping every upgrade.</summary>
+        private static Gear Farmed(LootVariant variant, Loc loc, int sends, int seed, Build build)
+        {
+            if (sends <= 0) return new Gear();
+            var looter = new Looter(variant, seed);
+            var hero = new SweepHero(build, 1);
+            for (var i = 0; i < sends * loc.KillsPerSend; i++)
+            {
+                var item = looter.Roll(loc);
+                if (item != null) hero.Offer(item, looter.ScaleOf(item));
+            }
+            return hero.Gear;
+        }
+
+        private static string GearText(SweepHero h) =>
+            $"HP {h.MaxHealth:0}, Arm {h.Stat(StatName.Armor):0} ({Knobs.Mitigation(h.Stat(StatName.Armor)):P0}), MR {h.Stat(StatName.MagicResist):0} ({Knobs.Mitigation(h.Stat(StatName.MagicResist)):P0}), Phys {h.PhysicalDamage:0}, Mag {h.MagicalDamage:0}, AS {h.AttackSpeed:0.00}, regen {h.Stat(StatName.HealthRegeneration):0.0}, {h.Gear.Equipped.Count} worn";
 
         private struct Cell
         {
-            public float CompletePct, DiedPct, MedianTtd, MedianComplete, SecPerKill, TripsPerSend, DiedOpeningPct, Encounters;
+            public float CompletePct, MedianTtd, Encounters, SecPerKill, TripsPerSend, PlayedDeathPct;
+            public string Gear;
         }
 
-        private static Cell Measure(Loc loc, Build build, int level, Kit kit)
+        private static Cell Measure(Loc loc, Build build, int level, Func<int, Gear> gearForSeed)
         {
             var careless = new List<SendResult>();
             var played = new List<SendResult>();
+            string gearText = null;
             for (var seed = 1; seed <= Knobs.Seeds; seed++)
             {
-                careless.Add(Sender.Run(new SweepHero(build, level, kit), loc, Policy.Careless, seed, keepGoing: true));
-                played.Add(Sender.Run(new SweepHero(build, level, kit), loc, Policy.Played, seed));
+                var gear = gearForSeed(seed);
+                var c = new SweepHero(build, level, gear);
+                gearText ??= GearText(c);
+                careless.Add(Sender.Run(c, loc, Policy.Careless, seed, keepGoing: true));
+                played.Add(Sender.Run(new SweepHero(build, level, gear), loc, Policy.Played, seed));
             }
             var ttd = careless.Select(r => r.Died ? r.Time : Knobs.SendCap).OrderBy(x => x).ToList();
-            var complete = careless.Where(r => r.Completed).Select(r => r.CompleteTime).OrderBy(x => x).ToList();
-            var kills = careless.Sum(r => r.Kills);
             return new Cell
             {
-                CompletePct = careless.Count(r => r.Completed && (!r.Died || r.CompleteTime < r.Time)) * 100f / careless.Count,
-                DiedPct = careless.Count(r => r.Died) * 100f / careless.Count,
+                CompletePct = careless.Count(r => r.Completed) * 100f / careless.Count,
                 MedianTtd = ttd[ttd.Count / 2],
-                MedianComplete = complete.Count > 0 ? complete[complete.Count / 2] : -1f,
-                SecPerKill = kills > 0 ? careless.Sum(r => r.Time) / kills : -1f,
-                TripsPerSend = (float)played.Average(r => r.Trips),
-                DiedOpeningPct = played.Count(r => r.Died) * 100f / played.Count,
                 Encounters = (float)careless.Average(r => r.Encounters),
+                SecPerKill = careless.Sum(r => r.Time) / Math.Max(1, careless.Sum(r => r.Kills)),
+                TripsPerSend = (float)played.Average(r => r.Trips),
+                PlayedDeathPct = played.Count(r => r.Died) * 100f / played.Count,
+                Gear = gearText,
             };
         }
 
         private static string Fmt(Cell c, int population) =>
-            $"{c.CompletePct:0}% | {(c.MedianTtd >= Knobs.SendCap ? "never" : c.MedianTtd.ToString("0") + " s")} | {c.Encounters:0.0}/{population} | " +
-            $"{(c.MedianComplete < 0 ? "-" : c.MedianComplete.ToString("0") + " s")} | {c.SecPerKill:0.0} | {c.TripsPerSend:0.0} | {c.DiedOpeningPct:0}%";
+            $"{c.CompletePct:0}% | {(c.MedianTtd >= Knobs.SendCap ? "never" : c.MedianTtd.ToString("0") + " s")} | {c.Encounters:0.0}/{population} | {c.SecPerKill:0.0} | {c.TripsPerSend:0.0} | {c.PlayedDeathPct:0}% | {c.Gear}";
 
-        private const string CellHeader = "careless Completes | careless TTD (median) | Encounters before death | time to Complete | s / kill | played trips / Send | played deaths";
+        private const string CellHeader = "careless Completes | careless time to die | Encounters before death | s / kill | played trips / Send | played deaths | hero (seed 1)";
         private const string CellRule = "---|---|---|---|---|---|---";
 
-        private void AuthoredTable()
+        private void AuthoredTable(LootVariant variant)
         {
-            var population = Knobs.ThornwoodPopulation;
-            _out.AppendLine($"## Thornwood (Population {Knobs.ThornwoodPopulation}) and Ashfall (Population {Knobs.AshfallPopulation})");
-            _out.AppendLine();
-            _out.AppendLine($"| Location | build | level | kit | {CellHeader} |");
+            _out.AppendLine($"| Location | build | level | gear | {CellHeader} |");
             _out.AppendLine($"|---|---|---|---|{CellRule}|");
-            var kits = new (string, Func<Kit>)[]
+            var thorn = Loc.Thornwood();
+            var ash = Loc.Ashfall();
+            var gears = new (string, Func<int, Build, Gear>)[]
             {
-                ("none", () => Kit.None), ("typical ilvl 2", () => Kit.At(2, Knobs.TypicalQuality)), ("good ilvl 2", () => Kit.At(2, Knobs.GoodQuality)),
-                ("typical ilvl 5", () => Kit.At(5, Knobs.TypicalQuality)),
+                ("none", (_, _) => new Gear()),
+                ("1 Thornwood Send", (s, b) => Farmed(variant, thorn, 1, s, b)),
+                ("5 Thornwood Sends", (s, b) => Farmed(variant, thorn, 5, s, b)),
+                ("20 Thornwood Sends", (s, b) => Farmed(variant, thorn, 20, s, b)),
+                ("5 Ashfall Sends", (s, b) => Farmed(variant, ash, 5, s, b)),
             };
-            foreach (var loc in new[] { Loc.Thornwood(Knobs.ThornwoodPopulation), Loc.Ashfall(Knobs.AshfallPopulation) })
+            foreach (var loc in new[] { thorn, ash })
                 foreach (var build in new[] { Build.Physical, Build.Magical })
-                    foreach (var level in new[] { 1, 3, 5 })
-                        foreach (var (name, kit) in kits)
-                            _out.AppendLine($"| {loc.Name} | {build} | {level} | {name} | {Fmt(Measure(loc, build, level, kit()), loc.Population)} |");
+                    foreach (var level in new[] { 1, 3, 6 })
+                        foreach (var (name, gear) in gears)
+                            _out.AppendLine($"| {loc.Name} | {build} | {level} | {name} | {Fmt(Measure(loc, build, level, s => gear(s, build)), loc.Population)} |");
             _out.AppendLine();
         }
 
-        private void CurveTable()
+        private void CurveTable(LootVariant variant)
         {
-            var population = Knobs.CurvePopulation;
-            _out.AppendLine($"## The curve: synthetic Locations S1-10, hero on level (L = S), physical build, Population {population}");
+            _out.AppendLine("Synthetic Locations, hero on level (L = S), physical build, gear farmed two source levels below or at this one.");
             _out.AppendLine();
-            _out.AppendLine($"| Location | kit | {CellHeader} |");
+            _out.AppendLine($"| Location | gear | {CellHeader} |");
             _out.AppendLine($"|---|---|{CellRule}|");
             for (var s = 1; s <= 10; s++)
-                foreach (var loc in new[] { Loc.BrutePacked(s, population), Loc.SkirmisherPacked(s, population) })
-                    foreach (var (name, kit) in new (string, Kit)[]
+                foreach (var loc in new[] { Loc.BrutePacked(s, Knobs.CurvePopulation), Loc.SkirmisherPacked(s, Knobs.CurvePopulation) })
+                {
+                    var below = Loc.BrutePacked(Math.Max(1, s - 2), Knobs.CurvePopulation);
+                    foreach (var (name, gear) in new (string, Func<int, Gear>)[]
                              {
-                                 ("none", Kit.None), ($"typical ilvl {Math.Max(1, s - 2)}", Kit.At(Math.Max(1, s - 2), Knobs.TypicalQuality)),
-                                 ($"typical ilvl {s}", Kit.At(s, Knobs.TypicalQuality)), ($"good ilvl {s}", Kit.At(s, Knobs.GoodQuality)),
+                                 ("none", _ => new Gear()),
+                                 ($"5 Sends at S{below.S}", seed => Farmed(variant, below, 5, seed, Build.Physical)),
+                                 ($"5 Sends at S{s}", seed => Farmed(variant, loc, 5, seed, Build.Physical)),
                              })
-                        _out.AppendLine($"| {loc.Name} | {name} | {Fmt(Measure(loc, Build.Physical, s, kit), population)} |");
+                        _out.AppendLine($"| {loc.Name} | {name} | {Fmt(Measure(loc, Build.Physical, s, gear), loc.Population)} |");
+                }
             _out.AppendLine();
         }
 
         // A fresh level-1 hero with nothing equipped farms Thornwood until its first Complete, then Ashfall until its
-        // first Complete. Every Send rolls loot (Fail Bucket included) and equips upgrades; a Death loses 25% of the
-        // bar and starts the next Send fresh.
-        private void Campaign()
+        // first Complete. Every kill rolls real loot (Fail Bucket included); upgrades are equipped, potions carried up to
+        // the belt; a Death loses 25% of the bar and the next Send starts fresh.
+        private void Campaign(LootVariant variant)
         {
-            var total = Knobs.FailWeight + Knobs.RarityWeights.Sum(w => w.weight);
-            _out.AppendLine($"## Campaign: fresh hero, Thornwood (Population {Knobs.ThornwoodPopulation}) then Ashfall (Population {Knobs.AshfallPopulation}), {Knobs.CampaignSeeds} seeds");
-            _out.AppendLine();
-            _out.AppendLine($"Loot: each kill rolls once; Fail Bucket {Knobs.FailWeight / total:P0}, " +
-                            string.Join(", ", Knobs.RarityWeights.Select(w => $"{w.rarity} {w.weight / total:P1}")) + ".");
-            _out.AppendLine();
-            _out.AppendLine("| policy | build | Location | Sends to Complete (median / max) | Deaths (median) | trips (median) | level at Complete | kit avg power | items equipped | time (median, min) |");
-            _out.AppendLine("|---|---|---|---|---|---|---|---|---|---|");
+            _out.AppendLine("| policy | build | Location | Sends to Complete (median / max) | Deaths (median) | trips (median) | potions drunk / dropped | level at Complete | items dropped / equipped | time (median, min) | hero at Complete (seed 1) |");
+            _out.AppendLine("|---|---|---|---|---|---|---|---|---|---|---|");
             foreach (var policy in new[] { Policy.Careless, Policy.Played })
                 foreach (var build in new[] { Build.Physical, Build.Magical })
                 {
-                    var rows = new Dictionary<string, List<(int sends, int deaths, int trips, int level, float kit, int items, float time)>>
+                    var rows = new Dictionary<string, List<(int sends, int deaths, int trips, int drunk, int potions, int level, int items, int equipped, float time, string gear)>>
                     {
                         ["Thornwood"] = new(), ["Ashfall"] = new(),
                     };
                     for (var seed = 1; seed <= Knobs.CampaignSeeds; seed++)
                     {
-                        var hero = new SweepHero(build, 1, Kit.None);
-                        var rng = new Random(seed * 31);
+                        var hero = new SweepHero(build, 1);
+                        var looter = new Looter(variant, seed * 31);
                         var sendSeed = seed * 1000;
-                        foreach (var loc in new[] { Loc.Thornwood(Knobs.ThornwoodPopulation), Loc.Ashfall(Knobs.AshfallPopulation) })
+                        foreach (var loc in new[] { Loc.Thornwood(), Loc.Ashfall() })
                         {
-                            int sends = 0, deaths = 0, trips = 0, items = 0;
+                            int sends = 0, deaths = 0, trips = 0, drunk = 0, potions = 0, items = 0, equipped = 0;
                             var time = 0f;
-                            while (sends < 40)
+                            while (sends < Knobs.CampaignMaxSends)
                             {
                                 sends++;
                                 hero.FullHeal();
-                                var r = Sender.Run(hero, loc, policy, ++sendSeed, loot: rng);
-                                items += r.Drops.Count(d => d != ItemRarity.NoDrop);
-                                Loot.Equip(hero, r.Drops, loc.S, rng);
+                                var r = Sender.Run(hero, loc, policy, ++sendSeed, looter: looter);
+                                foreach (var item in r.Drops)
+                                {
+                                    items++;
+                                    if (Looter.Definition(item).ConsumableType == ConsumableType.Potion)
+                                    {
+                                        potions++;
+                                        hero.Potions = Math.Min(Knobs.PotionCarry, hero.Potions + 1);
+                                    }
+                                    else if (hero.Offer(item, looter.ScaleOf(item))) equipped++;
+                                }
                                 trips += r.Trips;
+                                drunk += r.PotionsDrunk;
                                 time += r.Time;
                                 if (r.Died) { deaths++; hero.LoseXpOnDeath(); }
                                 if (r.Completed) break;
                             }
-                            rows[loc.Name].Add((sends, deaths, trips, hero.Level, hero.Kit.Average, items, time));
+                            rows[loc.Name].Add((sends, deaths, trips, drunk, potions, hero.Level, items, equipped, time, seed == 1 ? GearText(hero) : null));
                         }
                     }
                     foreach (var (name, list) in rows)
                     {
                         static float Med(IEnumerable<float> xs) { var l = xs.OrderBy(x => x).ToList(); return l[l.Count / 2]; }
                         _out.AppendLine($"| {policy} | {build} | {name} | {Med(list.Select(x => (float)x.sends)):0} / {list.Max(x => x.sends)} | {Med(list.Select(x => (float)x.deaths)):0} | " +
-                                        $"{Med(list.Select(x => (float)x.trips)):0} | {Med(list.Select(x => (float)x.level)):0} | {Med(list.Select(x => x.kit)):0.0} | {Med(list.Select(x => (float)x.items)):0} | {Med(list.Select(x => x.time)) / 60f:0.0} |");
+                                        $"{Med(list.Select(x => (float)x.trips)):0} | {Med(list.Select(x => (float)x.drunk)):0} / {Med(list.Select(x => (float)x.potions)):0} | {Med(list.Select(x => (float)x.level)):0} | " +
+                                        $"{Med(list.Select(x => (float)x.items)):0} / {Med(list.Select(x => (float)x.equipped)):0} | {Med(list.Select(x => x.time)) / 60f:0.0} | {list[0].gear} |");
                     }
                 }
             _out.AppendLine();
