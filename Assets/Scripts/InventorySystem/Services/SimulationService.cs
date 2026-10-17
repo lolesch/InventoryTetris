@@ -150,10 +150,12 @@ namespace ToolSmiths.InventorySystem.Services
 
         public void Respawn()
         {
+            // A stray call (a double click on the Respawn button) finds the hero already up: nothing to do.
             var hero = session.Hero;
-            if (hero.IsDead)
-                hero.Heal();
+            if (!hero.IsDead)
+                return;
 
+            hero.Heal();
             EndDeathBeat();
             Respawned?.Invoke();
         }

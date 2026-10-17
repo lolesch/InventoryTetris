@@ -23,7 +23,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         [SerializeField, Tooltip("The arena whose canvas scale turns the hero's walking speed (arena units) into canvas units.")]
         private EnemyArena arena;
 
-        private IHeroTravel _travel;
+        // Standing at the origin until the first Place, so a walk query or TravelTo before OnEnable is safe.
+        private IHeroTravel _travel = new HeroTravel(default);
         private RectTransform _rect;
         private RectTransform _map;
 

@@ -93,8 +93,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _mode = Mode.Walking;
         }
 
+        // The arena's Location anchor, resolved once per Update for everything it drives.
+        private RectTransform _anchor;
+
         private void Update()
         {
+            _anchor = ArenaSpace.LocationAnchor;
             var run = SimulationService.Instance.Run;
             var sameRun = run == _run;
             var sent = sameRun && _phase == RunPhase.InTown && run.Phase == RunPhase.InField;
@@ -116,8 +120,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             }
 
             // A Send's walk starts once the Location's anchor can be read, as the arena waits for it too.
-            if (_awaitingLocation && ArenaSpace.LocationAnchor != null)
-                TravelTo(ArenaSpace.LocationAnchor);
+            if (_awaitingLocation && _anchor != null)
+                TravelTo(_anchor);
 
             switch (_mode)
             {
@@ -278,7 +282,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         // Where a point of the map is on the arena, for the depth sort: the selected Location's centre is the Origin.
         private Coordinate ArenaOf(Vector2 canvas)
         {
-            var anchor = ArenaSpace.LocationAnchor;
+            var anchor = _anchor;
             if (_bound == null || anchor == null)
                 return default;
 
