@@ -840,24 +840,35 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8333965097217707184, guid: ab40e40140a5d1b49ae47d4d36b7d96a, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 56875748}
   m_SourcePrefab: {fileID: 100100000, guid: ab40e40140a5d1b49ae47d4d36b7d96a, type: 3}
 --- !u!224 &56875746 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 2677061103562822159, guid: ab40e40140a5d1b49ae47d4d36b7d96a, type: 3}
   m_PrefabInstance: {fileID: 56875745}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &56875747 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 7114436011070331753, guid: ab40e40140a5d1b49ae47d4d36b7d96a, type: 3}
+--- !u!1 &56875747 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8333965097217707184, guid: ab40e40140a5d1b49ae47d4d36b7d96a, type: 3}
   m_PrefabInstance: {fileID: 56875745}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+--- !u!114 &56875748
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 56875747}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 310f33975d3468842a5795f483725a69, type: 3}
+  m_Script: {fileID: 11500000, guid: b8b81eb4f50510e439f7b81325b1b906, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.Runtime.Simulation.Figure
+  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.Runtime.Simulation.HeroFigure
+  arena: {fileID: 900000012}
+  facingDeadZoneUnits: 0.75
 --- !u!1 &64018610
 GameObject:
   m_ObjectHideFlags: 0
@@ -13585,7 +13596,6 @@ MonoBehaviour:
   container: {fileID: 900000011}
   locations: {fileID: 2124397354}
   visuals: {fileID: 11400000, guid: d876f234f708e044a81089a2195df328, type: 2}
-  heroFigure: {fileID: 56875747}
   arenaScale: 16
   tilt: 0.65
   facingDeadZoneUnits: 0.75
