@@ -266,7 +266,7 @@ One file holding one **Hero**, named `Name_id`: the hero's name, for the eye, an
 that never changes, which is the identity (a rename moves the file, never the id), and nothing else.
 It holds the hero's display name, the id of the template it was built from (`HeroData`: its icon and
 class name), level, the current Health, Resource, Shield and
-Experience, its total **Kills** (banked when a **Run** settles), its **Behaviour Profile**, its selected **Location** (by id), whether its **Town Portal** is open,
+Experience, its total **Kills** (banked when a **Run** settles), its **Behaviour Profile**, its selected **Location** (by id), its open **Town Portal** (by its **Location**),
 the **Unlockables** it has **Completed** (by id; every other **Unlock State** is derived from them), its **Corpse** if
 it has one, and the packages in its **Equipment**, **Inventory** and **Stash** by cell
 (the **Wallet** is coins in the Inventory, so it saves with it). It never holds the **World**
@@ -418,10 +418,12 @@ retreat, extract, flee
 
 **Town Portal**:
 The link a **Recall** opens, from where the hero stood to the **Waypoint**, open until it is
-used. Used from Town, or from its marker on the **Field map**, it takes the hero back and
-resumes the held Run where it was, and closes. A click on any **Location** instead is a
-**Relocate** and closes it. Saved with the hero, so a portal left open survives a quit; the
-Run it held does not, so a portal used after a relaunch Sends there with a fresh **Population**.
+used or a new **Recall** replaces it; there is only ever one. Used from Town, or from its marker
+on the **Field map**, it takes the hero back and resumes the held Run where it was, and closes.
+A click on any **Location** instead is a **Relocate** that discards the held Run; the portal
+stays open. Saved with the hero and its **Location**, so a portal left open survives later Runs
+and a quit; the Run it held does not, so a portal used with no held Run Sends there with a fresh
+**Population**.
 _Avoid_: portal (alone, for the scroll), gate, teleporter, waypoint (that is where it opens)
 
 **Portal Scroll**:

@@ -44,5 +44,6 @@ Hero save. Rejected; a fresh Encounter after a relaunch is the cost.
 - The menus' simulation freeze is renamed, so "held" means only the Run's state.
 - The hero never leaves a Run on his own (Auto-Recall is gone, hero-travel spec), so a Run ends by a
   Return or a Death, and never opens a portal by itself.
-- The Hero save carries one portal flag; which events close a portal is left to triage (spec, Open
-  questions).
+- The Hero save carries the one open portal's Location. A portal closes only when it is used or a new
+  Recall replaces it (resolved 2026-10-18, spec): it outlives a Relocate from held, later Runs and a quit,
+  and used with no held Run it Sends a fresh Encounter at its Location.
