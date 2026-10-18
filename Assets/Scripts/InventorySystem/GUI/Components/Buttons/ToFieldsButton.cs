@@ -29,7 +29,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
         protected override void OnClick()
         {
             base.OnClick();
-            InventoryService.Instance.SyncContextToPhase(true);
+            InventoryService.Instance.SyncContextToMap(true);
 
             if (heroFigure != null)
                 heroFigure.TravelTo(this.TravelPointOr(travelPoint));

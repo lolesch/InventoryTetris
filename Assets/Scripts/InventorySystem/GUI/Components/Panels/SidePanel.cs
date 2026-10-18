@@ -40,6 +40,11 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
                  "the same value. Must not be None.")]
         [SerializeField] private InventoryContext inventoryContext = InventoryContext.None;
 
+        [Tooltip("The Combat Panel, the Field map's Side Panel: also up on None, so closing the hero's bag brings it " +
+                 "back with no request, but only while its map's face says it is up (SetMapUp). Its toggle and " +
+                 "IsUpIn still follow inventoryContext alone.")]
+        [SerializeField] private bool isCombatPanel;
+
         /// <summary>The one Inventory Context this panel was authored with - what a display
         /// living inside the panel asks to learn which Town Stop it belongs to, rather than
         /// hard-coding one.</summary>
@@ -59,6 +64,30 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
         public bool IsUpIn(InventoryContext context) =>
             (InventoryContextState.PanelsFor(context) & InventoryContextState.PanelFor(inventoryContext))
             != InventoryPanels.None;
+
+        /// <summary>
+        /// Whether this panel is shown in <paramref name="context"/>: <see cref="IsUpIn"/>, and for the Combat
+        /// Panel <see cref="InventoryContextState.CombatPanelUpIn"/> while its map is up, which adds <c>None</c>.
+        /// Separate from <see cref="IsUpIn"/> because the Ground toggle's pressed visual must not read pressed
+        /// on <c>None</c>. The map gate keeps a Combat Panel that nothing hides from sitting up, and taking
+        /// clicks, under the Town map.
+        /// </summary>
+        private bool ShowsIn(InventoryContext context) =>
+            isCombatPanel ? mapUp && InventoryContextState.CombatPanelUpIn(context) : IsUpIn(context);
+
+        private bool mapUp;
+
+        /// <summary>
+        /// The Field face telling the Combat Panel that its map came up or went. Re-derives from the active
+        /// context at once, so the panel is up with the face on <c>None</c> and gone with it.
+        /// </summary>
+        public void SetMapUp(bool up)
+        {
+            mapUp = up;
+
+            if (Application.isPlaying && ServiceLocator.IsArmed)
+                ApplyContext(InventoryService.Instance.ActiveContext);
+        }
 
         /// <summary>
         /// The visibility the last context application settled on. Tracked so a context that
@@ -93,7 +122,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
         private void OnContextChanged(InventoryContext context) => ApplyContext(context);
 
         /// <summary>
-        /// Shows or hides this panel for one context, from <see cref="IsUpIn"/>. A panel authored
+        /// Shows or hides this panel for one context, from <see cref="ShowsIn"/>. A panel authored
         /// with no context at all is left exactly as the scene has it: it has no role to derive
         /// and <see cref="OnValidate"/> is what complains about that, not this.
         /// </summary>
@@ -102,7 +131,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
             if (InventoryContextState.PanelFor(inventoryContext) == InventoryPanels.None)
                 return;
 
-            var shouldShow = IsUpIn(context);
+            var shouldShow = ShowsIn(context);
             if (shown == shouldShow)
                 return;
 

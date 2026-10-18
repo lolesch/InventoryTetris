@@ -8,7 +8,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
     /// The Inventory Context rule (issue #83) - the only thing the scene's panel visibility and
     /// toggle pressed-state are derived from since #85. Exercises the real
     /// <see cref="InventoryContextState"/> rather than a copy of it: the default state, the
-    /// single-change-per-Set contract, the derived panel set, closing-is-always-None, and phase
+    /// single-change-per-Set contract, the derived panel set, closing-is-always-None, and map
     /// reachability.
     ///
     /// <para>The two static derivations the scene calls are covered here too, because they are
@@ -236,88 +236,134 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             Assert.That(Attribute.GetCustomAttribute(typeof(InventoryPanels), typeof(FlagsAttribute)), Is.Not.Null);
         }
 
-        // ── Phase reachability ───────────────────────────────────────────
+        // ── Map reachability ───────────────────────────────────────────
+
+        [TestCase(InventoryContext.None, true)]
+        [TestCase(InventoryContext.Hero, true)]
+        [TestCase(InventoryContext.Ground, true)]
+        [TestCase(InventoryContext.Stash, false)]
+        [TestCase(InventoryContext.Vendor, false)]
+        [TestCase(InventoryContext.Healer, false)]
+        public void IsReachable_OnTheFieldMap_IsOnlyNoneHeroAndGround(InventoryContext context, bool expected)
+        {
+            Assert.That(InventoryContextState.IsReachable(context, onFieldMap: true), Is.EqualTo(expected));
+        }
+
+        [TestCase(InventoryContext.None)]
+        [TestCase(InventoryContext.Hero)]
+        [TestCase(InventoryContext.Ground)]
+        [TestCase(InventoryContext.Stash)]
+        [TestCase(InventoryContext.Vendor)]
+        [TestCase(InventoryContext.Healer)]
+        public void IsReachable_OnTheTownMap_IsEveryContext(InventoryContext context)
+        {
+            Assert.That(InventoryContextState.IsReachable(context, onFieldMap: false), Is.True);
+        }
+
+        // ── The Combat Panel ─────────────────────────────────────────────
+
+        [TestCase(InventoryContext.None, true)]
+        [TestCase(InventoryContext.Ground, true)]
+        [TestCase(InventoryContext.Hero, false)]
+        [TestCase(InventoryContext.Stash, false)]
+        [TestCase(InventoryContext.Vendor, false)]
+        [TestCase(InventoryContext.Healer, false)]
+        public void CombatPanelIsUp_OnNoneAndGround(InventoryContext context, bool expected)
+        {
+            Assert.That(InventoryContextState.CombatPanelUpIn(context), Is.EqualTo(expected));
+        }
 
         [Test]
-        public void SyncToPhase_EnteringField_DropsUnreachableContext_ToNone()
+        public void CombatPanel_ClosingTheHeroPanel_BringsItBack()
+        {
+            state.Set(InventoryContext.Hero);
+            Assert.That(InventoryContextState.CombatPanelUpIn(state.Active), Is.False);
+
+            state.Close();
+
+            Assert.That(InventoryContextState.CombatPanelUpIn(state.Active), Is.True);
+        }
+
+        [Test]
+        public void SyncToMap_EnteringField_DropsUnreachableContext_ToNone()
         {
             state.Set(InventoryContext.Vendor);
             InventoryContext? seen = null;
             state.Changed += ctx => seen = ctx;
 
-            state.SyncToPhase(inField: true);
+            state.SyncToMap(onFieldMap: true);
 
             Assert.That(state.Active, Is.EqualTo(InventoryContext.None));
             Assert.That(seen, Is.EqualTo(InventoryContext.None));
         }
 
         [Test]
-        public void SyncToPhase_EnteringField_KeepsHeroReachable()
+        public void SyncToMap_EnteringField_KeepsHeroReachable()
         {
             state.Set(InventoryContext.Hero);
             var fired = 0;
             state.Changed += _ => fired++;
 
-            state.SyncToPhase(inField: true);
+            state.SyncToMap(onFieldMap: true);
 
             Assert.That(state.Active, Is.EqualTo(InventoryContext.Hero));
             Assert.That(fired, Is.Zero);
         }
 
         [Test]
-        public void SyncToPhase_EnteringField_KeepsGroundReachable()
+        public void SyncToMap_EnteringField_KeepsGroundReachable()
         {
             state.Set(InventoryContext.Ground);
             var fired = 0;
             state.Changed += _ => fired++;
 
-            state.SyncToPhase(inField: true);
+            state.SyncToMap(onFieldMap: true);
 
             Assert.That(state.Active, Is.EqualTo(InventoryContext.Ground));
             Assert.That(fired, Is.Zero);
         }
 
         [Test]
-        public void SyncToPhase_EnteringField_KeepsNoneReachable()
+        public void SyncToMap_EnteringField_KeepsNoneReachable()
         {
             var fired = 0;
             state.Changed += _ => fired++;
 
-            state.SyncToPhase(inField: true);
+            state.SyncToMap(onFieldMap: true);
 
             Assert.That(state.Active, Is.EqualTo(InventoryContext.None));
             Assert.That(fired, Is.Zero);
         }
 
         [Test]
-        public void SyncToPhase_ReturningToTown_DoesNotReopenAnything()
+        public void SyncToMap_ReturningToTown_DoesNotReopenAnything()
         {
             state.Set(InventoryContext.Vendor);
-            state.SyncToPhase(inField: true); // drops to None
+            state.SyncToMap(onFieldMap: true); // drops to None
 
-            state.SyncToPhase(inField: false);
+            state.SyncToMap(onFieldMap: false);
 
             Assert.That(state.Active, Is.EqualTo(InventoryContext.None));
         }
 
         [Test]
-        public void SyncToPhase_InTown_LeavesGroundReachable()
+        public void SyncToMap_InTown_LeavesGroundReachable()
         {
             state.Set(InventoryContext.Ground);
 
-            state.SyncToPhase(inField: false);
+            state.SyncToMap(onFieldMap: false);
 
             Assert.That(state.Active, Is.EqualTo(InventoryContext.Ground), "the World's ground is there in Town too (#285)");
         }
 
         [Test]
-        public void SyncToPhase_InTown_LeavesReachableContextUntouched()
+        public void SyncToMap_InTown_LeavesReachableContextUntouched()
         {
             state.Set(InventoryContext.Stash);
             var fired = 0;
             state.Changed += _ => fired++;
 
-            state.SyncToPhase(inField: false);
+            state.SyncToMap(onFieldMap: false);
 
             Assert.That(state.Active, Is.EqualTo(InventoryContext.Stash));
             Assert.That(fired, Is.Zero);

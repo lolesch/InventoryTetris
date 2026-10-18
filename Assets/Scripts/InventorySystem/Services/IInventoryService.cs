@@ -33,11 +33,10 @@ namespace ToolSmiths.InventorySystem.Services
         void CloseContext();
 
         /// <summary>
-        /// Drops the active context to <see cref="InventoryContext.None"/> if the Run phase just made it
-        /// unreachable (see <see cref="InventoryContextState.SyncToPhase"/>) - the Send/Return/Death/
-        /// Go-Venture side of phase reachability (#84).
+        /// Drops the active context to <see cref="InventoryContext.None"/> if the map that just came up
+        /// makes it unreachable (see <see cref="InventoryContextState.IsReachable"/>).
         /// </summary>
-        void SyncContextToPhase(bool inField);
+        void SyncContextToMap(bool onFieldMap);
 
         /// <summary>The container <paramref name="role"/> names on the current Hero and World, or null for none.</summary>
         AbstractDimensionalContainer ContainerFor(ContainerRole role);
