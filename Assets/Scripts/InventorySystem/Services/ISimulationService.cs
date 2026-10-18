@@ -76,6 +76,26 @@ namespace ToolSmiths.InventorySystem.Services
         /// </summary>
         void Relocate(LocationConfig location);
 
+        /// <summary>
+        /// Whether <see cref="Recall"/> will not refuse: a Run is live with its hero up and no portal opening, and
+        /// the hero's Inventory (not the Stash) holds a Portal Scroll. Also true after a Location's Complete.
+        /// </summary>
+        bool CanRecall { get; }
+
+        /// <summary>
+        /// Open a Town Portal on the live Run (ADR-0022): takes one Portal Scroll from the hero's Inventory and
+        /// starts the Run's opening, after which the Run is <see cref="RunPhase.Held"/> and the
+        /// Hero's <c>TownPortal</c> is the Run's Location. Throws when <see cref="CanRecall"/> is false;
+        /// the Inventory is then unchanged. A Death in the opening is an ordinary Death and the scroll stays spent.
+        /// </summary>
+        void Recall();
+
+        /// <summary>
+        /// Resume the held Run exactly where it was and close the hero's Town Portal. Throws unless the Run is
+        /// <see cref="RunPhase.Held"/>. A Relocate from Held, a Send, a Return and a Death all leave the portal open.
+        /// </summary>
+        void Resume();
+
         /// <summary>Whether the Hero's Corpse lies at <paramref name="location"/>, selected or not.</summary>
         bool CorpseLiesAt(LocationConfig location);
 
