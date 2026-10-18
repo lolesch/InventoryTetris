@@ -42,8 +42,9 @@ this one (#296). A harder Location pays more XP per kill through its archetypes'
 (the ±1%-per-level term stays as it is). Item level caps how far a Location's loot carries a hero, with
 neighbouring bands overlapping: the best Thornwood gear can
 clear Ashfall, typical Thornwood gear cannot. Ashfall is a gear-gated **step**, not a wall: a hero fresh
-from Thornwood survives part of it, Returns before dying, and grows on Ashfall's own drops. How item level
-caps an affix (ranges or pools) waits on "What each Rarity is for".
+from Thornwood survives part of it, Returns before dying, and grows on Ashfall's own drops. The range runs
+from the source level to two above, weighted toward the bottom, and item level scales every rolled value by
+one formula ("What each Rarity is for", #303, `dev/specs/2026-10-18-rarity-roles-design.md`).
 
 **What the sweep aims at (#296).** A careless new hero (no Recall, no potion) dies in Thornwood before its
 first Send Completes; a played one Completes it. The first Location fields mainly slow, short-range enemies
