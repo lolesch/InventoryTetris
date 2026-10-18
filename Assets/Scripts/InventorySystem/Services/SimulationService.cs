@@ -63,6 +63,8 @@ namespace ToolSmiths.InventorySystem.Services
 
         public UnlockState StateOf(Unlockable unlockable) => progression.StateOf(unlockable, session.Hero);
 
+        public event Action ProgressionChanged;
+
         private void RequireOpen(LocationConfig location)
         {
             if (StateOf(location) < UnlockState.Active)
@@ -322,6 +324,8 @@ namespace ToolSmiths.InventorySystem.Services
                     hero.GainExperience(xp, hero.Level);
             };
 
+            encounter.LocationCompleted += () => OnLocationCompleted(hero, profile);
+
             var lootFlow = new LootFlow(encounter, hero.Behaviour, generator, items, hero, hero.Wallet,
                 world.Ground);
 
@@ -333,6 +337,20 @@ namespace ToolSmiths.InventorySystem.Services
 
             world.LootFlow = lootFlow;
             return encounter;
+        }
+
+        /// <summary>
+        /// A Population cleared: the Location joins the hero's Completed set, which opens what it Unlocks in the
+        /// same Run (ADR-0023). The signal is raised only when the set grew, so a farmed Location stays quiet.
+        /// </summary>
+        private void OnLocationCompleted(Hero hero, EncounterProfile profile)
+        {
+            // A profile outside the authored list has no id to complete.
+            if (!locations.TryGetId(profile, out var id) || hero.HasCompleted(id))
+                return;
+
+            hero.MarkCompleted(id);
+            ProgressionChanged?.Invoke();
         }
 
         /// <summary>

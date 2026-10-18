@@ -188,6 +188,57 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(session.Hero.SelectedLocation, Is.SameAs(ashfen));
         }
 
+        // ── a Location's Complete opens what it Unlocks, in the same Run ──────
+
+        // An invincible hero clears the one-Encounter Population the test Locations field.
+        private static void TickUntilComplete(SimulationService game)
+        {
+            for (var i = 0; i < 20000 && game.Run.Encounter.Phase != SimulationPhase.Complete; i++)
+                game.Tick(0.1f);
+
+            Assert.That(game.Run.Encounter.Phase, Is.EqualTo(SimulationPhase.Complete), "premise: the Population cleared");
+        }
+
+        [Test]
+        public void ClearingThePopulation_CompletesTheLocation_AndOpensWhatItUnlocks_WithoutAReturn()
+        {
+            Unlock(thornwood, ashfen, whenComplete: true);
+            var game = GameOver(thornwood, ashfen);
+            session.Hero.IsInvincible = true;
+            var changed = 0;
+            game.ProgressionChanged += () => changed++;
+
+            game.Send(thornwood);
+            Assert.That(game.StateOf(ashfen), Is.EqualTo(UnlockState.Locked), "premise");
+            TickUntilComplete(game);
+
+            Assert.That(game.StateOf(thornwood), Is.EqualTo(UnlockState.Complete));
+            Assert.That(game.StateOf(ashfen), Is.EqualTo(UnlockState.Active));
+            Assert.That(changed, Is.EqualTo(1));
+            Assert.That(game.Run.Phase, Is.EqualTo(RunPhase.InField), "no Return needed");
+
+            game.Relocate(ashfen);
+            Assert.That(session.Hero.SelectedLocation, Is.SameAs(ashfen));
+        }
+
+        [Test]
+        public void ClearingACompleteLocationAgain_ChangesNothing_AndRaisesNoSignal()
+        {
+            Unlock(thornwood, ashfen, whenComplete: true);
+            var game = GameOver(thornwood, ashfen);
+            session.Hero.IsInvincible = true;
+            session.Hero.MarkCompleted("thornwood");
+            var changed = 0;
+            game.ProgressionChanged += () => changed++;
+
+            game.Send(thornwood);
+            TickUntilComplete(game);
+
+            Assert.That(game.StateOf(thornwood), Is.EqualTo(UnlockState.Complete));
+            Assert.That(game.StateOf(ashfen), Is.EqualTo(UnlockState.Active));
+            Assert.That(changed, Is.EqualTo(0));
+        }
+
         // ── a fresh World and Hero ───────────────────────────────────────────
 
         [Test]

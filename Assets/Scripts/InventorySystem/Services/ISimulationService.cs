@@ -28,6 +28,12 @@ namespace ToolSmiths.InventorySystem.Services
         /// </summary>
         UnlockState StateOf(Unlockable unlockable);
 
+        /// <summary>
+        /// Raised once when a Location's Complete changed the hero's Completed set, so anything showing an
+        /// <see cref="UnlockState"/> re-reads it. Not raised for a Complete Location cleared again.
+        /// </summary>
+        event Action ProgressionChanged;
+
         /// <summary>The current World's Run FSM - <see cref="RunPhase.InTown"/> until a <see cref="Send"/>. Built on the first ask.</summary>
         RunState Run { get; }
 
