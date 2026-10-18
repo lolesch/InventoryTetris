@@ -10,6 +10,7 @@ using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Persistence;
 using ToolSmiths.InventorySystem.Services;
+using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -351,6 +352,29 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             var retried = NewSetup();
             _ = retried.Saves.Load(hero.Id);
             Assert.That(retried.Game.Hero.Wallet.Balance.Total, Is.EqualTo(1000u));
+        }
+
+        [Test]
+        public void AFailingCompleteSave_IsReportedAsAnyOtherIs_AndTheCompleteStandsInMemory()
+        {
+            var thornwood = TestLocations.Create(config, created, "thornwood");
+            TestLocations.Author(config, thornwood);
+            var setup = NewSetup();
+            var hero = setup.Saves.Create("Aria");
+            _ = setup.Saves.Load(hero.Id);
+            setup.Game.Hero.IsInvincible = true;
+            setup.Game.Simulation.Send(thornwood);
+            store.FailWrites = true;
+            ExpectLog(LogType.Error, "Could not save hero .*the disk is full");
+
+            for (var i = 0; i < 20000 && setup.Game.Simulation.Run.Encounter.Phase != SimulationPhase.Complete; i++)
+                setup.Game.Simulation.Tick(0.1f);
+
+            setup.Saves.FlushCompletionSave();
+
+            Assert.That(setup.Game.Simulation.Run.Encounter.Phase, Is.EqualTo(SimulationPhase.Complete), "premise");
+            Assert.That(setup.Game.Hero.HasCompleted("thornwood"), Is.True, "the Complete stands in memory");
+            Assert.That(setup.Game.Simulation.Run.Phase, Is.EqualTo(RunPhase.InField));
         }
 
         // ── the quarantine sidecar ──────────────────────────────────────────

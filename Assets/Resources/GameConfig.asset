@@ -44,3 +44,7 @@ MonoBehaviour:
   locations:
   - {fileID: 11400000, guid: 79be389ba1b44186ad2958d8b404c690, type: 2}
   - {fileID: 11400000, guid: 547ec5b47c1b458f833aaae5f6dc7aa4, type: 2}
+  quests:
+  - {fileID: 11400000, guid: 9d4c7e1a35b64f08a2e6c0b8f1d37a24, type: 2}
+  townStops:
+  - {fileID: 11400000, guid: 2f6a0d9b81c34e57a3d1b4c8e7092f15, type: 2}

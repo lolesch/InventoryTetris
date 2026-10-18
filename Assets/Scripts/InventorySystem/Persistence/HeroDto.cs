@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using ToolSmiths.InventorySystem.Simulation;
 
 namespace ToolSmiths.InventorySystem.Persistence
@@ -37,6 +38,13 @@ namespace ToolSmiths.InventorySystem.Persistence
 
         /// <summary>The hero's lifetime Kill count. 0 in a save written before there was one, so those need no schema migration.</summary>
         public int totalKills;
+
+        /// <summary>
+        /// The ids of the Unlockables the hero has Completed, the one progression fact kept (ADR-0023). Empty
+        /// in a save written before there was one; an id the progression registry no longer knows is dropped
+        /// on load, so neither needs a schema migration.
+        /// </summary>
+        public List<string> completedIds = new();
 
         public float health;
         public float resource;

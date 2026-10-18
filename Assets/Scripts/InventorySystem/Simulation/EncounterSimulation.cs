@@ -103,6 +103,7 @@ namespace ToolSmiths.InventorySystem.Simulation
 
             _tuning = tuning ?? new EncounterTuning();
             _tuning.Validate();
+            Population = _profile.Population.Roll(_streams.Main);
             _heroBrain = heroBrain ?? new AutoHeroBrain(_behaviour, _tuning.HeroTargeting);
             _arena = new Arena(_tuning.Arena);
 
@@ -177,6 +178,12 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <summary>1-based index of the Encounter currently building or being fought.</summary>
         public int CurrentEncounter { get; private set; }
 
+        /// <summary>How many Encounters this Send fields, rolled once from the Location's range.</summary>
+        public int Population { get; }
+
+        /// <summary>The live readout of how far the Send is from done: the current index of the Population, or the Population alone while arriving.</summary>
+        public string ProgressText => IsArriving ? $"Arriving…   {Population} {(Population == 1 ? "Encounter" : "Encounters")}" : $"Encounter {CurrentEncounter} of {Population}";
+
         public int EncountersCleared { get; private set; }
 
         /// <summary>Every enemy that has fallen across the whole sequence.</summary>
@@ -214,6 +221,9 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <summary>Raised on an Encounter clear — the Roster is spent and the last body is down.</summary>
         public event Action EncounterCleared;
 
+        /// <summary>Raised once, as the last Encounter of the Population clears and the sim enters <see cref="SimulationPhase.Complete"/>.</summary>
+        public event Action LocationCompleted;
+
         /// <summary>Raised the tick the hero's health reaches 0.</summary>
         public event Action HeroDowned;
 
@@ -233,11 +243,11 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <summary>
         /// Bank <paramref name="deltaSeconds"/> of real time and run every whole tick now due
         /// (0..N). Returns the number of ticks run. A no-op once the sim has
-        /// <see cref="SimulationPhase.Ended"/>.
+        /// <see cref="SimulationPhase.Ended"/>, and once <see cref="SimulationPhase.Complete"/>, where time stands still.
         /// </summary>
         public int Advance(float deltaSeconds)
         {
-            if (Phase == SimulationPhase.Ended) return 0;
+            if (Phase == SimulationPhase.Ended || Phase == SimulationPhase.Complete) return 0;
             return _clock.Advance(deltaSeconds);
         }
 
@@ -622,10 +632,13 @@ namespace ToolSmiths.InventorySystem.Simulation
         {
             EncountersCleared++;
 
-            Phase = SimulationPhase.Beat;
+            var complete = EncountersCleared >= Population;
+            Phase = complete ? SimulationPhase.Complete : SimulationPhase.Beat;
             _beatEndsAt = _clock.ElapsedTime + _tuning.Beat;
 
             EncounterCleared?.Invoke();
+            if (complete)
+                LocationCompleted?.Invoke();
         }
     }
 }

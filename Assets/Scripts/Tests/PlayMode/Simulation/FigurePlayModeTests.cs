@@ -5,6 +5,7 @@ using Submodules.Utility.UI;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Locations;
+using ToolSmiths.InventorySystem.Persistence;
 using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
@@ -26,9 +27,17 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
         [UnitySetUp]
         public IEnumerator SetUp()
         {
-            _locations = GameBoot.Load().Locations.ToArray();
+            // Thornwood first: it is the one a fresh hero may be Sent to.
+            _locations = GameBoot.Load().Locations.OrderBy(location => location.Id != "location.thornwood").ToArray();
 
             yield return SceneManager.LoadSceneAsync("Example");
+            yield return null;
+
+            // A veteran who has Completed Thornwood: Ashfall is open too, so the tests can Relocate between the two.
+            var veteran = Session.Instance.Hero;
+            veteran.MarkCompleted("location.thornwood");
+            var save = HeroMapper.ToDto(veteran, "veteran", "Veteran", SimulationService.Instance.Locations);
+            _ = Session.Instance.TryLoad(save, SimulationService.Instance.Locations, out _);
             yield return null;
         }
 

@@ -35,10 +35,8 @@ namespace ToolSmiths.InventorySystem.Locations
     /// <see cref="RunState"/>'s <c>InTown</c> phase.
     /// </summary>
     [CreateAssetMenu(fileName = "New Location", menuName = AssetMenus.Root + "Location")]
-    public sealed class LocationConfig : ScriptableObject
+    public sealed class LocationConfig : Unlockable
     {
-        [Tooltip("Stable id a Run / Corpse references - a slug the author picks. Never the asset name, never the Unity asset GUID.")]
-        [SerializeField] private string id;
         [SerializeField] private string displayName;
 
         [Header("Difficulty")]
@@ -59,6 +57,9 @@ namespace ToolSmiths.InventorySystem.Locations
         [Tooltip("[min,max] Skirmishers each Encounter fields, rolled fresh per Encounter.")]
         [SerializeField] private Vector2Int rosterSkirmisher = new(1, 1);
 
+        [Tooltip("[min,max] Encounters a Send here fields, rolled fresh on every Send and Relocate. The last one cleared Completes the Location.")]
+        [SerializeField] private Vector2Int population = new(1, 1);
+
         [Header("Spawn Profile")]
         [Tooltip("Pack size for the packed archetype. [1,1] means 'no real Pack', a pure trickle.")]
         [SerializeField] private Vector2Int packBatch = new(1, 1);
@@ -69,9 +70,6 @@ namespace ToolSmiths.InventorySystem.Locations
         [Tooltip("Uniform ±jitter, in seconds, applied to each spawn interval.")]
         [SerializeField] private float spawnJitter;
 
-        /// <summary>Stable identity a saved Run / Corpse references. Never the asset GUID, never the asset name.</summary>
-        public string Id => id;
-
         public string DisplayName => displayName;
 
         /// <summary>Fixed per Location, never scaled to the hero.</summary>
@@ -81,6 +79,8 @@ namespace ToolSmiths.InventorySystem.Locations
 
         public Vector2Int RosterBrute => rosterBrute;
         public Vector2Int RosterSkirmisher => rosterSkirmisher;
+
+        public Vector2Int Population => population;
 
         public Vector2Int PackBatch => packBatch;
         public float PackedSpawnWeight => packedSpawnWeight;
@@ -99,6 +99,8 @@ namespace ToolSmiths.InventorySystem.Locations
             if (rosterSkirmisher.x < 0) rosterSkirmisher.x = 0;
             if (rosterBrute.y < rosterBrute.x) rosterBrute.y = rosterBrute.x;
             if (rosterSkirmisher.y < rosterSkirmisher.x) rosterSkirmisher.y = rosterSkirmisher.x;
+            if (population.x < 1) population.x = 1;
+            if (population.y < population.x) population.y = population.x;
             if (packBatch.x < 1) packBatch.x = 1;
             if (packBatch.y < packBatch.x) packBatch.y = packBatch.x;
             if (spawnInterval <= 0f) spawnInterval = 0.1f;
@@ -115,7 +117,7 @@ namespace ToolSmiths.InventorySystem.Locations
         /// </summary>
         public string[] Validate()
         {
-            if (string.IsNullOrWhiteSpace(id))
+            if (string.IsNullOrWhiteSpace(Id))
                 return new[] { "id is empty - author a stable slug (never the asset name or Unity asset GUID)." };
             if (categoryDistribution == null || rarityDistribution == null)
                 return new[] { "the loot table is incomplete - author both the category and rarity distributions." };
@@ -148,7 +150,8 @@ namespace ToolSmiths.InventorySystem.Locations
                 packedSpawnWeight,
                 spawnInterval,
                 new LocationLootTable(categoryDistribution, rarityDistribution),
-                spawnJitter);
+                spawnJitter,
+                population: new IntRange(population.x, population.y));
         }
 
 #if UNITY_EDITOR
@@ -161,9 +164,10 @@ namespace ToolSmiths.InventorySystem.Locations
             string id, string displayName, int sourceLevel,
             ItemCategoryDistribution categoryDistribution, ItemRarityDistribution rarityDistribution,
             EnemyArchetype packed, Vector2Int rosterBrute, Vector2Int rosterSkirmisher,
-            Vector2Int packBatch, float packedSpawnWeight, float spawnInterval, float spawnJitter)
+            Vector2Int packBatch, float packedSpawnWeight, float spawnInterval, float spawnJitter,
+            Vector2Int? population = null)
         {
-            this.id = id;
+            AuthorId(id);
             this.displayName = displayName;
             this.sourceLevel = sourceLevel;
             this.categoryDistribution = categoryDistribution;
@@ -171,6 +175,7 @@ namespace ToolSmiths.InventorySystem.Locations
             this.packed = packed;
             this.rosterBrute = rosterBrute;
             this.rosterSkirmisher = rosterSkirmisher;
+            this.population = population ?? new Vector2Int(1, 1);
             this.packBatch = packBatch;
             this.packedSpawnWeight = Mathf.Clamp01(packedSpawnWeight);
             this.spawnInterval = spawnInterval;

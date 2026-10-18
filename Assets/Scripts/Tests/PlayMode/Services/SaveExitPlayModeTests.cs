@@ -167,7 +167,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         private static bool BagHolds(ItemInstance item) =>
             Session.Hero.Inventory.StoredPackages.Values.Any(stored => stored.Item.Equals(item));
 
-        private static void SendToTheField() => Simulation.Send(GameBoot.Load().Locations.First());
+        private static void SendToTheField() => Simulation.Send(GameBoot.Load().Locations.First(location => location.Id == "location.thornwood"));
 
         [UnityTest]
         public IEnumerator InTown_SaveAndExit_WritesTheHeroAndLoadsTheMenu_WithNoPopup()

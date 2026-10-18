@@ -203,6 +203,10 @@ namespace ToolSmiths.InventorySystem.Services
             var simulation = registry.Get<ISimulationService>();
             _ = new PauseHotkey(simulation, keys);
             GameLoop.Add(simulation.Tick);
+
+            // After the tick, so a Complete it raised is banked the frame it happened.
+            var heroes = registry.Get<IHeroSaveService>();
+            GameLoop.Add(_ => heroes.FlushCompletionSave());
         }
 
         // The Cancel chain, with the Context layer that is the services' own. The Drag layer is the drag

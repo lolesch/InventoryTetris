@@ -99,7 +99,7 @@ namespace ToolSmiths.InventorySystem.Services
         /// <summary>The Session's hero did not come from a save file (a template load, or another hero loaded behind the service's back).</summary>
         NotFromSave,
 
-        /// <summary>A Run is in the Field; the file only ever holds a Town hero.</summary>
+        /// <summary>A Run is in the Field; the file only ever holds a Town hero. A Complete's own save is the one write past it.</summary>
         RunInField,
 
         /// <summary>A before-save step failed, so the previous file was kept.</summary>
@@ -257,5 +257,12 @@ namespace ToolSmiths.InventorySystem.Services
 
         /// <summary>Removes a normaliser. Does nothing for one that is not registered.</summary>
         void RemoveBeforeSave(System.Action normaliser);
+
+        /// <summary>
+        /// Writes the hero if a Location's Complete is waiting to be banked, even mid-Run; does nothing otherwise.
+        /// The Complete is raised inside the sim tick, which must not do file I/O, so the frame loop calls this
+        /// right after the tick.
+        /// </summary>
+        void FlushCompletionSave();
     }
 }

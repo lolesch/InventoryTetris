@@ -140,7 +140,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         [Test]
         public void WithNoEnemyAlive_TheHeroWalksBackToTheOrigin_AndStopsThere()
         {
-            var sim = SoloSkirmisher(Walker(damage: 30f));
+            // Two Encounters, so the clear of the first is a beat he walks home through, not the Complete phase.
+            var sim = Sim(Walker(damage: 30f), Profiles.Group(EnemyArchetype.Skirmisher, 1, population: 2));
             for (var i = 0; i < 200 && sim.EnemiesDefeated == 0; i++) sim.Advance(Tick);
             Assert.That(sim.EnemiesDefeated, Is.EqualTo(1), "premise: he killed it");
             var away = Coordinate.Distance(sim.HeroPosition, sim.Arena.Origin);

@@ -2,6 +2,7 @@ using Submodules.Utility.Services;
 using Submodules.Utility.UI;
 using ToolSmiths.InventorySystem.GUI.Components.Panels;
 using ToolSmiths.InventorySystem.Inventories;
+using ToolSmiths.InventorySystem.Locations;
 using ToolSmiths.InventorySystem.Runtime.Simulation;
 using ToolSmiths.InventorySystem.Services;
 using UnityEngine;
@@ -69,6 +70,10 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         [Tooltip("Where the Hero figure stands at this Stop. Empty: this toggle's own centre.")]
         [SerializeField] private RectTransform travelPoint;
 
+        [Tooltip("The Unlockable this Town Stop opens as (the Vendor). It is greyed out and does nothing, to a click and to " +
+                 "its hotkey alike, until the hero's state for it is Active. Empty: always open (the Stash, the Healer).")]
+        [SerializeField] private TownStop stop;
+
         protected override void OnClick() => UserToggle();
 
         /// <summary>
@@ -120,6 +125,15 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
             if (InventoryService.TrySubscribeContextChanged(SyncToContext, out var activeContext))
                 SyncToContext(activeContext);
 
+            if (stop != null && Application.isPlaying && ServiceLocator.IsArmed)
+            {
+                var simulation = SimulationService.Instance;
+                simulation.ProgressionChanged -= SyncLock;
+                simulation.ProgressionChanged += SyncLock;
+                _ = Session.TrySubscribeHeroLoaded(SyncLock);
+                SyncLock();
+            }
+
             // Detach first, so a re-enable cannot subscribe twice.
             GameInput.Performed -= OnAction;
             GameInput.Performed += OnAction;
@@ -131,7 +145,25 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
 
             InventoryService.UnsubscribeContextChanged(SyncToContext);
 
+            if (stop != null && Application.isPlaying && ServiceLocator.IsArmed)
+                SimulationService.Instance.ProgressionChanged -= SyncLock;
+
+            Session.UnsubscribeHeroLoaded(SyncLock);
+
             GameInput.Performed -= OnAction;
+        }
+
+        /// <summary>
+        /// Greys the toggle out while the hero's state for its Town Stop is below Active. A non-interactable
+        /// toggle takes neither a click nor, through <see cref="OnAction"/>, its hotkey. A hero load can drop the
+        /// Stop below Active under its open panel, which is then closed: the toggle could not close it any more.
+        /// </summary>
+        private void SyncLock()
+        {
+            UnlockLook.Apply(this, SimulationService.Instance.StateOf(stop) >= UnlockState.Active);
+
+            if (!interactable && panel != null && ServiceLocator.IsArmed && panel.IsUpIn(InventoryService.Instance.ActiveContext))
+                _ = panel.RequestContext(false);
         }
 
         /// <summary>

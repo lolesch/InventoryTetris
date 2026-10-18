@@ -68,6 +68,296 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             return location;
         }
 
+        // ── the Unlock graph: only an Active Location can be Sent or Relocated to ──
+
+        private void Unlock(Unlockable source, Unlockable target, bool whenComplete)
+        {
+            var so = new SerializedObject(source);
+            var links = so.FindProperty(whenComplete ? "unlocksWhenComplete" : "unlocksWhenActive");
+            links.arraySize++;
+            links.GetArrayElementAtIndex(links.arraySize - 1).objectReferenceValue = target;
+            _ = so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        // The service reads the authored graph when it is built, so links go in first.
+        private SimulationService GameOver(params LocationConfig[] authored)
+        {
+            TestLocations.Author(config, authored);
+            return new SimulationService(session, items, inventory, config, new SessionBuilderTests.FixedRolls(0.5f));
+        }
+
+        [Test]
+        public void OnAFreshHero_TheRootIsActive_AndWhatItUnlocksWhenCompleteIsLocked()
+        {
+            Unlock(thornwood, ashfen, whenComplete: true);
+            var game = GameOver(thornwood, ashfen);
+
+            Assert.That(game.StateOf(thornwood), Is.EqualTo(UnlockState.Active));
+            Assert.That(game.StateOf(ashfen), Is.EqualTo(UnlockState.Locked));
+        }
+
+        [Test]
+        public void WithTheSourceCompleted_ItIsComplete_AndWhatItUnlocksIsActive()
+        {
+            Unlock(thornwood, ashfen, whenComplete: true);
+            var game = GameOver(thornwood, ashfen);
+
+            session.Hero.MarkCompleted("thornwood");
+
+            Assert.That(game.StateOf(thornwood), Is.EqualTo(UnlockState.Complete));
+            Assert.That(game.StateOf(ashfen), Is.EqualTo(UnlockState.Active));
+        }
+
+        [Test]
+        public void AnUnlockableNamedOnlyByALockedSource_IsHidden()
+        {
+            var gravel = Location("gravel");
+            Unlock(thornwood, ashfen, whenComplete: true);
+            Unlock(ashfen, gravel, whenComplete: true);
+            var game = GameOver(thornwood, ashfen, gravel);
+
+            Assert.That(game.StateOf(gravel), Is.EqualTo(UnlockState.Hidden));
+        }
+
+        [Test]
+        public void AWhenActiveLink_IsSatisfiedByACompleteSource()
+        {
+            Unlock(thornwood, ashfen, whenComplete: false);
+            var game = GameOver(thornwood, ashfen);
+            Assert.That(game.StateOf(ashfen), Is.EqualTo(UnlockState.Active), "Active source");
+
+            session.Hero.MarkCompleted("thornwood");
+
+            Assert.That(game.StateOf(ashfen), Is.EqualTo(UnlockState.Active), "Complete source still satisfies it");
+        }
+
+        [Test]
+        public void AWhenCompleteLink_IsNotSatisfiedByAnActiveSource()
+        {
+            Unlock(thornwood, ashfen, whenComplete: true);
+            var game = GameOver(thornwood, ashfen);
+
+            Assert.That(game.StateOf(ashfen), Is.Not.EqualTo(UnlockState.Active));
+        }
+
+        [Test]
+        public void TwoSourcesAreAnOr()
+        {
+            var gravel = Location("gravel");
+            Unlock(thornwood, gravel, whenComplete: true);
+            Unlock(ashfen, gravel, whenComplete: true);
+            var game = GameOver(thornwood, ashfen, gravel);
+
+            session.Hero.MarkCompleted("ashfen");
+
+            Assert.That(game.StateOf(gravel), Is.EqualTo(UnlockState.Active));
+        }
+
+        [Test]
+        public void ASendAndARelocate_ToALockedOrHiddenLocation_AreRefused_AndChangeNothing()
+        {
+            var gravel = Location("gravel");
+            Unlock(thornwood, ashfen, whenComplete: true);
+            Unlock(ashfen, gravel, whenComplete: true);
+            var game = GameOver(thornwood, ashfen, gravel);
+
+            Assert.Throws<InvalidOperationException>(() => game.Send(ashfen), "Locked");
+            Assert.Throws<InvalidOperationException>(() => game.Send(gravel), "Hidden");
+            Assert.That(game.Run.Phase, Is.EqualTo(RunPhase.InTown));
+            Assert.That(session.Hero.SelectedLocation, Is.Null);
+
+            game.Send(thornwood);
+            var encounter = game.Run.Encounter;
+
+            Assert.Throws<InvalidOperationException>(() => game.Relocate(ashfen), "Locked");
+            Assert.Throws<InvalidOperationException>(() => game.Relocate(gravel), "Hidden");
+            Assert.That(game.Run.Encounter, Is.SameAs(encounter));
+            Assert.That(session.Hero.SelectedLocation, Is.SameAs(thornwood));
+        }
+
+        [Test]
+        public void ASendAndARelocate_ToAnActiveLocation_Work()
+        {
+            Unlock(thornwood, ashfen, whenComplete: true);
+            var game = GameOver(thornwood, ashfen);
+            session.Hero.MarkCompleted("thornwood");
+
+            game.Send(thornwood);
+            game.Relocate(ashfen);
+
+            Assert.That(session.Hero.SelectedLocation, Is.SameAs(ashfen));
+        }
+
+        [Test]
+        public void CanSend_IsFalseForAClosedLocation_AndForADownHero_AndTrueOtherwise()
+        {
+            Unlock(thornwood, ashfen, whenComplete: true);
+            var game = GameOver(thornwood, ashfen);
+
+            Assert.That(game.CanSend(thornwood), Is.True, "an Active Location");
+            Assert.That(game.CanSend(ashfen), Is.False, "a Locked Location");
+
+            session.Hero.MarkCompleted("thornwood");
+            Assert.That(game.CanSend(ashfen), Is.True, "opened by the Complete");
+
+            session.Hero.GetResource(StatName.Health).DepleteCurrent();
+            Assert.That(session.Hero.IsDead, Is.True, "premise");
+            Assert.That(game.CanSend(thornwood), Is.False, "the hero is down");
+        }
+
+        // ── a Location's Complete opens what it Unlocks, in the same Run ──────
+
+        // An invincible hero clears the one-Encounter Population the test Locations field.
+        private static void TickUntilComplete(SimulationService game)
+        {
+            for (var i = 0; i < 20000 && game.Run.Encounter.Phase != SimulationPhase.Complete; i++)
+                game.Tick(0.1f);
+
+            Assert.That(game.Run.Encounter.Phase, Is.EqualTo(SimulationPhase.Complete), "premise: the Population cleared");
+        }
+
+        [Test]
+        public void ClearingThePopulation_CompletesTheLocation_AndOpensWhatItUnlocks_WithoutAReturn()
+        {
+            Unlock(thornwood, ashfen, whenComplete: true);
+            var game = GameOver(thornwood, ashfen);
+            session.Hero.IsInvincible = true;
+            var changed = 0;
+            game.ProgressionChanged += () => changed++;
+
+            game.Send(thornwood);
+            Assert.That(game.StateOf(ashfen), Is.EqualTo(UnlockState.Locked), "premise");
+            TickUntilComplete(game);
+
+            Assert.That(game.StateOf(thornwood), Is.EqualTo(UnlockState.Complete));
+            Assert.That(game.StateOf(ashfen), Is.EqualTo(UnlockState.Active));
+            Assert.That(changed, Is.EqualTo(1));
+            Assert.That(game.Run.Phase, Is.EqualTo(RunPhase.InField), "no Return needed");
+
+            game.Relocate(ashfen);
+            Assert.That(session.Hero.SelectedLocation, Is.SameAs(ashfen));
+        }
+
+        [Test]
+        public void ClearingACompleteLocationAgain_ChangesNothing_AndRaisesNoSignal()
+        {
+            Unlock(thornwood, ashfen, whenComplete: true);
+            var game = GameOver(thornwood, ashfen);
+            session.Hero.IsInvincible = true;
+            session.Hero.MarkCompleted("thornwood");
+            var changed = 0;
+            game.ProgressionChanged += () => changed++;
+
+            game.Send(thornwood);
+            TickUntilComplete(game);
+
+            Assert.That(game.StateOf(thornwood), Is.EqualTo(UnlockState.Complete));
+            Assert.That(game.StateOf(ashfen), Is.EqualTo(UnlockState.Active));
+            Assert.That(changed, Is.EqualTo(0));
+        }
+
+        // ── a Quest Completes on its objective ──────────────────────────────
+
+        private Quest NewQuest(string id, string objectiveId) => TestQuests.Create(created, id, objectiveId);
+
+        private SimulationService GameOver(LocationConfig[] locations, params Quest[] quests)
+        {
+            TestQuests.Author(config, quests);
+            return GameOver(locations);
+        }
+
+        [Test]
+        public void AQuestActiveBeforeItsObjectiveCompletes_CompletesWithIt_AndTheStepRaisesOneSignal()
+        {
+            var merchant = NewQuest("merchant", "thornwood");
+            var game = GameOver(new[] { thornwood }, merchant);
+            session.Hero.IsInvincible = true;
+            var changed = 0;
+            game.ProgressionChanged += () => changed++;
+            Assert.That(game.StateOf(merchant), Is.EqualTo(UnlockState.Active), "premise: a root Quest is Active from the start");
+
+            game.Send(thornwood);
+            TickUntilComplete(game);
+
+            Assert.That(game.StateOf(merchant), Is.EqualTo(UnlockState.Complete));
+            Assert.That(changed, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void ALockedTownStopNamedByAQuest_IsLockedUntilTheQuestCompletes_InTheSameRun()
+        {
+            var vendor = TestTownStops.Create(created, "town.vendor");
+            var merchant = NewQuest("merchant", "thornwood");
+            Unlock(merchant, vendor, whenComplete: true);
+            TestTownStops.Author(config, vendor);
+            var game = GameOver(new[] { thornwood }, merchant);
+            session.Hero.IsInvincible = true;
+            var changed = 0;
+            game.ProgressionChanged += () => changed++;
+            Assert.That(game.StateOf(vendor), Is.EqualTo(UnlockState.Locked), "a fresh hero sees the Vendor greyed out");
+
+            game.Send(thornwood);
+            TickUntilComplete(game);
+
+            Assert.That(game.StateOf(vendor), Is.EqualTo(UnlockState.Active));
+            Assert.That(changed, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void AQuestMadeActiveByTheObjectivesOwnComplete_StaysActive_AndCompletesOnALaterComplete()
+        {
+            var late = NewQuest("late", "thornwood");
+            Unlock(thornwood, late, whenComplete: true);
+            var game = GameOver(new[] { thornwood }, late);
+            session.Hero.IsInvincible = true;
+            Assert.That(game.StateOf(late), Is.Not.EqualTo(UnlockState.Active), "premise: the Quest waits on Thornwood");
+
+            game.Send(thornwood);
+            TickUntilComplete(game);
+
+            Assert.That(game.StateOf(thornwood), Is.EqualTo(UnlockState.Complete));
+            Assert.That(game.StateOf(late), Is.EqualTo(UnlockState.Active), "the Complete that opened it does not count");
+
+            game.Relocate(thornwood);
+            TickUntilComplete(game);
+
+            Assert.That(game.StateOf(late), Is.EqualTo(UnlockState.Complete));
+        }
+
+        [Test]
+        public void AQuestWhoseObjectiveIsAQuest_CompletesInTheSameStep()
+        {
+            var inner = NewQuest("inner", "thornwood");
+            var outer = NewQuest("outer", "inner");
+            var game = GameOver(new[] { thornwood }, outer, inner);
+            session.Hero.IsInvincible = true;
+            var changed = 0;
+            game.ProgressionChanged += () => changed++;
+
+            game.Send(thornwood);
+            TickUntilComplete(game);
+
+            Assert.That(game.StateOf(inner), Is.EqualTo(UnlockState.Complete));
+            Assert.That(game.StateOf(outer), Is.EqualTo(UnlockState.Complete));
+            Assert.That(changed, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void AQuestMadeActiveByACascade_DoesNotCountTheCompleteThatOpenedIt()
+        {
+            var inner = NewQuest("inner", "thornwood");
+            var after = NewQuest("after", "inner");
+            Unlock(inner, after, whenComplete: true);
+            var game = GameOver(new[] { thornwood }, inner, after);
+            session.Hero.IsInvincible = true;
+
+            game.Send(thornwood);
+            TickUntilComplete(game);
+
+            Assert.That(game.StateOf(inner), Is.EqualTo(UnlockState.Complete));
+            Assert.That(game.StateOf(after), Is.EqualTo(UnlockState.Active));
+        }
+
         // ── a fresh World and Hero ───────────────────────────────────────────
 
         [Test]

@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using System.Linq;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Locations;
 using ToolSmiths.InventorySystem.Services;
@@ -126,5 +127,37 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             foreach (var location in config.Locations)
                 Assert.That(location, Is.Not.Null);
         }
-    }
+
+        [Test]
+        public void ThornwoodUnlocksAshfallWhenComplete_SoANewHeroStartsInThornwoodOnly()
+        {
+            var registry = new ProgressionRegistry(config.Unlockables);
+            var thornwood = config.Locations.Single(location => location.Id == "location.thornwood");
+            var ashfall = config.Locations.Single(location => location.Id == "location.ashfall");
+            var hero = new Runtime.Character.Hero(config.DefaultHero);
+
+            Assert.That(registry.StateOf(thornwood, hero), Is.EqualTo(UnlockState.Active));
+            Assert.That(registry.StateOf(ashfall, hero), Is.EqualTo(UnlockState.Locked));
+
+            hero.MarkCompleted("location.thornwood");
+
+            Assert.That(registry.StateOf(ashfall, hero), Is.EqualTo(UnlockState.Active));
+        }
+
+        [Test]
+        public void FreeTheMerchantCompletesWithThornwood_AndOpensTheVendor()
+        {
+            var registry = new ProgressionRegistry(config.Unlockables);
+            var vendor = config.Unlockables.Single(unlockable => unlockable.Id == "town.vendor");
+            var merchant = config.Unlockables.Single(unlockable => unlockable.Id == "quest.free-the-merchant");
+            var hero = new Runtime.Character.Hero(config.DefaultHero);
+
+            Assert.That(registry.StateOf(merchant, hero), Is.EqualTo(UnlockState.Active), "a root Quest");
+            Assert.That(registry.StateOf(vendor, hero), Is.EqualTo(UnlockState.Locked), "greyed out on a fresh hero");
+
+            _ = registry.Complete("location.thornwood", hero);
+
+            Assert.That(registry.StateOf(merchant, hero), Is.EqualTo(UnlockState.Complete));
+            Assert.That(registry.StateOf(vendor, hero), Is.EqualTo(UnlockState.Active));
+        }    }
 }

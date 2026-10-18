@@ -37,6 +37,7 @@ namespace ToolSmiths.InventorySystem.Services
         private readonly RollStreams rolls;
         private readonly ItemGenerator generator;
         private readonly LocationRegistry locations;
+        private readonly ProgressionRegistry progression;
 
         /// <summary>Call sites at the Unity edge read the service as <c>SimulationService.Instance.Run</c>.</summary>
         public static ISimulationService Instance => ServiceLocator.Get<ISimulationService>();
@@ -52,12 +53,23 @@ namespace ToolSmiths.InventorySystem.Services
 
             generator = new ItemGenerator(items.Catalog, rolls.Main);
             locations = new LocationRegistry(config.Locations);
+            progression = new ProgressionRegistry(config.Unlockables);
 
             // A loaded hero starts a fresh life: whatever slow-down the last one left is gone.
             session.HeroLoaded += EndDeathBeat;
         }
 
         public ILocationRegistry Locations => locations;
+
+        public UnlockState StateOf(Unlockable unlockable) => progression.StateOf(unlockable, session.Hero);
+
+        public event Action ProgressionChanged;
+
+        private void RequireOpen(LocationConfig location)
+        {
+            if (StateOf(location) < UnlockState.Active)
+                throw new InvalidOperationException($"Location '{location.Id}' is not open to the hero.");
+        }
 
         public RunState Run
         {
@@ -70,6 +82,14 @@ namespace ToolSmiths.InventorySystem.Services
 
         public LootFlow LootFlow => session.World.LootFlow;
 
+        public bool CanSend(LocationConfig location)
+        {
+            if (location == null)
+                throw new ArgumentNullException(nameof(location));
+
+            return !session.Hero.IsDead && StateOf(location) >= UnlockState.Active;
+        }
+
         public void Send(LocationConfig location)
         {
             if (location == null)
@@ -81,6 +101,8 @@ namespace ToolSmiths.InventorySystem.Services
             // Location click in that Death beat would otherwise Send him to a second Death and bury over the Corpse.
             if (hero.IsDead)
                 throw new InvalidOperationException("The hero is down - Respawn before a new Run is Sent.");
+
+            RequireOpen(location);
 
             var profile = ProfileFor(location);
             Run.Send(profile);
@@ -100,6 +122,8 @@ namespace ToolSmiths.InventorySystem.Services
                 throw new ArgumentNullException(nameof(location));
 
             var hero = session.Hero;
+
+            RequireOpen(location);
 
             var profile = ProfileFor(location);
             Run.Relocate(profile);
@@ -308,6 +332,8 @@ namespace ToolSmiths.InventorySystem.Services
                     hero.GainExperience(xp, hero.Level);
             };
 
+            encounter.LocationCompleted += () => OnLocationCompleted(hero, profile);
+
             var lootFlow = new LootFlow(encounter, hero.Behaviour, generator, items, hero, hero.Wallet,
                 world.Ground);
 
@@ -319,6 +345,20 @@ namespace ToolSmiths.InventorySystem.Services
 
             world.LootFlow = lootFlow;
             return encounter;
+        }
+
+        /// <summary>
+        /// A Population cleared: the Location joins the hero's Completed set, which opens what it Unlocks in the
+        /// same Run (ADR-0023). The signal is raised only when the set grew, so a farmed Location stays quiet.
+        /// </summary>
+        private void OnLocationCompleted(Hero hero, EncounterProfile profile)
+        {
+            // A profile outside the authored list has no id to complete.
+            if (!locations.TryGetId(profile, out var id))
+                return;
+
+            if (progression.Complete(id, hero))
+                ProgressionChanged?.Invoke();
         }
 
         /// <summary>

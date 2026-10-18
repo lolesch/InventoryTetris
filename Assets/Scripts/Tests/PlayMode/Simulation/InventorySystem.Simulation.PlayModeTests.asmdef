@@ -9,6 +9,7 @@
         "InventorySystem.Simulation",
         "InventorySystem.Characters",
         "InventorySystem.Locations",
+        "InventorySystem.Persistence",
         "Utility",
         "Utility.UI",
         "UnityEngine.UI",

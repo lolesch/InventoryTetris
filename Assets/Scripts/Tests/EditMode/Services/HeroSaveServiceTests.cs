@@ -634,6 +634,103 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             }));
         }
 
+        // ── save points: a Complete, mid-Run ────────────────────────────────
+
+        // An invincible hero clears the one-Encounter Population the test Location fields.
+        private static void TickUntilComplete(Setup setup)
+        {
+            var game = setup.Game.Simulation;
+
+            for (var i = 0; i < 20000 && game.Run.Encounter.Phase != SimulationPhase.Complete; i++)
+                game.Tick(0.1f);
+
+            Assert.That(game.Run.Encounter.Phase, Is.EqualTo(SimulationPhase.Complete), "premise: the Population cleared");
+        }
+
+        // The frame hook the boot adds after the sim's tick.
+        private static void TickUntilCompleteAndFlush(Setup setup)
+        {
+            TickUntilComplete(setup);
+            setup.Saves.FlushCompletionSave();
+        }
+
+        [Test]
+        public void ACompleteInsideTheTick_WritesNothingUntilTheFrameHookFlushes()
+        {
+            var setup = LoadedHero(out var id);
+            setup.Game.Hero.IsInvincible = true;
+            setup.Game.Simulation.Send(thornwood);
+            Tick();
+
+            TickUntilComplete(setup);
+
+            Assert.That(setup.Game.Hero.HasCompleted("thornwood"), Is.True, "premise: the Complete happened");
+            Assert.That(setup.Saves.List().Single().SavedAtUtc, Is.Not.EqualTo(now), "the tick wrote nothing");
+
+            setup.Saves.FlushCompletionSave();
+            setup.Saves.FlushCompletionSave();
+
+            var next = NewSetup();
+            _ = next.Saves.Load(id);
+            Assert.That(next.Game.Hero.HasCompleted("thornwood"), Is.True);
+            Assert.That(next.Saves.List().Single().SavedAtUtc, Is.EqualTo(now), "written by the flush");
+        }
+
+        [Test]
+        public void AFlushWithNoCompleteWaiting_WritesNothing()
+        {
+            var setup = LoadedHero(out _);
+            Tick();
+
+            setup.Saves.FlushCompletionSave();
+
+            Assert.That(setup.Saves.List().Single().SavedAtUtc, Is.Not.EqualTo(now));
+        }
+
+        [Test]
+        public void ACompleteMidRun_WritesTheHeroAtOnce_WithTheLocationCompleted_AndTheBagAsItStands()
+        {
+            var setup = LoadedHero(out var id);
+            setup.Game.Hero.IsInvincible = true;
+            setup.Game.Simulation.Send(thornwood);
+            PutPotionsInBag(setup, 3u);
+            Tick();
+
+            TickUntilCompleteAndFlush(setup);
+
+            Assert.That(setup.Game.Simulation.Run.Phase, Is.EqualTo(RunPhase.InField), "the Run carries on");
+            var next = NewSetup();
+            _ = next.Saves.Load(id);
+            Assert.That(next.Game.Hero.HasCompleted("thornwood"), Is.True);
+            Assert.That(BagHoldsPotions(next.Game.Hero), Is.True, "what a quit at that moment banks");
+            Assert.That(next.Saves.List().Single().SavedAtUtc, Is.EqualTo(now), "written by the Complete");
+        }
+
+        [Test]
+        public void AfterACompleteSave_AnyOtherSaveInTheField_IsStillRefused()
+        {
+            var setup = LoadedHero(out _);
+            setup.Game.Hero.IsInvincible = true;
+            setup.Game.Simulation.Send(thornwood);
+            TickUntilCompleteAndFlush(setup);
+
+            Assert.That(setup.Saves.Save().Failure, Is.EqualTo(SaveFailure.RunInField));
+        }
+
+        [Test]
+        public void TheCompleteSave_RunsTheBeforeSaveNormalisers()
+        {
+            var setup = LoadedHero(out _);
+            var runs = 0;
+            setup.Saves.AddBeforeSave(() => runs++);
+            setup.Game.Hero.IsInvincible = true;
+            setup.Game.Simulation.Send(thornwood);
+
+            TickUntilCompleteAndFlush(setup);
+
+            Assert.That(runs, Is.EqualTo(1));
+        }
+
         [Test]
         public void NoSaveIsWritten_WhileARunIsStillInTheField()
         {

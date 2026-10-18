@@ -68,6 +68,26 @@ namespace ToolSmiths.InventorySystem.Services
             this.utcNow = utcNow;
 
             simulation.RunSettled += _ => Save();
+            simulation.ProgressionChanged += SaveCompletion;
+        }
+
+        // A Complete is raised from inside the sim tick, so it only marks the save due; the host's frame hook
+        // (FlushCompletionSave) writes it right after the tick, still the frame it happened in.
+        private bool completionSaveDue;
+
+        private void SaveCompletion() => completionSaveDue = true;
+
+        public void FlushCompletionSave()
+        {
+            if (!completionSaveDue)
+                return;
+
+            completionSaveDue = false;
+
+            // Banks even mid-Run: it writes what a quit at this moment would and leaves the Run live.
+            // The one write past the in-Field refusal; a draft is still never written here.
+            if (!IsActiveDraft())
+                _ = WriteActive(allowInField: true);
         }
 
         /// <summary>
@@ -437,7 +457,7 @@ namespace ToolSmiths.InventorySystem.Services
         private bool IsActiveDraft() =>
             draft != null && ActiveHeroId == draft.id && ReferenceEquals(activeHero, session.Hero);
 
-        private SaveResult WriteActive()
+        private SaveResult WriteActive(bool allowInField = false)
         {
             // The Session's hero is the file's only while it is the one this service loaded; a template
             // load or another load behind its back leaves the file alone.
@@ -445,7 +465,7 @@ namespace ToolSmiths.InventorySystem.Services
                 return SaveResult.Failed(SaveFailure.NotFromSave);
 
             // A hero in the Field holds a bag the Run has not settled; the file only ever holds a Town hero.
-            if (simulation.Run.Phase == RunPhase.InField)
+            if (!allowInField && simulation.Run.Phase == RunPhase.InField)
                 return SaveResult.Failed(SaveFailure.RunInField);
 
             // A normaliser that failed left the hero in a state that is not safe to write (a held Package
@@ -466,6 +486,9 @@ namespace ToolSmiths.InventorySystem.Services
                     dto.templateId = activeTemplateId;
 
                 _ = WriteHero(ActiveHeroId, dto);
+
+                // This write holds the Complete too, so a flush right after would only repeat it.
+                completionSaveDue = false;
                 return SaveResult.Written;
             }
             catch (Exception exception)
