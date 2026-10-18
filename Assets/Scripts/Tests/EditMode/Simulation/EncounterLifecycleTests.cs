@@ -6,8 +6,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 {
     /// <summary>
     /// An Encounter clears when its Roster is spent and the last body falls — then a beat, then
-    /// the next; the sim runs Encounters endlessly. Only the hero going down (or an external
-    /// <see cref="EncounterSimulation.Abandon"/>) ends it. <c>EnemiesDefeated</c> and
+    /// the next, until the Population is spent (<c>EncounterPopulationTests</c>). Only the hero going
+    /// down (or an external <see cref="EncounterSimulation.Abandon"/>) ends it. <c>EnemiesDefeated</c> and
     /// <c>Duration</c> report across the whole multi-Encounter sequence.
     /// </summary>
     [TestFixture]
@@ -26,7 +26,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         [Test]
         public void Encounter_ClearsWhenTheRosterIsSpentAndTheLastEnemyFalls()
         {
-            var sim = new EncounterSimulation(OneShotHero(), Profiles.Solo(EnemyArchetype.Skirmisher),
+            var sim = new EncounterSimulation(OneShotHero(), Profiles.Group(EnemyArchetype.Skirmisher, 1, population: 2),
                 new ConstantRollSource(0f), Behaviours.Engaging(5), ShortBeat());
 
             var clears = 0;
@@ -42,7 +42,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         [Test]
         public void AfterTheBeat_TheNextEncounterBuilds()
         {
-            var sim = new EncounterSimulation(OneShotHero(), Profiles.Solo(EnemyArchetype.Skirmisher),
+            var sim = new EncounterSimulation(OneShotHero(), Profiles.Group(EnemyArchetype.Skirmisher, 1, population: 2),
                 new ConstantRollSource(0f), Behaviours.Engaging(5), ShortBeat());
 
             sim.Advance(0.1f);                 // clears Encounter 1 → Beat
@@ -59,7 +59,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         public void EnemiesDefeated_AndEncountersCleared_AccumulateAcrossTheSequence()
         {
             // Each Encounter fields 3 Skirmishers; the hero clears one per tick, one beat between.
-            var sim = new EncounterSimulation(OneShotHero(), Profiles.Group(EnemyArchetype.Skirmisher, 3),
+            var sim = new EncounterSimulation(OneShotHero(), Profiles.Group(EnemyArchetype.Skirmisher, 3, population: 4),
                 new ConstantRollSource(0f), Behaviours.Engaging(10), ShortBeat());
 
             // Stop the instant the 4th Encounter clears — no partial next Encounter in the counts.
@@ -135,15 +135,15 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
-        public void OnlyTheHeroGoingDownEndsTheSim_NotClearingAnEncounter()
+        public void ClearingThePopulation_CompletesTheSim_ItDoesNotEndIt()
         {
-            var sim = new EncounterSimulation(OneShotHero(), Profiles.Group(EnemyArchetype.Skirmisher, 2),
+            var sim = new EncounterSimulation(OneShotHero(), Profiles.Group(EnemyArchetype.Skirmisher, 2, population: 6),
                 new ConstantRollSource(0f), Behaviours.Engaging(10), ShortBeat());
 
             for (var i = 0; i < 300; i++) sim.Advance(0.1f);
 
-            Assert.That(sim.Phase, Is.Not.EqualTo(SimulationPhase.Ended));
-            Assert.That(sim.EncountersCleared, Is.GreaterThan(5), "it just keeps going");
+            Assert.That(sim.Phase, Is.EqualTo(SimulationPhase.Complete), "standing, not Ended: the Run decides what next");
+            Assert.That(sim.EncountersCleared, Is.EqualTo(6), "exactly the Population, no more");
         }
     }
 }

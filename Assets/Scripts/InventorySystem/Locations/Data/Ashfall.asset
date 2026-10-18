@@ -20,6 +20,7 @@ MonoBehaviour:
   packed: 1
   rosterBrute: {x: 4, y: 4}
   rosterSkirmisher: {x: 13, y: 13}
+  population: {x: 4, y: 6}
   packBatch: {x: 3, y: 5}
   packedSpawnWeight: 0.7
   spawnInterval: 3.6

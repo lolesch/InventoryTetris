@@ -135,7 +135,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         public void TheDelayDoesNotApplyAgain_AfterTheBeat()
         {
             var sim = new EncounterSimulation(StrikingHero(),
-                Profiles.Group(EnemyArchetype.Skirmisher, 2),   // 100 s spawn interval — a delay would show
+                Profiles.Group(EnemyArchetype.Skirmisher, 2, population: 2),   // 100 s spawn interval — a delay would show
                 new ConstantRollSource(0.5f), Behaviours.Engaging(5),
                 new EncounterTuning { DelayFirstSpawn = true, Beat = 0.5f, CastCadence = 0.05f });
 
