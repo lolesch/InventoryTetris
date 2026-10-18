@@ -56,7 +56,7 @@ namespace ToolSmiths.InventorySystem.Services
 
             var (hero, world) = BuildPair(config, template, items);
 
-            return (hero, world, HeroRestore.Restore(save, hero, locations, config.KnowsUnlockable));
+            return (hero, world, HeroRestore.Restore(save, hero, locations));
         }
 
         private static (Hero Hero, World World) BuildPair(GameConfig config, HeroData data, IItemService items)
