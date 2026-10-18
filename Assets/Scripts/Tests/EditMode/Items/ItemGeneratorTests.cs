@@ -35,6 +35,14 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Items
             AffixPool = pool,
         };
 
+        private static FakeItemDefinition Consumable(string id, ConsumableType type) => new()
+        {
+            Id = id,
+            Category = ItemCategory.Consumable,
+            ConsumableType = type,
+            Footprint = ItemSize.OneByOne,
+        };
+
         // ── construction guards ──────────────────────────────────────────────
 
         [Test]
@@ -101,6 +109,39 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Items
 
             foreach (var id in counts.Keys.ToArray())
                 Assert.That(counts[id] / 30_000f, Is.EqualTo(1f / 3f).Within(0.03f), id);
+        }
+
+        [Test]
+        public void Roll_Consumable_DrawsTheTypeByItsOddsNotByHowManyDefinitionsItHas()
+        {
+            // Enum order: NONE, Book, Potion, PortalScroll - three Books against one of each other type.
+            var catalog = new InMemoryItemCatalog(
+                Consumable("book.a", ConsumableType.Book), Consumable("book.b", ConsumableType.Book),
+                Consumable("book.c", ConsumableType.Book), Consumable("potion", ConsumableType.Potion),
+                Consumable("scroll", ConsumableType.PortalScroll));
+            var generator = new ItemGenerator(catalog, new SeededRollSource(2026), new[] { 0f, 0.1f, 0.4f, 0.5f });
+            var context = new RollContext(FakeLootTable.Fixed(ItemCategory.Consumable, ItemRarity.Common));
+
+            var counts = new Dictionary<ConsumableType, int>();
+            for (var i = 0; i < 30_000; i++)
+            {
+                var type = catalog.Definition(generator.Roll(context).DefinitionId).ConsumableType;
+                counts[type] = counts.GetValueOrDefault(type) + 1;
+            }
+
+            Assert.That(counts[ConsumableType.Book] / 30_000f, Is.EqualTo(0.1f).Within(0.02f));
+            Assert.That(counts[ConsumableType.Potion] / 30_000f, Is.EqualTo(0.4f).Within(0.02f));
+            Assert.That(counts[ConsumableType.PortalScroll] / 30_000f, Is.EqualTo(0.5f).Within(0.02f));
+        }
+
+        [Test]
+        public void Roll_Consumable_OddsForATypeTheCatalogLacks_Throws()
+        {
+            var catalog = new InMemoryItemCatalog(Consumable("potion", ConsumableType.Potion));
+            var generator = new ItemGenerator(catalog, new ConstantRollSource(0.99f), new[] { 0f, 0f, 0f, 1f });
+            var context = new RollContext(FakeLootTable.Fixed(ItemCategory.Consumable, ItemRarity.Common));
+
+            Assert.That(() => generator.Roll(context), Throws.InvalidOperationException);
         }
 
         // ── magic find: the shared invariant with the probability rebuild ────

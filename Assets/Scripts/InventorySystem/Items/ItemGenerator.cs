@@ -27,11 +27,16 @@ namespace ToolSmiths.InventorySystem.Items
     {
         private readonly IItemCatalog catalog;
         private readonly IRollSource rolls;
+        private readonly IReadOnlyList<float> consumableTypeOdds;
 
-        public ItemGenerator(IItemCatalog catalog, IRollSource rolls)
+        /// <param name="consumableTypeOdds">Odds per <see cref="ConsumableType"/> in enum order, summing to 1.
+        /// A consumable drop draws its type by them, then a definition of that type; <c>null</c> draws
+        /// uniformly over every consumable definition.</param>
+        public ItemGenerator(IItemCatalog catalog, IRollSource rolls, IReadOnlyList<float> consumableTypeOdds = null)
         {
             this.catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
             this.rolls = rolls ?? throw new ArgumentNullException(nameof(rolls));
+            this.consumableTypeOdds = consumableTypeOdds;
         }
 
         /// <summary>
@@ -149,17 +154,24 @@ namespace ToolSmiths.InventorySystem.Items
 
         /// <summary>
         /// Draws one definition of <paramref name="category"/> from the catalog by reservoir
-        /// sampling - uniform, and allocation-free over the catalog's own enumeration. The
-        /// per-type weighting the old distribution tree carried does not map onto
-        /// definitions one-to-one; a weighted draw waits on authored selection weights.
+        /// sampling - uniform, and allocation-free over the catalog's own enumeration. A
+        /// consumable first draws its <see cref="ConsumableType"/> by <c>consumableTypeOdds</c>, so
+        /// a type's share does not depend on how many definitions it has; other categories have
+        /// no per-type weighting.
         /// </summary>
         private ItemDefinition PickDefinition(ItemCategory category)
         {
+            var type = category == ItemCategory.Consumable && consumableTypeOdds != null
+                ? ProbabilityTable<ConsumableType>.Sample(consumableTypeOdds, rolls.Next())
+                : ConsumableType.NONE;
             ItemDefinition chosen = null;
             var seen = 0;
 
             foreach (var candidate in catalog.OfCategory(category))
             {
+                if (type != ConsumableType.NONE && candidate.ConsumableType != type)
+                    continue;
+
                 seen++;
                 // Replace the reservoir with probability 1 / seen -> uniform. The roll is
                 // always drawn (one per candidate), but the `chosen is null` arm takes the
@@ -172,7 +184,9 @@ namespace ToolSmiths.InventorySystem.Items
             }
 
             if (chosen is null)
-                throw new InvalidOperationException($"the catalog has no item definitions in category {category}");
+                throw new InvalidOperationException(
+                    $"the catalog has no item definitions in category {category}" +
+                    (type == ConsumableType.NONE ? "" : $" of consumable type {type}"));
 
             return chosen;
         }
