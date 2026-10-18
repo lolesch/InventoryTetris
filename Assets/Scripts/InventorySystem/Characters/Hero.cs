@@ -155,8 +155,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         private readonly HashSet<string> _completed = new(StringComparer.Ordinal);
 
         // The ids of the Unlockables this hero has Completed - the only progression fact kept; every other
-        // Unlock State is derived from it (ADR-0023). In memory only until the save carries it.
+        // Unlock State is derived from it (ADR-0023). The save carries it as a list of ids.
         public bool HasCompleted(string id) => id != null && _completed.Contains(id);
+
+        /// <summary>The ids of every Unlockable this hero has Completed, in no promised order.</summary>
+        public IReadOnlyCollection<string> CompletedIds => _completed;
 
         /// <summary>Records <paramref name="id"/> as Completed, for good. A second call changes nothing.</summary>
         public void MarkCompleted(string id)

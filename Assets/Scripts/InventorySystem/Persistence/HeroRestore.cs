@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Runtime.Character;
 
@@ -17,9 +18,13 @@ namespace ToolSmiths.InventorySystem.Persistence
         /// Restores <paramref name="dto"/> onto <paramref name="hero"/>, which must be new and
         /// outfitted. Returns what could not be placed. A selected Location that is no longer authored
         /// leaves none selected, and a loot filter name that no longer parses leaves the builder's default.
+        /// A Completed id for which <paramref name="isAuthored"/> says no is dropped.
         /// </summary>
-        public static RestoreReport Restore(HeroDto dto, Hero hero, ILocationIndex locations)
+        public static RestoreReport Restore(HeroDto dto, Hero hero, ILocationIndex locations, Func<string, bool> isAuthored)
         {
+            if (isAuthored == null)
+                throw new ArgumentNullException(nameof(isAuthored));
+
             if (dto == null)
                 throw new ArgumentNullException(nameof(dto));
 
@@ -60,6 +65,12 @@ namespace ToolSmiths.InventorySystem.Persistence
             RestoreBehaviour(dto.behaviour, hero);
             hero.SelectedLocation = locations.Find(dto.selectedLocationId);
             hero.AddKills(dto.totalKills);
+
+            foreach (var id in dto.completedIds ?? Enumerable.Empty<string>())
+            {
+                if (!string.IsNullOrWhiteSpace(id) && isAuthored(id))
+                    hero.MarkCompleted(id);
+            }
 
             return report;
         }
