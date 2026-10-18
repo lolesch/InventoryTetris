@@ -59,6 +59,9 @@ namespace ToolSmiths.InventorySystem.Locations
         [Tooltip("[min,max] Skirmishers each Encounter fields, rolled fresh per Encounter.")]
         [SerializeField] private Vector2Int rosterSkirmisher = new(1, 1);
 
+        [Tooltip("[min,max] Encounters a Send here fields, rolled fresh on every Send and Relocate. The last one cleared Completes the Location.")]
+        [SerializeField] private Vector2Int population = new(1, 1);
+
         [Header("Spawn Profile")]
         [Tooltip("Pack size for the packed archetype. [1,1] means 'no real Pack', a pure trickle.")]
         [SerializeField] private Vector2Int packBatch = new(1, 1);
@@ -82,6 +85,8 @@ namespace ToolSmiths.InventorySystem.Locations
         public Vector2Int RosterBrute => rosterBrute;
         public Vector2Int RosterSkirmisher => rosterSkirmisher;
 
+        public Vector2Int Population => population;
+
         public Vector2Int PackBatch => packBatch;
         public float PackedSpawnWeight => packedSpawnWeight;
         public float SpawnInterval => spawnInterval;
@@ -99,6 +104,8 @@ namespace ToolSmiths.InventorySystem.Locations
             if (rosterSkirmisher.x < 0) rosterSkirmisher.x = 0;
             if (rosterBrute.y < rosterBrute.x) rosterBrute.y = rosterBrute.x;
             if (rosterSkirmisher.y < rosterSkirmisher.x) rosterSkirmisher.y = rosterSkirmisher.x;
+            if (population.x < 1) population.x = 1;
+            if (population.y < population.x) population.y = population.x;
             if (packBatch.x < 1) packBatch.x = 1;
             if (packBatch.y < packBatch.x) packBatch.y = packBatch.x;
             if (spawnInterval <= 0f) spawnInterval = 0.1f;
@@ -148,7 +155,8 @@ namespace ToolSmiths.InventorySystem.Locations
                 packedSpawnWeight,
                 spawnInterval,
                 new LocationLootTable(categoryDistribution, rarityDistribution),
-                spawnJitter);
+                spawnJitter,
+                population: new IntRange(population.x, population.y));
         }
 
 #if UNITY_EDITOR
@@ -161,8 +169,10 @@ namespace ToolSmiths.InventorySystem.Locations
             string id, string displayName, int sourceLevel,
             ItemCategoryDistribution categoryDistribution, ItemRarityDistribution rarityDistribution,
             EnemyArchetype packed, Vector2Int rosterBrute, Vector2Int rosterSkirmisher,
-            Vector2Int packBatch, float packedSpawnWeight, float spawnInterval, float spawnJitter)
+            Vector2Int packBatch, float packedSpawnWeight, float spawnInterval, float spawnJitter,
+            Vector2Int? population = null)
         {
+            this.population = population ?? new Vector2Int(1, 1);
             this.id = id;
             this.displayName = displayName;
             this.sourceLevel = sourceLevel;

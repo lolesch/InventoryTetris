@@ -187,7 +187,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         [Test]
         public void EnemySpawned_CoversTheInitialBatchOfEveryLaterEncounter_WithNoSpecialCase()
         {
-            var sim = new EncounterSimulation(OneShotHero(), Profiles.Group(EnemyArchetype.Skirmisher, 3),
+            var sim = new EncounterSimulation(OneShotHero(), Profiles.Group(EnemyArchetype.Skirmisher, 3, population: 2),
                 new ConstantRollSource(0f), Behaviours.Engaging(10), ShortBeat());
 
             var spawned = new List<Enemy>();

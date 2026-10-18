@@ -28,7 +28,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Locations
             float spawnInterval = 2f,
             float spawnJitter = 0.1f,
             ItemCategoryDistribution category = null,
-            ItemRarityDistribution rarity = null)
+            ItemRarityDistribution rarity = null,
+            Vector2Int? population = null)
         {
             var config = ScriptableObject.CreateInstance<LocationConfig>();
             config.Author(
@@ -38,8 +39,20 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Locations
                 rosterBrute == default ? new Vector2Int(3, 4) : rosterBrute,
                 rosterSkirmisher == default ? new Vector2Int(1, 2) : rosterSkirmisher,
                 packBatch == default ? new Vector2Int(2, 3) : packBatch,
-                packedSpawnWeight, spawnInterval, spawnJitter);
+                packedSpawnWeight, spawnInterval, spawnJitter, population);
             return config;
+        }
+
+        [Test]
+        public void ToProfile_MapsThePopulationRange()
+        {
+            var category = ScriptableObject.CreateInstance<ItemCategoryDistribution>();
+            var rarity = ScriptableObject.CreateInstance<ItemRarityDistribution>();
+
+            var profile = Build(category: category, rarity: rarity, population: new Vector2Int(3, 5)).ToProfile();
+
+            Assert.That(profile.Population.Min, Is.EqualTo(3));
+            Assert.That(profile.Population.Max, Is.EqualTo(5));
         }
 
         [Test]

@@ -25,7 +25,8 @@ namespace ToolSmiths.InventorySystem.Simulation
             float spawnInterval,
             LootTable table,
             float spawnJitter = 0f,
-            int initialSpawn = 2)
+            int initialSpawn = 2,
+            IntRange? population = null)
         {
             if (sourceLevel < 1)
                 throw new ArgumentOutOfRangeException(nameof(sourceLevel), sourceLevel, "Source level must be at least 1.");
@@ -47,6 +48,11 @@ namespace ToolSmiths.InventorySystem.Simulation
                 throw new ArgumentOutOfRangeException(nameof(spawnJitter), spawnJitter, "Spawn jitter cannot be negative.");
             if (initialSpawn < 0)
                 throw new ArgumentOutOfRangeException(nameof(initialSpawn), initialSpawn, "Initial spawn cannot be negative.");
+            var populationRange = population ?? new IntRange(1);
+            if (populationRange.Min < 1)
+                throw new ArgumentOutOfRangeException(nameof(population), populationRange.Min, "A Population must field at least one Encounter.");
+            if (populationRange.Max < populationRange.Min)
+                throw new ArgumentException("Population max cannot be below its min.");
 
             SourceLevel = sourceLevel;
             Packed = packed;
@@ -58,6 +64,7 @@ namespace ToolSmiths.InventorySystem.Simulation
             Table = table ?? throw new ArgumentNullException(nameof(table));
             SpawnJitter = spawnJitter;
             InitialSpawn = initialSpawn;
+            Population = populationRange;
         }
 
         /// <summary>Feeds both archetype curve-sets. Fixed per Location, never scaled to the hero.</summary>
@@ -80,6 +87,9 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         /// <summary>Bodies present when an Encounter opens, drawn packed-type-first.</summary>
         public int InitialSpawn { get; }
+
+        /// <summary>How many Encounters a Send here fields, <c>[min, max]</c>, rolled fresh per Send and Relocate.</summary>
+        public IntRange Population { get; }
 
         /// <summary>The loot table a kill at this Location rolls against (issue #24's <c>RollContext.Table</c>).</summary>
         public LootTable Table { get; }
