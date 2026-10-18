@@ -29,12 +29,10 @@ and runs there. The shadow keeps its own `Library/`, so only its first run pays 
 delete `Temp/UnityLockfile`: two processes writing one `Library/` corrupts it. A hand-built `Unity.exe
 -runTests` line is only for `-executeMethod`, never for the suite.
 
-**Known flake (#278).** PlayMode fixtures (`PauseMenu`, `SaveExit`, `BehaviourSliders`, the hotkey
-fixture) have failed with `NullReferenceException`s in the `PreviewProvider` / `DragProvider` scene
-singletons, order-dependently and with the cause unknown. In the live Editor `GameInputTests` also fails
-where the headless run passes. Rerun the failing fixture alone with `dev/run-tests.sh PlayMode <fixture>`:
-a pass alone and in the next full headless run is the flake. Show a regression with a run on a worktree
-at the base commit, not with a guess about the old base.
+**A `NullReferenceException` in `PreviewProvider.Awake` or `DragProvider` is not a flake (#278).** It was a
+scene-swap bug, fixed: see *Teardown asks a destroyed singleton* in `codebase-notes/play-mode-and-assemblies.md`.
+If one comes back, read the first `NullReferenceException` stack in the run's `unity.log`; show a regression with
+a run on a worktree at the base commit, not with a guess about the old base.
 
 
 ## Verifying a C# change compiles

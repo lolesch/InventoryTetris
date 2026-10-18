@@ -201,7 +201,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         public void OnPointerExit(PointerEventData eventData)
         {
-            DragProvider.Instance.SetHoveredSlot(null);
+            // The input module resets its pointers as the scene unloads, after the providers are gone.
+            if (DragProvider.TryGetAlive(out var drag))
+                drag.SetHoveredSlot(null);
 
             FadeOutPreview();
 
@@ -421,7 +423,8 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
         {
             CancelFadeIn();
 
-            PreviewProvider.Instance.RefreshPreviewDisplay(new Package(Container, null, 0), this);
+            if (PreviewProvider.TryGetAlive(out var preview))
+                preview.RefreshPreviewDisplay(new Package(Container, null, 0), this);
         }
 
         protected abstract void DropItem(Package package);
