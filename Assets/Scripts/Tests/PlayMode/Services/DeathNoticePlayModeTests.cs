@@ -45,7 +45,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             yield return null;
 
             Simulation.RunSettled += died => result = died;
-            Simulation.Send(GameBoot.Load().Locations.First());
+            Simulation.Send(GameBoot.Load().Locations.First(location => location.Id == "location.thornwood"));
             Hero.GetResource(StatName.Health).DepleteCurrent();
 
             for (var tick = 0; Simulation.Run.Phase == RunPhase.InField && tick < DeathTimeoutTicks; tick++)

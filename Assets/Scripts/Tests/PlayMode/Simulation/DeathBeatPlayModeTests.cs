@@ -28,7 +28,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
         [UnitySetUp]
         public IEnumerator SetUp()
         {
-            _location = GameBoot.Load().Locations.First();
+            _location = GameBoot.Load().Locations.First(location => location.Id == "location.thornwood");
 
             yield return SceneManager.LoadSceneAsync("Example");
             yield return null;

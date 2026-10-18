@@ -56,6 +56,10 @@ namespace ToolSmiths.InventorySystem.Services
                 AddLinks(source, source.UnlocksWhenComplete, whenComplete: true);
             }
 
+            foreach (var quest in quests)
+                if (!known.Contains(quest.ObjectiveId ?? string.Empty))
+                    throw new InvalidOperationException($"The Quest '{quest.Id}' has the objective '{quest.ObjectiveId}', which names no authored Unlockable. It could never Complete.");
+
             RefuseUnreachable(byId);
             RefuseLoop(byId);
         }

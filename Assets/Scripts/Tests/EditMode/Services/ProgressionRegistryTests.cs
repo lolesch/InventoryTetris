@@ -118,6 +118,29 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
+        public void AQuestWhoseObjectiveNamesNoUnlockable_Throws_NamingTheQuest()
+        {
+            var root = Location("root");
+            var quest = TestQuests.Create(created, "quest.lost", "nowhere");
+            Unlock(root, quest);
+
+            var exception = Assert.Throws<InvalidOperationException>(
+                () => new ProgressionRegistry(new Unlockable[] { root, quest }));
+
+            Assert.That(exception.Message, Does.Contain("quest.lost"));
+        }
+
+        [Test]
+        public void AQuestWhoseObjectiveIsAnAuthoredUnlockable_Builds()
+        {
+            var root = Location("root");
+            var quest = TestQuests.Create(created, "quest.found", "root");
+            Unlock(root, quest);
+
+            Assert.DoesNotThrow(() => new ProgressionRegistry(new Unlockable[] { root, quest }));
+        }
+
+        [Test]
         public void ASelfLoop_Throws_NamingIt()
         {
             var root = Location("root");

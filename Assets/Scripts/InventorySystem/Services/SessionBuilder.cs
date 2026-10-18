@@ -56,9 +56,7 @@ namespace ToolSmiths.InventorySystem.Services
 
             var (hero, world) = BuildPair(config, template, items);
 
-            var progression = new ProgressionRegistry(config.Unlockables);
-
-            return (hero, world, HeroRestore.Restore(save, hero, locations, progression.Knows));
+            return (hero, world, HeroRestore.Restore(save, hero, locations, config.KnowsUnlockable));
         }
 
         private static (Hero Hero, World World) BuildPair(GameConfig config, HeroData data, IItemService items)

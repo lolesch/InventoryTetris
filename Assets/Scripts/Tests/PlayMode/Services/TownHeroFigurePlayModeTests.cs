@@ -282,7 +282,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             MoveTheWaypointOffTheExit();
             var figure = Figure();
 
-            SimulationService.Instance.Send(GameBoot.Load().Locations.First());
+            SimulationService.Instance.Send(GameBoot.Load().Locations.First(location => location.Id == "location.thornwood"));
             _ = SimulationService.Instance.Return();
 
             Assert.That(Apart(figure, Named("ToFieldsButton")), Is.LessThan(1f), "he came in through the Exit");
@@ -340,7 +340,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             var figure = Figure();
             var stash = Named("StashToggle");
 
-            SimulationService.Instance.Send(GameBoot.Load().Locations.First());
+            SimulationService.Instance.Send(GameBoot.Load().Locations.First(location => location.Id == "location.thornwood"));
             _ = SimulationService.Instance.Return();
             Assert.That(Apart(figure, Named("ToFieldsButton")), Is.LessThan(1f), "premise: he came in through the Exit");
 

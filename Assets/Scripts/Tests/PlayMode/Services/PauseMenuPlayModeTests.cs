@@ -67,7 +67,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 
         private static GameObject ScreenObject() => Member<GameObject>(Popup(), "screen");
 
-        private static void SendToTheField() => Simulation.Send(GameBoot.Load().Locations.First());
+        private static void SendToTheField() => Simulation.Send(GameBoot.Load().Locations.First(location => location.Id == "location.thornwood"));
 
         [UnityTest]
         public IEnumerator Escape_WithNothingToPeel_OpensTheMenuInTown_AndEscapeAgainClosesIt()

@@ -27,7 +27,8 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
         [UnitySetUp]
         public IEnumerator SetUp()
         {
-            _locations = GameBoot.Load().Locations.ToArray();
+            // Thornwood first: it is the one a fresh hero may be Sent to.
+            _locations = GameBoot.Load().Locations.OrderBy(location => location.Id != "location.thornwood").ToArray();
 
             yield return SceneManager.LoadSceneAsync("Example");
             yield return null;

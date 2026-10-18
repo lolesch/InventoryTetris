@@ -84,7 +84,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         protected override void OnToggle()
         {
-            if (!IsOn) return;
+            if (!IsOn || locked) return;
 
             var simulation = SimulationService.Instance;
 

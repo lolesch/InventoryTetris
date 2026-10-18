@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Locations now open as you progress: Thornwood is open from the start and clears the way to Ashfall, and the Vendor opens once you free the merchant. A Location ends after its encounters, and the screen shows how far along you are (for example "Encounter 3 of 5").
 - The game now starts on the main menu: pick a hero or create one, then press Play.
 - New heroes are given a name, and a hero can be deleted after a confirmation.
 - The Cancel key steps back one layer at a time, and with nothing left to close it opens the Pause Menu.
