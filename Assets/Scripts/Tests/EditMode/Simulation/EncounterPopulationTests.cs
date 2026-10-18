@@ -213,7 +213,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
             Assert.That(result.Outcome, Is.EqualTo(RunOutcome.Returned));
             Assert.That(result.EncountersCleared, Is.EqualTo(1));
-            Assert.That(run.Phase, Is.EqualTo(RunPhase.InTown));
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.None));
         }
 
         [Test]

@@ -89,7 +89,7 @@ namespace ToolSmiths.InventorySystem.Services
 
             // In the Field the hero holds a bag the Run has not settled, which the file must never carry; only
             // the Completed set goes onto the last settled file. A Return writes the rest.
-            if (simulation.Run.Phase == RunPhase.InField)
+            if (simulation.Run.Phase == RunPhase.Live)
                 _ = WriteCompletedOnly();
             else
                 _ = WriteActive();
@@ -495,8 +495,8 @@ namespace ToolSmiths.InventorySystem.Services
                 return SaveResult.Failed(SaveFailure.NotFromSave);
 
             // A hero in the Field holds a bag the Run has not settled; the file only ever holds a Town hero.
-            if (simulation.Run.Phase == RunPhase.InField)
-                return SaveResult.Failed(SaveFailure.RunInField);
+            if (simulation.Run.Phase == RunPhase.Live)
+                return SaveResult.Failed(SaveFailure.RunLive);
 
             // A normaliser that failed left the hero in a state that is not safe to write (a held Package
             // that is in no container). The previous file still holds it, so keep that one.

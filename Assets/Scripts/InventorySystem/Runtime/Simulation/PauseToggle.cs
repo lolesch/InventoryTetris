@@ -13,7 +13,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// which is why <see cref="OnClick"/> asks the service instead of switching the toggle and
     /// <see cref="OnToggle"/> is empty.
     ///
-    /// <para>Interactable only while a Run is <see cref="RunPhase.InField"/>: in Town and in the Go
+    /// <para>Interactable only while a Run is <see cref="RunPhase.Live"/>: in Town and in the Go
     /// Venture preview there is no Run to freeze, and the service refuses a pause there anyway. Read
     /// every frame, not subscribed, because the Run is replaced on a hero load and a Death ends it
     /// without any button click.</para>
@@ -76,9 +76,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (_simulation == null)
                 return;
 
-            var inField = _simulation.Run.Phase == RunPhase.InField;
-            if (interactable != inField)
-                interactable = inField;
+            var live = _simulation.Run.Phase == RunPhase.Live;
+            if (interactable != live)
+                interactable = live;
         }
     }
 }

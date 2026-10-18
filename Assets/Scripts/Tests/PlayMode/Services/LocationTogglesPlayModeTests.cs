@@ -35,7 +35,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         [TearDown]
         public void TearDown()
         {
-            if (SimulationService.Instance.Run.Phase == RunPhase.InField)
+            if (SimulationService.Instance.Run.Phase == RunPhase.Live)
                 _ = SimulationService.Instance.Return();
 
             _ = Session.Instance.TryLoad(GameBoot.Load().DefaultHero);
@@ -64,7 +64,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             var toggle = ToggleOf(id);
             toggle.GetType().GetMethod("OnPointerClick").Invoke(toggle, new object[] { new PointerEventData(EventSystem.current) });
 
-            return Session.Instance.Hero.SelectedLocation?.Id == id && Simulation.Run.Phase == RunPhase.InField;
+            return Session.Instance.Hero.SelectedLocation?.Id == id && Simulation.Run.Phase == RunPhase.Live;
         }
 
         private static void CompleteThornwood()
@@ -96,7 +96,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             yield return null;
 
             Assert.That(ClickGoesThrough(Ashfall), Is.False);
-            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.InTown));
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.None));
         }
 
         [UnityTest]
@@ -114,7 +114,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             CompleteThornwood();
             yield return null;
 
-            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.InField), "premise: still out in the Field");
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.Live), "premise: still out in the Field");
             Assert.That(IsGreyedOut(Ashfall), Is.False);
             Assert.That(IconAlpha(Ashfall), Is.EqualTo(1f).Within(0.001f), "its icon is full once it opens");
             Assert.That(ClickGoesThrough(Ashfall), Is.True);

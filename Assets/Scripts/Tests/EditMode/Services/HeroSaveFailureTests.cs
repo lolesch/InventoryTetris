@@ -374,7 +374,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             Assert.That(setup.Game.Simulation.Run.Encounter.Phase, Is.EqualTo(SimulationPhase.Complete), "premise");
             Assert.That(setup.Game.Hero.HasCompleted("thornwood"), Is.True, "the Complete stands in memory");
-            Assert.That(setup.Game.Simulation.Run.Phase, Is.EqualTo(RunPhase.InField));
+            Assert.That(setup.Game.Simulation.Run.Phase, Is.EqualTo(RunPhase.Live));
         }
 
         // ── the quarantine sidecar ──────────────────────────────────────────

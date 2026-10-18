@@ -11,7 +11,7 @@ namespace ToolSmiths.InventorySystem.Inventories
     /// own appear or disappear hook - the Hero Panel belongs to every non-<c>None</c> context,
     /// so no panel can be the thing that names one (issue #85).</para>
     ///
-    /// <para><see cref="InField"/> is deliberately not a member: the Hero Panel is openable
+    /// <para>A live Run is deliberately not a member: the Hero Panel is openable
     /// during a Run, so the map that is up constrains which contexts are available
     /// (<see cref="InventoryContextState.IsReachable"/>) rather than being one itself.</para>
     /// </summary>

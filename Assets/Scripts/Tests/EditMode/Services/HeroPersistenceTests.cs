@@ -332,7 +332,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(game.Hero, Is.SameAs(hero));
             Assert.That(game.Session.World, Is.SameAs(world));
             Assert.That(loaded, Is.Zero);
-            Assert.That(game.Simulation.Run.Phase, Is.EqualTo(RunPhase.InField));
+            Assert.That(game.Simulation.Run.Phase, Is.EqualTo(RunPhase.Live));
         }
 
         [Test]

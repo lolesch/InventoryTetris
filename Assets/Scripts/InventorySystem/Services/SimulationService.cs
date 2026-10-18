@@ -163,7 +163,7 @@ namespace ToolSmiths.InventorySystem.Services
         public bool LeaveField()
         {
             var run = Run;
-            if (run.Phase != RunPhase.InField)
+            if (run.Phase != RunPhase.Live)
                 return false;
 
             // Death first, as in the tick: a hero already down cannot be recalled out of its Death.
@@ -193,14 +193,14 @@ namespace ToolSmiths.InventorySystem.Services
         // over from another World (a hero load mid-Run) cannot freeze a Run it does not belong to.
         private bool paused;
 
-        public bool IsPaused => paused && Run.Phase == RunPhase.InField;
+        public bool IsPaused => paused && Run.Phase == RunPhase.Live;
 
         public event Action<bool> PausedChanged;
 
         public void SetPaused(bool value)
         {
             // Pausing needs a Run in the Field; resuming never does, so a stale flag can always be cleared.
-            if (value && Run.Phase != RunPhase.InField)
+            if (value && Run.Phase != RunPhase.Live)
                 return;
 
             if (paused == value)
@@ -214,12 +214,12 @@ namespace ToolSmiths.InventorySystem.Services
         // as found. Transient and read through the phase, like the Pause.
         private bool held;
 
-        public bool IsHeld => held && Run.Phase == RunPhase.InField;
+        public bool IsMenuFrozen => held && Run.Phase == RunPhase.Live;
 
-        public void SetHeld(bool value)
+        public void SetMenuFreeze(bool value)
         {
             // Holding needs a Run in the Field, so Town has nothing to hold; releasing never does.
-            if (value && Run.Phase != RunPhase.InField)
+            if (value && Run.Phase != RunPhase.Live)
                 return;
 
             held = value;
@@ -244,7 +244,7 @@ namespace ToolSmiths.InventorySystem.Services
         }
 
         public float SimDelta(float deltaSeconds) =>
-            IsPaused || IsHeld ? 0f : deltaSeconds * Mathf.Max(0f, session.Hero.Behaviour.SimSpeed) * ViewTimeFactor;
+            IsPaused || IsMenuFrozen ? 0f : deltaSeconds * Mathf.Max(0f, session.Hero.Behaviour.SimSpeed) * ViewTimeFactor;
 
         public float WalkDelta(float deltaSeconds) =>
             deltaSeconds * Mathf.Max(0f, session.Hero.Behaviour.SimSpeed);
@@ -255,7 +255,7 @@ namespace ToolSmiths.InventorySystem.Services
         public void Tick(float deltaSeconds)
         {
             // A frozen Run stands still whole: no regeneration, no Encounter.
-            if (IsPaused || IsHeld)
+            if (IsPaused || IsMenuFrozen)
                 return;
 
             var hero = session.Hero;
@@ -278,7 +278,7 @@ namespace ToolSmiths.InventorySystem.Services
                 hero.Regenerate(dt);
 
             var run = Run;
-            if (run.Phase != RunPhase.InField)
+            if (run.Phase != RunPhase.Live)
                 return;
 
             _ = run.Advance(dt);
@@ -362,8 +362,8 @@ namespace ToolSmiths.InventorySystem.Services
         }
 
         /// <summary>
-        /// Close a Run whose hero has been downed - <see cref="RunPhase.InField"/> to
-        /// <see cref="RunPhase.InTown"/> with the Death penalty (ADR-0009): the XP-loss and
+        /// Close a Run whose hero has been downed - <see cref="RunPhase.Live"/> to
+        /// <see cref="RunPhase.None"/> with the Death penalty (ADR-0009): the XP-loss and
         /// currency-fee fractions, the bag-to-Corpse hand-off and the XP subtraction.
         /// </summary>
         private void HandleHeroDeath(Hero hero, RunState run)

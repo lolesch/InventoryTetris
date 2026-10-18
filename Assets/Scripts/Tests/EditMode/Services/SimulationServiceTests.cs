@@ -163,7 +163,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             Assert.Throws<InvalidOperationException>(() => game.Send(ashfen), "Locked");
             Assert.Throws<InvalidOperationException>(() => game.Send(gravel), "Hidden");
-            Assert.That(game.Run.Phase, Is.EqualTo(RunPhase.InTown));
+            Assert.That(game.Run.Phase, Is.EqualTo(RunPhase.None));
             Assert.That(session.Hero.SelectedLocation, Is.Null);
 
             game.Send(thornwood);
@@ -232,7 +232,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(game.StateOf(thornwood), Is.EqualTo(UnlockState.Complete));
             Assert.That(game.StateOf(ashfen), Is.EqualTo(UnlockState.Active));
             Assert.That(changed, Is.EqualTo(1));
-            Assert.That(game.Run.Phase, Is.EqualTo(RunPhase.InField), "no Return needed");
+            Assert.That(game.Run.Phase, Is.EqualTo(RunPhase.Live), "no Return needed");
 
             game.Relocate(ashfen);
             Assert.That(session.Hero.SelectedLocation, Is.SameAs(ashfen));
@@ -270,7 +270,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             _ = game.Return();
 
-            Assert.That(game.Run.Phase, Is.EqualTo(RunPhase.InTown));
+            Assert.That(game.Run.Phase, Is.EqualTo(RunPhase.None));
             Assert.That(game.StateOf(thornwood), Is.EqualTo(UnlockState.Complete));
             Assert.That(game.StateOf(ashfen), Is.EqualTo(UnlockState.Active));
             Assert.That(changed, Is.EqualTo(0), "the Return changes no Unlock State");
@@ -289,7 +289,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             session.Hero.IsInvincible = false;
 
             session.Hero.GetResource(StatName.Health).DepleteCurrent();
-            for (var i = 0; i < 100 && game.Run.Phase == RunPhase.InField; i++)
+            for (var i = 0; i < 100 && game.Run.Phase == RunPhase.Live; i++)
                 game.Tick(0.5f);
 
             Assert.That(session.Hero.Corpse.Exists, Is.True, "premise: the hero died in Ashfen");
@@ -418,11 +418,11 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
-        public void TheRun_IsBuiltOnFirstAsk_ThenTheWorldsOwn_AndStartsInTown()
+        public void TheRun_IsBuiltOnFirstAsk_ThenTheWorldsOwn_AndStartsWithNoRun()
         {
             var run = service.Run;
 
-            Assert.That(run.Phase, Is.EqualTo(RunPhase.InTown));
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.None));
             Assert.That(run.Encounter, Is.Null);
             Assert.That(session.World.Run, Is.SameAs(run));
             Assert.That(service.Run, Is.SameAs(run));
@@ -554,7 +554,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             service.Send(thornwood);
 
             Assert.That(session.Hero.SelectedLocation, Is.SameAs(thornwood));
-            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.InField));
+            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.Live));
             Assert.That(service.Run.Encounter, Is.Not.Null);
             Assert.That(service.LootFlow, Is.Not.Null);
             Assert.That(session.World.LootFlow, Is.SameAs(service.LootFlow));
@@ -658,7 +658,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             _ = service.Return();
 
-            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.InTown));
+            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.None));
             Assert.That(service.LootFlow, Is.Null);
             Assert.That(session.World.VendorSupply.StoredPackages, Is.Not.Empty, "a Return brings the shops new stock");
         }
@@ -681,7 +681,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             service.Relocate(ashfen);
 
-            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.InField));
+            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.Live));
             Assert.That(service.Run.Encounter, Is.Not.SameAs(before));
             Assert.That(session.Hero.SelectedLocation, Is.SameAs(ashfen));
         }
@@ -697,7 +697,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             service.Tick(1f);
 
-            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.InTown));
+            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.None));
             Assert.That(resource.CurrentValue, Is.GreaterThan(0f));
         }
 
@@ -753,7 +753,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             for (var i = 0; i < 100; i++)
                 service.Tick(0.5f);
 
-            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.InField), "a Run ends only by a Return or a Death");
+            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.Live), "a Run ends only by a Return or a Death");
         }
 
         [Test]
@@ -822,7 +822,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             service.Send(thornwood);
             service.SetPaused(true);
-            service.SetHeld(true);
+            service.SetMenuFreeze(true);
 
             Assert.That(service.SimDelta(0.1f), Is.EqualTo(0f), "premise: the Run is frozen");
             Assert.That(service.WalkDelta(0.1f), Is.EqualTo(0.4f).Within(1e-5f), "a shown walk goes on");
@@ -853,17 +853,17 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             service.Tick(0.1f);
             var duration = service.Run.Encounter.Duration;
 
-            service.SetHeld(true);
+            service.SetMenuFreeze(true);
             service.Tick(0.1f);
 
-            Assert.That(service.IsHeld, Is.True);
+            Assert.That(service.IsMenuFrozen, Is.True);
             Assert.That(service.Run.Encounter.Duration, Is.EqualTo(duration), "the Encounter's clock froze");
             Assert.That(service.SimDelta(0.1f), Is.EqualTo(0f), "views on sim time freeze with it");
 
-            service.SetHeld(false);
+            service.SetMenuFreeze(false);
             service.Tick(0.1f);
 
-            Assert.That(service.IsHeld, Is.False);
+            Assert.That(service.IsMenuFrozen, Is.False);
             Assert.That(service.Run.Encounter.Duration, Is.GreaterThan(duration));
         }
 
@@ -873,14 +873,14 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             service.Send(thornwood);
             service.SetPaused(true);
 
-            service.SetHeld(true);
-            service.SetHeld(false);
+            service.SetMenuFreeze(true);
+            service.SetMenuFreeze(false);
 
             Assert.That(service.IsPaused, Is.True, "the player's own Pause is given back as found");
 
             service.SetPaused(false);
-            service.SetHeld(true);
-            service.SetHeld(false);
+            service.SetMenuFreeze(true);
+            service.SetMenuFreeze(false);
 
             Assert.That(service.IsPaused, Is.False);
             Assert.That(service.SimDelta(0.1f), Is.GreaterThan(0f));
@@ -893,15 +893,15 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             var raised = new List<bool>();
             service.PausedChanged += raised.Add;
 
-            service.SetHeld(true);
+            service.SetMenuFreeze(true);
             Assert.That(service.IsPaused, Is.False);
-            service.SetHeld(false);
+            service.SetMenuFreeze(false);
 
             service.SetPaused(true);
             raised.Clear();
-            service.SetHeld(true);
+            service.SetMenuFreeze(true);
             Assert.That(service.IsPaused, Is.True);
-            service.SetHeld(false);
+            service.SetMenuFreeze(false);
 
             Assert.That(raised, Is.Empty);
         }
@@ -909,14 +909,14 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         [Test]
         public void HoldingAndReleasingInTown_DoesNothingAndDoesNotThrow()
         {
-            Assert.DoesNotThrow(() => service.SetHeld(true));
-            Assert.That(service.IsHeld, Is.False, "there is nothing to hold in Town");
-            Assert.DoesNotThrow(() => service.SetHeld(false));
+            Assert.DoesNotThrow(() => service.SetMenuFreeze(true));
+            Assert.That(service.IsMenuFrozen, Is.False, "there is nothing to hold in Town");
+            Assert.DoesNotThrow(() => service.SetMenuFreeze(false));
 
-            service.SetHeld(true);
+            service.SetMenuFreeze(true);
             service.Send(thornwood);
 
-            Assert.That(service.IsHeld, Is.False, "a refused hold does not wait for the next Run");
+            Assert.That(service.IsMenuFrozen, Is.False, "a refused hold does not wait for the next Run");
             Assert.That(service.SimDelta(0.1f), Is.GreaterThan(0f));
         }
 
@@ -925,27 +925,27 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         {
             service.Send(thornwood);
 
-            service.SetHeld(true);
-            service.SetHeld(true);
-            service.SetHeld(false);
+            service.SetMenuFreeze(true);
+            service.SetMenuFreeze(true);
+            service.SetMenuFreeze(false);
 
-            Assert.That(service.IsHeld, Is.False, "a second hold is the same hold");
+            Assert.That(service.IsMenuFrozen, Is.False, "a second hold is the same hold");
 
-            service.SetHeld(false);
+            service.SetMenuFreeze(false);
 
-            Assert.That(service.IsHeld, Is.False);
+            Assert.That(service.IsMenuFrozen, Is.False);
         }
 
         [Test]
         public void TheRunsEnd_ReleasesTheHold()
         {
             service.Send(thornwood);
-            service.SetHeld(true);
+            service.SetMenuFreeze(true);
 
             _ = service.Return();
             service.Send(thornwood);
 
-            Assert.That(service.IsHeld, Is.False, "a hold left over from the last Run does not freeze the next");
+            Assert.That(service.IsMenuFrozen, Is.False, "a hold left over from the last Run does not freeze the next");
         }
 
         [Test]
@@ -1053,10 +1053,10 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         // The hero first arrives (one spawn delay), then the fight finds it down.
         private void TickUntilHome()
         {
-            for (var i = 0; i < 100 && service.Run.Phase == RunPhase.InField; i++)
+            for (var i = 0; i < 100 && service.Run.Phase == RunPhase.Live; i++)
                 service.Tick(0.5f);
 
-            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.InTown), "the Run never ended");
+            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.None), "the Run never ended");
         }
 
         // ── the lifetime Kill count ──────────────────────────────────────────
@@ -1139,7 +1139,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             hero.GetResource(StatName.Health).DepleteCurrent();
             TickUntilHome();
 
-            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.InTown));
+            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.None));
             Assert.That(service.Run.LastResult?.Outcome, Is.EqualTo(RunOutcome.Died));
             Assert.That(hero.Corpse.Exists, Is.True);
             Assert.That(hero.Corpse.Items.Count, Is.EqualTo(1));
@@ -1238,7 +1238,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.Throws<InvalidOperationException>(() => service.Send(ashfen), "the hero is still down");
             service.Tick(0.5f);
 
-            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.InTown), "no new Run");
+            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.None), "no new Run");
             Assert.That(hero.SelectedLocation, Is.SameAs(thornwood), "the Location the Death was judged against");
             Assert.That(hero.Corpse.Items.Count, Is.EqualTo(corpseItems));
             Assert.That(hero.GetResource(StatName.Experience).CurrentValue, Is.EqualTo(experience));
@@ -1256,7 +1256,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             service.Respawn();
             service.Send(ashfen);
 
-            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.InField));
+            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.Live));
             Assert.That(session.Hero.SelectedLocation, Is.SameAs(ashfen));
         }
 

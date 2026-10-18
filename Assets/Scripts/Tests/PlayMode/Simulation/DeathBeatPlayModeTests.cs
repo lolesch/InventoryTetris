@@ -39,7 +39,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
         {
             Time.timeScale = 1f;
 
-            if (SimulationService.Instance.Run.Phase == RunPhase.InField)
+            if (SimulationService.Instance.Run.Phase == RunPhase.Live)
                 _ = SimulationService.Instance.Return();
 
             _ = Session.Instance.TryLoad(GameBoot.Load().DefaultHero);
@@ -110,10 +110,10 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             Assert.That(EnemyFigures(), Is.Not.Empty, "premise: enemies stand in the fight");
 
             Session.Instance.Hero.GetResource(StatName.Health).DepleteCurrent();
-            for (var tick = 0; Simulation.Run.Phase == RunPhase.InField && tick < SettleTicks; tick++)
+            for (var tick = 0; Simulation.Run.Phase == RunPhase.Live && tick < SettleTicks; tick++)
                 Simulation.Tick(0.016f);
 
-            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.InTown), "premise: the hero died");
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.None), "premise: the hero died");
             yield return null;
         }
 
@@ -166,7 +166,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             _ = toggle.GetType().GetMethod("SetToggle").Invoke(toggle, new object[] { true });
             yield return null;
 
-            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.InTown), "a dead hero is not Sent");
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.None), "a dead hero is not Sent");
             Assert.That(Session.Instance.Hero.SelectedLocation, Is.EqualTo(_location), "the Location the Death was judged against");
             Assert.That(corpse.FallPosition, Is.EqualTo(fell), "the first Corpse stands");
         }

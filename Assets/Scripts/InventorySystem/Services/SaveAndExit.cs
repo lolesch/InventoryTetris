@@ -19,7 +19,7 @@ namespace ToolSmiths.InventorySystem.Services
         public const string DiscardQuestion = "Exit without saving?\nThe hero's last save is kept, and this Run's loot is lost.";
 
         /// <summary>Whether a Leave ends a Run, so the player is asked first. In Town it goes straight through.</summary>
-        public static bool NeedsConfirmation(ISimulationService simulation) => simulation.Run.Phase == RunPhase.InField;
+        public static bool NeedsConfirmation(ISimulationService simulation) => simulation.Run.Phase == RunPhase.Live;
 
         /// <summary>
         /// Ends a Run in the Field if there is one, writes the hero and, if the write succeeded, calls
