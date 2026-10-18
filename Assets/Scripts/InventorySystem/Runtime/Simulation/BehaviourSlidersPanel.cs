@@ -17,12 +17,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// <see cref="lootFilterSlider"/> offers the <see cref="HeroBehaviour.RaritySteps"/> members
     /// (Common, Magic, Rare, Unique) as four snapping positions.
     ///
-    /// Lives on the Combat Panel, a child of the InFields face. Its own visibility is not
-    /// <see cref="RunPhase"/>-driven — <see cref="RunPhase.InField"/> only exists once a Location
-    /// is actually Sent to, but the Combat Panel must already be up during the Go Venture preview
-    /// (still <see cref="RunPhase.InTown"/>, no Run yet). <see cref="FieldFacePanel"/> cascades
-    /// this panel's <see cref="SimplePanel.Expand"/>/<see cref="SimplePanel.Collapse"/> straight from its own appear/
-    /// disappear instead, so both follow the same UI-layer event the preview relies on. Subscribes
+    /// Lives on the Combat Panel, a child of the Field face. Its own visibility is derived from the
+    /// Inventory Context by its <see cref="ToolSmiths.InventorySystem.GUI.Components.Panels.SidePanel"/>, never from the
+    /// Run: it is up on <c>None</c> and <c>Ground</c>, including during the Go Venture preview. Subscribes
     /// to slider events on enable and again in <see cref="SimplePanel.BeforeAppear"/>, so they are live
     /// as soon as the panel becomes visible - including a panel the scene authors as already up.
     ///

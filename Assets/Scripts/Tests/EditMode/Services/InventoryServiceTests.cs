@@ -74,15 +74,15 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
-        public void SyncContextToPhase_ClosesAContextTheFieldMakesUnreachable_AndLeavesTheHeroPanel()
+        public void SyncContextToMap_ClosesAContextTheFieldMakesUnreachable_AndLeavesTheHeroPanel()
         {
             service.SetContext(InventoryContext.Vendor);
-            service.SyncContextToPhase(true);
+            service.SyncContextToMap(true);
 
             Assert.That(service.ActiveContext, Is.EqualTo(InventoryContext.None), "a Town Stop is unreachable in the field");
 
             service.SetContext(InventoryContext.Hero);
-            service.SyncContextToPhase(true);
+            service.SyncContextToMap(true);
 
             Assert.That(service.ActiveContext, Is.EqualTo(InventoryContext.Hero), "the Hero Panel is reachable in both faces");
         }
