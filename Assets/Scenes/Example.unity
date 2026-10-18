@@ -1475,7 +1475,7 @@ PrefabInstance:
       objectReference: {fileID: 1612948804}
     - target: {fileID: 1647627357151131012, guid: d2efbe32240082a4d8344755fb27f51e, type: 3}
       propertyPath: m_Padding.z
-      value: 155.00006
+      value: 155
       objectReference: {fileID: 0}
     - target: {fileID: 2323841930182580407, guid: d2efbe32240082a4d8344755fb27f51e, type: 3}
       propertyPath: m_AdditionalShaderChannelsFlag
@@ -2680,7 +2680,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1647627357151131012, guid: ce2ae27950e43ee4aaa40642f2281dfe, type: 3}
       propertyPath: m_Padding.z
-      value: 155.00006
+      value: 155
       objectReference: {fileID: 0}
     - target: {fileID: 1873483464664095418, guid: ce2ae27950e43ee4aaa40642f2281dfe, type: 3}
       propertyPath: m_fontSize
@@ -3124,7 +3124,7 @@ MonoBehaviour:
     m_HighlightedColor: {r: 1, g: 1, b: 1, a: 1}
     m_PressedColor: {r: 0.8584906, g: 0.8584906, b: 0.8584906, a: 1}
     m_SelectedColor: {r: 1, g: 1, b: 1, a: 1}
-    m_DisabledColor: {r: 0.5176471, g: 0.2627451, b: 0, a: 0.29803923}
+    m_DisabledColor: {r: 1, g: 1, b: 1, a: 0.2}
     m_ColorMultiplier: 1
     m_FadeDuration: 0.1
   m_SpriteState:
@@ -4816,7 +4816,7 @@ MonoBehaviour:
     m_HighlightedColor: {r: 1, g: 1, b: 1, a: 1}
     m_PressedColor: {r: 0.85882354, g: 0.85882354, b: 0.85882354, a: 1}
     m_SelectedColor: {r: 1, g: 1, b: 1, a: 1}
-    m_DisabledColor: {r: 0.5176471, g: 0.2627451, b: 0, a: 0.5019608}
+    m_DisabledColor: {r: 1, g: 1, b: 1, a: 0.2}
     m_ColorMultiplier: 1
     m_FadeDuration: 0.1
   m_SpriteState:
@@ -7557,7 +7557,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1647627357151131012, guid: 9b97adda8736357469138b4a0938b0e1, type: 3}
       propertyPath: m_Padding.z
-      value: 155.00006
+      value: 155
       objectReference: {fileID: 0}
     - target: {fileID: 1873483464664095418, guid: 9b97adda8736357469138b4a0938b0e1, type: 3}
       propertyPath: m_fontSize
@@ -9824,6 +9824,7 @@ MonoBehaviour:
   hotkey: 5
   heroFigure: {fileID: 296961779}
   travelPoint: {fileID: 1074568916}
+  stop: {fileID: 0}
 --- !u!114 &612742130
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12889,6 +12890,7 @@ MonoBehaviour:
   hotkey: 2
   heroFigure: {fileID: 0}
   travelPoint: {fileID: 0}
+  stop: {fileID: 0}
 --- !u!114 &856665806
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -20325,6 +20327,7 @@ MonoBehaviour:
   hotkey: 3
   heroFigure: {fileID: 296961779}
   travelPoint: {fileID: 1435354194}
+  stop: {fileID: 0}
 --- !u!114 &1393504393
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -27256,7 +27259,7 @@ PrefabInstance:
       objectReference: {fileID: 1900000008}
     - target: {fileID: 1647627357151131012, guid: d2efbe32240082a4d8344755fb27f51e, type: 3}
       propertyPath: m_Padding.z
-      value: 155.00006
+      value: 155
       objectReference: {fileID: 0}
     - target: {fileID: 2323841930182580407, guid: d2efbe32240082a4d8344755fb27f51e, type: 3}
       propertyPath: m_AdditionalShaderChannelsFlag
@@ -32759,6 +32762,7 @@ MonoBehaviour:
   hotkey: 0
   heroFigure: {fileID: 0}
   travelPoint: {fileID: 0}
+  stop: {fileID: 0}
 --- !u!114 &2850000003
 MonoBehaviour:
   m_ObjectHideFlags: 0
