@@ -1,3 +1,4 @@
+using Submodules.Utility.Services;
 using Submodules.Utility.UI;
 using ToolSmiths.InventorySystem.Locations;
 using ToolSmiths.InventorySystem.Services;
@@ -25,6 +26,61 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         /// <summary>The rect whose centre is this Location on the map: the hero walks to it and the arena is drawn there.</summary>
         public RectTransform TravelPoint => this.TravelPointOr(travelPoint);
+
+        private const float LockedAlpha = 0.35f;
+
+        private CanvasGroup group;
+        private bool locked;
+
+        /// <summary>
+        /// Subscribes in <see cref="OnEnable"/>, not <c>Awake</c>, which a scene object keeps across Play entries
+        /// without its subscriptions. A Hidden toggle stays enabled (only its group fades), so it still hears the
+        /// signal that reveals it.
+        /// </summary>
+        protected override void OnEnable()
+        {
+            base.OnEnable();
+
+            if (!Application.isPlaying || !Session.TrySubscribeHeroLoaded(Refresh))
+                return;
+
+            SimulationService.Instance.ProgressionChanged -= Refresh;
+            SimulationService.Instance.ProgressionChanged += Refresh;
+            Refresh();
+        }
+
+        protected override void OnDisable()
+        {
+            base.OnDisable();
+
+            Session.UnsubscribeHeroLoaded(Refresh);
+
+            if (ServiceLocator.IsArmed)
+                SimulationService.Instance.ProgressionChanged -= Refresh;
+        }
+
+        private void Refresh() => Show(SimulationService.Instance.StateOf(Location));
+
+        /// <summary>
+        /// Hidden is not seen or hit; Locked is seen dimmed and refuses its own click. Not <c>interactable</c>: that
+        /// switches the Selectable to Disabled as the scene loads, and PlayMode fixtures run after such a load
+        /// failed their fades.
+        /// </summary>
+        private void Show(UnlockState state)
+        {
+            if (!group && !TryGetComponent(out group))
+                group = gameObject.AddComponent<CanvasGroup>();
+
+            locked = state < UnlockState.Active;
+            group.alpha = state == UnlockState.Hidden ? 0f : locked ? LockedAlpha : 1f;
+            group.blocksRaycasts = state != UnlockState.Hidden;
+        }
+
+        protected override void OnClick()
+        {
+            if (!locked)
+                base.OnClick();
+        }
 
         protected override void OnToggle()
         {
