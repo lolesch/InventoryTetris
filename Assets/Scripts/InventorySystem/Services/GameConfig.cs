@@ -80,6 +80,9 @@ namespace ToolSmiths.InventorySystem.Services
             return DefaultHero;
         }
 
+        [field: SerializeField, Tooltip("The coins a newly created hero starts with, on top of its template's own: about three Portal Scrolls at the Healer (tuning). Never granted on a load.")]
+        public Currency StartingCoins { get; private set; } = new(24u);
+
         [field: Header("Items")]
         [field: SerializeField, Tooltip("Stat-icon lookup for the character and item-stat displays. Not on the roll path.")]
         public ItemTypeData ItemTypeData { get; private set; }
