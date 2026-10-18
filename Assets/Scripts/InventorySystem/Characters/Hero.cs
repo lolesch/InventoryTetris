@@ -144,6 +144,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         public LocationConfig SelectedLocation { get; set; }
 
         /// <summary>
+        /// The Location the hero's open Town Portal leads to, <c>null</c> while none is open (ADR-0022). There is
+        /// only ever one: a Recall that holds the Run replaces it, and only a resume closes it.
+        /// </summary>
+        public LocationConfig TownPortal { get; set; }
+
+        /// <summary>
         /// Monsters this hero has killed over its life, Runs that ended in Death included. A Run in the
         /// Field is never saved, so its count joins this one when the Run settles.
         /// </summary>

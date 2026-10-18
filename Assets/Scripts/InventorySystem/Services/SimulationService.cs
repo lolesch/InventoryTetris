@@ -2,6 +2,7 @@ using Submodules.Utility.Extensions;
 using Submodules.Utility.Services;
 using System;
 using System.Collections.Generic;
+using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
@@ -131,6 +132,56 @@ namespace ToolSmiths.InventorySystem.Services
             hero.SelectedLocation = location;
 
             RecoverCorpseAt(hero, profile);
+        }
+
+        // A hero down, even one the tick has not yet ended the Run for, cannot Recall; the Death beat follows a
+        // Death, which leaves no Run, so the phase covers it.
+        public bool CanRecall
+        {
+            get
+            {
+                var run = Run;
+                return run.Phase == RunPhase.Live && !run.HeroIsDown && !run.IsRecalling
+                    && !session.Hero.IsDead && TryFindPortalScroll(session.Hero, out _, out _);
+            }
+        }
+
+        public void Recall()
+        {
+            if (!CanRecall)
+                throw new InvalidOperationException("A Recall needs a live Run, a hero who is up, no portal opening and a Portal Scroll in the Inventory.");
+
+            var bag = session.Hero.Inventory;
+            _ = TryFindPortalScroll(session.Hero, out var cell, out var scroll);
+
+            // The scroll leaves only if the Run accepts the Recall: a throw rolls the Inventory back.
+            using var transaction = new ItemTransaction(bag);
+            _ = bag.RemoveAtPosition(cell, new Package(null, scroll.Item, 1u));
+            Run.Recall();
+            transaction.Commit();
+        }
+
+        public void Resume()
+        {
+            Run.Resume();
+            session.Hero.TownPortal = null;
+        }
+
+        private bool TryFindPortalScroll(Hero hero, out Vector2Int cell, out Package scroll)
+        {
+            foreach (var entry in hero.Inventory.StoredPackages)
+            {
+                if (items.Catalog.Definition(entry.Value.Item.DefinitionId).ConsumableType != ConsumableType.PortalScroll)
+                    continue;
+
+                cell = entry.Key;
+                scroll = entry.Value;
+                return true;
+            }
+
+            cell = default;
+            scroll = default;
+            return false;
         }
 
         public bool CorpseLiesAt(LocationConfig location)
@@ -296,6 +347,13 @@ namespace ToolSmiths.InventorySystem.Services
             run = new RunState(profile => StartEncounter(world, profile, run),
                 new RunPenalty(config.XpLossFraction, config.CurrencyFeeFraction), config.RecallOpeningSeconds);
             run.RunEnded += () => OnRunEnded(world, run);
+
+            // The Hero owns the portal a hold opens (ADR-0022): the Run is at the Location the Hero has selected.
+            run.PhaseChanged += phase =>
+            {
+                if (phase == RunPhase.Held)
+                    session.Hero.TownPortal = session.Hero.SelectedLocation;
+            };
 
             return run;
         }
