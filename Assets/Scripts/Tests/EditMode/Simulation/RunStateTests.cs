@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Simulation;
@@ -760,6 +761,130 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             Assert.That(run.Phase, Is.EqualTo(RunPhase.Held));
             Assert.That(run.Encounter.Phase, Is.EqualTo(SimulationPhase.Complete));
             Assert.That(phases, Is.EqualTo(new[] { RunPhase.Held }));
+        }
+
+        // ─── the resume: Held back to Live exactly where it was held (ADR-0022) ───
+
+        [Test]
+        public void Resume_TakesAHeldRunBackToLive_OnTheSameEncounterAtTheSameHealth()
+        {
+            var run = NewRun(SteadyHero(), recallOpening: 0.5f);
+            run.Send(SlowFight());
+            run.Recall();
+            run.Advance(0.5f);
+            var encounter = run.Encounter;
+            var index = encounter.CurrentEncounter;
+            var population = encounter.Population;
+            var enemies = new List<Enemy>(encounter.Enemies);
+            var health = enemies.ConvertAll(e => e.Health);
+            Assert.That(enemies, Is.Not.Empty, "setup: something to stay wounded");
+            var phases = new List<RunPhase>();
+            run.PhaseChanged += phases.Add;
+
+            run.Resume();
+
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Live));
+            Assert.That(run.IsRecalling, Is.False);
+            Assert.That(phases, Is.EqualTo(new[] { RunPhase.Live }));
+            Assert.That(run.Encounter, Is.SameAs(encounter));
+            Assert.That(encounter.CurrentEncounter, Is.EqualTo(index));
+            Assert.That(encounter.Population, Is.EqualTo(population));
+            Assert.That(encounter.Enemies, Is.EqualTo(enemies));
+            Assert.That(encounter.Enemies.Select(e => e.Health), Is.EqualTo(health));
+        }
+
+        [Test]
+        public void ALiveRun_AfterAResume_AdvancesAgain()
+        {
+            var run = HeldRun();
+            run.Resume();
+            var frozen = Snapshot(run);
+
+            Assert.That(run.Advance(1f), Is.GreaterThan(0));
+
+            Assert.That(Snapshot(run), Is.Not.EqualTo(frozen));
+        }
+
+        [Test]
+        public void AResumedRun_CanRecallAgain_AndReturn()
+        {
+            var run = HeldRun();
+            run.Resume();
+
+            run.Recall();
+            run.Advance(0.5f);
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Held), "the resume left no opening behind");
+            run.Resume();
+
+            Assert.That(run.Return().Outcome, Is.EqualTo(RunOutcome.Returned));
+        }
+
+        [Test]
+        public void ClearingTheRestOfThePopulation_AfterAResume_CompletesTheLocationOnce()
+        {
+            var run = NewRun(OneShotHero(), tuning: ShortBeat(), recallOpening: 0.1f);
+            run.Send(Profiles.Group(EnemyArchetype.Skirmisher, 1, population: 3));
+            var completed = 0;
+            run.Encounter.LocationCompleted += () => completed++;
+            for (var i = 0; i < 500 && run.Encounter.EncountersCleared < 1; i++) run.Advance(0.1f);
+            Assert.That(run.Encounter.EncountersCleared, Is.EqualTo(1), "setup: the first Encounter is cleared");
+            run.Recall();
+            run.Advance(0.1f);
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Held), "setup: held mid-Population");
+            Assert.That(completed, Is.EqualTo(0));
+
+            run.Resume();
+            for (var i = 0; i < 500 && run.Encounter.Phase != SimulationPhase.Complete; i++) run.Advance(0.1f);
+            for (var i = 0; i < 50; i++) run.Advance(0.1f);
+
+            Assert.That(run.Encounter.Phase, Is.EqualTo(SimulationPhase.Complete));
+            Assert.That(run.Encounter.EncountersCleared, Is.EqualTo(3));
+            Assert.That(completed, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void AResume_FromTheCompletePhase_ResumesIntoTheEmptiedLocation_NothingSpawns()
+        {
+            var run = NewRun(OneShotHero(), recallOpening: 0.5f);
+            run.Send(Profiles.Group(EnemyArchetype.Skirmisher, 1));
+            for (var i = 0; i < 500 && run.Encounter.Phase != SimulationPhase.Complete; i++)
+                run.Advance(0.1f);
+            var spawned = 0;
+            var completed = 0;
+            run.Encounter.EnemySpawned += _ => spawned++;
+            run.Encounter.LocationCompleted += () => completed++;
+            run.Recall();
+            run.Advance(0.5f);
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Held), "setup: held from Complete");
+
+            run.Resume();
+            for (var i = 0; i < 50; i++) run.Advance(0.1f);
+
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Live));
+            Assert.That(run.Encounter.Phase, Is.EqualTo(SimulationPhase.Complete));
+            Assert.That(run.Encounter.AliveEnemyCount, Is.EqualTo(0));
+            Assert.That(spawned, Is.EqualTo(0));
+            Assert.That(completed, Is.EqualTo(0), "the Location was Completed before the Recall, not again");
+        }
+
+        [Test]
+        public void Resume_IsRefused_UnlessHeld()
+        {
+            var none = NewRun(SteadyHero());
+            Assert.That(() => none.Resume(), Throws.InvalidOperationException);
+
+            var live = NewRun(SteadyHero(), recallOpening: 0.5f);
+            live.Send(SlowFight());
+            Assert.That(() => live.Resume(), Throws.InvalidOperationException);
+
+            live.Recall();
+            Assert.That(() => live.Resume(), Throws.InvalidOperationException, "an opening portal is not yet held");
+            Assert.That(live.IsRecalling, Is.True);
+
+            var down = NewRun(FrailHero());
+            down.Send(Skirmishers(4));
+            DriveHeroDown(down);
+            Assert.That(() => down.Resume(), Throws.InvalidOperationException);
         }
 
         [Test]
