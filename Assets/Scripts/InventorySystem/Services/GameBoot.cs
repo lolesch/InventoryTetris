@@ -155,7 +155,7 @@ namespace ToolSmiths.InventorySystem.Services
             inventory.RestockTownStops();
 
             var simulation = new SimulationService(session, items, inventory, config,
-                new RollStreams(rolls, new UnityRollSource(), new UnityRollSource()));
+                new RollStreams(rolls, new UnityRollSource(), new UnityRollSource(), new UnityRollSource()));
             registry.Register<ISimulationService>(simulation);
 
             registry.Register<IPauseMenu>(new PauseMenu(simulation));

@@ -181,7 +181,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
-        public void ACompletedIdTheRegistryNoLongerKnows_IsDroppedOnLoad_WithoutFailingIt()
+        public void ACompletedIdTheRegistryNoLongerKnows_IsKeptOnLoad_AndSavedAgain_WithoutFailingIt()
         {
             UnlockWhenComplete(thornwood, ashfen);
             var before = TestGame.Create(config);
@@ -194,8 +194,10 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             Assert.That(ok, Is.True);
             Assert.That(report.IsClean, Is.True);
-            Assert.That(after.Hero.HasCompleted("lost-in-a-patch"), Is.False);
+            Assert.That(after.Hero.HasCompleted("lost-in-a-patch"), Is.True, "kept, so an id authored back in finds its progress");
             Assert.That(after.Hero.HasCompleted("thornwood"), Is.True);
+            Assert.That(after.Simulation.StateOf(ashfen), Is.EqualTo(UnlockState.Active), "the unknown id changes no State");
+            Assert.That(Snapshot(after).completedIds, Does.Contain("lost-in-a-patch"));
         }
 
         [Test]

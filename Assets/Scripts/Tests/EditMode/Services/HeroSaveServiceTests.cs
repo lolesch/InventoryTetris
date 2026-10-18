@@ -688,7 +688,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
-        public void ACompleteMidRun_WritesTheHeroAtOnce_WithTheLocationCompleted_AndTheBagAsItStands()
+        public void ACompleteMidRun_WritesTheLocationCompleted_AtOnce_WithoutTheUnsettledBag()
         {
             var setup = LoadedHero(out var id);
             setup.Game.Hero.IsInvincible = true;
@@ -702,7 +702,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             var next = NewSetup();
             _ = next.Saves.Load(id);
             Assert.That(next.Game.Hero.HasCompleted("thornwood"), Is.True);
-            Assert.That(BagHoldsPotions(next.Game.Hero), Is.True, "what a quit at that moment banks");
+            Assert.That(BagHoldsPotions(next.Game.Hero), Is.False, "the field bag is the Return's to bank, not the Complete's");
             Assert.That(next.Saves.List().Single().SavedAtUtc, Is.EqualTo(now), "written by the Complete");
         }
 
@@ -718,7 +718,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
-        public void TheCompleteSave_RunsTheBeforeSaveNormalisers()
+        public void AMidRunCompleteSave_RunsNoNormaliser_ItWritesNoHeroState()
         {
             var setup = LoadedHero(out _);
             var runs = 0;
@@ -728,7 +728,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             TickUntilCompleteAndFlush(setup);
 
-            Assert.That(runs, Is.EqualTo(1));
+            Assert.That(runs, Is.EqualTo(0));
         }
 
         [Test]

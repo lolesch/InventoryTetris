@@ -41,8 +41,8 @@ namespace ToolSmiths.InventorySystem.Persistence
 
         /// <summary>
         /// The ids of the Unlockables the hero has Completed, the one progression fact kept (ADR-0023). Empty
-        /// in a save written before there was one; an id the progression registry no longer knows is dropped
-        /// on load, so neither needs a schema migration.
+        /// in a save written before there was one; an id the progression registry no longer knows is kept and
+        /// saved again, so neither needs a schema migration.
         /// </summary>
         public List<string> completedIds = new();
 

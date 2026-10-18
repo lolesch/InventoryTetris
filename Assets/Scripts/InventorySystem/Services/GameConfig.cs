@@ -155,9 +155,5 @@ namespace ToolSmiths.InventorySystem.Services
         /// <summary>Everything the Unlock graph holds (ADR-0023): the Locations, the Quests and the locked Town Stops.</summary>
         public IEnumerable<Unlockable> Unlockables =>
             System.Linq.Enumerable.Concat(System.Linq.Enumerable.Concat<Unlockable>(locations, quests), townStops);
-
-        /// <summary>Whether <paramref name="id"/> names an authored Unlockable, without building the Unlock graph.</summary>
-        public bool KnowsUnlockable(string id) =>
-            id != null && System.Linq.Enumerable.Any(Unlockables, unlockable => unlockable != null && unlockable.Id == id);
     }
 }
