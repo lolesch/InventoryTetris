@@ -4,7 +4,7 @@ namespace ToolSmiths.InventorySystem.Services
 {
     /// <summary>
     /// The <see cref="IPauseMenu"/> of one boot. It holds the simulation while open through
-    /// <see cref="ISimulationService.SetHeld"/>, never the player's Pause and never <c>Time.timeScale</c>.
+    /// <see cref="ISimulationService.SetMenuFreeze"/>, never the player's Pause and never <c>Time.timeScale</c>.
     /// </summary>
     public sealed class PauseMenu : IPauseMenu
     {
@@ -29,7 +29,7 @@ namespace ToolSmiths.InventorySystem.Services
                 return;
 
             IsOpen = open;
-            simulation.SetHeld(open);
+            simulation.SetMenuFreeze(open);
             OpenChanged?.Invoke(open);
         }
     }

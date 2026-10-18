@@ -4,12 +4,12 @@ namespace ToolSmiths.InventorySystem.Simulation
 {
     /// <summary>
     /// The Run finite-state machine (issue #21; spec <i>The RunState machine</i>). Two states —
-    /// <see cref="RunPhase.InTown"/> and <see cref="RunPhase.InField"/>; <see cref="Send"/> opens
+    /// <see cref="RunPhase.None"/> and <see cref="RunPhase.Live"/>; <see cref="Send"/> opens
     /// a Run at a Location, <see cref="Return"/> and <see cref="HandleDeath"/> close it. Send and
     /// Return are instant — there is no <c>Traveling</c> state — and Death is not a game-over,
-    /// only a penalised trip back to Town.
+    /// only a penalised end of the Run.
     ///
-    /// While <see cref="RunPhase.InField"/> a single <see cref="EncounterSimulation"/> runs the
+    /// While <see cref="RunPhase.Live"/> a single <see cref="EncounterSimulation"/> runs the
     /// endless series of Encounters; this class is the façade the engine-side driver (issue #26)
     /// and the behaviour triggers (issue #23) talk to. It owns the one running total the sim
     /// does not — <see cref="CurrencyBanked"/>, fed per kill by the loot flow (issue #24) — and
@@ -51,24 +51,24 @@ namespace ToolSmiths.InventorySystem.Simulation
         // ─── state ──────────────────────────────────────────────────────────
 
         /// <summary>Which state the Run is in.</summary>
-        public RunPhase Phase { get; private set; } = RunPhase.InTown;
+        public RunPhase Phase { get; private set; } = RunPhase.None;
 
-        /// <summary>The Location the hero is currently in the Field at — <c>null</c> while <see cref="RunPhase.InTown"/>.</summary>
+        /// <summary>The Location the Run is at — <c>null</c> while <see cref="RunPhase.None"/>.</summary>
         public EncounterProfile Location => _location;
 
-        /// <summary>The live Encounter simulation — <c>null</c> while <see cref="RunPhase.InTown"/>.</summary>
+        /// <summary>The live Encounter simulation — <c>null</c> while <see cref="RunPhase.None"/>.</summary>
         public EncounterSimulation Encounter => _encounter;
 
         /// <summary>
         /// Currency banked to the Wallet this Run so far, in base units (<see cref="BankCurrency"/>).
-        /// Zero while <see cref="RunPhase.InTown"/>; the Death fee is computed against it.
+        /// Zero while <see cref="RunPhase.None"/>; the Death fee is computed against it.
         /// </summary>
         public long CurrencyBanked => _currencyBanked;
 
         /// <summary>
         /// Whether the hero has been downed in the current Run. The sim has ended and the only
         /// way out is <see cref="HandleDeath"/> — <see cref="Return"/> is refused. <c>false</c>
-        /// while <see cref="RunPhase.InTown"/>.
+        /// while <see cref="RunPhase.None"/>.
         /// </summary>
         public bool HeroIsDown => _heroDown;
 
@@ -87,14 +87,14 @@ namespace ToolSmiths.InventorySystem.Simulation
         public event Action RunEnded;
 
         /// <summary>
-        /// Raised on every phase transition — <see cref="Send"/> (→ InField) and
-        /// <see cref="EndRun"/> (→ InTown). The UI subscribes to toggle panels.
+        /// Raised on every phase transition — <see cref="Send"/> (→ Live) and
+        /// <see cref="EndRun"/> (→ None). The UI subscribes to toggle panels.
         /// </summary>
         public event Action<RunPhase> PhaseChanged;
 
         /// <summary>
         /// Raised when <see cref="Relocate"/> swaps the live Encounter for one at another
-        /// Location. The Run never leaves <see cref="RunPhase.InField"/>, so
+        /// Location. The Run never leaves <see cref="RunPhase.Live"/>, so
         /// <see cref="PhaseChanged"/> and <see cref="RunEnded"/> stay quiet; anything holding the
         /// old <see cref="Encounter"/> re-reads it here.
         /// </summary>
@@ -103,8 +103,8 @@ namespace ToolSmiths.InventorySystem.Simulation
         // ─── transitions ────────────────────────────────────────────────────
 
         /// <summary>
-        /// Start a Run at <paramref name="location"/> — <see cref="RunPhase.InTown"/> →
-        /// <see cref="RunPhase.InField"/>. Builds a fresh Encounter and zeroes the Run totals.
+        /// Start a Run at <paramref name="location"/> — <see cref="RunPhase.None"/> →
+        /// <see cref="RunPhase.Live"/>. Builds a fresh Encounter and zeroes the Run totals.
         /// </summary>
         public void Send(EncounterProfile location)
         {
@@ -112,8 +112,8 @@ namespace ToolSmiths.InventorySystem.Simulation
                 throw new InvalidOperationException("The hero is down — the Run ends in HandleDeath before a new one can be Sent.");
 
             if (location == null) throw new ArgumentNullException(nameof(location));
-            if (Phase != RunPhase.InTown)
-                throw new InvalidOperationException("A Run is already in the Field — Return or HandleDeath before Sending again.");
+            if (Phase != RunPhase.None)
+                throw new InvalidOperationException("A Run is already live — Return or HandleDeath before Sending again.");
 
             var encounter = _startEncounter(location)
                 ?? throw new InvalidOperationException("The encounter factory returned null.");
@@ -124,23 +124,23 @@ namespace ToolSmiths.InventorySystem.Simulation
             ResetRunTotals();
             LastResult = null;
 
-            Phase = RunPhase.InField;
+            Phase = RunPhase.Live;
             PhaseChanged?.Invoke(Phase);
         }
 
         /// <summary>
         /// Move the live Run to <paramref name="location"/> without ending it — stays
-        /// <see cref="RunPhase.InField"/>, stops the current Encounter and starts a fresh one there.
+        /// <see cref="RunPhase.Live"/>, stops the current Encounter and starts a fresh one there.
         /// This is not a Return: the Run's totals (<see cref="CurrencyBanked"/>, kills, XP, clears,
         /// duration) carry on into the one <see cref="RunResult"/> the Run eventually freezes, and
         /// no <see cref="RunEnded"/> or <see cref="PhaseChanged"/> is raised (<see cref="Relocated"/>
-        /// is). Refused in Town (nothing to move) and once the hero is down (that Run ends in
+        /// is). Refused with no Run (nothing to move) and once the hero is down (that Run ends in
         /// <see cref="HandleDeath"/>). The new Encounter is built first, so a factory that throws
         /// leaves the current one running.
         /// </summary>
         public void Relocate(EncounterProfile location)
         {
-            RequireInField();
+            RequireLive();
             if (_heroDown)
                 throw new InvalidOperationException("The hero is down — the Run ends in HandleDeath, not a Relocate.");
             if (location == null) throw new ArgumentNullException(nameof(location));
@@ -161,10 +161,10 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <summary>
         /// Bank <paramref name="deltaSeconds"/> of real time on the Encounter and run every whole
         /// tick now due. Forwards to <see cref="EncounterSimulation.Advance"/> (already
-        /// sim-speed-scaled by the caller); returns the tick count. A no-op in Town.
+        /// sim-speed-scaled by the caller); returns the tick count. A no-op with no Run.
         /// </summary>
         public int Advance(float deltaSeconds) =>
-            Phase == RunPhase.InField ? _encounter.Advance(deltaSeconds) : 0;
+            Phase == RunPhase.Live ? _encounter.Advance(deltaSeconds) : 0;
 
         /// <summary>
         /// Record <paramref name="baseUnits"/> of currency banked to the Wallet by a kill's loot
@@ -174,7 +174,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// </summary>
         public void BankCurrency(long baseUnits)
         {
-            if (Phase != RunPhase.InField)
+            if (Phase != RunPhase.Live)
                 throw new InvalidOperationException("Currency only banks during a Run.");
             if (_heroDown)
                 throw new InvalidOperationException("The hero is down — no more currency banks before HandleDeath closes the Run.");
@@ -185,13 +185,13 @@ namespace ToolSmiths.InventorySystem.Simulation
         }
 
         /// <summary>
-        /// End the Run with everything kept — <see cref="RunPhase.InField"/> →
-        /// <see cref="RunPhase.InTown"/>, freezing and returning a <see cref="RunOutcome.Returned"/>
+        /// End the Run with everything kept — <see cref="RunPhase.Live"/> →
+        /// <see cref="RunPhase.None"/>, freezing and returning a <see cref="RunOutcome.Returned"/>
         /// result. Refused once the hero is down: that Run ends in <see cref="HandleDeath"/>.
         /// </summary>
         public RunResult Return()
         {
-            RequireInField();
+            RequireLive();
             if (_heroDown)
                 throw new InvalidOperationException("The hero is down — the Run ends in HandleDeath, not a Return.");
 
@@ -201,7 +201,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         }
 
         /// <summary>
-        /// End the Run in Death — <see cref="RunPhase.InField"/> → <see cref="RunPhase.InTown"/>,
+        /// End the Run in Death — <see cref="RunPhase.Live"/> → <see cref="RunPhase.None"/>,
         /// freezing and returning a <see cref="RunOutcome.Died"/> result. Refused unless the hero
         /// is actually down (<see cref="HeroIsDown"/>): that guard is what stops a driver bug from
         /// imposing the Death penalty on a Run that is still winnable — a live hero's Run only
@@ -215,7 +215,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <param name="xpTowardNextLevel">The hero's current progress toward its next level, in XP.</param>
         public RunResult HandleDeath(int xpTowardNextLevel)
         {
-            RequireInField();
+            RequireLive();
             if (!_heroDown)
                 throw new InvalidOperationException("The hero is not down — the Run ends in Return, not HandleDeath.");
             if (xpTowardNextLevel < 0)
@@ -238,9 +238,9 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         private void OnHeroDowned() => _heroDown = true;
 
-        private void RequireInField()
+        private void RequireLive()
         {
-            if (Phase != RunPhase.InField)
+            if (Phase != RunPhase.Live)
                 throw new InvalidOperationException("No Run is in the Field.");
         }
 
@@ -266,7 +266,7 @@ namespace ToolSmiths.InventorySystem.Simulation
             _encounter = null;
             _location = null;
             ResetRunTotals();
-            Phase = RunPhase.InTown;
+            Phase = RunPhase.None;
             LastResult = result;
             PhaseChanged?.Invoke(Phase);
             RunEnded?.Invoke();

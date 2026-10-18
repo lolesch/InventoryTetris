@@ -47,7 +47,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             Time.timeScale = 1f;
             SimulationService.Instance.SetPaused(false);
 
-            if (SimulationService.Instance.Run.Phase == RunPhase.InField)
+            if (SimulationService.Instance.Run.Phase == RunPhase.Live)
                 _ = SimulationService.Instance.Return();
 
             _ = Session.Instance.TryLoad(GameBoot.Load().DefaultHero);
@@ -198,7 +198,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             yield return null;
 
             var run = SimulationService.Instance.Run;
-            Assert.That(run.Phase, Is.EqualTo(RunPhase.InTown), "the Run ends at the click");
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.None), "the Run ends at the click");
             Assert.That(run.LastResult?.Outcome, Is.EqualTo(RunOutcome.Returned));
             Assert.That(Session.Instance.Hero.Corpse.Exists, Is.False, "a Return keeps everything");
             Assert.That(IsWalking(), Is.True, "he walks out, not the Relocate walk to a Location");
@@ -216,13 +216,13 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             Press("ToFieldsButton");
             yield return UntilAlpha(Face("InFields"), 1f);
             var run = SimulationService.Instance.Run;
-            Assert.That(run.Phase, Is.EqualTo(RunPhase.InTown), "premise: no Run");
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.None), "premise: no Run");
 
             Press("ToTownButton");
             yield return UntilAlpha(Face("InTown"), 1f);
 
             Assert.That(SimulationService.Instance.Run, Is.SameAs(run));
-            Assert.That(run.Phase, Is.EqualTo(RunPhase.InTown));
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.None));
             Assert.That(run.LastResult, Is.Null, "nothing ended");
             Assert.That(IsWalking(), Is.False);
         }
@@ -247,7 +247,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             Assert.That(IsWalking(), Is.True, "the Send starts a walk");
             Assert.That(Vector2.Distance(FigureAt(), CentreOf(FieldExit())), Is.LessThan(Vector2.Distance(CentreOf(FieldExit()), CentreOf(LocationIcon(_locations[0])))),
                 "not there yet");
-            Assert.That(SimulationService.Instance.Run.Phase, Is.EqualTo(RunPhase.InField), "the Run starts at the click, not on arrival");
+            Assert.That(SimulationService.Instance.Run.Phase, Is.EqualTo(RunPhase.Live), "the Run starts at the click, not on arrival");
 
             yield return WaitForArrival();
             Assert.That(Vector2.Distance(FigureAt(), CentreOf(LocationIcon(_locations[0]))), Is.LessThan(0.01f), "arrived at the Location");

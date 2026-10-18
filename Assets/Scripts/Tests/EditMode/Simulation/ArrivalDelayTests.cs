@@ -163,14 +163,14 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
-        public void ARunSentWithTheDelay_HasNoBodiesYet_ButIsInField()
+        public void ARunSentWithTheDelay_HasNoBodiesYet_ButIsLive()
         {
             var hero = StrikingHero();
             var run = new RunState(p => new EncounterSimulation(hero, p, new ConstantRollSource(0.5f), Behaviours.Engaging(5), Delayed()));
 
             run.Send(Profile());
 
-            Assert.That(run.Phase, Is.EqualTo(RunPhase.InField));
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Live));
             Assert.That(run.Encounter.AliveEnemyCount, Is.EqualTo(0));
         }
     }

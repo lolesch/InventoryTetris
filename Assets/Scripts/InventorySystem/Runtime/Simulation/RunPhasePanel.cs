@@ -13,11 +13,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     ///
     /// <para><b>Only the InTown face uses this.</b> The InFields face
     /// (<see cref="FieldFacePanel"/>) is deliberately not phase-driven - Go Venture previews it
-    /// while still <see cref="RunPhase.InTown"/>, and a <see cref="RunPhase"/>-driven panel would
+    /// while still <see cref="RunPhase.None"/>, and a <see cref="RunPhase"/>-driven panel would
     /// keep it hidden through exactly that preview. Entering the Field is always a deliberate UI
     /// action (<c>ToFieldsButton</c> fades InFields in, a Location Send commits) with no
     /// involuntary edge to catch. Leaving is not: a Return ends the Run without any button click, so
-    /// InTown needs its own route back in. Authored here for <see cref="RunPhase.InTown"/>, its
+    /// InTown needs its own route back in. Authored here for <see cref="RunPhase.None"/>, its
     /// <see cref="SimplePanel.Expand"/> goes through the InTown/InFields <see cref="PanelGroup"/>
     /// on a Return exactly as a real To Town click would, which is what fades InFields (and, via its
     /// own cascade, the Combat Panel) back out without either of them needing to hear about
@@ -28,7 +28,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     {
         [Tooltip("The RunPhase this panel is up during. Applied on every PhaseChanged and on " +
                  "enable, against whatever the Run's phase actually is right now.")]
-        [SerializeField] private RunPhase activeDuring = RunPhase.InTown;
+        [SerializeField] private RunPhase activeDuring = RunPhase.None;
 
         private RunState _run;
 

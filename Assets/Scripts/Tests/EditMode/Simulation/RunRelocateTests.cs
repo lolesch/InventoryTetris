@@ -44,7 +44,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         // ─── the swap ────────────────────────────────────────────────────────
 
         [Test]
-        public void Relocate_StaysInField_WithTheNewLocationAndAFreshEncounter()
+        public void Relocate_StaysLive_WithTheNewLocationAndAFreshEncounter()
         {
             var run = NewRun(OneShotHero());
             var first = Skirmishers(3);
@@ -54,7 +54,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
             run.Relocate(second);
 
-            Assert.That(run.Phase, Is.EqualTo(RunPhase.InField));
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Live));
             Assert.That(run.Location, Is.SameAs(second));
             Assert.That(run.Encounter, Is.Not.SameAs(oldEncounter));
             Assert.That(run.Encounter.Profile, Is.SameAs(second));
@@ -202,7 +202,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         // ─── refusals ────────────────────────────────────────────────────────
 
         [Test]
-        public void Relocate_WhileInTown_Throws()
+        public void Relocate_WhileNone_Throws()
         {
             var run = NewRun(OneShotHero());
 
@@ -266,7 +266,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             run.Send(Skirmishers(3));
 
             Assert.That(() => run.Relocate(Skirmishers(3)), Throws.InvalidOperationException);
-            Assert.That(run.Phase, Is.EqualTo(RunPhase.InField));
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Live));
         }
 
         [Test]

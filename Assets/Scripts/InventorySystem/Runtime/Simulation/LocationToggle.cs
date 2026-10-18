@@ -85,7 +85,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             // Switching mid-Run moves the live Run — no Return, so the Run never passes through
             // Town (which would collapse the InFields face and clear this very toggle with it).
-            if (simulation.Run.Phase == RunPhase.InField)
+            if (simulation.Run.Phase == RunPhase.Live)
                 simulation.Relocate(Location);
             else
                 simulation.Send(Location);

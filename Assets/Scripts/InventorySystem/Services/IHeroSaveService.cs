@@ -100,7 +100,7 @@ namespace ToolSmiths.InventorySystem.Services
         NotFromSave,
 
         /// <summary>A Run is in the Field; the file only ever holds a Town hero. A Complete's own save is the one write past it.</summary>
-        RunInField,
+        RunLive,
 
         /// <summary>A before-save step failed, so the previous file was kept.</summary>
         BeforeSaveFailed,
@@ -127,7 +127,7 @@ namespace ToolSmiths.InventorySystem.Services
         public static SaveResult Failed(SaveFailure failure) => new(failure, failure switch
         {
             SaveFailure.NotFromSave => "This hero did not come from a save file, so there is nothing to write.",
-            SaveFailure.RunInField => "A Run is in the Field, and a hero is only saved in Town.",
+            SaveFailure.RunLive => "A Run is in the Field, and a hero is only saved in Town.",
             SaveFailure.BeforeSaveFailed => "Something the game does before saving failed, so the previous save was kept.",
             SaveFailure.StoreFailed => "The save could not be written: storage is blocked or has no room.",
             _ => throw new ArgumentOutOfRangeException(nameof(failure), failure, "A failure is not None."),

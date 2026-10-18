@@ -108,7 +108,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _anchor = ArenaSpace.LocationAnchor;
             var run = SimulationService.Instance.Run;
             var sameRun = run == _run;
-            var sent = sameRun && _phase == RunPhase.InTown && run.Phase == RunPhase.InField;
+            var sent = sameRun && _phase == RunPhase.None && run.Phase == RunPhase.Live;
             var relocated = sameRun && _bound != null && run.Encounter != null && run.Encounter != _bound;
             _run = run;
             _phase = run.Phase;
