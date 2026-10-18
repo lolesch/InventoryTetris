@@ -9,6 +9,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
+using UnityEngine.UI;
 
 namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 {
@@ -51,7 +52,11 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 
         private static bool IsSeen(string id) => GroupOf(id).alpha > 0f && GroupOf(id).blocksRaycasts;
 
-        private static bool IsGreyedOut(string id) => GroupOf(id).alpha < 1f;
+        // Locked is the Selectable's own non-interactable look; its child icons sit at 0.4 alpha until it opens.
+        private static bool IsGreyedOut(string id) => !((Selectable)ToggleOf(id)).interactable;
+
+        private static float IconAlpha(string id) =>
+            ToggleOf(id).GetComponentsInChildren<Graphic>(true).First(g => g != ((Selectable)ToggleOf(id)).targetGraphic).color.a;
 
         // A click that goes through has selected the toggle's Location on the hero, with the Run out in the Field.
         private static bool ClickGoesThrough(string id)
@@ -81,6 +86,8 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             Assert.That(IsSeen(Thornwood) && !IsGreyedOut(Thornwood), Is.True, "Thornwood is open");
             Assert.That(IsSeen(Ashfall), Is.True, "Ashfall is shown");
             Assert.That(IsGreyedOut(Ashfall), Is.True, "greyed out");
+            Assert.That(IconAlpha(Ashfall), Is.EqualTo(0.4f).Within(0.001f), "its icon is dimmed");
+            Assert.That(IconAlpha(Thornwood), Is.EqualTo(1f).Within(0.001f), "an open Location's icon is full");
         }
 
         [UnityTest]
@@ -109,6 +116,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 
             Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.InField), "premise: still out in the Field");
             Assert.That(IsGreyedOut(Ashfall), Is.False);
+            Assert.That(IconAlpha(Ashfall), Is.EqualTo(1f).Within(0.001f), "its icon is full once it opens");
             Assert.That(ClickGoesThrough(Ashfall), Is.True);
         }
 

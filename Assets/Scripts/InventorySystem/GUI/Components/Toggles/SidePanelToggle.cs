@@ -160,7 +160,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         /// </summary>
         private void SyncLock()
         {
-            interactable = SimulationService.Instance.StateOf(stop) >= UnlockState.Active;
+            UnlockLook.Apply(this, SimulationService.Instance.StateOf(stop) >= UnlockState.Active);
 
             if (!interactable && panel != null && ServiceLocator.IsArmed && panel.IsUpIn(InventoryService.Instance.ActiveContext))
                 _ = panel.RequestContext(false);
