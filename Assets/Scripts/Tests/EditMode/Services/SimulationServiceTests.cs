@@ -277,10 +277,11 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
-        public void ADeathAfterAComplete_KeepsTheLocationComplete_AndWhatItOpenedOpen()
+        public void ADeathAfterAComplete_KeepsWhatItOpenedOpen_SoASendThereRecoversTheCorpse()
         {
             Unlock(thornwood, ashfen, whenComplete: true);
             var game = GameOver(thornwood, ashfen);
+            var item = PutInBag();
             session.Hero.IsInvincible = true;
             game.Send(thornwood);
             TickUntilComplete(game);
@@ -288,12 +289,19 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             session.Hero.IsInvincible = false;
 
             session.Hero.GetResource(StatName.Health).DepleteCurrent();
-            game.Tick(0.1f);
+            for (var i = 0; i < 100 && game.Run.Phase == RunPhase.InField; i++)
+                game.Tick(0.5f);
 
-            Assert.That(session.Hero.IsDead, Is.True, "premise: the hero died in Ashfen");
+            Assert.That(session.Hero.Corpse.Exists, Is.True, "premise: the hero died in Ashfen");
             Assert.That(game.StateOf(thornwood), Is.EqualTo(UnlockState.Complete));
             Assert.That(game.StateOf(ashfen), Is.EqualTo(UnlockState.Active), "still open to go back for the Corpse");
             Assert.That(session.Hero.HasCompleted("thornwood"), Is.True);
+
+            game.Respawn();
+            game.Send(ashfen);
+
+            Assert.That(session.Hero.Corpse.Exists, Is.False);
+            Assert.That(Holds(session.Hero, item), Is.True);
         }
 
         // ── a Quest Completes on its objective ──────────────────────────────
