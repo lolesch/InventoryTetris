@@ -23,6 +23,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         private const string SwordId = "test.sword";
         private const string TwoHandedSwordId = "test.twohanded.sword"; // a 2×2 purchase for the no-room tests
         private const string ArrowId = "test.arrow"; // a cheap restock filler for the fixed-price test
+        private const string BookId = "test.book"; // no affixes, so it prices at its base value alone (#122)
+        private const float BookBaseValue = 5f;
         private const string CopperId = "test.copper";
         private const string IronId = "test.iron";
         private const string SilverId = "test.silver";
@@ -38,6 +40,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
                 .With(new TestDefinition { Id = SwordId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Sword, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
                 .With(new TestDefinition { Id = TwoHandedSwordId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.TWOHANDEDWEAPONS, Footprint = ItemSize.TwoByTwo, BaseStackLimit = 1u })
                 .With(new TestDefinition { Id = ArrowId, Category = ItemCategory.Consumable, ConsumableType = ConsumableType.Arrow, Footprint = ItemSize.OneByOne, BaseStackLimit = 20u })
+                .With(new TestDefinition { Id = BookId, Category = ItemCategory.Consumable, ConsumableType = ConsumableType.Book, Footprint = ItemSize.OneByOne, BaseStackLimit = 10u, BaseValue = BookBaseValue })
                 .With(new TestDefinition { Id = CopperId, Category = ItemCategory.Currency, CurrencyType = CurrencyType.Copper, Footprint = ItemSize.OneByOne, BaseStackLimit = 999u })
                 .With(new TestDefinition { Id = IronId, Category = ItemCategory.Currency, CurrencyType = CurrencyType.Iron, Footprint = ItemSize.OneByOne, BaseStackLimit = 999u })
                 .With(new TestDefinition { Id = SilverId, Category = ItemCategory.Currency, CurrencyType = CurrencyType.Silver, Footprint = ItemSize.OneByOne, BaseStackLimit = 999u })
@@ -88,6 +91,16 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             VendorTransaction.Sell(new Package(null, Sword(), 1u), wallet);
 
             Assert.That(WalletValue(wallet), Is.EqualTo((uint)SwordSellValue));
+        }
+
+        [Test]
+        public void Sell_AffixlessBook_PaysItsBaseValue()
+        {
+            var wallet = NewWallet();
+
+            VendorTransaction.Sell(new Package(null, new ItemInstance(BookId, ItemRarity.Common, 1, null), 1u), wallet);
+
+            Assert.That(WalletValue(wallet), Is.EqualTo((uint)BookBaseValue));
         }
 
         [Test]
@@ -531,6 +544,14 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var sword = Sword();
 
             Assert.That(VendorTransaction.BuyPrice(sword, catalog), Is.EqualTo(SwordSellValue * VendorTransaction.Markup));
+        }
+
+        [Test]
+        public void BuyPrice_AffixlessBook_IsAboveZero()
+        {
+            var book = new ItemInstance(BookId, ItemRarity.Common, 1, null);
+
+            Assert.That(VendorTransaction.BuyPrice(book, catalog), Is.EqualTo(BookBaseValue * VendorTransaction.Markup));
         }
 
         // ── the check-then-queue protocol (TF#4) ───────────────────────────
