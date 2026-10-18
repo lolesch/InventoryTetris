@@ -3,8 +3,9 @@ using System;
 namespace ToolSmiths.InventorySystem.Simulation
 {
     /// <summary>
-    /// The Run finite-state machine (issue #21; spec <i>The RunState machine</i>). Two states —
-    /// <see cref="RunPhase.None"/> and <see cref="RunPhase.Live"/>; <see cref="Send"/> opens
+    /// The Run finite-state machine (issue #21; spec <i>The RunState machine</i>). Three states —
+    /// <see cref="RunPhase.None"/>, <see cref="RunPhase.Live"/> and, after a <see cref="Recall"/>,
+    /// <see cref="RunPhase.Held"/>; <see cref="Send"/> opens
     /// a Run at a Location, <see cref="Return"/> and <see cref="HandleDeath"/> close it. Send and
     /// Return are instant — there is no <c>Traveling</c> state — and Death is not a game-over,
     /// only a penalised end of the Run.
@@ -26,12 +27,15 @@ namespace ToolSmiths.InventorySystem.Simulation
         private readonly Func<EncounterProfile, EncounterSimulation> _startEncounter;
         private readonly RunPenalty _penalty;
         private readonly Action _onHeroDowned;
+        private readonly float _recallOpening;
 
         private EncounterSimulation _encounter;
+        private float _openingLeft; // sim seconds until a Recall's portal is open; meaningful while IsRecalling
         private EncounterProfile _location;
         private EncounterTotals _carried; // totals of the Encounters a Relocate left behind
         private long _currencyBanked;
         private bool _heroDown;
+        private bool _recalling;
 
         // ─── construction ───────────────────────────────────────────────────
 
@@ -41,10 +45,13 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <c>HeroBehaviour.Engagement</c>; a test binds a fake hero and a scripted roll source.
         /// </param>
         /// <param name="penalty">The cost of a Death. <c>default</c> (<see cref="RunPenalty.None"/>) costs nothing extra.</param>
-        public RunState(Func<EncounterProfile, EncounterSimulation> startEncounter, RunPenalty penalty = default)
+        /// <param name="recallOpening">Sim seconds a <see cref="Recall"/>'s portal takes to open, during which the Run stays live.</param>
+        public RunState(Func<EncounterProfile, EncounterSimulation> startEncounter, RunPenalty penalty = default,
+            float recallOpening = 0f)
         {
             _startEncounter = startEncounter ?? throw new ArgumentNullException(nameof(startEncounter));
             _penalty = penalty;
+            _recallOpening = Math.Max(0f, recallOpening);
             _onHeroDowned = OnHeroDowned;
         }
 
@@ -71,6 +78,12 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// while <see cref="RunPhase.None"/>.
         /// </summary>
         public bool HeroIsDown => _heroDown;
+
+        /// <summary>
+        /// Whether a <see cref="Recall"/>'s portal is still opening. The Run is <see cref="RunPhase.Live"/> through it and
+        /// only a Death cancels it; <see cref="Return"/>, <see cref="Relocate"/> and a second Recall are refused.
+        /// </summary>
+        public bool IsRecalling => _recalling;
 
         /// <summary>
         /// The result of the most recently finished Run, or <c>null</c> if none has finished yet
@@ -143,6 +156,7 @@ namespace ToolSmiths.InventorySystem.Simulation
             RequireLive();
             if (_heroDown)
                 throw new InvalidOperationException("The hero is down — the Run ends in HandleDeath, not a Relocate.");
+            RequirePortalNotOpening();
             if (location == null) throw new ArgumentNullException(nameof(location));
 
             var encounter = _startEncounter(location)
@@ -159,12 +173,52 @@ namespace ToolSmiths.InventorySystem.Simulation
         }
 
         /// <summary>
+        /// Open a Town Portal on the live Run (ADR-0022). The Run stays <see cref="RunPhase.Live"/>, the Encounter
+        /// ticking and hits landing, for the opening's sim time (<see cref="Advance"/> counts it, the Encounter's
+        /// Complete phase included); then it goes <see cref="RunPhase.Held"/>. A Death in the opening cancels it.
+        /// Refused with no Run, while Held, while a portal is already opening and once the hero is down.
+        /// </summary>
+        public void Recall()
+        {
+            RequireLive();
+            if (_heroDown)
+                throw new InvalidOperationException("The hero is down — the Run ends in HandleDeath, not a Recall.");
+            if (_recalling)
+                throw new InvalidOperationException("A portal is already opening.");
+
+            _recalling = true;
+            _openingLeft = _recallOpening;
+        }
+
+        /// <summary>
         /// Bank <paramref name="deltaSeconds"/> of real time on the Encounter and run every whole
         /// tick now due. Forwards to <see cref="EncounterSimulation.Advance"/> (already
-        /// sim-speed-scaled by the caller); returns the tick count. A no-op with no Run.
+        /// sim-speed-scaled by the caller); returns the tick count. A no-op with no Run and while
+        /// <see cref="RunPhase.Held"/>. An opening Recall takes its time off the same clock and holds the Run
+        /// once it has run out, unless the hero went down in it.
         /// </summary>
-        public int Advance(float deltaSeconds) =>
-            Phase == RunPhase.Live ? _encounter.Advance(deltaSeconds) : 0;
+        public int Advance(float deltaSeconds)
+        {
+            if (Phase != RunPhase.Live)
+                return 0;
+
+            if (!_recalling)
+                return _encounter.Advance(deltaSeconds);
+
+            // The Encounter gets the opening's sim time and no more: what is left of the frame is held.
+            var step = Math.Min(deltaSeconds, _openingLeft);
+            var ticks = _encounter.Advance(step);
+            _openingLeft -= step;
+
+            if (_recalling && _openingLeft <= 0f)
+            {
+                _recalling = false;
+                Phase = RunPhase.Held;
+                PhaseChanged?.Invoke(Phase);
+            }
+
+            return ticks;
+        }
 
         /// <summary>
         /// Record <paramref name="baseUnits"/> of currency banked to the Wallet by a kill's loot
@@ -194,6 +248,7 @@ namespace ToolSmiths.InventorySystem.Simulation
             RequireLive();
             if (_heroDown)
                 throw new InvalidOperationException("The hero is down — the Run ends in HandleDeath, not a Return.");
+            RequirePortalNotOpening();
 
             var result = RunResult.Returned(FreezeEncounter(), _currencyBanked);
             EndRun(result);
@@ -236,7 +291,18 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         // ─── internals ──────────────────────────────────────────────────────
 
-        private void OnHeroDowned() => _heroDown = true;
+        // A Death is not held: it cancels an opening portal, and the Run ends in HandleDeath as usual.
+        private void OnHeroDowned()
+        {
+            _heroDown = true;
+            _recalling = false;
+        }
+
+        private void RequirePortalNotOpening()
+        {
+            if (_recalling)
+                throw new InvalidOperationException("A portal is opening — the Run is held first, or a Death ends it.");
+        }
 
         private void RequireLive()
         {
@@ -258,6 +324,7 @@ namespace ToolSmiths.InventorySystem.Simulation
             _carried = default;
             _currencyBanked = 0L;
             _heroDown = false;
+            _recalling = false;
         }
 
         private void EndRun(RunResult result)

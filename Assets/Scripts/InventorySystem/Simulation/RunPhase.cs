@@ -13,5 +13,11 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         /// <summary>The simulation ticks — an <see cref="EncounterSimulation"/> is live at a Location.</summary>
         Live,
+
+        /// <summary>
+        /// A Recall's portal is open (ADR-0022): the Run stands frozen as it was, its Encounter, enemies, spawn timer
+        /// and ground untouched, until it is resumed or ends.
+        /// </summary>
+        Held,
     }
 }

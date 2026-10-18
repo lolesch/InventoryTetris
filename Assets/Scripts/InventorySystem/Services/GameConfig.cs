@@ -136,6 +136,9 @@ namespace ToolSmiths.InventorySystem.Services
         [field: SerializeField, Min(0f), Tooltip("How many real seconds the Death slow-down lasts.")]
         public float DeathSlowdownSeconds { get; private set; } = 1.5f;
 
+        [field: SerializeField, Min(0f), Tooltip("Sim seconds a Recall's Town Portal takes to open; the Run stays live through it (ADR-0022).")]
+        public float RecallOpeningSeconds { get; private set; } = 0.5f;
+
         [field: Header("Simulation: Encounter tuning (placeholders, untested starting points)")]
         [field: SerializeField, Tooltip("The arena, the Cast, the damage spread and the combat clock an Encounter plays on. A value outside what the sim accepts is pulled back into range when the Encounter is built, so a hand-edited asset cannot make a Send throw.")]
         public EncounterTuning Tuning { get; private set; } = EncounterTuning.Standard();

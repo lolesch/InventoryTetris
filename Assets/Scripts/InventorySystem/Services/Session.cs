@@ -63,7 +63,7 @@ namespace ToolSmiths.InventorySystem.Services
             if (data == null)
                 throw new ArgumentNullException(nameof(data));
 
-            if (IsLive)
+            if (HoldsARun)
                 return false;
 
             // Built whole before either is swapped, so a build that throws changes nothing.
@@ -81,7 +81,7 @@ namespace ToolSmiths.InventorySystem.Services
             if (locations == null)
                 throw new ArgumentNullException(nameof(locations));
 
-            if (IsLive)
+            if (HoldsARun)
             {
                 report = null;
                 return false;
@@ -94,7 +94,8 @@ namespace ToolSmiths.InventorySystem.Services
             return true;
         }
 
-        private bool IsLive => World.Run is { Phase: RunPhase.Live };
+        // A held Run belongs to this hero's World as a live one does.
+        private bool HoldsARun => World.Run is { Phase: not RunPhase.None };
 
         private void Swap(Hero hero, World world)
         {

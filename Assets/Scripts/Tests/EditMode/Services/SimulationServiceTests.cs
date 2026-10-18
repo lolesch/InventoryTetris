@@ -921,6 +921,39 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
+        public void AHeldRun_RefusesThePauseAndTheMenuFreeze_AndReadsThemFalse()
+        {
+            service.Send(thornwood);
+            service.Run.Recall();
+            service.Run.Advance(60f);
+            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.Held), "setup: the Run is held");
+            var raised = new List<bool>();
+            service.PausedChanged += raised.Add;
+
+            service.SetPaused(true);
+            service.SetMenuFreeze(true);
+
+            Assert.That(service.IsPaused, Is.False, "a held Run is already frozen");
+            Assert.That(service.IsMenuFrozen, Is.False);
+            Assert.That(raised, Is.Empty);
+        }
+
+        [Test]
+        public void TickingAHeldRun_AdvancesNothing()
+        {
+            service.Send(thornwood);
+            service.Run.Recall();
+            service.Run.Advance(60f);
+            var frozenAt = service.Run.Encounter.Duration;
+
+            for (var i = 0; i < 20; i++)
+                service.Tick(0.1f);
+
+            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.Held));
+            Assert.That(service.Run.Encounter.Duration, Is.EqualTo(frozenAt));
+        }
+
+        [Test]
         public void HoldAndRelease_AreIdempotent()
         {
             service.Send(thornwood);
