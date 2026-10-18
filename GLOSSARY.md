@@ -42,8 +42,18 @@ The grid shape an item occupies. The reason the backpack is a packing problem.
 _Avoid_: size, dimensions, area
 
 **Rarity**:
-The quality tier — Common, Magic, Rare, Unique. A **Unique** is an ordinary definition
-flagged unique with a fixed affix list, not a separate kind of thing.
+The quality tier, and the role an item plays — Common, Magic, Rare, Unique. A **Common** is the
+plain base: its implicit and no affixes, the implicit higher than any other rarity's. A **Magic**
+item rolls few affixes from a higher range: the specialist. A **Rare** rolls more of them: the
+generalist. A **Unique** is an ordinary definition flagged unique whose fixed affix list is the
+whole item, not a separate kind of thing; it drops only from its minimum item level up.
+_Avoid_: Legendary (it is a Unique), quality
+
+**Item level**:
+The level an item was rolled at, fixed for its life. It scales every rolled value on the item,
+and an affix or a Unique rolls only from its **minimum item level** up. A Location's drops start at
+its source level and reach a little above it, the higher the rarer.
+_Avoid_: ilvl, quality level, level (alone)
 
 ## Containers
 
