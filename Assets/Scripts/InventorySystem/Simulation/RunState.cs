@@ -100,8 +100,8 @@ namespace ToolSmiths.InventorySystem.Simulation
         public event Action RunEnded;
 
         /// <summary>
-        /// Raised on every phase transition — <see cref="Send"/> (→ Live) and
-        /// <see cref="EndRun"/> (→ None). The UI subscribes to toggle panels.
+        /// Raised on every phase transition — <see cref="Send"/> and <see cref="Resume"/> (→ Live), a Recall's
+        /// hold (→ Held), a <see cref="Relocate"/> from Held (→ Live) and <see cref="EndRun"/> (→ None). The UI subscribes to toggle panels.
         /// </summary>
         public event Action<RunPhase> PhaseChanged;
 
@@ -147,13 +147,16 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// This is not a Return: the Run's totals (<see cref="CurrencyBanked"/>, kills, XP, clears,
         /// duration) carry on into the one <see cref="RunResult"/> the Run eventually freezes, and
         /// no <see cref="RunEnded"/> or <see cref="PhaseChanged"/> is raised (<see cref="Relocated"/>
-        /// is). Refused with no Run (nothing to move) and once the hero is down (that Run ends in
+        /// is). From <see cref="RunPhase.Held"/> it discards the frozen Encounter and the Run goes
+        /// <see cref="RunPhase.Live"/> at the new Location (<see cref="PhaseChanged"/> is raised).
+        /// Refused with no Run (nothing to move) and once the hero is down (that Run ends in
         /// <see cref="HandleDeath"/>). The new Encounter is built first, so a factory that throws
         /// leaves the current one running.
         /// </summary>
         public void Relocate(EncounterProfile location)
         {
-            RequireLive();
+            if (Phase == RunPhase.None)
+                throw new InvalidOperationException("No Run is in the Field.");
             if (_heroDown)
                 throw new InvalidOperationException("The hero is down — the Run ends in HandleDeath, not a Relocate.");
             RequirePortalNotOpening();
@@ -169,7 +172,25 @@ namespace ToolSmiths.InventorySystem.Simulation
             _encounter = encounter;
             _encounter.HeroDowned += _onHeroDowned;
 
+            var wasHeld = Phase == RunPhase.Held;
+            Phase = RunPhase.Live;
+
             Relocated?.Invoke();
+            if (wasHeld)
+                PhaseChanged?.Invoke(Phase);
+        }
+
+        /// <summary>
+        /// Take a <see cref="RunPhase.Held"/> Run back to <see cref="RunPhase.Live"/> exactly where it was held: the
+        /// same Encounter, enemies at the same Health, the same Population progress. Refused unless Held.
+        /// </summary>
+        public void Resume()
+        {
+            if (Phase != RunPhase.Held)
+                throw new InvalidOperationException("No Run is held.");
+
+            Phase = RunPhase.Live;
+            PhaseChanged?.Invoke(Phase);
         }
 
         /// <summary>
