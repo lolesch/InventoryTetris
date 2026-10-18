@@ -68,6 +68,126 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             return location;
         }
 
+        // ── the Unlock graph: only an Active Location can be Sent or Relocated to ──
+
+        private void Unlock(LocationConfig source, LocationConfig target, bool whenComplete)
+        {
+            var so = new SerializedObject(source);
+            var links = so.FindProperty(whenComplete ? "unlocksWhenComplete" : "unlocksWhenActive");
+            links.arraySize++;
+            links.GetArrayElementAtIndex(links.arraySize - 1).objectReferenceValue = target;
+            _ = so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        // The service reads the authored graph when it is built, so links go in first.
+        private SimulationService GameOver(params LocationConfig[] authored)
+        {
+            TestLocations.Author(config, authored);
+            return new SimulationService(session, items, inventory, config, new SessionBuilderTests.FixedRolls(0.5f));
+        }
+
+        [Test]
+        public void OnAFreshHero_TheRootIsActive_AndWhatItUnlocksWhenCompleteIsLocked()
+        {
+            Unlock(thornwood, ashfen, whenComplete: true);
+            var game = GameOver(thornwood, ashfen);
+
+            Assert.That(game.StateOf(thornwood), Is.EqualTo(UnlockState.Active));
+            Assert.That(game.StateOf(ashfen), Is.EqualTo(UnlockState.Locked));
+        }
+
+        [Test]
+        public void WithTheSourceCompleted_ItIsComplete_AndWhatItUnlocksIsActive()
+        {
+            Unlock(thornwood, ashfen, whenComplete: true);
+            var game = GameOver(thornwood, ashfen);
+
+            session.Hero.MarkCompleted("thornwood");
+
+            Assert.That(game.StateOf(thornwood), Is.EqualTo(UnlockState.Complete));
+            Assert.That(game.StateOf(ashfen), Is.EqualTo(UnlockState.Active));
+        }
+
+        [Test]
+        public void AnUnlockableNamedOnlyByALockedSource_IsHidden()
+        {
+            var gravel = Location("gravel");
+            Unlock(thornwood, ashfen, whenComplete: true);
+            Unlock(ashfen, gravel, whenComplete: true);
+            var game = GameOver(thornwood, ashfen, gravel);
+
+            Assert.That(game.StateOf(gravel), Is.EqualTo(UnlockState.Hidden));
+        }
+
+        [Test]
+        public void AWhenActiveLink_IsSatisfiedByACompleteSource()
+        {
+            Unlock(thornwood, ashfen, whenComplete: false);
+            var game = GameOver(thornwood, ashfen);
+            Assert.That(game.StateOf(ashfen), Is.EqualTo(UnlockState.Active), "Active source");
+
+            session.Hero.MarkCompleted("thornwood");
+
+            Assert.That(game.StateOf(ashfen), Is.EqualTo(UnlockState.Active), "Complete source still satisfies it");
+        }
+
+        [Test]
+        public void AWhenCompleteLink_IsNotSatisfiedByAnActiveSource()
+        {
+            Unlock(thornwood, ashfen, whenComplete: true);
+            var game = GameOver(thornwood, ashfen);
+
+            Assert.That(game.StateOf(ashfen), Is.Not.EqualTo(UnlockState.Active));
+        }
+
+        [Test]
+        public void TwoSourcesAreAnOr()
+        {
+            var gravel = Location("gravel");
+            Unlock(thornwood, gravel, whenComplete: true);
+            Unlock(ashfen, gravel, whenComplete: true);
+            var game = GameOver(thornwood, ashfen, gravel);
+
+            session.Hero.MarkCompleted("ashfen");
+
+            Assert.That(game.StateOf(gravel), Is.EqualTo(UnlockState.Active));
+        }
+
+        [Test]
+        public void ASendAndARelocate_ToALockedOrHiddenLocation_AreRefused_AndChangeNothing()
+        {
+            var gravel = Location("gravel");
+            Unlock(thornwood, ashfen, whenComplete: true);
+            Unlock(ashfen, gravel, whenComplete: true);
+            var game = GameOver(thornwood, ashfen, gravel);
+
+            Assert.Throws<InvalidOperationException>(() => game.Send(ashfen), "Locked");
+            Assert.Throws<InvalidOperationException>(() => game.Send(gravel), "Hidden");
+            Assert.That(game.Run.Phase, Is.EqualTo(RunPhase.InTown));
+            Assert.That(session.Hero.SelectedLocation, Is.Null);
+
+            game.Send(thornwood);
+            var encounter = game.Run.Encounter;
+
+            Assert.Throws<InvalidOperationException>(() => game.Relocate(ashfen), "Locked");
+            Assert.Throws<InvalidOperationException>(() => game.Relocate(gravel), "Hidden");
+            Assert.That(game.Run.Encounter, Is.SameAs(encounter));
+            Assert.That(session.Hero.SelectedLocation, Is.SameAs(thornwood));
+        }
+
+        [Test]
+        public void ASendAndARelocate_ToAnActiveLocation_Work()
+        {
+            Unlock(thornwood, ashfen, whenComplete: true);
+            var game = GameOver(thornwood, ashfen);
+            session.Hero.MarkCompleted("thornwood");
+
+            game.Send(thornwood);
+            game.Relocate(ashfen);
+
+            Assert.That(session.Hero.SelectedLocation, Is.SameAs(ashfen));
+        }
+
         // ── a fresh World and Hero ───────────────────────────────────────────
 
         [Test]

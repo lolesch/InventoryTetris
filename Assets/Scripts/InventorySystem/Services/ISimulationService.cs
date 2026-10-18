@@ -22,6 +22,12 @@ namespace ToolSmiths.InventorySystem.Services
         /// </summary>
         ILocationRegistry Locations { get; }
 
+        /// <summary>
+        /// The current hero's Unlock State for <paramref name="unlockable"/> (ADR-0023). <see cref="Send"/> and
+        /// <see cref="Relocate"/> go only to an <see cref="UnlockState.Active"/> or <see cref="UnlockState.Complete"/> Location.
+        /// </summary>
+        UnlockState StateOf(Unlockable unlockable);
+
         /// <summary>The current World's Run FSM - <see cref="RunPhase.InTown"/> until a <see cref="Send"/>. Built on the first ask.</summary>
         RunState Run { get; }
 
@@ -45,13 +51,14 @@ namespace ToolSmiths.InventorySystem.Services
         /// Send the hero to <paramref name="location"/>: <see cref="RunPhase.InTown"/> to
         /// <see cref="RunPhase.InField"/>. Selects the Location on the Hero, opens the Run and, if the
         /// Hero's Corpse is at exactly this Location, lays it back out (to the bag where it fits, else
-        /// the ground). Throws while the hero is down: a Death leaves him so until <see cref="Respawn"/>.
+        /// the ground). Throws while the hero is down: a Death leaves him so until <see cref="Respawn"/>;
+        /// also for a Location that is not open to him. Nothing changes then.
         /// </summary>
         void Send(LocationConfig location);
 
         /// <summary>
         /// Move the live Run to <paramref name="location"/> without a Return. Throws unless a Run is
-        /// live with its hero up. Like <see cref="Send"/>, lays the Hero's Corpse back out when the new
+        /// live with its hero up, and for a Location that is not open to him. Like <see cref="Send"/>, lays the Hero's Corpse back out when the new
         /// Location is where it fell.
         /// </summary>
         void Relocate(LocationConfig location);
