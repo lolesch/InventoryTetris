@@ -80,13 +80,14 @@ namespace ToolSmiths.InventorySystem.Items
         /// <summary>
         /// What a vendor pays for the instance, in base units. Carried verbatim from
         /// <c>AbstractItem.CalculateValue</c> / <c>CurrencyItem.CalculateValue</c>: a coin is
-        /// worth its denomination, everything else is the sum of <c>|value * goldRatio|</c>
-        /// over its affixes. User story 14 (a value model resting on a pinned affix system)
-        /// is still deferred - this is the switch it replaces, moved not redesigned.
+        /// worth its denomination, everything else is the definition's <c>BaseValue</c> plus the sum
+        /// of <c>|value * goldRatio|</c> over its affixes, so no item is worth nothing. User story 14
+        /// (a value model resting on a pinned affix system) is still deferred - this is the switch it
+        /// replaces, moved not redesigned.
         /// </summary>
         public float SellValue => IsCurrency
             ? Currency.ValueOf(definition.CurrencyType)
-            : AffixValueOf(instance);
+            : definition.BaseValue + AffixValueOf(instance);
 
         /// <summary>Whether the item is a coin: it has a face value and is spent, never sold or stored as loot.</summary>
         public bool IsCurrency => definition.Category == ItemCategory.Currency;

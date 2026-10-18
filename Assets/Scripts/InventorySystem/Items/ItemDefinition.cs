@@ -35,6 +35,13 @@ namespace ToolSmiths.InventorySystem.Items
         uint BaseStackLimit { get; }
 
         /// <summary>
+        /// The value every instance carries before its affixes, in base units, so an item that
+        /// rolls only zero-ratio stats is still not free. Ignored for Currency, which prices at
+        /// its denomination.
+        /// </summary>
+        float BaseValue { get; }
+
+        /// <summary>
         /// The allowed stats, their roll ranges and their pool weighting - what a roll may
         /// draw affixes from. Was <c>ItemTypeData</c>.
         /// </summary>

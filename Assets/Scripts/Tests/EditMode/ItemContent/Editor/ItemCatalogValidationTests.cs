@@ -68,6 +68,19 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.ItemContent
         }
 
         [Test]
+        public void EveryNonCurrencyDefinition_PricesAboveZero_EvenWithNoAffixes()
+        {
+            foreach (var definition in catalog.Definitions.Where(d => d.Category != ItemCategory.Currency))
+            {
+                var bare = new ItemInstance(definition.Id, ItemRarity.Common, 1, null);
+
+                var price = ItemView.Resolve(bare, catalog).SellValue;
+
+                Assert.That(price, Is.GreaterThan(0f), $"'{definition.name}' sells for nothing and buys for free");
+            }
+        }
+
+        [Test]
         public void AllOneHundredFiftySixUniques_AreCarriedAsUniqueFlaggedDefinitions()
         {
             var uniques = catalog.Definitions.Count(d => d.IsUnique);

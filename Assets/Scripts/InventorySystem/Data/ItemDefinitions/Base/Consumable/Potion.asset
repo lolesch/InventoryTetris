@@ -16,6 +16,7 @@ MonoBehaviour:
   category: 1
   footprint: 12
   baseStackLimit: 10
+  baseValue: 5
   affixPool:
   - stat: 11
     range: {x: 15, y: 25}

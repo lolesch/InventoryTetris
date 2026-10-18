@@ -20,6 +20,13 @@
   working (it did, 2026-09-21, after the class split). After any refactor that moves a field between
   base classes, grep for the guarded field's name; nothing fails to compile. No test covers the
   guard. For new statics see the `SubsystemRegistration` bullet under Assembly definitions.
+- **Teardown asks a destroyed singleton (#278).** A scene swap disables `InputSystemUIInputModule`, whose
+  `ResetPointers` fires `OnPointerExit` on the hovered slot after that scene's `DragProvider` and
+  `PreviewProvider` are destroyed. `Instance` then made an unconfigured replacement whose `Awake` threw on
+  its unassigned `compareGroup`; 52 of 114 PlayMode tests failed at `main` on it, which read as an
+  order-dependent flake. `_isQuitting` is not involved (it is set only by `OnApplicationQuit`). A release on
+  a teardown path asks `AbstractSceneSingleton<T>.TryGetAlive`, which never creates. `SceneTeardownPlayModeTests`
+  covers it. Headless the Game view is 640x480 and no panel is on screen, so a test cannot hover a slot.
 
 ## Assembly definitions — namespace ≠ asmdef
 

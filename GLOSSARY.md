@@ -32,7 +32,9 @@ _Avoid_: stack, slot contents, entry
 
 **Affix**:
 A rolled stat modifier on an instance. **Implicit stats** are the definition's
-guaranteed modifiers and are not rolled; both end up in the same combined list.
+guaranteed modifiers, never drawn from the affix pool, though an implicit's value may roll within its
+base's range and grow with item level; both end up in the same combined list. An affix on a stat its
+item carries as an **item stat** changes the item; any other changes the hero.
 _Avoid_: modifier, property, enchantment
 
 **Footprint**:
@@ -40,8 +42,18 @@ The grid shape an item occupies. The reason the backpack is a packing problem.
 _Avoid_: size, dimensions, area
 
 **Rarity**:
-The quality tier — Common, Magic, Rare, Unique. A **Unique** is an ordinary definition
-flagged unique with a fixed affix list, not a separate kind of thing.
+The quality tier, and the role an item plays — Common, Magic, Rare, Unique. A **Common** is the
+plain base: its implicit and no affixes, the implicit higher than any other rarity's. A **Magic**
+item rolls few affixes from a higher range: the specialist. A **Rare** rolls more of them: the
+generalist. A **Unique** is an ordinary definition flagged unique whose fixed affix list is the
+whole item, not a separate kind of thing; it drops only from its minimum item level up.
+_Avoid_: Legendary (it is a Unique), quality
+
+**Item level**:
+The level an item was rolled at, fixed for its life. It scales every rolled value on the item,
+and an affix or a Unique rolls only from its **minimum item level** up. A Location's drops start at
+its source level and reach a little above it, the higher the rarer.
+_Avoid_: ilvl, quality level, level (alone)
 
 ## Containers
 
@@ -592,6 +604,41 @@ A tuning fraction that varies each hit around its base damage: a hit rolls a fac
 and loot streams. Zero means every hit is its base damage. A stand-in until weapons carry a
 real minimum and maximum.
 _Avoid_: variance, crit range, damage roll
+
+**Stat**:
+A value a combatant or an item carries, built from a base and modifiers. Most are read as one total;
+some, like Penetration, are read by their flat and percent parts.
+_Avoid_: attribute, property
+
+**Item stat**:
+A stat an equipped item carries itself, starting from its implicit - the Armor of an Armor base. Affixes on
+it change the item, never the hero, and the item adds its total to the hero's stat of the same name.
+Equipment never changes a hero stat that has an item stat.
+_Avoid_: local modifier, enhanced defense, local stat
+
+**Armor**:
+The defense against physical damage: a rating that mitigates more the higher it climbs and never all of a
+hit. On the hero it is the sum of his worn items' Armor.
+
+**Magic Resist**:
+The defense against magical damage: a percent of each hit, capped. It stands in for elemental
+resistances until they exist, and rolls on the hero from a few slots.
+_Avoid_: magic armor, resistance (alone)
+
+**Mitigation**:
+The share of a hit the target's Armor or Magic Resist removes. Below 0 either defense makes the hit larger,
+at most double.
+_Avoid_: damage reduction, block
+
+**Penetration**:
+The attacker's stat that makes his hit read less of the target's Armor or Magic Resist, by points and by
+share. It ignores a defense, never takes one below 0, and does nothing against one at or below 0.
+_Avoid_: lethality, pierce, shred
+
+**Reduction**:
+An effect on the target that lowers its Armor or Magic Resist for every hit while it lasts, below 0 too.
+It belongs to the target, where Penetration belongs to a hit.
+_Avoid_: shred, sunder
 
 **Engagement**:
 The player-set count of enemies an Encounter tries to keep on the hero at once. A soft

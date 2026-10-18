@@ -59,6 +59,10 @@ namespace ToolSmiths.InventorySystem.Items
         [SerializeField] private ItemSize footprint = ItemSize.OneByOne;
         [SerializeField] private uint baseStackLimit = 1u;
 
+        [Min(0)]
+        [Tooltip("Value before affixes, in base units. Keep above zero for anything that is not a coin, or the item sells for nothing and buys for free.")]
+        [SerializeField] private float baseValue = 1f;
+
         [Header("Roll")]
         [SerializeField] private AuthoredAffixSlot[] affixPool = Array.Empty<AuthoredAffixSlot>();
         [SerializeField] private CharacterStatModifier[] implicitStats = Array.Empty<CharacterStatModifier>();
@@ -91,6 +95,7 @@ namespace ToolSmiths.InventorySystem.Items
         public ItemCategory Category => category;
         public ItemSize Footprint => footprint;
         public uint BaseStackLimit => baseStackLimit;
+        public float BaseValue => baseValue;
 
         public IReadOnlyList<AffixSlot> AffixPool
         {
