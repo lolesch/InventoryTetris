@@ -84,7 +84,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components
         public void SetItemToWeapon1H() => AddEquipment(EquipmentType.ONEHANDEDWEAPONS);
         public void SetItemToWeapon2H() => AddEquipment(EquipmentType.TWOHANDEDWEAPONS);
 
-        public void SetItemToArrows() => AddConsumable(ConsumableType.Arrow);
+        public void SetItemToPortalScrolls() => AddConsumable(ConsumableType.PortalScroll);
         public void SetItemToBooks() => AddConsumable(ConsumableType.Book);
         public void SetItemToPotions() => AddConsumable(ConsumableType.Potion);
 

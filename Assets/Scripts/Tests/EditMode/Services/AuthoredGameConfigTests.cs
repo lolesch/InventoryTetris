@@ -34,6 +34,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(config.Catalog, Is.Not.Null);
             Assert.That(config.ItemCategoryDistribution, Is.Not.Null);
             Assert.That(config.ItemRarityDistribution, Is.Not.Null);
+            Assert.That(config.ConsumableTypeDistribution, Is.Not.Null);
             Assert.That(config.CurrencyTypeDistribution, Is.Not.Null);
             Assert.That(config.CurrencyDropTable, Is.Not.Null);
         }

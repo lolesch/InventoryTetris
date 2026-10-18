@@ -51,7 +51,7 @@ namespace ToolSmiths.InventorySystem.Services
             this.config = config ?? throw new ArgumentNullException(nameof(config));
             this.rolls = rolls ?? throw new ArgumentNullException(nameof(rolls));
 
-            generator = new ItemGenerator(items.Catalog, rolls.Main);
+            generator = new ItemGenerator(items.Catalog, rolls.Main, config.ConsumableTypeDistribution?.Probabilities);
             locations = new LocationRegistry(config.Locations);
             progression = new ProgressionRegistry(config.Unlockables);
 

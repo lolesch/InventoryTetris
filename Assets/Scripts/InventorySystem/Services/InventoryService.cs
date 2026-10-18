@@ -72,7 +72,7 @@ namespace ToolSmiths.InventorySystem.Services
 
         public void CloseContext() => session.World.Context.Close();
 
-        public void SyncContextToPhase(bool live) => session.World.Context.SyncToPhase(live);
+        public void SyncContextToMap(bool onFieldMap) => session.World.Context.SyncToMap(onFieldMap);
 
         private void Attach(World world)
         {

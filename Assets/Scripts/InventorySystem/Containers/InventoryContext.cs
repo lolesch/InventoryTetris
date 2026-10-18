@@ -12,8 +12,8 @@ namespace ToolSmiths.InventorySystem.Inventories
     /// so no panel can be the thing that names one (issue #85).</para>
     ///
     /// <para>A live Run is deliberately not a member: the Hero Panel is openable
-    /// during a Run, so phase reachability constrains which contexts are available
-    /// (<see cref="InventoryContextState.SyncToPhase"/>) rather than being one itself.</para>
+    /// during a Run, so the map that is up constrains which contexts are available
+    /// (<see cref="InventoryContextState.IsReachable"/>) rather than being one itself.</para>
     /// </summary>
     public enum InventoryContext
     {

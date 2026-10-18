@@ -56,20 +56,32 @@ namespace ToolSmiths.InventorySystem.Inventories
         public void Close() => Set(InventoryContext.None);
 
         /// <summary>
-        /// Applies a Run-phase change. Only <see cref="InventoryContext.None"/>,
-        /// <see cref="InventoryContext.Hero"/> and <see cref="InventoryContext.Ground"/> are reachable
-        /// while <paramref name="live"/> - a phase change that leaves <see cref="Active"/> unreachable drops it to
-        /// <see cref="InventoryContext.None"/>. Every context is reachable in Town, the Ground's among them
-        /// (the World's ground is there too), and returning to Town reopens nothing on its own.
+        /// Applies the map that just came up: a map that leaves <see cref="Active"/> unreachable drops it
+        /// to <see cref="InventoryContext.None"/>, and arriving on either map reopens nothing on its own.
         /// </summary>
-        public void SyncToPhase(bool live)
+        public void SyncToMap(bool onFieldMap)
         {
-            if (live && !IsReachableLive(Active))
+            if (!IsReachable(Active, onFieldMap))
                 Close();
         }
 
-        private static bool IsReachableLive(InventoryContext context) =>
-            context is InventoryContext.None or InventoryContext.Hero or InventoryContext.Ground;
+        /// <summary>
+        /// Whether <paramref name="context"/> can be active while a map is up - a function of the map, not
+        /// of the Run phase (a held Run puts a Town map up beside a Run). The Field map reaches only
+        /// <see cref="InventoryContext.None"/>, <see cref="InventoryContext.Hero"/> and
+        /// <see cref="InventoryContext.Ground"/>; the Town map reaches every context, the Ground's among
+        /// them (the World's ground is there too).
+        /// </summary>
+        public static bool IsReachable(InventoryContext context, bool onFieldMap) =>
+            !onFieldMap || context is InventoryContext.None or InventoryContext.Hero or InventoryContext.Ground;
+
+        /// <summary>
+        /// Whether the Combat Panel, the Field map's Side Panel, is up in <paramref name="context"/>: on
+        /// <see cref="InventoryContext.None"/> and <see cref="InventoryContext.Ground"/>, so closing the
+        /// hero's bag brings it back with no request. Which map is up is the Field face's own fade.
+        /// </summary>
+        public static bool CombatPanelUpIn(InventoryContext context) =>
+            context is InventoryContext.None or InventoryContext.Ground;
 
         /// <summary>
         /// The one panel a context names for itself: the Hero Panel for

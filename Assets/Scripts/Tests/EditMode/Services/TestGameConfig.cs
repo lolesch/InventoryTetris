@@ -44,6 +44,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assign(so, "Catalog", authored.Catalog);
             Assign(so, "ItemCategoryDistribution", authored.ItemCategoryDistribution);
             Assign(so, "ItemRarityDistribution", authored.ItemRarityDistribution);
+            Assign(so, "ConsumableTypeDistribution", authored.ConsumableTypeDistribution);
             Assign(so, "CurrencyTypeDistribution", types);
             Assign(so, "CurrencyDropTable", amounts);
 
