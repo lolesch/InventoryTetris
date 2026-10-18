@@ -44,9 +44,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             combatStatsText.text =
                 (simulation.IsPaused ? "PAUSED - Space to resume\n" : string.Empty) +
-                (encounter.IsArriving
-                    ? $"Arriving…   cleared {encounter.EncountersCleared}\n"
-                    : $"Encounter {encounter.CurrentEncounter}   cleared {encounter.EncountersCleared}\n") +
+                encounter.ProgressText + "\n" +
                 $"Enemies  alive {encounter.AliveEnemyCount}   defeated {encounter.EnemiesDefeated}\n" +
                 $"Hero HP {hero.HealthFraction * 100f:0}%   Resource {hero.ResourceFraction * 100f:0}%\n" +
                 $"XP gained {encounter.SettledXp}\n" +
