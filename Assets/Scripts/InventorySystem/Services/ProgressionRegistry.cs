@@ -27,6 +27,8 @@ namespace ToolSmiths.InventorySystem.Services
 
         private readonly HashSet<string> known = new(StringComparer.Ordinal);
 
+        private readonly List<Quest> quests = new();
+
         public ProgressionRegistry(IEnumerable<Unlockable> authored)
         {
             if (authored == null)
@@ -43,6 +45,9 @@ namespace ToolSmiths.InventorySystem.Services
                     throw new InvalidOperationException($"Two Unlockables share the id '{source.Id}'. A save could not tell them apart.");
 
                 _ = known.Add(source.Id);
+
+                if (source is Quest quest)
+                    quests.Add(quest);
 
                 AddLinks(source, source.UnlocksWhenActive, whenComplete: false);
                 AddLinks(source, source.UnlocksWhenComplete, whenComplete: true);
@@ -134,6 +139,51 @@ namespace ToolSmiths.InventorySystem.Services
         }
 
         public bool Knows(string id) => id != null && known.Contains(id);
+
+        /// <summary>
+        /// Takes every Quest's state before anything changes, so a Quest the event itself opens does not count
+        /// it, then completes what each just-Completed id finishes, until nothing changes.
+        /// </summary>
+        public bool Complete(string id, Hero hero)
+        {
+            if (hero == null)
+                throw new ArgumentNullException(nameof(hero));
+
+            var activeBefore = new List<Quest>();
+
+            foreach (var quest in quests)
+                if (StateOf(quest, hero) == UnlockState.Active)
+                    activeBefore.Add(quest);
+
+            var changed = false;
+            var justCompleted = new Queue<string>();
+
+            if (!hero.HasCompleted(id))
+            {
+                hero.MarkCompleted(id);
+                changed = true;
+            }
+
+            justCompleted.Enqueue(id);
+
+            while (justCompleted.Count > 0)
+            {
+                var objective = justCompleted.Dequeue();
+
+                for (var i = activeBefore.Count; i-- > 0;)
+                {
+                    if (activeBefore[i].ObjectiveId != objective)
+                        continue;
+
+                    hero.MarkCompleted(activeBefore[i].Id);
+                    justCompleted.Enqueue(activeBefore[i].Id);
+                    activeBefore.RemoveAt(i);
+                    changed = true;
+                }
+            }
+
+            return changed;
+        }
 
         public UnlockState StateOf(Unlockable unlockable, Hero hero)
         {

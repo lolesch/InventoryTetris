@@ -15,5 +15,12 @@ namespace ToolSmiths.InventorySystem.Services
         /// satisfied; else Locked if any naming source is at least Active; else Hidden.
         /// </summary>
         UnlockState StateOf(Unlockable unlockable, Hero hero);
+
+        /// <summary>
+        /// Adds <paramref name="id"/> to the hero's Completed set, then Completes each Quest that was Active
+        /// before this call and has a just-Completed id as objective, repeating until nothing changes.
+        /// Returns whether the Completed set grew. A Complete already recorded can still finish an Active Quest.
+        /// </summary>
+        bool Complete(string id, Hero hero);
     }
 }

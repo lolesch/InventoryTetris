@@ -73,6 +73,36 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
     }
 
+    internal static class TestQuests
+    {
+        /// <summary>A Quest with this id whose objective is the Unlockable <paramref name="objectiveId"/>.</summary>
+        public static Quest Create(List<UnityEngine.Object> created, string id, string objectiveId)
+        {
+            var quest = ScriptableObject.CreateInstance<Quest>();
+            created.Add(quest);
+
+            var so = new SerializedObject(quest);
+            so.FindProperty("id").stringValue = id;
+            so.FindProperty("objectiveId").stringValue = objectiveId;
+            _ = so.ApplyModifiedPropertiesWithoutUndo();
+
+            return quest;
+        }
+
+        /// <summary>Makes <paramref name="quests"/> the config's authored Quests.</summary>
+        public static void Author(GameConfig config, params Quest[] quests)
+        {
+            var so = new SerializedObject(config);
+            var array = so.FindProperty("quests");
+            array.arraySize = quests.Length;
+
+            for (var i = 0; i < quests.Length; i++)
+                array.GetArrayElementAtIndex(i).objectReferenceValue = quests[i];
+
+            _ = so.ApplyModifiedPropertiesWithoutUndo();
+        }
+    }
+
     internal static class TestLocations
     {
         /// <summary>A valid Location with this id, over the config's own loot distributions.</summary>

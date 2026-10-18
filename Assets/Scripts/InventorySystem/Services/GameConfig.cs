@@ -146,7 +146,10 @@ namespace ToolSmiths.InventorySystem.Services
         [SerializeField] private LocationConfig[] locations = System.Array.Empty<LocationConfig>();
         public IReadOnlyList<LocationConfig> Locations => System.Array.AsReadOnly(locations);
 
-        /// <summary>Everything the Unlock graph holds (ADR-0023): the Locations, until Quests and locked Town Stops join them.</summary>
-        public IEnumerable<Unlockable> Unlockables => locations;
+        [Header("Quests")]
+        [SerializeField] private Quest[] quests = System.Array.Empty<Quest>();
+
+        /// <summary>Everything the Unlock graph holds (ADR-0023): the Locations and the Quests, until locked Town Stops join them.</summary>
+        public IEnumerable<Unlockable> Unlockables => System.Linq.Enumerable.Concat<Unlockable>(locations, quests);
     }
 }
