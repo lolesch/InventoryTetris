@@ -19,6 +19,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         public ItemCategory Category { get; set; } = ItemCategory.Equipment;
         public ItemSize Footprint { get; set; } = ItemSize.OneByOne;
         public uint BaseStackLimit { get; set; } = 1u;
+        public float BaseValue { get; set; }
         public IReadOnlyList<AffixSlot> AffixPool { get; set; } = Array.Empty<AffixSlot>();
         public IReadOnlyList<CharacterStatModifier> ImplicitStats { get; set; } = Array.Empty<CharacterStatModifier>();
         public ItemRequirement Requirement { get; set; } = ItemRequirement.None;

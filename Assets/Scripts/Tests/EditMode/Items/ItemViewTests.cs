@@ -116,6 +116,37 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Items
             Assert.That(view.SellValue, Is.EqualTo((10f * 2.67f) + (5f * 20f)).Within(0.001f));
         }
 
+        [Test]
+        public void SellValue_ForAnItemWithNoAffixes_IsTheDefinitionsBaseValue()
+        {
+            var definition = new FakeItemDefinition { Id = "book", Category = ItemCategory.Consumable, BaseValue = 5f };
+
+            var view = ItemView.Resolve(new ItemInstance("book", ItemRarity.Common, 1, null), new InMemoryItemCatalog(definition));
+
+            Assert.That(view.SellValue, Is.EqualTo(5f));
+        }
+
+        [Test]
+        public void SellValue_AddsTheBaseValueToTheAffixValue()
+        {
+            var definition = new FakeItemDefinition { Id = "chest", Category = ItemCategory.Equipment, BaseValue = 10f };
+            var instance = new ItemInstance("chest", ItemRarity.Magic, 1, new[] { Affix(StatName.Armor, 0, 100, 5f) });
+
+            var view = ItemView.Resolve(instance, new InMemoryItemCatalog(definition));
+
+            Assert.That(view.SellValue, Is.EqualTo(10f + (5f * 20f)).Within(0.001f));
+        }
+
+        [Test]
+        public void SellValue_ForCurrency_IgnoresTheBaseValue()
+        {
+            var definition = new FakeItemDefinition { Id = "coin", Category = ItemCategory.Currency, CurrencyType = CurrencyType.Copper, BaseValue = 99f };
+
+            var view = ItemView.Resolve(new ItemInstance("coin", ItemRarity.Common, 0, null), new InMemoryItemCatalog(definition));
+
+            Assert.That(view.SellValue, Is.EqualTo(5f));
+        }
+
         [TestCase(CurrencyType.Iron, 1f)]
         [TestCase(CurrencyType.Copper, 5f)]    // Currency.ironToCopper
         [TestCase(CurrencyType.Gold, 1200f)]   // Currency.ironToGold
