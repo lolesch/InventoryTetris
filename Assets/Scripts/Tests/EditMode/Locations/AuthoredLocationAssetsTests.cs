@@ -59,6 +59,17 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Locations
         }
 
         [Test]
+        public void BothLocations_AuthorAPopulationOfSeveralEncounters()
+        {
+            foreach (var location in new[] { thornwood, ashfall })
+            {
+                var population = location.ToProfile().Population;
+                Assert.That(population.Min, Is.GreaterThan(1), location.name);
+                Assert.That(population.Max, Is.GreaterThanOrEqualTo(population.Min), location.name);
+            }
+        }
+
+        [Test]
         public void Thornwood_IsTheEasyLocation()
         {
             var profile = thornwood.ToProfile();

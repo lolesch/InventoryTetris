@@ -279,9 +279,10 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         /// <paramref name="count"/> enemies of one archetype, all present at open, no further
         /// spawns — the Roster is spent the moment the Encounter begins. <paramref name="table"/>
         /// defaults to <see cref="FakeLootTable.ForCategory"/>'s Equipment table — most tests
-        /// never look at loot, so they should not have to build one.
+        /// never look at loot, so they should not have to build one. <paramref name="population"/> is how many
+        /// Encounters a Send fields: one, unless a test wants the beat between them.
         /// </summary>
-        public static EncounterProfile Group(EnemyArchetype archetype, int count, int sourceLevel = 5, LootTable table = null) => new(
+        public static EncounterProfile Group(EnemyArchetype archetype, int count, int sourceLevel = 5, LootTable table = null, int population = 1) => new(
             sourceLevel: sourceLevel,
             packed: archetype,
             rosterBrute: new IntRange(archetype == EnemyArchetype.Brute ? count : 0),
@@ -291,7 +292,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             spawnInterval: 100f,
             table: table ?? FakeLootTable.ForCategory(ItemCategory.Equipment),
             spawnJitter: 0f,
-            initialSpawn: count);
+            initialSpawn: count,
+            population: new IntRange(population));
     }
 
     // ─── loot flow (issue #24) ─────────────────────────────────────────────

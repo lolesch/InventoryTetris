@@ -100,7 +100,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         [Test]
         public void SettledXp_SumsAcrossClearedEncounters()
         {
-            var sim = new EncounterSimulation(PicksThemOff(level: 5), Profiles.Group(EnemyArchetype.Skirmisher, 2),
+            var sim = new EncounterSimulation(PicksThemOff(level: 5), Profiles.Group(EnemyArchetype.Skirmisher, 2, population: 3),
                 new ConstantRollSource(0f), Behaviours.Engaging(10), new EncounterTuning { Beat = 0.5f, CastCadence = 0.05f });
 
             for (var i = 0; i < 500 && sim.EncountersCleared < 3; i++) sim.Advance(0.1f);

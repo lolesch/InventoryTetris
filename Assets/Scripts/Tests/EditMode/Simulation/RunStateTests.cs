@@ -252,7 +252,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         public void KillingAcrossEncounters_AccumulatesXp_IntoTheRunTotal()
         {
             var run = NewRun(OneShotHero(), tuning: ShortBeat());
-            run.Send(Skirmishers(2));
+            run.Send(Profiles.Group(EnemyArchetype.Skirmisher, 2, population: 3));
 
             for (var i = 0; i < 500 && run.Encounter.EncountersCleared < 3; i++)
                 run.Advance(0.1f);
