@@ -294,7 +294,7 @@ namespace ToolSmiths.InventorySystem.Services
             RunState run = null;
 
             run = new RunState(profile => StartEncounter(world, profile, run),
-                new RunPenalty(config.XpLossFraction, config.CurrencyFeeFraction));
+                new RunPenalty(config.XpLossFraction, config.CurrencyFeeFraction), config.RecallOpeningSeconds);
             run.RunEnded += () => OnRunEnded(world, run);
 
             return run;

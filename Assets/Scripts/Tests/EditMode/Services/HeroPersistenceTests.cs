@@ -336,6 +336,25 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
+        public void ALoadDuringAHeldRun_ReturnsFalseAndChangesNothing()
+        {
+            var game = TestGame.Create(config);
+            game.Simulation.Send(thornwood);
+            game.Simulation.Run.Recall();
+            game.Simulation.Run.Advance(60f);
+            var hero = game.Hero;
+            var world = game.Session.World;
+
+            var ok = game.Session.TryLoad(Snapshot(PlayedGame()), game.Simulation.Locations, out var report);
+
+            Assert.That(ok, Is.False);
+            Assert.That(report, Is.Null);
+            Assert.That(game.Hero, Is.SameAs(hero));
+            Assert.That(game.Session.World, Is.SameAs(world));
+            Assert.That(game.Simulation.Run.Phase, Is.EqualTo(RunPhase.Held));
+        }
+
+        [Test]
         public void ARestoreThatThrows_LeavesTheCurrentPairInPlace()
         {
             var game = TestGame.Create(config);

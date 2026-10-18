@@ -207,6 +207,22 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
+        public void TryLoad_DuringAHeldRun_Refuses_AndChangesNothing()
+        {
+            SimulationService.Instance.Send(Location());
+            SimulationService.Instance.Run.Recall();
+            SimulationService.Instance.Run.Advance(60f);
+            var hero = Session.Instance.Hero;
+            var world = Session.Instance.World;
+
+            Assert.That(Session.Instance.TryLoad(data), Is.False);
+
+            Assert.That(Session.Instance.Hero, Is.SameAs(hero));
+            Assert.That(Session.Instance.World, Is.SameAs(world));
+            Assert.That(SimulationService.Instance.Run.Phase, Is.EqualTo(RunPhase.Held), "the held Run was not ended for it");
+        }
+
+        [Test]
         public void TryLoad_AfterTheRunEnded_Succeeds()
         {
             SimulationService.Instance.Send(Location());
