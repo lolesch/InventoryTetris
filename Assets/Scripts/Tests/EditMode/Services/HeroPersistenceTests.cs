@@ -11,6 +11,7 @@ using ToolSmiths.InventorySystem.Persistence;
 using ToolSmiths.InventorySystem.Runtime.Character;
 using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Simulation;
+using UnityEditor;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Tests.Services
@@ -154,6 +155,62 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(now.Corpse.FallPosition, Is.EqualTo(was.Corpse.FallPosition));
             Assert.That(now.Corpse.FallPosition, Is.EqualTo(new Submodules.Utility.Extensions.Coordinate(3.5f, -2f)));
             Assert.That(now.Corpse.Items.Select(item => item.DefinitionId), Is.EqualTo(was.Corpse.Items.Select(item => item.DefinitionId)));
+        }
+
+        private void UnlockWhenComplete(LocationConfig source, LocationConfig target)
+        {
+            var so = new SerializedObject(source);
+            var links = so.FindProperty("unlocksWhenComplete");
+            links.arraySize++;
+            links.GetArrayElementAtIndex(links.arraySize - 1).objectReferenceValue = target;
+            _ = so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        [Test]
+        public void TheCompletedSet_RoundTripsThroughASave()
+        {
+            UnlockWhenComplete(thornwood, ashfen);
+            var before = TestGame.Create(config);
+            before.Hero.MarkCompleted("thornwood");
+            var after = TestGame.Create(config);
+
+            Assert.That(after.Session.TryLoad(Snapshot(before), after.Simulation.Locations, out _), Is.True);
+
+            Assert.That(after.Simulation.StateOf(thornwood), Is.EqualTo(UnlockState.Complete));
+            Assert.That(after.Simulation.StateOf(ashfen), Is.EqualTo(UnlockState.Active));
+        }
+
+        [Test]
+        public void ACompletedIdTheRegistryNoLongerKnows_IsDroppedOnLoad_WithoutFailingIt()
+        {
+            UnlockWhenComplete(thornwood, ashfen);
+            var before = TestGame.Create(config);
+            before.Hero.MarkCompleted("thornwood");
+            var saved = Snapshot(before);
+            saved.completedIds.Add("lost-in-a-patch");
+            var after = TestGame.Create(config);
+
+            var ok = after.Session.TryLoad(saved, after.Simulation.Locations, out var report);
+
+            Assert.That(ok, Is.True);
+            Assert.That(report.IsClean, Is.True);
+            Assert.That(after.Hero.HasCompleted("lost-in-a-patch"), Is.False);
+            Assert.That(after.Hero.HasCompleted("thornwood"), Is.True);
+        }
+
+        [Test]
+        public void ASaveWrittenBeforeTheCompletedSet_LoadsWithNothingCompleted()
+        {
+            var before = TestGame.Create(config);
+            before.Hero.MarkCompleted("thornwood");
+            var oldText = JsonUtility.ToJson(HeroMapper.ToDto(before.Hero, "hero-1", "Aria", before.Simulation.Locations))
+                .Replace("\"completedIds\":[\"thornwood\"],", string.Empty);
+            Assert.That(oldText, Does.Not.Contain("completedIds"), "premise: the text is a pre-progression save");
+            var after = TestGame.Create(config);
+
+            Assert.That(after.Session.TryLoad(JsonUtility.FromJson<HeroDto>(oldText), after.Simulation.Locations, out _), Is.True);
+
+            Assert.That(after.Hero.HasCompleted("thornwood"), Is.False);
         }
 
         [Test]

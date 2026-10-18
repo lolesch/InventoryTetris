@@ -25,6 +25,8 @@ namespace ToolSmiths.InventorySystem.Services
 
         private readonly Dictionary<string, List<Link>> namedBy = new(StringComparer.Ordinal);
 
+        private readonly HashSet<string> known = new(StringComparer.Ordinal);
+
         public ProgressionRegistry(IEnumerable<Unlockable> authored)
         {
             if (authored == null)
@@ -34,6 +36,8 @@ namespace ToolSmiths.InventorySystem.Services
             {
                 if (source == null || string.IsNullOrWhiteSpace(source.Id))
                     continue;
+
+                _ = known.Add(source.Id);
 
                 AddLinks(source, source.UnlocksWhenActive, whenComplete: false);
                 AddLinks(source, source.UnlocksWhenComplete, whenComplete: true);
@@ -53,6 +57,8 @@ namespace ToolSmiths.InventorySystem.Services
                 links.Add(new Link(source, whenComplete));
             }
         }
+
+        public bool Knows(string id) => id != null && known.Contains(id);
 
         public UnlockState StateOf(Unlockable unlockable, Hero hero)
         {
