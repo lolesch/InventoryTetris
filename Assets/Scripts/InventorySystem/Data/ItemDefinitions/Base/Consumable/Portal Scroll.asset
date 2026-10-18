@@ -10,31 +10,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b585884374a4ce092526f6bf721a52e, type: 3}
-  m_Name: Arrow
+  m_Name: Portal Scroll
   m_EditorClassIdentifier: InventorySystem.Items::ToolSmiths.InventorySystem.Items.ItemDefinitionAsset
-  id: base.consumable.arrow
+  id: base.consumable.portalscroll
   category: 1
-  footprint: 11
+  footprint: 12
   baseStackLimit: 10
-  baseValue: 1
-  affixPool:
-  - stat: 1
-    range: {x: 2, y: 5}
-    modifierType: 0
-    weight: 1
-  - stat: 2
-    range: {x: 2, y: 5}
-    modifierType: 0
-    weight: 1
-  - stat: 3
-    range: {x: 2, y: 5}
-    modifierType: 0
-    weight: 1
+  baseValue: 5
+  affixPool: []
   implicitStats: []
   requirementLevel: 0
   isUnique: 0
   uniqueAffixes: []
   equipmentType: 0
-  consumableType: 1
+  consumableType: 4
   currencyType: 0
-  icon: {fileID: 21300000, guid: 01819f568865a8f4a93ab674f59b3e1a, type: 3}
+  icon: {fileID: 21300000, guid: e2727becf41334b4aa9616683ea24023, type: 3}

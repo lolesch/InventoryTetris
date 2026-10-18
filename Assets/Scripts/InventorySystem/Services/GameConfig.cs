@@ -89,6 +89,8 @@ namespace ToolSmiths.InventorySystem.Services
         [field: Header("Loot table")]
         [field: SerializeField] public ItemCategoryDistribution ItemCategoryDistribution { get; private set; }
         [field: SerializeField] public ItemRarityDistribution ItemRarityDistribution { get; private set; }
+        [field: SerializeField, Tooltip("Odds per consumable type. Empty draws a consumable uniformly over every consumable definition.")]
+        public ConsumableTypeDistribution ConsumableTypeDistribution { get; private set; }
 
         [field: Header("Currency")]
         [field: SerializeField] public CurrencyTypeDistribution CurrencyTypeDistribution { get; private set; }

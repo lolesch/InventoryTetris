@@ -13,7 +13,6 @@ MonoBehaviour:
   m_Name: Item Catalog
   m_EditorClassIdentifier: InventorySystem.Items::ToolSmiths.InventorySystem.Items.ItemCatalogAsset
   definitions:
-  - {fileID: 11400000, guid: c16bd8cf0daa0484a9f026816bf1ccab, type: 2}
   - {fileID: 11400000, guid: 0ec058739ac4c7a4fb23f1cc2ad4439f, type: 2}
   - {fileID: 11400000, guid: 37cbc56eca46650468ae7d3f0df78af3, type: 2}
   - {fileID: 11400000, guid: 3bb8e2675bf1c5740bd0f01c242ef029, type: 2}
@@ -52,16 +51,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: c821d0ba657404848a1cd85099749e6a, type: 2}
   - {fileID: 11400000, guid: 8d8ab235ac2f99d4e857ae01f7d00c60, type: 2}
   - {fileID: 11400000, guid: ab92afeb493c6d04788c58d4c1143d49, type: 2}
-  - {fileID: 11400000, guid: fa8a3a4f8d1f7e842b8f87195abbe9fb, type: 2}
-  - {fileID: 11400000, guid: e1c0aa7dbd667c24faa6f9bf50de1ace, type: 2}
-  - {fileID: 11400000, guid: 5b497230c4c8a7f44b67b0826ba63e20, type: 2}
-  - {fileID: 11400000, guid: 45a672c98d21dae4d8ecedf94b4380d9, type: 2}
-  - {fileID: 11400000, guid: cbc069b63f800d14b9a153eebb1bc271, type: 2}
-  - {fileID: 11400000, guid: ec0e2f2b33b961941a31d678e4e868f9, type: 2}
-  - {fileID: 11400000, guid: cd815007a1f33384daddeb7db040cf2c, type: 2}
-  - {fileID: 11400000, guid: 474c157b69bf855458e4862ed50dabd0, type: 2}
-  - {fileID: 11400000, guid: 491e9a57e8c5311479cefd373cb4656f, type: 2}
-  - {fileID: 11400000, guid: 439c4a0d1e4d66441a0ebccb19286b0c, type: 2}
   - {fileID: 11400000, guid: 0451c57a53575fa4ab88b43092afae07, type: 2}
   - {fileID: 11400000, guid: ad0b7a9c1987dd246ab96ce71d5cdb51, type: 2}
   - {fileID: 11400000, guid: 8deda8fadb05a8b4ea052b46cd9d26bd, type: 2}
@@ -193,3 +182,4 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 1c090c4734bfd1746a1cd9ab205b12fe, type: 2}
   - {fileID: 11400000, guid: 1f9fff290d7d1474fbd16d1c3a140afe, type: 2}
   - {fileID: 11400000, guid: 12dbd2c9bbbc582478e4d6c4ee459f8d, type: 2}
+  - {fileID: 11400000, guid: 5d01ddab0cc94de48edc2c594a094278, type: 2}

@@ -46,7 +46,7 @@ namespace ToolSmiths.InventorySystem.Services
             Require(config.ItemTypeData, nameof(GameConfig.ItemTypeData));
 
             lootTable = new DistributionLootTable(config.ItemCategoryDistribution, config.ItemRarityDistribution);
-            generator = new ItemGenerator(config.Catalog, rolls);
+            generator = new ItemGenerator(config.Catalog, rolls, config.ConsumableTypeDistribution?.Probabilities);
         }
 
         private static void Require(UnityEngine.Object asset, string field)
@@ -175,8 +175,14 @@ namespace ToolSmiths.InventorySystem.Services
         public ItemInstance RollEquipment(EquipmentType type, float magicFind = 0f) =>
             RollFrom(PickDefinition(ItemCategory.Equipment, d => EquipmentTypeMatches(type, d.EquipmentType)), magicFind);
 
-        public ItemInstance RollConsumable(float magicFind = 0f) =>
-            RollFrom(PickDefinition(ItemCategory.Consumable, _ => true), magicFind);
+        public ItemInstance RollConsumable(float magicFind = 0f)
+        {
+            // The type is drawn by the Consumable Type Distribution, as a drop's is (ItemGenerator).
+            var type = config.ConsumableTypeDistribution == null
+                ? ConsumableType.NONE
+                : ProbabilityTable<ConsumableType>.Sample(config.ConsumableTypeDistribution.Probabilities, rolls.Next());
+            return RollFrom(PickDefinition(ItemCategory.Consumable, d => type == ConsumableType.NONE || d.ConsumableType == type), magicFind);
+        }
 
         public ItemInstance RollConsumable(ConsumableType type, float magicFind = 0f) =>
             RollFrom(PickDefinition(ItemCategory.Consumable, d => d.ConsumableType == type), magicFind);

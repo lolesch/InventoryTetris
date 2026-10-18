@@ -81,12 +81,12 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.ItemContent
         }
 
         [Test]
-        public void AllOneHundredFiftySixUniques_AreCarriedAsUniqueFlaggedDefinitions()
+        public void AllOneHundredFortySixUniques_AreCarriedAsUniqueFlaggedDefinitions()
         {
             var uniques = catalog.Definitions.Count(d => d.IsUnique);
 
-            Assert.That(uniques, Is.EqualTo(156),
-                "expected the 156 migrated uniques (157 .asset files under Data/Items/Uniques minus Item Type Data)");
+            Assert.That(uniques, Is.EqualTo(146),
+                "expected the 146 migrated uniques (the 156 of the migration minus the 10 Arrow uniques dropped with the Arrow)");
         }
 
         [Test]
@@ -106,8 +106,50 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.ItemContent
                 .ToHashSet();
 
             Assert.That(equipmentBases, Has.Count.EqualTo(17));
-            Assert.That(consumableBases, Is.EquivalentTo(new[] { ConsumableType.Arrow, ConsumableType.Book, ConsumableType.Potion }));
+            Assert.That(consumableBases, Is.EquivalentTo(new[] { ConsumableType.Book, ConsumableType.Potion, ConsumableType.PortalScroll }));
             Assert.That(currencyBases, Is.EquivalentTo(new[] { CurrencyType.Copper, CurrencyType.Iron, CurrencyType.Silver, CurrencyType.Gold }));
+        }
+
+        [Test]
+        public void PortalScroll_StacksAndHasAnIcon()
+        {
+            var scroll = catalog.Definitions.Single(d => !d.IsUnique && d.ConsumableType == ConsumableType.PortalScroll);
+
+            Assert.That(scroll.BaseStackLimit, Is.GreaterThan(1u), "a Portal Scroll stacks");
+            Assert.That(scroll.Icon, Is.Not.Null, "a Portal Scroll has an icon");
+        }
+
+        [Test]
+        public void RollingConsumables_FindsPortalScrolls_AndNoArrows()
+        {
+            // The removed Arrow's number 1 stays reserved, so it is compared as a number.
+            const int reservedArrow = 1;
+            var generator = new ItemGenerator(catalog, new SeededRolls(2026));
+            var context = new RollContext(new ConsumableOnlyTable());
+
+            var found = new HashSet<ConsumableType>();
+            for (var i = 0; i < 2_000; i++)
+                found.Add(catalog.Definition(generator.Roll(context).DefinitionId).ConsumableType);
+
+            Assert.That(found, Contains.Item(ConsumableType.PortalScroll));
+            Assert.That(found.Select(t => (int)t), Has.None.EqualTo(reservedArrow));
+            Assert.That(catalog.Definitions.Select(d => (int)d.ConsumableType), Has.None.EqualTo(reservedArrow));
+        }
+
+        private sealed class SeededRolls : IRollSource
+        {
+            private readonly System.Random rng;
+
+            public SeededRolls(int seed) => rng = new System.Random(seed);
+
+            public float Next() => (float)rng.NextDouble();
+        }
+
+        private sealed class ConsumableOnlyTable : LootTable
+        {
+            public IReadOnlyList<float> CategoryOdds { get; } = new[] { 0f, 1f, 0f, 0f };
+
+            public IReadOnlyList<float> RarityOdds { get; } = new[] { 0f, 1f, 0f, 0f, 0f };
         }
     }
 }
