@@ -152,6 +152,21 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         /// <summary>Adds <paramref name="count"/> Kills to the lifetime count; a negative count (a hand-edited save) adds none.</summary>
         public void AddKills(int count) => TotalKills += Math.Max(0, count);
 
+        private readonly HashSet<string> _completed = new(StringComparer.Ordinal);
+
+        // The ids of the Unlockables this hero has Completed - the only progression fact kept; every other
+        // Unlock State is derived from it (ADR-0023). In memory only until the save carries it.
+        public bool HasCompleted(string id) => id != null && _completed.Contains(id);
+
+        /// <summary>Records <paramref name="id"/> as Completed, for good. A second call changes nothing.</summary>
+        public void MarkCompleted(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+                throw new ArgumentException("A Completed id must name an Unlockable.", nameof(id));
+
+            _ = _completed.Add(id);
+        }
+
         /// <summary>Whether <see cref="Outfit"/> has run.</summary>
         public bool IsOutfitted => _equipment != null;
 

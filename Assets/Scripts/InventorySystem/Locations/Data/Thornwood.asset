@@ -13,6 +13,9 @@ MonoBehaviour:
   m_Name: Thornwood
   m_EditorClassIdentifier: InventorySystem.Locations:ToolSmiths.InventorySystem.Locations.LocationConfig
   id: location.thornwood
+  unlocksWhenActive: []
+  unlocksWhenComplete:
+  - {fileID: 11400000, guid: 79be389ba1b44186ad2958d8b404c690, type: 2}
   displayName: Thornwood
   sourceLevel: 2
   categoryDistribution: {fileID: 11400000, guid: 885350863192442eb4599e906cad58f1, type: 2}
