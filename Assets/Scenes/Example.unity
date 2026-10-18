@@ -7832,7 +7832,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 427819260}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0e0a7c42425d4123b9a228e5c6c30a81, type: 3}
   m_Name: 
@@ -7878,6 +7878,7 @@ MonoBehaviour:
   hotkey: 4
   heroFigure: {fileID: 296961779}
   travelPoint: {fileID: 362991003}
+  stop: {fileID: 11400000, guid: 2f6a0d9b81c34e57a3d1b4c8e7092f15, type: 2}
 --- !u!114 &427819268
 MonoBehaviour:
   m_ObjectHideFlags: 0

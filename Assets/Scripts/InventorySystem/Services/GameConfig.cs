@@ -146,7 +146,14 @@ namespace ToolSmiths.InventorySystem.Services
         [SerializeField] private LocationConfig[] locations = System.Array.Empty<LocationConfig>();
         public IReadOnlyList<LocationConfig> Locations => System.Array.AsReadOnly(locations);
 
-        /// <summary>Everything the Unlock graph holds (ADR-0023): the Locations, until Quests and locked Town Stops join them.</summary>
-        public IEnumerable<Unlockable> Unlockables => locations;
+        [Header("Quests")]
+        [SerializeField] private Quest[] quests = System.Array.Empty<Quest>();
+
+        [SerializeField, Tooltip("The Town Stops authored as locked (the Vendor). The Stash and the Healer are always open and are not listed.")]
+        private TownStop[] townStops = System.Array.Empty<TownStop>();
+
+        /// <summary>Everything the Unlock graph holds (ADR-0023): the Locations, the Quests and the locked Town Stops.</summary>
+        public IEnumerable<Unlockable> Unlockables =>
+            System.Linq.Enumerable.Concat(System.Linq.Enumerable.Concat<Unlockable>(locations, quests), townStops);
     }
 }

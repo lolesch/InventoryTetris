@@ -346,11 +346,11 @@ namespace ToolSmiths.InventorySystem.Services
         private void OnLocationCompleted(Hero hero, EncounterProfile profile)
         {
             // A profile outside the authored list has no id to complete.
-            if (!locations.TryGetId(profile, out var id) || hero.HasCompleted(id))
+            if (!locations.TryGetId(profile, out var id))
                 return;
 
-            hero.MarkCompleted(id);
-            ProgressionChanged?.Invoke();
+            if (progression.Complete(id, hero))
+                ProgressionChanged?.Invoke();
         }
 
         /// <summary>

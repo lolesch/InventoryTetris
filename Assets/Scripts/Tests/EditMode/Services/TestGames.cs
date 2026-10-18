@@ -73,6 +73,65 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
     }
 
+    internal static class TestQuests
+    {
+        /// <summary>A Quest with this id whose objective is the Unlockable <paramref name="objectiveId"/>.</summary>
+        public static Quest Create(List<UnityEngine.Object> created, string id, string objectiveId)
+        {
+            var quest = ScriptableObject.CreateInstance<Quest>();
+            created.Add(quest);
+
+            var so = new SerializedObject(quest);
+            so.FindProperty("id").stringValue = id;
+            so.FindProperty("objectiveId").stringValue = objectiveId;
+            _ = so.ApplyModifiedPropertiesWithoutUndo();
+
+            return quest;
+        }
+
+        /// <summary>Makes <paramref name="quests"/> the config's authored Quests.</summary>
+        public static void Author(GameConfig config, params Quest[] quests)
+        {
+            var so = new SerializedObject(config);
+            var array = so.FindProperty("quests");
+            array.arraySize = quests.Length;
+
+            for (var i = 0; i < quests.Length; i++)
+                array.GetArrayElementAtIndex(i).objectReferenceValue = quests[i];
+
+            _ = so.ApplyModifiedPropertiesWithoutUndo();
+        }
+    }
+
+    internal static class TestTownStops
+    {
+        /// <summary>A Town Stop with this id, authored as locked.</summary>
+        public static TownStop Create(List<UnityEngine.Object> created, string id)
+        {
+            var stop = ScriptableObject.CreateInstance<TownStop>();
+            created.Add(stop);
+
+            var so = new SerializedObject(stop);
+            so.FindProperty("id").stringValue = id;
+            _ = so.ApplyModifiedPropertiesWithoutUndo();
+
+            return stop;
+        }
+
+        /// <summary>Makes <paramref name="stops"/> the config's authored locked Town Stops.</summary>
+        public static void Author(GameConfig config, params TownStop[] stops)
+        {
+            var so = new SerializedObject(config);
+            var array = so.FindProperty("townStops");
+            array.arraySize = stops.Length;
+
+            for (var i = 0; i < stops.Length; i++)
+                array.GetArrayElementAtIndex(i).objectReferenceValue = stops[i];
+
+            _ = so.ApplyModifiedPropertiesWithoutUndo();
+        }
+    }
+
     internal static class TestLocations
     {
         /// <summary>A valid Location with this id, over the config's own loot distributions.</summary>

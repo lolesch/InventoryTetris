@@ -70,7 +70,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
         // ── the Unlock graph: only an Active Location can be Sent or Relocated to ──
 
-        private void Unlock(LocationConfig source, LocationConfig target, bool whenComplete)
+        private void Unlock(Unlockable source, Unlockable target, bool whenComplete)
         {
             var so = new SerializedObject(source);
             var links = so.FindProperty(whenComplete ? "unlocksWhenComplete" : "unlocksWhenActive");
@@ -237,6 +237,108 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(game.StateOf(thornwood), Is.EqualTo(UnlockState.Complete));
             Assert.That(game.StateOf(ashfen), Is.EqualTo(UnlockState.Active));
             Assert.That(changed, Is.EqualTo(0));
+        }
+
+        // ── a Quest Completes on its objective ──────────────────────────────
+
+        private Quest NewQuest(string id, string objectiveId) => TestQuests.Create(created, id, objectiveId);
+
+        private SimulationService GameOver(LocationConfig[] locations, params Quest[] quests)
+        {
+            TestQuests.Author(config, quests);
+            return GameOver(locations);
+        }
+
+        [Test]
+        public void AQuestActiveBeforeItsObjectiveCompletes_CompletesWithIt_AndTheStepRaisesOneSignal()
+        {
+            var merchant = NewQuest("merchant", "thornwood");
+            var game = GameOver(new[] { thornwood }, merchant);
+            session.Hero.IsInvincible = true;
+            var changed = 0;
+            game.ProgressionChanged += () => changed++;
+            Assert.That(game.StateOf(merchant), Is.EqualTo(UnlockState.Active), "premise: a root Quest is Active from the start");
+
+            game.Send(thornwood);
+            TickUntilComplete(game);
+
+            Assert.That(game.StateOf(merchant), Is.EqualTo(UnlockState.Complete));
+            Assert.That(changed, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void ALockedTownStopNamedByAQuest_IsLockedUntilTheQuestCompletes_InTheSameRun()
+        {
+            var vendor = TestTownStops.Create(created, "town.vendor");
+            var merchant = NewQuest("merchant", "thornwood");
+            Unlock(merchant, vendor, whenComplete: true);
+            TestTownStops.Author(config, vendor);
+            var game = GameOver(new[] { thornwood }, merchant);
+            session.Hero.IsInvincible = true;
+            var changed = 0;
+            game.ProgressionChanged += () => changed++;
+            Assert.That(game.StateOf(vendor), Is.EqualTo(UnlockState.Locked), "a fresh hero sees the Vendor greyed out");
+
+            game.Send(thornwood);
+            TickUntilComplete(game);
+
+            Assert.That(game.StateOf(vendor), Is.EqualTo(UnlockState.Active));
+            Assert.That(changed, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void AQuestMadeActiveByTheObjectivesOwnComplete_StaysActive_AndCompletesOnALaterComplete()
+        {
+            var late = NewQuest("late", "thornwood");
+            Unlock(thornwood, late, whenComplete: true);
+            var game = GameOver(new[] { thornwood }, late);
+            session.Hero.IsInvincible = true;
+            Assert.That(game.StateOf(late), Is.Not.EqualTo(UnlockState.Active), "premise: the Quest waits on Thornwood");
+
+            game.Send(thornwood);
+            TickUntilComplete(game);
+
+            Assert.That(game.StateOf(thornwood), Is.EqualTo(UnlockState.Complete));
+            Assert.That(game.StateOf(late), Is.EqualTo(UnlockState.Active), "the Complete that opened it does not count");
+
+            game.Relocate(thornwood);
+            TickUntilComplete(game);
+
+            Assert.That(game.StateOf(late), Is.EqualTo(UnlockState.Complete));
+        }
+
+        [Test]
+        public void AQuestWhoseObjectiveIsAQuest_CompletesInTheSameStep()
+        {
+            var inner = NewQuest("inner", "thornwood");
+            var outer = NewQuest("outer", "inner");
+            var game = GameOver(new[] { thornwood }, outer, inner);
+            session.Hero.IsInvincible = true;
+            var changed = 0;
+            game.ProgressionChanged += () => changed++;
+
+            game.Send(thornwood);
+            TickUntilComplete(game);
+
+            Assert.That(game.StateOf(inner), Is.EqualTo(UnlockState.Complete));
+            Assert.That(game.StateOf(outer), Is.EqualTo(UnlockState.Complete));
+            Assert.That(changed, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void AQuestMadeActiveByACascade_DoesNotCountTheCompleteThatOpenedIt()
+        {
+            var inner = NewQuest("inner", "thornwood");
+            var after = NewQuest("after", "inner");
+            Unlock(inner, after, whenComplete: true);
+            var game = GameOver(new[] { thornwood }, inner, after);
+            session.Hero.IsInvincible = true;
+
+            game.Send(thornwood);
+            TickUntilComplete(game);
+
+            Assert.That(game.StateOf(inner), Is.EqualTo(UnlockState.Complete));
+            Assert.That(game.StateOf(after), Is.EqualTo(UnlockState.Active));
         }
 
         // ── a fresh World and Hero ───────────────────────────────────────────

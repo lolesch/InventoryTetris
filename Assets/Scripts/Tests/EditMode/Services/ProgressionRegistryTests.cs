@@ -31,7 +31,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
         private LocationConfig Location(string id) => TestLocations.Create(config, created, id);
 
-        private static void Unlock(LocationConfig source, LocationConfig target, bool whenComplete = true)
+        private static void Unlock(Unlockable source, Unlockable target, bool whenComplete = true)
         {
             var so = new SerializedObject(source);
             var links = so.FindProperty(whenComplete ? "unlocksWhenComplete" : "unlocksWhenActive");
@@ -88,6 +88,33 @@ namespace ToolSmiths.InventorySystem.Tests.Services
                 () => new ProgressionRegistry(new[] { root, island, other }));
 
             Assert.That(exception.Message, Does.Contain("island").Or.Contain("other"));
+        }
+
+        [Test]
+        public void ATownStopThatUnlocksWhenComplete_Throws_NamingIt()
+        {
+            var root = Location("root");
+            var vendor = TestTownStops.Create(created, "town.vendor");
+            var child = Location("child");
+            Unlock(root, vendor);
+            Unlock(vendor, child);
+
+            var exception = Assert.Throws<InvalidOperationException>(
+                () => new ProgressionRegistry(new Unlockable[] { root, vendor, child }));
+
+            Assert.That(exception.Message, Does.Contain("town.vendor"));
+        }
+
+        [Test]
+        public void ATownStopThatUnlocksWhenActive_Builds()
+        {
+            var root = Location("root");
+            var vendor = TestTownStops.Create(created, "town.vendor");
+            var child = Location("child");
+            Unlock(root, vendor);
+            Unlock(vendor, child, whenComplete: false);
+
+            Assert.DoesNotThrow(() => new ProgressionRegistry(new Unlockable[] { root, vendor, child }));
         }
 
         [Test]

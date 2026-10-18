@@ -181,6 +181,9 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <summary>How many Encounters this Send fields, rolled once from the Location's range.</summary>
         public int Population { get; }
 
+        /// <summary>The live readout of how far the Send is from done: the current index of the Population, or the Population alone while arriving.</summary>
+        public string ProgressText => IsArriving ? $"Arriving…   {Population} Encounters" : $"Encounter {CurrentEncounter} of {Population}";
+
         public int EncountersCleared { get; private set; }
 
         /// <summary>Every enemy that has fallen across the whole sequence.</summary>

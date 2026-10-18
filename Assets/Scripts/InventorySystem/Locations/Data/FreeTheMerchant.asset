@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5c8d2e41b0a34f7d9e26a3c8d1f05b72, type: 3}
+  m_Name: FreeTheMerchant
+  m_EditorClassIdentifier: InventorySystem.Locations:ToolSmiths.InventorySystem.Locations.Quest
+  id: quest.free-the-merchant
+  unlocksWhenActive: []
+  unlocksWhenComplete:
+  - {fileID: 11400000, guid: 2f6a0d9b81c34e57a3d1b4c8e7092f15, type: 2}
+  objectiveId: location.thornwood

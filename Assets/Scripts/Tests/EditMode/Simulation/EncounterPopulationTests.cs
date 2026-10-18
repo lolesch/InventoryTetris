@@ -49,6 +49,31 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             for (var i = 0; i < 500 && sim.Phase != SimulationPhase.Complete; i++) sim.Advance(0.1f);
         }
 
+        // ─── the progress readout ────────────────────────────────────────────
+
+        [Test]
+        public void TheProgressText_ReadsTheCurrentIndexOfThePopulation()
+        {
+            var sim = Sim(population: 5);
+
+            Assert.That(sim.ProgressText, Is.EqualTo("Encounter 1 of 5"));
+
+            for (var i = 0; i < 500 && sim.EncountersCleared < 1; i++) sim.Advance(0.1f);
+            for (var i = 0; i < 20 && sim.CurrentEncounter < 2; i++) sim.Advance(0.1f); // rides the beat into Encounter 2
+
+            Assert.That(sim.ProgressText, Is.EqualTo("Encounter 2 of 5"));
+        }
+
+        [Test]
+        public void WhileArriving_TheProgressText_NamesThePopulationAndNoIndex()
+        {
+            var sim = new EncounterSimulation(OneShotHero(), Profiles.Group(EnemyArchetype.Skirmisher, 1, population: 4),
+                new ConstantRollSource(0.5f), Behaviours.Engaging(5), new EncounterTuning { DelayFirstSpawn = true });
+
+            Assert.That(sim.IsArriving, Is.True, "setup");
+            Assert.That(sim.ProgressText, Is.EqualTo("Arriving…   4 Encounters"));
+        }
+
         // ─── the roll ────────────────────────────────────────────────────────
 
         [Test]
