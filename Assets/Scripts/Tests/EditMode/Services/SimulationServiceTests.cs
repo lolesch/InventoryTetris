@@ -256,6 +256,46 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(changed, Is.EqualTo(0));
         }
 
+        // Stories 11 and 12 (the Return after a Complete is free) and 15 (a Death never takes a Location back).
+        [Test]
+        public void AReturnAfterAComplete_IsFree_AndKeepsWhatTheCompleteOpened()
+        {
+            Unlock(thornwood, ashfen, whenComplete: true);
+            var game = GameOver(thornwood, ashfen);
+            session.Hero.IsInvincible = true;
+            game.Send(thornwood);
+            TickUntilComplete(game);
+            var changed = 0;
+            game.ProgressionChanged += () => changed++;
+
+            _ = game.Return();
+
+            Assert.That(game.Run.Phase, Is.EqualTo(RunPhase.InTown));
+            Assert.That(game.StateOf(thornwood), Is.EqualTo(UnlockState.Complete));
+            Assert.That(game.StateOf(ashfen), Is.EqualTo(UnlockState.Active));
+            Assert.That(changed, Is.EqualTo(0), "the Return changes no Unlock State");
+        }
+
+        [Test]
+        public void ADeathAfterAComplete_KeepsTheLocationComplete_AndWhatItOpenedOpen()
+        {
+            Unlock(thornwood, ashfen, whenComplete: true);
+            var game = GameOver(thornwood, ashfen);
+            session.Hero.IsInvincible = true;
+            game.Send(thornwood);
+            TickUntilComplete(game);
+            game.Relocate(ashfen);
+            session.Hero.IsInvincible = false;
+
+            session.Hero.GetResource(StatName.Health).DepleteCurrent();
+            game.Tick(0.1f);
+
+            Assert.That(session.Hero.IsDead, Is.True, "premise: the hero died in Ashfen");
+            Assert.That(game.StateOf(thornwood), Is.EqualTo(UnlockState.Complete));
+            Assert.That(game.StateOf(ashfen), Is.EqualTo(UnlockState.Active), "still open to go back for the Corpse");
+            Assert.That(session.Hero.HasCompleted("thornwood"), Is.True);
+        }
+
         // ── a Quest Completes on its objective ──────────────────────────────
 
         private Quest NewQuest(string id, string objectiveId) => TestQuests.Create(created, id, objectiveId);

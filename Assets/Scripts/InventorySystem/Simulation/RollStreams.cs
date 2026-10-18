@@ -21,14 +21,21 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// One roll per hit, for the <see cref="EncounterTuning.DamageSpread"/>. Optional: without one every hit
         /// rolls 0.5, the middle of the spread, so a hit is its base damage.
         /// </param>
-        public RollStreams(IRollSource main, IRollSource movement = null, IRollSource hit = null)
+        /// <param name="population">
+        /// One roll per Send, for the Location's Population. Optional: without one every Population rolls the
+        /// middle of its range.
+        /// </param>
+        public RollStreams(IRollSource main, IRollSource movement = null, IRollSource hit = null, IRollSource population = null)
         {
             Main = main ?? throw new ArgumentNullException(nameof(main));
             Movement = movement ?? new MiddleRolls();
             Hit = hit ?? new MiddleRolls();
+            Population = population ?? new MiddleRolls();
         }
 
         public IRollSource Main { get; }
+
+        public IRollSource Population { get; }
 
         public IRollSource Movement { get; }
 

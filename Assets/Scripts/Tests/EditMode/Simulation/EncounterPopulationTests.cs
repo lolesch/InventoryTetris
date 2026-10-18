@@ -89,8 +89,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         [Test]
         public void ThePopulation_IsRolledWithinTheLocationsRange()
         {
-            var low = new EncounterSimulation(OneShotHero(), Ranged(3, 6), new ConstantRollSource(0f), Behaviours.Engaging(5));
-            var high = new EncounterSimulation(OneShotHero(), Ranged(3, 6), new ConstantRollSource(1f), Behaviours.Engaging(5));
+            var low = new EncounterSimulation(OneShotHero(), Ranged(3, 6), PopulationRolls(0f), Behaviours.Engaging(5));
+            var high = new EncounterSimulation(OneShotHero(), Ranged(3, 6), PopulationRolls(1f), Behaviours.Engaging(5));
 
             Assert.That(low.Population, Is.EqualTo(3));
             Assert.That(high.Population, Is.EqualTo(6));
@@ -100,7 +100,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         public void EverySend_RollsTheRangeFresh()
         {
             var seen = new System.Collections.Generic.HashSet<int>();
-            var run = new RunState(p => new EncounterSimulation(OneShotHero(), p, new SeededRollSource(seen.Count + 1), Behaviours.Engaging(5)));
+            var run = new RunState(p => new EncounterSimulation(OneShotHero(), p, new RollStreams(new ConstantRollSource(0f), population: new SeededRollSource(seen.Count + 1)), Behaviours.Engaging(5)));
             for (var i = 0; i < 12; i++)
             {
                 run.Send(Ranged(3, 6));
@@ -115,7 +115,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         [Test]
         public void ARelocate_RollsTheNewLocationsPopulation()
         {
-            var run = new RunState(p => new EncounterSimulation(OneShotHero(), p, new ConstantRollSource(1f), Behaviours.Engaging(5)));
+            var run = new RunState(p => new EncounterSimulation(OneShotHero(), p, PopulationRolls(1f), Behaviours.Engaging(5)));
             run.Send(Ranged(2, 4));
             Assert.That(run.Encounter.Population, Is.EqualTo(4));
 
@@ -244,6 +244,10 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
             Assert.That(run.Return().EncountersCleared, Is.EqualTo(2));
         }
+
+        // The Population draws from its own stream; every other roll reads 0.
+        private static RollStreams PopulationRolls(float roll) =>
+            new(new ConstantRollSource(0f), population: new ConstantRollSource(roll));
 
         private static RunState NewRun() =>
             new(p => new EncounterSimulation(OneShotHero(), p, new ConstantRollSource(0f), Behaviours.Engaging(5), ShortBeat()));

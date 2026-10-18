@@ -365,7 +365,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             setup.Game.Hero.IsInvincible = true;
             setup.Game.Simulation.Send(thornwood);
             store.FailWrites = true;
-            ExpectLog(LogType.Error, "Could not save hero .*the disk is full");
+            ExpectLog(LogType.Error, "Could not save the Complete of hero .*the disk is full");
 
             for (var i = 0; i < 20000 && setup.Game.Simulation.Run.Encounter.Phase != SimulationPhase.Complete; i++)
                 setup.Game.Simulation.Tick(0.1f);

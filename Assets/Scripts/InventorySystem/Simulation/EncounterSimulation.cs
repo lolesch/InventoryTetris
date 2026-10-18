@@ -103,7 +103,7 @@ namespace ToolSmiths.InventorySystem.Simulation
 
             _tuning = tuning ?? new EncounterTuning();
             _tuning.Validate();
-            Population = _profile.Population.Roll(_streams.Main);
+            Population = _profile.Population.Roll(_streams.Population);
             _heroBrain = heroBrain ?? new AutoHeroBrain(_behaviour, _tuning.HeroTargeting);
             _arena = new Arena(_tuning.Arena);
 

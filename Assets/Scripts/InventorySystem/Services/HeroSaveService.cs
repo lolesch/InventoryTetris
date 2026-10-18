@@ -84,10 +84,40 @@ namespace ToolSmiths.InventorySystem.Services
 
             completionSaveDue = false;
 
-            // Banks even mid-Run: it writes what a quit at this moment would and leaves the Run live.
-            // The one write past the in-Field refusal; a draft is still never written here.
-            if (!IsActiveDraft())
-                _ = WriteActive(allowInField: true);
+            if (IsActiveDraft())
+                return;
+
+            // In the Field the hero holds a bag the Run has not settled, which the file must never carry; only
+            // the Completed set goes onto the last settled file. A Return writes the rest.
+            if (simulation.Run.Phase == RunPhase.InField)
+                _ = WriteCompletedOnly();
+            else
+                _ = WriteActive();
+        }
+
+        private bool WriteCompletedOnly()
+        {
+            if (ActiveHeroId == null || !ReferenceEquals(activeHero, session.Hero))
+                return false;
+
+            try
+            {
+                var key = KeyOf(ActiveHeroId);
+                var result = key == null ? default : HeroSlot(key).Load();
+
+                // A file that cannot be read is left alone, as a rename leaves it.
+                if (!result.HasPayload)
+                    return false;
+
+                result.Payload.completedIds = session.Hero.CompletedIds.OrderBy(id => id, StringComparer.Ordinal).ToList();
+                _ = WriteHero(ActiveHeroId, result.Payload);
+                return true;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError($"Could not save the Complete of hero '{ActiveHeroId}': {exception.Message} The previous save is untouched; the Return writes it.");
+                return false;
+            }
         }
 
         /// <summary>
@@ -457,7 +487,7 @@ namespace ToolSmiths.InventorySystem.Services
         private bool IsActiveDraft() =>
             draft != null && ActiveHeroId == draft.id && ReferenceEquals(activeHero, session.Hero);
 
-        private SaveResult WriteActive(bool allowInField = false)
+        private SaveResult WriteActive()
         {
             // The Session's hero is the file's only while it is the one this service loaded; a template
             // load or another load behind its back leaves the file alone.
@@ -465,7 +495,7 @@ namespace ToolSmiths.InventorySystem.Services
                 return SaveResult.Failed(SaveFailure.NotFromSave);
 
             // A hero in the Field holds a bag the Run has not settled; the file only ever holds a Town hero.
-            if (!allowInField && simulation.Run.Phase == RunPhase.InField)
+            if (simulation.Run.Phase == RunPhase.InField)
                 return SaveResult.Failed(SaveFailure.RunInField);
 
             // A normaliser that failed left the hero in a state that is not safe to write (a held Package
