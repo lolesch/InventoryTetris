@@ -1,0 +1,586 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PROTOTYPE - Arena Loot (#307)</title>
+<style>
+  :root { --bg:#14161a; --panel:#1d2026; --line:#2c313a; --text:#d8dbe0; --dim:#8a919c; --accent:#e0a34a; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:13px/1.45 system-ui, Segoe UI, sans-serif; }
+  header { padding:12px 18px 6px; }
+  header h1 { margin:0; font-size:17px; }
+  header p { margin:4px 0 0; color:var(--dim); max-width:1100px; }
+  .proto-tag { color:#111; background:var(--accent); border-radius:3px; padding:1px 6px; font-size:11px; font-weight:700; margin-right:6px; }
+  main { display:flex; gap:14px; padding:8px 18px 80px; align-items:flex-start; flex-wrap:wrap; }
+  #arenaWrap { position:relative; }
+  canvas { background:#0e1013; border:1px solid var(--line); border-radius:6px; display:block; }
+  aside { width:360px; display:flex; flex-direction:column; gap:10px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:10px 12px; }
+  .card h2 { margin:0 0 6px; font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--dim); }
+  label.row { display:flex; justify-content:space-between; align-items:center; gap:8px; margin:3px 0; }
+  select, input[type=range] { width:160px; }
+  select { background:#262a31; color:var(--text); border:1px solid var(--line); border-radius:4px; padding:2px 4px; }
+  button { background:#2a2f37; color:var(--text); border:1px solid #3a404a; border-radius:4px; padding:4px 9px; cursor:pointer; margin:2px 2px 2px 0; }
+  button:hover { border-color:var(--accent); }
+  .stats { display:grid; grid-template-columns:1fr auto; gap:1px 10px; }
+  .stats span:nth-child(even) { text-align:right; font-variant-numeric:tabular-nums; }
+  .changed { color:var(--accent); }
+  #log { font-size:12px; color:var(--dim); max-height:120px; overflow:auto; }
+  #grid { display:grid; gap:2px; margin-top:4px; }
+  #grid div { aspect-ratio:1; border:1px solid #2a2e35; border-radius:2px; background:#121418; cursor:pointer; }
+  .hint { color:var(--dim); font-size:12px; }
+  #switcher { position:fixed; left:50%; bottom:16px; transform:translateX(-50%); display:flex; align-items:center; gap:10px;
+              background:#f2f2f2; color:#111; border-radius:999px; padding:6px 10px; box-shadow:0 4px 18px rgba(0,0,0,.5); font-weight:600; z-index:5; }
+  #switcher button { background:#111; color:#fff; border:none; border-radius:999px; width:28px; height:28px; margin:0; }
+  #variantDesc { max-width:1100px; margin:2px 0 0; color:var(--text); }
+</style>
+</head>
+<body>
+<header>
+  <h1><span class="proto-tag">PROTOTYPE</span>Loot in the Arena: where it lands, no overlap, fade, filter</h1>
+  <p>Throwaway demo for Wayfinder ticket #307. Drops land where the enemy died, over the fight, instead of in the Ground Items List.
+     Flip the label layout with the bar at the bottom (or the arrow keys); tune fade, filter and pick-up on the right.
+     Hold <b>Alt</b> (or <b>Z</b>) to reveal labels. Click a label (or a beacon) to pick it up. Nothing is saved.</p>
+  <p id="variantDesc"></p>
+</header>
+<main>
+  <div id="arenaWrap"><canvas id="arena" width="820" height="560"></canvas></div>
+  <aside>
+    <div class="card">
+      <h2>Run</h2>
+      <button id="btnSend">Send (new Location)</button>
+      <button id="btnBurst">Spawn 8 at once</button>
+      <button id="btnFlood">Flood: 25 drops on one spot</button>
+      <label class="row">Sim speed
+        <select id="speed"><option value="0">Paused</option><option value="0.5">0.5x</option><option value="1" selected>1x</option><option value="2">2x</option><option value="4">4x</option></select>
+      </label>
+      <div class="hint" id="runLine"></div>
+    </div>
+    <div class="card">
+      <h2>Fade</h2>
+      <label class="row">Rule
+        <select id="fade"><option value="timer">Timer</option><option value="oldest" selected>Oldest-out (cap)</option><option value="both">Both</option></select>
+      </label>
+      <label class="row">Lifetime <span><input type="range" id="lifetime" min="10" max="120" step="5" value="45"> <b id="lifetimeV"></b></span></label>
+      <label class="row">Cap <span><input type="range" id="cap" min="8" max="60" step="1" value="30"> <b id="capV"></b></span></label>
+    </div>
+    <div class="card">
+      <h2>Filter and pick-up</h2>
+      <label class="row">Show from Rarity
+        <select id="filter"><option>Common</option><option>Magic</option><option>Rare</option><option>Unique</option></select>
+      </label>
+      <label class="row">Alt also reveals filtered drops <input type="checkbox" id="altFiltered" checked></label>
+      <label class="row">Pick-up
+        <select id="pickup"><option value="instant" selected>Click: instant, from anywhere</option><option value="walk">Click: the hero walks to it</option><option value="reach">Instant within reach, else walk</option></select>
+      </label>
+      <label class="row">Labels under the fighters <input type="checkbox" id="labelsUnder"></label>
+      <label class="row">Show labels (toggle, B) <input type="checkbox" id="showLabels"></label>
+    </div>
+    <div class="card">
+      <h2>What is on the ground</h2>
+      <div class="stats" id="stats"></div>
+    </div>
+    <div class="card">
+      <h2>Floor grid (the fallback view, same drops)</h2>
+      <div id="grid"></div>
+      <div class="hint">One cell per Drop, where it landed in the grid; click picks up.</div>
+    </div>
+    <div class="card"><h2>What just happened</h2><div id="log"></div></div>
+  </aside>
+</main>
+<div id="switcher"><button id="prevV">&larr;</button><span id="variantLabel"></span><button id="nextV">&rarr;</button></div>
+
+<script>
+// ---------------------------------------------------------------------------------------------
+// The portable part: the ground's rules (fade, cap, filter) and the label placement. No DOM.
+// ---------------------------------------------------------------------------------------------
+const ArenaLoot = (() => {
+  const RARITIES = ['Common', 'Magic', 'Rare', 'Unique'];
+
+  function makeGround() { return { drops: [], nextId: 1 }; }
+
+  /** Lays a Drop at an arena point. Oldest-out (and Both) evict the oldest past the cap. */
+  function lay(ground, spec, now, rules) {
+    const drop = { ...spec, id: ground.nextId++, born: now };
+    ground.drops.push(drop);
+    const evicted = [];
+    if (rules.fade !== 'timer')
+      while (ground.drops.length > rules.cap) evicted.push(ground.drops.shift());
+    return { drop, evicted };
+  }
+
+  /** Timer (and Both) remove a Drop whose lifetime ran out, on sim time. */
+  function expire(ground, now, rules) {
+    if (rules.fade === 'oldest') return [];
+    const gone = [];
+    ground.drops = ground.drops.filter(d => (now - d.born >= rules.lifetime) ? (gone.push(d), false) : true);
+    return gone;
+  }
+
+  function remove(ground, id) {
+    const i = ground.drops.findIndex(d => d.id === id);
+    return i < 0 ? null : ground.drops.splice(i, 1)[0];
+  }
+
+  /** How faded a Drop is: 1 = fresh, rules.minOpacity = about to go. */
+  function opacity(ground, drop, now, rules) {
+    const min = rules.minOpacity;
+    let byCap = 1, byTime = 1;
+    if (rules.fade !== 'timer') {
+      // How many more Drops until this one is pushed out, against the cap.
+      const n = ground.drops.length, rank = ground.drops.indexOf(drop);
+      const ahead = rank + (rules.cap - n);
+      byCap = min + (1 - min) * Math.min(1, ahead / Math.max(1, rules.cap - 1));
+    }
+    if (rules.fade !== 'oldest') {
+      const left = rules.lifetime - (now - drop.born), ramp = rules.lifetime * 0.4;
+      byTime = left >= ramp ? 1 : min + (1 - min) * Math.max(0, left / ramp);
+    }
+    return Math.min(byCap, byTime);
+  }
+
+  const rarityIndex = r => RARITIES.indexOf(r);
+  /** The Rarity filter: shown at or above the chosen Rarity. */
+  const passes = (drop, minRarity) => rarityIndex(drop.rarity) >= rarityIndex(minRarity);
+
+  const overlaps = (a, b, pad) => a.x < b.x + b.w + pad && b.x < a.x + a.w + pad && a.y < b.y + b.h + pad && b.y < a.y + a.h + pad;
+  const inside = (r, bounds) => r.x >= bounds.x && r.y >= bounds.y && r.x + r.w <= bounds.x + bounds.w && r.y + r.h <= bounds.y + bounds.h;
+
+  /**
+   * Places a label near its anchor (screen px) where it overlaps no taken label: candidates
+   * sorted by distance, up preferred to down. A label placed is never moved again by the caller
+   * (sticky), so what the player is aiming at does not jump. clash = no free spot was found.
+   */
+  function placeNear(anchor, w, h, taken, bounds) {
+    const stepX = w * 0.55, stepY = h + 2, cands = [];
+    for (let iy = -9; iy <= 9; iy++)
+      for (let ix = -3; ix <= 3; ix++)
+        cands.push({ x: anchor.x - w / 2 + ix * stepX, y: anchor.y - h - 5 + iy * stepY, w, h,
+                     d: Math.hypot(ix * stepX, iy * stepY) + (iy > 0 ? 3 : 0) });
+    cands.sort((a, b) => a.d - b.d);
+    for (const c of cands)
+      if (inside(c, bounds) && !taken.some(t => overlaps(t, c, 2))) return { x: c.x, y: c.y, w, h, clash: false };
+    return { x: cands[0].x, y: cands[0].y, w, h, clash: true };
+  }
+
+  /** Edge rail: a slot in the left or right column nearest the anchor's height, never a taken one. */
+  function placeOnRail(anchorY, side, slotCount, takenSlots) {
+    const want = Math.round(anchorY);
+    let best = -1, bestD = Infinity;
+    for (let s = 0; s < slotCount; s++) {
+      if (takenSlots.has(side + s)) continue;
+      const d = Math.abs(s - want);
+      if (d < bestD) { bestD = d; best = s; }
+    }
+    return best; // -1 = the rail is full
+  }
+
+  return { RARITIES, makeGround, lay, expire, remove, opacity, passes, placeNear, placeOnRail, overlaps };
+})();
+
+// ---------------------------------------------------------------------------------------------
+// The throwaway page: a rough Arena fight (hero, enemies walking in, kills, Drops) and the views.
+// ---------------------------------------------------------------------------------------------
+const $ = id => document.getElementById(id);
+const cvs = $('arena'), ctx = cvs.getContext('2d');
+const W = cvs.width, H = cvs.height;
+const RAIL_W = 128;                                  // room for the edge-rail columns (variant C)
+const CENTER = { x: W / 2, y: H / 2 + 10 };
+const SCALE = 25, TILT = 0.62, RADIUS = 10, SPAWN_R = 12;
+const project = p => ({ x: CENTER.x + p.x * SCALE, y: CENTER.y + p.z * SCALE * TILT });
+const unproject = s => ({ x: (s.x - CENTER.x) / SCALE, z: (s.y - CENTER.y) / (SCALE * TILT) });
+
+const COLORS = { Common: '#b9bcc2', Magic: '#7f9bff', Rare: '#f1d04c', Unique: '#e08a2c' };
+const COIN = { Copper: ['#c9773a', 'Common'], Iron: ['#9aa4af', 'Magic'], Silver: ['#e4ebf2', 'Rare'], Gold: ['#ffd34d', 'Unique'] };
+const BASES = ['Belt', 'Boots', 'Bracers', 'Chest', 'Cloak', 'Gloves', 'Helm', 'Pants', 'Ring', 'Amulet', 'Sword', 'Bow', 'Quiver'];
+const PREFIX = ['Sturdy', 'Swift', 'Keen', 'Warded', 'Bright', 'Lucky'];
+const RARE1 = ['Doom', 'Ash', 'Grim', 'Storm', 'Bone', 'Dusk'], RARE2 = ['Grip', 'Coil', 'Ward', 'Hold', 'Mark', 'Veil'];
+const UNIQUE = ['Ashfall Coil', 'The Grey Vigil', 'Emberstride', 'Widow’s Knot'];
+
+const VARIANTS = {
+  A: { name: 'Labels on the floor', desc: 'A - Labels on the floor (Diablo II with Alt held): every shown Drop has its name on the floor at the spot it fell, nudged up or sideways off its neighbours when it lands and never moved again. Always on.' },
+  B: { name: 'Beacons, labels on Alt', desc: 'B - Beacons, labels on Alt: a Drop is a small rarity-tinted gem where it fell (Rare and Unique get a light beam). Names show only while Alt is held (or the toggle is on), laid out fresh each time, oldest first; hover a beacon to see just its name.' },
+  C: { name: 'Edge rail', desc: 'C - Edge rail: a dot marks where a Drop fell; its label sits in a column outside the Arena, left or right by side, at the height nearest its dot, joined by a leader line. The fight is never covered.' },
+};
+const VKEYS = Object.keys(VARIANTS);
+let variant = new URLSearchParams(location.search).get('variant') || 'A';
+if (!VARIANTS[variant]) variant = 'A';
+
+let ground, hero, enemies, corpses, now, encounter, spawnedThis, spawnTimer, wallet, bag, totals, logLines, gridCells, flashes;
+const BAG_SIZE = 24, POPULATION = 6, ENCOUNTERS = 4, GRID_W = 10, GRID_H = 6;
+
+function rules() {
+  return { fade: $('fade').value, lifetime: +$('lifetime').value, cap: +$('cap').value, minOpacity: 0.35 };
+}
+
+function newLocation() {
+  ground = ArenaLoot.makeGround();
+  hero = { x: 0, z: 0, cd: 0, target: null, hit: 0 };
+  enemies = []; corpses = []; flashes = [];
+  now = 0; encounter = 1; spawnedThis = 0; spawnTimer = 0.5;
+  gridCells = new Array(GRID_W * GRID_H).fill(null);
+  totals = totals || { evicted: 0, expired: 0, picked: 0, full: 0 };
+  wallet = wallet || 0; bag = bag || 0;
+  logLines = logLines || [];
+  log('Send: a new Location, the ground starts empty.');
+}
+
+function log(line) { logLines.unshift(`[${now.toFixed(1)}s] ${line}`); logLines.length = Math.min(logLines.length, 30); }
+
+function spawnEnemy() {
+  const a = Math.random() * Math.PI * 2, brute = Math.random() < 0.55;
+  enemies.push({ x: Math.cos(a) * SPAWN_R, z: Math.sin(a) * SPAWN_R, hp: brute ? 5 : 3, max: brute ? 5 : 3,
+                 speed: brute ? 2 : 3.5, stop: (brute ? 1.2 : 3.2) * (1 - 0.2 * Math.random()), cd: 1, brute, hit: 0 });
+}
+
+function rollRarity() { const r = Math.random() * 100; return r < 58 ? 'Common' : r < 86 ? 'Magic' : r < 97.5 ? 'Rare' : 'Unique'; }
+function itemName(rarity) {
+  const base = BASES[Math.floor(Math.random() * BASES.length)];
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  if (rarity === 'Common') return base;
+  if (rarity === 'Magic') return `${pick(PREFIX)} ${base}`;
+  if (rarity === 'Rare') return `${pick(RARE1)} ${pick(RARE2)} ${base}`;
+  return pick(UNIQUE);
+}
+
+function layDrop(spec) {
+  const res = ArenaLoot.lay(ground, spec, now, rules());
+  const free = gridCells.indexOf(null);
+  if (free >= 0) gridCells[free] = res.drop.id;
+  for (const e of res.evicted) { forget(e); totals.evicted++; log(`Pushed out (oldest): ${labelOf(e)}`); }
+}
+
+function forget(drop) {
+  const i = gridCells.indexOf(drop.id); if (i >= 0) gridCells[i] = null;
+  if (hero.target === drop.id) hero.target = null;
+}
+
+function dropLoot(at, count) {
+  const scatter = () => ({ x: at.x + (Math.random() - 0.5) * 1.8, z: at.z + (Math.random() - 0.5) * 1.8 });
+  for (let i = 0; i < count; i++) {
+    const rarity = rollRarity();
+    layDrop({ kind: 'item', rarity, name: itemName(rarity), at: scatter() });
+  }
+  if (Math.random() < 0.7) {
+    const r = Math.random(), denom = r < 0.62 ? 'Copper' : r < 0.88 ? 'Iron' : r < 0.98 ? 'Silver' : 'Gold';
+    const amount = denom === 'Copper' ? 10 + Math.floor(Math.random() * 60) : 1 + Math.floor(Math.random() * 9);
+    layDrop({ kind: 'coin', denom, amount, rarity: COIN[denom][1], name: `${amount} ${denom}`, at: scatter() });
+  }
+}
+
+function labelOf(d) { return d.name; }
+function colorOf(d) { return d.kind === 'coin' ? COIN[d.denom][0] : COLORS[d.rarity]; }
+
+function pickUp(drop) {
+  if (drop.kind === 'item' && bag >= BAG_SIZE) {
+    totals.full++; log(`Bag full: ${labelOf(drop)} stays on the ground.`);
+    flashes.push({ id: drop.id, t: 0.6 }); return;
+  }
+  ArenaLoot.remove(ground, drop.id); forget(drop);
+  if (drop.kind === 'item') bag++; else wallet += drop.amount * ({ Copper: 1, Iron: 100, Silver: 10000, Gold: 1000000 })[drop.denom];
+  totals.picked++; log(`Picked up: ${labelOf(drop)}`);
+}
+
+function requestPickUp(drop) {
+  const mode = $('pickup').value;
+  const dist = Math.hypot(drop.at.x - hero.x, drop.at.z - hero.z);
+  if (mode === 'instant' || (mode === 'reach' && dist <= 3)) pickUp(drop);
+  else { hero.target = drop.id; log(`The hero walks to ${labelOf(drop)} (${dist.toFixed(1)} units).`); }
+}
+
+// ---- sim tick --------------------------------------------------------------------------------
+function step(dt) {
+  now += dt;
+  for (const g of ArenaLoot.expire(ground, now, rules())) { forget(g); totals.expired++; log(`Faded away (timer): ${labelOf(g)}`); }
+
+  // spawning
+  if (encounter <= ENCOUNTERS) {
+    spawnTimer -= dt;
+    if (spawnedThis < POPULATION && spawnTimer <= 0) { spawnEnemy(); spawnedThis++; spawnTimer = 1.1; }
+    if (spawnedThis >= POPULATION && enemies.length === 0) {
+      encounter++; spawnedThis = 0; spawnTimer = 1.5;
+      log(encounter > ENCOUNTERS ? 'Location Complete: the hero stands where he is.' : `Encounter ${encounter} of ${ENCOUNTERS}.`);
+    }
+  }
+
+  // hero: loot walk first, else fight
+  const tgt = hero.target && ground.drops.find(d => d.id === hero.target);
+  if (tgt) {
+    const dx = tgt.at.x - hero.x, dz = tgt.at.z - hero.z, d = Math.hypot(dx, dz);
+    if (d < 0.5) { hero.target = null; pickUp(tgt); }
+    else { const s = Math.min(d, 3.25 * dt); hero.x += dx / d * s; hero.z += dz / d * s; }
+  } else {
+    hero.target = null;
+    let near = null, nd = Infinity;
+    for (const e of enemies) { const d = Math.hypot(e.x - hero.x, e.z - hero.z); if (d < nd) { nd = d; near = e; } }
+    hero.cd -= dt;
+    if (near && nd <= 1.6) {
+      if (hero.cd <= 0) { near.hp--; near.hit = 0.15; hero.cd = 0.55; }
+    } else if (near) {
+      const s = Math.min(nd - 1.4, 3.25 * dt); hero.x += (near.x - hero.x) / nd * s; hero.z += (near.z - hero.z) / nd * s;
+    }
+  }
+
+  // enemies close in and strike
+  for (const e of enemies) {
+    const dx = hero.x - e.x, dz = hero.z - e.z, d = Math.hypot(dx, dz);
+    if (d > e.stop) { const s = Math.min(d - e.stop, e.speed * dt); e.x += dx / d * s; e.z += dz / d * s; }
+    else if ((e.cd -= dt) <= 0) { hero.hit = 0.12; e.cd = 1.3; }
+    e.hit = Math.max(0, e.hit - dt);
+  }
+  hero.hit = Math.max(0, hero.hit - dt);
+
+  // kills drop loot where the enemy died
+  for (const e of enemies.filter(e => e.hp <= 0)) {
+    corpses.push({ x: e.x, z: e.z, t: 1.2, brute: e.brute });
+    const r = Math.random(); dropLoot({ x: e.x, z: e.z }, r < 0.4 ? 0 : r < 0.8 ? 1 : 2);
+  }
+  enemies = enemies.filter(e => e.hp > 0);
+  corpses.forEach(c => c.t -= dt); corpses = corpses.filter(c => c.t > 0);
+  flashes.forEach(f => f.t -= dt); flashes = flashes.filter(f => f.t > 0);
+}
+
+// ---- views -----------------------------------------------------------------------------------
+let mouse = { x: -1, y: -1 }, altHeld = false, hits = [];
+
+function labelSize(d) { ctx.font = '12px system-ui, Segoe UI, sans-serif'; return { w: ctx.measureText(labelOf(d)).width + 10, h: 16 }; }
+
+function figureRects() {
+  const rects = [];
+  const add = (p, r) => { const s = project(p); rects.push({ x: s.x - r, y: s.y - r * 2.2, w: r * 2, h: r * 2.6 }); };
+  add(hero, 11); enemies.forEach(e => add(e, e.brute ? 11 : 8));
+  return rects;
+}
+
+/** Works out where every visible label and marker goes this frame, per variant. */
+function layout() {
+  const filterMin = $('filter').value, reveal = altHeld || $('showLabels').checked;
+  const allowFiltered = reveal && $('altFiltered').checked;
+  const shown = ground.drops.filter(d => ArenaLoot.passes(d, filterMin) || allowFiltered);
+  const fullBounds = { x: 4, y: 4, w: W - 8, h: H - 8 };
+  const out = [];
+
+  if (variant === 'A') {
+    // sticky rects for passing Drops, temporary ones for revealed filtered Drops
+    const taken = ground.drops.filter(d => d.rectA && ArenaLoot.passes(d, filterMin)).map(d => d.rectA);
+    for (const d of shown) {
+      const passing = ArenaLoot.passes(d, filterMin);
+      let rect = passing ? d.rectA : null;
+      if (!rect) {
+        const s = labelSize(d);
+        rect = ArenaLoot.placeNear(project(d.at), s.w, s.h, taken, fullBounds);
+        taken.push(rect);
+        if (passing) d.rectA = rect;
+      }
+      out.push({ d, rect, label: true, ghost: !passing });
+    }
+  } else if (variant === 'B') {
+    const taken = [];
+    const hover = shown.find(d => { const s = project(d.at); return Math.hypot(s.x - mouse.x, s.y - mouse.y) < 9; });
+    for (const d of shown) {
+      const passing = ArenaLoot.passes(d, filterMin);
+      const wantsLabel = reveal || d === hover;
+      let rect = null;
+      if (wantsLabel) { const s = labelSize(d); rect = ArenaLoot.placeNear(project(d.at), s.w, s.h, taken, fullBounds); taken.push(rect); }
+      out.push({ d, rect, label: wantsLabel, beacon: true, ghost: !passing });
+    }
+  } else {
+    const slotH = 18, top = 30, slotCount = Math.floor((H - top - 10) / slotH);
+    const takenSlots = new Set(ground.drops.filter(d => d.slotC && ArenaLoot.passes(d, filterMin)).map(d => d.slotC.key));
+    for (const d of shown) {
+      const passing = ArenaLoot.passes(d, filterMin);
+      let slot = passing ? d.slotC : null;
+      if (!slot) {
+        const side = d.at.x < 0 ? 'L' : 'R';
+        const s = ArenaLoot.placeOnRail((project(d.at).y - top) / slotH, side, slotCount, takenSlots);
+        if (s < 0) { out.push({ d, rect: null, label: false, dot: true, ghost: !passing, railFull: true }); continue; }
+        slot = { side, s, key: side + s };
+        takenSlots.add(slot.key);
+        if (passing) d.slotC = slot;
+      }
+      const sz = labelSize(d), w = Math.min(sz.w, RAIL_W - 8);
+      const x = slot.side === 'L' ? 6 : W - 6 - w;
+      out.push({ d, rect: { x, y: top + slot.s * slotH, w, h: 16, clash: false }, label: true, dot: true, rail: slot.side, ghost: !passing });
+    }
+  }
+  return { out, shownCount: shown.length };
+}
+
+function drawArenaFloor() {
+  ctx.fillStyle = '#0e1013'; ctx.fillRect(0, 0, W, H);
+  ctx.save(); ctx.translate(CENTER.x, CENTER.y); ctx.scale(1, TILT);
+  ctx.beginPath(); ctx.arc(0, 0, RADIUS * SCALE, 0, Math.PI * 2); ctx.fillStyle = '#1a1712'; ctx.fill();
+  ctx.strokeStyle = '#3b3428'; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
+  if (variant === 'C') {
+    ctx.fillStyle = '#15181d'; ctx.fillRect(0, 0, RAIL_W, H); ctx.fillRect(W - RAIL_W, 0, RAIL_W, H);
+  }
+}
+
+function drawFighters() {
+  const figs = [...enemies.map(e => ({ ...e, kind: 'enemy' })), ...corpses.map(c => ({ ...c, kind: 'corpse' })), { ...hero, kind: 'hero' }]
+    .sort((a, b) => a.z - b.z);
+  for (const f of figs) {
+    const s = project(f);
+    if (f.kind === 'corpse') { ctx.globalAlpha = f.t / 1.2 * 0.6; ctx.fillStyle = '#5a2626'; ctx.beginPath(); ctx.ellipse(s.x, s.y, 9, 4, 0, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1; continue; }
+    const r = f.kind === 'hero' ? 11 : f.brute ? 11 : 8;
+    ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(s.x, s.y, r, r * 0.4, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = f.hit > 0 ? '#fff' : f.kind === 'hero' ? '#4f8fe0' : f.brute ? '#b4473f' : '#d26b3b';
+    ctx.beginPath(); ctx.arc(s.x, s.y - r, r, 0, Math.PI * 2); ctx.fill();
+    if (f.kind === 'enemy') { ctx.fillStyle = '#300'; ctx.fillRect(s.x - 10, s.y - r * 2 - 6, 20, 3); ctx.fillStyle = '#e33'; ctx.fillRect(s.x - 10, s.y - r * 2 - 6, 20 * f.hp / f.max, 3); }
+  }
+}
+
+function drawLoot(lay) {
+  const R = rules();
+  hits = [];
+  let hover = null;
+  for (const it of lay.out) if (it.rect && pointIn(mouse, it.rect)) hover = it;
+  for (const it of lay.out) {
+    const d = it.d, s = project(d.at), col = colorOf(d);
+    const a = ArenaLoot.opacity(ground, d, now, R) * (it.ghost ? 0.45 : 1);
+    ctx.globalAlpha = a;
+    if (it.beacon || it.dot) {
+      if (it.beacon && (d.rarity === 'Rare' || d.rarity === 'Unique')) {
+        const g = ctx.createLinearGradient(0, s.y - 60, 0, s.y); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, col);
+        ctx.fillStyle = g; ctx.fillRect(s.x - 1.5, s.y - 60, 3, 60);
+      }
+      ctx.fillStyle = col; ctx.beginPath();
+      const r = it.beacon ? 5 : 3;
+      ctx.moveTo(s.x, s.y - r); ctx.lineTo(s.x + r, s.y); ctx.lineTo(s.x, s.y + r); ctx.lineTo(s.x - r, s.y); ctx.closePath(); ctx.fill();
+      if (it.beacon) hits.push({ d, rect: { x: s.x - 8, y: s.y - 8, w: 16, h: 16 } });
+    }
+    if (it.label && it.rect) {
+      const r = it.rect, hot = hover === it;
+      if (it.rail || hot || (variant === 'A' && Math.hypot(r.x + r.w / 2 - s.x, r.y + r.h - s.y) > 22)) {
+        ctx.strokeStyle = col; ctx.globalAlpha = a * (hot ? 0.9 : 0.35); ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(it.rail === 'L' ? r.x + r.w : it.rail === 'R' ? r.x : r.x + r.w / 2, r.y + r.h / 2); ctx.stroke();
+        ctx.globalAlpha = a;
+      }
+      const flash = flashes.find(f => f.id === d.id);
+      ctx.fillStyle = flash ? '#5a1a1a' : hot ? 'rgba(60,62,70,.95)' : 'rgba(10,10,12,.82)';
+      ctx.fillRect(r.x, r.y, r.w, r.h);
+      if (hot || r.clash) { ctx.strokeStyle = r.clash ? '#ff4d4d' : col; ctx.lineWidth = 1; ctx.strokeRect(r.x + .5, r.y + .5, r.w - 1, r.h - 1); }
+      ctx.fillStyle = col; ctx.font = '12px system-ui, Segoe UI, sans-serif'; ctx.textBaseline = 'middle';
+      ctx.save(); ctx.beginPath(); ctx.rect(r.x, r.y, r.w, r.h); ctx.clip();
+      ctx.fillText(labelOf(d), r.x + 5, r.y + r.h / 2 + 0.5); ctx.restore();
+      hits.push({ d, rect: r });
+    }
+    ctx.globalAlpha = 1;
+  }
+  cvs.style.cursor = hover || hits.some(h => pointIn(mouse, h.rect)) ? 'pointer' : 'default';
+}
+
+const pointIn = (p, r) => p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h;
+
+function render() {
+  drawArenaFloor();
+  const lay = layout();
+  if ($('labelsUnder').checked) { drawLoot(lay); drawFighters(); }
+  else { drawFighters(); drawLoot(lay); }
+  if (hero.target) {
+    const t = ground.drops.find(d => d.id === hero.target);
+    if (t) { const a = project(hero), b = project(t.at); ctx.setLineDash([4, 4]); ctx.strokeStyle = '#4f8fe0'; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); ctx.setLineDash([]); }
+  }
+  ctx.fillStyle = '#8a919c'; ctx.font = '11px system-ui'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText(`Variant ${variant} - ${VARIANTS[variant].name}${altHeld ? '   [Alt: revealing]' : ''}`, variant === 'C' ? RAIL_W + 8 : 10, H - 10);
+  renderStats(lay);
+}
+
+let lastStats = {};
+function renderStats(lay) {
+  const filterMin = $('filter').value;
+  const passing = ground.drops.filter(d => ArenaLoot.passes(d, filterMin)).length;
+  const labels = lay.out.filter(i => i.rect && i.label);
+  const clashes = labels.filter(i => i.rect.clash).length;
+  let overlapPairs = 0;
+  for (let i = 0; i < labels.length; i++) for (let j = i + 1; j < labels.length; j++) if (ArenaLoot.overlaps(labels[i].rect, labels[j].rect, 0)) overlapPairs++;
+  const figs = figureRects();
+  const overFight = labels.filter(i => figs.some(f => ArenaLoot.overlaps(i.rect, f, 0))).length;
+  const railFull = lay.out.filter(i => i.railFull).length;
+  const rows = {
+    'Drops on the ground': ground.drops.length,
+    'shown by the filter': passing,
+    'hidden by the filter': ground.drops.length - passing,
+    'labels drawn now': labels.length,
+    'labels overlapping each other': overlapPairs,
+    'labels with no free spot': clashes + railFull,
+    'labels over a fighter right now': overFight,
+    'pushed out (oldest)': totals.evicted,
+    'faded away (timer)': totals.expired,
+    'picked up': totals.picked,
+    'pick-ups refused, bag full': totals.full,
+    'bag': `${bag} / ${BAG_SIZE}`,
+    'wallet (copper)': wallet.toLocaleString(),
+  };
+  $('stats').innerHTML = Object.entries(rows).map(([k, v]) =>
+    `<span>${k}</span><span class="${lastStats[k] !== undefined && lastStats[k] !== v ? 'changed' : ''}">${v}</span>`).join('');
+  lastStats = rows;
+  const enc = Math.min(encounter, ENCOUNTERS);
+  $('runLine').textContent = encounter > ENCOUNTERS ? 'Location Complete - the hero idles where he stands. Send for more.'
+    : `Encounter ${enc} of ${ENCOUNTERS}, ${enemies.length} enemies up, ${POPULATION - spawnedThis} still to come.`;
+  $('log').innerHTML = logLines.map(l => `<div>${l}</div>`).join('');
+  const grid = $('grid'); grid.style.gridTemplateColumns = `repeat(${GRID_W}, 1fr)`;
+  if (grid.children.length !== gridCells.length) grid.innerHTML = gridCells.map((_, i) => `<div data-i="${i}"></div>`).join('');
+  const R = rules();
+  gridCells.forEach((id, i) => {
+    const d = id && ground.drops.find(x => x.id === id), el = grid.children[i];
+    if (!d || !ArenaLoot.passes(d, filterMin)) { el.style.background = '#121418'; el.style.opacity = 1; el.title = ''; return; }
+    el.style.background = colorOf(d); el.style.opacity = ArenaLoot.opacity(ground, d, now, R); el.title = labelOf(d);
+  });
+}
+
+// ---- input -----------------------------------------------------------------------------------
+cvs.addEventListener('mousemove', e => { const b = cvs.getBoundingClientRect(); mouse = { x: (e.clientX - b.left) * W / b.width, y: (e.clientY - b.top) * H / b.height }; });
+cvs.addEventListener('mouseleave', () => mouse = { x: -1, y: -1 });
+cvs.addEventListener('click', () => {
+  // the topmost (last drawn) wins
+  for (let i = hits.length - 1; i >= 0; i--) if (pointIn(mouse, hits[i].rect)) { requestPickUp(hits[i].d); return; }
+});
+$('grid').addEventListener('click', e => {
+  const i = e.target.dataset.i; if (i === undefined) return;
+  const d = gridCells[i] && ground.drops.find(x => x.id === gridCells[i]);
+  if (d && ArenaLoot.passes(d, $('filter').value)) pickUp(d);
+});
+const typing = () => /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName || '') || document.activeElement?.isContentEditable;
+window.addEventListener('keydown', e => {
+  if (e.key === 'Alt' || e.key === 'z' || e.key === 'Z') { altHeld = true; e.preventDefault(); }
+  if (typing()) return;
+  if (e.key === 'ArrowRight') cycle(1); if (e.key === 'ArrowLeft') cycle(-1);
+});
+window.addEventListener('keyup', e => { if (e.key === 'Alt' || e.key === 'z' || e.key === 'Z') { altHeld = false; e.preventDefault(); } });
+window.addEventListener('blur', () => altHeld = false);
+
+function setVariant(v) {
+  variant = v;
+  const p = new URLSearchParams(location.search); p.set('variant', v);
+  history.replaceState(null, '', `${location.pathname}?${p}`);
+  $('variantLabel').textContent = `${v} (${VARIANTS[v].name})`;
+  $('variantDesc').textContent = VARIANTS[v].desc;
+}
+function cycle(dir) { setVariant(VKEYS[(VKEYS.indexOf(variant) + dir + VKEYS.length) % VKEYS.length]); }
+$('prevV').onclick = () => cycle(-1); $('nextV').onclick = () => cycle(1);
+
+$('btnSend').onclick = () => { newLocation(); };
+$('btnBurst').onclick = () => { for (let i = 0; i < 8; i++) spawnEnemy(); log('Eight enemies at once.'); };
+$('btnFlood').onclick = () => {
+  const a = Math.random() * Math.PI * 2, at = { x: Math.cos(a) * 3, z: Math.sin(a) * 3 };
+  for (let i = 0; i < 25; i++) { const rarity = rollRarity(); layDrop({ kind: 'item', rarity, name: itemName(rarity), at: { x: at.x + (Math.random() - .5) * 1.2, z: at.z + (Math.random() - .5) * 1.2 } }); }
+  log('Flood: 25 Drops on one spot.');
+};
+['lifetime', 'cap'].forEach(id => { const f = () => $(id + 'V').textContent = id === 'lifetime' ? `${$(id).value} s` : $(id).value; $(id).oninput = f; f(); });
+$('filter').onchange = () => log(`Filter: show from ${$('filter').value}.`);
+$('fade').onchange = () => log(`Fade rule: ${$('fade').selectedOptions[0].text}.`);
+
+// ---- loop ------------------------------------------------------------------------------------
+newLocation(); setVariant(variant);
+let last = performance.now();
+function frame(t) {
+  const dt = Math.min(0.05, (t - last) / 1000) * +$('speed').value; last = t;
+  if (dt > 0) step(dt);
+  render(); requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
