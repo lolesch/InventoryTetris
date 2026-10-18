@@ -99,7 +99,7 @@ namespace ToolSmiths.InventorySystem.Services
         /// <summary>The Session's hero did not come from a save file (a template load, or another hero loaded behind the service's back).</summary>
         NotFromSave,
 
-        /// <summary>A Run is in the Field; the file only ever holds a Town hero.</summary>
+        /// <summary>A Run is in the Field; the file only ever holds a Town hero. A Complete's own save is the one write past it.</summary>
         RunInField,
 
         /// <summary>A before-save step failed, so the previous file was kept.</summary>
