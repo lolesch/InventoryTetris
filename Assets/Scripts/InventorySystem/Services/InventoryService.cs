@@ -17,6 +17,9 @@ namespace ToolSmiths.InventorySystem.Services
     {
         private const int SupplyStock = 20;
 
+        /// <summary>The Portal Scrolls every Healer Restock leaves on its shelf, on top of its rolled stock (Town Portal).</summary>
+        public const uint HealerPortalScrolls = 2u;
+
         private readonly ISession session;
         private readonly IItemService items;
 
@@ -141,14 +144,14 @@ namespace ToolSmiths.InventorySystem.Services
         public void RestockHealerSupply()
         {
             session.World.Sold.RemoveAll();
-            Fill(session.World.HealerSupply, () => items.RollConsumable(MagicFind));
+            FillHealer();
         }
 
         public void RestockTownStops()
         {
             session.World.Sold.RemoveAll();
             Fill(session.World.VendorSupply, () => items.RollEquipment(MagicFind));
-            Fill(session.World.HealerSupply, () => items.RollConsumable(MagicFind));
+            FillHealer();
         }
 
         // A hero without the stat (a template that never authored it) rolls at no bonus.
@@ -156,9 +159,16 @@ namespace ToolSmiths.InventorySystem.Services
 
         public float ItemQuantity => session.Hero.GetStat(StatName.IncreasedItemQuantity)?.TotalValue ?? 0f;
 
-        private static void Fill(AbstractDimensionalContainer supply, Func<ItemInstance> roll)
+        // The guaranteed scrolls are placed first, so a shelf the rolls would fill still holds them.
+        private void FillHealer() => Fill(session.World.HealerSupply, () => items.RollConsumable(MagicFind),
+            new Package(null, items.RollConsumable(ConsumableType.PortalScroll, MagicFind), HealerPortalScrolls));
+
+        private static void Fill(AbstractDimensionalContainer supply, Func<ItemInstance> roll, Package? guaranteed = null)
         {
             supply.RemoveAll();
+
+            if (guaranteed is { } stock)
+                _ = supply.TryAddToContainer(ref stock);
 
             for (var i = 0; i < SupplyStock; i++)
             {
