@@ -37,7 +37,7 @@ namespace ToolSmiths.InventorySystem.Services
         /// unreachable (see <see cref="InventoryContextState.SyncToPhase"/>) - the Send/Return/Death/
         /// Go-Venture side of phase reachability (#84).
         /// </summary>
-        void SyncContextToPhase(bool inField);
+        void SyncContextToPhase(bool live);
 
         /// <summary>The container <paramref name="role"/> names on the current Hero and World, or null for none.</summary>
         AbstractDimensionalContainer ContainerFor(ContainerRole role);

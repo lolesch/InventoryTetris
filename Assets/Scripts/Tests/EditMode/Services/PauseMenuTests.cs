@@ -62,11 +62,11 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             menu.Open();
             Assert.That(menu.IsOpen, Is.True);
-            Assert.That(simulation.IsHeld, Is.True);
+            Assert.That(simulation.IsMenuFrozen, Is.True);
 
             menu.Close();
             Assert.That(menu.IsOpen, Is.False);
-            Assert.That(simulation.IsHeld, Is.False);
+            Assert.That(simulation.IsMenuFrozen, Is.False);
         }
 
         [Test]
@@ -92,7 +92,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             menu.Open();
 
             Assert.That(menu.IsOpen, Is.True);
-            Assert.That(simulation.IsHeld, Is.False);
+            Assert.That(simulation.IsMenuFrozen, Is.False);
 
             menu.Close();
             Assert.That(menu.IsOpen, Is.False);

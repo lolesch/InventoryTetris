@@ -18,9 +18,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// (Common, Magic, Rare, Unique) as four snapping positions.
     ///
     /// Lives on the Combat Panel, a child of the InFields face. Its own visibility is not
-    /// <see cref="RunPhase"/>-driven — <see cref="RunPhase.InField"/> only exists once a Location
+    /// <see cref="RunPhase"/>-driven — <see cref="RunPhase.Live"/> only exists once a Location
     /// is actually Sent to, but the Combat Panel must already be up during the Go Venture preview
-    /// (still <see cref="RunPhase.InTown"/>, no Run yet). <see cref="FieldFacePanel"/> cascades
+    /// (still <see cref="RunPhase.None"/>, no Run yet). <see cref="FieldFacePanel"/> cascades
     /// this panel's <see cref="SimplePanel.Expand"/>/<see cref="SimplePanel.Collapse"/> straight from its own appear/
     /// disappear instead, so both follow the same UI-layer event the preview relies on. Subscribes
     /// to slider events on enable and again in <see cref="SimplePanel.BeforeAppear"/>, so they are live

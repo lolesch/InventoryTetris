@@ -67,25 +67,25 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         // ─── transitions ─────────────────────────────────────────────────────
 
         [Test]
-        public void ANewRunState_StartsInTown_WithNoLocationAndNoEncounter()
+        public void ANewRunState_StartsWithNoRun_WithNoLocationAndNoEncounter()
         {
             var run = NewRun(OneShotHero());
 
-            Assert.That(run.Phase, Is.EqualTo(RunPhase.InTown));
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.None));
             Assert.That(run.Location, Is.Null);
             Assert.That(run.Encounter, Is.Null);
             Assert.That(run.LastResult, Is.Null);
         }
 
         [Test]
-        public void Send_EntersInField_WithTheLocationAndALiveEncounter()
+        public void Send_GoesLive_WithTheLocationAndALiveEncounter()
         {
             var run = NewRun(OneShotHero());
             var thornwood = Skirmishers(3);
 
             run.Send(thornwood);
 
-            Assert.That(run.Phase, Is.EqualTo(RunPhase.InField));
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Live));
             Assert.That(run.Location, Is.SameAs(thornwood));
             Assert.That(run.Encounter, Is.Not.Null);
             Assert.That(run.Encounter.AliveEnemyCount, Is.GreaterThan(0));
@@ -99,7 +99,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
             run.Return();
 
-            Assert.That(run.Phase, Is.EqualTo(RunPhase.InTown));
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.None));
             Assert.That(run.Location, Is.Null);
             Assert.That(run.Encounter, Is.Null);
         }
@@ -113,13 +113,13 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
             run.HandleDeath(xpTowardNextLevel: 0);
 
-            Assert.That(run.Phase, Is.EqualTo(RunPhase.InTown));
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.None));
             Assert.That(run.Location, Is.Null);
             Assert.That(run.Encounter, Is.Null);
         }
 
         [Test]
-        public void Send_WhileInField_Throws()
+        public void Send_WhileLive_Throws()
         {
             var run = NewRun(OneShotHero());
             run.Send(Skirmishers(3));
@@ -139,7 +139,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
-        public void Return_WhileInTown_Throws()
+        public void Return_WhileNone_Throws()
         {
             var run = NewRun(OneShotHero());
 
@@ -147,7 +147,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
-        public void HandleDeath_WhileInTown_Throws()
+        public void HandleDeath_WhileNone_Throws()
         {
             var run = NewRun(OneShotHero());
 
@@ -162,11 +162,11 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
             Assert.That(() => run.HandleDeath(100), Throws.InvalidOperationException,
                 "a live hero's Run only ends in Return — HandleDeath is not a 'give up' button");
-            Assert.That(run.Phase, Is.EqualTo(RunPhase.InField), "the refused HandleDeath must not half-end the Run");
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Live), "the refused HandleDeath must not half-end the Run");
         }
 
         [Test]
-        public void Advance_WhileInTown_IsANoOp()
+        public void Advance_WhileNone_IsANoOp()
         {
             var run = NewRun(OneShotHero());
 
@@ -193,7 +193,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var run = new RunState(_ => null);
 
             Assert.That(() => run.Send(Skirmishers(3)), Throws.InvalidOperationException);
-            Assert.That(run.Phase, Is.EqualTo(RunPhase.InTown), "a failed Send leaves the Run in Town");
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.None), "a failed Send leaves the Run in Town");
         }
 
         [Test]
@@ -281,7 +281,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
-        public void BankCurrency_WhileInTown_Throws()
+        public void BankCurrency_WhileNone_Throws()
         {
             var run = NewRun(OneShotHero());
 
@@ -464,7 +464,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
-        public void Advance_InField_RunsTheEncounter_AndReportsTicks()
+        public void Advance_Live_RunsTheEncounter_AndReportsTicks()
         {
             var run = NewRun(new FakeHero { PhysicalDamage = 0f, MagicalDamage = 0f, Resource = 0f, Level = 5 });
             run.Send(Profiles.Solo(EnemyArchetype.Brute, sourceLevel: 5));
@@ -507,7 +507,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
-        public void RunEnded_IsNotRaised_WhileTheRunIsStillInField()
+        public void RunEnded_IsNotRaised_WhileTheRunIsStillLive()
         {
             var run = NewRun(OneShotHero());
             run.Send(Skirmishers(3));
@@ -542,7 +542,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
             for (var i = 0; i < 50; i++) run.Advance(0.1f);
 
-            Assert.That(run.Phase, Is.EqualTo(RunPhase.InField));
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Live));
             Assert.That(run.Encounter.Phase, Is.EqualTo(SimulationPhase.Fighting), "the Run ends only by a Return or a Death");
         }
     }

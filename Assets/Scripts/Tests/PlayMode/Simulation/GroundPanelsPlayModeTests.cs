@@ -44,7 +44,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
         public void TearDown()
         {
             // The services outlive the test with domain reload off: end its Run and hand the next test a fresh Hero.
-            if (SimulationService.Instance.Run.Phase == RunPhase.InField)
+            if (SimulationService.Instance.Run.Phase == RunPhase.Live)
                 _ = SimulationService.Instance.Return();
 
             _ = Session.Instance.TryLoad(GameBoot.Load().DefaultHero);
@@ -221,14 +221,14 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             Session.Instance.Hero.GetResource(StatName.Health).DepleteCurrent();
 
             // The scene's own loop may be paused or slow; the service's Tick is what a frame would call.
-            for (var tick = 0; SimulationService.Instance.Run.Phase == RunPhase.InField && tick < DeathTimeoutTicks; tick++)
+            for (var tick = 0; SimulationService.Instance.Run.Phase == RunPhase.Live && tick < DeathTimeoutTicks; tick++)
                 SimulationService.Instance.Tick(0.5f);
 
             // The marker waits for the Death beat; its own timing is DeathBeatPlayModeTests'.
             SimulationService.Instance.Tick(2f);
             yield return null;
 
-            Assert.That(SimulationService.Instance.Run.Phase, Is.EqualTo(RunPhase.InTown), "the Hero died and went home");
+            Assert.That(SimulationService.Instance.Run.Phase, Is.EqualTo(RunPhase.None), "the Hero died and went home");
             Assert.That(MarkerAt(_locations[0]).enabled, Is.True, "the Corpse lies where the Hero fell");
             Assert.That(MarkerAt(_locations[1]).enabled, Is.False, "and nowhere else");
 
@@ -244,7 +244,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             SimulationService.Instance.Send(_locations[0]);
             yield return null;
             Session.Instance.Hero.GetResource(StatName.Health).DepleteCurrent();
-            for (var tick = 0; SimulationService.Instance.Run.Phase == RunPhase.InField && tick < DeathTimeoutTicks; tick++)
+            for (var tick = 0; SimulationService.Instance.Run.Phase == RunPhase.Live && tick < DeathTimeoutTicks; tick++)
                 SimulationService.Instance.Tick(0.5f);
 
             SimulationService.Instance.Tick(2f);

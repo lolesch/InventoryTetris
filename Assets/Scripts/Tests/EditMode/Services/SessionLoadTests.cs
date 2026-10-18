@@ -170,7 +170,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(inventory.ContainerFor(ContainerRole.HealerSupply), Is.Not.SameAs(oldWorld.HealerSupply));
             Assert.That(inventory.ContainerFor(ContainerRole.Sold), Is.Not.SameAs(oldWorld.Sold));
             Assert.That(SimulationService.Instance.Run, Is.Not.SameAs(oldRun));
-            Assert.That(SimulationService.Instance.Run.Phase, Is.EqualTo(RunPhase.InTown));
+            Assert.That(SimulationService.Instance.Run.Phase, Is.EqualTo(RunPhase.None));
         }
 
         [Test]
@@ -202,7 +202,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             Assert.That(Session.Instance.Hero, Is.SameAs(hero));
             Assert.That(Session.Instance.World, Is.SameAs(world));
-            Assert.That(SimulationService.Instance.Run.Phase, Is.EqualTo(RunPhase.InField), "the Run was not ended for it");
+            Assert.That(SimulationService.Instance.Run.Phase, Is.EqualTo(RunPhase.Live), "the Run was not ended for it");
             Assert.That(raised, Is.Zero);
         }
 

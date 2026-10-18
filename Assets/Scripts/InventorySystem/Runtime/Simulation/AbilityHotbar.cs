@@ -12,8 +12,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// <c>dev/specs/2026-09-08-arpg-screen-layout-design.md</c>.
     ///
     /// Faded like <see cref="RunPhasePanel"/> — up only while the Run is actually
-    /// <see cref="RunPhase.InField"/>, since Strike/Cast only fire on a live Encounter and there
-    /// is nothing to flash In Town. Unlike <see cref="RunPhasePanel"/> it also has to track the
+    /// <see cref="RunPhase.Live"/>, since Strike/Cast only fire on a live Encounter and there
+    /// is nothing to flash while no Run is up. Unlike <see cref="RunPhasePanel"/> it also has to track the
     /// live <see cref="EncounterSimulation"/> itself, not just the phase: a fresh Encounter is
     /// built on every <see cref="RunState.Send"/>, so the Strike/Cast subscription is
     /// re-established each time the Run steps into the Field rather than held once at enable.
@@ -74,13 +74,13 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         }
 
         // A Relocate swaps the Encounter without a phase change — follow it to the new one.
-        private void OnRelocated() => SyncToPhase(RunPhase.InField);
+        private void OnRelocated() => SyncToPhase(RunPhase.Live);
 
         private void SyncToPhase(RunPhase phase)
         {
             UnsubscribeEncounter();
 
-            if (phase != RunPhase.InField)
+            if (phase != RunPhase.Live)
                 return;
 
             SubscribeEncounter();

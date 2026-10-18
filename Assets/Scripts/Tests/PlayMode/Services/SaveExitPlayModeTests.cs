@@ -198,7 +198,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 
             Assert.That(Popup().gameObject.activeSelf, Is.True);
             Assert.That(PopupText(), Is.EqualTo(SaveAndExit.FieldQuestion));
-            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.InField), "asking ends nothing");
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.Live), "asking ends nothing");
             Assert.That(EventSystem.current.currentSelectedGameObject, Is.SameAs(Member<Component>(Popup(), "back").gameObject),
                 "Back is selected, so Enter leaves nothing");
 
@@ -206,7 +206,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             yield return null;
 
             Assert.That(Popup().gameObject.activeSelf, Is.False);
-            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.InField), "Cancel leaves the Run untouched");
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.Live), "Cancel leaves the Run untouched");
             Assert.That(Menu.IsOpen, Is.True, "and the Pause Menu stays where it was");
             Assert.That(BagHolds(helm), Is.True);
             Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("Example"));
@@ -214,7 +214,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             ClickSaveExit();
             Assert.That(ServiceLocator.Get<ICancelChain>().Cancel(), Is.True, "the Cancel key closes the confirm too");
             Assert.That(Popup().gameObject.activeSelf, Is.False);
-            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.InField));
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.Live));
         }
 
         [UnityTest]
@@ -232,7 +232,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             ClickSaveExit();
             ClickPopup("primary");
 
-            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.InTown), "the implicit Return");
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.None), "the implicit Return");
             Assert.That(Session.Hero.Corpse.Exists, Is.False, "no Death penalty");
             yield return WaitForScene("MainMenu");
 
@@ -328,14 +328,14 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 
             Assert.That(Popup().gameObject.activeSelf, Is.True);
             Assert.That(PopupText(), Is.EqualTo(SaveAndExit.FieldQuestion));
-            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.InField), "asking ends nothing");
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.Live), "asking ends nothing");
             Assert.That(quits, Is.Zero);
 
             ClickPopup("back");
             yield return null;
 
             Assert.That(Popup().gameObject.activeSelf, Is.False);
-            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.InField));
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.Live));
             Assert.That(BagHolds(helm), Is.True);
             Assert.That(quits, Is.Zero);
         }
@@ -353,7 +353,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             ClickQuitGame();
             ClickPopup("primary");
 
-            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.InTown), "the implicit Return");
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.None), "the implicit Return");
             Assert.That(Session.Hero.Corpse.Exists, Is.False, "no Death penalty");
             Assert.That(quits, Is.EqualTo(1));
             Assert.That(savedAtTheQuit, Is.GreaterThan(savedBefore), "written before the quit");

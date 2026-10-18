@@ -245,7 +245,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             InventoryContext? seen = null;
             state.Changed += ctx => seen = ctx;
 
-            state.SyncToPhase(inField: true);
+            state.SyncToPhase(live: true);
 
             Assert.That(state.Active, Is.EqualTo(InventoryContext.None));
             Assert.That(seen, Is.EqualTo(InventoryContext.None));
@@ -258,7 +258,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var fired = 0;
             state.Changed += _ => fired++;
 
-            state.SyncToPhase(inField: true);
+            state.SyncToPhase(live: true);
 
             Assert.That(state.Active, Is.EqualTo(InventoryContext.Hero));
             Assert.That(fired, Is.Zero);
@@ -271,7 +271,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var fired = 0;
             state.Changed += _ => fired++;
 
-            state.SyncToPhase(inField: true);
+            state.SyncToPhase(live: true);
 
             Assert.That(state.Active, Is.EqualTo(InventoryContext.Ground));
             Assert.That(fired, Is.Zero);
@@ -283,7 +283,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var fired = 0;
             state.Changed += _ => fired++;
 
-            state.SyncToPhase(inField: true);
+            state.SyncToPhase(live: true);
 
             Assert.That(state.Active, Is.EqualTo(InventoryContext.None));
             Assert.That(fired, Is.Zero);
@@ -293,9 +293,9 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         public void SyncToPhase_ReturningToTown_DoesNotReopenAnything()
         {
             state.Set(InventoryContext.Vendor);
-            state.SyncToPhase(inField: true); // drops to None
+            state.SyncToPhase(live: true); // drops to None
 
-            state.SyncToPhase(inField: false);
+            state.SyncToPhase(live: false);
 
             Assert.That(state.Active, Is.EqualTo(InventoryContext.None));
         }
@@ -305,7 +305,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         {
             state.Set(InventoryContext.Ground);
 
-            state.SyncToPhase(inField: false);
+            state.SyncToPhase(live: false);
 
             Assert.That(state.Active, Is.EqualTo(InventoryContext.Ground), "the World's ground is there in Town too (#285)");
         }
@@ -317,7 +317,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             var fired = 0;
             state.Changed += _ => fired++;
 
-            state.SyncToPhase(inField: false);
+            state.SyncToPhase(live: false);
 
             Assert.That(state.Active, Is.EqualTo(InventoryContext.Stash));
             Assert.That(fired, Is.Zero);

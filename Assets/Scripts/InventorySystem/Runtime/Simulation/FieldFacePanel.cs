@@ -10,7 +10,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// The InFields face. Purely UI-driven, like <see cref="ToolSmiths.InventorySystem.GUI.Components.Buttons.ToFieldsButton"/>
     /// and <see cref="ToolSmiths.InventorySystem.GUI.Components.Buttons.ToTownButton"/> that fade
     /// it — it carries no <see cref="RunPhase"/> of its own, because Go Venture previews this face
-    /// while still <see cref="RunPhase.InTown"/> (no Run exists yet to be InField about; think
+    /// while still <see cref="RunPhase.None"/> (no Run exists yet to be Live about; think
     /// opening the Town Portal without stepping through it). <see cref="RunPhasePanel"/> would
     /// keep this face hidden through exactly that preview, which is the one thing it must not do.
     ///

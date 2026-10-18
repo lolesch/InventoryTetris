@@ -58,17 +58,17 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// <summary>
         /// Applies a Run-phase change. Only <see cref="InventoryContext.None"/>,
         /// <see cref="InventoryContext.Hero"/> and <see cref="InventoryContext.Ground"/> are reachable
-        /// while <paramref name="inField"/> - a phase change that leaves <see cref="Active"/> unreachable drops it to
+        /// while <paramref name="live"/> - a phase change that leaves <see cref="Active"/> unreachable drops it to
         /// <see cref="InventoryContext.None"/>. Every context is reachable in Town, the Ground's among them
         /// (the World's ground is there too), and returning to Town reopens nothing on its own.
         /// </summary>
-        public void SyncToPhase(bool inField)
+        public void SyncToPhase(bool live)
         {
-            if (inField && !IsReachableInField(Active))
+            if (live && !IsReachableLive(Active))
                 Close();
         }
 
-        private static bool IsReachableInField(InventoryContext context) =>
+        private static bool IsReachableLive(InventoryContext context) =>
             context is InventoryContext.None or InventoryContext.Hero or InventoryContext.Ground;
 
         /// <summary>

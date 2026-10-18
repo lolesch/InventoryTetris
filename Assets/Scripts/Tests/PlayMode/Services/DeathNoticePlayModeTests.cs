@@ -48,7 +48,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             Simulation.Send(GameBoot.Load().Locations.First(location => location.Id == "location.thornwood"));
             Hero.GetResource(StatName.Health).DepleteCurrent();
 
-            for (var tick = 0; Simulation.Run.Phase == RunPhase.InField && tick < DeathTimeoutTicks; tick++)
+            for (var tick = 0; Simulation.Run.Phase == RunPhase.Live && tick < DeathTimeoutTicks; tick++)
                 Simulation.Tick(0.5f);
 
             // The notice waits for the Death beat; its own timing is DeathBeatPlayModeTests'.

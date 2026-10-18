@@ -36,7 +36,7 @@ namespace ToolSmiths.InventorySystem.Services
         private void OnPerformed(GameAction action)
         {
             // A space typed into a text field is the field's, not the pause key's, and an open menu's hold is not the player's to lift.
-            if (action == GameAction.TogglePause && !simulation.IsHeld && !HoldsTextFocus(EventSystem.current))
+            if (action == GameAction.TogglePause && !simulation.IsMenuFrozen && !HoldsTextFocus(EventSystem.current))
                 simulation.SetPaused(!simulation.IsPaused);
         }
 

@@ -32,7 +32,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
         [TearDown]
         public void TearDown()
         {
-            if (SimulationService.Instance.Run.Phase == RunPhase.InField)
+            if (SimulationService.Instance.Run.Phase == RunPhase.Live)
                 _ = SimulationService.Instance.Return();
 
             _ = Session.Instance.TryLoad(GameBoot.Load().DefaultHero);

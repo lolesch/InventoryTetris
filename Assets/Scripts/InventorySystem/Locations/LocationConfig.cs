@@ -32,7 +32,7 @@ namespace ToolSmiths.InventorySystem.Locations
     /// throws on bad ranges / spawn / level) and adds the authoring rules that are
     /// <c>LocationConfig</c>'s alone: a non-empty stable id and present distributions
     /// (<see cref="Validate"/>). Town is <em>not</em> a <c>LocationConfig</c> — it is the
-    /// <see cref="RunState"/>'s <c>InTown</c> phase.
+    /// <see cref="RunState"/>'s <c>None</c> phase.
     /// </summary>
     [CreateAssetMenu(fileName = "New Location", menuName = AssetMenus.Root + "Location")]
     public sealed class LocationConfig : Unlockable

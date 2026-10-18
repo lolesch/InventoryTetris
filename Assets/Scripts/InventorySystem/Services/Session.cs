@@ -63,7 +63,7 @@ namespace ToolSmiths.InventorySystem.Services
             if (data == null)
                 throw new ArgumentNullException(nameof(data));
 
-            if (IsInField)
+            if (IsLive)
                 return false;
 
             // Built whole before either is swapped, so a build that throws changes nothing.
@@ -81,7 +81,7 @@ namespace ToolSmiths.InventorySystem.Services
             if (locations == null)
                 throw new ArgumentNullException(nameof(locations));
 
-            if (IsInField)
+            if (IsLive)
             {
                 report = null;
                 return false;
@@ -94,7 +94,7 @@ namespace ToolSmiths.InventorySystem.Services
             return true;
         }
 
-        private bool IsInField => World.Run is { Phase: RunPhase.InField };
+        private bool IsLive => World.Run is { Phase: RunPhase.Live };
 
         private void Swap(Hero hero, World world)
         {
