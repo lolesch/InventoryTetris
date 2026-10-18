@@ -267,6 +267,26 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
+        public void ALockedTownStopNamedByAQuest_IsLockedUntilTheQuestCompletes_InTheSameRun()
+        {
+            var vendor = TestTownStops.Create(created, "town.vendor");
+            var merchant = NewQuest("merchant", "thornwood");
+            Unlock(merchant, vendor, whenComplete: true);
+            TestTownStops.Author(config, vendor);
+            var game = GameOver(new[] { thornwood }, merchant);
+            session.Hero.IsInvincible = true;
+            var changed = 0;
+            game.ProgressionChanged += () => changed++;
+            Assert.That(game.StateOf(vendor), Is.EqualTo(UnlockState.Locked), "a fresh hero sees the Vendor greyed out");
+
+            game.Send(thornwood);
+            TickUntilComplete(game);
+
+            Assert.That(game.StateOf(vendor), Is.EqualTo(UnlockState.Active));
+            Assert.That(changed, Is.EqualTo(1));
+        }
+
+        [Test]
         public void AQuestMadeActiveByTheObjectivesOwnComplete_StaysActive_AndCompletesOnALaterComplete()
         {
             var late = NewQuest("late", "thornwood");

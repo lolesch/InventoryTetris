@@ -44,6 +44,9 @@ namespace ToolSmiths.InventorySystem.Services
                 if (!byId.TryAdd(source.Id, source))
                     throw new InvalidOperationException($"Two Unlockables share the id '{source.Id}'. A save could not tell them apart.");
 
+                if (source is TownStop && HasTargets(source.UnlocksWhenComplete))
+                    throw new InvalidOperationException($"The Town Stop '{source.Id}' lists Unlocks-when-Complete links, but a Town Stop never Completes.");
+
                 _ = known.Add(source.Id);
 
                 if (source is Quest quest)
@@ -111,6 +114,15 @@ namespace ToolSmiths.InventorySystem.Services
 
             _ = onPath.Remove(unlockable.Id);
             _ = cleared.Add(unlockable.Id);
+        }
+
+        private static bool HasTargets(Unlockable[] targets)
+        {
+            foreach (var target in targets ?? Array.Empty<Unlockable>())
+                if (target != null)
+                    return true;
+
+            return false;
         }
 
         private static IEnumerable<Unlockable> TargetsOf(Unlockable source)

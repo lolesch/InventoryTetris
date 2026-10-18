@@ -143,5 +143,21 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             Assert.That(registry.StateOf(ashfall, hero), Is.EqualTo(UnlockState.Active));
         }
-    }
+
+        [Test]
+        public void FreeTheMerchantCompletesWithThornwood_AndOpensTheVendor()
+        {
+            var registry = new ProgressionRegistry(config.Unlockables);
+            var vendor = config.Unlockables.Single(unlockable => unlockable.Id == "town.vendor");
+            var merchant = config.Unlockables.Single(unlockable => unlockable.Id == "quest.free-the-merchant");
+            var hero = new Runtime.Character.Hero(config.DefaultHero);
+
+            Assert.That(registry.StateOf(merchant, hero), Is.EqualTo(UnlockState.Active), "a root Quest");
+            Assert.That(registry.StateOf(vendor, hero), Is.EqualTo(UnlockState.Locked), "greyed out on a fresh hero");
+
+            _ = registry.Complete("location.thornwood", hero);
+
+            Assert.That(registry.StateOf(merchant, hero), Is.EqualTo(UnlockState.Complete));
+            Assert.That(registry.StateOf(vendor, hero), Is.EqualTo(UnlockState.Active));
+        }    }
 }
