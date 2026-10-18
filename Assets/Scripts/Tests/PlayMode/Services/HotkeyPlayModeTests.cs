@@ -117,6 +117,34 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         }
 
         [UnityTest]
+        public IEnumerator AHeroLoadThatLocksTheVendor_ClosesItsOpenPanel_AndGreysTheToggle()
+        {
+            yield return OpenExample();
+
+            var vendor = GameObject.Find("VendorToggle").GetComponent<Selectable>();
+            var simulation = ServiceLocator.Get<ISimulationService>();
+            Session.Instance.Hero.IsInvincible = true;
+
+            simulation.Send(GameBoot.Load().Locations.First(location => location.Id == "location.thornwood"));
+            for (var i = 0; i < 20000 && simulation.Run.Encounter.Phase != SimulationPhase.Complete; i++)
+                simulation.Tick(0.1f);
+
+            _ = simulation.Return();
+            yield return null;
+
+            currentTime += 1.0;
+            PressAndRelease(keyboard.vKey);
+            yield return null;
+            Assert.That(Context, Is.EqualTo(InventoryContext.Vendor), "premise: the Vendor's panel is open");
+
+            Assert.That(Session.Instance.TryLoad(GameBoot.Load().DefaultHero), Is.True, "a fresh hero has opened nothing");
+            yield return null;
+
+            Assert.That(vendor.interactable, Is.False, "greyed out again");
+            Assert.That(Context, Is.EqualTo(InventoryContext.None), "its panel does not stay open behind a toggle that cannot close it");
+        }
+
+        [UnityTest]
         public IEnumerator AClickOnAToggle_ReachesItThroughTheUiModule()
         {
             yield return OpenExample();

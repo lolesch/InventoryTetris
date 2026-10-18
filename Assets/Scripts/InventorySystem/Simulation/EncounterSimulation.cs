@@ -182,7 +182,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         public int Population { get; }
 
         /// <summary>The live readout of how far the Send is from done: the current index of the Population, or the Population alone while arriving.</summary>
-        public string ProgressText => IsArriving ? $"Arriving…   {Population} Encounters" : $"Encounter {CurrentEncounter} of {Population}";
+        public string ProgressText => IsArriving ? $"Arriving…   {Population} {(Population == 1 ? "Encounter" : "Encounters")}" : $"Encounter {CurrentEncounter} of {Population}";
 
         public int EncountersCleared { get; private set; }
 

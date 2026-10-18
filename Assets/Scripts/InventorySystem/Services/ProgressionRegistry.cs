@@ -25,8 +25,6 @@ namespace ToolSmiths.InventorySystem.Services
 
         private readonly Dictionary<string, List<Link>> namedBy = new(StringComparer.Ordinal);
 
-        private readonly HashSet<string> known = new(StringComparer.Ordinal);
-
         private readonly List<Quest> quests = new();
 
         public ProgressionRegistry(IEnumerable<Unlockable> authored)
@@ -47,8 +45,6 @@ namespace ToolSmiths.InventorySystem.Services
                 if (source is TownStop && HasTargets(source.UnlocksWhenComplete))
                     throw new InvalidOperationException($"The Town Stop '{source.Id}' lists Unlocks-when-Complete links, but a Town Stop never Completes.");
 
-                _ = known.Add(source.Id);
-
                 if (source is Quest quest)
                     quests.Add(quest);
 
@@ -56,8 +52,13 @@ namespace ToolSmiths.InventorySystem.Services
                 AddLinks(source, source.UnlocksWhenComplete, whenComplete: true);
             }
 
+            // A link to an Unlockable outside the authored set would never be reached, and validation would pass it by.
+            foreach (var entry in namedBy)
+                if (!byId.ContainsKey(entry.Key))
+                    throw new InvalidOperationException($"'{entry.Value[0].Source.Id}' Unlocks '{entry.Key}', which is not in the authored set (the game config's Locations, Quests and Town Stops).");
+
             foreach (var quest in quests)
-                if (!known.Contains(quest.ObjectiveId ?? string.Empty))
+                if (!byId.ContainsKey(quest.ObjectiveId ?? string.Empty))
                     throw new InvalidOperationException($"The Quest '{quest.Id}' has the objective '{quest.ObjectiveId}', which names no authored Unlockable. It could never Complete.");
 
             RefuseUnreachable(byId);
@@ -85,8 +86,7 @@ namespace ToolSmiths.InventorySystem.Services
                     continue;
 
                 foreach (var target in TargetsOf(current))
-                    if (byId.ContainsKey(target.Id))
-                        pending.Push(target);
+                    pending.Push(target);
             }
 
             foreach (var unlockable in byId.Values)
@@ -113,8 +113,7 @@ namespace ToolSmiths.InventorySystem.Services
                 throw new InvalidOperationException($"The Unlock graph loops through '{unlockable.Id}'.");
 
             foreach (var target in TargetsOf(unlockable))
-                if (byId.ContainsKey(target.Id))
-                    Visit(target, byId, onPath, cleared);
+                Visit(target, byId, onPath, cleared);
 
             _ = onPath.Remove(unlockable.Id);
             _ = cleared.Add(unlockable.Id);
@@ -153,8 +152,6 @@ namespace ToolSmiths.InventorySystem.Services
                 links.Add(new Link(source, whenComplete));
             }
         }
-
-        public bool Knows(string id) => id != null && known.Contains(id);
 
         /// <summary>
         /// Takes every Quest's state before anything changes, so a Quest the event itself opens does not count

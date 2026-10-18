@@ -187,6 +187,28 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
+        public void Arm_HostsTheCompletionSave_AfterTheSimulationsTick_SoACompleteIsBankedTheFrameItHappened()
+        {
+            var thornwood = TestLocations.Create(testConfig, created, "thornwood");
+            TestLocations.Author(testConfig, thornwood);
+            var store = new Submodules.Utility.Persistence.InMemorySaveStore();
+            GameBoot.Arm(testConfig, store);
+            Assert.That(ServiceLocator.Get<IHeroSaveService>().LoadLastOrCreate().Entered, Is.True, "premise");
+            var simulation = ServiceLocator.Get<ISimulationService>();
+            Session.Instance.Hero.IsInvincible = true;
+            simulation.Send(thornwood);
+
+            for (var i = 0; i < 20000 && !Session.Instance.Hero.HasCompleted("thornwood"); i++)
+                GameLoop.Tick(0.1f);
+
+            Assert.That(Session.Instance.Hero.HasCompleted("thornwood"), Is.True, "premise: the Population cleared");
+
+            var next = TestGame.Create(testConfig);
+            _ = next.SavesOver(testConfig, store).Load(ServiceLocator.Get<IHeroSaveService>().ActiveHeroId);
+            Assert.That(next.Hero.HasCompleted("thornwood"), Is.True, "the file already holds the Complete");
+        }
+
+        [Test]
         public void Arm_AfterAReset_StartsFromACleanBoot_WithoutDoublingTheLoop()
         {
             GameBoot.Arm(testConfig);

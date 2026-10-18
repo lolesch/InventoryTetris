@@ -370,6 +370,8 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             for (var i = 0; i < 20000 && setup.Game.Simulation.Run.Encounter.Phase != SimulationPhase.Complete; i++)
                 setup.Game.Simulation.Tick(0.1f);
 
+            setup.Saves.FlushCompletionSave();
+
             Assert.That(setup.Game.Simulation.Run.Encounter.Phase, Is.EqualTo(SimulationPhase.Complete), "premise");
             Assert.That(setup.Game.Hero.HasCompleted("thornwood"), Is.True, "the Complete stands in memory");
             Assert.That(setup.Game.Simulation.Run.Phase, Is.EqualTo(RunPhase.InField));

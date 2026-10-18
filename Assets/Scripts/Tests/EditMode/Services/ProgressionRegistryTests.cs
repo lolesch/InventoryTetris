@@ -140,6 +140,39 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.DoesNotThrow(() => new ProgressionRegistry(new Unlockable[] { root, quest }));
         }
 
+        [TestCase(true)]
+        [TestCase(false)]
+        public void ALinkToAnUnlockableOutsideTheAuthoredSet_Throws_NamingSourceAndTarget(bool whenComplete)
+        {
+            var root = Location("root");
+            var stray = Location("stray");
+            Unlock(root, stray, whenComplete);
+
+            var exception = Assert.Throws<InvalidOperationException>(
+                () => new ProgressionRegistry(new[] { root }));
+
+            Assert.That(exception.Message, Does.Contain("root").And.Contain("stray"));
+        }
+
+        [Test]
+        public void AQuestActiveWhoseObjectiveWasCompletedBeforeItOpened_CompletesOnTheNextCompleteOfIt_NotBefore()
+        {
+            var opener = Location("opener");
+            var objective = Location("objective");
+            var quest = TestQuests.Create(created, "quest.late", "objective");
+            Unlock(opener, quest);
+            var registry = new ProgressionRegistry(new Unlockable[] { opener, objective, quest });
+            var hero = new Runtime.Character.Hero(config.DefaultHero);
+            _ = registry.Complete("objective", hero);
+
+            _ = registry.Complete("opener", hero);
+
+            Assert.That(registry.StateOf(quest, hero), Is.EqualTo(UnlockState.Active), "it counts only what the player does after it opened");
+
+            Assert.That(registry.Complete("objective", hero), Is.True, "the Complete finishes the Quest, though the Location was Complete already");
+            Assert.That(registry.StateOf(quest, hero), Is.EqualTo(UnlockState.Complete));
+        }
+
         [Test]
         public void ASelfLoop_Throws_NamingIt()
         {

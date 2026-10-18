@@ -257,5 +257,12 @@ namespace ToolSmiths.InventorySystem.Services
 
         /// <summary>Removes a normaliser. Does nothing for one that is not registered.</summary>
         void RemoveBeforeSave(System.Action normaliser);
+
+        /// <summary>
+        /// Writes the hero if a Location's Complete is waiting to be banked, even mid-Run; does nothing otherwise.
+        /// The Complete is raised inside the sim tick, which must not do file I/O, so the frame loop calls this
+        /// right after the tick.
+        /// </summary>
+        void FlushCompletionSave();
     }
 }

@@ -155,9 +155,16 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
 
         /// <summary>
         /// Greys the toggle out while the hero's state for its Town Stop is below Active. A non-interactable
-        /// toggle takes neither a click nor, through <see cref="OnAction"/>, its hotkey.
+        /// toggle takes neither a click nor, through <see cref="OnAction"/>, its hotkey. A hero load can drop the
+        /// Stop below Active under its open panel, which is then closed: the toggle could not close it any more.
         /// </summary>
-        private void SyncLock() => interactable = SimulationService.Instance.StateOf(stop) >= UnlockState.Active;
+        private void SyncLock()
+        {
+            interactable = SimulationService.Instance.StateOf(stop) >= UnlockState.Active;
+
+            if (!interactable && panel != null && ServiceLocator.IsArmed && panel.IsUpIn(InventoryService.Instance.ActiveContext))
+                _ = panel.RequestContext(false);
+        }
 
         /// <summary>
         /// Brings this toggle's pressed state back in line with the Inventory Context: on exactly

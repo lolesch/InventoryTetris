@@ -188,6 +188,23 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(session.Hero.SelectedLocation, Is.SameAs(ashfen));
         }
 
+        [Test]
+        public void CanSend_IsFalseForAClosedLocation_AndForADownHero_AndTrueOtherwise()
+        {
+            Unlock(thornwood, ashfen, whenComplete: true);
+            var game = GameOver(thornwood, ashfen);
+
+            Assert.That(game.CanSend(thornwood), Is.True, "an Active Location");
+            Assert.That(game.CanSend(ashfen), Is.False, "a Locked Location");
+
+            session.Hero.MarkCompleted("thornwood");
+            Assert.That(game.CanSend(ashfen), Is.True, "opened by the Complete");
+
+            session.Hero.GetResource(StatName.Health).DepleteCurrent();
+            Assert.That(session.Hero.IsDead, Is.True, "premise");
+            Assert.That(game.CanSend(thornwood), Is.False, "the hero is down");
+        }
+
         // ── a Location's Complete opens what it Unlocks, in the same Run ──────
 
         // An invincible hero clears the one-Encounter Population the test Locations field.

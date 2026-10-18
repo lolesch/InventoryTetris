@@ -71,10 +71,21 @@ namespace ToolSmiths.InventorySystem.Services
             simulation.ProgressionChanged += SaveCompletion;
         }
 
-        // A Complete banks at once, even mid-Run: it writes what a quit at this moment would and leaves the Run live.
-        // The one write past the in-Field refusal; a draft is still never written here.
-        private void SaveCompletion()
+        // A Complete is raised from inside the sim tick, so it only marks the save due; the host's frame hook
+        // (FlushCompletionSave) writes it right after the tick, still the frame it happened in.
+        private bool completionSaveDue;
+
+        private void SaveCompletion() => completionSaveDue = true;
+
+        public void FlushCompletionSave()
         {
+            if (!completionSaveDue)
+                return;
+
+            completionSaveDue = false;
+
+            // Banks even mid-Run: it writes what a quit at this moment would and leaves the Run live.
+            // The one write past the in-Field refusal; a draft is still never written here.
             if (!IsActiveDraft())
                 _ = WriteActive(allowInField: true);
         }
@@ -475,6 +486,9 @@ namespace ToolSmiths.InventorySystem.Services
                     dto.templateId = activeTemplateId;
 
                 _ = WriteHero(ActiveHeroId, dto);
+
+                // This write holds the Complete too, so a flush right after would only repeat it.
+                completionSaveDue = false;
                 return SaveResult.Written;
             }
             catch (Exception exception)

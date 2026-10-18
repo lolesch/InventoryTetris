@@ -82,6 +82,14 @@ namespace ToolSmiths.InventorySystem.Services
 
         public LootFlow LootFlow => session.World.LootFlow;
 
+        public bool CanSend(LocationConfig location)
+        {
+            if (location == null)
+                throw new ArgumentNullException(nameof(location));
+
+            return !session.Hero.IsDead && StateOf(location) >= UnlockState.Active;
+        }
+
         public void Send(LocationConfig location)
         {
             if (location == null)

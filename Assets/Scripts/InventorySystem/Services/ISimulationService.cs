@@ -63,6 +63,13 @@ namespace ToolSmiths.InventorySystem.Services
         void Send(LocationConfig location);
 
         /// <summary>
+        /// Whether the hero is up and <paramref name="location"/> is open to him, so <see cref="Send"/> and
+        /// <see cref="Relocate"/> will not refuse for either reason. A caller that has to tell a refusal from a
+        /// fault asks this instead of catching their <see cref="InvalidOperationException"/>.
+        /// </summary>
+        bool CanSend(LocationConfig location);
+
+        /// <summary>
         /// Move the live Run to <paramref name="location"/> without a Return. Throws unless a Run is
         /// live with its hero up, and for a Location that is not open to him. Like <see cref="Send"/>, lays the Hero's Corpse back out when the new
         /// Location is where it fell.

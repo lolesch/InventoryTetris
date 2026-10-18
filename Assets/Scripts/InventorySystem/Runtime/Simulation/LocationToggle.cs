@@ -84,12 +84,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         protected override void OnToggle()
         {
-            if (!IsOn || locked) return;
+            if (!IsOn) return;
 
             var simulation = SimulationService.Instance;
 
             // After a Death the Run's down flag is reset but the hero stays dead until Respawn, while this face still shows.
-            if (simulation.Run.HeroIsDown || Session.Instance.Hero.IsDead) return;
+            if (!simulation.CanSend(Location) || simulation.Run.HeroIsDown) return;
 
             // Switching mid-Run moves the live Run — no Return, so the Run never passes through
             // Town (which would collapse the InFields face and clear this very toggle with it).

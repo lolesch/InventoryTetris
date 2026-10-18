@@ -74,6 +74,16 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             Assert.That(sim.ProgressText, Is.EqualTo("Arriving…   4 Encounters"));
         }
 
+        [Test]
+        public void WhileArriving_APopulationOfOne_ReadsInTheSingular()
+        {
+            var sim = new EncounterSimulation(OneShotHero(), Profiles.Group(EnemyArchetype.Skirmisher, 1, population: 1),
+                new ConstantRollSource(0.5f), Behaviours.Engaging(5), new EncounterTuning { DelayFirstSpawn = true });
+
+            Assert.That(sim.IsArriving, Is.True, "setup");
+            Assert.That(sim.ProgressText, Is.EqualTo("Arriving…   1 Encounter"));
+        }
+
         // ─── the roll ────────────────────────────────────────────────────────
 
         [Test]
