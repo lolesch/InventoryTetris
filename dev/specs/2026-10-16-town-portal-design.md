@@ -46,9 +46,16 @@ the rest still Completes the Location.
 - The **Town Exit** brings up the Field map with the figure at the Field Exit. The portal stays open.
 - The **Field Exit** brings back the Town map and ends nothing.
 - A click on **any Location**, the portal's own included, is a **Relocate**. The held Encounter is
-  discarded, a fresh Population is rolled, and the portal closes. That is the cost of walking out instead
-  of taking the portal.
+  discarded and a fresh Population is rolled. The portal stays open, leading to a fresh Encounter at its
+  own Location (below). Losing the held fight is the cost of walking out instead of taking the portal.
 - A held Run ends only from the Field: by a Return or a Death after it is resumed or Relocated. Quitting also ends it (below).
+
+**A portal stays open until it is used or a new one opens** (Diablo II; resolved 2026-10-18). The portal
+is the hero's, not the Run's: it remembers its Location, and there is only ever one. A new Recall replaces
+it. A Relocate from held, a Send, a Return, a Death and a quit all leave it open. Used while the Run is held
+at its Location, it resumes that Run. Used with no held Run (after a Relocate from held, a later Run's end,
+or a relaunch), it Sends a fresh Encounter at its Location, with the figure arriving through the portal,
+not walking in. It is used from the Town map only then: the Field-map marker shows only for a held Run.
 
 **The Run's state and where the hero is are two things.** The Run is none, **live** (the simulation ticks)
 or **held**. That decides only the Run's rules: what Send, Relocate, Recall and Return may do, whether the
@@ -74,9 +81,12 @@ Send, and a resume is not a Send, so it survives a Recall and the trip back.
 
 **Quitting with a portal open.** The World is never saved, so a held Run cannot survive a quit. Quitting
 ends it the way quitting mid-Run does: what the hero picked up is kept, the rest is gone. The hero saves
-whether a portal is open. The Location it leads to is the hero's selected Location, which is already saved.
-After a relaunch the hero stands at the Waypoint with the portal up. Using it Sends a fresh Encounter at
-that Location, with the figure arriving through the portal, not walking in.
+whether a portal is open, and the portal saves with its Location: after a Relocate from held that is not
+the hero's selected Location. After a relaunch the hero stands at the Waypoint with the portal up. Using it
+Sends a fresh Encounter at that Location, with the figure arriving through the portal, not walking in.
+
+**The hero regenerates in Town while the Run is held** (resolved 2026-10-18). Only the Encounter is frozen;
+the hero is in Town and regenerates as with no Run. Only the Pause and the menus' freeze stop it.
 
 **The Portal Scroll.** A new `ConsumableType.PortalScroll`, appended as 4, which stacks. An identification
 scroll later gets its own member, not a shared Scroll type. `Arrow` is commented out of the enum, the
@@ -102,7 +112,8 @@ what it does today.
 6. As a player, `B` does nothing in Town, while my hero is down, or with no scroll in my bag.
 7. As a player, right-clicking a Portal Scroll in my bag Recalls the same as `B`.
 8. As a player, with a portal open I can walk out to the Field map and back without losing the portal.
-9. As a player, with a portal open, clicking a Location starts a fresh fight there and closes the portal.
+9. As a player, with a portal open, clicking a Location starts a fresh fight there; the portal stays open
+   and now leads to a fresh fight at its own Location.
 10. As a player, clicking the Field Exit during a live Run ends it and I walk home; the fight is gone.
 11. As a player, clearing the rest of a Location after a portal trip still Completes it.
 12. As a player, after a Location Completes I can still Recall to heal or sell, and the portal brings me
@@ -116,6 +127,8 @@ what it does today.
 18. As a new player, I start with no scrolls but enough coins to buy a few.
 19. As a player, after I press `B` my hero keeps fighting while the portal opens, and if he dies before it
     is open, the scroll is gone and it is an ordinary Death.
+20. As a player, a portal I opened stays open through later Runs until I use it or open a new one.
+21. As a player, my hero regenerates in Town while my Run waits.
 
 ## Implementation Decisions
 
@@ -131,7 +144,7 @@ what it does today.
   The resume calls `Run.Resume()` first, then `SyncToggle(true)` on that toggle, so the arena anchor (the
   group's active member) and the highlight follow while the `OnToggle` this fires finds nothing to do. A
   Location click while the Run is held is still a Relocate, because the guard covers only a live Run. A
-  click on the selected Location already stops in `AbstractToggle.Apply`. A portal used after a relaunch
+  click on the selected Location already stops in `AbstractToggle.Apply`. A portal used with no held Run
   (no Run) falls through to `Send`, so it needs no path of its own. A selection that mirrors the Run's
   Location instead of commanding it would fit ADR-0013 better, but it also moves `EnemyArena`'s anchor,
   `CorpseMarker` and the group's reset, so it is not part of this.
@@ -142,8 +155,12 @@ what it does today.
   appears, which opens the Hero Panel with it. It changes to also show on `None` while the Field map is up.
   Then the face requests nothing, the Hero Panel stays closed until asked for, and closing it brings the
   Combat Panel back. Its ground tab reads the Run's ground only while the Run is live.
-- The Hero save gains a `townPortalOpen` flag; `HeroMapper` round-trips it. Loading with the flag set and
-  no Run shows the portal at the Waypoint. Using it Sends.
+- The Hero owns the open portal as its Location (none when closed). The Hero save gains a
+  `townPortalLocationId` (empty when closed); `HeroMapper` round-trips it, and an id the Location registry
+  no longer knows loads as no portal. Loading with a portal and no Run shows it at the Waypoint. Using it
+  Sends to its Location.
+- `SimulationService.Tick` regenerates the hero while the Run is held; only the Pause and the menus' freeze
+  skip it.
 - The portal's Field-map marker sits where the hero stood when he Recalled, projected around that
   Location's anchor, as the `CorpseMarker` is.
 - `ConsumableType`, the Location loot tables, `Consumable Type Distribution.asset` and the Healer's Restock
@@ -155,19 +172,13 @@ what it does today.
   Complete phase and its resume into the emptied Location are tested by whichever of the Recall ticket and
   #331 (the Population and the Complete phase) lands second.
 
-## Open questions (for the user to triage)
+## Resolved questions (2026-10-18, ticketing)
 
-Which events close a Town Portal, beyond being used and a Location click while held:
-
-- A Send from the Field Exit after a relaunch, while a saved portal is still open.
-- A Return or a Death in a later Run, while a portal from an earlier one is still open.
-- Carrying open portals across Runs on purpose: several saved portal links instead of one.
-
-And:
-
-- Does the hero regenerate in Town while the Run is held? Today a frozen Run stops regeneration too. The
-  Healer refills anyway, and a new hero has no base regeneration (Run-risk spec), so this only matters for
-  a hero with regeneration on gear who skips the Healer.
+- Which events close a Town Portal: only using it or opening a new one (Diablo II). One portal, never
+  several; it outlives Relocates, Sends, Returns, Deaths and quits (Decisions above).
+- The hero regenerates in Town while the Run is held (Decisions above).
+- The held Location's ground and the Town ground are one `World.Ground` today, wiped by every Send and Run
+  end. Keeping them apart waits on "Loot in the Arena" (#307), which settles where loot lies.
 
 ## Out of scope
 
