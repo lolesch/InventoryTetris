@@ -14,8 +14,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     ///
     /// <para>It grows when it opens, and the hero waits for it before he walks in. Once the Run is held a click on it
     /// takes the hero to Town: he walks into the portal and vanishes, as a Recall does, and the portal stays open. Only
-    /// the Town Portal resumes the Run, and the hero steps out of a portal that opens where he arrives, grows, and
-    /// closes once he is out. While the portal is still growing, or the hero is already on his way in, it is not a
+    /// the Town Portal resumes the Run, and the hero comes out of a portal that opens beside him the same way: it grows,
+    /// he grows on top of it and walks to the fight, and it closes once he is clear. While the portal is still growing, or the hero is already on his way in, it is not a
     /// click target, so it swallows no click.</para>
     /// </summary>
     [RequireComponent(typeof(Image))]
@@ -48,9 +48,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             if (open && !_open)
             {
-                // Out of Town he steps out of it where he stands; a Recall opens it beside him.
-                var centre = ArenaLayout.CorpseOffset(run.Encounter.HeroPosition, run.Encounter.Arena.Origin, arena.Projection);
-                _offset = arriving ? centre : centre + beside;
+                // Beside the hero, for a Recall to walk him into and for him to step out of and walk away from.
+                _offset = ArenaLayout.CorpseOffset(run.Encounter.HeroPosition, run.Encounter.Arena.Origin, arena.Projection) + beside;
                 Grow(arriving ? ArrivalDelay : 0f);
             }
             else if (!open)

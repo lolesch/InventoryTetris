@@ -68,6 +68,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private float _visible = 1f;
         private bool _inPortal;
         private bool _emerging;
+        private bool _steppingOut;
         private float _emergeFor;
         private FieldPortalMarker _portalMarker;
 
@@ -89,7 +90,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// <summary>Whether he is on his way into the portal, walking to it or vanishing in it.</summary>
         public bool IsEnteringPortal => _mode == Mode.Entering;
 
-        /// <summary>Whether he has come through a portal and is growing back to his size, once the portal beside him is open.</summary>
+        /// <summary>Whether he has come through a portal and is not yet clear of it: waiting for it to open, growing on top of it, or walking to the fight.</summary>
         public bool IsEmerging => _emerging;
 
         /// <summary>Raised once when he has gone into the portal: the map changes now.</summary>
@@ -151,7 +152,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _inPortal &= _phase == RunPhase.Held;
 
             // A Run that ended or was held again leaves him nothing to come out of.
-            if (_emerging && _phase != RunPhase.Live)
+            if (_emerging && (_phase != RunPhase.Live || _mode != Mode.Following))
                 _emerging = false;
 
             // A Run that is not held any more (a Relocate while he walks to the portal) leaves him nothing to walk into.
@@ -204,6 +205,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             switch (_mode)
             {
                 case Mode.Walking: Walk(); break;
+                case Mode.Following when _emerging && _bound != null: StepOut(); break;
                 case Mode.Following: Follow(); break;
                 case Mode.Entering: Enter(); break;
                 case Mode.Fallen: break;
@@ -213,11 +215,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             // When the Death beat ends the fallen figure is gone: the Corpse marker is what lies there now.
             var gone = _mode == Mode.Fallen && !SimulationService.Instance.DeathBeatPlaying;
 
-            // Shrunk and faded together while he vanishes into the portal and grown back as he steps out of one;
-            // whole again once he is neither.
-            if (_emerging)
-                Emerge();
-            else if (_mode != Mode.Entering && !_inPortal)
+            // Shrunk and faded together while he vanishes into the portal and grown back as he steps out of one
+            // (StepOut drives that); whole again once he is neither.
+            if (!_emerging && _mode != Mode.Entering && !_inPortal)
                 _visible = 1f;
 
             transform.localScale = Vector3.one * _visible;
@@ -349,25 +349,68 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             }
         }
 
-        // He is gone from the Run's map until the portal he steps out of has grown; then he grows back from nothing.
+        // Going in reversed: he is gone until the portal beside the fight has grown, grows from nothing on top of it, and
+        // walks the few steps to where the fight has him.
         private void BeginEmerging()
         {
             _emerging = true;
             _emergeFor = 0f;
             _visible = 0f;
+            _steppingOut = false;
         }
 
-        private void Emerge()
+        private void StepOut()
         {
-            if (PortalIsGrowing)
+            var at = _bound.HeroPosition;
+            if (!Projection.TryGetNumberOrigin(at, out var fight))
+                return;
+
+            if (portal == null)
             {
-                _visible = 0f;
+                // Nothing to come out of: he grows where the fight has him.
+                Follow();
+                GrowOut();
                 return;
             }
 
+            if (!_steppingOut)
+            {
+                if (PortalIsGrowing)
+                {
+                    _visible = 0f;
+                    return;
+                }
+
+                var from = LocalCentre(portal);
+                Figure.Place(from, ArenaOf(from), ArenaLayout.FacingSign(from.x, fight.x, Figure.FacingSign, WalkFacingDeadZone));
+                SortAmongSiblings();
+                GrowOut();
+
+                if (_emergeFor >= vanishSeconds)
+                {
+                    _steppingOut = true;
+                    _travel.Place(new Coordinate(from));
+                }
+
+                return;
+            }
+
+            _visible = 1f;
+            _travel.Retarget(new Coordinate(fight));
+            var arrived = _travel.Advance(ArenaSpace.HeroCanvasSpeed, SimulationService.Instance.WalkDelta(Time.deltaTime));
+
+            var here = new Vector2(_travel.Position.x, _travel.Position.z);
+            Figure.Place(here, ArenaOf(here), ArenaLayout.FacingSign(here.x, fight.x, Figure.FacingSign, WalkFacingDeadZone));
+            SortAmongSiblings();
+            _emerging = !arrived;
+        }
+
+        // Grows from nothing over the vanish's beat, the reverse of going in.
+        private void GrowOut()
+        {
             _emergeFor += Time.deltaTime;
             _visible = 1f - PortalVanish.Remaining(_emergeFor, vanishSeconds);
-            _emerging = _emergeFor < vanishSeconds;
+            _emerging = _emergeFor < vanishSeconds || portal != null;
         }
 
         private void Enter()

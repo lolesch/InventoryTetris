@@ -151,6 +151,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             }
         }
 
+        // Gone until the portal has grown; then he grows on top of it and walks the few steps to where he stands.
         private void Emerge()
         {
             if (PortalIsGrowing)
@@ -159,9 +160,22 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 return;
             }
 
+            if (_portalMarker)
+            {
+                var at = Local((RectTransform)_portalMarker.transform);
+                _travel = new HeroTravel(at);
+                Show(at);
+            }
+
             _emergeFor += Time.deltaTime;
             Look(1f - PortalVanish.Remaining(_emergeFor, vanishSeconds));
-            _emerging = _emergeFor < vanishSeconds;
+
+            if (_emergeFor < vanishSeconds)
+                return;
+
+            _emerging = false;
+            if (StandPoint != null)
+                TravelTo(StandPoint);
         }
 
         // The Town map came up over a held Run without a portal: he came back by the Field Exit and stands at the Town
@@ -206,7 +220,13 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private void Update()
         {
             if (_emerging)
+            {
                 Emerge();
+
+                // Standing at the portal, not at the point he walks to next.
+                if (_emerging)
+                    return;
+            }
 
             if (_vanishing)
             {

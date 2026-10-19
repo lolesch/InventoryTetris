@@ -29,9 +29,11 @@ ADR-0022 where they disagree; the older text yields.
   a hero only walks into it, or out of it, once it is open. It is not a click target while it grows.
 - On the Field map the portal grows as the Recall opens; the hero then walks in, vanishes, waits, and the map changes.
 - On arrival the map is still fading in, so the portal waits a beat (0.3 s) before it grows, and the hero is not
-  there until it has. He then grows from nothing over the vanish's 0.5 s, the reverse of going in. This holds in both
-  directions: the Town Portal on the Town map after a Recall, and a portal on the Field map (opened where he arrives,
-  closed once he is out) after the Town Portal resumes the Run or Sends one.
+  there until it has. Coming out is exactly going in reversed: going in he starts beside the portal, walks onto it and
+  scales down; coming out he scales up on top of the portal (0.5 s) and walks the few steps to the side, to the Town
+  Waypoint or to where the fight has him. This holds in both directions: the Town Portal on the Town map after a
+  Recall, and a portal on the Field map (opened beside the hero, closed once he is clear of it) after the Town
+  Portal resumes the Run or Sends one.
 
 ## The Town hero comes back where the Town map is entered
 

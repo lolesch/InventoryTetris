@@ -204,6 +204,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             yield return HeldAndWalkedOutToTheField();
             ClickTheFieldMarker();
             yield return Until(() => Flag(TownFace(), "IsExtended"), "premise: the hero is in Town");
+            yield return Until(() => Flag(Named("TownPortalMarker").Single(), "IsOpen"), "premise: the Town Portal has grown");
 
             ClickThePortal();
             yield return Until(() => Simulation.Run.Phase == RunPhase.Live, "the Town Portal resumes the Run");
@@ -303,9 +304,12 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
 
             yield return Until(() => group.alpha > 0f, "he starts to grow out of the portal");
             Assert.That(Flag(marker, "IsOpen"), Is.True, "only once it is open");
+            var hero = Named("TownHeroFigure").Single();
+            Assert.That(Vector3.Distance(hero.transform.position, marker.transform.position), Is.LessThan(10f), "on top of it");
 
-            yield return Until(() => group.alpha >= 1f, "and he is whole again");
-            Assert.That(Named("TownHeroFigure").Single().transform.localScale.y, Is.EqualTo(1f).Within(1e-3f));
+            yield return Until(() => group.alpha >= 1f && !Flag(hero, "IsWalking"), "he is whole again and has walked off");
+            Assert.That(hero.transform.localScale.y, Is.EqualTo(1f).Within(1e-3f));
+            Assert.That(Vector3.Distance(hero.transform.position, marker.transform.position), Is.GreaterThan(10f), "to the side of the portal");
         }
 
         [UnityTest]
@@ -319,12 +323,17 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             yield return Until(() => Flag(figure, "IsEmerging"), "he comes out of the portal on the Field map");
 
             Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.Live), "the Run is live again");
-            yield return Until(() => marker.GetComponent<UnityEngine.UI.Image>().enabled, "a portal opens where he comes out");
+            yield return Until(() => marker.GetComponent<UnityEngine.UI.Image>().enabled, "a portal opens beside him");
             Assert.That(marker.transform.localScale.x, Is.LessThan(1f), "growing");
 
-            yield return Until(() => !Flag(figure, "IsEmerging"), "he is whole again");
+            yield return Until(() => figure.transform.localScale.x > 0f, "he grows from nothing");
+            Assert.That(Flag(marker, "IsOpen"), Is.True, "once it is open");
+            Assert.That(Vector3.Distance(figure.transform.position, marker.transform.position), Is.LessThan(10f), "on top of it");
+
+            yield return Until(() => !Flag(figure, "IsEmerging"), "he has walked clear of it");
             yield return null;
             Assert.That(figure.transform.localScale.x, Is.EqualTo(1f).Within(1e-3f));
+            Assert.That(Vector3.Distance(figure.transform.position, marker.transform.position), Is.GreaterThan(10f), "to the side");
             Assert.That(marker.GetComponent<UnityEngine.UI.Image>().enabled, Is.False, "and the portal closes behind him");
         }
 

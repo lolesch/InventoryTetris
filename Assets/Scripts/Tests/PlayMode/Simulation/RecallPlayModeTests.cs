@@ -158,6 +158,9 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
 
             var figure = Named("TownHeroFigure").Single();
             var waypoint = Member<RectTransform>(figure, "waypoint");
+
+            // He comes out on top of the portal and walks off it to the Waypoint.
+            yield return Until(() => figure.GetComponent<CanvasGroup>().alpha >= 1f && !Flag(figure, "IsWalking"), "he has stepped out and walked off");
             Assert.That(Vector3.Distance(figure.transform.position, waypoint.TransformPoint(waypoint.rect.center)), Is.LessThan(1f),
                 "the figure stands at the Waypoint");
         }
