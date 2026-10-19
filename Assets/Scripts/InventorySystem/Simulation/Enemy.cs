@@ -141,6 +141,7 @@ namespace ToolSmiths.InventorySystem.Simulation
             return before - HealthResource.CurrentValue;
         }
 
-        public void Regenerate(float deltaSeconds) { /* enemies do not regenerate */ }
+        // Enemies never regenerate: a hurt enemy stays hurt, so the hero's damage is what ends a fight.
+        public void Regenerate(float deltaSeconds) { }
     }
 }
