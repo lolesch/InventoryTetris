@@ -35,6 +35,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         private void Update()
         {
+            // Selectable is [ExecuteAlways]: no services exist outside Play Mode.
+            if (!Application.isPlaying)
+                return;
+
             var open = Session.Instance.Hero.TownPortal != null;
             if (!open)
                 _using = false;

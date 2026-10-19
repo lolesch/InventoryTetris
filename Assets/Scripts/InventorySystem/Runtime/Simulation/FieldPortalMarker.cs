@@ -35,6 +35,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         // The Run is polled, since a hero load replaces it and a Recall's opening raises no event of its own.
         private void Update()
         {
+            // Selectable is [ExecuteAlways]: no services exist outside Play Mode.
+            if (!Application.isPlaying)
+                return;
+
             var run = SimulationService.Instance.Run;
             var open = run.IsRecalling || run.Phase == RunPhase.Held;
 
