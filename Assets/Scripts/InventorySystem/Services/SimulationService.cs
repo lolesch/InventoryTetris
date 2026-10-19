@@ -161,6 +161,21 @@ namespace ToolSmiths.InventorySystem.Services
             transaction.Commit();
         }
 
+        public int PortalScrollCount
+        {
+            get
+            {
+                var count = 0;
+                foreach (var entry in session.Hero.Inventory.StoredPackages)
+                {
+                    if (items.Catalog.Definition(entry.Value.Item.DefinitionId).ConsumableType == ConsumableType.PortalScroll)
+                        count += (int)entry.Value.Amount;
+                }
+
+                return count;
+            }
+        }
+
         public void Resume()
         {
             Run.Resume();

@@ -108,10 +108,21 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             #region USE ITEM
             if (eventData.button == PointerEventData.InputButton.Right)
             {
-                var category = ItemService.Instance.View(package.Item).Definition.Category;
+                var definition = ItemService.Instance.View(package.Item).Definition;
+                var category = definition.Category;
 
                 if (category == ItemCategory.Consumable)
                 {
+                    /// A Portal Scroll is the Recall's to spend (ADR-0022), never this click's: a Recall the
+                    /// service refuses, or a scroll lying in the Stash, leaves it where it is.
+                    if (definition.ConsumableType == ConsumableType.PortalScroll)
+                    {
+                        if (Container == Session.Instance.Hero.Inventory && SimulationService.Instance.CanRecall)
+                            SimulationService.Instance.Recall();
+
+                        return;
+                    }
+
                     Debug.Log($"Consuming {ItemService.Instance.View(package.Item).DisplayName}");
 
                     _ = Container.RemoveAtPosition(position, new Package(Container, package.Item, 1)); // only consume one amount

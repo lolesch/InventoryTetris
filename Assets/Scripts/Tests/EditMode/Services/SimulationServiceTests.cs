@@ -1863,6 +1863,145 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(held.Enemies, Is.Empty, "the Location is still cleared");
         }
 
+        // ── the Recall input: the key and the button's count ─────────────────
+
+        [Test]
+        public void PortalScrollCount_SumsTheInventorysStacks_AndLeavesTheStashOut()
+        {
+            Assert.That(service.PortalScrollCount, Is.Zero);
+
+            GiveScrolls(session.Hero.Inventory, 2u);
+            GiveScrolls(session.Hero.Stash, 5u);
+            Assert.That(service.PortalScrollCount, Is.EqualTo(2));
+
+            GiveScrolls(session.Hero.Inventory, 1u);
+            Assert.That(service.PortalScrollCount, Is.EqualTo(ScrollsIn(session.Hero.Inventory)));
+            Assert.That(service.PortalScrollCount, Is.EqualTo(3));
+        }
+
+        [Test]
+        public void PortalScrollCount_FallsByOne_ForARecall()
+        {
+            session.Hero.IsInvincible = true;
+            GiveScrolls(session.Hero.Inventory, 3u);
+            service.Send(thornwood);
+
+            service.Recall();
+
+            Assert.That(service.PortalScrollCount, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void TheRecallKey_RecallsOnce_AndSpendsOneScroll()
+        {
+            session.Hero.IsInvincible = true;
+            var input = new FakeInput();
+            _ = new RecallHotkey(service, input);
+            GiveScrolls(session.Hero.Inventory, 3u);
+            service.Send(thornwood);
+
+            input.Press(GameAction.Recall);
+            input.Press(GameAction.Recall);
+
+            Assert.That(service.Run.IsRecalling, Is.True);
+            Assert.That(ScrollsIn(session.Hero.Inventory), Is.EqualTo(2), "the second press found the portal opening");
+        }
+
+        [Test]
+        public void TheRecallKey_DoesNothingInTown_WithNoScroll_WhileTheHeroIsDown_AndOnAnotherAction()
+        {
+            var input = new FakeInput();
+            _ = new RecallHotkey(service, input);
+            GiveScrolls(session.Hero.Inventory, 2u);
+
+            input.Press(GameAction.Recall);
+            Assert.That(ScrollsIn(session.Hero.Inventory), Is.EqualTo(2), "Town has no Run to Recall");
+
+            service.Send(thornwood);
+            input.Press(GameAction.ShowDetails);
+            Assert.That(service.Run.IsRecalling, Is.False, "another action");
+
+            session.Hero.GetResource(StatName.Health).DepleteCurrent();
+            input.Press(GameAction.Recall);
+            Assert.That(ScrollsIn(session.Hero.Inventory), Is.EqualTo(2), "the hero is down");
+        }
+
+        [Test]
+        public void TheRecallKey_DoesNothingWithNoScrollInTheInventory()
+        {
+            var input = new FakeInput();
+            _ = new RecallHotkey(service, input);
+            GiveScrolls(session.Hero.Stash, 2u);
+            service.Send(thornwood);
+
+            Assert.That(() => input.Press(GameAction.Recall), Throws.Nothing);
+
+            Assert.That(service.Run.IsRecalling, Is.False);
+            Assert.That(ScrollsIn(session.Hero.Stash), Is.EqualTo(2));
+        }
+
+        [Test]
+        public void TheRecallKey_DoesNothingThroughTheDeathBeat()
+        {
+            var input = new FakeInput();
+            _ = new RecallHotkey(service, input);
+            service.Send(thornwood);
+            session.Hero.GetResource(StatName.Health).DepleteCurrent();
+            TickUntilHome();
+            GiveScrolls(session.Hero.Inventory, 1u);
+            Assert.That(service.DeathBeatPlaying, Is.True, "premise");
+
+            input.Press(GameAction.Recall);
+
+            Assert.That(ScrollsIn(session.Hero.Inventory), Is.EqualTo(1));
+        }
+
+        [Test]
+        public void TheRecallKey_DoesNothingWhileAMenuHoldsTheRun()
+        {
+            session.Hero.IsInvincible = true;
+            var input = new FakeInput();
+            _ = new RecallHotkey(service, input);
+            GiveScrolls(session.Hero.Inventory, 1u);
+            service.Send(thornwood);
+            service.SetMenuFreeze(true);
+
+            input.Press(GameAction.Recall);
+            Assert.That(ScrollsIn(session.Hero.Inventory), Is.EqualTo(1), "the menu's hold is not the player's to spend a scroll under");
+
+            service.SetMenuFreeze(false);
+            input.Press(GameAction.Recall);
+            Assert.That(service.Run.IsRecalling, Is.True, "the key works again once the menu is closed");
+        }
+
+        [Test]
+        public void TheRecallKey_IsLeftToATextFieldThatHasFocus()
+        {
+            session.Hero.IsInvincible = true;
+            var events = new GameObject("events").AddComponent<UnityEngine.EventSystems.EventSystem>();
+            SwitchEventSystem(events, "OnEnable");
+            var field = new GameObject("field", typeof(TextFieldStub));
+
+            try
+            {
+                var input = new FakeInput();
+                _ = new RecallHotkey(service, input);
+                GiveScrolls(session.Hero.Inventory, 1u);
+                service.Send(thornwood);
+
+                events.SetSelectedGameObject(field);
+                input.Press(GameAction.Recall);
+
+                Assert.That(service.Run.IsRecalling, Is.False, "the b went to the field");
+            }
+            finally
+            {
+                SwitchEventSystem(events, "OnDisable");
+                UnityEngine.Object.DestroyImmediate(events.gameObject);
+                UnityEngine.Object.DestroyImmediate(field);
+            }
+        }
+
         // ── reaching it ──────────────────────────────────────────────────────
 
         [Test]
