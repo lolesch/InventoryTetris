@@ -144,6 +144,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         // After the Run: the toggle follows it, so its OnToggle finds the Run already live here and commands nothing.
         private static void SyncToggle(LocationConfig location)
         {
+            // A cleared Location's toggle stays off, as it let go on the clear: he arrives and the player chooses what comes
+            // next. Turning it on would send him to the Location again.
+            if (SimulationService.Instance.Run.Encounter is { Phase: SimulationPhase.Complete })
+                return;
+
             foreach (var toggle in FindObjectsByType<LocationToggle>(FindObjectsInactive.Include))
                 if (toggle.Location == location)
                     toggle.SyncToggle(true);

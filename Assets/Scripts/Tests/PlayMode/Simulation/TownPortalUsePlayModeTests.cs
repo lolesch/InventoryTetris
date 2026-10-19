@@ -420,6 +420,31 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
         }
 
         [UnityTest]
+        public IEnumerator AClearedLocation_RecalledFromAndReturnedTo_ArrivesWithItsToggleOff_AndSendsNowhere()
+        {
+            yield return FightingBeforeTheRecall();
+            Session.Instance.Hero.IsInvincible = true;
+            var cleared = Simulation.Run.Encounter;
+            for (var tick = 0; cleared.Phase != SimulationPhase.Complete && tick < 20000; tick++)
+                Simulation.Tick(0.5f);
+
+            Assume.That(cleared.Phase, Is.EqualTo(SimulationPhase.Complete), "premise: the Location is cleared");
+
+            Simulation.Recall();
+            Simulation.Tick(1f);
+            yield return Until(() => Flag(TownFace(), "IsExtended"), "premise: the Town map is up");
+            yield return Until(() => Flag(Named("TownPortalMarker").Single(), "IsOpen"), "premise: the Town Portal has grown");
+
+            ClickThePortal();
+            yield return Until(() => Simulation.Run.Phase == RunPhase.Live, "the Run resumes");
+            yield return Until(() => !Flag(Named("HeroFigure").Single(), "IsEmerging"), "he has arrived");
+            yield return null;
+
+            Assert.That(Simulation.Run.Encounter, Is.SameAs(cleared), "no new Encounter: he is not sent again");
+            Assert.That(Flag(ToggleOf(_thornwood), "IsOn"), Is.False, "the cleared Location's toggle stays off");
+        }
+
+        [UnityTest]
         public IEnumerator AfterARelocateFromHeld_TheFieldMarkerIsGone_ThoughThePortalStaysOpen()
         {
             Session.Instance.Hero.MarkCompleted(_thornwood.Id);
