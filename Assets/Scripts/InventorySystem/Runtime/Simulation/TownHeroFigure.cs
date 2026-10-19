@@ -11,13 +11,17 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// pace through the arena's canvas scale, so a walk and a fight move alike; nothing waits for it to arrive and
     /// Pause does not stop it. A Recall that holds the Run stands it at the Waypoint, beside the Town Portal.
     /// </summary>
-    [DisallowMultipleComponent]
+    [DisallowMultipleComponent, RequireComponent(typeof(CanvasGroup))]
     public sealed class TownHeroFigure : MonoBehaviour, ITownHeroFigure
     {
         [SerializeField, Tooltip("Where the figure stands when it has not walked in: entering the game, a hero load, a Respawn. Empty: the Town Exit.")]
         private RectTransform waypoint;
         [SerializeField, Tooltip("The arena whose canvas scale turns the hero's walking speed (arena units) into canvas units.")]
         private EnemyArena arena;
+        [SerializeField, Tooltip("The Field map's Hero figure: when it goes into a portal, this one comes out beside the Town Portal.")]
+        private HeroFigure fieldFigure;
+        [SerializeField, Min(0f), Tooltip("Seconds the figure takes to shrink and fade once it has walked into the portal, before the map changes.")]
+        private float vanishSeconds = 0.5f;
 
         // Standing at the origin until the first Place, so a walk query or TravelTo before OnEnable is safe.
         private IHeroTravel _travel = new HeroTravel(default);
@@ -30,7 +34,20 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private TownStand _stand = TownStand.Waypoint;
         private RectTransform _rect;
         private RectTransform _map;
-        private RunPhase _phase;
+        private CanvasGroup _group;
+        private RunPhasePanel _face;
+
+        // Going into a portal: walking to it, then vanishing; the command waits until he is gone.
+        private System.Action _onGone;
+        private bool _vanishing;
+        private float _vanishFor;
+        private float _look = 1f;
+        private float _facing = 1f;
+
+        // A portal brought him in beside the Town Portal; any other way onto the Town map with a held Run is a walk back.
+        private bool _arrivedByPortal;
+
+        private CanvasGroup Group => _group ? _group : _group = GetComponent<CanvasGroup>();
 
         // The rect the figure sits under: positions and the walk are in its local space (canvas units).
         private RectTransform Map => _map ? _map : _map = (RectTransform)transform.parent;
@@ -54,11 +71,25 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 SimulationService.Instance.Respawned += OnRespawned;
             }
 
+            if (fieldFigure)
+                fieldFigure.PortalEntered += OnPortalEntered;
+
+            _face = GetComponentInParent<RunPhasePanel>();
+            if (_face)
+                _face.Appearing += OnTownMapAppearing;
+
             Enter(TownEntry.Play);
         }
 
         private void OnDisable()
         {
+            if (fieldFigure)
+                fieldFigure.PortalEntered -= OnPortalEntered;
+
+            if (_face)
+                _face.Appearing -= OnTownMapAppearing;
+
+            _face = null;
             Session.UnsubscribeHeroLoaded(OnHeroLoaded);
             if (ServiceLocator.IsArmed)
             {
@@ -89,12 +120,40 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// </summary>
         public void SetExit(RectTransform exit) => _exit = exit;
 
+        // The Field figure went into a portal: he comes out beside the Town Portal.
+        private void OnPortalEntered()
+        {
+            _arrivedByPortal = true;
+            Enter(TownEntry.Recall);
+        }
+
+        // The Town map came up over a held Run without a portal: he came back by the Field Exit and stands at the Town
+        // Exit, not where he left off.
+        private void OnTownMapAppearing()
+        {
+            if (!_arrivedByPortal && SimulationService.Instance.Run.Phase == RunPhase.Held)
+                Enter(TownEntry.Return);
+
+            _arrivedByPortal = false;
+        }
+
         private void Enter(TownEntry entry)
         {
             _stand = TownStartPoint.For(entry);
             _standAt = null;
             _target = null;
+            _onGone = null;
+            _vanishing = false;
+            Look(1f);
             Settle(force: true);
+        }
+
+        // Scale and opacity together; his facing is kept.
+        private void Look(float factor)
+        {
+            _look = factor;
+            Rect.localScale = new Vector3(_facing * factor, factor, 1f);
+            Group.alpha = factor;
         }
 
         // Stands at <paramref name="point"/> from now on: the Exit as the Exit stance, any other point as itself.
@@ -108,12 +167,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         private void Update()
         {
-            // The Run's phase is polled, since a hero load replaces the Run: a hold is the only edge this reads.
-            var phase = SimulationService.Instance.Run.Phase;
-            if (phase == RunPhase.Held && _phase != RunPhase.Held)
-                Enter(TownEntry.Recall);
-
-            _phase = phase;
+            if (_vanishing)
+            {
+                Vanish();
+                return;
+            }
 
             if (!_travel.IsWalking)
             {
@@ -125,8 +183,38 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             var arrived = _travel.Advance(ArenaSpace.HeroCanvasSpeed, SimulationService.Instance.WalkDelta(Time.deltaTime));
             Show(from);
 
-            if (arrived)
-                StandAtPoint(_target);
+            if (!arrived)
+                return;
+
+            StandAtPoint(_target);
+            _vanishing = _onGone != null;
+        }
+
+        private void Vanish()
+        {
+            _vanishFor += Time.deltaTime;
+            var left = PortalVanish.Remaining(_vanishFor, vanishSeconds);
+            Look(left);
+
+            if (left > 0f)
+                return;
+
+            // Gone: he stays gone until the next way into Town puts him back.
+            _vanishing = false;
+            var onGone = _onGone;
+            _onGone = null;
+            onGone();
+        }
+
+        /// <inheritdoc/>
+        public void WalkIntoPortal(RectTransform portal, System.Action onGone)
+        {
+            TravelTo(portal);
+            _onGone = onGone;
+            _vanishFor = 0f;
+
+            // Already at the portal: nothing walks, so he starts to vanish at once.
+            _vanishing = !_travel.IsWalking;
         }
 
         // A standing figure keeps to its point, re-read every frame: the canvas has not laid its rects out when the
@@ -158,6 +246,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// <inheritdoc/>
         public void TravelTo(RectTransform point)
         {
+            // A walk to anywhere else turns him from a portal he was heading for.
+            _onGone = null;
             _target = point;
             _standAt = null;
             _travel.Retarget(Local(point));
@@ -182,7 +272,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             var dx = at.x - from.x;
             if (Mathf.Abs(dx) > 1e-4f)
-                Rect.localScale = new Vector3(Mathf.Sign(dx), 1f, 1f);
+            {
+                _facing = Mathf.Sign(dx);
+                Look(_look);
+            }
         }
     }
 }

@@ -1716,23 +1716,6 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
-        public void RunAllowsRecall_IsTheRunsHalfOfCanRecall_WithoutLookingInTheBag()
-        {
-            session.Hero.IsInvincible = true;
-            Assert.That(service.RunAllowsRecall, Is.False, "no Run");
-
-            service.Send(thornwood);
-            Assert.That(service.RunAllowsRecall, Is.True, "a live Run allows it, scroll or none");
-            Assert.That(service.CanRecall, Is.False, "but the bag has none");
-
-            GiveScrolls(session.Hero.Inventory, 1u);
-            Assert.That(service.CanRecall, Is.True);
-
-            service.Recall();
-            Assert.That(service.RunAllowsRecall, Is.False, "the portal opens");
-        }
-
-        [Test]
         public void RecallGate_RefusesUnderAMenuFreeze_AndOtherwiseAsksCanRecall()
         {
             session.Hero.IsInvincible = true;

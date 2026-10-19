@@ -83,13 +83,6 @@ namespace ToolSmiths.InventorySystem.Services
         bool CanRecall { get; }
 
         /// <summary>
-        /// The Run's half of <see cref="CanRecall"/>, without the scan of the Inventory: a Run is live with its hero
-        /// up and no portal opening. A view that already counts the scrolls (<see cref="PortalScrollCount"/>) asks
-        /// this and the count rather than <see cref="CanRecall"/>, which would count them again.
-        /// </summary>
-        bool RunAllowsRecall { get; }
-
-        /// <summary>
         /// Open a Town Portal on the live Run (ADR-0022): takes one Portal Scroll from the hero's Inventory and
         /// starts the Run's opening, after which the Run is <see cref="RunPhase.Held"/> and the
         /// Hero's <c>TownPortal</c> is the Run's Location. Throws when <see cref="CanRecall"/> is false;

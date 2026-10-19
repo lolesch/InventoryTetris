@@ -260,28 +260,28 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             Assert.That(InventoryContextState.IsReachable(context, onFieldMap: false), Is.True);
         }
 
-        // ── The Combat Panel ─────────────────────────────────────────────
+        // ── The Ground Items panel ───────────────────────────────────────
 
-        [TestCase(InventoryContext.None, true)]
-        [TestCase(InventoryContext.Ground, true)]
+        [TestCase(InventoryContext.None, false)]
         [TestCase(InventoryContext.Hero, false)]
-        [TestCase(InventoryContext.Stash, false)]
-        [TestCase(InventoryContext.Vendor, false)]
-        [TestCase(InventoryContext.Healer, false)]
-        public void CombatPanelIsUp_OnNoneAndGround(InventoryContext context, bool expected)
+        [TestCase(InventoryContext.Ground, false)]
+        [TestCase(InventoryContext.Stash, true)]
+        [TestCase(InventoryContext.Vendor, true)]
+        [TestCase(InventoryContext.Healer, true)]
+        public void TownStopOpen_IsTrueForTheThreeTownStopsOnly(InventoryContext context, bool expected)
         {
-            Assert.That(InventoryContextState.CombatPanelUpIn(context), Is.EqualTo(expected));
+            Assert.That(InventoryContextState.TownStopOpen(context), Is.EqualTo(expected));
         }
 
         [Test]
-        public void CombatPanel_ClosingTheHeroPanel_BringsItBack()
+        public void ClosingATownStop_LeavesNoTownStopOpen()
         {
-            state.Set(InventoryContext.Hero);
-            Assert.That(InventoryContextState.CombatPanelUpIn(state.Active), Is.False);
+            state.Set(InventoryContext.Vendor);
+            Assert.That(InventoryContextState.TownStopOpen(state.Active), Is.True);
 
             state.Close();
 
-            Assert.That(InventoryContextState.CombatPanelUpIn(state.Active), Is.True);
+            Assert.That(InventoryContextState.TownStopOpen(state.Active), Is.False);
         }
 
         [Test]

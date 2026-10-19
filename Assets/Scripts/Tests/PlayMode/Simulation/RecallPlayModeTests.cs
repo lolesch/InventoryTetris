@@ -73,7 +73,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
 
         private static Image PortalImage(string typeName) => Named(typeName).Single().GetComponent<Image>();
 
-        // The SidePanel authored with the context, by the scene's stored enum value (Healer = 4, Combat Panel = 5).
+        // The SidePanel authored with the context, by the scene's stored enum value (Healer = 4).
         private static Component SidePanelOf(int context) =>
             Named("SidePanel").Single(panel => Member<InventoryContext>(panel, "inventoryContext") == (InventoryContext)context);
 
@@ -153,7 +153,6 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             yield return Until(() => Flag(TownFace(), "IsExtended"), "the Town map comes up");
 
             yield return Until(() => Flag(FieldFace(), "IsCollapsed"), "the Field map crossfades away");
-            yield return Until(() => Flag(SidePanelOf(5), "IsCollapsed"), "and the Combat Panel with it");
             Assert.That(PortalImage("TownPortalMarker").enabled, Is.True, "the Town Portal is up");
             Assert.That(Session.Instance.Hero.TownPortal, Is.EqualTo(_location));
 

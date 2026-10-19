@@ -96,6 +96,10 @@ namespace ToolSmiths.InventorySystem.Items
             if (definition.Category == ItemCategory.Currency)
                 return ItemInstance.Coin(definition.Id, definition.CurrencyType);
 
+            // A consumable has no rarity: whichever path rolled one, every scroll of a type is the same item and stacks.
+            if (definition.Category == ItemCategory.Consumable)
+                rarity = ItemRarity.Common;
+
             var implicitStats = definition.ImplicitStats;
             var uniqueAffixes = definition.IsUnique ? definition.UniqueAffixes : null;
             var affixes = new List<CharacterStatModifier>(

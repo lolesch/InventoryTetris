@@ -40,10 +40,9 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
                  "the same value. Must not be None.")]
         [SerializeField] private InventoryContext inventoryContext = InventoryContext.None;
 
-        [Tooltip("The Combat Panel, the Field map's Side Panel: also up on None, so closing the hero's bag brings it " +
-                 "back with no request, but only while its map's face says it is up (SetMapUp). Its toggle and " +
-                 "IsUpIn still follow inventoryContext alone.")]
-        [SerializeField] private bool isCombatPanel;
+        [Tooltip("The Ground Items panel: also up while no Town Stop is open (on None and Hero), so closing a Town Stop " +
+                 "brings it back with no request. Its toggle and IsUpIn still follow inventoryContext alone.")]
+        [SerializeField] private bool upWithNoTownStop;
 
         /// <summary>The one Inventory Context this panel was authored with - what a display
         /// living inside the panel asks to learn which Town Stop it belongs to, rather than
@@ -66,28 +65,12 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
             != InventoryPanels.None;
 
         /// <summary>
-        /// Whether this panel is shown in <paramref name="context"/>: <see cref="IsUpIn"/>, and for the Combat
-        /// Panel <see cref="InventoryContextState.CombatPanelUpIn"/> while its map is up, which adds <c>None</c>.
-        /// Separate from <see cref="IsUpIn"/> because the Ground toggle's pressed visual must not read pressed
-        /// on <c>None</c>. The map gate keeps a Combat Panel that nothing hides from sitting up, and taking
-        /// clicks, under the Town map.
+        /// Whether this panel is shown in <paramref name="context"/>: <see cref="IsUpIn"/>, and for the Ground Items
+        /// panel also whenever no Town Stop is open. Separate from <see cref="IsUpIn"/> because the Ground toggle's
+        /// pressed visual must not read pressed on <c>None</c>.
         /// </summary>
         private bool ShowsIn(InventoryContext context) =>
-            isCombatPanel ? mapUp && InventoryContextState.CombatPanelUpIn(context) : IsUpIn(context);
-
-        private bool mapUp;
-
-        /// <summary>
-        /// The Field face telling the Combat Panel that its map came up or went. Re-derives from the active
-        /// context at once, so the panel is up with the face on <c>None</c> and gone with it.
-        /// </summary>
-        public void SetMapUp(bool up)
-        {
-            mapUp = up;
-
-            if (Application.isPlaying && ServiceLocator.IsArmed)
-                ApplyContext(InventoryService.Instance.ActiveContext);
-        }
+            IsUpIn(context) || (upWithNoTownStop && !InventoryContextState.TownStopOpen(context));
 
         /// <summary>
         /// The visibility the last context application settled on. Tracked so a context that

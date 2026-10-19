@@ -125,6 +125,8 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             var progress = encounter.ProgressText;
 
             ClickThePortal();
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.Held), "the Run waits while the hero walks into the portal");
+            yield return Until(() => Simulation.Run.Phase == RunPhase.Live, "the hero has gone into the portal and the Run resumes");
             yield return null;
 
             Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.Live), "the Run is live again");
@@ -182,22 +184,72 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
         }
 
         [UnityTest]
-        public IEnumerator TheFieldMarker_WithTheRunHeld_ResumesTheSameFight_AsTheTownPortalDoes()
+        public IEnumerator TheFieldMarker_WithTheRunHeld_TakesTheHeroToTown_AndTheRunStaysHeldWithThePortalOpen()
         {
             yield return HeldAndWalkedOutToTheField();
             var encounter = Simulation.Run.Encounter;
-            var progress = encounter.ProgressText;
 
             ClickTheFieldMarker();
+            yield return Until(() => Flag(TownFace(), "IsExtended"), "the hero walks into the portal and the Town map comes up");
+
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.Held), "the Run is still held");
+            Assert.That(Simulation.Run.Encounter, Is.SameAs(encounter), "on the same fight");
+            Assert.That(Session.Instance.Hero.TownPortal, Is.EqualTo(_thornwood), "the portal did not vanish: it is a one-way street");
+            Assert.That(Named("TownPortalMarker").Single().GetComponent<UnityEngine.UI.Image>().enabled, Is.True, "and it waits in Town");
+        }
+
+        [UnityTest]
+        public IEnumerator TheFieldMarkerThenTheTownPortal_GoToTownAndBack_AndOnlyTheTownSideClosesThePortal()
+        {
+            yield return HeldAndWalkedOutToTheField();
+            ClickTheFieldMarker();
+            yield return Until(() => Flag(TownFace(), "IsExtended"), "premise: the hero is in Town");
+
+            ClickThePortal();
+            yield return Until(() => Simulation.Run.Phase == RunPhase.Live, "the Town Portal resumes the Run");
             yield return null;
 
-            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.Live), "the Run is live again");
-            Assert.That(Simulation.Run.Encounter, Is.SameAs(encounter), "the same fight");
-            Assert.That(Simulation.Run.Encounter.ProgressText, Is.EqualTo(progress), "at the same \"Encounter N of M\"");
-            Assert.That(Session.Instance.Hero.TownPortal, Is.Null, "the portal is closed");
-            Assert.That(Flag(ToggleOf(_thornwood), "IsOn"), Is.True, "the Location's toggle is selected");
-            Assert.That(Flag(FieldFace(), "IsExtended"), Is.True, "the Field map stays up");
-            Assert.That(FieldMarker().GetComponent<UnityEngine.UI.Image>().enabled, Is.False, "and the marker is gone");
+            Assert.That(Session.Instance.Hero.TownPortal, Is.Null, "using the portal from Town closes it");
+            Assert.That(Flag(ToggleOf(_thornwood), "IsOn"), Is.True, "with the Location selected");
+        }
+
+        [UnityTest]
+        public IEnumerator ClickingTheTownExitAndComingStraightBackWithTheRunHeld_StandsTheTownHeroAtTheTownExit_NotMidWalk()
+        {
+            yield return HeldAtThornwood();
+            var figure = Named("TownHeroFigure").Single();
+
+            GameObject.Find("ToFieldsButton").GetComponent<AbstractButton>()
+                .OnPointerClick(new PointerEventData(EventSystem.current) { button = PointerEventData.InputButton.Left });
+            yield return null;
+            Assume.That(Flag(figure, "IsWalking"), Is.True, "premise: he is still on his way to the Town Exit");
+
+            GameObject.Find("ToTownButton").GetComponent<AbstractButton>()
+                .OnPointerClick(new PointerEventData(EventSystem.current) { button = PointerEventData.InputButton.Left });
+            yield return Until(() => Flag(TownFace(), "IsExtended"), "premise: the Town map is back");
+
+            var exit = (RectTransform)figure.GetType().GetField("_exit", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(figure);
+            var expected = (Vector2)figure.transform.parent.InverseTransformPoint(exit.TransformPoint(exit.rect.center));
+
+            Assert.That(Flag(figure, "IsWalking"), Is.False, "he is not on the walk he left off");
+            Assert.That(figure.transform.localPosition.x, Is.EqualTo(expected.x).Within(1f), "he stands at the Town Exit");
+            Assert.That(figure.transform.localPosition.y, Is.EqualTo(expected.y).Within(1f), "he stands at the Town Exit");
+        }
+
+        [UnityTest]
+        public IEnumerator TheTownHero_WalksIntoThePortalAndShrinksAndFades_BeforeTheMapChanges()
+        {
+            yield return HeldAtThornwood();
+            var figure = Named("TownHeroFigure").Single();
+            var group = figure.GetComponent<CanvasGroup>();
+            Assert.That(group.alpha, Is.EqualTo(1f), "premise: he is whole");
+
+            ClickThePortal();
+            yield return Until(() => group.alpha < 1f, "he starts to fade");
+
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.Held), "while the map has not changed yet");
+            Assert.That(figure.transform.localScale.y, Is.LessThan(1f), "and he shrinks with it");
+            yield return Until(() => Simulation.Run.Phase == RunPhase.Live, "then the Run resumes");
         }
 
         [UnityTest]
@@ -239,6 +291,9 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.None), "premise: no Run is held");
 
             ClickThePortal();
+            yield return Until(() => Simulation.Run.Phase == RunPhase.Live, "the hero goes into the portal and a Run is Sent");
+            yield return null;
+            Assert.That(Session.Instance.Hero.TownPortal, Is.Null, "using the portal from Town closes it");
             for (var frame = 0; frame < 5; frame++)
             {
                 yield return null;

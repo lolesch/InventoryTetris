@@ -136,7 +136,7 @@ namespace ToolSmiths.InventorySystem.Services
 
         // A hero down, even one the tick has not yet ended the Run for, cannot Recall; the Death beat follows a
         // Death, which leaves no Run, so the phase covers it.
-        public bool RunAllowsRecall
+        private bool RunAllowsRecall
         {
             get
             {

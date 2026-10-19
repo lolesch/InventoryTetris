@@ -156,6 +156,26 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Items
             Assert.That(() => generator.Roll(context), Throws.InvalidOperationException);
         }
 
+        [TestCase(ItemRarity.Magic)]
+        [TestCase(ItemRarity.Rare)]
+        [TestCase(ItemRarity.Unique)]
+        public void Roll_Consumable_IsAlwaysCommon_WhateverRarityIsAsked(ItemRarity asked)
+        {
+            var scroll = Consumable("scroll", ConsumableType.PortalScroll);
+            var generator = Generator(scroll, new ConstantRollSource(0f));
+
+            Assert.That(generator.Roll(scroll, asked, 0).Rarity, Is.EqualTo(ItemRarity.Common));
+        }
+
+        [Test]
+        public void Roll_Consumable_FromALootTable_IsCommonEvenWhereTheTableRollsRare()
+        {
+            var generator = Generator(Consumable("scroll", ConsumableType.PortalScroll), new ConstantRollSource(0f));
+            var context = new RollContext(FakeLootTable.Fixed(ItemCategory.Consumable, ItemRarity.Rare));
+
+            Assert.That(generator.Roll(context).Rarity, Is.EqualTo(ItemRarity.Common));
+        }
+
         // ── magic find: the shared invariant with the probability rebuild ────
 
         [Test]

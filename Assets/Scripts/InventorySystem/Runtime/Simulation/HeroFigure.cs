@@ -35,8 +35,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private CanvasGroup map;
         [SerializeField, Tooltip("The Recall portal's rect, which the figure walks into once the Run is held. Empty: he is gone at once.")]
         private RectTransform portal;
-        [SerializeField, Min(0f), Tooltip("Sim seconds the walk into the portal takes; scales with sim speed.")]
-        private float portalWalkSeconds = 0.5f;
+        [SerializeField, Min(0f), Tooltip("Seconds he takes to shrink and fade once he has walked into the portal, before the map changes.")]
+        private float vanishSeconds = 0.5f;
 
         private enum Mode
         {
@@ -62,8 +62,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private bool _awaitingLocation;
         private bool _arrivesByPortal;
         private Vector2? _fallenAt;
-        private Vector2 _enteredFrom;
-        private float _enteredFor;
+        private float _vanishFor;
+        private float _visible = 1f;
         private bool _inPortal;
 
         private Figure Figure => _figure ? _figure : _figure = GetComponent<Figure>();
@@ -80,6 +80,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// moment the Run is not held any more.
         /// </summary>
         public bool HasEnteredPortal => _inPortal;
+
+        /// <summary>Whether he is on his way into the portal, walking to it or vanishing in it.</summary>
+        public bool IsEnteringPortal => _mode == Mode.Entering;
+
+        /// <summary>Raised once when he has gone into the portal: the map changes now.</summary>
+        public event System.Action PortalEntered;
 
         /// <summary>
         /// The Field Exit, announced by its button: where the figure stands when the Field map comes up and walks out on
@@ -136,6 +142,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _phase = run.Phase;
             _inPortal &= _phase == RunPhase.Held;
 
+            // A Run that is not held any more (a Relocate while he walks to the portal) leaves him nothing to walk into.
+            if (_mode == Mode.Entering && _phase != RunPhase.Held)
+                _mode = Mode.Standing;
+
             SyncHero();
 
             // A hero who is down with no fight left lies where he fell until Respawn stands him up.
@@ -165,7 +175,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             }
 
             if (held)
-                EnterPortal();
+                WalkIntoPortal();
             else if (resumed && _bound != null)
                 _mode = Mode.Following;
 
@@ -180,7 +190,13 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             // When the Death beat ends the fallen figure is gone: the Corpse marker is what lies there now.
             var gone = _mode == Mode.Fallen && !SimulationService.Instance.DeathBeatPlaying;
-            Figure.SetAlpha(gone || _inPortal ? 0f : map != null ? map.alpha : 1f);
+
+            // Shrunk and faded together while he vanishes into the portal; whole again once he is no longer on his way in.
+            if (_mode != Mode.Entering && !_inPortal)
+                _visible = 1f;
+
+            transform.localScale = Vector3.one * _visible;
+            Figure.SetAlpha(gone || _inPortal ? 0f : (map != null ? map.alpha : 1f) * _visible);
         }
 
         private FieldFacePanel _face;
@@ -200,6 +216,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 return;
 
             _inPortal = false;
+            _visible = 1f;
             StandAtExit();
         }
 
@@ -274,33 +291,51 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 _mode = Mode.Following;
         }
 
-        // The Run was just held: the figure walks from where the fight has him into the portal beside him.
-        private void EnterPortal()
+        /// <summary>
+        /// The Run is held: he walks from where the fight has him into the portal beside him, at his walking speed, and
+        /// vanishes in it. The map changes when <see cref="PortalEntered"/> is raised.
+        /// </summary>
+        public void WalkIntoPortal()
         {
             if (portal == null || !Figure.IsPlaced)
             {
-                _inPortal = true;
+                FinishEntering();
                 return;
             }
 
-            _enteredFrom = ((RectTransform)transform).anchoredPosition;
-            _enteredFor = 0f;
+            _travel.Place(new Coordinate(((RectTransform)transform).anchoredPosition));
+            _travel.Retarget(new Coordinate(LocalCentre(portal)));
+            _vanishFor = 0f;
             _target = null;
             _mode = Mode.Entering;
         }
 
-        // A fixed stretch of sim time, not his pace: the portal is only ever a step away.
         private void Enter()
         {
-            _enteredFor += SimulationService.Instance.WalkDelta(Time.deltaTime);
-            var progress = portalWalkSeconds > 0f ? Mathf.Clamp01(_enteredFor / portalWalkSeconds) : 1f;
+            if (_travel.IsWalking)
+            {
+                var goal = LocalCentre(portal);
+                _travel.Retarget(new Coordinate(goal));
+                _ = _travel.Advance(ArenaSpace.HeroCanvasSpeed, SimulationService.Instance.WalkDelta(Time.deltaTime));
 
-            var goal = LocalCentre(portal);
-            var at = Vector2.Lerp(_enteredFrom, goal, progress);
-            Figure.Place(at, ArenaOf(at), ArenaLayout.FacingSign(at.x, goal.x, Figure.FacingSign, WalkFacingDeadZone));
-            SortAmongSiblings();
+                var at = new Vector2(_travel.Position.x, _travel.Position.z);
+                Figure.Place(at, ArenaOf(at), ArenaLayout.FacingSign(at.x, goal.x, Figure.FacingSign, WalkFacingDeadZone));
+                SortAmongSiblings();
+                return;
+            }
 
-            _inPortal = progress >= 1f;
+            _vanishFor += Time.deltaTime;
+            _visible = PortalVanish.Remaining(_vanishFor, vanishSeconds);
+
+            if (_visible <= 0f)
+                FinishEntering();
+        }
+
+        private void FinishEntering()
+        {
+            _mode = Mode.Standing;
+            _inPortal = true;
+            PortalEntered?.Invoke();
         }
 
         // The arena holds the ended Encounter through the Death beat, so the hero's last position is still projectable.

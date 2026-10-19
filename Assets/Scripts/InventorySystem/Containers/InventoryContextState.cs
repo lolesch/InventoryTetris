@@ -76,12 +76,11 @@ namespace ToolSmiths.InventorySystem.Inventories
             !onFieldMap || context is InventoryContext.None or InventoryContext.Hero or InventoryContext.Ground;
 
         /// <summary>
-        /// Whether the Combat Panel, the Field map's Side Panel, is up in <paramref name="context"/>: on
-        /// <see cref="InventoryContext.None"/> and <see cref="InventoryContext.Ground"/>, so closing the
-        /// hero's bag brings it back with no request. Which map is up is the Field face's own fade.
+        /// Whether a Town Stop's panel (Stash, Vendor or Healer) is the open one. The Ground Items panel is up in
+        /// every context but these, so closing a Town Stop brings it back with no request.
         /// </summary>
-        public static bool CombatPanelUpIn(InventoryContext context) =>
-            context is InventoryContext.None or InventoryContext.Ground;
+        public static bool TownStopOpen(InventoryContext context) =>
+            context is InventoryContext.Stash or InventoryContext.Vendor or InventoryContext.Healer;
 
         /// <summary>
         /// The one panel a context names for itself: the Hero Panel for

@@ -33,7 +33,15 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         [SerializeField] private HeroFigure fieldFigure;
 
         private RunState _run;
-        private bool _awaitingFigure;
+
+        /// <summary>Raised as the Town map starts to come up, whatever brought it.</summary>
+        public event System.Action Appearing;
+
+        protected override void BeforeAppear()
+        {
+            base.BeforeAppear();
+            Appearing?.Invoke();
+        }
 
         /// <summary>
         /// Play mode only, mirroring <see cref="ToolSmiths.InventorySystem.Services.InventoryService.TrySubscribeContextChanged"/>'s
@@ -47,25 +55,26 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             _ = Session.TrySubscribeHeroLoaded(BindRun);
             SimulationService.Instance.Respawned += Resync;
+            if (fieldFigure)
+                fieldFigure.PortalEntered += OnPortalEntered;
 
             BindRun();
         }
 
-        // The figure walks into the portal on its own clock, so the held Run's Town map is picked up here.
-        private void Update()
+        // The figure walks into the portal on its own clock: the Town map of a held Run comes up when he is gone.
+        private void OnPortalEntered()
         {
-            if (!_awaitingFigure || !fieldFigure.HasEnteredPortal)
-                return;
-
-            _awaitingFigure = false;
-            ToggleState(true);
+            if (_run.Phase == RunPhase.Held && !Session.Instance.Hero.IsDead)
+                ToggleState(true);
         }
 
         // Lets go of the Run it subscribed to, not whatever the service holds by now.
         protected override void OnDisable()
         {
             base.OnDisable();
-            _awaitingFigure = false;
+
+            if (fieldFigure)
+                fieldFigure.PortalEntered -= OnPortalEntered;
 
             Session.UnsubscribeHeroLoaded(BindRun);
             if (ServiceLocator.IsArmed)
@@ -97,11 +106,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         // A Death ends the Run but leaves the hero down; the Town map waits for Respawn.
         private void SyncToPhase(RunPhase phase)
         {
-            var up = phase.TownMapIsUp() && !Session.Instance.Hero.IsDead;
-            _awaitingFigure = up && phase == RunPhase.Held && fieldFigure != null;
+            // A held Run's Town map waits for the hero to go into the portal (OnPortalEntered).
+            if (phase == RunPhase.Held && fieldFigure != null)
+                return;
 
-            if (!_awaitingFigure)
-                ToggleState(up);
+            ToggleState(phase.TownMapIsUp() && !Session.Instance.Hero.IsDead);
         }
 
         private void Resync() => SyncToPhase(_run.Phase);
