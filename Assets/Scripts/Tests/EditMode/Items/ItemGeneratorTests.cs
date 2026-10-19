@@ -135,6 +135,18 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Items
         }
 
         [Test]
+        public void DrawConsumableType_IsTheDropsDraw_ByTheOdds_AndNoneWithoutOdds()
+        {
+            var catalog = new InMemoryItemCatalog(Consumable("potion", ConsumableType.Potion));
+
+            var weighted = new ItemGenerator(catalog, new SeededRollSource(7), new[] { 0f, 0f, 0f, 1f });
+            var uniform = new ItemGenerator(catalog, new SeededRollSource(7));
+
+            Assert.That(weighted.DrawConsumableType(), Is.EqualTo(ConsumableType.PortalScroll));
+            Assert.That(uniform.DrawConsumableType(), Is.EqualTo(ConsumableType.NONE));
+        }
+
+        [Test]
         public void Roll_Consumable_OddsForATypeTheCatalogLacks_Throws()
         {
             var catalog = new InMemoryItemCatalog(Consumable("potion", ConsumableType.Potion));

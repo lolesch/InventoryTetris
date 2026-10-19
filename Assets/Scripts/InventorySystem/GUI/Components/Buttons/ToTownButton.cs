@@ -9,9 +9,10 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
     /// <summary>
     /// To Town: fades the Town face back in unconditionally (<see cref="PanelButton.OnClick"/>) -
     /// covering both a real Return and backing out of a Go Venture preview, where no Run exists
-    /// yet to Return. Only Returns when a Run is actually live (<see cref="RunMaps.FieldExitReturns"/>) -
+    /// yet to Return. Only Returns when <see cref="ISimulationService.CanReturn"/> -
     /// <see cref="RunState.Return"/> requires exactly that and throws otherwise, which the preview-cancel path
-    /// would hit on every click without this guard. A held Run is only walked away from: it ends nothing.
+    /// would hit on every click without this guard. A held Run is only walked away from: it ends nothing. While a
+    /// Recall's portal opens the click is refused whole, without fading the Town face in.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class ToTownButton : PanelButton
@@ -32,11 +33,16 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
 
         protected override void OnClick()
         {
-            base.OnClick();
-
             var simulation = SimulationService.Instance;
 
-            if (simulation.Run.Phase.FieldExitReturns())
+            // A Return is refused while a Recall's portal opens (ADR-0022): the click does nothing, and the Town face
+            // stays down, so the screen and the Run do not part ways.
+            if (simulation.Run.IsRecalling)
+                return;
+
+            base.OnClick();
+
+            if (simulation.CanReturn)
                 _ = simulation.Return();
         }
     }

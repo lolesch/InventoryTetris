@@ -153,6 +153,16 @@ namespace ToolSmiths.InventorySystem.Items
         };
 
         /// <summary>
+        /// Draws a <see cref="ConsumableType"/> by the Consumable Type Distribution this generator was built with, one
+        /// roll - the draw a consumable drop makes before it picks a definition, so a caller that rolls a consumable
+        /// outside a drop (the debug helpers) makes the same one. <see cref="ConsumableType.NONE"/> when the
+        /// generator has no odds: any consumable.
+        /// </summary>
+        public ConsumableType DrawConsumableType() => consumableTypeOdds == null
+            ? ConsumableType.NONE
+            : ProbabilityTable<ConsumableType>.Sample(consumableTypeOdds, rolls.Next());
+
+        /// <summary>
         /// Draws one definition of <paramref name="category"/> from the catalog by reservoir
         /// sampling - uniform, and allocation-free over the catalog's own enumeration. A
         /// consumable first draws its <see cref="ConsumableType"/> by <c>consumableTypeOdds</c>, so
@@ -161,9 +171,7 @@ namespace ToolSmiths.InventorySystem.Items
         /// </summary>
         private ItemDefinition PickDefinition(ItemCategory category)
         {
-            var type = category == ItemCategory.Consumable && consumableTypeOdds != null
-                ? ProbabilityTable<ConsumableType>.Sample(consumableTypeOdds, rolls.Next())
-                : ConsumableType.NONE;
+            var type = category == ItemCategory.Consumable ? DrawConsumableType() : ConsumableType.NONE;
             ItemDefinition chosen = null;
             var seen = 0;
 

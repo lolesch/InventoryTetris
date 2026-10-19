@@ -83,6 +83,13 @@ namespace ToolSmiths.InventorySystem.Services
         bool CanRecall { get; }
 
         /// <summary>
+        /// The Run's half of <see cref="CanRecall"/>, without the scan of the Inventory: a Run is live with its hero
+        /// up and no portal opening. A view that already counts the scrolls (<see cref="PortalScrollCount"/>) asks
+        /// this and the count rather than <see cref="CanRecall"/>, which would count them again.
+        /// </summary>
+        bool RunAllowsRecall { get; }
+
+        /// <summary>
         /// Open a Town Portal on the live Run (ADR-0022): takes one Portal Scroll from the hero's Inventory and
         /// starts the Run's opening, after which the Run is <see cref="RunPhase.Held"/> and the
         /// Hero's <c>TownPortal</c> is the Run's Location. Throws when <see cref="CanRecall"/> is false;
@@ -108,13 +115,20 @@ namespace ToolSmiths.InventorySystem.Services
         /// <summary>Raised when the Hero's Corpse is buried, replaced or recovered.</summary>
         event Action CorpseChanged;
 
-        /// <summary>End the Run with everything kept. Refused once the hero is down - that ends in a Death.</summary>
+        /// <summary>
+        /// Whether <see cref="Return"/> will not refuse: a Run is live (not held) with its hero up and no portal
+        /// opening (ADR-0022). A caller that can be clicked in any of those states asks this instead of catching.
+        /// </summary>
+        bool CanReturn { get; }
+
+        /// <summary>End the Run with everything kept. Refused once the hero is down - that ends in a Death - and while a Recall's portal opens.</summary>
         RunResult Return();
 
         /// <summary>
         /// Ends a live Run so the game can close in Town: a Return, or the Death when the hero is already
         /// down, in that order of precedence the tick uses. Raises <see cref="RunSettled"/> like either
-        /// does. Nothing happens when no Run is in the Field.
+        /// does. A quit does not wait for a Recall's opening: the opening ends with the Run. Nothing happens when
+        /// no Run is in the Field.
         /// </summary>
         /// <returns>Whether a Run was ended.</returns>
         bool LeaveField();

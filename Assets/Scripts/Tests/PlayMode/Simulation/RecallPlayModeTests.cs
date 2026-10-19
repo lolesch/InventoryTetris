@@ -276,6 +276,22 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
         }
 
         [UnityTest]
+        public IEnumerator WhileThePortalOpens_TheFieldExit_IsRefusedQuietly_AndTheTownFaceStaysDown()
+        {
+            yield return RecalledFromTheFight();
+            Assert.That(Simulation.Run.IsRecalling, Is.True, "premise: the portal is opening");
+
+            Assert.That(() => Press("ToTownButton"), Throws.Nothing);
+            yield return null;
+
+            Assert.That(Simulation.Run.IsRecalling, Is.True, "the opening runs on");
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.Live), "no Return");
+            Assert.That(Simulation.Run.LastResult, Is.Null);
+            Assert.That(Flag(FieldFace(), "IsExtended"), Is.True, "the Field map stays up");
+            Assert.That(Flag(TownFace(), "IsCollapsed"), Is.True, "and the Town face does not fade in half-way");
+        }
+
+        [UnityTest]
         public IEnumerator ALiveRun_TheFieldExit_StillReturns()
         {
             yield return FightingInTheField();

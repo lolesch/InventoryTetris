@@ -143,6 +143,23 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
+        public void InTheField_ALeaveWhileAPortalOpens_EndsTheRunWithoutThrowing_AndStillWritesAndLoadsTheMenu()
+        {
+            game.Hero.IsInvincible = true;
+            var scroll = new Package(game.Hero.Inventory, game.Items.RollConsumable(ConsumableType.PortalScroll), 1u);
+            Assert.That(game.Hero.Inventory.TryAddToContainer(ref scroll), Is.True, "premise: the scroll fits");
+            game.Simulation.Send(thornwood);
+            game.Simulation.Recall();
+            Assert.That(game.Simulation.Run.IsRecalling, Is.True, "premise: the portal is opening");
+
+            var result = SaveAndExit.Leave(game.Simulation, saves, LoadMenu);
+
+            Assert.That(result.Wrote, Is.True);
+            Assert.That(game.Simulation.Run.Phase, Is.EqualTo(RunPhase.None), "a quit does not wait for the opening");
+            Assert.That(menuLoads, Is.EqualTo(1));
+        }
+
+        [Test]
         public void ALeave_RunsTheBeforeSaveStep_SoAPackageOnTheCursorGoesHome()
         {
             var normalised = 0;

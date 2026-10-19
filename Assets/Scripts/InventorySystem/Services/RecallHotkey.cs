@@ -6,8 +6,8 @@ namespace ToolSmiths.InventorySystem.Services
 {
     /// <summary>
     /// The Recall key: each time <see cref="GameAction.Recall"/> performs, calls
-    /// <see cref="ISimulationService.Recall"/> if <see cref="ISimulationService.CanRecall"/> says it will not be refused. Like <see cref="PauseHotkey"/> it lives as long as the input service, with no scene object and no tick.
-    /// A menu's hold is not the player's to spend a scroll under, and a text field that has focus keeps its letters.
+    /// <see cref="ISimulationService.Recall"/> if <see cref="RecallGate"/> says it will not be refused. Like <see cref="PauseHotkey"/> it lives as long as the input service, with no scene object and no tick.
+    /// A text field that has focus keeps its letters.
     /// </summary>
     internal sealed class RecallHotkey
     {
@@ -26,8 +26,7 @@ namespace ToolSmiths.InventorySystem.Services
 
         private void OnPerformed(GameAction action)
         {
-            if (action == GameAction.Recall && !simulation.IsMenuFrozen
-                && !PauseHotkey.HoldsTextFocus(EventSystem.current) && simulation.CanRecall)
+            if (action == GameAction.Recall && !PauseHotkey.HoldsTextFocus(EventSystem.current) && RecallGate.Allows(simulation))
                 simulation.Recall();
         }
     }
