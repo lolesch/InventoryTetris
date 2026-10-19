@@ -113,11 +113,11 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
                 if (category == ItemCategory.Consumable)
                 {
-                    /// A Portal Scroll is the Recall's to spend (ADR-0022), never this click's: a Recall the
-                    /// service refuses, or a scroll lying in the Stash, leaves it where it is.
+                    // A Portal Scroll is the Recall's to spend (ADR-0022), never this click's: a Recall the
+                    // service refuses, a menu's hold, or a scroll lying in the Stash, leaves it where it is.
                     if (definition.ConsumableType == ConsumableType.PortalScroll)
                     {
-                        if (Container == Session.Instance.Hero.Inventory && SimulationService.Instance.CanRecall)
+                        if (Container == Session.Instance.Hero.Inventory && RecallGate.Allows(SimulationService.Instance))
                             SimulationService.Instance.Recall();
 
                         return;
@@ -132,11 +132,11 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
                 if (category == ItemCategory.Equipment)
                 {
-                    /// Route the equip through a transaction (issue #10) as a right-click
-                    /// "swap in place": remove here, equip there, and swap whatever the
-                    /// equip displaces back into this same container. A player-driven move
-                    /// always executes - one displaced item that will not re-fit overflows
-                    /// to the hand, and only a second homeless item rolls the move back.
+                    // Route the equip through a transaction (issue #10) as a right-click
+                    // "swap in place": remove here, equip there, and swap whatever the
+                    // equip displaces back into this same container. A player-driven move
+                    // always executes - one displaced item that will not re-fit overflows
+                    // to the hand, and only a second homeless item rolls the move back.
                     var equipment = Session.Instance.Hero.Equipment;
                     var cursor = new CursorHolder(DragProvider.Instance);
 

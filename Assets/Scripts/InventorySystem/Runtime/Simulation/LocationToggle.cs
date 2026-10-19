@@ -74,6 +74,16 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             UnlockLook.Apply(this, state >= UnlockState.Active);
         }
 
+        // A Relocate is refused while a Recall's portal opens (ADR-0022). Refused at the click, before the group moves
+        // the highlight, so the selection never diverges from the Run; OnToggle holds the same line for a script's toggle.
+        protected override void OnClick()
+        {
+            if (SimulationService.Instance.Run.IsRecalling)
+                return;
+
+            base.OnClick();
+        }
+
         protected override void OnToggle()
         {
             if (!IsOn) return;
@@ -81,7 +91,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             var simulation = SimulationService.Instance;
 
             // After a Death the Run's down flag is reset but the hero stays dead until Respawn, while this face still shows.
-            if (!simulation.CanSend(Location) || simulation.Run.HeroIsDown) return;
+            if (!simulation.CanSend(Location) || simulation.Run.HeroIsDown || simulation.Run.IsRecalling) return;
 
             var run = simulation.Run;
 

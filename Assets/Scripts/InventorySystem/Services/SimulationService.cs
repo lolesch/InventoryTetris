@@ -136,23 +136,24 @@ namespace ToolSmiths.InventorySystem.Services
 
         // A hero down, even one the tick has not yet ended the Run for, cannot Recall; the Death beat follows a
         // Death, which leaves no Run, so the phase covers it.
-        public bool CanRecall
+        public bool RunAllowsRecall
         {
             get
             {
                 var run = Run;
-                return run.Phase == RunPhase.Live && !run.HeroIsDown && !run.IsRecalling
-                    && !session.Hero.IsDead && TryFindPortalScroll(session.Hero, out _, out _);
+                return run.Phase == RunPhase.Live && !run.HeroIsDown && !run.IsRecalling && !session.Hero.IsDead;
             }
         }
 
+        // The Run's half first: in Town the Inventory is not scanned at all.
+        public bool CanRecall => RunAllowsRecall && ScanPortalScrolls(out _, out _) > 0;
+
         public void Recall()
         {
-            if (!CanRecall)
+            if (!RunAllowsRecall || ScanPortalScrolls(out var cell, out var scroll) == 0)
                 throw new InvalidOperationException("A Recall needs a live Run, a hero who is up, no portal opening and a Portal Scroll in the Inventory.");
 
             var bag = session.Hero.Inventory;
-            _ = TryFindPortalScroll(session.Hero, out var cell, out var scroll);
 
             // The scroll leaves only if the Run accepts the Recall: a throw rolls the Inventory back.
             using var transaction = new ItemTransaction(bag);
@@ -161,20 +162,7 @@ namespace ToolSmiths.InventorySystem.Services
             transaction.Commit();
         }
 
-        public int PortalScrollCount
-        {
-            get
-            {
-                var count = 0;
-                foreach (var entry in session.Hero.Inventory.StoredPackages)
-                {
-                    if (items.Catalog.Definition(entry.Value.Item.DefinitionId).ConsumableType == ConsumableType.PortalScroll)
-                        count += (int)entry.Value.Amount;
-                }
-
-                return count;
-            }
-        }
+        public int PortalScrollCount => ScanPortalScrolls(out _, out _);
 
         public void Resume()
         {
@@ -182,21 +170,32 @@ namespace ToolSmiths.InventorySystem.Services
             session.Hero.TownPortal = null;
         }
 
-        private bool TryFindPortalScroll(Hero hero, out Vector2Int cell, out Package scroll)
+        /// <summary>
+        /// The one pass over the Inventory the Recall's questions share: the Portal Scrolls in all, and the first
+        /// stack that holds them (where a Recall takes its scroll from). Each stack costs a catalog lookup, so a
+        /// caller that needs both the count and the stack takes them from this one scan.
+        /// </summary>
+        private int ScanPortalScrolls(out Vector2Int firstCell, out Package firstStack)
         {
-            foreach (var entry in hero.Inventory.StoredPackages)
+            var count = 0;
+            firstCell = default;
+            firstStack = default;
+
+            foreach (var entry in session.Hero.Inventory.StoredPackages)
             {
                 if (items.Catalog.Definition(entry.Value.Item.DefinitionId).ConsumableType != ConsumableType.PortalScroll)
                     continue;
 
-                cell = entry.Key;
-                scroll = entry.Value;
-                return true;
+                if (count == 0)
+                {
+                    firstCell = entry.Key;
+                    firstStack = entry.Value;
+                }
+
+                count += (int)entry.Value.Amount;
             }
 
-            cell = default;
-            scroll = default;
-            return false;
+            return count;
         }
 
         public bool CorpseLiesAt(LocationConfig location)
@@ -218,13 +217,16 @@ namespace ToolSmiths.InventorySystem.Services
 
         public event Action<RunResult> RunSettled;
 
-        public RunResult Return()
+        public bool CanReturn
         {
-            var result = Run.Return();
-            RunSettled?.Invoke(result);
-
-            return result;
+            get
+            {
+                var run = Run;
+                return run.Phase.FieldExitReturns() && !run.HeroIsDown && !run.IsRecalling;
+            }
         }
+
+        public RunResult Return() => RaiseSettled(Run.Return());
 
         public bool LeaveField()
         {
@@ -236,9 +238,15 @@ namespace ToolSmiths.InventorySystem.Services
             if (run.HeroIsDown)
                 HandleHeroDeath(session.Hero, run);
             else
-                _ = Return();
+                _ = RaiseSettled(run.Quit()); // a quit does not wait for a portal's opening, which a Return would be refused in
 
             return true;
+        }
+
+        private RunResult RaiseSettled(RunResult result)
+        {
+            RunSettled?.Invoke(result);
+            return result;
         }
 
         public event Action Respawned;

@@ -1668,6 +1668,88 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
+        public void CanReturn_IsTrueOnlyForALiveRunWithItsHeroUpAndNoPortalOpening()
+        {
+            session.Hero.IsInvincible = true;
+            GiveScrolls(session.Hero.Inventory, 1u);
+            Assert.That(service.CanReturn, Is.False, "no Run");
+
+            service.Send(thornwood);
+            Assert.That(service.CanReturn, Is.True, "a live Run");
+
+            service.Recall();
+            Assert.That(service.CanReturn, Is.False, "the portal opens");
+
+            TickUntilHeld();
+            Assert.That(service.CanReturn, Is.False, "a held Run is walked away from, not Returned");
+        }
+
+        [Test]
+        public void ACallerThatAsksCanReturn_NeverMeetsTheRefusalOfAnOpening()
+        {
+            session.Hero.IsInvincible = true;
+            GiveScrolls(session.Hero.Inventory, 1u);
+            service.Send(thornwood);
+            service.Recall();
+
+            Assert.Throws<InvalidOperationException>(() => service.Return(), "the service itself still refuses");
+            Assert.That(service.CanReturn, Is.False, "so the button asks first");
+            Assert.That(service.Run.IsRecalling, Is.True, "and the opening runs on");
+        }
+
+        [Test]
+        public void LeaveField_DuringAnOpening_EndsTheRun_RaisesSettled_AndTheScrollStaysSpent()
+        {
+            session.Hero.IsInvincible = true;
+            GiveScrolls(session.Hero.Inventory, 2u);
+            service.Send(thornwood);
+            service.Recall();
+            RunResult? settled = null;
+            service.RunSettled += result => settled = result;
+
+            Assert.That(() => service.LeaveField(), Throws.Nothing);
+
+            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.None));
+            Assert.That(service.Run.IsRecalling, Is.False);
+            Assert.That(settled?.Outcome, Is.EqualTo(RunOutcome.Returned), "a quit keeps everything, like a Return");
+            Assert.That(ScrollsIn(session.Hero.Inventory), Is.EqualTo(1), "the Recall had paid");
+        }
+
+        [Test]
+        public void RunAllowsRecall_IsTheRunsHalfOfCanRecall_WithoutLookingInTheBag()
+        {
+            session.Hero.IsInvincible = true;
+            Assert.That(service.RunAllowsRecall, Is.False, "no Run");
+
+            service.Send(thornwood);
+            Assert.That(service.RunAllowsRecall, Is.True, "a live Run allows it, scroll or none");
+            Assert.That(service.CanRecall, Is.False, "but the bag has none");
+
+            GiveScrolls(session.Hero.Inventory, 1u);
+            Assert.That(service.CanRecall, Is.True);
+
+            service.Recall();
+            Assert.That(service.RunAllowsRecall, Is.False, "the portal opens");
+        }
+
+        [Test]
+        public void RecallGate_RefusesUnderAMenuFreeze_AndOtherwiseAsksCanRecall()
+        {
+            session.Hero.IsInvincible = true;
+            GiveScrolls(session.Hero.Inventory, 1u);
+            Assert.That(RecallGate.Allows(service), Is.False, "Town");
+
+            service.Send(thornwood);
+            Assert.That(RecallGate.Allows(service), Is.True);
+
+            service.SetMenuFreeze(true);
+            Assert.That(RecallGate.Allows(service), Is.False, "a menu holds the Run");
+
+            service.SetMenuFreeze(false);
+            Assert.That(RecallGate.Allows(service), Is.True);
+        }
+
+        [Test]
         public void Recall_IsRefusedWhileTheHeroIsDown_AndSpendsNothing()
         {
             GiveScrolls(session.Hero.Inventory, 2u);

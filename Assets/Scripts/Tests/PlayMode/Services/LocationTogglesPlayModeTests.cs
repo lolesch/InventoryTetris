@@ -154,11 +154,40 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             Simulation.Send(GameBoot.Load().Locations.First(l => l.Id == Thornwood));
             Simulation.Tick(0.5f);
 
-            var package = new Package(null, ItemService.Instance.RollConsumable(ConsumableType.PortalScroll, 0f), 1u);
-            Assert.That(Session.Instance.Hero.Inventory.TryAddToContainer(ref package), Is.True, "premise: the scroll fits the bag");
+            GiveAScroll();
             Simulation.Recall();
             Simulation.Tick(1f);
             Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.Held), "premise: the Run is held");
+        }
+
+        private static void GiveAScroll()
+        {
+            var package = new Package(null, ItemService.Instance.RollConsumable(ConsumableType.PortalScroll, 0f), 1u);
+            Assert.That(Session.Instance.Hero.Inventory.TryAddToContainer(ref package), Is.True, "premise: the scroll fits the bag");
+        }
+
+        [UnityTest]
+        public IEnumerator ALocationClickWhileAPortalOpens_IsRefused_BeforeTheHighlightMoves_AndNothingThrows()
+        {
+            yield return null;
+            CompleteThornwood();
+            GiveAScroll();
+            Simulation.Recall();
+            var encounter = Simulation.Run.Encounter;
+            Assert.That(Simulation.Run.IsRecalling, Is.True, "premise: the portal is opening");
+
+            var ashfall = ToggleOf(Ashfall);
+            Assert.That(() => ashfall.GetType().GetMethod("OnPointerClick")
+                .Invoke(ashfall, new object[] { new PointerEventData(EventSystem.current) }), Throws.Nothing);
+
+            Assert.That(IsOn(Ashfall), Is.False, "the highlight stays where the Run is");
+            Assert.That(Simulation.Run.Encounter, Is.SameAs(encounter), "no Relocate");
+            Assert.That(Session.Instance.Hero.SelectedLocation?.Id, Is.EqualTo(Thornwood));
+
+            // Not through the click: a script that toggles it is refused the same, without throwing.
+            Assert.That(() => Select(Ashfall), Throws.Nothing);
+            Assert.That(Simulation.Run.Encounter, Is.SameAs(encounter));
+            Assert.That(Simulation.Run.IsRecalling, Is.True, "the opening runs on");
         }
 
         [UnityTest]

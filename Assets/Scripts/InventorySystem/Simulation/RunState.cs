@@ -271,9 +271,21 @@ namespace ToolSmiths.InventorySystem.Simulation
                 throw new InvalidOperationException("The hero is down — the Run ends in HandleDeath, not a Return.");
             RequirePortalNotOpening();
 
-            var result = RunResult.Returned(FreezeEncounter(), _currencyBanked);
-            EndRun(result);
-            return result;
+            return EndReturned();
+        }
+
+        /// <summary>
+        /// End a live Run because the game is closing — a <see cref="Return"/> that an opening portal does not refuse:
+        /// the opening is cancelled with the Run and the scroll stays spent. Refused with no Run and once the hero is
+        /// down (that Run ends in <see cref="HandleDeath"/>).
+        /// </summary>
+        public RunResult Quit()
+        {
+            RequireLive();
+            if (_heroDown)
+                throw new InvalidOperationException("The hero is down — the Run ends in HandleDeath, not a Quit.");
+
+            return EndReturned();
         }
 
         /// <summary>
@@ -317,6 +329,13 @@ namespace ToolSmiths.InventorySystem.Simulation
         {
             _heroDown = true;
             _recalling = false;
+        }
+
+        private RunResult EndReturned()
+        {
+            var result = RunResult.Returned(FreezeEncounter(), _currencyBanked);
+            EndRun(result); // ResetRunTotals clears an opening too
+            return result;
         }
 
         private void RequirePortalNotOpening()

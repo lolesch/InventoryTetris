@@ -202,6 +202,28 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             Assert.That(ScrollsInTheBag, Is.EqualTo(2), "a refused Recall does not consume the scroll");
         }
 
+        [UnityTest]
+        public IEnumerator ARightClickOnAScroll_WhileAMenuHoldsTheRun_LeavesItInTheBag()
+        {
+            yield return OpenExample();
+            GiveScrolls(2u);
+            SendToTheField();
+            Simulation.SetMenuFreeze(true);
+
+            RightClickTheScroll();
+            yield return null;
+
+            Assert.That(Simulation.Run.IsRecalling, Is.False, "the menu's hold is not the player's to spend a scroll under");
+            Assert.That(ScrollsInTheBag, Is.EqualTo(2));
+
+            Simulation.SetMenuFreeze(false);
+            RightClickTheScroll();
+            yield return null;
+
+            Assert.That(Simulation.Run.IsRecalling, Is.True, "the click works again once the menu is closed");
+            Assert.That(ScrollsInTheBag, Is.EqualTo(1));
+        }
+
         private static object Property(object target, string name) => target.GetType().GetProperty(name).GetValue(target);
     }
 }

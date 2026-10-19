@@ -178,9 +178,7 @@ namespace ToolSmiths.InventorySystem.Services
         public ItemInstance RollConsumable(float magicFind = 0f)
         {
             // The type is drawn by the Consumable Type Distribution, as a drop's is (ItemGenerator).
-            var type = config.ConsumableTypeDistribution == null
-                ? ConsumableType.NONE
-                : ProbabilityTable<ConsumableType>.Sample(config.ConsumableTypeDistribution.Probabilities, rolls.Next());
+            var type = generator.DrawConsumableType();
             return RollFrom(PickDefinition(ItemCategory.Consumable, d => type == ConsumableType.NONE || d.ConsumableType == type), magicFind);
         }
 

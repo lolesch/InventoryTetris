@@ -714,6 +714,30 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
+        public void Quit_WhileThePortalOpens_EndsTheRunAsReturned_AndTheOpeningEndsWithIt()
+        {
+            var run = NewRun(SteadyHero(), recallOpening: 0.5f);
+            run.Send(SlowFight());
+            run.Recall();
+            var ended = 0;
+            run.RunEnded += () => ended++;
+
+            var result = run.Quit();
+
+            Assert.That(result.Outcome, Is.EqualTo(RunOutcome.Returned));
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.None));
+            Assert.That(run.IsRecalling, Is.False);
+            Assert.That(ended, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void Quit_IsRefused_WithNoRun_AndWhileHeld()
+        {
+            Assert.That(() => NewRun(SteadyHero()).Quit(), Throws.InvalidOperationException);
+            Assert.That(() => HeldRun().Quit(), Throws.InvalidOperationException);
+        }
+
+        [Test]
         public void Recall_IsRefused_WithNoRun_WhileHeld_AndOnceTheHeroIsDown()
         {
             var none = NewRun(SteadyHero());
