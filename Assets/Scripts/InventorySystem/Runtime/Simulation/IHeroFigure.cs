@@ -22,5 +22,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// arrival it stands there, or follows the fight when an Encounter is live.
         /// </summary>
         void TravelTo(RectTransform anchor);
+
+        /// <summary>
+        /// The Run just Sent comes out of a Town Portal: the figure appears at the fight instead of walking in to the
+        /// Location from the Field Exit. Call it right after the Send.
+        /// </summary>
+        void ArriveByPortal();
     }
 }

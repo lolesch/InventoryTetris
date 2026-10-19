@@ -60,6 +60,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private RectTransform _exit;
         private bool _standsAtExit;
         private bool _awaitingLocation;
+        private bool _arrivesByPortal;
         private Vector2? _fallenAt;
         private Vector2 _enteredFrom;
         private float _enteredFor;
@@ -102,6 +103,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             StandAt(null);
             _standsAtExit = true;
         }
+
+        /// <inheritdoc/>
+        public void ArriveByPortal() => _arrivesByPortal = true;
 
         /// <inheritdoc/>
         public void TravelTo(RectTransform anchor)
@@ -147,7 +151,18 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             // A Send's walk starts once the Location's anchor can be read, as the arena waits for it too.
             if (_awaitingLocation && _anchor != null)
-                TravelTo(_anchor);
+            {
+                // Out of a Town Portal he is at the fight at once; the walk is for a hero who set out from the Exit.
+                if (_arrivesByPortal)
+                {
+                    _awaitingLocation = false;
+                    _mode = Mode.Following;
+                }
+                else
+                    TravelTo(_anchor);
+
+                _arrivesByPortal = false;
+            }
 
             if (held)
                 EnterPortal();
@@ -204,6 +219,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _run = null;
             _phase = default;
             _inPortal = false;
+            _arrivesByPortal = false;
             StandAt(null);
         }
 

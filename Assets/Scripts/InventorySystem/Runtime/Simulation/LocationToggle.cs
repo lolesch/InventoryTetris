@@ -83,12 +83,18 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             // After a Death the Run's down flag is reset but the hero stays dead until Respawn, while this face still shows.
             if (!simulation.CanSend(Location) || simulation.Run.HeroIsDown) return;
 
-            // Switching mid-Run moves the live Run — no Return, so the Run never passes through
+            var run = simulation.Run;
+
+            // A resume selects the Location its Run is already live at: the toggle follows the Run, it does not command it.
+            if (run.Phase == RunPhase.Live && run.Location == simulation.Locations.ProfileFor(Location))
+                return;
+
+            // Switching mid-Run moves the Run, live or held — no Return, so the Run never passes through
             // Town (which would collapse the InFields face and clear this very toggle with it).
-            if (simulation.Run.Phase == RunPhase.Live)
-                simulation.Relocate(Location);
-            else
+            if (run.Phase == RunPhase.None)
                 simulation.Send(Location);
+            else
+                simulation.Relocate(Location);
         }
 
 #if UNITY_EDITOR
