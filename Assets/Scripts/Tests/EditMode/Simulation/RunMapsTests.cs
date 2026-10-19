@@ -17,5 +17,13 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         {
             Assert.That(phase.TownMapIsUp(), Is.EqualTo(townUp));
         }
+
+        [TestCase(RunPhase.None, false)]
+        [TestCase(RunPhase.Held, false)]
+        [TestCase(RunPhase.Live, true)]
+        public void TheFieldExit_ReturnsOnlyALiveRun(RunPhase phase, bool returns)
+        {
+            Assert.That(phase.FieldExitReturns(), Is.EqualTo(returns));
+        }
     }
 }

@@ -8,5 +8,11 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// whose hero heals and sorts the bag in Town. Only a live Run is on the Field map.
         /// </summary>
         public static bool TownMapIsUp(this RunPhase phase) => phase != RunPhase.Live;
+
+        /// <summary>
+        /// Whether a click on the Field Exit ends the Run in <paramref name="phase"/>: a live Run Returns, while a held
+        /// one is only walked away from and a Run-less preview has nothing to end.
+        /// </summary>
+        public static bool FieldExitReturns(this RunPhase phase) => phase == RunPhase.Live;
     }
 }

@@ -9,9 +9,9 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
     /// <summary>
     /// To Town: fades the Town face back in unconditionally (<see cref="PanelButton.OnClick"/>) -
     /// covering both a real Return and backing out of a Go Venture preview, where no Run exists
-    /// yet to Return. Only Returns when a Run is actually live
-    /// (<see cref="RunPhase.Live"/>) - <see cref="RunState.Return"/> requires exactly that and
-    /// throws otherwise, which the preview-cancel path would hit on every click without this guard.
+    /// yet to Return. Only Returns when a Run is actually live (<see cref="RunMaps.FieldExitReturns"/>) -
+    /// <see cref="RunState.Return"/> requires exactly that and throws otherwise, which the preview-cancel path
+    /// would hit on every click without this guard. A held Run is only walked away from: it ends nothing.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class ToTownButton : PanelButton
@@ -36,7 +36,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
 
             var simulation = SimulationService.Instance;
 
-            if (simulation.Run.Phase == RunPhase.Live)
+            if (simulation.Run.Phase.FieldExitReturns())
                 _ = simulation.Return();
         }
     }
