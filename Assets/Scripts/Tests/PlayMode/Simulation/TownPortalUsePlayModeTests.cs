@@ -420,6 +420,32 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
         }
 
         [UnityTest]
+        public IEnumerator AClearedLocation_EndsWithTheHeroWalkingBackToTheAnchor()
+        {
+            yield return FightingBeforeTheRecall();
+            Session.Instance.Hero.IsInvincible = true;
+            var figure = Named("HeroFigure").Single();
+            var anchor = (RectTransform)ToggleOf(_thornwood).GetType().GetProperty("TravelPoint").GetValue(ToggleOf(_thornwood));
+            var centre = anchor.TransformPoint(anchor.rect.center);
+
+            var encounter = Simulation.Run.Encounter;
+            for (var tick = 0; encounter.Phase != SimulationPhase.Complete && tick < 20000; tick++)
+                Simulation.Tick(0.5f);
+
+            Assume.That(encounter.Phase, Is.EqualTo(SimulationPhase.Complete), "premise: the last enemy is down");
+            yield return null;
+
+            Time.timeScale = 20f;
+            for (var frame = 0; Vector3.Distance(figure.transform.position, centre) > 2f && frame < 3000; frame++)
+                yield return null;
+
+            Time.timeScale = 1f;
+            Assert.That(Vector3.Distance(figure.transform.position, centre), Is.LessThan(2f), "he ends at the anchor, not where he struck last");
+            yield return null;
+            Assert.That(Vector3.Distance(figure.transform.position, centre), Is.LessThan(2f), "and stays there");
+        }
+
+        [UnityTest]
         public IEnumerator AClearedLocation_RecalledFromAndReturnedTo_ArrivesWithItsToggleOff_AndSendsNowhere()
         {
             yield return FightingBeforeTheRecall();

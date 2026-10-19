@@ -88,3 +88,9 @@ Inventory behaviour, not the Recall: tracked separately.
   stands where he walked to; after a Return he still comes in through the Exit's Travel Point.
 - The Field map is unchanged: a Location's Travel Point is also where its arena is drawn, and the Field Exit is where
   the figure stands after the map comes up, so neither is a place to click to.
+
+## The Location ends with a walk back to the anchor
+
+- When the last enemy of a Location is down the hero walks back to the anchor, the centre of the arena, and stands
+  there; the run does not end on the spot where he struck last. It is a shown walk at his own pace (ADR-0021) and
+  independent of the clear itself: the Location completes, and its toggle lets go, at the kill as before.

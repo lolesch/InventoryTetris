@@ -2,6 +2,7 @@ using Submodules.Utility.Extensions;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Geometry;
+using ToolSmiths.InventorySystem.Locations;
 using ToolSmiths.InventorySystem.Runtime.Character;
 using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Simulation;
@@ -48,6 +49,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             Fallen,
             Entering,
             Leaving,
+            Finishing,
         }
 
         private readonly IHeroTravel _travel = new HeroTravel(default);
@@ -219,10 +221,15 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             else if (resumed && _bound != null)
                 _mode = Mode.Following;
 
+            // The last enemy is down: he walks back to the anchor rather than ending where he struck it.
+            if (_mode == Mode.Following && !_emerging && _bound != null && _bound.Phase == SimulationPhase.Complete && !_hero.IsDead)
+                BeginFinishing();
+
             switch (_mode)
             {
                 case Mode.Walking: Walk(); break;
                 case Mode.Leaving: Leave(); break;
+                case Mode.Finishing: Finish(); break;
                 case Mode.Following when _emerging && _bound != null: StepOut(); break;
                 case Mode.Following: Follow(); break;
                 case Mode.Entering: Enter(); break;
@@ -381,7 +388,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _emergeFor = 0f;
             _visible = 0f;
             _steppingOut = false;
-            _heldAnchor = null;
 
             // A live Run waits for him; a held one is not moving anyway.
             SimulationService.Instance.SetHeroInTransit(true);
@@ -464,7 +470,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             // The map collapsing over a held Run clears the Location toggles, so the arena has no anchor then: the
             // selected Location's own Travel Point is where its fight is drawn all the same.
-            var anchor = _anchor != null ? _anchor : HeldLocationAnchor();
+            var anchor = _anchor != null ? _anchor : SelectedLocationAnchor();
             if (anchor == null)
                 return false;
 
@@ -474,19 +480,53 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             return true;
         }
 
-        private RectTransform _heldAnchor;
+        private RectTransform _selectedAnchor;
+        private LocationConfig _selectedAnchorFor;
 
-        private RectTransform HeldLocationAnchor()
+        // The Travel Point of the hero's selected Location, found when the arena has no anchor (no toggle is on).
+        private RectTransform SelectedLocationAnchor()
         {
-            if (_heldAnchor)
-                return _heldAnchor;
-
             var selected = _hero?.SelectedLocation;
+            if (_selectedAnchor && _selectedAnchorFor == selected)
+                return _selectedAnchor;
+
+            _selectedAnchor = null;
+            _selectedAnchorFor = selected;
             foreach (var toggle in FindObjectsByType<LocationToggle>(FindObjectsInactive.Include))
                 if (toggle.Location == selected)
-                    return _heldAnchor = toggle.TravelPoint;
+                    return _selectedAnchor = toggle.TravelPoint;
 
             return null;
+        }
+
+        // The Location is cleared: the fight is over and he walks back to the anchor, the centre of the arena, to end on.
+        // Shown only (ADR-0021); the sim has nothing left to do with him.
+        private void BeginFinishing()
+        {
+            var anchor = _anchor != null ? _anchor : SelectedLocationAnchor();
+            if (anchor == null || !Figure.IsPlaced)
+                return;
+
+            _travel.Place(new Coordinate(((RectTransform)transform).anchoredPosition));
+            _mode = Mode.Finishing;
+        }
+
+        private void Finish()
+        {
+            var anchor = _anchor != null ? _anchor : SelectedLocationAnchor();
+            if (anchor == null)
+            {
+                _mode = Mode.Following;
+                return;
+            }
+
+            var goal = LocalCentre(anchor);
+            _travel.Retarget(new Coordinate(goal));
+            _ = _travel.Advance(ArenaSpace.HeroCanvasSpeed, SimulationService.Instance.WalkDelta(Time.deltaTime));
+
+            var at = new Vector2(_travel.Position.x, _travel.Position.z);
+            Figure.Place(at, ArenaOf(at), ArenaLayout.FacingSign(at.x, goal.x, Figure.FacingSign, WalkFacingDeadZone));
+            SortAmongSiblings();
         }
 
         // Grows from nothing over the vanish's beat, the reverse of going in; with no portal that is all of it.
