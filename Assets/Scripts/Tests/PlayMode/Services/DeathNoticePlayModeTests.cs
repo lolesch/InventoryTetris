@@ -80,7 +80,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             var waypoint = TravelPoints.Waypoint(figure);
 
             Hero.GetStat(StatName.MovementSpeed).AddModifier(new StatModifier(new Vector2Int(0, 100000), 325f));
-            _ = figure.GetType().GetMethod("TravelTo").Invoke(figure, new object[] { stash });
+            _ = figure.GetType().GetMethod("TravelTo", new[] { typeof(RectTransform) }).Invoke(figure, new object[] { stash });
             yield return new WaitForSeconds(0.4f);
 
             Assert.That(Vector3.Distance(figure.transform.position, waypoint.TransformPoint(waypoint.rect.center)), Is.GreaterThan(5f),

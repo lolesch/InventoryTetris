@@ -2,6 +2,7 @@ using Submodules.Utility.UI;
 using ToolSmiths.InventorySystem.Runtime.Simulation;
 using ToolSmiths.InventorySystem.Services;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
 {
@@ -17,6 +18,9 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
         [SerializeField, Tooltip("Where the figure stands at the Exit. Empty: this button's own centre.")]
         private RectTransform travelPoint;
 
+        // The click that is under way: he walks to where it landed on the Exit.
+        private PointerEventData _click;
+
         // Announces the Exit's point to the figure, which stands there after a Return.
         protected override void OnEnable()
         {
@@ -26,10 +30,26 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
                 heroFigure.SetExit(this.TravelPointOr(travelPoint));
         }
 
+        public override void OnPointerClick(PointerEventData eventData)
+        {
+            _click = eventData;
+
+            try
+            {
+                base.OnPointerClick(eventData);
+            }
+            finally
+            {
+                _click = null;
+            }
+        }
+
         protected override void OnClick()
         {
             if (heroFigure == null)
                 Leave();
+            else if (heroFigure.TryPointerToMap(_click, (RectTransform)transform, out var clicked))
+                heroFigure.WalkThen(clicked, Leave);
             else
                 heroFigure.WalkThen(this.TravelPointOr(travelPoint), Leave);
         }

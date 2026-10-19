@@ -80,3 +80,11 @@ Inventory behaviour, not the Recall: tracked separately.
   Town stop on the way cancels the Town Exit.
 - A Recall opens the Field portal beside where the hero is drawn, not beside the fight he has not reached yet; a
   portal he comes out of opens beside the fight. On the Town map he walks to the Town Portal's `Beside` offset.
+
+## The hero walks to where the click landed
+
+- On the Town map a click on a Town Stop or the Town Exit sends the hero to the point of the control the pointer
+  landed on, not to its referenced Travel Point. A hotkey has no pointer and still walks to the Travel Point. He
+  stands where he walked to; after a Return he still comes in through the Exit's Travel Point.
+- The Field map is unchanged: a Location's Travel Point is also where its arena is drawn, and the Field Exit is where
+  the figure stands after the map comes up, so neither is a place to click to.

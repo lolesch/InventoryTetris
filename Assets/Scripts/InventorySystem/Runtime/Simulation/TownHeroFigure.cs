@@ -3,6 +3,7 @@ using Submodules.Utility.Services;
 using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace ToolSmiths.InventorySystem.Runtime.Simulation
 {
@@ -57,8 +58,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private float _emergeFor;
         private TownPortalMarker _portalMarker;
 
-        // Where he stands beside the Town Portal once he has come out of it, in the map's space; none otherwise.
-        private Vector2? _besideStand;
+        // Where he stands when it is a point of the map and no marked one - beside the Town Portal once he has come out of
+        // it, or where a click sent him - in the map's space; none otherwise.
+        private Vector2? _standCoord;
 
         private CanvasGroup Group => _group ? _group : _group = GetComponent<CanvasGroup>();
 
@@ -183,10 +185,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (_portalMarker)
             {
                 // He stands where the portal's Beside says, and stays there: a stance of its own, not one of the marked points.
-                _besideStand = new Vector2(at.x, at.z) + _portalMarker.Beside;
+                _standCoord = new Vector2(at.x, at.z) + _portalMarker.Beside;
                 _standAt = null;
                 _target = null;
-                _travel.Retarget(new Coordinate(_besideStand.Value));
+                _travel.Retarget(new Coordinate(_standCoord.Value));
             }
             else if (StandPoint != null)
                 TravelTo(StandPoint);
@@ -207,7 +209,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _stand = TownStartPoint.For(entry);
             _standAt = null;
             _target = null;
-            _besideStand = null;
+            _standCoord = null;
             _onGone = null;
             _onArrived = null;
             _vanishing = false;
@@ -231,7 +233,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _stand = atExit ? TownStand.TownExit : _stand;
             _standAt = atExit ? null : point;
             _target = null;
-            _besideStand = null;
+            _standCoord = null;
         }
 
         private void Update()
@@ -265,7 +267,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 return;
 
             // Arriving at his Beside is no marked point to stand at.
-            if (!_besideStand.HasValue)
+            if (!_standCoord.HasValue)
                 StandAtPoint(_target);
 
             _vanishing = _onGone != null;
@@ -323,10 +325,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private void Settle(bool force)
         {
             var point = StandPoint;
-            if (point == null && !_besideStand.HasValue)
+            if (point == null && !_standCoord.HasValue)
                 return;
 
-            var at = _besideStand.HasValue ? new Coordinate(_besideStand.Value) : Local(point);
+            var at = _standCoord.HasValue ? new Coordinate(_standCoord.Value) : Local(point);
             if (!force && Coordinate.Distance(at, _travel.Position) < 1e-3f)
                 return;
 
@@ -352,12 +354,49 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _onArrived = null;
             _target = point;
             _standAt = null;
-            _besideStand = null;
+            _standCoord = null;
             _travel.Retarget(Local(point));
 
             // Already there: nothing walks, so it stands at the point it was sent to.
             if (!_travel.IsWalking)
                 Place(point);
+        }
+
+        /// <summary>
+        /// Where a click landed on the map, in the space the figure walks in: <c>false</c> for a key press or a click
+        /// that did not land on <paramref name="control"/>, which walks to the control's Travel Point instead.
+        /// </summary>
+        public bool TryPointerToMap(PointerEventData click, RectTransform control, out Vector2 local)
+        {
+            local = default;
+            return click != null
+                   && RectTransformUtility.RectangleContainsScreenPoint(control, click.position, click.pressEventCamera)
+                   && RectTransformUtility.ScreenPointToLocalPointInRectangle(Map, click.position, click.pressEventCamera, out local);
+        }
+
+        /// <summary>Walk to a point of the map at the hero's pace and stand there, turning from any walk under way.</summary>
+        public void TravelTo(Vector2 point)
+        {
+            _onGone = null;
+            _onArrived = null;
+            _target = null;
+            _standAt = null;
+            _standCoord = point;
+            _travel.Retarget(new Coordinate(point));
+        }
+
+        /// <summary>Walk to a point of the map and call <paramref name="onArrived"/> once he stands there (at once when he does).</summary>
+        public void WalkThen(Vector2 point, System.Action onArrived)
+        {
+            TravelTo(point);
+
+            if (!_travel.IsWalking)
+            {
+                onArrived();
+                return;
+            }
+
+            _onArrived = onArrived;
         }
 
         // The point's centre in the space the figure walks in.

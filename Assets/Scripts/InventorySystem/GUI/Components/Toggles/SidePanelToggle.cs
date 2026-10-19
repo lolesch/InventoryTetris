@@ -6,6 +6,7 @@ using ToolSmiths.InventorySystem.Locations;
 using ToolSmiths.InventorySystem.Runtime.Simulation;
 using ToolSmiths.InventorySystem.Services;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
 {
@@ -73,6 +74,23 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         [Tooltip("The Unlockable this Town Stop opens as (the Vendor). It is greyed out and does nothing, to a click and to " +
                  "its hotkey alike, until the hero's state for it is Active. Empty: always open (the Stash, the Healer).")]
         [SerializeField] private TownStop stop;
+
+        // The click that is under way, for the figure to walk to where it landed; a hotkey has none and walks to the Travel Point.
+        private PointerEventData _click;
+
+        public override void OnPointerClick(PointerEventData eventData)
+        {
+            _click = eventData;
+
+            try
+            {
+                base.OnPointerClick(eventData);
+            }
+            finally
+            {
+                _click = null;
+            }
+        }
 
         protected override void OnClick() => UserToggle();
 
@@ -207,7 +225,12 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
             if (wasOn && !IsOn)
                 panel.RequestContext(false);
             else if (!wasOn && IsOn && heroFigure != null && panel.IsUpIn(InventoryService.Instance.ActiveContext))
-                heroFigure.TravelTo(this.TravelPointOr(travelPoint));
+            {
+                if (heroFigure.TryPointerToMap(_click, (RectTransform)transform, out var clicked))
+                    heroFigure.TravelTo(clicked);
+                else
+                    heroFigure.TravelTo(this.TravelPointOr(travelPoint));
+            }
         }
 
 #if UNITY_EDITOR

@@ -64,6 +64,10 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         private static float Apart(MonoBehaviour figure, RectTransform control) =>
             Vector3.Distance(figure.transform.position, Centre(TravelPoints.Of(control)));
 
+        // World units between the figure and the control's centre, where a test's click lands and so where a click sends him.
+        private static float ApartFromClick(MonoBehaviour figure, RectTransform control) =>
+            Vector3.Distance(figure.transform.position, Centre(control));
+
         // The Overlay canvas draws in screen space, so a rect's world centre is where the pointer goes.
         private IEnumerator Click(RectTransform target)
         {
@@ -105,7 +109,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             yield return OpenExample();
             var figure = Figure();
             var stash = Named("StashToggle");
-            var before = Apart(figure, stash);
+            var before = ApartFromClick(figure, stash);
 
             yield return Click(stash);
             yield return null;
@@ -114,11 +118,34 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             Assert.That(IsWalking(figure), Is.True);
 
             yield return new WaitForSeconds(0.3f);
-            Assert.That(Apart(figure, stash), Is.LessThan(before), "walking towards it");
+            Assert.That(ApartFromClick(figure, stash), Is.LessThan(before), "walking towards it");
 
             Hasten(5000f);
             yield return UntilArrived(figure);
-            Assert.That(Apart(figure, stash), Is.LessThan(AtTheStop));
+            Assert.That(ApartFromClick(figure, stash), Is.LessThan(AtTheStop));
+        }
+
+        [UnityTest]
+        public IEnumerator AClickOnAStop_SendsTheFigureToWhereItLanded_NotToTheTravelPoint()
+        {
+            yield return OpenExample();
+            var figure = Figure();
+            var stash = Named("StashToggle");
+            var aside = new Vector2(6f, 4f);
+            var landed = (Vector2)Centre(stash) + aside;
+            Hasten(5000f);
+
+            Set(mouse.position, landed);
+            yield return null;
+            currentTime += 1.0;
+            Press(mouse.leftButton);
+            yield return null;
+            Release(mouse.leftButton);
+            yield return null;
+
+            yield return UntilArrived(figure);
+            Assert.That(Context, Is.EqualTo(InventoryContext.Stash));
+            Assert.That(Vector2.Distance(figure.transform.position, landed), Is.LessThan(2f), "he stands where the click landed");
         }
 
         [UnityTest]
@@ -143,8 +170,8 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 
             Hasten(5000f);
             yield return UntilArrived(figure);
-            Assert.That(Apart(figure, stash), Is.LessThan(AtTheStop), "ended at the Stash");
-            Assert.That(Apart(figure, healer), Is.GreaterThan(AtTheStop), "never stopped at the Healer");
+            Assert.That(ApartFromClick(figure, stash), Is.LessThan(AtTheStop), "ended at the Stash");
+            Assert.That(ApartFromClick(figure, healer), Is.GreaterThan(AtTheStop), "never stopped at the Healer");
         }
 
         [UnityTest]
@@ -172,7 +199,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             var figure = Figure();
 
             var stash = Named("StashToggle");
-            var travelTo = figure.GetType().GetMethod("TravelTo");
+            var travelTo = figure.GetType().GetMethod("TravelTo", new[] { typeof(RectTransform) });
 
             _ = travelTo.Invoke(figure, new object[] { stash });
             var start = figure.transform.position;
@@ -232,16 +259,17 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         {
             yield return OpenExample();
             var figure = Figure();
-            var exit = Named("ToFieldsButton");
-            yield return StandAtTheStash(figure);
+            var healer = Named("HealerToggle");
+            var healerAt = (Vector2)Centre(healer);
+            Hasten(5000f);
 
-            yield return Click(exit);
-            yield return Click(Named("HealerToggle"));
             yield return Click(Named("StashToggle"));
+            yield return Click(Named("ToFieldsButton"));
+            yield return Click(healer);
 
             yield return UntilArrived(figure);
             yield return new WaitForSeconds(0.2f);
-            Assert.That(Apart(figure, Named("StashToggle")), Is.LessThan(AtTheStop), "he ended at the Stash he last asked for");
+            Assert.That(Vector2.Distance(figure.transform.position, healerAt), Is.LessThan(AtTheStop), "he ended at the Healer he last asked for");
             Assert.That(Face("InTown").blocksRaycasts, Is.True, "the exit was cancelled: the Town map is still up");
         }
 
@@ -384,7 +412,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             yield return null;
             Assert.That(Context, Is.EqualTo(InventoryContext.None), "premise: the second press closed it");
             Assert.That(IsWalking(figure), Is.False);
-            Assert.That(Apart(figure, stash), Is.LessThan(AtTheStop));
+            Assert.That(ApartFromClick(figure, stash), Is.LessThan(AtTheStop));
         }
     }
 }
