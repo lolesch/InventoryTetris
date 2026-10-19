@@ -135,6 +135,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(RebindableActions.All, Has.No.Member(GameAction.Cancel));
             Assert.That(RebindableActions.All, Has.No.Member(GameAction.None));
             Assert.That(RebindableActions.All, Has.Member(GameAction.TogglePause));
+            Assert.That(RebindableActions.All, Has.Member(GameAction.Recall));
             Assert.That(RebindableActions.All.Count, Is.EqualTo(System.Enum.GetValues(typeof(GameAction)).Length - 2));
         }
 

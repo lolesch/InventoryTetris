@@ -47,6 +47,9 @@ namespace ToolSmiths.InventorySystem.Services
         /// <summary>Held on an open selling panel: shows the other tab of its two-panel switch. Apart from
         /// <see cref="ShowDetails"/> so that holding it over an item does not swap that item away.</summary>
         PeekTab = 11,
+
+        /// <summary>Recalls the live Run to Town through a Portal Scroll (ADR-0022).</summary>
+        Recall = 12,
     }
 
     /// <summary>The actions a rebinding screen offers.</summary>

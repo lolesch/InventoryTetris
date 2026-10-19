@@ -90,6 +90,9 @@ namespace ToolSmiths.InventorySystem.Services
         /// </summary>
         void Recall();
 
+        /// <summary>The Portal Scrolls in the hero's Inventory, stacks summed; the Stash does not count. The number the Recall button shows.</summary>
+        int PortalScrollCount { get; }
+
         /// <summary>
         /// Resume the held Run exactly where it was and close the hero's Town Portal. Throws unless the Run is
         /// <see cref="RunPhase.Held"/>. A Relocate from Held, a Send, a Return and a Death all leave the portal open.

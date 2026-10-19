@@ -202,6 +202,7 @@ namespace ToolSmiths.InventorySystem.Services
             // The pause key subscribes to its press and lives with the service; it has no tick.
             var simulation = registry.Get<ISimulationService>();
             _ = new PauseHotkey(simulation, keys);
+            _ = new RecallHotkey(simulation, keys);
             GameLoop.Add(simulation.Tick);
 
             // After the tick, so a Complete it raised is banked the frame it happened.
