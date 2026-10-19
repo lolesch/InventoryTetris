@@ -359,6 +359,45 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             Assert.That(marker.GetComponent<UnityEngine.UI.Image>().enabled, Is.False, "and the portal closes behind him");
         }
 
+        // A pointer over the portal and off it again, as the event system sends them.
+        private static IEnumerator HoverGrowsAndReleases(Component marker)
+        {
+            var before = marker.transform.localScale;
+            var pointer = new PointerEventData(EventSystem.current);
+
+            ExecuteEvents.Execute(marker.gameObject, pointer, ExecuteEvents.pointerEnterHandler);
+            yield return new WaitForSeconds(0.6f);
+            Assert.That(marker.transform.localScale.x, Is.GreaterThan(before.x * 1.03f), "it grows under the pointer");
+            Assert.That(marker.transform.localScale.y, Is.GreaterThan(before.y * 1.03f), "in height too");
+
+            ExecuteEvents.Execute(marker.gameObject, pointer, ExecuteEvents.pointerExitHandler);
+            yield return new WaitForSeconds(0.6f);
+            Assert.That(marker.transform.localScale.x, Is.EqualTo(before.x).Within(0.01f), "and returns to size");
+        }
+
+        [UnityTest]
+        public IEnumerator TheTownPortal_GrowsOnHover_LikeEveryOtherButton()
+        {
+            yield return HeldAtThornwood();
+            var marker = Named("TownPortalMarker").Single();
+            yield return Until(() => Flag(marker, "IsOpen"), "premise: the portal has grown");
+            yield return null;
+
+            Assert.That(RaycastHitsAt(marker).FirstOrDefault(), Is.EqualTo(marker.gameObject), "a real pointer over it hits it first");
+            yield return HoverGrowsAndReleases(marker);
+        }
+
+        [UnityTest]
+        public IEnumerator TheFieldPortal_GrowsOnHover_LikeEveryOtherButton()
+        {
+            yield return HeldAndWalkedOutToTheField();
+            var marker = FieldMarker();
+            yield return Until(() => Flag(marker, "IsOpen"), "premise: the portal is open");
+            yield return null;
+
+            yield return HoverGrowsAndReleases(marker);
+        }
+
         [UnityTest]
         public IEnumerator AClearedLocation_LetsGoOfItsToggle_SoItCanBeSentToAgain()
         {
