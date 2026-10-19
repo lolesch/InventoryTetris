@@ -4795,6 +4795,7 @@ GameObject:
   - component: {fileID: 318019185}
   - component: {fileID: 318019184}
   - component: {fileID: 318019183}
+  - component: {fileID: 318019187}
   m_Layer: 5
   m_Name: ToTownButton
   m_TagString: Untagged
@@ -4949,6 +4950,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 318019180}
   m_CullTransparentMesh: 1
+--- !u!114 &318019187
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 318019180}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3546bcdad4abcd542aa64a5e65da30ec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Components.AlphaHitTest
+  image: {fileID: 318019185}
+  minimumAlpha: 0.1
 --- !u!224 &322413264 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 8089604161027485866, guid: 6d403d8b65792114ba5ea1a5420f1956, type: 3}
@@ -7901,7 +7916,7 @@ MonoBehaviour:
   hoverScale: 1.06
   tooltip: 
   tooltipLabel: {fileID: 0}
-  <IsOn>k__BackingField: 0
+  <IsOn>k__BackingField: 1
   <RadioGroup>k__BackingField: {fileID: 1435666377}
   toggledOffSprite: {fileID: 0}
   toggledOnSprite: {fileID: 0}
@@ -11181,14 +11196,14 @@ MonoBehaviour:
   m_Interactable: 1
   m_TargetGraphic: {fileID: 713883094}
   staySelected: 0
-  hoverScale: 1.06
+  hoverScale: 1.15
   tooltip: 
   tooltipLabel: {fileID: 0}
   appearSeconds: 0.4
   arrivalDelaySeconds: 0.3
   arena: {fileID: 900000012}
   heroFigure: {fileID: 56875748}
-  beside: {x: 70, y: 0}
+  beside: {x: 60, y: -10}
 --- !u!114 &713883094
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12790,7 +12805,7 @@ MonoBehaviour:
   hoverScale: 1.06
   tooltip: 
   tooltipLabel: {fileID: 0}
-  <IsOn>k__BackingField: 0
+  <IsOn>k__BackingField: 1
   <RadioGroup>k__BackingField: {fileID: 0}
   toggledOffSprite: {fileID: 0}
   toggledOnSprite: {fileID: 0}
@@ -20775,8 +20790,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56427663e125e1643bdf7e7f665c39a6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Utility.UI::Submodules.Utility.UI.RadioGroup
-  <ActiveMember>k__BackingField: {fileID: 0}
-  <PreviousMember>k__BackingField: {fileID: 1393504392}
+  <ActiveMember>k__BackingField: {fileID: 427819267}
+  <PreviousMember>k__BackingField: {fileID: 0}
   <UserCanClear>k__BackingField: 1
   <SystemCanClear>k__BackingField: 1
   <ResetWithParentPanel>k__BackingField: 1
@@ -23645,7 +23660,7 @@ MonoBehaviour:
   m_Interactable: 1
   m_TargetGraphic: {fileID: 1623532714}
   staySelected: 0
-  hoverScale: 1.06
+  hoverScale: 1.15
   tooltip: 
   tooltipLabel: {fileID: 0}
   appearSeconds: 0.4
@@ -23653,6 +23668,7 @@ MonoBehaviour:
   fieldFace: {fileID: 1426694742}
   fieldFigure: {fileID: 56875748}
   townFigure: {fileID: 296961779}
+  beside: {x: -60, y: 10}
 --- !u!114 &1623532714
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -23765,6 +23781,7 @@ GameObject:
   - component: {fileID: 1628728800}
   - component: {fileID: 1628728799}
   - component: {fileID: 1628728798}
+  - component: {fileID: 1628728802}
   m_Layer: 5
   m_Name: Location2Toggle
   m_TagString: Untagged
@@ -23922,6 +23939,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1628728795}
   m_CullTransparentMesh: 1
+--- !u!114 &1628728802
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1628728795}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3546bcdad4abcd542aa64a5e65da30ec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Components.AlphaHitTest
+  image: {fileID: 1628728800}
+  minimumAlpha: 0.1
 --- !u!224 &1641443808 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 7732425298350059314, guid: cf0141580ffbbc444b72dd3d441cf354, type: 3}
@@ -23984,7 +24015,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 29
+  m_text: 4
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2100000, guid: 79459efec17a4d00a321bdcc27bbc385, type: 2}
@@ -29534,6 +29565,7 @@ GameObject:
   - component: {fileID: 1990545806}
   - component: {fileID: 1990545805}
   - component: {fileID: 1990545804}
+  - component: {fileID: 1990545808}
   m_Layer: 5
   m_Name: Location1Toggle
   m_TagString: Untagged
@@ -29691,6 +29723,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1990545801}
   m_CullTransparentMesh: 1
+--- !u!114 &1990545808
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1990545801}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3546bcdad4abcd542aa64a5e65da30ec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Components.AlphaHitTest
+  image: {fileID: 1990545806}
+  minimumAlpha: 0.1
 --- !u!1 &1991824110
 GameObject:
   m_ObjectHideFlags: 0
