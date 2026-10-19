@@ -134,6 +134,16 @@ namespace ToolSmiths.InventorySystem.GUI.Components
             }
         }
 
+        /// <summary>A Recall as the player's: spends a Portal Scroll and opens the portal. Refused, with a warning, when
+        /// <see cref="ISimulationService.CanRecall"/> says so.</summary>
+        public void RecallPlayer()
+        {
+            if (SimulationService.Instance.CanRecall)
+                SimulationService.Instance.Recall();
+            else
+                Debug.LogWarning("A Recall needs a live Run, a hero who is up and a Portal Scroll in the Inventory.");
+        }
+
         public void KillPlayer() => Session.Instance.Hero.GetResource(StatName.Health).DepleteCurrent();
 
         /// <summary>A full Health and Resource refill, the Healer's.</summary>

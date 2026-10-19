@@ -9,7 +9,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// <summary>
     /// The hero drawn on the Town map and walking it (ADR-0021), in its parent's canvas space. It walks at the sim's
     /// pace through the arena's canvas scale, so a walk and a fight move alike; nothing waits for it to arrive and
-    /// Pause does not stop it.
+    /// Pause does not stop it. A Recall that holds the Run stands it at the Waypoint, beside the Town Portal.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class TownHeroFigure : MonoBehaviour, ITownHeroFigure
@@ -30,6 +30,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private TownStand _stand = TownStand.Waypoint;
         private RectTransform _rect;
         private RectTransform _map;
+        private RunPhase _phase;
 
         // The rect the figure sits under: positions and the walk are in its local space (canvas units).
         private RectTransform Map => _map ? _map : _map = (RectTransform)transform.parent;
@@ -107,6 +108,13 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         private void Update()
         {
+            // The Run's phase is polled, since a hero load replaces the Run: a hold is the only edge this reads.
+            var phase = SimulationService.Instance.Run.Phase;
+            if (phase == RunPhase.Held && _phase != RunPhase.Held)
+                Enter(TownEntry.Recall);
+
+            _phase = phase;
+
             if (!_travel.IsWalking)
             {
                 Settle(force: false);

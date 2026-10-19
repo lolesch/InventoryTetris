@@ -9,7 +9,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// <summary>
     /// A <see cref="SimplePanel"/> that fades itself in to match the Run's phase, previously
     /// driven by <c>MinimapController</c> (removed; issue #85's "panels derive, nothing
-    /// announces" now applies to <see cref="RunPhase"/> too).
+    /// announces" now applies to <see cref="RunPhase"/> too). It is the Town map's face, up whenever the Run is
+    /// not live (<see cref="RunMaps.TownMapIsUp"/>): with no Run, and with a held one, once the Field figure has
+    /// gone into the portal.
     ///
     /// <para><b>Only the InTown face uses this.</b> The InFields face
     /// (<see cref="FieldFacePanel"/>) is deliberately not phase-driven - Go Venture previews it
@@ -26,11 +28,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// </summary>
     public sealed class RunPhasePanel : SimplePanel
     {
-        [Tooltip("The RunPhase this panel is up during. Applied on every PhaseChanged and on " +
-                 "enable, against whatever the Run's phase actually is right now.")]
-        [SerializeField] private RunPhase activeDuring = RunPhase.None;
+        [Tooltip("The Field map's Hero figure. A held Run brings the Town map up only once it has gone into the " +
+                 "portal. Empty: at once.")]
+        [SerializeField] private HeroFigure fieldFigure;
 
         private RunState _run;
+        private bool _awaitingFigure;
 
         /// <summary>
         /// Play mode only, mirroring <see cref="ToolSmiths.InventorySystem.Services.InventoryService.TrySubscribeContextChanged"/>'s
@@ -48,10 +51,21 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             BindRun();
         }
 
+        // The figure walks into the portal on its own clock, so the held Run's Town map is picked up here.
+        private void Update()
+        {
+            if (!_awaitingFigure || !fieldFigure.HasEnteredPortal)
+                return;
+
+            _awaitingFigure = false;
+            ToggleState(true);
+        }
+
         // Lets go of the Run it subscribed to, not whatever the service holds by now.
         protected override void OnDisable()
         {
             base.OnDisable();
+            _awaitingFigure = false;
 
             Session.UnsubscribeHeroLoaded(BindRun);
             if (ServiceLocator.IsArmed)
@@ -81,8 +95,14 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         }
 
         // A Death ends the Run but leaves the hero down; the Town map waits for Respawn.
-        private void SyncToPhase(RunPhase phase) =>
-            ToggleState(phase == activeDuring && !Session.Instance.Hero.IsDead);
+        private void SyncToPhase(RunPhase phase)
+        {
+            var up = phase.TownMapIsUp() && !Session.Instance.Hero.IsDead;
+            _awaitingFigure = up && phase == RunPhase.Held && fieldFigure != null;
+
+            if (!_awaitingFigure)
+                ToggleState(up);
+        }
 
         private void Resync() => SyncToPhase(_run.Phase);
     }

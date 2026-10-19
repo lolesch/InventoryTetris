@@ -11,6 +11,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// <summary>Whether a walk is under way. False once the figure has arrived, or was placed.</summary>
         bool IsWalking { get; }
 
+        /// <summary>Whether a held Run's hero has gone into the Recall portal, so the Town map can come up.</summary>
+        bool HasEnteredPortal { get; }
+
         /// <summary>Appear at <paramref name="anchor"/> and stand there, as the figure does at the Field Exit.</summary>
         void StandAt(RectTransform anchor);
 

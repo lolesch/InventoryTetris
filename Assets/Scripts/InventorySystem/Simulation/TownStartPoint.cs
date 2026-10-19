@@ -11,6 +11,8 @@ namespace ToolSmiths.InventorySystem.Simulation
         Respawn,
         /// <summary>A Return from the Field: he came in through the Town Exit.</summary>
         Return,
+        /// <summary>A Recall's portal took him: he came in beside the Town Portal at the Waypoint.</summary>
+        Recall,
     }
 
     /// <summary>The marked points on the Town map the Town hero figure can stand at.</summary>

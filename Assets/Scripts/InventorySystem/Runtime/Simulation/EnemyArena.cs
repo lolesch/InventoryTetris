@@ -50,6 +50,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         [SerializeField, Tooltip("The Locations' toggle group; its active member's Hero icon is the anchor.")]
         private ToggleGroup locations;
         [SerializeField] private EnemyVisuals visuals;
+        [SerializeField, Tooltip("The Field map's canvas group. The enemy figures fade with it, since this object sits outside the face and a held Run's fight outlives it. Empty: always opaque.")]
+        private CanvasGroup map;
         [SerializeField, Min(0.01f), Tooltip("Canvas units one arena unit spans along the horizontal axis.")]
         private float arenaScale = 16f;
         [SerializeField, Range(0f, 1f), Tooltip("The depth axis against the horizontal one: 1 draws the arena top-down, less flattens it. Drawing only; the rules use arena distances.")]
@@ -209,7 +211,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                     Release(dying.Figure);
                 }
                 else
-                    dying.Figure.SetAlpha(ArenaLayout.DyingAlpha(dying.Elapsed, deathFadeSeconds));
+                    dying.Figure.SetAlpha(ArenaLayout.DyingAlpha(dying.Elapsed, deathFadeSeconds) * MapAlpha);
             }
         }
 
@@ -371,8 +373,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             var sign = facing.HasValue
                 ? ArenaLayout.FacingSign(at.x, facing.Value.x, figure.FacingSign, facingDeadZoneUnits)
                 : figure.FacingSign;
-            return figure.Place(_center + _projection.ToCanvas(at, _bound.Arena.Origin), at, sign);
+            var moved = figure.Place(_center + _projection.ToCanvas(at, _bound.Arena.Origin), at, sign);
+            figure.SetAlpha(MapAlpha);
+            return moved;
         }
+
+        private float MapAlpha => map != null ? map.alpha : 1f;
 
         /// <summary>The active Location's Hero icon, or null while nothing is selected.</summary>
         private RectTransform ResolveAnchor()
