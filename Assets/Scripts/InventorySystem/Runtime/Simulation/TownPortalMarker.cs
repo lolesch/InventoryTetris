@@ -43,21 +43,14 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (location == null || phase == RunPhase.Live || !simulation.CanSend(location))
                 return;
 
-            fieldFace.Expand();
-            InventoryService.Instance.SyncContextToMap(true);
-
             if (phase == RunPhase.Held)
-                simulation.Resume();
+                TownPortalUse.Use(fieldFace, location, simulation.Resume);
             else
-            {
-                simulation.Send(location);
-                fieldFigure.ArriveByPortal();
-            }
-
-            // After the Run: the toggle follows it, so its OnToggle finds the Run already live here and commands nothing.
-            foreach (var toggle in FindObjectsByType<LocationToggle>(FindObjectsInactive.Include))
-                if (toggle.Location == location)
-                    toggle.SyncToggle(true);
+                TownPortalUse.Use(fieldFace, location, () =>
+                {
+                    simulation.Send(location);
+                    fieldFigure.ArriveByPortal();
+                });
         }
     }
 }

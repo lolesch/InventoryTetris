@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Linq;
 using NUnit.Framework;
+using Submodules.Utility.UI;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Inventories;
@@ -78,8 +79,8 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             Assert.That(condition(), Is.True, because);
         }
 
-        // The Field map up, the hero Sent to Thornwood and walked in, a few ticks fought, then Recalled and held.
-        private IEnumerator HeldAtThornwood()
+        // The Field map up, the hero Sent to Thornwood and walked in, a few ticks fought.
+        private IEnumerator FightingBeforeTheRecall()
         {
             _ = FieldFace().GetType().GetMethod("ToggleState").Invoke(FieldFace(), new object[] { true });
             yield return Until(() => Flag(FieldFace(), "IsExtended"), "premise: the Field map is up");
@@ -99,6 +100,13 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
 
             var package = new Package(null, ItemService.Instance.RollConsumable(ConsumableType.PortalScroll, 0f), 1u);
             Assert.That(Session.Instance.Hero.Inventory.TryAddToContainer(ref package), Is.True, "premise: the scroll fits the bag");
+        }
+
+        // Recalled and held, the hero in Town.
+        private IEnumerator HeldAtThornwood()
+        {
+            yield return FightingBeforeTheRecall();
+
             Simulation.Recall();
             Simulation.Tick(1f);
             yield return null;
@@ -106,7 +114,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
 
             yield return Until(() => Flag(TownFace(), "IsExtended"), "premise: the Town map is up");
             yield return Until(() => Flag(FieldFace(), "IsCollapsed"), "premise: the Field map has gone");
-            yield return Until(() => !Flag(toggle, "IsOn"), "premise: the Location's highlight went with the Field map");
+            yield return Until(() => !Flag(ToggleOf(_thornwood), "IsOn"), "premise: the Location's highlight went with the Field map");
         }
 
         [UnityTest]
@@ -126,6 +134,99 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             Assert.That(Flag(FieldFace(), "IsExtended") || !Flag(FieldFace(), "IsCollapsed"), Is.True, "the Field map is coming back");
             Assert.That(Flag(ToggleOf(_thornwood), "IsOn"), Is.True, "the Location's toggle is selected");
             Assert.That(Flag(TownFace(), "IsExtended"), Is.False, "the Town map gives way");
+        }
+
+        private static Component FieldMarker() => Named("FieldPortalMarker").Single();
+
+        private static void ClickTheFieldMarker() =>
+            ((IPointerClickHandler)FieldMarker())
+                .OnPointerClick(new PointerEventData(EventSystem.current) { button = PointerEventData.InputButton.Left });
+
+        // Held and in Town: out through the Town Exit, as a player walks to the Recall point.
+        private IEnumerator HeldAndWalkedOutToTheField()
+        {
+            yield return HeldAtThornwood();
+
+            GameObject.Find("ToFieldsButton").GetComponent<AbstractButton>()
+                .OnPointerClick(new PointerEventData(EventSystem.current) { button = PointerEventData.InputButton.Left });
+            yield return Until(() => Flag(FieldFace(), "IsExtended"), "premise: the Field map is up");
+            yield return null;
+        }
+
+        // What a pointer over the marker's centre hits, front to back.
+        private static System.Collections.Generic.List<GameObject> RaycastHitsAt(Component marker)
+        {
+            var camera = marker.GetComponentInParent<Canvas>().rootCanvas.worldCamera;
+            var pointer = new PointerEventData(EventSystem.current)
+            {
+                position = RectTransformUtility.WorldToScreenPoint(camera, marker.transform.position)
+            };
+            var hits = new System.Collections.Generic.List<RaycastResult>();
+            EventSystem.current.RaycastAll(pointer, hits);
+            return hits.Select(hit => hit.gameObject).ToList();
+        }
+
+        [UnityTest]
+        public IEnumerator WalkingOutOfTownWhileHeld_ShowsTheFieldMarker_WithNothingOfTheFieldMapInFrontOfIt()
+        {
+            yield return HeldAndWalkedOutToTheField();
+
+            var marker = FieldMarker();
+            Assert.That(marker.GetComponent<UnityEngine.UI.Image>().enabled, Is.True, "the marker is shown at the Recall point");
+
+            // A side panel on a small screen may cover the point; what the Field map itself must not do is sit on top.
+            var hits = RaycastHitsAt(marker);
+            Assert.That(hits, Does.Contain(marker.gameObject), "a click can land on it");
+            var inFront = hits.TakeWhile(hit => hit != marker.gameObject).Where(hit => hit.transform.IsChildOf(FieldFace().transform));
+            Assert.That(inFront.Select(hit => hit.name), Is.Empty, "and nothing on the Field map covers it");
+        }
+
+        [UnityTest]
+        public IEnumerator TheFieldMarker_WithTheRunHeld_ResumesTheSameFight_AsTheTownPortalDoes()
+        {
+            yield return HeldAndWalkedOutToTheField();
+            var encounter = Simulation.Run.Encounter;
+            var progress = encounter.ProgressText;
+
+            ClickTheFieldMarker();
+            yield return null;
+
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.Live), "the Run is live again");
+            Assert.That(Simulation.Run.Encounter, Is.SameAs(encounter), "the same fight");
+            Assert.That(Simulation.Run.Encounter.ProgressText, Is.EqualTo(progress), "at the same \"Encounter N of M\"");
+            Assert.That(Session.Instance.Hero.TownPortal, Is.Null, "the portal is closed");
+            Assert.That(Flag(ToggleOf(_thornwood), "IsOn"), Is.True, "the Location's toggle is selected");
+            Assert.That(Flag(FieldFace(), "IsExtended"), Is.True, "the Field map stays up");
+            Assert.That(FieldMarker().GetComponent<UnityEngine.UI.Image>().enabled, Is.False, "and the marker is gone");
+        }
+
+        [UnityTest]
+        public IEnumerator TheFieldMarker_WhileThePortalIsStillOpening_IsNotClickable()
+        {
+            yield return FightingBeforeTheRecall();
+            Simulation.Recall();
+            yield return null;
+            Assume.That(Simulation.Run.IsRecalling, Is.True, "premise: the portal is opening");
+
+            ClickTheFieldMarker();
+
+            Assert.That(Simulation.Run.IsRecalling, Is.True, "a click only resumes a held Run");
+            Assert.That(RaycastHitsAt(FieldMarker()), Has.No.Member(FieldMarker().gameObject), "the opening swallows no clicks");
+        }
+
+        [UnityTest]
+        public IEnumerator AfterARelocateFromHeld_TheFieldMarkerIsGone_ThoughThePortalStaysOpen()
+        {
+            Session.Instance.Hero.MarkCompleted(_thornwood.Id);
+            var ashfall = GameBoot.Load().Locations.First(location => location.Id == "location.ashfall");
+            yield return HeldAndWalkedOutToTheField();
+
+            Simulation.Relocate(ashfall);
+            yield return null;
+
+            Assert.That(Session.Instance.Hero.TownPortal, Is.EqualTo(_thornwood), "the portal stays open");
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.Live), "on a new Run");
+            Assert.That(FieldMarker().GetComponent<UnityEngine.UI.Image>().enabled, Is.False, "with no marker on the Field map");
         }
 
         [UnityTest]
