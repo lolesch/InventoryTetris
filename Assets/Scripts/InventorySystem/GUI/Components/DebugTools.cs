@@ -261,12 +261,12 @@ namespace ToolSmiths.InventorySystem.GUI.Components
         private void LogResourceDepleted() => Debug.LogWarning($"Hero resource {"depleted".Colored(Color.red)}", this);
 
         private void LogDamageDealt(DamageType damageType, float damageOutput) =>
-            Debug.Log($"Hero deals {damageOutput.ToString().Colored(Color.red)} {damageType}", this);
+            Debug.Log($"Hero deals {damageOutput.ToString("F").Colored(Color.red)} {damageType}", this);
 
         private void LogDamageReceived(DamageType damageType, float absorbed, float received)
         {
-            Debug.Log($"Hero absorbs {absorbed.ToString().Colored(Color.red)} {damageType}", this);
-            Debug.Log($"Hero receives {received.ToString().Colored(Color.red)} {damageType}", this);
+            Debug.Log($"Hero absorbs {absorbed.ToString("F").Colored(Color.red)} {damageType}", this);
+            Debug.Log($"Hero receives {received.ToString("F").Colored(Color.red)} {damageType}", this);
         }
     }
 }

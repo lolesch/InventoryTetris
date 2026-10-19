@@ -254,11 +254,11 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 0
-        y: 504
-        width: 483
-        height: 520
+        y: 512
+        width: 512
+        height: 512
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -275,12 +275,12 @@ TextureImporter:
       name: Fantasy RPG Character Lineup_1
       rect:
         serializedVersion: 2
-        x: 446
-        y: 947
-        width: 49
-        height: 47
+        x: 512
+        y: 512
+        width: 512
+        height: 512
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -297,12 +297,12 @@ TextureImporter:
       name: Fantasy RPG Character Lineup_2
       rect:
         serializedVersion: 2
-        x: 460
-        y: 866
-        width: 63
-        height: 82
+        x: 1024
+        y: 512
+        width: 512
+        height: 512
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -319,12 +319,12 @@ TextureImporter:
       name: Fantasy RPG Character Lineup_3
       rect:
         serializedVersion: 2
-        x: 484
-        y: 309
-        width: 589
-        height: 707
+        x: 0
+        y: 0
+        width: 512
+        height: 512
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -341,12 +341,12 @@ TextureImporter:
       name: Fantasy RPG Character Lineup_4
       rect:
         serializedVersion: 2
-        x: 1062
-        y: 14
-        width: 461
-        height: 1006
+        x: 512
+        y: 0
+        width: 512
+        height: 512
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -363,12 +363,12 @@ TextureImporter:
       name: Fantasy RPG Character Lineup_5
       rect:
         serializedVersion: 2
-        x: 953
-        y: 921
-        width: 6
-        height: 7
+        x: 1024
+        y: 0
+        width: 512
+        height: 512
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -381,891 +381,11 @@ TextureImporter:
       indices: 
       edges: []
       weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_6
-      rect:
-        serializedVersion: 2
-        x: 958
-        y: 915
-        width: 9
-        height: 17
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: dad1ea671d78c3580800000000000000
-      internalID: -8846046234353459795
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_7
-      rect:
-        serializedVersion: 2
-        x: 966
-        y: 911
-        width: 15
-        height: 21
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: edbafa72e4d925b70800000000000000
-      internalID: 8886337973754244062
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_8
-      rect:
-        serializedVersion: 2
-        x: 1015
-        y: 905
-        width: 8
-        height: 23
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 281445fbc7ad76550800000000000000
-      internalID: 6154127645145842050
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_9
-      rect:
-        serializedVersion: 2
-        x: 1446
-        y: 851
-        width: 69
-        height: 71
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 35df685d1450caa40800000000000000
-      internalID: 5380681435114306899
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_10
-      rect:
-        serializedVersion: 2
-        x: 1450
-        y: 913
-        width: 23
-        height: 29
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: dd154ee50ad60ff20800000000000000
-      internalID: 3454381449747386845
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_11
-      rect:
-        serializedVersion: 2
-        x: 1008
-        y: 897
-        width: 7
-        height: 11
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 3d239e95563435c70800000000000000
-      internalID: 8958578186349261523
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_12
-      rect:
-        serializedVersion: 2
-        x: 1466
-        y: 901
-        width: 9
-        height: 9
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 40f50d902d350a700800000000000000
-      internalID: 549531316112088836
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_13
-      rect:
-        serializedVersion: 2
-        x: 1088
-        y: 867
-        width: 7
-        height: 13
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 0b235f1b062df5c20800000000000000
-      internalID: 3197505573200671408
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_14
-      rect:
-        serializedVersion: 2
-        x: 1456
-        y: 879
-        width: 7
-        height: 13
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 3e8131a029d633dc0800000000000000
-      internalID: -3660461598120404765
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_15
-      rect:
-        serializedVersion: 2
-        x: 48
-        y: 765
-        width: 15
-        height: 16
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: f573f1401eb559680800000000000000
-      internalID: -8748985679102396577
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_16
-      rect:
-        serializedVersion: 2
-        x: 1496
-        y: 727
-        width: 17
-        height: 19
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: ff138606686f0b2e0800000000000000
-      internalID: -2111917168233270785
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_17
-      rect:
-        serializedVersion: 2
-        x: 448
-        y: 551
-        width: 7
-        height: 9
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 9fe477d1e6f9a4880800000000000000
-      internalID: -8625906840985186567
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_18
-      rect:
-        serializedVersion: 2
-        x: 478
-        y: 559
-        width: 13
-        height: 15
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 0a9abc8ee75fee690800000000000000
-      internalID: -7570843998142879328
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_19
-      rect:
-        serializedVersion: 2
-        x: 1382
-        y: 523
-        width: 77
-        height: 65
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 3a15f815f5d030450800000000000000
-      internalID: 6053697027157479843
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_20
-      rect:
-        serializedVersion: 2
-        x: 0
-        y: 0
-        width: 483
-        height: 522
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 926f0fb75448fd470800000000000000
-      internalID: 8421595262173115945
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_21
-      rect:
-        serializedVersion: 2
-        x: 143
-        y: 503
-        width: 8
-        height: 17
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 330f4ab392b0d5e10800000000000000
-      internalID: 2187917265694158899
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_22
-      rect:
-        serializedVersion: 2
-        x: 452
-        y: 505
-        width: 13
-        height: 25
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 9152bee2bce618e40800000000000000
-      internalID: 5656924425898632473
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_23
-      rect:
-        serializedVersion: 2
-        x: 510
-        y: 503
-        width: 9
-        height: 10
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 0dbe10410b0699900800000000000000
-      internalID: 691690327144262608
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_24
-      rect:
-        serializedVersion: 2
-        x: 0
-        y: 436
-        width: 33
-        height: 14
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 947c5878860da4360800000000000000
-      internalID: 7154760105400321865
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_25
-      rect:
-        serializedVersion: 2
-        x: 474
-        y: 415
-        width: 21
-        height: 25
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 54e406ba32b1a5a40800000000000000
-      internalID: 5357624546723647045
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_26
-      rect:
-        serializedVersion: 2
-        x: 536
-        y: 15
-        width: 421
-        height: 483
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: ba06d8bdb98af0740800000000000000
-      internalID: 5120496688700416171
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_27
-      rect:
-        serializedVersion: 2
-        x: 494
-        y: 417
-        width: 11
-        height: 18
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 7a2bcc28626b29b50800000000000000
-      internalID: 6598536680570663591
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_28
-      rect:
-        serializedVersion: 2
-        x: 504
-        y: 417
-        width: 7
-        height: 15
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 9103535045efa2380800000000000000
-      internalID: -8995097668901064679
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_29
-      rect:
-        serializedVersion: 2
-        x: 1008
-        y: 423
-        width: 7
-        height: 9
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: bcef63ac87123ff90800000000000000
-      internalID: -6921151399665926453
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_30
-      rect:
-        serializedVersion: 2
-        x: 498
-        y: 387
-        width: 19
-        height: 23
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: c5d2e27ba159704b0800000000000000
-      internalID: -5474242880070603428
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_31
-      rect:
-        serializedVersion: 2
-        x: 538
-        y: 391
-        width: 21
-        height: 29
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 4157a90686c8a2a50800000000000000
-      internalID: 6497159792360584468
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_32
-      rect:
-        serializedVersion: 2
-        x: 502
-        y: 373
-        width: 11
-        height: 16
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: d16544c56ac59fba0800000000000000
-      internalID: -6054706354440612323
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_33
-      rect:
-        serializedVersion: 2
-        x: 502
-        y: 329
-        width: 11
-        height: 10
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: a976fd12cf19f1a60800000000000000
-      internalID: 7646991204384466842
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_34
-      rect:
-        serializedVersion: 2
-        x: 1000
-        y: 321
-        width: 7
-        height: 15
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: e794bff0cd7303e00800000000000000
-      internalID: 1022378533713561982
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_35
-      rect:
-        serializedVersion: 2
-        x: 534
-        y: 306
-        width: 9
-        height: 20
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: a9b326322a2c81a30800000000000000
-      internalID: 4186309855275006874
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_36
-      rect:
-        serializedVersion: 2
-        x: 572
-        y: 281
-        width: 19
-        height: 35
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 97bd2b9ff4e8ce030800000000000000
-      internalID: 3525349082467064697
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_37
-      rect:
-        serializedVersion: 2
-        x: 966
-        y: 257
-        width: 43
-        height: 71
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 392c8364744ec61b0800000000000000
-      internalID: -5661899636739620205
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_38
-      rect:
-        serializedVersion: 2
-        x: 1020
-        y: 274
-        width: 51
-        height: 32
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 0b413b07e1cf51770800000000000000
-      internalID: 8581041872694351024
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_39
-      rect:
-        serializedVersion: 2
-        x: 1454
-        y: 289
-        width: 17
-        height: 16
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: cf4eb97087a39ef30800000000000000
-      internalID: 4605276381161186556
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_40
-      rect:
-        serializedVersion: 2
-        x: 514
-        y: 141
-        width: 49
-        height: 143
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: e162c2c852eb92ad0800000000000000
-      internalID: -2726439030921353698
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_41
-      rect:
-        serializedVersion: 2
-        x: 514
-        y: 243
-        width: 13
-        height: 21
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: b092b598bb1e32460800000000000000
-      internalID: 7215859223557253387
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_42
-      rect:
-        serializedVersion: 2
-        x: 1448
-        y: 262
-        width: 9
-        height: 12
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 0e1452e2c4ef66380800000000000000
-      internalID: -8978209203971341856
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_43
-      rect:
-        serializedVersion: 2
-        x: 976
-        y: 117
-        width: 75
-        height: 141
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: bbb772399beada620800000000000000
-      internalID: 2787075856473226171
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_44
-      rect:
-        serializedVersion: 2
-        x: 1480
-        y: 167
-        width: 7
-        height: 11
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 52ef7c5042bd48920800000000000000
-      internalID: 2991757000243150373
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Fantasy RPG Character Lineup_45
-      rect:
-        serializedVersion: 2
-        x: 1008
-        y: 59
-        width: 17
-        height: 31
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 79bc9e2172f7bce70800000000000000
-      internalID: 9136536074848947095
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
     outline: []
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: b7c9727ed6d0b924ebd76fab8e4ef184
     internalID: 0
     vertices: []
     indices: 
@@ -1273,54 +393,16 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     spriteCustomMetadata:
-      entries: []
+      entries:
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":3.0,"y":2.0},"gridSpriteSize":{"x":512.0,"y":512.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":2,"keepEmptyRects":false,"isAlternate":false}'
     nameFileIdTable:
       Fantasy RPG Character Lineup_0: 7259246426022816756
       Fantasy RPG Character Lineup_1: -6012147654789889726
-      Fantasy RPG Character Lineup_10: 3454381449747386845
-      Fantasy RPG Character Lineup_11: 8958578186349261523
-      Fantasy RPG Character Lineup_12: 549531316112088836
-      Fantasy RPG Character Lineup_13: 3197505573200671408
-      Fantasy RPG Character Lineup_14: -3660461598120404765
-      Fantasy RPG Character Lineup_15: -8748985679102396577
-      Fantasy RPG Character Lineup_16: -2111917168233270785
-      Fantasy RPG Character Lineup_17: -8625906840985186567
-      Fantasy RPG Character Lineup_18: -7570843998142879328
-      Fantasy RPG Character Lineup_19: 6053697027157479843
       Fantasy RPG Character Lineup_2: 2733489793196045361
-      Fantasy RPG Character Lineup_20: 8421595262173115945
-      Fantasy RPG Character Lineup_21: 2187917265694158899
-      Fantasy RPG Character Lineup_22: 5656924425898632473
-      Fantasy RPG Character Lineup_23: 691690327144262608
-      Fantasy RPG Character Lineup_24: 7154760105400321865
-      Fantasy RPG Character Lineup_25: 5357624546723647045
-      Fantasy RPG Character Lineup_26: 5120496688700416171
-      Fantasy RPG Character Lineup_27: 6598536680570663591
-      Fantasy RPG Character Lineup_28: -8995097668901064679
-      Fantasy RPG Character Lineup_29: -6921151399665926453
       Fantasy RPG Character Lineup_3: 3915146199173802971
-      Fantasy RPG Character Lineup_30: -5474242880070603428
-      Fantasy RPG Character Lineup_31: 6497159792360584468
-      Fantasy RPG Character Lineup_32: -6054706354440612323
-      Fantasy RPG Character Lineup_33: 7646991204384466842
-      Fantasy RPG Character Lineup_34: 1022378533713561982
-      Fantasy RPG Character Lineup_35: 4186309855275006874
-      Fantasy RPG Character Lineup_36: 3525349082467064697
-      Fantasy RPG Character Lineup_37: -5661899636739620205
-      Fantasy RPG Character Lineup_38: 8581041872694351024
-      Fantasy RPG Character Lineup_39: 4605276381161186556
       Fantasy RPG Character Lineup_4: 1666319981472608621
-      Fantasy RPG Character Lineup_40: -2726439030921353698
-      Fantasy RPG Character Lineup_41: 7215859223557253387
-      Fantasy RPG Character Lineup_42: -8978209203971341856
-      Fantasy RPG Character Lineup_43: 2787075856473226171
-      Fantasy RPG Character Lineup_44: 2991757000243150373
-      Fantasy RPG Character Lineup_45: 9136536074848947095
       Fantasy RPG Character Lineup_5: 765113817782244827
-      Fantasy RPG Character Lineup_6: -8846046234353459795
-      Fantasy RPG Character Lineup_7: 8886337973754244062
-      Fantasy RPG Character Lineup_8: 6154127645145842050
-      Fantasy RPG Character Lineup_9: 5380681435114306899
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
