@@ -115,7 +115,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Character
                 [StatName.MagicalDamage] = 0f,
                 [StatName.ArmorPenetration] = 0f,
                 [StatName.MagicPenetration] = 0f,
-                [StatName.HealthRegeneration] = 3.5f,
+                [StatName.HealthRegeneration] = 0f,
                 [StatName.Armor] = 26f,
                 [StatName.MagicResist] = 30f,
                 [StatName.MovementSpeed] = 325f,
@@ -290,7 +290,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Character
             var raised = CountStatsChanged(hero, () => hero.GainExperience(280f, monsterLevel: 1u));
 
             Assert.That(experience.TotalValue, Is.GreaterThan(thresholdBefore), "the next threshold is a new Experience total");
-            Assert.That(raised, Is.EqualTo(1), "one level, one new total - the heal moves only current values");
+            Assert.That(raised, Is.GreaterThanOrEqualTo(1), "the new threshold and the level's growth are new totals");
         }
 
         [Test]
@@ -516,8 +516,11 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Character
             Assert.Throws<ArgumentOutOfRangeException>(() => hero.RestoreLevel(2u));
         }
 
+        private static readonly StatName[] GrownStats =
+            { StatName.Health, StatName.Resource, StatName.PhysicalDamage, StatName.MagicalDamage };
+
         [Test]
-        public void LevelUp_HealsTheHeroItself()
+        public void LevelUp_MidFight_LeavesHealthAndResourceWhereTheyWere_AndGrowsTheirMaximums()
         {
             var hero = NewHero();
             Drain(hero, StatName.Health, 10f);
@@ -526,8 +529,68 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Character
             hero.GainExperience(280f, monsterLevel: 1u);
 
             Assert.That(hero.Level, Is.EqualTo(2u));
+            Assert.That(hero.GetResource(StatName.Health).CurrentValue, Is.EqualTo(10f), "no heal");
+            Assert.That(hero.GetResource(StatName.Resource).CurrentValue, Is.EqualTo(5f), "no refill");
+            Assert.That(hero.GetResource(StatName.Health).TotalValue, Is.GreaterThan(100f), "the level's growth raised the maximum");
+            Assert.That(hero.GetResource(StatName.Resource).TotalValue, Is.GreaterThan(100f));
+        }
+
+        [Test]
+        public void LevelUp_AddsThatLevelsGrowthModifiers_ToEachGrownStat()
+        {
+            var hero = NewHero();
+
+            hero.GainExperience(1000f, monsterLevel: 1u);
+
+            Assert.That(hero.Level, Is.EqualTo(3u));
+            foreach (var stat in GrownStats)
+            {
+                var expected = new[] { 2u, 3u }.SelectMany(level => LevelProgression.GrowthFor(level))
+                    .Where(growth => growth.Stat == stat).Select(growth => growth.Modifier).ToArray();
+
+                Assert.That(expected, Is.Not.Empty, $"the table grows {stat}");
+                Assert.That(hero.GetStat(stat).StatModifiers.ToArray(), Is.EqualTo(expected), stat.ToString());
+            }
+        }
+
+        [Test]
+        public void AHeroRestoredToALevel_CarriesTheSameGrowth_AsOneLeveledByGainingXp()
+        {
+            var earned = NewHero();
+            earned.GainExperience(1000f, monsterLevel: 1u);
+            var built = NewHero();
+
+            built.RestoreLevel(earned.Level);
+
+            foreach (var stat in GrownStats)
+            {
+                Assert.That(built.GetStat(stat).StatModifiers.ToArray(), Is.EqualTo(earned.GetStat(stat).StatModifiers.ToArray()), stat.ToString());
+                Assert.That(built.GetStat(stat).TotalValue, Is.EqualTo(earned.GetStat(stat).TotalValue), stat.ToString());
+            }
+        }
+
+        [Test]
+        public void ANewHero_HasNoBaseHealthRegeneration_SoItDoesNotHealOverTicks()
+        {
+            var hero = new Hero(AssetDatabase.LoadAssetAtPath<HeroData>(DefaultHeroPath));
+            Drain(hero, StatName.Health, 100f);
+
+            hero.Regenerate(30f);
+
+            Assert.That(hero.GetStatValue(StatName.HealthRegeneration), Is.Zero);
             Assert.That(hero.GetResource(StatName.Health).CurrentValue, Is.EqualTo(100f));
-            Assert.That(hero.GetResource(StatName.Resource).CurrentValue, Is.EqualTo(100f));
+        }
+
+        [Test]
+        public void ARegenerationAffixOnGear_HealsTheHeroOverTicks()
+        {
+            var hero = new Hero(AssetDatabase.LoadAssetAtPath<HeroData>(DefaultHeroPath));
+            Drain(hero, StatName.Health, 100f);
+            hero.AddItemStats(new[] { On(StatName.HealthRegeneration, Flat(2f)) });
+
+            hero.Regenerate(5f);
+
+            Assert.That(hero.GetResource(StatName.Health).CurrentValue, Is.EqualTo(110f), "100 + 2/s * 5s");
         }
 
         [Test]

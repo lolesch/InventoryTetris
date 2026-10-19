@@ -30,6 +30,9 @@
 - Selling from a full bag no longer fails: the bag keeps the gold and silver first, and the coins that do not fit lie on the Town ground for you to pick up.
 - Consolidate now also puts your coins in order, gold first and iron last, even when they were already in the biggest denominations.
 - A coin you drop or shift-click into your bag now falls into that order too, so shift-clicking your coins to the Stash one by one fills it gold first.
+- Recall the hero from the Field with B, the Recall button (it shows how many Portal Scrolls you have) or a right-click on a Portal Scroll. A Town Portal opens beside him, the Run is held where it stands, and he keeps regenerating while it waits.
+- Step through the Town Portal to carry on with the held Run, or to be sent to the Location again when none is held. The portal stays open until you use it or recall again.
+- Survival now comes from your gear: levelling up grows your health, resource and damage a little but no longer heals you, and a new hero no longer regenerates health on his own, so health regeneration has to come from items. The Healer still refills you for free.
 
 ## 0.0.5_Alpha - 2026-09-25
 

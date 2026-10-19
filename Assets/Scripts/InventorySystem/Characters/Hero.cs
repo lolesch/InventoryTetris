@@ -19,7 +19,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
     ///
     /// Holds no view: the stat panel binds to the stats' change events instead of the model
     /// reaching into a UI pool, and no scene component wraps it: the Session holds it.
-    /// Levelling up heals the hero itself, not through a locator.
+    /// Levelling up grows the hero's stats but does not heal him.
     ///
     /// <see cref="IStatReceiver"/> is the seat the container core takes it by, and
     /// <see cref="IItemReceiver"/> the one loot, a Buy and the Corpse recovery put items through.
@@ -334,7 +334,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
                 recoveryDelay: 2f, _shieldSecondsEmpty, deltaSeconds);
         }
 
-        /// <summary>A full Health and Resource refill: the Healer's, and a level-up's.</summary>
+        /// <summary>A full Health and Resource refill: the Healer's, the Respawn's and the starter kit's. A level-up does not heal.</summary>
         public void Heal()
         {
             GetResource(StatName.Health).RefillCurrent();
@@ -363,17 +363,25 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
                 {
                     Level++;
 
-                    experience.AddModifier(LevelProgression.ExperienceThresholdModifier(Level));
+                    ApplyLevelModifiers();
                     experience.DepleteCurrent();
-
-                    Heal();
                 }
             }
         }
 
+        // The modifiers of the level just reached: the XP bar's next threshold and the stat growth. Raising a
+        // maximum leaves the current value where it was, so a level-up never heals.
+        private void ApplyLevelModifiers()
+        {
+            RequireResource(StatName.Experience).AddModifier(LevelProgression.ExperienceThresholdModifier(Level));
+
+            foreach (var growth in LevelProgression.GrowthFor(Level))
+                GetStat(growth.Stat)?.AddModifier(growth.Modifier);
+        }
+
         /// <summary>
-        /// Puts a saved level back: the hero carries the Experience modifiers of every level it climbed
-        /// past, exactly as if it had earned them, without replaying the XP gain, the heal or the
+        /// Puts a saved level back: the hero carries the Experience and growth modifiers of every level it
+        /// climbed past, exactly as if it had earned them, without replaying the XP gain, the heal or the
         /// depleted bar. Touches no current value, so the caller sets those after the maximums are in
         /// place. Only climbs: a level below the current one throws.
         /// </summary>
@@ -382,12 +390,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
             if (level < Level)
                 throw new ArgumentOutOfRangeException(nameof(level), level, $"A hero at level {Level} cannot be restored to a lower level.");
 
-            var experience = RequireResource(StatName.Experience);
-
             while (Level < level)
             {
                 Level++;
-                experience.AddModifier(LevelProgression.ExperienceThresholdModifier(Level));
+                ApplyLevelModifiers();
             }
         }
 

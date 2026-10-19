@@ -83,8 +83,9 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             hero.Wallet.Deposit(new Currency(1234u));
 
-            // A level-up heals, so the damage comes after it: the hero ends below a maximum the gear raised.
+            // A level-up does not heal, so the hero is filled after it and then damaged: he ends below a maximum the gear raised.
             hero.GainExperience(1500f, hero.Level);
+            hero.Heal();
             hero.GetResource(StatName.Health).RemoveFromCurrent(7f);
             hero.GetResource(StatName.Resource).RemoveFromCurrent(11f);
 
