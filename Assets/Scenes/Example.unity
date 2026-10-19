@@ -24210,6 +24210,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b819b2a092f465644bb57dd48da2afe5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.Runtime.Simulation.TownPortalMarker
+  fieldFace: {fileID: 1426694742}
+  fieldFigure: {fileID: 56875748}
 --- !u!114 &1623532714
 MonoBehaviour:
   m_ObjectHideFlags: 0
