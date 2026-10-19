@@ -14,7 +14,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// fades with it. It stands at an anchor, walks to one (Travel, ADR-0021: shown, never simulated, so Pause leaves
     /// it walking) or follows the fight, projected by the arena (ADR-0018). A Death lays it where he fell for the
     /// Death beat; a Respawn stands it up at the Field Exit. A Recall that holds the Run walks it into the portal beside
-    /// it (shown only, ADR-0021) and it stays gone until the Run is live again. It polls the Run's Encounter once a frame, since a
+    /// it (shown only, ADR-0021) and it stays gone until the Run is live again or the Town Exit brings the Field map
+    /// up over the held Run, which stands it at the Field Exit. It polls the Run's Encounter once a frame, since a
     /// phase change or a new Encounter is the only way to tell a Send or a Relocate from a hero load mid-fight, and
     /// updates after the arena so the arena has placed its own figures first.
     /// </summary>
@@ -182,9 +183,34 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             Figure.SetAlpha(gone || _inPortal ? 0f : map != null ? map.alpha : 1f);
         }
 
+        private FieldFacePanel _face;
+
+        private void OnEnable()
+        {
+            _face = map ? map.GetComponent<FieldFacePanel>() : null;
+            if (_face)
+                _face.Appearing += OnFieldMapAppearing;
+        }
+
+        // The Town Exit brings the Field map up over a held Run: he steps out of the portal at the Field Exit and the
+        // portal stays open. A resume lands live, so it is not this.
+        private void OnFieldMapAppearing()
+        {
+            if (!_inPortal || SimulationService.Instance.Run.Phase != RunPhase.Held)
+                return;
+
+            _inPortal = false;
+            StandAtExit();
+        }
+
         // Update never runs while disabled, so a disabled map would hold a figure no one can retire.
         private void OnDisable()
         {
+            if (_face)
+                _face.Appearing -= OnFieldMapAppearing;
+
+            _face = null;
+
             if (_hero != null)
                 Figure.Unbind();
 
