@@ -13,7 +13,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// The Field map's own hero <see cref="Figure"/>: one scene object that follows the hero while the map is up and
     /// fades with it. It stands at an anchor, walks to one (Travel, ADR-0021: shown, never simulated, so Pause leaves
     /// it walking) or follows the fight, projected by the arena (ADR-0018). A Death lays it where he fell for the
-    /// Death beat; a Respawn stands it up at the Field Exit. It polls the Run's Encounter once a frame, since a
+    /// Death beat; a Respawn stands it up at the Field Exit. A Recall that holds the Run walks it into the portal beside
+    /// it (shown only, ADR-0021) and it stays gone until the Run is live again. It polls the Run's Encounter once a frame, since a
     /// phase change or a new Encounter is the only way to tell a Send or a Relocate from a hero load mid-fight, and
     /// updates after the arena so the arena has placed its own figures first.
     /// </summary>
@@ -31,6 +32,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private float facingDeadZoneUnits = 0.75f;
         [SerializeField, Tooltip("The Field map's canvas group. The figure fades with it. Empty: always opaque.")]
         private CanvasGroup map;
+        [SerializeField, Tooltip("The Recall portal's rect, which the figure walks into once the Run is held. Empty: he is gone at once.")]
+        private RectTransform portal;
+        [SerializeField, Min(0f), Tooltip("Sim seconds the walk into the portal takes; scales with sim speed.")]
+        private float portalWalkSeconds = 0.5f;
 
         private enum Mode
         {
@@ -38,6 +43,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             Walking,
             Following,
             Fallen,
+            Entering,
         }
 
         private readonly IHeroTravel _travel = new HeroTravel(default);
@@ -54,6 +60,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private bool _standsAtExit;
         private bool _awaitingLocation;
         private Vector2? _fallenAt;
+        private Vector2 _enteredFrom;
+        private float _enteredFor;
+        private bool _inPortal;
 
         private Figure Figure => _figure ? _figure : _figure = GetComponent<Figure>();
 
@@ -63,6 +72,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         /// <inheritdoc/>
         public bool IsWalking => _mode == Mode.Walking;
+
+        /// <summary>
+        /// Whether a held Run's hero has gone into the portal: the walk is over and the figure is gone. Cleared the
+        /// moment the Run is not held any more.
+        /// </summary>
+        public bool HasEnteredPortal => _inPortal;
 
         /// <summary>
         /// The Field Exit, announced by its button: where the figure stands when the Field map comes up and walks out on
@@ -110,8 +125,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             var sameRun = run == _run;
             var sent = sameRun && _phase == RunPhase.None && run.Phase == RunPhase.Live;
             var relocated = sameRun && _bound != null && run.Encounter != null && run.Encounter != _bound;
+            var held = sameRun && _phase != RunPhase.Held && run.Phase == RunPhase.Held;
+            var resumed = sameRun && _phase == RunPhase.Held && run.Phase == RunPhase.Live && !relocated;
             _run = run;
             _phase = run.Phase;
+            _inPortal &= _phase == RunPhase.Held;
 
             SyncHero();
 
@@ -130,17 +148,23 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (_awaitingLocation && _anchor != null)
                 TravelTo(_anchor);
 
+            if (held)
+                EnterPortal();
+            else if (resumed && _bound != null)
+                _mode = Mode.Following;
+
             switch (_mode)
             {
                 case Mode.Walking: Walk(); break;
                 case Mode.Following: Follow(); break;
+                case Mode.Entering: Enter(); break;
                 case Mode.Fallen: break;
                 default: Stand(); break;
             }
 
             // When the Death beat ends the fallen figure is gone: the Corpse marker is what lies there now.
             var gone = _mode == Mode.Fallen && !SimulationService.Instance.DeathBeatPlaying;
-            Figure.SetAlpha(gone ? 0f : map != null ? map.alpha : 1f);
+            Figure.SetAlpha(gone || _inPortal ? 0f : map != null ? map.alpha : 1f);
         }
 
         // Update never runs while disabled, so a disabled map would hold a figure no one can retire.
@@ -153,6 +177,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _bound = null;
             _run = null;
             _phase = default;
+            _inPortal = false;
             StandAt(null);
         }
 
@@ -205,6 +230,35 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             }
             else
                 _mode = Mode.Following;
+        }
+
+        // The Run was just held: the figure walks from where the fight has him into the portal beside him.
+        private void EnterPortal()
+        {
+            if (portal == null || !Figure.IsPlaced)
+            {
+                _inPortal = true;
+                return;
+            }
+
+            _enteredFrom = ((RectTransform)transform).anchoredPosition;
+            _enteredFor = 0f;
+            _target = null;
+            _mode = Mode.Entering;
+        }
+
+        // A fixed stretch of sim time, not his pace: the portal is only ever a step away.
+        private void Enter()
+        {
+            _enteredFor += SimulationService.Instance.WalkDelta(Time.deltaTime);
+            var progress = portalWalkSeconds > 0f ? Mathf.Clamp01(_enteredFor / portalWalkSeconds) : 1f;
+
+            var goal = LocalCentre(portal);
+            var at = Vector2.Lerp(_enteredFrom, goal, progress);
+            Figure.Place(at, ArenaOf(at), ArenaLayout.FacingSign(at.x, goal.x, Figure.FacingSign, WalkFacingDeadZone));
+            SortAmongSiblings();
+
+            _inPortal = progress >= 1f;
         }
 
         // The arena holds the ended Encounter through the Death beat, so the hero's last position is still projectable.
