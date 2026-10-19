@@ -30,6 +30,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         private Image _image;
         private bool _open;
+        private bool _wasArriving;
         private Vector2 _offset;
 
         private Image Image => _image ? _image : _image = GetComponent<Image>();
@@ -43,25 +44,41 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             var run = SimulationService.Instance.Run;
             // The figure retires its own arrival a frame after the Run ends, which this reads first.
-            var arriving = heroFigure.IsEmerging && run.Phase == RunPhase.Live && run.Encounter != null;
+            var arriving = heroFigure.IsEmerging && run.Phase != RunPhase.None && run.Encounter != null;
             var open = run.IsRecalling || run.Phase == RunPhase.Held || arriving;
 
             if (open && !_open)
-            {
-                // Beside the hero, for a Recall to walk him into and for him to step out of and walk away from.
-                _offset = ArenaLayout.CorpseOffset(run.Encounter.HeroPosition, run.Encounter.Arena.Origin, arena.Projection) + beside;
-                Grow(arriving ? ArrivalDelay : 0f);
-            }
+                _offset = OffsetBesideTheHero(run, arriving);
+
+            // A portal that was already open (the held Run's) grows again for the hero who comes out of it.
+            if (arriving && !_wasArriving)
+                Grow(ArrivalDelay);
+            else if (open && !_open)
+                Grow(0f);
             else if (!open)
                 Close();
 
+            _wasArriving = arriving;
             _open = open;
             Image.enabled = open;
             Tick();
 
-            var usable = run.Phase == RunPhase.Held && IsOpen && !heroFigure.IsEnteringPortal && !heroFigure.HasEnteredPortal;
+            var usable = run.Phase == RunPhase.Held && IsOpen && !heroFigure.IsEnteringPortal && !heroFigure.HasEnteredPortal
+                && !heroFigure.IsEmerging;
             Image.raycastTarget = usable;
             interactable = usable;
+        }
+
+        // Beside the hero, for a Recall to walk him into and for him to step out of and walk away from. A Recall opens
+        // it beside where he is drawn - a hero still walking to the fight has not reached his place in it - while one
+        // he comes out of opens beside the fight, which he is about to join.
+        private Vector2 OffsetBesideTheHero(RunState run, bool arriving)
+        {
+            var anchor = arena.LocationAnchor;
+            if (!arriving && anchor != null && heroFigure.IsPlaced)
+                return (Vector2)anchor.InverseTransformVector(heroFigure.transform.position - anchor.TransformPoint(anchor.rect.center)) + beside;
+
+            return ArenaLayout.CorpseOffset(run.Encounter.HeroPosition, run.Encounter.Arena.Origin, arena.Projection) + beside;
         }
 
         protected override void OnClick()

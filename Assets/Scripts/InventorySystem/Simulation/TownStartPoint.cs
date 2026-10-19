@@ -11,7 +11,7 @@ namespace ToolSmiths.InventorySystem.Simulation
         Respawn,
         /// <summary>A Return from the Field: he came in through the Town Exit.</summary>
         Return,
-        /// <summary>A Recall's portal took him: he came in beside the Town Portal at the Waypoint.</summary>
+        /// <summary>A Recall's portal took him: he comes out on top of the Town Portal and walks to its Beside point (the table's Waypoint only holds him unseen until then).</summary>
         Recall,
     }
 

@@ -20,6 +20,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private bool _growing;
         private float _elapsed;
         private float _delay;
+        private float _hover = 1f;
+        private float _hoverTarget = 1f;
 
         /// <summary>Whether it has grown to its full size and is still open: the hero goes through it or comes out of it now.</summary>
         public bool IsOpen => _growing && PortalAppear.Progress(_elapsed, _delay, appearSeconds) >= 1f;
@@ -47,11 +49,18 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// <summary>Shut: not open any more, whatever it had grown to.</summary>
         protected void Close() => _growing = false;
 
-        /// <summary>Advances the growing by this frame and sets the scale; once a frame while the portal is shown.</summary>
+        // The hover is folded into the scale this sets every frame; the base class's own hover tween would be overwritten by it.
+        protected override void Interact(SelectionState state, bool instant) =>
+            _hoverTarget = state is SelectionState.Highlighted or SelectionState.Selected ? hoverScale : 1f;
+
+        /// <summary>Advances the growing and the hover by this frame and sets the scale; once a frame while the portal is shown.</summary>
         protected void Tick()
         {
             if (_growing)
                 _elapsed += Time.deltaTime;
+
+            var speed = Mathf.Abs(hoverScale - 1f) / Mathf.Max(colors.fadeDuration, 1e-3f);
+            _hover = Mathf.MoveTowards(_hover, _hoverTarget, speed * Time.unscaledDeltaTime);
 
             ApplyScale();
         }
@@ -61,7 +70,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _baseScale ??= transform.localScale;
             var (x, y) = PortalAppear.Scale(_growing ? PortalAppear.Progress(_elapsed, _delay, appearSeconds) : 0f);
             var whole = _baseScale.Value;
-            transform.localScale = new Vector3(whole.x * x, whole.y * y, whole.z);
+            transform.localScale = new Vector3(whole.x * x * _hover, whole.y * y * _hover, whole.z);
         }
     }
 }

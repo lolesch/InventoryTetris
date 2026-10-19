@@ -110,6 +110,7 @@ namespace ToolSmiths.InventorySystem.Services
 
             // A new Run starts moving, whatever froze the last one.
             SetPaused(false);
+            inTransit = false;
 
             // After the Run accepted it: a refused Send must not move the Location a Death is judged against.
             hero.SelectedLocation = location;
@@ -141,7 +142,7 @@ namespace ToolSmiths.InventorySystem.Services
             get
             {
                 var run = Run;
-                return run.Phase == RunPhase.Live && !run.HeroIsDown && !run.IsRecalling && !session.Hero.IsDead;
+                return run.Phase == RunPhase.Live && !run.HeroIsDown && !run.IsRecalling && !session.Hero.IsDead && !IsHeroInTransit;
             }
         }
 
@@ -299,6 +300,20 @@ namespace ToolSmiths.InventorySystem.Services
             held = value;
         }
 
+        // The hero's trip (a walk to a Field Exit, a step out of a portal): a third freeze, transient and read
+        // through the phase like the others.
+        private bool inTransit;
+
+        public bool IsHeroInTransit => inTransit && Run.Phase == RunPhase.Live;
+
+        public void SetHeroInTransit(bool value)
+        {
+            if (value && Run.Phase != RunPhase.Live)
+                return;
+
+            inTransit = value;
+        }
+
         // Real seconds of the Death slow-down still to run. Transient and the service's, not the sim
         // speed slider's: it is set by a Death and cleared by Respawn or a hero load.
         private float deathSlowdownLeft;
@@ -318,7 +333,7 @@ namespace ToolSmiths.InventorySystem.Services
         }
 
         public float SimDelta(float deltaSeconds) =>
-            IsPaused || IsMenuFrozen ? 0f : deltaSeconds * Mathf.Max(0f, session.Hero.Behaviour.SimSpeed) * ViewTimeFactor;
+            IsPaused || IsMenuFrozen || IsHeroInTransit ? 0f : deltaSeconds * Mathf.Max(0f, session.Hero.Behaviour.SimSpeed) * ViewTimeFactor;
 
         public float WalkDelta(float deltaSeconds) =>
             deltaSeconds * Mathf.Max(0f, session.Hero.Behaviour.SimSpeed);
@@ -329,7 +344,7 @@ namespace ToolSmiths.InventorySystem.Services
         public void Tick(float deltaSeconds)
         {
             // A frozen Run stands still whole: no regeneration, no Encounter.
-            if (IsPaused || IsMenuFrozen)
+            if (IsPaused || IsMenuFrozen || IsHeroInTransit)
                 return;
 
             var hero = session.Hero;
@@ -493,6 +508,7 @@ namespace ToolSmiths.InventorySystem.Services
             // Home is never paused or held, Return and Death alike.
             SetPaused(false);
             held = false;
+            inTransit = false;
 
             // Coming home by Return brings the shops new stock; a Death does not.
             if (run.LastResult is { Outcome: RunOutcome.Returned })

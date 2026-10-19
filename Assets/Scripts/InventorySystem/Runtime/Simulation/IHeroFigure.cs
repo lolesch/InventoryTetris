@@ -24,8 +24,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         void TravelTo(RectTransform anchor);
 
         /// <summary>
-        /// The Run just Sent comes out of a Town Portal: the figure appears at the fight instead of walking in to the
-        /// Location from the Field Exit. Call it right after the Send.
+        /// The Run comes out of a Town Portal, Sent or resumed: the figure comes out of the portal beside the fight instead
+        /// of walking in to the Location from the Field Exit. Call it right before the Send or the Field map coming up.
         /// </summary>
         void ArriveByPortal();
     }

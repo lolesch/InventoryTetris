@@ -40,6 +40,18 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
             if (simulation.Run.IsRecalling)
                 return;
 
+            // A hero in the Field walks to the Exit first, the Run waiting for him; anywhere else there is no walk.
+            if (heroFigure != null)
+                heroFigure.WalkToExit(Leave);
+            else
+                Leave();
+        }
+
+        // He is at the Exit: the Town face comes up and the Run, if any, Returns.
+        private void Leave()
+        {
+            var simulation = SimulationService.Instance;
+
             base.OnClick();
 
             if (simulation.CanReturn)

@@ -198,15 +198,20 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             yield return null;
 
             var run = SimulationService.Instance.Run;
-            Assert.That(run.Phase, Is.EqualTo(RunPhase.None), "the Run ends at the click");
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Live), "the Run waits while he walks to the Exit");
+            Assert.That(SimulationService.Instance.IsHeroInTransit, Is.True, "frozen where it stands");
+            Assert.That(Vector2.Distance(FigureAt(), stood), Is.LessThan(Vector2.Distance(stood, exit) / 2f), "he sets off from where he stood in the fight");
+            Assert.That(Face("InFields").alpha, Is.EqualTo(1f), "the Field map has not started to fade");
+
+            Time.timeScale = 20f;
+            for (var frame = 0; run.Phase == RunPhase.Live && frame < 3000; frame++)
+                yield return null;
+
+            Time.timeScale = 1f;
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.None), "the Run ends once he stands at the Exit");
             Assert.That(run.LastResult?.Outcome, Is.EqualTo(RunOutcome.Returned));
             Assert.That(Session.Instance.Hero.Corpse.Exists, Is.False, "a Return keeps everything");
-            Assert.That(IsWalking(), Is.True, "he walks out, not the Relocate walk to a Location");
-            Assert.That(Vector2.Distance(FigureAt(), stood), Is.LessThan(Vector2.Distance(stood, exit) / 2f), "from where he stood in the fight");
-            Assert.That(Face("InFields").alpha, Is.GreaterThan(0f), "the Field map is still fading out while he walks");
-
-            yield return WaitForArrival();
-            Assert.That(Vector2.Distance(FigureAt(), CentreOf(FieldExit())), Is.LessThan(0.01f), "he reached the Exit");
+            Assert.That(Vector2.Distance(FigureAt(), CentreOf(FieldExit())), Is.LessThan(1f), "at the Exit");
             yield return UntilAlpha(Face("InTown"), 1f);
         }
 

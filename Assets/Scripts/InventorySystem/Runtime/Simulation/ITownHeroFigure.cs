@@ -28,5 +28,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// <paramref name="onGone"/>. Any other entry into Town (a Return, a Respawn) cancels it.
         /// </summary>
         void WalkIntoPortal(RectTransform portal, System.Action onGone);
+
+        /// <summary>
+        /// Walk to the centre of <paramref name="point"/> at the hero's pace and call <paramref name="onArrived"/> once he
+        /// stands there (at once when he already does). Any other walk or entry into Town cancels the call.
+        /// </summary>
+        void WalkThen(RectTransform point, System.Action onArrived);
     }
 }

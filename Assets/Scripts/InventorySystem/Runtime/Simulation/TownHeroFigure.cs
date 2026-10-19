@@ -41,6 +41,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         // Going into a portal: walking to it, then vanishing; the command waits until he is gone.
         private System.Action _onGone;
+
+        // Going to a point to do something there (the Exit): the command waits until he stands at it.
+        private System.Action _onArrived;
         private bool _vanishing;
         private float _vanishFor;
         private float _look = 1f;
@@ -53,6 +56,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private bool _emerging;
         private float _emergeFor;
         private TownPortalMarker _portalMarker;
+
+        // Where he stands beside the Town Portal once he has come out of it, in the map's space; none otherwise.
+        private Vector2? _besideStand;
 
         private CanvasGroup Group => _group ? _group : _group = GetComponent<CanvasGroup>();
 
@@ -160,9 +166,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 return;
             }
 
+            var at = _portalMarker ? Local((RectTransform)_portalMarker.transform) : _travel.Position;
             if (_portalMarker)
             {
-                var at = Local((RectTransform)_portalMarker.transform);
                 _travel = new HeroTravel(at);
                 Show(at);
             }
@@ -174,7 +180,15 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 return;
 
             _emerging = false;
-            if (StandPoint != null)
+            if (_portalMarker)
+            {
+                // He stands where the portal's Beside says, and stays there: a stance of its own, not one of the marked points.
+                _besideStand = new Vector2(at.x, at.z) + _portalMarker.Beside;
+                _standAt = null;
+                _target = null;
+                _travel.Retarget(new Coordinate(_besideStand.Value));
+            }
+            else if (StandPoint != null)
                 TravelTo(StandPoint);
         }
 
@@ -193,7 +207,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _stand = TownStartPoint.For(entry);
             _standAt = null;
             _target = null;
+            _besideStand = null;
             _onGone = null;
+            _onArrived = null;
             _vanishing = false;
             _emerging = false;
             Look(1f);
@@ -215,6 +231,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _stand = atExit ? TownStand.TownExit : _stand;
             _standAt = atExit ? null : point;
             _target = null;
+            _besideStand = null;
         }
 
         private void Update()
@@ -247,8 +264,15 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (!arrived)
                 return;
 
-            StandAtPoint(_target);
+            // Arriving at his Beside is no marked point to stand at.
+            if (!_besideStand.HasValue)
+                StandAtPoint(_target);
+
             _vanishing = _onGone != null;
+
+            var onArrived = _onArrived;
+            _onArrived = null;
+            onArrived?.Invoke();
         }
 
         private void Vanish()
@@ -279,15 +303,30 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _vanishing = !_travel.IsWalking;
         }
 
+        /// <inheritdoc/>
+        public void WalkThen(RectTransform point, System.Action onArrived)
+        {
+            TravelTo(point);
+
+            // Already there: TravelTo stood him at it and nothing walks.
+            if (!_travel.IsWalking)
+            {
+                onArrived();
+                return;
+            }
+
+            _onArrived = onArrived;
+        }
+
         // A standing figure keeps to its point, re-read every frame: the canvas has not laid its rects out when the
         // figure first enables, and a point that moves later takes the figure with it. Nothing while no point is known.
         private void Settle(bool force)
         {
             var point = StandPoint;
-            if (point == null)
+            if (point == null && !_besideStand.HasValue)
                 return;
 
-            var at = Local(point);
+            var at = _besideStand.HasValue ? new Coordinate(_besideStand.Value) : Local(point);
             if (!force && Coordinate.Distance(at, _travel.Position) < 1e-3f)
                 return;
 
@@ -308,10 +347,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// <inheritdoc/>
         public void TravelTo(RectTransform point)
         {
-            // A walk to anywhere else turns him from a portal he was heading for.
+            // A walk to anywhere else turns him from a portal or an Exit he was heading for.
             _onGone = null;
+            _onArrived = null;
             _target = point;
             _standAt = null;
+            _besideStand = null;
             _travel.Retarget(Local(point));
 
             // Already there: nothing walks, so it stands at the point it was sent to.

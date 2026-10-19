@@ -68,3 +68,15 @@ handlers only.
 
 Coins dropped by hand reordering highest-first, and the up-front refusal of a pickup that may not fit, are
 Inventory behaviour, not the Recall: tracked separately.
+
+## The Run waits for the hero; the Exits wait for him too
+
+- Coming out of a portal onto the Field map, the Run does not start until he has grown on top of the portal and
+  walked clear of it. A held Run stays held until then and resumes on arrival; a fresh Send is frozen by a third
+  hold on the simulation, `IsHeroInTransit`, beside the player's Pause and a menu's freeze. A Recall is refused
+  while it holds.
+- The Town Exit and the Field Exit do the same going out: the hero walks to the Exit at his own pace first, the
+  Field Run frozen where it stands, and the map changes (the Return happens) once he stands there. A click on a
+  Town stop on the way cancels the Town Exit.
+- A Recall opens the Field portal beside where the hero is drawn, not beside the fight he has not reached yet; a
+  portal he comes out of opens beside the fight. On the Town map he walks to the Town Portal's `Beside` offset.

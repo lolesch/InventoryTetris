@@ -204,7 +204,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         private static CanvasGroup Face(string name) => GameObject.Find(name).GetComponent<CanvasGroup>();
 
         [UnityTest]
-        public IEnumerator AClickOnTheTownExit_WalksTheFigureTowardsIt_WhileTheTownMapFades()
+        public IEnumerator AClickOnTheTownExit_WalksTheFigureTowardsIt_AndTheTownMapFadesOnceHeStandsThere()
         {
             yield return OpenExample();
             var figure = Figure();
@@ -217,12 +217,18 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 
             Assert.That(IsWalking(figure), Is.True);
             Assert.That(Apart(figure, exit), Is.LessThan(before), "walking towards the Exit");
-            Assert.That(Face("InTown").blocksRaycasts, Is.False, "the fading Town map takes input away");
-            Assert.That(Face("InFields").alpha, Is.LessThan(1f), "the Field map is on its way up, not there yet");
+            Assert.That(Face("InTown").blocksRaycasts, Is.True, "the Town map stays up while he walks");
+            Assert.That(Face("InFields").alpha, Is.EqualTo(0f), "the Field map has not started to come up");
+
+            yield return UntilArrived(figure);
+            yield return new WaitForSeconds(0.1f);
+
+            Assert.That(Face("InTown").blocksRaycasts, Is.False, "at the Exit the Town map starts to fade");
+            Assert.That(Face("InFields").alpha, Is.GreaterThan(0f), "and the Field map to come up");
         }
 
         [UnityTest]
-        public IEnumerator AClickDuringTheFade_DoesNotRetargetTheFigure()
+        public IEnumerator AClickOnAStopOnTheWayToTheExit_TurnsHimFromTheExit_AndTheTownMapStaysUp()
         {
             yield return OpenExample();
             var figure = Figure();
@@ -233,9 +239,10 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             yield return Click(Named("HealerToggle"));
             yield return Click(Named("StashToggle"));
 
-            Assert.That(Context, Is.Not.EqualTo(InventoryContext.Healer), "the Healer was out of reach");
             yield return UntilArrived(figure);
-            Assert.That(Apart(figure, exit), Is.LessThan(AtTheStop), "ended at the Exit");
+            yield return new WaitForSeconds(0.2f);
+            Assert.That(Apart(figure, Named("StashToggle")), Is.LessThan(AtTheStop), "he ended at the Stash he last asked for");
+            Assert.That(Face("InTown").blocksRaycasts, Is.True, "the exit was cancelled: the Town map is still up");
         }
 
         [UnityTest]

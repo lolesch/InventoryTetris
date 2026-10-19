@@ -867,6 +867,58 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(service.Run.Encounter.Duration, Is.GreaterThan(duration));
         }
 
+        // ── the hero's trip ──────────────────────────────────────────────────
+
+        [Test]
+        public void ARunWaitingForTheHero_StandsStill_ThenGoesOnWhereItStopped()
+        {
+            service.Send(thornwood);
+            service.Tick(0.1f);
+            var duration = service.Run.Encounter.Duration;
+
+            service.SetHeroInTransit(true);
+            service.Tick(0.1f);
+
+            Assert.That(service.IsHeroInTransit, Is.True);
+            Assert.That(service.Run.Encounter.Duration, Is.EqualTo(duration), "the Encounter's clock froze");
+            Assert.That(service.SimDelta(0.1f), Is.EqualTo(0f));
+            Assert.That(service.IsPaused, Is.False, "it is not the player's Pause");
+            Assert.That(service.IsMenuFrozen, Is.False, "nor a menu's hold");
+
+            service.SetHeroInTransit(false);
+            service.Tick(0.1f);
+
+            Assert.That(service.Run.Encounter.Duration, Is.GreaterThan(duration));
+        }
+
+        [Test]
+        public void TheHeroInTransit_RefusesARecall_AndANewRunStartsFree()
+        {
+            session.Hero.IsInvincible = true;
+            GiveScrolls(session.Hero.Inventory, 2u);
+            service.Send(thornwood);
+            Assume.That(service.CanRecall, Is.True, "premise: a scroll and a live Run allow it");
+            service.SetHeroInTransit(true);
+
+            Assert.That(service.CanRecall, Is.False, "no scroll is spent while he is on a trip");
+
+            service.SetHeroInTransit(false);
+            service.SetHeroInTransit(true);
+            _ = service.Return();
+            service.Send(thornwood);
+
+            Assert.That(service.IsHeroInTransit, Is.False, "a stale hold does not freeze the next Run");
+        }
+
+        [Test]
+        public void HoldingTheHeroInTown_DoesNothing()
+        {
+            service.SetHeroInTransit(true);
+            service.Send(thornwood);
+
+            Assert.That(service.IsHeroInTransit, Is.False, "there is nothing to wait for in Town");
+        }
+
         [Test]
         public void ARunPausedBeforeTheHold_IsStillPausedAfterTheRelease_AndOneRunningResumes()
         {

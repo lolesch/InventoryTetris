@@ -169,8 +169,22 @@ namespace ToolSmiths.InventorySystem.Services
         void SetMenuFreeze(bool held);
 
         /// <summary>
-        /// The sim seconds <paramref name="deltaSeconds"/> of real time is worth: 0 while <see cref="IsPaused"/>
-        /// or <see cref="IsMenuFrozen"/>, otherwise scaled by the Behaviour Profile's sim speed. What <see cref="Tick"/>
+        /// Whether the live Run waits for the hero to get where he is going: he walks to a Field Exit before he
+        /// Returns, or comes out of a portal and walks clear of it before the fight starts. A third freeze beside
+        /// <see cref="IsPaused"/> and <see cref="IsMenuFrozen"/> and, like them, only true while a Run is in the Field.
+        /// A Recall is refused while it holds.
+        /// </summary>
+        bool IsHeroInTransit { get; }
+
+        /// <summary>
+        /// Holds (<c>true</c>) or releases (<c>false</c>) the live Run for the hero's trip. Holding is refused unless a
+        /// Run is in the Field; releasing is always allowed. Never changes <see cref="IsPaused"/> or <see cref="IsMenuFrozen"/>.
+        /// </summary>
+        void SetHeroInTransit(bool inTransit);
+
+        /// <summary>
+        /// The sim seconds <paramref name="deltaSeconds"/> of real time is worth: 0 while <see cref="IsPaused"/>,
+        /// <see cref="IsMenuFrozen"/> or <see cref="IsHeroInTransit"/>, otherwise scaled by the Behaviour Profile's sim speed. What <see cref="Tick"/>
         /// advances by, for views that animate on sim time (they scale with the speed slider and freeze with the Run).
         /// </summary>
         float SimDelta(float deltaSeconds);

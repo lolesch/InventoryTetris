@@ -157,12 +157,15 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             Assert.That(Session.Instance.Hero.TownPortal, Is.EqualTo(_location));
 
             var figure = Named("TownHeroFigure").Single();
-            var waypoint = Member<RectTransform>(figure, "waypoint");
+            var portal = Named("TownPortalMarker").Single();
+            var beside = (Vector2)portal.GetType().GetProperty("Beside").GetValue(portal);
+            var standsAt = (Vector2)figure.transform.parent.InverseTransformPoint(
+                portal.transform.TransformPoint(((RectTransform)portal.transform).rect.center)) + beside;
 
-            // He comes out on top of the portal and walks off it to the Waypoint.
+            // He comes out on top of the portal and walks off it to its Beside point.
             yield return Until(() => figure.GetComponent<CanvasGroup>().alpha >= 1f && !Flag(figure, "IsWalking"), "he has stepped out and walked off");
-            Assert.That(Vector3.Distance(figure.transform.position, waypoint.TransformPoint(waypoint.rect.center)), Is.LessThan(1f),
-                "the figure stands at the Waypoint");
+            Assert.That(Vector2.Distance(figure.transform.localPosition, standsAt), Is.LessThan(1f),
+                "the figure stands beside the Town Portal by its Beside offset");
         }
 
         [UnityTest]
@@ -300,8 +303,14 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
 
             Press("ToTownButton");
             yield return null;
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.Live), "the Run waits while he walks to the Exit");
 
-            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.None), "the Run ends at the click");
+            Time.timeScale = 20f;
+            for (var frame = 0; Simulation.Run.Phase == RunPhase.Live && frame < 3000; frame++)
+                yield return null;
+
+            Time.timeScale = 1f;
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.None), "the Run ends once he stands at the Exit");
             Assert.That(Simulation.Run.LastResult?.Outcome, Is.EqualTo(RunOutcome.Returned));
         }
 

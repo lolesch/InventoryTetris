@@ -215,7 +215,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
         }
 
         [UnityTest]
-        public IEnumerator ClickingTheTownExitAndComingStraightBackWithTheRunHeld_StandsTheTownHeroAtTheTownExit_NotMidWalk()
+        public IEnumerator ClickingTheTownExitWithTheRunHeld_WalksTheTownHeroToTheExitFirst_ThenTheFieldMapComesUp()
         {
             yield return HeldAtThornwood();
             var figure = Named("TownHeroFigure").Single();
@@ -223,18 +223,17 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             GameObject.Find("ToFieldsButton").GetComponent<AbstractButton>()
                 .OnPointerClick(new PointerEventData(EventSystem.current) { button = PointerEventData.InputButton.Left });
             yield return null;
-            Assume.That(Flag(figure, "IsWalking"), Is.True, "premise: he is still on his way to the Town Exit");
+            Assert.That(Flag(figure, "IsWalking"), Is.True, "he walks to the Town Exit");
+            Assert.That(Flag(FieldFace(), "IsExtended"), Is.False, "and the Field map waits for him");
 
-            GameObject.Find("ToTownButton").GetComponent<AbstractButton>()
-                .OnPointerClick(new PointerEventData(EventSystem.current) { button = PointerEventData.InputButton.Left });
-            yield return Until(() => Flag(TownFace(), "IsExtended"), "premise: the Town map is back");
+            yield return Until(() => Flag(FieldFace(), "IsExtended"), "he is at the Exit and the Field map comes up");
 
             var exit = (RectTransform)figure.GetType().GetField("_exit", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(figure);
             var expected = (Vector2)figure.transform.parent.InverseTransformPoint(exit.TransformPoint(exit.rect.center));
 
-            Assert.That(Flag(figure, "IsWalking"), Is.False, "he is not on the walk he left off");
-            Assert.That(figure.transform.localPosition.x, Is.EqualTo(expected.x).Within(1f), "he stands at the Town Exit");
-            Assert.That(figure.transform.localPosition.y, Is.EqualTo(expected.y).Within(1f), "he stands at the Town Exit");
+            Assert.That(Flag(figure, "IsWalking"), Is.False, "he stands where he walked to");
+            Assert.That(figure.transform.localPosition.x, Is.EqualTo(expected.x).Within(1f), "at the Town Exit");
+            Assert.That(figure.transform.localPosition.y, Is.EqualTo(expected.y).Within(1f), "at the Town Exit");
         }
 
         [UnityTest]
@@ -289,6 +288,25 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
         }
 
         [UnityTest]
+        public IEnumerator TheFieldPortal_OpensBesideWhereTheHeroIsDrawn_ByItsBesideOffset()
+        {
+            yield return FightingBeforeTheRecall();
+            var marker = FieldMarker();
+            var figure = Named("HeroFigure").Single();
+            var arena = Named("EnemyArena").Single();
+            var anchor = (RectTransform)arena.GetType().GetProperty("LocationAnchor").GetValue(arena);
+            var beside = (Vector2)marker.GetType().GetField("beside", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(marker);
+
+            Simulation.Recall();
+            yield return null;
+            yield return null;
+
+            // The fight moves him a little between the portal opening and this read, so it is the distance that is held to.
+            var apart = Vector3.Distance(marker.transform.position, figure.transform.position);
+            Assert.That(apart, Is.EqualTo(anchor.TransformVector(beside).magnitude).Within(25f), "beside the figure, by the marker's Beside");
+        }
+
+        [UnityTest]
         public IEnumerator TheTownPortal_WhenTheHeroComesThrough_WaitsThenGrows_AndOnlyThenHeGrowsOutOfIt()
         {
             yield return FightingBeforeTheRecall();
@@ -322,7 +340,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             ClickThePortal();
             yield return Until(() => Flag(figure, "IsEmerging"), "he comes out of the portal on the Field map");
 
-            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.Live), "the Run is live again");
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.Held), "the Run waits for him to appear");
             yield return Until(() => marker.GetComponent<UnityEngine.UI.Image>().enabled, "a portal opens beside him");
             Assert.That(marker.transform.localScale.x, Is.LessThan(1f), "growing");
 
@@ -332,6 +350,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
 
             yield return Until(() => !Flag(figure, "IsEmerging"), "he has walked clear of it");
             yield return null;
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.Live), "and only then does the Run go on");
             Assert.That(figure.transform.localScale.x, Is.EqualTo(1f).Within(1e-3f));
             Assert.That(Vector3.Distance(figure.transform.position, marker.transform.position), Is.GreaterThan(10f), "to the side");
             Assert.That(marker.GetComponent<UnityEngine.UI.Image>().enabled, Is.False, "and the portal closes behind him");

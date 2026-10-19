@@ -28,10 +28,16 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private HeroFigure fieldFigure;
         [SerializeField, Tooltip("The Town map's Hero figure, which walks into the portal before the map changes.")]
         private TownHeroFigure townFigure;
+        [SerializeField, Tooltip("Canvas units from the portal's centre to where the hero stands once he has come out of it.")]
+        private Vector2 beside = new(70f, 0f);
 
         private Image _image;
         private bool _using;
         private bool _open;
+        private LocationConfig _resuming;
+
+        /// <summary>Canvas units from the portal's centre to where the hero stands once he has come out of it.</summary>
+        public Vector2 Beside => beside;
 
         private Image Image => _image ? _image : _image = GetComponent<Image>();
 
@@ -46,6 +52,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         protected override void OnDisable()
         {
+            // Not Arrived: the Town map collapses as the Field map comes up, and the held Run still waits on it.
             if (fieldFigure)
                 fieldFigure.PortalEntered -= OnHeroCameThrough;
 
@@ -103,14 +110,40 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             InventoryService.Instance.SyncContextToMap(true);
 
             if (simulation.Run.Phase == RunPhase.Held)
-                simulation.Resume();
-            else
             {
-                simulation.Send(location);
-                Session.Instance.Hero.TownPortal = null;
+                // The Run stays held until he has come out of the portal and walked clear of it.
+                _resuming = location;
+                fieldFigure.Arrived += OnHeroArrived;
+                return;
             }
 
-            // After the Run: the toggle follows it, so its OnToggle finds the Run already live here and commands nothing.
+            simulation.Send(location);
+            Session.Instance.Hero.TownPortal = null;
+
+            // The fresh Run waits for him too: he is not on the Field map yet.
+            simulation.SetHeroInTransit(true);
+            SyncToggle(location);
+        }
+
+        // He is out and clear: the held Run goes on, live exactly where it was held.
+        private void OnHeroArrived()
+        {
+            fieldFigure.Arrived -= OnHeroArrived;
+
+            var simulation = SimulationService.Instance;
+            var location = _resuming;
+            _resuming = null;
+
+            if (location == null || simulation.Run.Phase != RunPhase.Held)
+                return;
+
+            simulation.Resume();
+            SyncToggle(location);
+        }
+
+        // After the Run: the toggle follows it, so its OnToggle finds the Run already live here and commands nothing.
+        private static void SyncToggle(LocationConfig location)
+        {
             foreach (var toggle in FindObjectsByType<LocationToggle>(FindObjectsInactive.Include))
                 if (toggle.Location == location)
                     toggle.SyncToggle(true);

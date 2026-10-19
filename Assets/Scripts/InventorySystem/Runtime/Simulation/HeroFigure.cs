@@ -47,6 +47,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             Following,
             Fallen,
             Entering,
+            Leaving,
         }
 
         private readonly IHeroTravel _travel = new HeroTravel(default);
@@ -71,6 +72,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private bool _steppingOut;
         private float _emergeFor;
         private FieldPortalMarker _portalMarker;
+        private System.Action _onLeft;
 
         private Figure Figure => _figure ? _figure : _figure = GetComponent<Figure>();
 
@@ -90,11 +92,20 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// <summary>Whether he is on his way into the portal, walking to it or vanishing in it.</summary>
         public bool IsEnteringPortal => _mode == Mode.Entering;
 
+        /// <summary>Whether the figure has been drawn anywhere yet.</summary>
+        public bool IsPlaced => Figure.IsPlaced;
+
         /// <summary>Whether he has come through a portal and is not yet clear of it: waiting for it to open, growing on top of it, or walking to the fight.</summary>
         public bool IsEmerging => _emerging;
 
+        /// <summary>Whether he is walking to the Field Exit to Return, the Run waiting for him.</summary>
+        public bool IsLeaving => _mode == Mode.Leaving;
+
         /// <summary>Raised once when he has gone into the portal: the map changes now.</summary>
         public event System.Action PortalEntered;
+
+        /// <summary>Raised once when he has come out of a portal and walked clear of it: the Run goes on from here.</summary>
+        public event System.Action Arrived;
 
         /// <summary>
         /// The Field Exit, announced by its button: where the figure stands when the Field map comes up and walks out on
@@ -151,13 +162,28 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _phase = run.Phase;
             _inPortal &= _phase == RunPhase.Held;
 
-            // A Run that ended or was held again leaves him nothing to come out of.
-            if (_emerging && (_phase != RunPhase.Live || _mode != Mode.Following))
-                _emerging = false;
+            // A Run that ended leaves him nothing to come out of or to leave by the Exit.
+            if (_emerging && (_phase == RunPhase.None || _mode != Mode.Following))
+                StopEmerging();
+
+            if (_mode == Mode.Leaving && _phase != RunPhase.Live)
+            {
+                _mode = Mode.Standing;
+                _onLeft = null;
+            }
 
             // A Run that is not held any more (a Relocate while he walks to the portal) leaves him nothing to walk into.
             if (_mode == Mode.Entering && _phase != RunPhase.Held)
                 _mode = Mode.Standing;
+
+            // Through the Town Portal with the Run held: he comes out of it on the Field map and the Run resumes once he is clear.
+            if (_arrivesByPortal && _phase == RunPhase.Held && _bound != null)
+            {
+                _arrivesByPortal = false;
+                _inPortal = false;
+                _mode = Mode.Following;
+                BeginEmerging();
+            }
 
             SyncHero();
 
@@ -191,20 +217,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (held)
                 WalkIntoPortal();
             else if (resumed && _bound != null)
-            {
                 _mode = Mode.Following;
-
-                // Out of the Town Portal he steps from it where the fight has him.
-                if (_arrivesByPortal)
-                {
-                    BeginEmerging();
-                    _arrivesByPortal = false;
-                }
-            }
 
             switch (_mode)
             {
                 case Mode.Walking: Walk(); break;
+                case Mode.Leaving: Leave(); break;
                 case Mode.Following when _emerging && _bound != null: StepOut(); break;
                 case Mode.Following: Follow(); break;
                 case Mode.Entering: Enter(); break;
@@ -222,6 +240,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             transform.localScale = Vector3.one * _visible;
             Figure.SetAlpha(gone || _inPortal ? 0f : (map != null ? map.alpha : 1f) * _visible);
+
+            // The Run waits only while he is on a trip; a hold nothing here owns is let go.
+            var simulation = SimulationService.Instance;
+            if (simulation.IsHeroInTransit && !_emerging && !_arrivesByPortal && _mode != Mode.Leaving)
+                simulation.SetHeroInTransit(false);
         }
 
         private FieldFacePanel _face;
@@ -263,6 +286,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _phase = default;
             _inPortal = false;
             _emerging = false;
+            _onLeft = null;
             _arrivesByPortal = false;
             StandAt(null);
         }
@@ -357,18 +381,32 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _emergeFor = 0f;
             _visible = 0f;
             _steppingOut = false;
+
+            // A live Run waits for him; a held one is not moving anyway.
+            SimulationService.Instance.SetHeroInTransit(true);
+        }
+
+        // He is clear of the portal: whatever waited for him goes on.
+        private void StopEmerging()
+        {
+            if (!_emerging)
+                return;
+
+            _emerging = false;
+            Arrived?.Invoke();
         }
 
         private void StepOut()
         {
-            var at = _bound.HeroPosition;
-            if (!Projection.TryGetNumberOrigin(at, out var fight))
-                return;
+            // A held Run's fight may not be projectable yet; he comes out of the portal all the same, facing the way he was.
+            var known = Projection.TryGetNumberOrigin(_bound.HeroPosition, out var fight);
 
             if (portal == null)
             {
                 // Nothing to come out of: he grows where the fight has him.
-                Follow();
+                if (known)
+                    Follow();
+
                 GrowOut();
                 return;
             }
@@ -382,7 +420,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 }
 
                 var from = LocalCentre(portal);
-                Figure.Place(from, ArenaOf(from), ArenaLayout.FacingSign(from.x, fight.x, Figure.FacingSign, WalkFacingDeadZone));
+                var facing = known ? ArenaLayout.FacingSign(from.x, fight.x, Figure.FacingSign, WalkFacingDeadZone) : Figure.FacingSign;
+                Figure.Place(from, ArenaOf(from), facing);
                 SortAmongSiblings();
                 GrowOut();
 
@@ -396,21 +435,74 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             }
 
             _visible = 1f;
+
+            // Nowhere to walk to: he is out and that is all.
+            if (!known)
+            {
+                StopEmerging();
+                return;
+            }
+
             _travel.Retarget(new Coordinate(fight));
             var arrived = _travel.Advance(ArenaSpace.HeroCanvasSpeed, SimulationService.Instance.WalkDelta(Time.deltaTime));
 
             var here = new Vector2(_travel.Position.x, _travel.Position.z);
             Figure.Place(here, ArenaOf(here), ArenaLayout.FacingSign(here.x, fight.x, Figure.FacingSign, WalkFacingDeadZone));
             SortAmongSiblings();
-            _emerging = !arrived;
+
+            if (arrived)
+                StopEmerging();
         }
 
-        // Grows from nothing over the vanish's beat, the reverse of going in.
+        // Grows from nothing over the vanish's beat, the reverse of going in; with no portal that is all of it.
         private void GrowOut()
         {
             _emergeFor += Time.deltaTime;
             _visible = 1f - PortalVanish.Remaining(_emergeFor, vanishSeconds);
-            _emerging = _emergeFor < vanishSeconds || portal != null;
+
+            if (portal == null && _emergeFor >= vanishSeconds)
+                StopEmerging();
+        }
+
+        /// <summary>
+        /// A click on the Field Exit: with a Run in the Field he walks to the Exit at his own pace, the Run waiting for
+        /// him, and <paramref name="onArrived"/> runs once he stands there. Anywhere else there is no walk and it runs at once.
+        /// </summary>
+        public void WalkToExit(System.Action onArrived)
+        {
+            if (_exit == null || _bound == null || _phase != RunPhase.Live || !Figure.IsPlaced || _emerging || _mode == Mode.Entering)
+            {
+                onArrived();
+                return;
+            }
+
+            _travel.Place(new Coordinate(((RectTransform)transform).anchoredPosition));
+            _travel.Retarget(new Coordinate(LocalCentre(_exit)));
+            _onLeft = onArrived;
+            _target = null;
+            _mode = Mode.Leaving;
+            SimulationService.Instance.SetHeroInTransit(true);
+        }
+
+        private void Leave()
+        {
+            var goal = LocalCentre(_exit);
+            _travel.Retarget(new Coordinate(goal));
+            var arrived = _travel.Advance(ArenaSpace.HeroCanvasSpeed, SimulationService.Instance.WalkDelta(Time.deltaTime));
+
+            var at = new Vector2(_travel.Position.x, _travel.Position.z);
+            Figure.Place(at, ArenaOf(at), ArenaLayout.FacingSign(at.x, goal.x, Figure.FacingSign, WalkFacingDeadZone));
+            SortAmongSiblings();
+
+            if (!arrived)
+                return;
+
+            // At the Exit: the Run is his to leave now.
+            _mode = Mode.Following;
+            SimulationService.Instance.SetHeroInTransit(false);
+            var onLeft = _onLeft;
+            _onLeft = null;
+            onLeft?.Invoke();
         }
 
         private void Enter()
