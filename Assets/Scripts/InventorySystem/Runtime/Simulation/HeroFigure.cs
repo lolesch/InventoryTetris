@@ -381,6 +381,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _emergeFor = 0f;
             _visible = 0f;
             _steppingOut = false;
+            _heldAnchor = null;
 
             // A live Run waits for him; a held one is not moving anyway.
             SimulationService.Instance.SetHeroInTransit(true);
@@ -461,13 +462,31 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (Projection.TryGetNumberOrigin(_bound.HeroPosition, out canvas))
                 return true;
 
-            if (_anchor == null)
+            // The map collapsing over a held Run clears the Location toggles, so the arena has no anchor then: the
+            // selected Location's own Travel Point is where its fight is drawn all the same.
+            var anchor = _anchor != null ? _anchor : HeldLocationAnchor();
+            if (anchor == null)
                 return false;
 
-            var offset = ArenaLayout.CorpseOffset(_bound.HeroPosition, _bound.Arena.Origin, ArenaSpace.Projection);
-            var parent = (RectTransform)transform.parent;
-            canvas = LocalCentre(_anchor) + (Vector2)parent.InverseTransformVector(_anchor.TransformVector(offset));
+            // Exactly as the arena places a figure: its centre on the anchor plus the projected offset, in canvas units
+            // that the anchor's own scale (a selected toggle's) does not change.
+            canvas = LocalCentre(anchor) + ArenaLayout.CorpseOffset(_bound.HeroPosition, _bound.Arena.Origin, ArenaSpace.Projection);
             return true;
+        }
+
+        private RectTransform _heldAnchor;
+
+        private RectTransform HeldLocationAnchor()
+        {
+            if (_heldAnchor)
+                return _heldAnchor;
+
+            var selected = _hero?.SelectedLocation;
+            foreach (var toggle in FindObjectsByType<LocationToggle>(FindObjectsInactive.Include))
+                if (toggle.Location == selected)
+                    return _heldAnchor = toggle.TravelPoint;
+
+            return null;
         }
 
         // Grows from nothing over the vanish's beat, the reverse of going in; with no portal that is all of it.

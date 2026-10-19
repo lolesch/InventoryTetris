@@ -445,6 +445,55 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
         }
 
         [UnityTest]
+        public IEnumerator ARecallOnTheWalkToTheLocation_ThenBackThroughTheTownPortal_WalksToTheSimPosition_WithoutAJump()
+        {
+            _ = FieldFace().GetType().GetMethod("ToggleState").Invoke(FieldFace(), new object[] { true });
+            yield return Until(() => Flag(FieldFace(), "IsExtended"), "premise: the Field map is up");
+
+            var toggle = ToggleOf(_thornwood);
+            _ = toggle.GetType().GetMethod("SetToggle").Invoke(toggle, new object[] { true });
+            var figure = Named("HeroFigure").Single();
+            yield return null;
+            yield return null;
+            Assume.That(Flag(figure, "IsWalking"), Is.True, "premise: he is still on his way to the Location");
+
+            var package = new Package(null, ItemService.Instance.RollConsumable(ConsumableType.PortalScroll, 0f), 1u);
+            Assert.That(Session.Instance.Hero.Inventory.TryAddToContainer(ref package), Is.True, "premise: the scroll fits the bag");
+            Simulation.Recall();
+            Simulation.Tick(1f);
+            yield return Until(() => Flag(TownFace(), "IsExtended"), "premise: the Town map is up");
+            yield return Until(() => Flag(Named("TownPortalMarker").Single(), "IsOpen"), "premise: the Town Portal has grown");
+
+            ClickThePortal();
+            var last = (Vector3?)null;
+            var worst = 0f;
+            var frames = 0;
+            var live = 0;
+            var until = Time.realtimeSinceStartup + 60f;
+            while (Time.realtimeSinceStartup < until && live < 90)
+            {
+                yield return null;
+                frames++;
+                if (Simulation.Run.Phase == RunPhase.Live)
+                    live++;
+
+                if (figure.transform.localScale.x <= 0.01f)
+                {
+                    last = null;
+                    continue;
+                }
+
+                if (last.HasValue)
+                    worst = Mathf.Max(worst, Vector3.Distance(last.Value, figure.transform.position));
+
+                last = figure.transform.position;
+            }
+
+            Assert.That(live, Is.GreaterThan(0), "premise: the Run resumed");
+            Assert.That(worst, Is.LessThan(25f), $"he never jumps: the biggest step in {frames} frames");
+        }
+
+        [UnityTest]
         public IEnumerator AfterARelocateFromHeld_TheFieldMarkerIsGone_ThoughThePortalStaysOpen()
         {
             Session.Instance.Hero.MarkCompleted(_thornwood.Id);
