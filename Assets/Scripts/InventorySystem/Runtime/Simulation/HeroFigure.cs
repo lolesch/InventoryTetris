@@ -398,8 +398,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         private void StepOut()
         {
-            // A held Run's fight may not be projectable yet; he comes out of the portal all the same, facing the way he was.
-            var known = Projection.TryGetNumberOrigin(_bound.HeroPosition, out var fight);
+            // A held Run's fight may not be drawn yet; its place on the map is still known, and he walks to it.
+            var known = TryFightCanvas(out var fight);
 
             if (portal == null)
             {
@@ -452,6 +452,22 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             if (arrived)
                 StopEmerging();
+        }
+
+        // Where the fight has him on this map: the arena's own projection when it is drawing him, else the same place
+        // worked out from the Location's anchor, as the portal markers place themselves.
+        private bool TryFightCanvas(out Vector2 canvas)
+        {
+            if (Projection.TryGetNumberOrigin(_bound.HeroPosition, out canvas))
+                return true;
+
+            if (_anchor == null)
+                return false;
+
+            var offset = ArenaLayout.CorpseOffset(_bound.HeroPosition, _bound.Arena.Origin, ArenaSpace.Projection);
+            var parent = (RectTransform)transform.parent;
+            canvas = LocalCentre(_anchor) + (Vector2)parent.InverseTransformVector(_anchor.TransformVector(offset));
+            return true;
         }
 
         // Grows from nothing over the vanish's beat, the reverse of going in; with no portal that is all of it.

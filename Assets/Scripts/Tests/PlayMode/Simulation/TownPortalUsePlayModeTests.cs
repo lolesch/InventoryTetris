@@ -348,12 +348,36 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             Assert.That(Flag(marker, "IsOpen"), Is.True, "once it is open");
             Assert.That(Vector3.Distance(figure.transform.position, marker.transform.position), Is.LessThan(10f), "on top of it");
 
+            yield return Until(() => Flag(figure, "IsEmerging") && figure.transform.localScale.x >= 1f, "he is whole and walks to the fight");
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.Held), "the Run still waits for him to get there");
+
             yield return Until(() => !Flag(figure, "IsEmerging"), "he has walked clear of it");
             yield return null;
             Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.Live), "and only then does the Run go on");
             Assert.That(figure.transform.localScale.x, Is.EqualTo(1f).Within(1e-3f));
             Assert.That(Vector3.Distance(figure.transform.position, marker.transform.position), Is.GreaterThan(10f), "to the side");
             Assert.That(marker.GetComponent<UnityEngine.UI.Image>().enabled, Is.False, "and the portal closes behind him");
+        }
+
+        [UnityTest]
+        public IEnumerator AClearedLocation_LetsGoOfItsToggle_SoItCanBeSentToAgain()
+        {
+            yield return FightingBeforeTheRecall();
+            Session.Instance.Hero.IsInvincible = true;
+            var first = Simulation.Run.Encounter;
+            for (var tick = 0; first.Phase != SimulationPhase.Complete && tick < 20000; tick++)
+                Simulation.Tick(0.5f);
+
+            Assume.That(first.Phase, Is.EqualTo(SimulationPhase.Complete), "premise: the Location is cleared");
+            yield return null;
+
+            var toggle = ToggleOf(_thornwood);
+            Assert.That(Flag(toggle, "IsOn"), Is.False, "the selection let go of the cleared Location");
+
+            _ = toggle.GetType().GetMethod("SetToggle").Invoke(toggle, new object[] { true });
+            yield return null;
+
+            Assert.That(Simulation.Run.Encounter, Is.Not.SameAs(first), "a click sends the hero to the same Location again");
         }
 
         [UnityTest]

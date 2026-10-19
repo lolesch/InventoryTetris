@@ -59,6 +59,21 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         private void Refresh() => Show(SimulationService.Instance.StateOf(Location));
 
+        // A cleared Location lets go of the selection, so the same Location can be sent to again. Polled, since a farmed
+        // clear raises no signal of its own.
+        private void Update()
+        {
+            if (!Application.isPlaying || !ServiceLocator.IsArmed || !IsOn)
+                return;
+
+            var simulation = SimulationService.Instance;
+            if (IsClearedHere(simulation.Run, simulation.Locations.ProfileFor(Location)))
+                SyncToggle(false);
+        }
+
+        private static bool IsClearedHere(RunState run, EncounterProfile profile) =>
+            run.Phase == RunPhase.Live && run.Location == profile && run.Encounter is { Phase: SimulationPhase.Complete };
+
         /// <summary>
         /// Hidden is not seen or hit; Locked is the non-interactable look (<see cref="UnlockLook"/>), so it neither
         /// scales on hover nor takes a click; Active and Complete are open.
@@ -96,7 +111,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             var run = simulation.Run;
 
             // A resume selects the Location its Run is already live at: the toggle follows the Run, it does not command it.
-            if (run.Phase == RunPhase.Live && run.Location == simulation.Locations.ProfileFor(Location))
+            // A cleared one is sent to again.
+            var profile = simulation.Locations.ProfileFor(Location);
+            if (run.Phase == RunPhase.Live && run.Location == profile && !IsClearedHere(run, profile))
                 return;
 
             // Switching mid-Run moves the Run, live or held — no Return, so the Run never passes through
