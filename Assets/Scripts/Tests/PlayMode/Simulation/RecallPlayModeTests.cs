@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Linq;
 using NUnit.Framework;
+using Submodules.Utility.UI;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Inventories;
@@ -8,6 +9,7 @@ using ToolSmiths.InventorySystem.Locations;
 using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
@@ -193,6 +195,96 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             InventoryService.Instance.SetContext(InventoryContext.Stash);
             Assert.That(InventoryService.Instance.ActiveContext, Is.EqualTo(InventoryContext.Stash), "the Stash opens");
             Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.Held), "and the Run is still held");
+        }
+
+        // A press as the pointer makes it: the Town Exit is the ToFieldsButton, the Field Exit the ToTownButton.
+        private static void Press(string name) =>
+            GameObject.Find(name).GetComponent<AbstractButton>()
+                .OnPointerClick(new PointerEventData(EventSystem.current) { button = PointerEventData.InputButton.Left });
+
+        private static Vector2 CentreOf(RectTransform anchor) => anchor.TransformPoint(anchor.rect.center);
+
+        private static RectTransform FieldExit() =>
+            TravelPoints.Of((RectTransform)GameObject.Find("ToTownButton").transform);
+
+        // Held, the figure in the portal and the Town map up: where a player stands before walking out.
+        private IEnumerator HeldInTown()
+        {
+            yield return RecalledFromTheFight();
+            yield return OpenThePortal();
+            yield return Until(() => Flag(Named("HeroFigure").Single(), "HasEnteredPortal"), "premise: the figure went in");
+            yield return Until(() => Flag(TownFace(), "IsExtended"), "premise: the Town map is up");
+        }
+
+        [UnityTest]
+        public IEnumerator WhileHeld_TheTownExit_BringsUpTheFieldMapWithTheFigureAtTheFieldExit_AndTheRunStaysHeldWithItsPortal()
+        {
+            yield return HeldInTown();
+
+            Press("ToFieldsButton");
+            yield return Until(() => Flag(FieldFace(), "IsExtended"), "the Field map comes up");
+
+            var figure = Named("HeroFigure").Single();
+            Assert.That(Flag(figure, "HasEnteredPortal"), Is.False, "he has stepped out of the portal");
+            Assert.That(figure.GetComponent<CanvasGroup>().alpha, Is.EqualTo(1f).Within(0.01f), "and is drawn");
+            Assert.That(Vector2.Distance(figure.transform.position, CentreOf(FieldExit())), Is.LessThan(1f), "at the Field Exit");
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.Held), "the Run is still held");
+            Assert.That(Session.Instance.Hero.TownPortal, Is.EqualTo(_location), "and the portal still open");
+            Assert.That(PortalImage("FieldPortalMarker").enabled, Is.True, "with its marker on the Field map");
+            Assert.That(Flag(TownFace(), "IsCollapsed"), Is.True, "the Town map has given way");
+        }
+
+        [UnityTest]
+        public IEnumerator WhileHeld_TheFieldExit_BringsTheTownMapBack_AndEndsNothing()
+        {
+            yield return HeldInTown();
+            Press("ToFieldsButton");
+            yield return Until(() => Flag(FieldFace(), "IsExtended"), "premise: the Field map is up");
+
+            var run = Simulation.Run;
+            var settled = 0;
+            void Count(RunResult _) => settled++;
+            Simulation.RunSettled += Count;
+
+            Press("ToTownButton");
+            yield return Until(() => Flag(TownFace(), "IsExtended"), "the Town map comes back");
+            Simulation.RunSettled -= Count;
+
+            Assert.That(settled, Is.Zero, "no Return ends the Run");
+            Assert.That(Simulation.Run, Is.SameAs(run));
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Held), "the Run is still held");
+            Assert.That(run.LastResult, Is.Null, "nothing ended");
+            Assert.That(Session.Instance.Hero.TownPortal, Is.EqualTo(_location), "and the portal still open");
+        }
+
+        [UnityTest]
+        public IEnumerator WhileHeld_WalkingOutAndBackAndOutAgain_LeavesTheFigureAtTheFieldExit()
+        {
+            yield return HeldInTown();
+            Press("ToFieldsButton");
+            yield return Until(() => Flag(FieldFace(), "IsExtended"), "premise: the Field map is up");
+            Press("ToTownButton");
+            yield return Until(() => Flag(TownFace(), "IsExtended"), "premise: the Town map is back");
+
+            Press("ToFieldsButton");
+            yield return Until(() => Flag(FieldFace(), "IsExtended"), "the Field map comes up again");
+
+            var figure = Named("HeroFigure").Single();
+            Assert.That(figure.GetComponent<CanvasGroup>().alpha, Is.EqualTo(1f).Within(0.01f), "he is drawn");
+            Assert.That(Vector2.Distance(figure.transform.position, CentreOf(FieldExit())), Is.LessThan(1f), "at the Field Exit");
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.Held));
+        }
+
+        [UnityTest]
+        public IEnumerator ALiveRun_TheFieldExit_StillReturns()
+        {
+            yield return FightingInTheField();
+
+            Press("ToTownButton");
+            yield return null;
+
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.None), "the Run ends at the click");
+            Assert.That(Simulation.Run.LastResult?.Outcome, Is.EqualTo(RunOutcome.Returned));
         }
 
         [UnityTest]

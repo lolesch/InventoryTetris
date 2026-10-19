@@ -25,9 +25,13 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         [Tooltip("The Combat Panel - a SidePanel whose Ground context this face closes as it goes.")]
         [SerializeField] private SidePanel combatPanel;
 
+        /// <summary>Raised as the map starts to come up: the hero's figure learns that the Town Exit brought it up.</summary>
+        public event System.Action Appearing;
+
         protected override void BeforeAppear()
         {
             base.BeforeAppear();
+            Appearing?.Invoke();
 
             if (combatPanel)
                 combatPanel.SetMapUp(true);
