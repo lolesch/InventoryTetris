@@ -22,6 +22,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private HeroFigure fieldFigure;
         [SerializeField, Min(0f), Tooltip("Seconds the figure takes to shrink and fade once it has walked into the portal, before the map changes.")]
         private float vanishSeconds = 0.5f;
+        [SerializeField, Min(0f), Tooltip("Seconds the map waits after the figure is gone before it changes.")]
+        private float holdSeconds = 0.25f;
 
         // Standing at the origin until the first Place, so a walk query or TravelTo before OnEnable is safe.
         private IHeroTravel _travel = new HeroTravel(default);
@@ -46,6 +48,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         // A portal brought him in beside the Town Portal; any other way onto the Town map with a held Run is a walk back.
         private bool _arrivedByPortal;
+
+        // Out of the portal: gone until the Town Portal has grown, then growing back.
+        private bool _emerging;
+        private float _emergeFor;
+        private TownPortalMarker _portalMarker;
 
         private CanvasGroup Group => _group ? _group : _group = GetComponent<CanvasGroup>();
 
@@ -125,6 +132,36 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         {
             _arrivedByPortal = true;
             Enter(TownEntry.Recall);
+
+            // He is not there until the portal has grown; then he grows back, the way he went in.
+            _emerging = true;
+            _emergeFor = 0f;
+            Look(0f);
+        }
+
+        // The Town Portal, which he waits for while it grows; none, or one that is not up, is nothing to wait for.
+        private bool PortalIsGrowing
+        {
+            get
+            {
+                if (!_portalMarker && _face)
+                    _portalMarker = _face.GetComponentInChildren<TownPortalMarker>(true);
+
+                return _portalMarker && _portalMarker.isActiveAndEnabled && !_portalMarker.IsOpen;
+            }
+        }
+
+        private void Emerge()
+        {
+            if (PortalIsGrowing)
+            {
+                Look(0f);
+                return;
+            }
+
+            _emergeFor += Time.deltaTime;
+            Look(1f - PortalVanish.Remaining(_emergeFor, vanishSeconds));
+            _emerging = _emergeFor < vanishSeconds;
         }
 
         // The Town map came up over a held Run without a portal: he came back by the Field Exit and stands at the Town
@@ -144,6 +181,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _target = null;
             _onGone = null;
             _vanishing = false;
+            _emerging = false;
             Look(1f);
             Settle(force: true);
         }
@@ -167,6 +205,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         private void Update()
         {
+            if (_emerging)
+                Emerge();
+
             if (_vanishing)
             {
                 Vanish();
@@ -196,7 +237,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             var left = PortalVanish.Remaining(_vanishFor, vanishSeconds);
             Look(left);
 
-            if (left > 0f)
+            // Gone, the map waits a beat before it changes.
+            if (_vanishFor < vanishSeconds + holdSeconds)
                 return;
 
             // Gone: he stays gone until the next way into Town puts him back.

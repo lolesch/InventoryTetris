@@ -37,6 +37,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private RectTransform portal;
         [SerializeField, Min(0f), Tooltip("Seconds he takes to shrink and fade once he has walked into the portal, before the map changes.")]
         private float vanishSeconds = 0.5f;
+        [SerializeField, Min(0f), Tooltip("Seconds the map waits after he is gone before it changes.")]
+        private float holdSeconds = 0.25f;
 
         private enum Mode
         {
@@ -65,6 +67,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private float _vanishFor;
         private float _visible = 1f;
         private bool _inPortal;
+        private bool _emerging;
+        private float _emergeFor;
+        private FieldPortalMarker _portalMarker;
 
         private Figure Figure => _figure ? _figure : _figure = GetComponent<Figure>();
 
@@ -83,6 +88,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         /// <summary>Whether he is on his way into the portal, walking to it or vanishing in it.</summary>
         public bool IsEnteringPortal => _mode == Mode.Entering;
+
+        /// <summary>Whether he has come through a portal and is growing back to his size, once the portal beside him is open.</summary>
+        public bool IsEmerging => _emerging;
 
         /// <summary>Raised once when he has gone into the portal: the map changes now.</summary>
         public event System.Action PortalEntered;
@@ -142,6 +150,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _phase = run.Phase;
             _inPortal &= _phase == RunPhase.Held;
 
+            // A Run that ended or was held again leaves him nothing to come out of.
+            if (_emerging && _phase != RunPhase.Live)
+                _emerging = false;
+
             // A Run that is not held any more (a Relocate while he walks to the portal) leaves him nothing to walk into.
             if (_mode == Mode.Entering && _phase != RunPhase.Held)
                 _mode = Mode.Standing;
@@ -167,6 +179,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 {
                     _awaitingLocation = false;
                     _mode = Mode.Following;
+                    BeginEmerging();
                 }
                 else
                     TravelTo(_anchor);
@@ -177,7 +190,16 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (held)
                 WalkIntoPortal();
             else if (resumed && _bound != null)
+            {
                 _mode = Mode.Following;
+
+                // Out of the Town Portal he steps from it where the fight has him.
+                if (_arrivesByPortal)
+                {
+                    BeginEmerging();
+                    _arrivesByPortal = false;
+                }
+            }
 
             switch (_mode)
             {
@@ -191,8 +213,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             // When the Death beat ends the fallen figure is gone: the Corpse marker is what lies there now.
             var gone = _mode == Mode.Fallen && !SimulationService.Instance.DeathBeatPlaying;
 
-            // Shrunk and faded together while he vanishes into the portal; whole again once he is no longer on his way in.
-            if (_mode != Mode.Entering && !_inPortal)
+            // Shrunk and faded together while he vanishes into the portal and grown back as he steps out of one;
+            // whole again once he is neither.
+            if (_emerging)
+                Emerge();
+            else if (_mode != Mode.Entering && !_inPortal)
                 _visible = 1f;
 
             transform.localScale = Vector3.one * _visible;
@@ -212,7 +237,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         // portal stays open. A resume lands live, so it is not this.
         private void OnFieldMapAppearing()
         {
-            if (!_inPortal || SimulationService.Instance.Run.Phase != RunPhase.Held)
+            // On his way out of the Town Portal the Run resumes at once: he stays gone until he steps out of it.
+            if (!_inPortal || _arrivesByPortal || SimulationService.Instance.Run.Phase != RunPhase.Held)
                 return;
 
             _inPortal = false;
@@ -236,6 +262,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _run = null;
             _phase = default;
             _inPortal = false;
+            _emerging = false;
             _arrivesByPortal = false;
             StandAt(null);
         }
@@ -310,8 +337,44 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _mode = Mode.Entering;
         }
 
+        // The portal beside him, which he waits for while it grows; none, or one that is not up, is nothing to wait for.
+        private bool PortalIsGrowing
+        {
+            get
+            {
+                if (!_portalMarker && portal)
+                    portal.TryGetComponent(out _portalMarker);
+
+                return _portalMarker && _portalMarker.isActiveAndEnabled && !_portalMarker.IsOpen;
+            }
+        }
+
+        // He is gone from the Run's map until the portal he steps out of has grown; then he grows back from nothing.
+        private void BeginEmerging()
+        {
+            _emerging = true;
+            _emergeFor = 0f;
+            _visible = 0f;
+        }
+
+        private void Emerge()
+        {
+            if (PortalIsGrowing)
+            {
+                _visible = 0f;
+                return;
+            }
+
+            _emergeFor += Time.deltaTime;
+            _visible = 1f - PortalVanish.Remaining(_emergeFor, vanishSeconds);
+            _emerging = _emergeFor < vanishSeconds;
+        }
+
         private void Enter()
         {
+            if (PortalIsGrowing)
+                return;
+
             if (_travel.IsWalking)
             {
                 var goal = LocalCentre(portal);
@@ -327,7 +390,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _vanishFor += Time.deltaTime;
             _visible = PortalVanish.Remaining(_vanishFor, vanishSeconds);
 
-            if (_visible <= 0f)
+            // Gone, the map waits a beat before it changes.
+            if (_vanishFor >= vanishSeconds + holdSeconds)
                 FinishEntering();
         }
 

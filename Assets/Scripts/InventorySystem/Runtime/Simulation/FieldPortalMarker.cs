@@ -12,12 +12,14 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// stays while the portal opens and the Run is held. It is placed around the selected Location's anchor, as the
     /// <see cref="CorpseMarker"/> is, so it keeps its place on the map as the fight goes on without him.
     ///
-    /// <para>Once the Run is held a click on it takes the hero to Town: he walks into the portal and vanishes, as a
-    /// Recall does, and the portal stays open. Only the Town Portal resumes the Run. While the portal is still opening,
-    /// or the hero is already on his way in, it is not a click target, so it swallows no click.</para>
+    /// <para>It grows when it opens, and the hero waits for it before he walks in. Once the Run is held a click on it
+    /// takes the hero to Town: he walks into the portal and vanishes, as a Recall does, and the portal stays open. Only
+    /// the Town Portal resumes the Run, and the hero steps out of a portal that opens where he arrives, grows, and
+    /// closes once he is out. While the portal is still growing, or the hero is already on his way in, it is not a
+    /// click target, so it swallows no click.</para>
     /// </summary>
     [RequireComponent(typeof(Image))]
-    public sealed class FieldPortalMarker : AbstractButton
+    public sealed class FieldPortalMarker : PortalMarker
     {
         [SerializeField, Tooltip("Supplies the projection and the Location anchor the portal is placed around.")]
         private EnemyArena arena;
@@ -40,15 +42,25 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 return;
 
             var run = SimulationService.Instance.Run;
-            var open = run.IsRecalling || run.Phase == RunPhase.Held;
+            // The figure retires its own arrival a frame after the Run ends, which this reads first.
+            var arriving = heroFigure.IsEmerging && run.Phase == RunPhase.Live && run.Encounter != null;
+            var open = run.IsRecalling || run.Phase == RunPhase.Held || arriving;
 
             if (open && !_open)
-                _offset = ArenaLayout.CorpseOffset(run.Encounter.HeroPosition, run.Encounter.Arena.Origin, arena.Projection) + beside;
+            {
+                // Out of Town he steps out of it where he stands; a Recall opens it beside him.
+                var centre = ArenaLayout.CorpseOffset(run.Encounter.HeroPosition, run.Encounter.Arena.Origin, arena.Projection);
+                _offset = arriving ? centre : centre + beside;
+                Grow(arriving ? ArrivalDelay : 0f);
+            }
+            else if (!open)
+                Close();
 
             _open = open;
             Image.enabled = open;
+            Tick();
 
-            var usable = run.Phase == RunPhase.Held && !heroFigure.IsEnteringPortal && !heroFigure.HasEnteredPortal;
+            var usable = run.Phase == RunPhase.Held && IsOpen && !heroFigure.IsEnteringPortal && !heroFigure.HasEnteredPortal;
             Image.raycastTarget = usable;
             interactable = usable;
         }

@@ -12,14 +12,15 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// with a Run held, a Run ended after it, or none at all. The hero owns the portal and no event says it closed
     /// (a resume clears it after the Run's own phase event), so it is read every frame.
     ///
-    /// <para>A click uses it, and using it closes it. The hero walks to the portal at his own pace and vanishes into it,
+    /// <para>When the hero comes through from the Field map the portal waits a beat, grows, and he steps out of it.
+    /// A click uses it, and using it closes it. The hero walks to the portal at his own pace and vanishes into it,
     /// and only then does the Field map come up: with the Run held it resumes it, live exactly where it was held and
     /// with the portal's Location selected, no new fight; with no Run it Sends a fresh Encounter at the portal's
     /// Location, the figure arriving through the portal. The Field map is brought up here, as the Town Exit does,
     /// because the Town map's collapse on the Run going live is refused (it is the group's active member).</para>
     /// </summary>
     [RequireComponent(typeof(Image))]
-    public sealed class TownPortalMarker : AbstractButton
+    public sealed class TownPortalMarker : PortalMarker
     {
         [SerializeField, Tooltip("The Field map's face, which the portal brings up.")]
         private FieldFacePanel fieldFace;
@@ -30,8 +31,29 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         private Image _image;
         private bool _using;
+        private bool _open;
 
         private Image Image => _image ? _image : _image = GetComponent<Image>();
+
+        // Selectable is [ExecuteAlways]: it subscribes in Play Mode only.
+        protected override void OnEnable()
+        {
+            base.OnEnable();
+
+            if (Application.isPlaying && fieldFigure)
+                fieldFigure.PortalEntered += OnHeroCameThrough;
+        }
+
+        protected override void OnDisable()
+        {
+            if (fieldFigure)
+                fieldFigure.PortalEntered -= OnHeroCameThrough;
+
+            base.OnDisable();
+        }
+
+        // The Town map is about to come up with him on it: the portal starts shut and grows once it is up.
+        private void OnHeroCameThrough() => Grow(ArrivalDelay);
 
         private void Update()
         {
@@ -40,11 +62,18 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 return;
 
             var open = Session.Instance.Hero.TownPortal != null;
-            if (!open)
+            if (open && !_open)
+                OpenAtOnce();
+            else if (!open)
+            {
                 _using = false;
+                Close();
+            }
 
+            _open = open;
             Image.enabled = open;
-            interactable = open && !_using;
+            Tick();
+            interactable = open && IsOpen && !_using;
         }
 
         protected override void OnClick()
@@ -68,6 +97,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (!simulation.CanSend(location))
                 return;
 
+            // Before the Field map comes up, so the figure stays gone until he steps out of the portal there.
+            fieldFigure.ArriveByPortal();
             fieldFace.Expand();
             InventoryService.Instance.SyncContextToMap(true);
 
@@ -76,7 +107,6 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             else
             {
                 simulation.Send(location);
-                fieldFigure.ArriveByPortal();
                 Session.Instance.Hero.TownPortal = null;
             }
 

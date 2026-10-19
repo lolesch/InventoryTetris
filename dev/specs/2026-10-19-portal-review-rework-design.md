@@ -19,10 +19,19 @@ ADR-0022 where they disagree; the older text yields.
 
 - He **walks** to the portal at his own movement speed (the canvas speed the arena already derives from his
   walking speed), never over a fixed time. Then he **vanishes** over a short fixed beat (0.5 s): scaled down to
-  nothing and faded out. Only then does the map change.
+  nothing and faded out. The map then waits a short beat (0.25 s) before it changes.
 - Same on the Town side: the Town figure walks to the portal at the same speed, vanishes, then the command
   (resume or Send) runs and the Field map comes up. The button takes no second click while he is on his way.
-- The Field figure's arrival from a Town portal is unchanged (it appears at the fight at once).
+
+## The portal grows, and he comes out of it the way he went in
+
+- A portal does not appear at once: it scales up, its width from 0 to 1 and its height from 0.5 to 1 (0.4 s), and
+  a hero only walks into it, or out of it, once it is open. It is not a click target while it grows.
+- On the Field map the portal grows as the Recall opens; the hero then walks in, vanishes, waits, and the map changes.
+- On arrival the map is still fading in, so the portal waits a beat (0.3 s) before it grows, and the hero is not
+  there until it has. He then grows from nothing over the vanish's 0.5 s, the reverse of going in. This holds in both
+  directions: the Town Portal on the Town map after a Recall, and a portal on the Field map (opened where he arrives,
+  closed once he is out) after the Town Portal resumes the Run or Sends one.
 
 ## The Town hero comes back where the Town map is entered
 

@@ -267,6 +267,68 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
         }
 
         [UnityTest]
+        public IEnumerator TheFieldPortal_GrowsFromASliver_AndTheHeroWaitsForItBeforeHeVanishes()
+        {
+            yield return FightingBeforeTheRecall();
+            var marker = FieldMarker();
+
+            Simulation.Recall();
+            yield return null;
+            Assume.That(Simulation.Run.IsRecalling, Is.True, "premise: the portal is opening");
+
+            Assert.That(marker.transform.localScale.x, Is.LessThan(1f), "it starts narrow");
+            Assert.That(marker.transform.localScale.y, Is.InRange(0.5f, 1f), "and no lower than half height");
+
+            Simulation.Tick(1f);
+            yield return Until(() => Flag(marker, "IsOpen"), "it grows to its full size");
+
+            Assert.That(marker.transform.localScale.x, Is.EqualTo(1f).Within(1e-3f));
+            Assert.That(Flag(Named("HeroFigure").Single(), "HasEnteredPortal"), Is.False, "the hero has not gone in before it was open");
+            Assert.That(Flag(TownFace(), "IsExtended"), Is.False, "and the map has not changed");
+        }
+
+        [UnityTest]
+        public IEnumerator TheTownPortal_WhenTheHeroComesThrough_WaitsThenGrows_AndOnlyThenHeGrowsOutOfIt()
+        {
+            yield return FightingBeforeTheRecall();
+            var marker = Named("TownPortalMarker").Single();
+            var group = Named("TownHeroFigure").Single().GetComponent<CanvasGroup>();
+
+            Simulation.Recall();
+            Simulation.Tick(1f);
+            yield return Until(() => Flag(Named("HeroFigure").Single(), "HasEnteredPortal"), "the Field hero has gone through");
+
+            Assert.That(marker.transform.localScale.x, Is.LessThan(1f), "the portal has not grown yet");
+            Assert.That(group.alpha, Is.EqualTo(0f), "and he is not there");
+
+            yield return Until(() => group.alpha > 0f, "he starts to grow out of the portal");
+            Assert.That(Flag(marker, "IsOpen"), Is.True, "only once it is open");
+
+            yield return Until(() => group.alpha >= 1f, "and he is whole again");
+            Assert.That(Named("TownHeroFigure").Single().transform.localScale.y, Is.EqualTo(1f).Within(1e-3f));
+        }
+
+        [UnityTest]
+        public IEnumerator TheHero_ComingOutOfTheTownPortalOntoTheField_GrowsOutOfAPortalThatThenCloses()
+        {
+            yield return HeldAtThornwood();
+            var figure = Named("HeroFigure").Single();
+            var marker = FieldMarker();
+
+            ClickThePortal();
+            yield return Until(() => Flag(figure, "IsEmerging"), "he comes out of the portal on the Field map");
+
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.Live), "the Run is live again");
+            yield return Until(() => marker.GetComponent<UnityEngine.UI.Image>().enabled, "a portal opens where he comes out");
+            Assert.That(marker.transform.localScale.x, Is.LessThan(1f), "growing");
+
+            yield return Until(() => !Flag(figure, "IsEmerging"), "he is whole again");
+            yield return null;
+            Assert.That(figure.transform.localScale.x, Is.EqualTo(1f).Within(1e-3f));
+            Assert.That(marker.GetComponent<UnityEngine.UI.Image>().enabled, Is.False, "and the portal closes behind him");
+        }
+
+        [UnityTest]
         public IEnumerator AfterARelocateFromHeld_TheFieldMarkerIsGone_ThoughThePortalStaysOpen()
         {
             Session.Instance.Hero.MarkCompleted(_thornwood.Id);
