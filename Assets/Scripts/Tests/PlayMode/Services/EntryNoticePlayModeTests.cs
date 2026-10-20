@@ -21,9 +21,8 @@ using UnityEngine.TestTools;
 namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 {
     /// <summary>
-    /// The real <c>Example</c> scene's entry notice (issue #256): a hero loaded from its backup, or with packages
-    /// left out, is told once on entering the game; a clean load is told nothing, and a later scene change shows
-    /// nothing again. The saves are real files in a scratch folder. Boots again over the Input System fixture's
+    /// The real <c>Example</c> scene's entry notice (issue #256): a hero loaded from its backup is told on entering
+    /// the game, and OK or the Cancel key closes it. What it says and when is <c>EntryNoticeTests</c>'. The saves are real files in a scratch folder. Boots again over the Input System fixture's
     /// isolation, like <see cref="MainMenuPlayModeTests"/>.
     /// </summary>
     public sealed class EntryNoticePlayModeTests : InputTestFixture
@@ -62,20 +61,6 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 
         private void DamageThePrimary(HeroSummary hero) => store.Write(KeyOf(hero.Id), "{ truncated");
 
-        private void LeaveAnItemWhoseDefinitionIsGone(HeroSummary hero)
-        {
-            var slot = new SaveSlot<HeroDto>(store, new JsonUtilitySerializer(), KeyOf(hero.Id), 1);
-            var saved = slot.Load().Payload;
-            saved.stash.packages = saved.stash.packages.Append(new PackageDto
-            {
-                x = 7,
-                y = 5,
-                instance = new ItemInstance("deleted-in-a-patch", ItemRarity.Common, 1, null).ToDto(),
-                amount = 1u,
-            }).ToArray();
-            slot.Save(saved);
-        }
-
         private static MonoBehaviour Notice() =>
             UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include)
                 .First(component => component.GetType().Name == "EntryNoticePopup");
@@ -105,46 +90,6 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             Click(Member<Component>(notice, "dismiss"));
 
             Assert.That(screen.activeSelf, Is.False);
-        }
-
-        [UnityTest]
-        public IEnumerator TheNotice_DoesNotShowAgainOnALaterSceneChange()
-        {
-            yield return EnterGame(DamageThePrimary);
-            Assert.That(Member<GameObject>(Notice(), "screen").activeSelf, Is.True, "premise: shown on entry");
-
-            yield return SceneManager.LoadSceneAsync("MainMenu");
-            yield return SceneManager.LoadSceneAsync("Example");
-            yield return null;
-
-            Assert.That(Member<GameObject>(Notice(), "screen").activeSelf, Is.False);
-        }
-
-        [UnityTest]
-        public IEnumerator APartialLoad_ShowsTheCount_AndTheNamesOnlyOnShow()
-        {
-            yield return EnterGame(LeaveAnItemWhoseDefinitionIsGone);
-            var notice = Notice();
-            var names = Member<TextMeshProUGUI>(notice, "names");
-
-            Assert.That(Member<GameObject>(notice, "screen").activeSelf, Is.True);
-            Assert.That(Member<TextMeshProUGUI>(notice, "message").text, Is.EqualTo("1 item couldn't be restored"));
-            Assert.That(names.gameObject.activeSelf, Is.False, "the names wait behind Show");
-
-            var show = Member<Component>(notice, "show");
-            Click(show);
-
-            Assert.That(names.gameObject.activeSelf, Is.True);
-            Assert.That(names.text, Is.EqualTo("deleted-in-a-patch (Stash)"));
-            Assert.That(show.gameObject.activeSelf, Is.False, "Show has been answered");
-        }
-
-        [UnityTest]
-        public IEnumerator ACleanLoad_ShowsNothing()
-        {
-            yield return EnterGame(null);
-
-            Assert.That(Member<GameObject>(Notice(), "screen").activeSelf, Is.False);
         }
 
         [UnityTest]

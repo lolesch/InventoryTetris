@@ -50,6 +50,19 @@ that reaches it. No path, no line.
 - **Doc comment**: one or two lines of why. It names no sibling members and doesn't narrate what
   was removed.
 
+## Test level
+
+A rule is tested in EditMode at its service seam (`ISimulationService`, `ISession`, `IInventoryService`, a
+flow such as `MainMenuFlow`). A PlayMode test proves only what Play Mode alone reaches:
+
+- the boot's `[RuntimeInitializeOnLoadMethod]` hooks and a scene load;
+- **wiring**: one smoke per panel or input that the scene binds it to its service;
+- a regression that only a scene reproduces (teardown, a rebind after a hero load).
+
+Feel (timing, easing, hover scale, the order of animation beats) is checked by playtest. A playtest note
+about feel changes the code and leaves the tests alone. A PlayMode test drives the simulation with
+`Tick` and waits on a condition (a scene loaded, a panel up), not on a duration.
+
 ## Public API needs an interface
 
 Every class or MonoBehaviour that other systems call into gets an `IThing`, and callers
@@ -78,6 +91,8 @@ component.
 - An added `[FormerlySerializedAs]` (see the serialized-rename rule below).
 - An added class named `*Panel` that does not derive `SimplePanel` (`GLOSSARY.md`, **Panel**): rename it
   to what it is.
+- An added `WaitForSeconds` or `Time.timeScale =` in a test: it waits out or speeds up an animation, which
+  is feel (see *Test level*).
 
 Files that compile editor-only by construction (asmdef `includePlatforms: ["Editor"]`, an
 `Editor`/`EditMode` folder; see `codebase-notes/play-mode-and-assemblies.md`) need no guard.

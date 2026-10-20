@@ -7,7 +7,7 @@ The notes are the shared channel for that knowledge across machines — an agent
 | Note (`docs/agents/codebase-notes/`) | Open it when |
 |---|---|
 | `editing-files.md` | a shell or python script edits source; `Edit` keeps CRLF + UTF-8, `perl -pi` mojibakes it |
-| `play-mode-and-assemblies.md` | an asmdef changes or a reference won't resolve; a Play Mode entry behaves differently from the first (reload disabled); a static or `OnDisable` throws on Stop; a PlayMode test or the Play-exit check is written |
+| `play-mode-and-assemblies.md` | an asmdef changes or a reference won't resolve; a Play Mode entry behaves differently from the first (reload disabled); a static or `OnDisable` throws on Stop; the Play-exit check is run, or a PlayMode test is written (which tests belong there: `coding-conventions.md`, *Test level*) |
 | `meta-files.md` | `CS0103` / `CS0246` doesn't match your diff, or a `.cs.meta` is suspect |
 | `input.md` | a key or the pointer is read (`Input.*` throws here; use `GameInput`), or a hotkey test is written |
 | `worktrees-and-utility.md` | work starts on a checkout that has uncommitted changes or another session's branch; a compile error doesn't match your diff; the `Utility` submodule is committed in |

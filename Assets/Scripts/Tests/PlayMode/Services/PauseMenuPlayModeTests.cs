@@ -14,9 +14,8 @@ using UnityEngine.TestTools;
 namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 {
     /// <summary>
-    /// The real <c>Example</c> scene's Pause Menu (issue #257): Escape with nothing to peel opens it, in Town and
-    /// in the Field; the Run holds while it is open and the player's own Pause comes back as found; the panel
-    /// hotkeys and the pause key do nothing; Escape or Resume closes it. Boots again over the Input System
+    /// The real <c>Example</c> scene's Pause Menu (issue #257) wired to the Escape key and its Resume button, and
+    /// closed by a scene change. The rules are <c>PauseMenuTests</c>'. Boots again over the Input System
     /// fixture's isolation, like <see cref="CancelPlayModeTests"/>.
     /// </summary>
     public sealed class PauseMenuPlayModeTests : InputTestFixture
@@ -25,7 +24,6 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 
         private static IPauseMenu Menu => ServiceLocator.Get<IPauseMenu>();
         private static ISimulationService Simulation => ServiceLocator.Get<ISimulationService>();
-        private static InventoryContext Context => ServiceLocator.Get<IInventoryService>().ActiveContext;
 
         private IEnumerator OpenExample()
         {
@@ -65,28 +63,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         private static T Member<T>(Component owner, string field) =>
             (T)owner.GetType().GetField(field, BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(owner);
 
-        private static GameObject ScreenObject() => Member<GameObject>(Popup(), "screen");
-
         private static void SendToTheField() => Simulation.Send(GameBoot.Load().Locations.First(location => location.Id == "location.thornwood"));
-
-        [UnityTest]
-        public IEnumerator Escape_WithNothingToPeel_OpensTheMenuInTown_AndEscapeAgainClosesIt()
-        {
-            yield return OpenExample();
-            Assert.That(ScreenObject().activeSelf, Is.False, "premise: the screen starts closed");
-
-            yield return Tap(keyboard.escapeKey);
-
-            Assert.That(Menu.IsOpen, Is.True);
-            Assert.That(ScreenObject().activeSelf, Is.True);
-            Assert.That(EventSystem.current.currentSelectedGameObject, Is.SameAs(Member<Component>(Popup(), "resume").gameObject),
-                "Resume is selected, so Enter closes the menu");
-
-            yield return Tap(keyboard.escapeKey);
-
-            Assert.That(Menu.IsOpen, Is.False);
-            Assert.That(ScreenObject().activeSelf, Is.False);
-        }
 
         [UnityTest]
         public IEnumerator Escape_OpensTheMenuInTheField_HoldingTheRun_AndResumeReleasesIt()
@@ -106,60 +83,6 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 
             Assert.That(Menu.IsOpen, Is.False);
             Assert.That(Simulation.IsMenuFrozen, Is.False);
-        }
-
-        [UnityTest]
-        public IEnumerator ASpacePausedRun_IsStillPausedWhenTheMenuCloses()
-        {
-            yield return OpenExample();
-            SendToTheField();
-            yield return Tap(keyboard.spaceKey);
-            Assert.That(Simulation.IsPaused, Is.True, "premise: Space paused the Run");
-
-            yield return Tap(keyboard.escapeKey);
-            yield return Tap(keyboard.escapeKey);
-
-            Assert.That(Menu.IsOpen, Is.False);
-            Assert.That(Simulation.IsMenuFrozen, Is.False);
-            Assert.That(Simulation.IsPaused, Is.True);
-        }
-
-        [UnityTest]
-        public IEnumerator WhileTheMenuIsOpen_ThePanelHotkeysAndThePauseKeyDoNothing()
-        {
-            yield return OpenExample();
-            SendToTheField();
-            yield return Tap(keyboard.escapeKey);
-
-            yield return Tap(keyboard.sKey);
-            yield return Tap(keyboard.iKey);
-            yield return Tap(keyboard.hKey);
-            yield return Tap(keyboard.spaceKey);
-
-            Assert.That(Context, Is.EqualTo(InventoryContext.None));
-            Assert.That(Simulation.IsPaused, Is.False);
-
-            yield return Tap(keyboard.escapeKey);
-            yield return Tap(keyboard.sKey);
-
-            Assert.That(Context, Is.EqualTo(InventoryContext.Stash), "the hotkeys work again once it is closed");
-        }
-
-        [UnityTest]
-        public IEnumerator AnOpenPanel_IsPeeledBeforeTheMenuOpens()
-        {
-            yield return OpenExample();
-            yield return Tap(keyboard.iKey);
-            Assert.That(Context, Is.EqualTo(InventoryContext.Hero), "premise");
-
-            yield return Tap(keyboard.escapeKey);
-
-            Assert.That(Context, Is.EqualTo(InventoryContext.None));
-            Assert.That(Menu.IsOpen, Is.False, "the press closed the panel and went no further");
-
-            yield return Tap(keyboard.escapeKey);
-
-            Assert.That(Menu.IsOpen, Is.True);
         }
 
         [UnityTest]

@@ -19,13 +19,12 @@ using UnityEngine.UI;
 namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 {
     /// <summary>
-    /// The three Recall inputs on the real <c>Example</c> scene (issue #371, ADR-0022): the <c>B</c> key through a
-    /// virtual keyboard, the HUD Recall button with its scroll count, and a right-click on a Portal Scroll in the bag.
-    /// The views live in the predefined assembly, so they are read by type name.
+    /// The Recall inputs that are views on the real <c>Example</c> scene (issue #371, ADR-0022): the HUD Recall
+    /// button with its scroll count, and a right-click on a Portal Scroll in the bag. The key and the refusals are
+    /// EditMode's. The views live in the predefined assembly, so they are read by type name.
     /// </summary>
     public sealed class RecallInputPlayModeTests : InputTestFixture
     {
-        private Keyboard keyboard;
         private LocationConfig location;
 
         private static ISimulationService Simulation => ServiceLocator.Get<ISimulationService>();
@@ -35,7 +34,6 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             ServiceLocator.Reset();
             GameBoot.Arm(GameBoot.Load());
 
-            keyboard = InputSystem.AddDevice<Keyboard>();
             _ = InputSystem.AddDevice<Mouse>();
             location = GameBoot.Load().Locations.First(l => l.Id == "location.thornwood");
 
@@ -49,7 +47,6 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             if (!ServiceLocator.IsArmed)
                 return;
 
-            Time.timeScale = 1f;
             ServiceLocator.Get<IInventoryService>().CloseContext();
 
             // A hero cannot be replaced while a Run is in the Field, held or live.
@@ -77,14 +74,6 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             Simulation.Send(location);
         }
 
-        private IEnumerator PressRecallKey()
-        {
-            // Input time, which the fixture holds still: a press within the repeat guard of the last is one press.
-            currentTime += 1.0;
-            PressAndRelease(keyboard.bKey);
-            yield return null;
-        }
-
         private static Component TheScene(string typeName) =>
             Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include).Single(c => c.GetType().Name == typeName);
 
@@ -94,32 +83,6 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         private static Selectable RecallButton => (Selectable)TheScene("RecallButton");
 
         private static string ButtonCount => Member<TMP_Text>(TheScene("RecallButton"), "countLabel").text;
-
-        [UnityTest]
-        public IEnumerator TheKey_RecallsALiveRunOnce_AndSpendsOneScroll()
-        {
-            yield return OpenExample();
-            GiveScrolls(3u);
-            SendToTheField();
-
-            yield return PressRecallKey();
-            yield return PressRecallKey();
-
-            Assert.That(Simulation.Run.IsRecalling, Is.True);
-            Assert.That(ScrollsInTheBag, Is.EqualTo(2), "the second press found the portal opening");
-        }
-
-        [UnityTest]
-        public IEnumerator TheKey_DoesNothingInTown()
-        {
-            yield return OpenExample();
-            GiveScrolls(2u);
-
-            yield return PressRecallKey();
-
-            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.None));
-            Assert.That(ScrollsInTheBag, Is.EqualTo(2));
-        }
 
         [UnityTest]
         public IEnumerator TheButton_ShowsTheBagsScrolls_AndIsLiveOnlyWhileARecallWouldWork()
@@ -147,21 +110,6 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             Assert.That(RecallButton.interactable, Is.False, "the portal is opening");
         }
 
-        [UnityTest]
-        public IEnumerator AfterAComplete_TheButtonIsStillEnabled()
-        {
-            yield return OpenExample();
-            GiveScrolls(1u);
-            SendToTheField();
-            for (var i = 0; i < 20000 && Simulation.Run.Encounter.Phase != SimulationPhase.Complete; i++)
-                Simulation.Tick(0.1f);
-            Assert.That(Simulation.Run.Encounter.Phase, Is.EqualTo(SimulationPhase.Complete), "premise: the Population cleared");
-
-            yield return null;
-
-            Assert.That(RecallButton.interactable, Is.True);
-        }
-
         private static void RightClickTheScroll()
         {
             var bag = Session.Instance.Hero.Inventory;
@@ -187,41 +135,6 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 
             Assert.That(Simulation.Run.IsRecalling, Is.True);
             Assert.That(ScrollsInTheBag, Is.EqualTo(1), "one scroll spent");
-        }
-
-        [UnityTest]
-        public IEnumerator ARightClickOnAScroll_WhenTheRecallIsRefused_LeavesItInTheBag()
-        {
-            yield return OpenExample();
-            GiveScrolls(2u);
-
-            RightClickTheScroll();
-            yield return null;
-
-            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.None));
-            Assert.That(ScrollsInTheBag, Is.EqualTo(2), "a refused Recall does not consume the scroll");
-        }
-
-        [UnityTest]
-        public IEnumerator ARightClickOnAScroll_WhileAMenuHoldsTheRun_LeavesItInTheBag()
-        {
-            yield return OpenExample();
-            GiveScrolls(2u);
-            SendToTheField();
-            Simulation.SetMenuFreeze(true);
-
-            RightClickTheScroll();
-            yield return null;
-
-            Assert.That(Simulation.Run.IsRecalling, Is.False, "the menu's hold is not the player's to spend a scroll under");
-            Assert.That(ScrollsInTheBag, Is.EqualTo(2));
-
-            Simulation.SetMenuFreeze(false);
-            RightClickTheScroll();
-            yield return null;
-
-            Assert.That(Simulation.Run.IsRecalling, Is.True, "the click works again once the menu is closed");
-            Assert.That(ScrollsInTheBag, Is.EqualTo(1));
         }
 
         private static object Property(object target, string name) => target.GetType().GetProperty(name).GetValue(target);
