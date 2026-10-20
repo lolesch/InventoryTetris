@@ -30,11 +30,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         };
 
         /// <summary>
-        /// The flat stat modifiers reaching <paramref name="level"/> adds: survival and damage come from
-        /// levels and gear, never from a heal. A hero at level N carries the growth of levels 2..N, applied
-        /// by the level-up and by a restore alike.
+        /// The flat stat modifiers each level reached adds: survival and damage come from levels and gear, never
+        /// from a heal. A hero at level N carries them N-1 times, applied by the level-up and by a restore alike.
         /// </summary>
-        public static IReadOnlyList<CharacterStatModifier> GrowthFor(uint level) =>
+        public static IReadOnlyList<CharacterStatModifier> LevelGrowth { get; } =
             Growth.Select(growth => new CharacterStatModifier(growth.Stat, new StatModifier(new Vector2Int(0, int.MaxValue), growth.Value))).ToArray();
     }
 }

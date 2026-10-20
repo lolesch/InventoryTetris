@@ -2,7 +2,6 @@ using Submodules.Utility.Extensions;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Geometry;
-using ToolSmiths.InventorySystem.Locations;
 using ToolSmiths.InventorySystem.Runtime.Character;
 using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Simulation;
@@ -450,14 +449,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 return;
             }
 
-            _travel.Retarget(new Coordinate(fight));
-            var arrived = _travel.Advance(ArenaSpace.HeroCanvasSpeed, SimulationService.Instance.WalkDelta(Time.deltaTime));
-
-            var here = new Vector2(_travel.Position.x, _travel.Position.z);
-            Figure.Place(here, ArenaOf(here), ArenaLayout.FacingSign(here.x, fight.x, Figure.FacingSign, WalkFacingDeadZone));
-            SortAmongSiblings();
-
-            if (arrived)
+            if (Step(fight))
                 StopEmerging();
         }
 
@@ -468,43 +460,22 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (Projection.TryGetNumberOrigin(_bound.HeroPosition, out canvas))
                 return true;
 
-            // The map collapsing over a held Run clears the Location toggles, so the arena has no anchor then: the
-            // selected Location's own Travel Point is where its fight is drawn all the same.
-            var anchor = _anchor != null ? _anchor : SelectedLocationAnchor();
-            if (anchor == null)
+            // The map collapsing over a held Run clears the Location toggles, so the arena draws nothing then: the
+            // fight is still around the same anchor, which the arena keeps naming.
+            if (_anchor == null)
                 return false;
 
             // Exactly as the arena places a figure: its centre on the anchor plus the projected offset, in canvas units
             // that the anchor's own scale (a selected toggle's) does not change.
-            canvas = LocalCentre(anchor) + ArenaLayout.CorpseOffset(_bound.HeroPosition, _bound.Arena.Origin, ArenaSpace.Projection);
+            canvas = LocalCentre(_anchor) + ArenaLayout.CorpseOffset(_bound.HeroPosition, _bound.Arena.Origin, ArenaSpace.Projection);
             return true;
-        }
-
-        private RectTransform _selectedAnchor;
-        private LocationConfig _selectedAnchorFor;
-
-        // The Travel Point of the hero's selected Location, found when the arena has no anchor (no toggle is on).
-        private RectTransform SelectedLocationAnchor()
-        {
-            var selected = _hero?.SelectedLocation;
-            if (_selectedAnchor && _selectedAnchorFor == selected)
-                return _selectedAnchor;
-
-            _selectedAnchor = null;
-            _selectedAnchorFor = selected;
-            foreach (var toggle in FindObjectsByType<LocationToggle>(FindObjectsInactive.Include))
-                if (toggle.Location == selected)
-                    return _selectedAnchor = toggle.TravelPoint;
-
-            return null;
         }
 
         // The Location is cleared: the fight is over and he walks back to the anchor, the centre of the arena, to end on.
         // Shown only (ADR-0021); the sim has nothing left to do with him.
         private void BeginFinishing()
         {
-            var anchor = _anchor != null ? _anchor : SelectedLocationAnchor();
-            if (anchor == null || !Figure.IsPlaced)
+            if (_anchor == null || !Figure.IsPlaced)
                 return;
 
             _travel.Place(new Coordinate(((RectTransform)transform).anchoredPosition));
@@ -513,20 +484,26 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         private void Finish()
         {
-            var anchor = _anchor != null ? _anchor : SelectedLocationAnchor();
-            if (anchor == null)
+            if (_anchor == null)
             {
                 _mode = Mode.Following;
                 return;
             }
 
-            var goal = LocalCentre(anchor);
+            _ = Step(LocalCentre(_anchor));
+        }
+
+        // One step of a walk to <paramref name="goal"/> at his pace, drawn facing it; whether he has arrived.
+        private bool Step(Vector2 goal)
+        {
             _travel.Retarget(new Coordinate(goal));
-            _ = _travel.Advance(ArenaSpace.HeroCanvasSpeed, SimulationService.Instance.WalkDelta(Time.deltaTime));
+            var arrived = _travel.Advance(ArenaSpace.HeroCanvasSpeed, SimulationService.Instance.WalkDelta(Time.deltaTime));
 
             var at = new Vector2(_travel.Position.x, _travel.Position.z);
             Figure.Place(at, ArenaOf(at), ArenaLayout.FacingSign(at.x, goal.x, Figure.FacingSign, WalkFacingDeadZone));
             SortAmongSiblings();
+
+            return arrived;
         }
 
         // Grows from nothing over the vanish's beat, the reverse of going in; with no portal that is all of it.
@@ -561,15 +538,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         private void Leave()
         {
-            var goal = LocalCentre(_exit);
-            _travel.Retarget(new Coordinate(goal));
-            var arrived = _travel.Advance(ArenaSpace.HeroCanvasSpeed, SimulationService.Instance.WalkDelta(Time.deltaTime));
-
-            var at = new Vector2(_travel.Position.x, _travel.Position.z);
-            Figure.Place(at, ArenaOf(at), ArenaLayout.FacingSign(at.x, goal.x, Figure.FacingSign, WalkFacingDeadZone));
-            SortAmongSiblings();
-
-            if (!arrived)
+            if (!Step(LocalCentre(_exit)))
                 return;
 
             // At the Exit: the Run is his to leave now.
@@ -587,13 +556,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             if (_travel.IsWalking)
             {
-                var goal = LocalCentre(portal);
-                _travel.Retarget(new Coordinate(goal));
-                _ = _travel.Advance(ArenaSpace.HeroCanvasSpeed, SimulationService.Instance.WalkDelta(Time.deltaTime));
-
-                var at = new Vector2(_travel.Position.x, _travel.Position.z);
-                Figure.Place(at, ArenaOf(at), ArenaLayout.FacingSign(at.x, goal.x, Figure.FacingSign, WalkFacingDeadZone));
-                SortAmongSiblings();
+                _ = Step(LocalCentre(portal));
                 return;
             }
 
@@ -657,16 +620,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 return;
             }
 
-            var goal = LocalCentre(_target);
-            _travel.Retarget(new Coordinate(goal));
-
-            var arrived = _travel.Advance(ArenaSpace.HeroCanvasSpeed, SimulationService.Instance.WalkDelta(Time.deltaTime));
-
-            var at = new Vector2(_travel.Position.x, _travel.Position.z);
-            Figure.Place(at, ArenaOf(at), ArenaLayout.FacingSign(at.x, goal.x, Figure.FacingSign, WalkFacingDeadZone));
-            SortAmongSiblings();
-
-            if (!arrived)
+            if (!Step(LocalCentre(_target)))
                 return;
 
             if (_bound != null)

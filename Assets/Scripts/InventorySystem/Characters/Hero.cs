@@ -375,7 +375,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Character
         {
             RequireResource(StatName.Experience).AddModifier(LevelProgression.ExperienceThresholdModifier(Level));
 
-            foreach (var growth in LevelProgression.GrowthFor(Level))
+            foreach (var growth in LevelProgression.LevelGrowth)
                 GetStat(growth.Stat)?.AddModifier(growth.Modifier);
         }
 

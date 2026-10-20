@@ -35,6 +35,9 @@
 - Consumables no longer have a rarity, so Portal Scrolls always stack.
 - The sim settings are their own panel at the top of the screen with their own toggle; the loot grid is shown on both maps whenever no Town Stop is open.
 - Survival now comes from your gear: levelling up grows your health, resource and damage a little but no longer heals you, and a new hero no longer regenerates health on his own, so health regeneration has to come from items. The Healer still refills you for free.
+- The Healer always has two Portal Scrolls on offer, and a new hero starts with enough coins to buy a few.
+- The hero walks to the spot you click on a Town Stop or the Town Exit, and both Exits wait until he stands there before the map changes or the Run returns; a Run waits for him to step out of a portal and walk clear before the fight goes on.
+- Clearing a Location lets its toggle go, so you can send the hero to the same Location again, and he ends the fight by walking back to the middle of the arena. Coming back through a portal from a cleared Location leaves the toggle off.
 
 ## 0.0.5_Alpha - 2026-09-25
 

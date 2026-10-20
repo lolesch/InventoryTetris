@@ -5,6 +5,7 @@ using Submodules.Utility.UI;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Geometry;
+using ToolSmiths.InventorySystem.Locations;
 using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
@@ -238,7 +239,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         public float HeroCanvasSpeed => SimulationService.Instance.HeroWalkingSpeed * arenaScale;
 
         /// <inheritdoc/>
-        public RectTransform LocationAnchor => ResolveAnchor();
+        public RectTransform LocationAnchor => ResolveAnchor() ?? SelectedLocationAnchor();
 
         /// <inheritdoc/>
         public bool TryGetNumberOrigin(Coordinate position, out Vector2 origin)
@@ -379,6 +380,32 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         }
 
         private float MapAlpha => map != null ? map.alpha : 1f;
+
+        private LocationConfig _selectedFor;
+        private RectTransform _selectedAnchor;
+
+        /// <summary>
+        /// The Travel Point of the hero's selected Location while a Run is bound, for when no toggle is on: the map
+        /// collapsing over a held Run and a cleared Location both clear the toggle group, but the fight is still
+        /// drawn around that Location. Looked up once per Location, a miss included.
+        /// </summary>
+        private RectTransform SelectedLocationAnchor()
+        {
+            if (_bound == null)
+                return null;
+
+            var selected = Session.Instance.Hero.SelectedLocation;
+            if (selected == _selectedFor)
+                return _selectedAnchor;
+
+            _selectedFor = selected;
+            _selectedAnchor = null;
+            foreach (var toggle in FindObjectsByType<LocationToggle>(FindObjectsInactive.Include))
+                if (toggle.Location == selected)
+                    _selectedAnchor = toggle.TravelPoint;
+
+            return _selectedAnchor;
+        }
 
         /// <summary>The active Location's Hero icon, or null while nothing is selected.</summary>
         private RectTransform ResolveAnchor()

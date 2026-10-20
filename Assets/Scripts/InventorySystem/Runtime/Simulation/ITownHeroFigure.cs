@@ -29,6 +29,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// </summary>
         void WalkIntoPortal(RectTransform portal, System.Action onGone);
 
+        /// <summary>Whether the call <see cref="WalkIntoPortal"/> was given is still to come: false once another walk cancelled it.</summary>
+        bool IsEnteringPortal { get; }
+
         /// <summary>
         /// Walk to the centre of <paramref name="point"/> at the hero's pace and call <paramref name="onArrived"/> once he
         /// stands there (at once when he already does). Any other walk or entry into Town cancels the call.

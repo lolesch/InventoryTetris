@@ -2,7 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace InventorySystem.GUI.Components
+namespace ToolSmiths.InventorySystem.GUI.Components
 {
     [RequireComponent(typeof(Image))]
     public sealed class SpriteCycler : MonoBehaviour
@@ -18,11 +18,22 @@ namespace InventorySystem.GUI.Components
         private int _index = 0;
         private bool _enabled;
         
-        private void Awake() => _frames = Resources.LoadAll<Sprite>(spriteSheet.name);
+        private void Awake()
+        {
+            if (spriteSheet == null)
+            {
+                Debug.LogWarning($"{name}: no sprite sheet assigned, so nothing cycles.", this);
+                return;
+            }
+
+            _frames = Resources.LoadAll<Sprite>(spriteSheet.name);
+            if (_frames.Length == 0)
+                Debug.LogWarning($"{name}: '{spriteSheet.name}' has no sprites in a Resources folder, so nothing cycles.", this);
+        }
 
         private void Update()
         {
-            if (Image.enabled == _enabled) 
+            if (_frames == null || _frames.Length == 0 || Image.enabled == _enabled)
                 return;
             
             _enabled = Image.enabled;
@@ -36,7 +47,7 @@ namespace InventorySystem.GUI.Components
         {
             while (Image.enabled)
             {
-                _image.sprite = _frames[_index];
+                Image.sprite = _frames[_index];
                 
                 _index = (_index + 1) % _frames.Length;
 

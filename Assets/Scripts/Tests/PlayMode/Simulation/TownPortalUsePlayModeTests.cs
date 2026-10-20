@@ -471,6 +471,95 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
         }
 
         [UnityTest]
+        public IEnumerator ARecallFromAClearedLocation_OpensTheFieldPortalBesideTheHero_ThoughNoToggleIsOn()
+        {
+            yield return FightingBeforeTheRecall();
+            Session.Instance.Hero.IsInvincible = true;
+            var cleared = Simulation.Run.Encounter;
+            for (var tick = 0; cleared.Phase != SimulationPhase.Complete && tick < 20000; tick++)
+                Simulation.Tick(0.5f);
+
+            Assume.That(cleared.Phase, Is.EqualTo(SimulationPhase.Complete), "premise: the Location is cleared");
+            yield return null;
+            Assume.That(Flag(ToggleOf(_thornwood), "IsOn"), Is.False, "premise: no toggle is on");
+
+            var marker = FieldMarker();
+            var figure = Named("HeroFigure").Single();
+            var arena = Named("EnemyArena").Single();
+            var beside = (Vector2)marker.GetType().GetField("beside", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(marker);
+
+            Simulation.Recall();
+            yield return null;
+            yield return null;
+
+            var anchor = (RectTransform)arena.GetType().GetProperty("LocationAnchor").GetValue(arena);
+            Assert.That(anchor, Is.Not.Null, "the arena still names the Location's anchor");
+            var apart = Vector3.Distance(marker.transform.position, figure.transform.position);
+            Assert.That(apart, Is.EqualTo(anchor.TransformVector(beside).magnitude).Within(25f), "the portal opens beside him, not at its authored place");
+        }
+
+        [UnityTest]
+        public IEnumerator AnotherWalkOnTheWayToTheTownPortal_CancelsTheUse_AndThePortalCanBeClickedAgain()
+        {
+            yield return HeldAtThornwood();
+            var figure = Named("TownHeroFigure").Single();
+            var marker = Named("TownPortalMarker").Single();
+            var exit = (RectTransform)figure.GetType().GetField("_exit", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(figure);
+
+            ClickThePortal();
+            yield return null;
+            Assert.That(Flag(figure, "IsEnteringPortal"), Is.True, "premise: he is on his way in");
+
+            _ = figure.GetType().GetMethod("TravelTo", new[] { typeof(RectTransform) }).Invoke(figure, new object[] { exit });
+            yield return null;
+            yield return null;
+
+            Assert.That(Flag(figure, "IsEnteringPortal"), Is.False, "the other walk took over");
+            Assert.That(Flag(marker, "interactable"), Is.True, "so the portal is a click target again");
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.Held), "and nothing used it");
+        }
+
+        [UnityTest]
+        public IEnumerator AnotherWalkWhileHeVanishesInTheTownPortal_BringsHimBack_WithoutThrowing()
+        {
+            yield return HeldAtThornwood();
+            var figure = Named("TownHeroFigure").Single();
+            var group = figure.GetComponent<CanvasGroup>();
+            var exit = (RectTransform)figure.GetType().GetField("_exit", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(figure);
+
+            ClickThePortal();
+            yield return Until(() => group.alpha < 1f, "premise: he is vanishing");
+
+            _ = figure.GetType().GetMethod("TravelTo", new[] { typeof(RectTransform) }).Invoke(figure, new object[] { exit });
+            Time.timeScale = 20f;
+            for (var frame = 0; frame < 120; frame++)
+                yield return null;
+
+            Time.timeScale = 1f;
+            Assert.That(group.alpha, Is.EqualTo(1f), "he is whole again and walking on");
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.Held), "the portal was not used");
+        }
+
+        [UnityTest]
+        public IEnumerator TheFieldExit_WhileTheHeldRunsHeroStillComesOutOfThePortal_LeavesTheRunHeld()
+        {
+            yield return HeldAtThornwood();
+
+            ClickThePortal();
+            yield return Until(() => Flag(FieldFace(), "IsExtended"), "premise: the Field map is up");
+            yield return Until(() => Flag(Named("HeroFigure").Single(), "IsEmerging"), "premise: he is coming out");
+
+            GameObject.Find("ToTownButton").GetComponent<AbstractButton>()
+                .OnPointerClick(new PointerEventData(EventSystem.current) { button = PointerEventData.InputButton.Left });
+            Time.timeScale = 20f;
+            yield return Until(() => !Flag(Named("HeroFigure").Single(), "IsEmerging"), "he has come out");
+            Time.timeScale = 1f;
+            yield return null;
+
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.Held), "the Run did not resume under the Town map");
+        }
+
+        [UnityTest]
         public IEnumerator ARecallOnTheWalkToTheLocation_ThenBackThroughTheTownPortal_WalksToTheSimPosition_WithoutAJump()
         {
             _ = FieldFace().GetType().GetMethod("ToggleState").Invoke(FieldFace(), new object[] { true });

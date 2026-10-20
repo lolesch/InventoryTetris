@@ -18,9 +18,6 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
         [SerializeField, Tooltip("Where the figure stands at the Exit. Empty: this button's own centre.")]
         private RectTransform travelPoint;
 
-        // The click that is under way: he walks to where it landed on the Exit.
-        private PointerEventData _click;
-
         // Announces the Exit's point to the figure, which stands there after a Return.
         protected override void OnEnable()
         {
@@ -30,28 +27,21 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
                 heroFigure.SetExit(this.TravelPointOr(travelPoint));
         }
 
+        // He walks to where the click landed on the Exit.
         public override void OnPointerClick(PointerEventData eventData)
         {
-            _click = eventData;
-
-            try
-            {
+            if (heroFigure == null)
                 base.OnPointerClick(eventData);
-            }
-            finally
-            {
-                _click = null;
-            }
+            else
+                heroFigure.DuringClick(eventData, () => base.OnPointerClick(eventData));
         }
 
         protected override void OnClick()
         {
             if (heroFigure == null)
                 Leave();
-            else if (heroFigure.TryPointerToMap(_click, (RectTransform)transform, out var clicked))
-                heroFigure.WalkThen(clicked, Leave);
             else
-                heroFigure.WalkThen(this.TravelPointOr(travelPoint), Leave);
+                heroFigure.WalkThenClickOr((RectTransform)transform, this.TravelPointOr(travelPoint), Leave);
         }
 
         // He is at the Exit: the Town map gives way to the Field map.

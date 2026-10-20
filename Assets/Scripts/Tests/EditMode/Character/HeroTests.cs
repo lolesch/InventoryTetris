@@ -545,7 +545,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Character
             Assert.That(hero.Level, Is.EqualTo(3u));
             foreach (var stat in GrownStats)
             {
-                var expected = new[] { 2u, 3u }.SelectMany(level => LevelProgression.GrowthFor(level))
+                var expected = new[] { 2u, 3u }.SelectMany(_ => LevelProgression.LevelGrowth)
                     .Where(growth => growth.Stat == stat).Select(growth => growth.Modifier).ToArray();
 
                 Assert.That(expected, Is.Not.Empty, $"the table grows {stat}");

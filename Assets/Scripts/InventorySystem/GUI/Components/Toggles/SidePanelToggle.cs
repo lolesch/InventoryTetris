@@ -75,21 +75,13 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
                  "its hotkey alike, until the hero's state for it is Active. Empty: always open (the Stash, the Healer).")]
         [SerializeField] private TownStop stop;
 
-        // The click that is under way, for the figure to walk to where it landed; a hotkey has none and walks to the Travel Point.
-        private PointerEventData _click;
-
+        // The figure walks to where the click landed; a hotkey has none and walks to the Travel Point.
         public override void OnPointerClick(PointerEventData eventData)
         {
-            _click = eventData;
-
-            try
-            {
+            if (heroFigure == null)
                 base.OnPointerClick(eventData);
-            }
-            finally
-            {
-                _click = null;
-            }
+            else
+                heroFigure.DuringClick(eventData, () => base.OnPointerClick(eventData));
         }
 
         protected override void OnClick() => UserToggle();
@@ -225,12 +217,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
             if (wasOn && !IsOn)
                 panel.RequestContext(false);
             else if (!wasOn && IsOn && heroFigure != null && panel.IsUpIn(InventoryService.Instance.ActiveContext))
-            {
-                if (heroFigure.TryPointerToMap(_click, (RectTransform)transform, out var clicked))
-                    heroFigure.TravelTo(clicked);
-                else
-                    heroFigure.TravelTo(this.TravelPointOr(travelPoint));
-            }
+                heroFigure.TravelToClickOr((RectTransform)transform, this.TravelPointOr(travelPoint));
         }
 
 #if UNITY_EDITOR

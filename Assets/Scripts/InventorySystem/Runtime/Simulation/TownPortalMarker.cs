@@ -68,6 +68,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (!Application.isPlaying)
                 return;
 
+            // Another walk cancels the one into the portal, and with it the call that uses it.
+            if (_using && !townFigure.IsEnteringPortal)
+                _using = false;
+
             var open = Session.Instance.Hero.TownPortal != null;
             if (open && !_open)
                 OpenAtOnce();
@@ -134,7 +138,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             var location = _resuming;
             _resuming = null;
 
-            if (location == null || simulation.Run.Phase != RunPhase.Held)
+            // The Field map was left by its Exit while he came out: the Run stays held, with the portal open, as any Exit from a held Run.
+            if (location == null || simulation.Run.Phase != RunPhase.Held || !fieldFace.IsInteractive)
                 return;
 
             simulation.Resume();

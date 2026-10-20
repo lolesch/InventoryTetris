@@ -309,8 +309,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         public void WalkThen(RectTransform point, System.Action onArrived)
         {
             TravelTo(point);
+            Then(onArrived);
+        }
 
-            // Already there: TravelTo stood him at it and nothing walks.
+        // Already there: nothing walks, so the call runs at once.
+        private void Then(System.Action onArrived)
+        {
             if (!_travel.IsWalking)
             {
                 onArrived();
@@ -319,6 +323,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             _onArrived = onArrived;
         }
+
+        /// <summary>Whether he is on his way into a portal or vanishing in it: the call <see cref="WalkIntoPortal"/> was given is still to come.</summary>
+        public bool IsEnteringPortal => _onGone != null || _vanishing;
 
         // A standing figure keeps to its point, re-read every frame: the canvas has not laid its rects out when the
         // figure first enables, and a point that moves later takes the figure with it. Nothing while no point is known.
@@ -349,54 +356,84 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// <inheritdoc/>
         public void TravelTo(RectTransform point)
         {
-            // A walk to anywhere else turns him from a portal or an Exit he was heading for.
-            _onGone = null;
-            _onArrived = null;
-            _target = point;
-            _standAt = null;
-            _standCoord = null;
-            _travel.Retarget(Local(point));
+            Head(point, null, Local(point));
 
             // Already there: nothing walks, so it stands at the point it was sent to.
             if (!_travel.IsWalking)
                 Place(point);
         }
 
-        /// <summary>
-        /// Where a click landed on the map, in the space the figure walks in: <c>false</c> for a key press or a click
-        /// that did not land on <paramref name="control"/>, which walks to the control's Travel Point instead.
-        /// </summary>
-        public bool TryPointerToMap(PointerEventData click, RectTransform control, out Vector2 local)
-        {
-            local = default;
-            return click != null
-                   && RectTransformUtility.RectangleContainsScreenPoint(control, click.position, click.pressEventCamera)
-                   && RectTransformUtility.ScreenPointToLocalPointInRectangle(Map, click.position, click.pressEventCamera, out local);
-        }
-
         /// <summary>Walk to a point of the map at the hero's pace and stand there, turning from any walk under way.</summary>
-        public void TravelTo(Vector2 point)
-        {
-            _onGone = null;
-            _onArrived = null;
-            _target = null;
-            _standAt = null;
-            _standCoord = point;
-            _travel.Retarget(new Coordinate(point));
-        }
+        public void TravelTo(Vector2 point) => Head(null, point, new Coordinate(point));
 
         /// <summary>Walk to a point of the map and call <paramref name="onArrived"/> once he stands there (at once when he does).</summary>
         public void WalkThen(Vector2 point, System.Action onArrived)
         {
             TravelTo(point);
+            Then(onArrived);
+        }
 
-            if (!_travel.IsWalking)
+        // Sets him off to a marked point or a point of the map. A walk to anywhere else turns him from a portal or an
+        // Exit he was heading for, and from a vanish already under way.
+        private void Head(RectTransform target, Vector2? coord, Coordinate goal)
+        {
+            _onGone = null;
+            _onArrived = null;
+            if (_vanishing)
             {
-                onArrived();
-                return;
+                _vanishing = false;
+                Look(1f);
             }
 
-            _onArrived = onArrived;
+            _target = target;
+            _standAt = null;
+            _standCoord = coord;
+            _travel.Retarget(goal);
+        }
+
+        // The click that is under way, for the walk it starts to end where it landed; a hotkey has none.
+        private PointerEventData _click;
+
+        /// <summary>Runs <paramref name="handle"/> (the control's own click handling) with <paramref name="click"/> as the click under way.</summary>
+        public void DuringClick(PointerEventData click, System.Action handle)
+        {
+            _click = click;
+
+            try
+            {
+                handle();
+            }
+            finally
+            {
+                _click = null;
+            }
+        }
+
+        /// <summary>Walk to where the click under way landed on <paramref name="control"/>; a key press, or a click that missed it, walks to <paramref name="travelPoint"/>.</summary>
+        public void TravelToClickOr(RectTransform control, RectTransform travelPoint)
+        {
+            if (TryPointerToMap(control, out var clicked))
+                TravelTo(clicked);
+            else
+                TravelTo(travelPoint);
+        }
+
+        /// <summary>As <see cref="TravelToClickOr"/>, then calls <paramref name="onArrived"/> once he stands there.</summary>
+        public void WalkThenClickOr(RectTransform control, RectTransform travelPoint, System.Action onArrived)
+        {
+            if (TryPointerToMap(control, out var clicked))
+                WalkThen(clicked, onArrived);
+            else
+                WalkThen(travelPoint, onArrived);
+        }
+
+        // Where the click under way landed on the map, in the space the figure walks in.
+        private bool TryPointerToMap(RectTransform control, out Vector2 local)
+        {
+            local = default;
+            return _click != null
+                   && RectTransformUtility.RectangleContainsScreenPoint(control, _click.position, _click.pressEventCamera)
+                   && RectTransformUtility.ScreenPointToLocalPointInRectangle(Map, _click.position, _click.pressEventCamera, out local);
         }
 
         // The point's centre in the space the figure walks in.

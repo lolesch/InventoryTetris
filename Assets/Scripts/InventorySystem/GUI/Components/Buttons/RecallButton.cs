@@ -1,3 +1,4 @@
+using Submodules.Utility.Services;
 using Submodules.Utility.UI;
 using System.Collections.Generic;
 using TMPro;
@@ -23,6 +24,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
 
         private AbstractDimensionalContainer _bag;
         private RunState _run;
+        private int _scrolls;
 
         protected override void OnEnable()
         {
@@ -76,14 +78,24 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
 
         private void OnPhaseChanged(RunPhase _) => Refresh();
 
+        // The Run's half of CanRecall changes with the hero's trips and a portal's opening, which raise no event: it is
+        // read every frame, beside the scroll count the Inventory's changes keep.
+        private void Update()
+        {
+            if (!Application.isPlaying || !ServiceLocator.IsArmed)
+                return;
+
+            interactable = _scrolls > 0 && SimulationService.Instance.RunAllowsRecall;
+        }
+
         private void Refresh()
         {
-            var simulation = SimulationService.Instance;
+            _scrolls = SimulationService.Instance.PortalScrollCount;
 
             if (countLabel != null)
-                countLabel.text = simulation.PortalScrollCount.ToString();
+                countLabel.text = _scrolls.ToString();
 
-            interactable = simulation.CanRecall;
+            interactable = _scrolls > 0 && SimulationService.Instance.RunAllowsRecall;
         }
     }
 }
