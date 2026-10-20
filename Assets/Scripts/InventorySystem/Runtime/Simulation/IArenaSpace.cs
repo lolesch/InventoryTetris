@@ -17,7 +17,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
         /// <summary>
         /// The selected Location's anchor on the map: where its Origin is drawn, and so where a Send walks the
-        /// hero. Null while no Location is selected.
+        /// hero. Held while a Run is bound even when no toggle is on (a held Run's map, a cleared Location). Null
+        /// while no Location is selected.
         /// </summary>
         RectTransform LocationAnchor { get; }
     }

@@ -1,6 +1,6 @@
 namespace ToolSmiths.InventorySystem.Simulation
 {
-    /// <summary>How a Run ended — the two ways out of <see cref="RunPhase.InField"/>.</summary>
+    /// <summary>How a Run ended — the two ways out of <see cref="RunPhase.Live"/>.</summary>
     public enum RunOutcome
     {
         /// <summary>The player pulled the hero out. Everything settled so far is kept, no penalty.</summary>

@@ -90,7 +90,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             GameExit.SaveHero(game.Simulation, saves);
 
-            Assert.That(game.Simulation.Run.Phase, Is.EqualTo(RunPhase.InTown));
+            Assert.That(game.Simulation.Run.Phase, Is.EqualTo(RunPhase.None));
             Assert.That(game.Simulation.Run.LastResult?.Outcome, Is.EqualTo(RunOutcome.Returned));
             var next = Reloaded(id);
             Assert.That(PotionsHeld(next.Game), Is.EqualTo(3), "the Run's loot is banked in the file");

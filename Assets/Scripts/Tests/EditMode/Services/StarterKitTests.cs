@@ -97,6 +97,79 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(game.Hero.Wallet.Balance.Total, Is.EqualTo(2u * Currency.ironToGold));
         }
 
+        private void ConfigureStartingCoins(uint iron)
+        {
+            var so = new SerializedObject(config);
+            var coins = so.FindProperty("<StartingCoins>k__BackingField");
+            coins.FindPropertyRelative("<Iron>k__BackingField").intValue = (int)iron;
+            coins.FindPropertyRelative("<Copper>k__BackingField").intValue = 0;
+            coins.FindPropertyRelative("<Silver>k__BackingField").intValue = 0;
+            coins.FindPropertyRelative("<Gold>k__BackingField").intValue = 0;
+            _ = so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static int PortalScrollsHeld(TestGame game, Hero hero) =>
+            hero.Inventory.StoredPackages.Values
+                .Where(package => game.Items.Catalog.Definition(package.Item.DefinitionId).ConsumableType == ConsumableType.PortalScroll)
+                .Sum(package => (int)package.Amount);
+
+        [Test]
+        public void ACreatedHero_StartsWithTheConfiguredStartingCoins_AndNoPortalScroll()
+        {
+            AuthorKit(goldCoins: 0);
+            ConfigureStartingCoins(iron: 24u);
+            var (game, saves) = NewGame();
+
+            var hero = saves.Create("Aria");
+            _ = saves.Load(hero.Id);
+
+            Assert.That(game.Hero.Wallet.Balance.Total, Is.EqualTo(24u));
+            Assert.That(PortalScrollsHeld(game, game.Hero), Is.Zero);
+        }
+
+        [Test]
+        public void TheStartingCoins_AddToTheTemplatesOwnStarterCoins()
+        {
+            AuthorKit(goldCoins: 1);
+            ConfigureStartingCoins(iron: 24u);
+            var (game, saves) = NewGame();
+
+            var hero = saves.Create("Aria");
+            _ = saves.Load(hero.Id);
+
+            Assert.That(game.Hero.Wallet.Balance.Total, Is.EqualTo(Currency.ironToGold + 24u));
+        }
+
+        [Test]
+        public void ALoadedHero_KeepsItsSavedWallet_WhateverTheStartingCoinsAreNow()
+        {
+            AuthorKit(goldCoins: 0);
+            ConfigureStartingCoins(iron: 24u);
+            var (first, saves) = NewGame();
+            var hero = saves.Create("Aria");
+            _ = saves.Load(hero.Id);
+            Assert.That(first.Hero.Wallet.TryPay(new Currency(10u)), Is.True);
+            var saved = first.Hero.Wallet.Balance.Total;
+            Assert.That(saves.Save().Wrote, Is.True);
+
+            ConfigureStartingCoins(iron: 500u);
+            var (second, secondSaves) = NewGame();
+            _ = secondSaves.Load(hero.Id);
+
+            Assert.That(second.Hero.Wallet.Balance.Total, Is.EqualTo(saved));
+        }
+
+        [Test]
+        public void ALoadedTemplate_GetsNoStartingCoins()
+        {
+            ConfigureStartingCoins(iron: 24u);
+            var (game, _) = NewGame();
+
+            Assert.That(game.Session.TryLoad(config.DefaultHero), Is.True);
+
+            Assert.That(game.Hero.Wallet.Balance.Total, Is.Zero);
+        }
+
         [Test]
         public void ALoadedHero_NeverReceivesTheKitAgain()
         {
@@ -177,7 +250,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             _ = game.Hero.GetResource(StatName.Health).RemoveFromCurrent(5f);
             _ = game.Hero.GetResource(StatName.Resource).RemoveFromCurrent(5f);
 
-            StarterKit.Apply(game.Hero, config.DefaultHero, game.Items);
+            StarterKit.Apply(game.Hero, config.DefaultHero, config, game.Items);
 
             Assert.That(game.Hero.GetResource(StatName.Health).CurrentValue, Is.EqualTo(game.Hero.GetResource(StatName.Health).TotalValue));
             Assert.That(game.Hero.GetResource(StatName.Resource).CurrentValue, Is.EqualTo(game.Hero.GetResource(StatName.Resource).TotalValue));

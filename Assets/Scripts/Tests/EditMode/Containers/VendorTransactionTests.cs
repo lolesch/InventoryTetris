@@ -39,7 +39,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
             catalog = new TestCatalog()
                 .With(new TestDefinition { Id = SwordId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Sword, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
                 .With(new TestDefinition { Id = TwoHandedSwordId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.TWOHANDEDWEAPONS, Footprint = ItemSize.TwoByTwo, BaseStackLimit = 1u })
-                .With(new TestDefinition { Id = ArrowId, Category = ItemCategory.Consumable, ConsumableType = ConsumableType.Arrow, Footprint = ItemSize.OneByOne, BaseStackLimit = 20u })
+                .With(new TestDefinition { Id = ArrowId, Category = ItemCategory.Consumable, ConsumableType = ConsumableType.PortalScroll, Footprint = ItemSize.OneByOne, BaseStackLimit = 20u })
                 .With(new TestDefinition { Id = BookId, Category = ItemCategory.Consumable, ConsumableType = ConsumableType.Book, Footprint = ItemSize.OneByOne, BaseStackLimit = 10u, BaseValue = BookBaseValue })
                 .With(new TestDefinition { Id = CopperId, Category = ItemCategory.Currency, CurrencyType = CurrencyType.Copper, Footprint = ItemSize.OneByOne, BaseStackLimit = 999u })
                 .With(new TestDefinition { Id = IronId, Category = ItemCategory.Currency, CurrencyType = CurrencyType.Iron, Footprint = ItemSize.OneByOne, BaseStackLimit = 999u })

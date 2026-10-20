@@ -131,7 +131,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             var result = SaveAndExit.Leave(game.Simulation, saves, LoadMenu);
 
             Assert.That(result.Wrote, Is.True);
-            Assert.That(game.Simulation.Run.Phase, Is.EqualTo(RunPhase.InTown));
+            Assert.That(game.Simulation.Run.Phase, Is.EqualTo(RunPhase.None));
             Assert.That(menuLoads, Is.EqualTo(1));
             Assert.That(game.Hero.Corpse.Exists, Is.False, "a Return, not a Death");
 
@@ -140,6 +140,23 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             _ = nextSaves.Load(heroId);
             Assert.That(BagHoldsPotions(next.Hero), Is.True, "the banked loot is in the file");
             Assert.That(nextSaves.List().Single().SavedAtUtc, Is.EqualTo(now));
+        }
+
+        [Test]
+        public void InTheField_ALeaveWhileAPortalOpens_EndsTheRunWithoutThrowing_AndStillWritesAndLoadsTheMenu()
+        {
+            game.Hero.IsInvincible = true;
+            var scroll = new Package(game.Hero.Inventory, game.Items.RollConsumable(ConsumableType.PortalScroll), 1u);
+            Assert.That(game.Hero.Inventory.TryAddToContainer(ref scroll), Is.True, "premise: the scroll fits");
+            game.Simulation.Send(thornwood);
+            game.Simulation.Recall();
+            Assert.That(game.Simulation.Run.IsRecalling, Is.True, "premise: the portal is opening");
+
+            var result = SaveAndExit.Leave(game.Simulation, saves, LoadMenu);
+
+            Assert.That(result.Wrote, Is.True);
+            Assert.That(game.Simulation.Run.Phase, Is.EqualTo(RunPhase.None), "a quit does not wait for the opening");
+            Assert.That(menuLoads, Is.EqualTo(1));
         }
 
         [Test]
@@ -168,7 +185,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(result.Failure, Is.EqualTo(SaveFailure.StoreFailed));
             Assert.That(result.Reason, Is.Not.Empty);
             Assert.That(menuLoads, Is.EqualTo(0), "nothing leaves with the banked loot unwritten");
-            Assert.That(game.Simulation.Run.Phase, Is.EqualTo(RunPhase.InTown));
+            Assert.That(game.Simulation.Run.Phase, Is.EqualTo(RunPhase.None));
             Assert.That(BagHoldsPotions(game.Hero), Is.True, "the loot is still held");
         }
 

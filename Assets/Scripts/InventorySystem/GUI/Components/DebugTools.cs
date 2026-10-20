@@ -84,7 +84,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components
         public void SetItemToWeapon1H() => AddEquipment(EquipmentType.ONEHANDEDWEAPONS);
         public void SetItemToWeapon2H() => AddEquipment(EquipmentType.TWOHANDEDWEAPONS);
 
-        public void SetItemToArrows() => AddConsumable(ConsumableType.Arrow);
+        public void SetItemToPortalScrolls() => AddConsumable(ConsumableType.PortalScroll);
         public void SetItemToBooks() => AddConsumable(ConsumableType.Book);
         public void SetItemToPotions() => AddConsumable(ConsumableType.Potion);
 
@@ -132,6 +132,16 @@ namespace ToolSmiths.InventorySystem.GUI.Components
                 if (0 < moved)
                     _ = hero.Inventory.RemoveAtPosition(cell, new Package(null, stored.Item, moved));
             }
+        }
+
+        /// <summary>A Recall as the player's: spends a Portal Scroll and opens the portal. Refused, with a warning, when
+        /// <see cref="ISimulationService.CanRecall"/> says so.</summary>
+        public void RecallPlayer()
+        {
+            if (SimulationService.Instance.CanRecall)
+                SimulationService.Instance.Recall();
+            else
+                Debug.LogWarning("A Recall needs a live Run, a hero who is up and a Portal Scroll in the Inventory.");
         }
 
         public void KillPlayer() => Session.Instance.Hero.GetResource(StatName.Health).DepleteCurrent();
@@ -251,12 +261,12 @@ namespace ToolSmiths.InventorySystem.GUI.Components
         private void LogResourceDepleted() => Debug.LogWarning($"Hero resource {"depleted".Colored(Color.red)}", this);
 
         private void LogDamageDealt(DamageType damageType, float damageOutput) =>
-            Debug.Log($"Hero deals {damageOutput.ToString().Colored(Color.red)} {damageType}", this);
+            Debug.Log($"Hero deals {damageOutput.ToString("F").Colored(Color.red)} {damageType}", this);
 
         private void LogDamageReceived(DamageType damageType, float absorbed, float received)
         {
-            Debug.Log($"Hero absorbs {absorbed.ToString().Colored(Color.red)} {damageType}", this);
-            Debug.Log($"Hero receives {received.ToString().Colored(Color.red)} {damageType}", this);
+            Debug.Log($"Hero absorbs {absorbed.ToString("F").Colored(Color.red)} {damageType}", this);
+            Debug.Log($"Hero receives {received.ToString("F").Colored(Color.red)} {damageType}", this);
         }
     }
 }

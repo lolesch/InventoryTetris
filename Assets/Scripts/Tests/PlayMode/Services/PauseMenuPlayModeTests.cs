@@ -98,14 +98,14 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             yield return Tap(keyboard.escapeKey);
 
             Assert.That(Menu.IsOpen, Is.True);
-            Assert.That(Simulation.IsHeld, Is.True);
+            Assert.That(Simulation.IsMenuFrozen, Is.True);
             Assert.That(Simulation.IsPaused, Is.False, "the menu's hold is not the player's Pause");
 
             var resume = Member<Component>(Popup(), "resume");
             _ = ExecuteEvents.Execute(resume.gameObject, new PointerEventData(EventSystem.current) { button = PointerEventData.InputButton.Left }, ExecuteEvents.pointerClickHandler);
 
             Assert.That(Menu.IsOpen, Is.False);
-            Assert.That(Simulation.IsHeld, Is.False);
+            Assert.That(Simulation.IsMenuFrozen, Is.False);
         }
 
         [UnityTest]
@@ -120,7 +120,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             yield return Tap(keyboard.escapeKey);
 
             Assert.That(Menu.IsOpen, Is.False);
-            Assert.That(Simulation.IsHeld, Is.False);
+            Assert.That(Simulation.IsMenuFrozen, Is.False);
             Assert.That(Simulation.IsPaused, Is.True);
         }
 
@@ -168,13 +168,13 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             yield return OpenExample();
             SendToTheField();
             yield return Tap(keyboard.escapeKey);
-            Assert.That(Simulation.IsHeld, Is.True, "premise");
+            Assert.That(Simulation.IsMenuFrozen, Is.True, "premise");
 
             yield return SceneManager.LoadSceneAsync("MainMenu");
             yield return null;
 
             Assert.That(Menu.IsOpen, Is.False);
-            Assert.That(Simulation.IsHeld, Is.False);
+            Assert.That(Simulation.IsMenuFrozen, Is.False);
         }
     }
 }

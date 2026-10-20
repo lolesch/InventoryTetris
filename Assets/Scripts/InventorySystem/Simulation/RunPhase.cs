@@ -1,17 +1,23 @@
 namespace ToolSmiths.InventorySystem.Simulation
 {
     /// <summary>
-    /// The two states a Run is ever in (ADR-0008; <c>GLOSSARY.md</c> <i>Run</i>). There is no
-    /// <c>Traveling</c> — <see cref="RunState.Send"/> and <see cref="RunState.Return"/> are
-    /// instant — and no <c>GameOver</c>: Death returns the hero to <see cref="InTown"/> under a
-    /// penalty, it does not end the Session.
+    /// What the Run is doing (ADR-0008; <c>GLOSSARY.md</c> <i>Run</i>), not where the hero stands: that is the
+    /// map that is up. There is no <c>Traveling</c> — <see cref="RunState.Send"/> and
+    /// <see cref="RunState.Return"/> are instant — and no <c>GameOver</c>: Death ends the Run
+    /// (<see cref="None"/>) under a penalty, it does not end the Session.
     /// </summary>
     public enum RunPhase
     {
-        /// <summary>The safe hub. The map offers <see cref="RunState.Send"/>; the Stash and Store are open.</summary>
-        InTown,
+        /// <summary>No Run. The map offers <see cref="RunState.Send"/>; the Stash and Store are open.</summary>
+        None,
 
-        /// <summary>A Run is underway at a Location — an <see cref="EncounterSimulation"/> is live.</summary>
-        InField,
+        /// <summary>The simulation ticks — an <see cref="EncounterSimulation"/> is live at a Location.</summary>
+        Live,
+
+        /// <summary>
+        /// A Recall's portal is open (ADR-0022): the Run stands frozen as it was, its Encounter, enemies, spawn timer
+        /// and ground untouched, until it is resumed or ends.
+        /// </summary>
+        Held,
     }
 }

@@ -83,8 +83,9 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             hero.Wallet.Deposit(new Currency(1234u));
 
-            // A level-up heals, so the damage comes after it: the hero ends below a maximum the gear raised.
+            // A level-up does not heal, so the hero is filled after it and then damaged: he ends below a maximum the gear raised.
             hero.GainExperience(1500f, hero.Level);
+            hero.Heal();
             hero.GetResource(StatName.Health).RemoveFromCurrent(7f);
             hero.GetResource(StatName.Resource).RemoveFromCurrent(11f);
 
@@ -332,7 +333,26 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(game.Hero, Is.SameAs(hero));
             Assert.That(game.Session.World, Is.SameAs(world));
             Assert.That(loaded, Is.Zero);
-            Assert.That(game.Simulation.Run.Phase, Is.EqualTo(RunPhase.InField));
+            Assert.That(game.Simulation.Run.Phase, Is.EqualTo(RunPhase.Live));
+        }
+
+        [Test]
+        public void ALoadDuringAHeldRun_ReturnsFalseAndChangesNothing()
+        {
+            var game = TestGame.Create(config);
+            game.Simulation.Send(thornwood);
+            game.Simulation.Run.Recall();
+            game.Simulation.Run.Advance(60f);
+            var hero = game.Hero;
+            var world = game.Session.World;
+
+            var ok = game.Session.TryLoad(Snapshot(PlayedGame()), game.Simulation.Locations, out var report);
+
+            Assert.That(ok, Is.False);
+            Assert.That(report, Is.Null);
+            Assert.That(game.Hero, Is.SameAs(hero));
+            Assert.That(game.Session.World, Is.SameAs(world));
+            Assert.That(game.Simulation.Run.Phase, Is.EqualTo(RunPhase.Held));
         }
 
         [Test]

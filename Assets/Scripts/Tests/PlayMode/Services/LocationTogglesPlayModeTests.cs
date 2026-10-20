@@ -1,6 +1,9 @@
 using System.Collections;
 using System.Linq;
 using NUnit.Framework;
+using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Data.Enums;
+using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Locations;
 using ToolSmiths.InventorySystem.Persistence;
 using ToolSmiths.InventorySystem.Services;
@@ -35,7 +38,11 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         [TearDown]
         public void TearDown()
         {
-            if (SimulationService.Instance.Run.Phase == RunPhase.InField)
+            if (SimulationService.Instance.Run.IsRecalling)
+                SimulationService.Instance.Tick(1f);
+            if (SimulationService.Instance.Run.Phase == RunPhase.Held)
+                SimulationService.Instance.Resume();
+            if (SimulationService.Instance.Run.Phase == RunPhase.Live)
                 _ = SimulationService.Instance.Return();
 
             _ = Session.Instance.TryLoad(GameBoot.Load().DefaultHero);
@@ -64,7 +71,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             var toggle = ToggleOf(id);
             toggle.GetType().GetMethod("OnPointerClick").Invoke(toggle, new object[] { new PointerEventData(EventSystem.current) });
 
-            return Session.Instance.Hero.SelectedLocation?.Id == id && Simulation.Run.Phase == RunPhase.InField;
+            return Session.Instance.Hero.SelectedLocation?.Id == id && Simulation.Run.Phase == RunPhase.Live;
         }
 
         private static void CompleteThornwood()
@@ -96,7 +103,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             yield return null;
 
             Assert.That(ClickGoesThrough(Ashfall), Is.False);
-            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.InTown));
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.None));
         }
 
         [UnityTest]
@@ -114,7 +121,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             CompleteThornwood();
             yield return null;
 
-            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.InField), "premise: still out in the Field");
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.Live), "premise: still out in the Field");
             Assert.That(IsGreyedOut(Ashfall), Is.False);
             Assert.That(IconAlpha(Ashfall), Is.EqualTo(1f).Within(0.001f), "its icon is full once it opens");
             Assert.That(ClickGoesThrough(Ashfall), Is.True);
@@ -134,6 +141,80 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             Assert.That(Session.Instance.TryLoad(save, Simulation.Locations, out _), Is.True);
             Assert.That(IsGreyedOut(Ashfall), Is.False, "the veteran has");
             Assert.That(ClickGoesThrough(Ashfall), Is.True);
+        }
+
+        private static void Select(string id) =>
+            ToggleOf(id).GetType().GetMethod("SetToggle").Invoke(ToggleOf(id), new object[] { true });
+
+        private static bool IsOn(string id) => (bool)ToggleOf(id).GetType().GetProperty("IsOn").GetValue(ToggleOf(id));
+
+        // A Run at Thornwood held by a Recall, as the Town portal leaves it.
+        private static void HoldARunAtThornwood()
+        {
+            Simulation.Send(GameBoot.Load().Locations.First(l => l.Id == Thornwood));
+            Simulation.Tick(0.5f);
+
+            GiveAScroll();
+            Simulation.Recall();
+            Simulation.Tick(1f);
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.Held), "premise: the Run is held");
+        }
+
+        private static void GiveAScroll()
+        {
+            var package = new Package(null, ItemService.Instance.RollConsumable(ConsumableType.PortalScroll, 0f), 1u);
+            Assert.That(Session.Instance.Hero.Inventory.TryAddToContainer(ref package), Is.True, "premise: the scroll fits the bag");
+        }
+
+        [UnityTest]
+        public IEnumerator ALocationClickWhileAPortalOpens_IsRefused_BeforeTheHighlightMoves_AndNothingThrows()
+        {
+            yield return null;
+            CompleteThornwood();
+            GiveAScroll();
+            Simulation.Recall();
+            var encounter = Simulation.Run.Encounter;
+            Assert.That(Simulation.Run.IsRecalling, Is.True, "premise: the portal is opening");
+
+            var ashfall = ToggleOf(Ashfall);
+            Assert.That(() => ashfall.GetType().GetMethod("OnPointerClick")
+                .Invoke(ashfall, new object[] { new PointerEventData(EventSystem.current) }), Throws.Nothing);
+
+            Assert.That(IsOn(Ashfall), Is.False, "the highlight stays where the Run is");
+            Assert.That(Simulation.Run.Encounter, Is.SameAs(encounter), "no Relocate");
+            Assert.That(Session.Instance.Hero.SelectedLocation?.Id, Is.EqualTo(Thornwood));
+
+            // Not through the click: a script that toggles it is refused the same, without throwing.
+            Assert.That(() => Select(Ashfall), Throws.Nothing);
+            Assert.That(Simulation.Run.Encounter, Is.SameAs(encounter));
+            Assert.That(Simulation.Run.IsRecalling, Is.True, "the opening runs on");
+        }
+
+        [UnityTest]
+        public IEnumerator SelectingTheLocationTheRunIsLiveAt_ReconcilesWithTheRun_AndCommandsNothing()
+        {
+            yield return null;
+            Simulation.Send(GameBoot.Load().Locations.First(l => l.Id == Thornwood));
+            var encounter = Simulation.Run.Encounter;
+
+            Select(Thornwood);
+
+            Assert.That(IsOn(Thornwood), Is.True, "the toggle shows it selected");
+            Assert.That(Simulation.Run.Encounter, Is.SameAs(encounter), "no Relocate: the fight is the same one");
+        }
+
+        [UnityTest]
+        public IEnumerator ALocationClickWhileHeld_Relocates_AndTheTownPortalStaysOpen()
+        {
+            yield return null;
+            HoldARunAtThornwood();
+            var held = Simulation.Run.Encounter;
+
+            Select(Thornwood);
+
+            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.Live), "the Run is live again");
+            Assert.That(Simulation.Run.Encounter, Is.Not.SameAs(held), "at a fresh Encounter: the held fight is discarded");
+            Assert.That(Session.Instance.Hero.TownPortal?.Id, Is.EqualTo(Thornwood), "and the portal is still open");
         }
 
         [UnityTest]

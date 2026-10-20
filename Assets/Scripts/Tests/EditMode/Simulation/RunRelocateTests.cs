@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using NUnit.Framework;
 using ToolSmiths.InventorySystem.Simulation;
 
@@ -34,9 +35,11 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
         private static EncounterTuning LongBeat() => new() { Beat = 100f, CastCadence = 0.05f };
 
-        private static RunState NewRun(IHeroCombatant hero, EncounterTuning tuning = null, HeroBehaviour behaviour = null) =>
+        private static RunState NewRun(IHeroCombatant hero, EncounterTuning tuning = null, HeroBehaviour behaviour = null,
+            float recallOpening = 0f) =>
             new(profile => new EncounterSimulation(
-                hero, profile, new ConstantRollSource(0f), behaviour ?? Behaviours.Engaging(10), tuning ?? LongBeat()));
+                    hero, profile, new ConstantRollSource(0f), behaviour ?? Behaviours.Engaging(10), tuning ?? LongBeat()),
+                recallOpening: recallOpening);
 
         private static EncounterProfile Skirmishers(int count, int sourceLevel = 5) =>
             Profiles.Group(EnemyArchetype.Skirmisher, count, sourceLevel);
@@ -44,7 +47,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         // ─── the swap ────────────────────────────────────────────────────────
 
         [Test]
-        public void Relocate_StaysInField_WithTheNewLocationAndAFreshEncounter()
+        public void Relocate_StaysLive_WithTheNewLocationAndAFreshEncounter()
         {
             var run = NewRun(OneShotHero());
             var first = Skirmishers(3);
@@ -54,7 +57,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
             run.Relocate(second);
 
-            Assert.That(run.Phase, Is.EqualTo(RunPhase.InField));
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Live));
             Assert.That(run.Location, Is.SameAs(second));
             Assert.That(run.Encounter, Is.Not.SameAs(oldEncounter));
             Assert.That(run.Encounter.Profile, Is.SameAs(second));
@@ -199,10 +202,90 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             Assert.That(result.Duration, Is.EqualTo(0f));
         }
 
+        // ─── from Held (ADR-0022) ────────────────────────────────────────────
+
+        private static RunState HeldRun(FakeHero hero, EncounterProfile location)
+        {
+            var run = NewRun(hero, recallOpening: 0.5f);
+            run.Send(location);
+            run.Recall();
+            run.Advance(0.5f);
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Held), "setup failed to hold the Run");
+            return run;
+        }
+
+        [Test]
+        public void ARelocate_FromHeld_AbandonsTheFrozenEncounter_AndGoesLiveAtTheNewLocation()
+        {
+            var second = Skirmishers(4, sourceLevel: 9);
+            var run = HeldRun(OneShotHero(), Skirmishers(3));
+            var frozen = run.Encounter;
+            var phases = new List<RunPhase>();
+            var relocated = 0;
+            run.PhaseChanged += phases.Add;
+            run.Relocated += () => relocated++;
+
+            run.Relocate(second);
+
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Live));
+            Assert.That(run.IsRecalling, Is.False);
+            Assert.That(phases, Is.EqualTo(new[] { RunPhase.Live }));
+            Assert.That(relocated, Is.EqualTo(1));
+            Assert.That(frozen.Phase, Is.EqualTo(SimulationPhase.Ended));
+            Assert.That(run.Encounter, Is.Not.SameAs(frozen));
+            Assert.That(run.Location, Is.SameAs(second));
+            Assert.That(run.Encounter.CurrentEncounter, Is.EqualTo(1), "a fresh Population");
+            Assert.That(run.Encounter.AliveEnemyCount, Is.EqualTo(4));
+            Assert.That(run.Advance(0.1f), Is.GreaterThan(0), "the new Encounter ticks");
+        }
+
+        [Test]
+        public void ARelocate_FromHeld_CarriesTheRunTotals_AndTheRunCanReturnAfterwards()
+        {
+            var run = NewRun(OneShotHero(), recallOpening: 0.5f);
+            run.Send(Skirmishers(5));
+            run.Advance(0.1f); // 1 kill
+            run.BankCurrency(300);
+            var earned = run.Encounter.SettledXp;
+            run.Recall();
+            run.Advance(0.5f);
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Held), "setup failed to hold the Run");
+
+            run.Relocate(Skirmishers(5));
+            var result = run.Return();
+
+            Assert.That(result.Outcome, Is.EqualTo(RunOutcome.Returned));
+            Assert.That(result.CurrencyBanked, Is.EqualTo(300));
+            Assert.That(result.XpSettled, Is.GreaterThanOrEqualTo(earned));
+            Assert.That(result.EnemiesDefeated, Is.GreaterThanOrEqualTo(1));
+        }
+
+        [Test]
+        public void ARelocate_FromHeld_WithAFactoryThatThrows_LeavesTheRunHeld()
+        {
+            var calls = 0;
+            var hero = OneShotHero();
+            var run = new RunState(profile =>
+            {
+                if (++calls == 2) throw new InvalidOperationException("no player");
+                return new EncounterSimulation(hero, profile, new ConstantRollSource(0f), Behaviours.Engaging(10), LongBeat());
+            }, recallOpening: 0.5f);
+            run.Send(Skirmishers(3));
+            run.Recall();
+            run.Advance(0.5f);
+            var frozen = run.Encounter;
+
+            Assert.That(() => run.Relocate(Skirmishers(3)), Throws.InvalidOperationException);
+
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Held));
+            Assert.That(run.Encounter, Is.SameAs(frozen));
+            Assert.That(frozen.Phase, Is.Not.EqualTo(SimulationPhase.Ended));
+        }
+
         // ─── refusals ────────────────────────────────────────────────────────
 
         [Test]
-        public void Relocate_WhileInTown_Throws()
+        public void Relocate_WhileNone_Throws()
         {
             var run = NewRun(OneShotHero());
 
@@ -266,7 +349,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             run.Send(Skirmishers(3));
 
             Assert.That(() => run.Relocate(Skirmishers(3)), Throws.InvalidOperationException);
-            Assert.That(run.Phase, Is.EqualTo(RunPhase.InField));
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Live));
         }
 
         [Test]

@@ -56,20 +56,31 @@ namespace ToolSmiths.InventorySystem.Inventories
         public void Close() => Set(InventoryContext.None);
 
         /// <summary>
-        /// Applies a Run-phase change. Only <see cref="InventoryContext.None"/>,
-        /// <see cref="InventoryContext.Hero"/> and <see cref="InventoryContext.Ground"/> are reachable
-        /// while <paramref name="inField"/> - a phase change that leaves <see cref="Active"/> unreachable drops it to
-        /// <see cref="InventoryContext.None"/>. Every context is reachable in Town, the Ground's among them
-        /// (the World's ground is there too), and returning to Town reopens nothing on its own.
+        /// Applies the map that just came up: a map that leaves <see cref="Active"/> unreachable drops it
+        /// to <see cref="InventoryContext.None"/>, and arriving on either map reopens nothing on its own.
         /// </summary>
-        public void SyncToPhase(bool inField)
+        public void SyncToMap(bool onFieldMap)
         {
-            if (inField && !IsReachableInField(Active))
+            if (!IsReachable(Active, onFieldMap))
                 Close();
         }
 
-        private static bool IsReachableInField(InventoryContext context) =>
-            context is InventoryContext.None or InventoryContext.Hero or InventoryContext.Ground;
+        /// <summary>
+        /// Whether <paramref name="context"/> can be active while a map is up - a function of the map, not
+        /// of the Run phase (a held Run puts a Town map up beside a Run). The Field map reaches only
+        /// <see cref="InventoryContext.None"/>, <see cref="InventoryContext.Hero"/> and
+        /// <see cref="InventoryContext.Ground"/>; the Town map reaches every context, the Ground's among
+        /// them (the World's ground is there too).
+        /// </summary>
+        public static bool IsReachable(InventoryContext context, bool onFieldMap) =>
+            !onFieldMap || context is InventoryContext.None or InventoryContext.Hero or InventoryContext.Ground;
+
+        /// <summary>
+        /// Whether a Town Stop's panel (Stash, Vendor or Healer) is the open one. The Ground Items panel is up in
+        /// every context but these, so closing a Town Stop brings it back with no request.
+        /// </summary>
+        public static bool TownStopOpen(InventoryContext context) =>
+            context is InventoryContext.Stash or InventoryContext.Vendor or InventoryContext.Healer;
 
         /// <summary>
         /// The one panel a context names for itself: the Hero Panel for

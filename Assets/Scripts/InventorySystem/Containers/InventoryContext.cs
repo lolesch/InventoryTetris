@@ -11,9 +11,9 @@ namespace ToolSmiths.InventorySystem.Inventories
     /// own appear or disappear hook - the Hero Panel belongs to every non-<c>None</c> context,
     /// so no panel can be the thing that names one (issue #85).</para>
     ///
-    /// <para><see cref="InField"/> is deliberately not a member: the Hero Panel is openable
-    /// during a Run, so phase reachability constrains which contexts are available
-    /// (<see cref="InventoryContextState.SyncToPhase"/>) rather than being one itself.</para>
+    /// <para>A live Run is deliberately not a member: the Hero Panel is openable
+    /// during a Run, so the map that is up constrains which contexts are available
+    /// (<see cref="InventoryContextState.IsReachable"/>) rather than being one itself.</para>
     /// </summary>
     public enum InventoryContext
     {
@@ -23,7 +23,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         Vendor,
         Healer,
 
-        /// <summary>The Combat Panel's ground tab, open during a Run and, through the Ground toggle, in Town (the World's ground is there in both). Like every non-<c>None</c> context it brings the Hero Panel with it.</summary>
+        /// <summary>The Ground Items panel, which is also up on <c>None</c> and <c>Hero</c> and gives way only to a Town Stop; the Ground toggle opens it with the Hero Panel (the World's ground is on both maps). Like every non-<c>None</c> context it brings the Hero Panel with it.</summary>
         Ground,
     }
 }

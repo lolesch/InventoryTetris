@@ -2,12 +2,13 @@ using Submodules.Utility.UI;
 using ToolSmiths.InventorySystem.Runtime.Simulation;
 using ToolSmiths.InventorySystem.Services;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
 {
     /// <summary>
-    /// The Town Exit (ADR-0021): a click starts the Minimap crossfade at once and Travels the Town figure to this
-    /// button. The fading Town face already takes input away, so nothing retargets the figure during the fade.
+    /// The Town Exit (ADR-0021): a click Travels the Town figure to this button, and the Minimap crossfade starts
+    /// once he stands there. Another walk in the meantime (a click on a stop) cancels the exit.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class ToFieldsButton : PanelButton
@@ -26,13 +27,28 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Buttons
                 heroFigure.SetExit(this.TravelPointOr(travelPoint));
         }
 
+        // He walks to where the click landed on the Exit.
+        public override void OnPointerClick(PointerEventData eventData)
+        {
+            if (heroFigure == null)
+                base.OnPointerClick(eventData);
+            else
+                heroFigure.DuringClick(eventData, () => base.OnPointerClick(eventData));
+        }
+
         protected override void OnClick()
         {
-            base.OnClick();
-            InventoryService.Instance.SyncContextToPhase(true);
+            if (heroFigure == null)
+                Leave();
+            else
+                heroFigure.WalkThenClickOr((RectTransform)transform, this.TravelPointOr(travelPoint), Leave);
+        }
 
-            if (heroFigure != null)
-                heroFigure.TravelTo(this.TravelPointOr(travelPoint));
+        // He is at the Exit: the Town map gives way to the Field map.
+        private void Leave()
+        {
+            base.OnClick();
+            InventoryService.Instance.SyncContextToMap(true);
         }
     }
 }

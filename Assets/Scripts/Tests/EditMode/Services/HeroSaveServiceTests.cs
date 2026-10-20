@@ -527,10 +527,10 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
         private static void TickUntilHome(Setup setup)
         {
-            for (var i = 0; i < 100 && setup.Game.Simulation.Run.Phase == RunPhase.InField; i++)
+            for (var i = 0; i < 100 && setup.Game.Simulation.Run.Phase == RunPhase.Live; i++)
                 setup.Game.Simulation.Tick(0.5f);
 
-            Assert.That(setup.Game.Simulation.Run.Phase, Is.EqualTo(RunPhase.InTown), "the Run never ended");
+            Assert.That(setup.Game.Simulation.Run.Phase, Is.EqualTo(RunPhase.None), "the Run never ended");
         }
 
         private static void PutPotionsInBag(Setup setup, uint amount)
@@ -629,8 +629,8 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             Assert.That(seen, Is.EqualTo(new[]
             {
-                (RunOutcome.Returned, RunPhase.InTown, false),
-                (RunOutcome.Died, RunPhase.InTown, true),
+                (RunOutcome.Returned, RunPhase.None, false),
+                (RunOutcome.Died, RunPhase.None, true),
             }));
         }
 
@@ -698,7 +698,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             TickUntilCompleteAndFlush(setup);
 
-            Assert.That(setup.Game.Simulation.Run.Phase, Is.EqualTo(RunPhase.InField), "the Run carries on");
+            Assert.That(setup.Game.Simulation.Run.Phase, Is.EqualTo(RunPhase.Live), "the Run carries on");
             var next = NewSetup();
             _ = next.Saves.Load(id);
             Assert.That(next.Game.Hero.HasCompleted("thornwood"), Is.True);
@@ -714,7 +714,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             setup.Game.Simulation.Send(thornwood);
             TickUntilCompleteAndFlush(setup);
 
-            Assert.That(setup.Saves.Save().Failure, Is.EqualTo(SaveFailure.RunInField));
+            Assert.That(setup.Saves.Save().Failure, Is.EqualTo(SaveFailure.RunLive));
         }
 
         [Test]
@@ -882,9 +882,9 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             var id = setup.Saves.Create("Aria").Id;
             _ = setup.Saves.Load(id);
             setup.Game.Simulation.Send(thornwood);
-            var inField = setup.Saves.Save();
-            Assert.That(inField.Failure, Is.EqualTo(SaveFailure.RunInField), "a Run in the Field");
-            Assert.That(inField.Reason, Is.Not.Empty);
+            var live = setup.Saves.Save();
+            Assert.That(live.Failure, Is.EqualTo(SaveFailure.RunLive), "a Run in the Field");
+            Assert.That(live.Reason, Is.Not.Empty);
 
             Assert.That(runs, Is.Zero);
         }

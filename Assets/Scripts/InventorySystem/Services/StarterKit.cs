@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Runtime.Character;
@@ -9,14 +10,15 @@ namespace ToolSmiths.InventorySystem.Services
     /// <summary>
     /// Places the authored starter kit on a newly created hero: each item is made by the item generator
     /// and placed the way a Drop is (auto-equip into an empty slot, else the Inventory), then the coins
-    /// are banked in the Wallet. Nothing in the kit is required: an empty kit does nothing, an unknown
+    /// are banked in the Wallet: the template's own plus the config's starting coins. Nothing in the kit
+    /// is required: an empty kit does nothing, an unknown
     /// definition or an item with no room is logged and skipped, and the hero stays valid either way.
     /// </summary>
     public static class StarterKit
     {
-        public static void Apply(Hero hero, HeroData data, IItemService items)
+        public static void Apply(Hero hero, HeroData data, GameConfig config, IItemService items)
         {
-            if (hero == null || data == null || items == null)
+            if (hero == null || data == null || config == null || items == null)
                 return;
 
             foreach (var starter in data.StarterItems)
@@ -26,7 +28,8 @@ namespace ToolSmiths.InventorySystem.Services
             // kit is worn, and starts at full Health and Resource.
             hero.Heal();
 
-            var coins = data.StarterCoins;
+            // The game-wide starting coins and the template's own, banked as one amount.
+            var coins = new Currency(config.StartingCoins.Total + data.StarterCoins.Total);
             if (coins.Total == 0u)
                 return;
 

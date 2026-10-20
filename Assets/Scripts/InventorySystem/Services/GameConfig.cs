@@ -80,6 +80,9 @@ namespace ToolSmiths.InventorySystem.Services
             return DefaultHero;
         }
 
+        [field: SerializeField, Tooltip("The coins a newly created hero starts with, on top of its template's own: about three Portal Scrolls at the Healer (tuning). Never granted on a load.")]
+        public Currency StartingCoins { get; private set; } = new(24u);
+
         [field: Header("Items")]
         [field: SerializeField, Tooltip("Stat-icon lookup for the character and item-stat displays. Not on the roll path.")]
         public ItemTypeData ItemTypeData { get; private set; }
@@ -89,6 +92,8 @@ namespace ToolSmiths.InventorySystem.Services
         [field: Header("Loot table")]
         [field: SerializeField] public ItemCategoryDistribution ItemCategoryDistribution { get; private set; }
         [field: SerializeField] public ItemRarityDistribution ItemRarityDistribution { get; private set; }
+        [field: SerializeField, Tooltip("Odds per consumable type. Empty draws a consumable uniformly over every consumable definition.")]
+        public ConsumableTypeDistribution ConsumableTypeDistribution { get; private set; }
 
         [field: Header("Currency")]
         [field: SerializeField] public CurrencyTypeDistribution CurrencyTypeDistribution { get; private set; }
@@ -133,6 +138,9 @@ namespace ToolSmiths.InventorySystem.Services
 
         [field: SerializeField, Min(0f), Tooltip("How many real seconds the Death slow-down lasts.")]
         public float DeathSlowdownSeconds { get; private set; } = 1.5f;
+
+        [field: SerializeField, Min(0f), Tooltip("Sim seconds a Recall's Town Portal takes to open; the Run stays live through it (ADR-0022).")]
+        public float RecallOpeningSeconds { get; private set; } = 0.5f;
 
         [field: Header("Simulation: Encounter tuning (placeholders, untested starting points)")]
         [field: SerializeField, Tooltip("The arena, the Cast, the damage spread and the combat clock an Encounter plays on. A value outside what the sim accepts is pulled back into range when the Encounter is built, so a hand-edited asset cannot make a Send throw.")]

@@ -1,5 +1,8 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
+using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Simulation;
 
 namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
@@ -55,11 +58,12 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             RunPenalty penalty = default,
             EncounterTuning tuning = null,
             int engagement = 10,
-            HeroBehaviour behaviour = null) =>
+            HeroBehaviour behaviour = null,
+            float recallOpening = 0f) =>
             new(profile => new EncounterSimulation(
                     hero, profile, new ConstantRollSource(0f),
                     behaviour ?? Behaviours.Engaging(engagement), tuning ?? new EncounterTuning()),
-                penalty);
+                penalty, recallOpening);
 
         private static EncounterProfile Skirmishers(int count) =>
             Profiles.Group(EnemyArchetype.Skirmisher, count, sourceLevel: 5);
@@ -67,25 +71,25 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         // ─── transitions ─────────────────────────────────────────────────────
 
         [Test]
-        public void ANewRunState_StartsInTown_WithNoLocationAndNoEncounter()
+        public void ANewRunState_StartsWithNoRun_WithNoLocationAndNoEncounter()
         {
             var run = NewRun(OneShotHero());
 
-            Assert.That(run.Phase, Is.EqualTo(RunPhase.InTown));
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.None));
             Assert.That(run.Location, Is.Null);
             Assert.That(run.Encounter, Is.Null);
             Assert.That(run.LastResult, Is.Null);
         }
 
         [Test]
-        public void Send_EntersInField_WithTheLocationAndALiveEncounter()
+        public void Send_GoesLive_WithTheLocationAndALiveEncounter()
         {
             var run = NewRun(OneShotHero());
             var thornwood = Skirmishers(3);
 
             run.Send(thornwood);
 
-            Assert.That(run.Phase, Is.EqualTo(RunPhase.InField));
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Live));
             Assert.That(run.Location, Is.SameAs(thornwood));
             Assert.That(run.Encounter, Is.Not.Null);
             Assert.That(run.Encounter.AliveEnemyCount, Is.GreaterThan(0));
@@ -99,7 +103,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
             run.Return();
 
-            Assert.That(run.Phase, Is.EqualTo(RunPhase.InTown));
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.None));
             Assert.That(run.Location, Is.Null);
             Assert.That(run.Encounter, Is.Null);
         }
@@ -113,13 +117,13 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
             run.HandleDeath(xpTowardNextLevel: 0);
 
-            Assert.That(run.Phase, Is.EqualTo(RunPhase.InTown));
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.None));
             Assert.That(run.Location, Is.Null);
             Assert.That(run.Encounter, Is.Null);
         }
 
         [Test]
-        public void Send_WhileInField_Throws()
+        public void Send_WhileLive_Throws()
         {
             var run = NewRun(OneShotHero());
             run.Send(Skirmishers(3));
@@ -139,7 +143,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
-        public void Return_WhileInTown_Throws()
+        public void Return_WhileNone_Throws()
         {
             var run = NewRun(OneShotHero());
 
@@ -147,7 +151,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
-        public void HandleDeath_WhileInTown_Throws()
+        public void HandleDeath_WhileNone_Throws()
         {
             var run = NewRun(OneShotHero());
 
@@ -162,11 +166,11 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
             Assert.That(() => run.HandleDeath(100), Throws.InvalidOperationException,
                 "a live hero's Run only ends in Return — HandleDeath is not a 'give up' button");
-            Assert.That(run.Phase, Is.EqualTo(RunPhase.InField), "the refused HandleDeath must not half-end the Run");
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Live), "the refused HandleDeath must not half-end the Run");
         }
 
         [Test]
-        public void Advance_WhileInTown_IsANoOp()
+        public void Advance_WhileNone_IsANoOp()
         {
             var run = NewRun(OneShotHero());
 
@@ -193,7 +197,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var run = new RunState(_ => null);
 
             Assert.That(() => run.Send(Skirmishers(3)), Throws.InvalidOperationException);
-            Assert.That(run.Phase, Is.EqualTo(RunPhase.InTown), "a failed Send leaves the Run in Town");
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.None), "a failed Send leaves the Run in Town");
         }
 
         [Test]
@@ -281,7 +285,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
-        public void BankCurrency_WhileInTown_Throws()
+        public void BankCurrency_WhileNone_Throws()
         {
             var run = NewRun(OneShotHero());
 
@@ -464,7 +468,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
-        public void Advance_InField_RunsTheEncounter_AndReportsTicks()
+        public void Advance_Live_RunsTheEncounter_AndReportsTicks()
         {
             var run = NewRun(new FakeHero { PhysicalDamage = 0f, MagicalDamage = 0f, Resource = 0f, Level = 5 });
             run.Send(Profiles.Solo(EnemyArchetype.Brute, sourceLevel: 5));
@@ -507,7 +511,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
-        public void RunEnded_IsNotRaised_WhileTheRunIsStillInField()
+        public void RunEnded_IsNotRaised_WhileTheRunIsStillLive()
         {
             var run = NewRun(OneShotHero());
             run.Send(Skirmishers(3));
@@ -542,8 +546,384 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
             for (var i = 0; i < 50; i++) run.Advance(0.1f);
 
-            Assert.That(run.Phase, Is.EqualTo(RunPhase.InField));
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Live));
             Assert.That(run.Encounter.Phase, Is.EqualTo(SimulationPhase.Fighting), "the Run ends only by a Return or a Death");
+        }
+
+        // ─── the Recall: an opening, then Held (ADR-0022) ────────────────────
+
+        // Enemies that outlast a weak hero and keep spawning, so a live tick moves health, positions and the spawn timer.
+        private static EncounterProfile SlowFight() => new(
+            sourceLevel: 5,
+            packed: EnemyArchetype.Skirmisher,
+            rosterBrute: new IntRange(0),
+            rosterSkirmisher: new IntRange(30),
+            packBatch: new IntRange(1),
+            packedSpawnWeight: 1f,
+            spawnInterval: 1f,
+            table: FakeLootTable.ForCategory(ItemCategory.Equipment),
+            spawnJitter: 0f,
+            initialSpawn: 1,
+            population: new IntRange(1));
+
+        private static FakeHero SteadyHero() => new()
+        {
+            MaxHealth = 1_000_000f,
+            Health = 1_000_000f,
+            PhysicalDamage = 1f,
+            AttackSpeed = 10f,
+            MagicalDamage = 0f,
+            Resource = 0f,
+            Level = 5,
+        };
+
+        // Everything the Encounter moves with time: health, positions, the spawn count and the clock the spawn timer reads.
+        private static string Snapshot(RunState run)
+        {
+            var encounter = run.Encounter;
+            var text = $"{encounter.Duration}|{encounter.AliveEnemyCount}|{encounter.EnemiesDefeated}|{encounter.HeroPosition.ToString("F6")}";
+            foreach (var enemy in encounter.Enemies)
+                text += $"|{enemy.Health}@{enemy.Position.ToString("F6")}";
+            return text;
+        }
+
+        private static RunState HeldRun()
+        {
+            var run = NewRun(SteadyHero(), recallOpening: 0.5f);
+            run.Send(SlowFight());
+            run.Recall();
+            run.Advance(0.5f);
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Held), "setup failed to hold the Run");
+            return run;
+        }
+
+        [Test]
+        public void Recall_OnALiveRun_OpensThePortal_AndTheRunStaysLive()
+        {
+            var run = NewRun(SteadyHero(), recallOpening: 0.5f);
+            run.Send(SlowFight());
+
+            run.Recall();
+
+            Assert.That(run.IsRecalling, Is.True);
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Live));
+        }
+
+        [Test]
+        public void TheOpening_KeepsTheEncounterTicking_ThenHoldsTheRunOnce()
+        {
+            var run = NewRun(SteadyHero(), recallOpening: 0.5f);
+            run.Send(SlowFight());
+            var phases = new List<RunPhase>();
+            run.PhaseChanged += phases.Add;
+            run.Recall();
+            var before = run.Encounter.Duration;
+
+            var ticks = run.Advance(0.3f);
+
+            Assert.That(ticks, Is.GreaterThan(0), "hits keep landing through the opening");
+            Assert.That(run.Encounter.Duration, Is.GreaterThan(before));
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Live));
+            Assert.That(phases, Is.Empty);
+
+            run.Advance(0.3f);
+
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Held));
+            Assert.That(run.IsRecalling, Is.False);
+            Assert.That(phases, Is.EqualTo(new[] { RunPhase.Held }));
+        }
+
+        [Test]
+        public void TheOpening_TicksTheEncounterNoFurtherThanItsOwnSimTime()
+        {
+            var run = NewRun(SteadyHero(), recallOpening: 0.5f);
+            run.Send(SlowFight());
+            run.Recall();
+
+            run.Advance(60f);
+
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Held));
+            Assert.That(run.Encounter.Duration, Is.EqualTo(0.5f).Within(0.11f), "one opening of sim time, not the whole frame");
+        }
+
+        [Test]
+        public void AHeldRun_AdvancesNothing()
+        {
+            var run = HeldRun();
+            var frozen = Snapshot(run);
+
+            for (var i = 0; i < 100; i++)
+                Assert.That(run.Advance(0.1f), Is.EqualTo(0));
+
+            Assert.That(Snapshot(run), Is.EqualTo(frozen));
+        }
+
+        [Test]
+        public void TheOpening_MovesWhatTheHeldRunFreezes()
+        {
+            var run = NewRun(SteadyHero(), recallOpening: 5f);
+            run.Send(SlowFight());
+            run.Recall();
+            var before = Snapshot(run);
+
+            run.Advance(2f);
+
+            Assert.That(Snapshot(run), Is.Not.EqualTo(before), "else the frozen-snapshot test proves nothing");
+        }
+
+        [Test]
+        public void AHeroDownedDuringTheOpening_CancelsIt_AndTheRunEndsInDeath()
+        {
+            var run = NewRun(FrailHero(), recallOpening: 30f);
+            run.Send(Skirmishers(4));
+            run.Recall();
+
+            DriveHeroDown(run);
+
+            Assert.That(run.IsRecalling, Is.False);
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Live));
+            Assert.That(run.HandleDeath(xpTowardNextLevel: 0).Outcome, Is.EqualTo(RunOutcome.Died));
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.None));
+        }
+
+        [Test]
+        public void ADeathOnTheTickTheOpeningRunsOut_WinsOverTheHold()
+        {
+            var run = NewRun(FrailHero(), recallOpening: 30f);
+            run.Send(Skirmishers(4));
+            run.Recall();
+
+            run.Advance(60f);
+
+            Assert.That(run.HeroIsDown, Is.True, "setup: the hero falls inside the opening");
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Live), "a Death is not held");
+        }
+
+        [Test]
+        public void ReturnRelocateAndRecall_AreRefusedWhileThePortalOpens()
+        {
+            var run = NewRun(SteadyHero(), recallOpening: 0.5f);
+            run.Send(SlowFight());
+            run.Recall();
+
+            Assert.That(() => run.Return(), Throws.InvalidOperationException);
+            Assert.That(() => run.Relocate(Skirmishers(3)), Throws.InvalidOperationException);
+            Assert.That(() => run.Recall(), Throws.InvalidOperationException);
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Live));
+            Assert.That(run.IsRecalling, Is.True, "a refusal leaves the opening running");
+        }
+
+        [Test]
+        public void Quit_WhileThePortalOpens_EndsTheRunAsReturned_AndTheOpeningEndsWithIt()
+        {
+            var run = NewRun(SteadyHero(), recallOpening: 0.5f);
+            run.Send(SlowFight());
+            run.Recall();
+            var ended = 0;
+            run.RunEnded += () => ended++;
+
+            var result = run.Quit();
+
+            Assert.That(result.Outcome, Is.EqualTo(RunOutcome.Returned));
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.None));
+            Assert.That(run.IsRecalling, Is.False);
+            Assert.That(ended, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void Quit_IsRefused_WithNoRun_AndWhileHeld()
+        {
+            Assert.That(() => NewRun(SteadyHero()).Quit(), Throws.InvalidOperationException);
+            Assert.That(() => HeldRun().Quit(), Throws.InvalidOperationException);
+        }
+
+        [Test]
+        public void Recall_IsRefused_WithNoRun_WhileHeld_AndOnceTheHeroIsDown()
+        {
+            var none = NewRun(SteadyHero());
+            Assert.That(() => none.Recall(), Throws.InvalidOperationException);
+
+            var held = HeldRun();
+            Assert.That(() => held.Recall(), Throws.InvalidOperationException);
+            Assert.That(held.Phase, Is.EqualTo(RunPhase.Held));
+
+            var down = NewRun(FrailHero(), recallOpening: 0.5f);
+            down.Send(Skirmishers(4));
+            DriveHeroDown(down);
+            Assert.That(() => down.Recall(), Throws.InvalidOperationException);
+            Assert.That(down.IsRecalling, Is.False);
+        }
+
+        [Test]
+        public void AHeldRun_RefusesReturnAndHandleDeath()
+        {
+            var run = HeldRun();
+
+            Assert.That(() => run.Return(), Throws.InvalidOperationException);
+            Assert.That(() => run.HandleDeath(0), Throws.InvalidOperationException);
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Held));
+        }
+
+        [Test]
+        public void Recall_FromTheCompletePhase_OpensAndHoldsLikeAnyOther()
+        {
+            var run = NewRun(OneShotHero(), recallOpening: 0.5f);
+            run.Send(Profiles.Group(EnemyArchetype.Skirmisher, 1));
+            for (var i = 0; i < 500 && run.Encounter.Phase != SimulationPhase.Complete; i++)
+                run.Advance(0.1f);
+            Assert.That(run.Encounter.Phase, Is.EqualTo(SimulationPhase.Complete), "setup: the Location completes");
+            var phases = new List<RunPhase>();
+            run.PhaseChanged += phases.Add;
+
+            run.Recall();
+            run.Advance(0.3f);
+
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Live), "the opening's timer is the Run's, and 0.3 of 0.5 s is not enough");
+
+            run.Advance(0.3f);
+
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Held));
+            Assert.That(run.Encounter.Phase, Is.EqualTo(SimulationPhase.Complete));
+            Assert.That(phases, Is.EqualTo(new[] { RunPhase.Held }));
+        }
+
+        // ─── the resume: Held back to Live exactly where it was held (ADR-0022) ───
+
+        [Test]
+        public void Resume_TakesAHeldRunBackToLive_OnTheSameEncounterAtTheSameHealth()
+        {
+            var run = NewRun(SteadyHero(), recallOpening: 0.5f);
+            run.Send(SlowFight());
+            run.Recall();
+            run.Advance(0.5f);
+            var encounter = run.Encounter;
+            var index = encounter.CurrentEncounter;
+            var population = encounter.Population;
+            var enemies = new List<Enemy>(encounter.Enemies);
+            var health = enemies.ConvertAll(e => e.Health);
+            Assert.That(enemies, Is.Not.Empty, "setup: something to stay wounded");
+            var phases = new List<RunPhase>();
+            run.PhaseChanged += phases.Add;
+
+            run.Resume();
+
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Live));
+            Assert.That(run.IsRecalling, Is.False);
+            Assert.That(phases, Is.EqualTo(new[] { RunPhase.Live }));
+            Assert.That(run.Encounter, Is.SameAs(encounter));
+            Assert.That(encounter.CurrentEncounter, Is.EqualTo(index));
+            Assert.That(encounter.Population, Is.EqualTo(population));
+            Assert.That(encounter.Enemies, Is.EqualTo(enemies));
+            Assert.That(encounter.Enemies.Select(e => e.Health), Is.EqualTo(health));
+        }
+
+        [Test]
+        public void ALiveRun_AfterAResume_AdvancesAgain()
+        {
+            var run = HeldRun();
+            run.Resume();
+            var frozen = Snapshot(run);
+
+            Assert.That(run.Advance(1f), Is.GreaterThan(0));
+
+            Assert.That(Snapshot(run), Is.Not.EqualTo(frozen));
+        }
+
+        [Test]
+        public void AResumedRun_CanRecallAgain_AndReturn()
+        {
+            var run = HeldRun();
+            run.Resume();
+
+            run.Recall();
+            run.Advance(0.5f);
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Held), "the resume left no opening behind");
+            run.Resume();
+
+            Assert.That(run.Return().Outcome, Is.EqualTo(RunOutcome.Returned));
+        }
+
+        [Test]
+        public void ClearingTheRestOfThePopulation_AfterAResume_CompletesTheLocationOnce()
+        {
+            var run = NewRun(OneShotHero(), tuning: ShortBeat(), recallOpening: 0.1f);
+            run.Send(Profiles.Group(EnemyArchetype.Skirmisher, 1, population: 3));
+            var completed = 0;
+            run.Encounter.LocationCompleted += () => completed++;
+            for (var i = 0; i < 500 && run.Encounter.EncountersCleared < 1; i++) run.Advance(0.1f);
+            Assert.That(run.Encounter.EncountersCleared, Is.EqualTo(1), "setup: the first Encounter is cleared");
+            run.Recall();
+            run.Advance(0.1f);
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Held), "setup: held mid-Population");
+            Assert.That(completed, Is.EqualTo(0));
+
+            run.Resume();
+            for (var i = 0; i < 500 && run.Encounter.Phase != SimulationPhase.Complete; i++) run.Advance(0.1f);
+            for (var i = 0; i < 50; i++) run.Advance(0.1f);
+
+            Assert.That(run.Encounter.Phase, Is.EqualTo(SimulationPhase.Complete));
+            Assert.That(run.Encounter.EncountersCleared, Is.EqualTo(3));
+            Assert.That(completed, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void AResume_FromTheCompletePhase_ResumesIntoTheEmptiedLocation_NothingSpawns()
+        {
+            var run = NewRun(OneShotHero(), recallOpening: 0.5f);
+            run.Send(Profiles.Group(EnemyArchetype.Skirmisher, 1));
+            for (var i = 0; i < 500 && run.Encounter.Phase != SimulationPhase.Complete; i++)
+                run.Advance(0.1f);
+            var spawned = 0;
+            var completed = 0;
+            run.Encounter.EnemySpawned += _ => spawned++;
+            run.Encounter.LocationCompleted += () => completed++;
+            run.Recall();
+            run.Advance(0.5f);
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Held), "setup: held from Complete");
+
+            run.Resume();
+            for (var i = 0; i < 50; i++) run.Advance(0.1f);
+
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.Live));
+            Assert.That(run.Encounter.Phase, Is.EqualTo(SimulationPhase.Complete));
+            Assert.That(run.Encounter.AliveEnemyCount, Is.EqualTo(0));
+            Assert.That(spawned, Is.EqualTo(0));
+            Assert.That(completed, Is.EqualTo(0), "the Location was Completed before the Recall, not again");
+        }
+
+        [Test]
+        public void Resume_IsRefused_UnlessHeld()
+        {
+            var none = NewRun(SteadyHero());
+            Assert.That(() => none.Resume(), Throws.InvalidOperationException);
+
+            var live = NewRun(SteadyHero(), recallOpening: 0.5f);
+            live.Send(SlowFight());
+            Assert.That(() => live.Resume(), Throws.InvalidOperationException);
+
+            live.Recall();
+            Assert.That(() => live.Resume(), Throws.InvalidOperationException, "an opening portal is not yet held");
+            Assert.That(live.IsRecalling, Is.True);
+
+            var down = NewRun(FrailHero());
+            down.Send(Skirmishers(4));
+            DriveHeroDown(down);
+            Assert.That(() => down.Resume(), Throws.InvalidOperationException);
+        }
+
+        [Test]
+        public void ARecall_DoesNotSurviveTheRunThatEnded()
+        {
+            // A Return is refused while the portal opens, so the Run ends the only other way: a Death in it.
+            var run = NewRun(FrailHero(), recallOpening: 30f);
+            run.Send(Skirmishers(4));
+            run.Recall();
+            DriveHeroDown(run);
+            run.HandleDeath(0);
+
+            run.Send(Skirmishers(4));
+
+            Assert.That(run.IsRecalling, Is.False);
         }
     }
 }

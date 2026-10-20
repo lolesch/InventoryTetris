@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using System.Collections.Generic;
+using System.Linq;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Inventories;
@@ -74,15 +75,15 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
-        public void SyncContextToPhase_ClosesAContextTheFieldMakesUnreachable_AndLeavesTheHeroPanel()
+        public void SyncContextToMap_ClosesAContextTheFieldMakesUnreachable_AndLeavesTheHeroPanel()
         {
             service.SetContext(InventoryContext.Vendor);
-            service.SyncContextToPhase(true);
+            service.SyncContextToMap(true);
 
             Assert.That(service.ActiveContext, Is.EqualTo(InventoryContext.None), "a Town Stop is unreachable in the field");
 
             service.SetContext(InventoryContext.Hero);
-            service.SyncContextToPhase(true);
+            service.SyncContextToMap(true);
 
             Assert.That(service.ActiveContext, Is.EqualTo(InventoryContext.Hero), "the Hero Panel is reachable in both faces");
         }
@@ -182,6 +183,39 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(session.World.Sold.StoredPackages, Is.Empty);
             Assert.That(session.World.HealerSupply.StoredPackages, Is.Not.Empty);
             Assert.That(session.World.VendorSupply.StoredPackages, Has.Count.EqualTo(vendorStock), "the Vendor's shelf is untouched");
+        }
+
+        // Rolls of 0 draw the first consumable type (a Potion) and the lowest rarity every time, so the
+        // rolled stock holds no Portal Scroll: any scroll on the shelf is the guarantee.
+        private uint PortalScrollsOnTheHealersShelf() =>
+            (uint)session.World.HealerSupply.StoredPackages.Values
+                .Where(package => items.Catalog.Definition(package.Item.DefinitionId).ConsumableType == ConsumableType.PortalScroll)
+                .Sum(package => (int)package.Amount);
+
+        private void RestockWithRollsThatNeverDrawAScroll(System.Action<InventoryService> restock)
+        {
+            var config = TestGameConfig.Create(created);
+            var noScrollRolls = new ItemService(config, new SessionBuilderTests.FixedRolls(0f));
+            session = SessionBuilder.Build(config, GameBoot.Load().DefaultHero, noScrollRolls);
+            items = noScrollRolls;
+
+            restock(new InventoryService(session, noScrollRolls));
+        }
+
+        [Test]
+        public void RestockHealerSupply_LeavesAtLeastTwoPortalScrolls_WhateverTheRolls()
+        {
+            RestockWithRollsThatNeverDrawAScroll(restocked => restocked.RestockHealerSupply());
+
+            Assert.That(PortalScrollsOnTheHealersShelf(), Is.GreaterThanOrEqualTo(2u));
+        }
+
+        [Test]
+        public void RestockTownStops_LeavesAtLeastTwoPortalScrollsOnTheHealer_WhateverTheRolls()
+        {
+            RestockWithRollsThatNeverDrawAScroll(restocked => restocked.RestockTownStops());
+
+            Assert.That(PortalScrollsOnTheHealersShelf(), Is.GreaterThanOrEqualTo(2u));
         }
 
         [Test]

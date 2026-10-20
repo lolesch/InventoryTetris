@@ -48,7 +48,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             Simulation.Send(GameBoot.Load().Locations.First(location => location.Id == "location.thornwood"));
             Hero.GetResource(StatName.Health).DepleteCurrent();
 
-            for (var tick = 0; Simulation.Run.Phase == RunPhase.InField && tick < DeathTimeoutTicks; tick++)
+            for (var tick = 0; Simulation.Run.Phase == RunPhase.Live && tick < DeathTimeoutTicks; tick++)
                 Simulation.Tick(0.5f);
 
             // The notice waits for the Death beat; its own timing is DeathBeatPlayModeTests'.
@@ -80,7 +80,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             var waypoint = TravelPoints.Waypoint(figure);
 
             Hero.GetStat(StatName.MovementSpeed).AddModifier(new StatModifier(new Vector2Int(0, 100000), 325f));
-            _ = figure.GetType().GetMethod("TravelTo").Invoke(figure, new object[] { stash });
+            _ = figure.GetType().GetMethod("TravelTo", new[] { typeof(RectTransform) }).Invoke(figure, new object[] { stash });
             yield return new WaitForSeconds(0.4f);
 
             Assert.That(Vector3.Distance(figure.transform.position, waypoint.TransformPoint(waypoint.rect.center)), Is.GreaterThan(5f),

@@ -30,6 +30,14 @@
 - Selling from a full bag no longer fails: the bag keeps the gold and silver first, and the coins that do not fit lie on the Town ground for you to pick up.
 - Consolidate now also puts your coins in order, gold first and iron last, even when they were already in the biggest denominations.
 - A coin you drop or shift-click into your bag now falls into that order too, so shift-clicking your coins to the Stash one by one fills it gold first.
+- Recall the hero from the Field with B, the Recall button (it shows how many Portal Scrolls you have) or a right-click on a Portal Scroll. A Town Portal opens beside him, the Run is held where it stands, and he keeps regenerating while it waits.
+- Step through the Town Portal in Town to carry on with the held Run, or to be sent to the Location again when none is held; using it closes it. The portal on the Field map only takes the hero to Town and stays open, and he walks to a portal at his own pace and fades out before the map changes. A portal grows open before the hero goes through it, and he grows back out of it on the other side. Opening another portal replaces it.
+- Consumables no longer have a rarity, so Portal Scrolls always stack.
+- The sim settings are their own panel at the top of the screen with their own toggle; the loot grid is shown on both maps whenever no Town Stop is open.
+- Survival now comes from your gear: levelling up grows your health, resource and damage a little but no longer heals you, and a new hero no longer regenerates health on his own, so health regeneration has to come from items. The Healer still refills you for free.
+- The Healer always has two Portal Scrolls on offer, and a new hero starts with enough coins to buy a few.
+- The hero walks to the spot you click on a Town Stop or the Town Exit, and both Exits wait until he stands there before the map changes or the Run returns; a Run waits for him to step out of a portal and walk clear before the fight goes on.
+- Clearing a Location lets its toggle go, so you can send the hero to the same Location again, and he ends the fight by walking back to the middle of the arena. Coming back through a portal from a cleared Location leaves the toggle off.
 
 ## 0.0.5_Alpha - 2026-09-25
 

@@ -2,6 +2,7 @@ using Submodules.Utility.Extensions;
 using Submodules.Utility.Services;
 using System;
 using System.Collections.Generic;
+using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Items;
@@ -51,7 +52,7 @@ namespace ToolSmiths.InventorySystem.Services
             this.config = config ?? throw new ArgumentNullException(nameof(config));
             this.rolls = rolls ?? throw new ArgumentNullException(nameof(rolls));
 
-            generator = new ItemGenerator(items.Catalog, rolls.Main);
+            generator = new ItemGenerator(items.Catalog, rolls.Main, config.ConsumableTypeDistribution?.Probabilities);
             locations = new LocationRegistry(config.Locations);
             progression = new ProgressionRegistry(config.Unlockables);
 
@@ -109,6 +110,7 @@ namespace ToolSmiths.InventorySystem.Services
 
             // A new Run starts moving, whatever froze the last one.
             SetPaused(false);
+            inTransit = false;
 
             // After the Run accepted it: a refused Send must not move the Location a Death is judged against.
             hero.SelectedLocation = location;
@@ -133,6 +135,70 @@ namespace ToolSmiths.InventorySystem.Services
             RecoverCorpseAt(hero, profile);
         }
 
+        // A hero down, even one the tick has not yet ended the Run for, cannot Recall; the Death beat follows a
+        // Death, which leaves no Run, so the phase covers it.
+        public bool RunAllowsRecall
+        {
+            get
+            {
+                var run = Run;
+                return run.Phase == RunPhase.Live && !run.HeroIsDown && !run.IsRecalling && !session.Hero.IsDead && !IsHeroInTransit;
+            }
+        }
+
+        // The Run's half first: in Town the Inventory is not scanned at all.
+        public bool CanRecall => RunAllowsRecall && ScanPortalScrolls(out _, out _) > 0;
+
+        public void Recall()
+        {
+            if (!RunAllowsRecall || ScanPortalScrolls(out var cell, out var scroll) == 0)
+                throw new InvalidOperationException("A Recall needs a live Run, a hero who is up, no portal opening and a Portal Scroll in the Inventory.");
+
+            var bag = session.Hero.Inventory;
+
+            // The scroll leaves only if the Run accepts the Recall: a throw rolls the Inventory back.
+            using var transaction = new ItemTransaction(bag);
+            _ = bag.RemoveAtPosition(cell, new Package(null, scroll.Item, 1u));
+            Run.Recall();
+            transaction.Commit();
+        }
+
+        public int PortalScrollCount => ScanPortalScrolls(out _, out _);
+
+        public void Resume()
+        {
+            Run.Resume();
+            session.Hero.TownPortal = null;
+        }
+
+        /// <summary>
+        /// The one pass over the Inventory the Recall's questions share: the Portal Scrolls in all, and the first
+        /// stack that holds them (where a Recall takes its scroll from). Each stack costs a catalog lookup, so a
+        /// caller that needs both the count and the stack takes them from this one scan.
+        /// </summary>
+        private int ScanPortalScrolls(out Vector2Int firstCell, out Package firstStack)
+        {
+            var count = 0;
+            firstCell = default;
+            firstStack = default;
+
+            foreach (var entry in session.Hero.Inventory.StoredPackages)
+            {
+                if (items.Catalog.Definition(entry.Value.Item.DefinitionId).ConsumableType != ConsumableType.PortalScroll)
+                    continue;
+
+                if (count == 0)
+                {
+                    firstCell = entry.Key;
+                    firstStack = entry.Value;
+                }
+
+                count += (int)entry.Value.Amount;
+            }
+
+            return count;
+        }
+
         public bool CorpseLiesAt(LocationConfig location)
         {
             if (location == null)
@@ -152,27 +218,36 @@ namespace ToolSmiths.InventorySystem.Services
 
         public event Action<RunResult> RunSettled;
 
-        public RunResult Return()
+        public bool CanReturn
         {
-            var result = Run.Return();
-            RunSettled?.Invoke(result);
-
-            return result;
+            get
+            {
+                var run = Run;
+                return run.Phase.FieldExitReturns() && !run.HeroIsDown && !run.IsRecalling;
+            }
         }
+
+        public RunResult Return() => RaiseSettled(Run.Return());
 
         public bool LeaveField()
         {
             var run = Run;
-            if (run.Phase != RunPhase.InField)
+            if (run.Phase != RunPhase.Live)
                 return false;
 
             // Death first, as in the tick: a hero already down cannot be recalled out of its Death.
             if (run.HeroIsDown)
                 HandleHeroDeath(session.Hero, run);
             else
-                _ = Return();
+                _ = RaiseSettled(run.Quit()); // a quit does not wait for a portal's opening, which a Return would be refused in
 
             return true;
+        }
+
+        private RunResult RaiseSettled(RunResult result)
+        {
+            RunSettled?.Invoke(result);
+            return result;
         }
 
         public event Action Respawned;
@@ -193,14 +268,14 @@ namespace ToolSmiths.InventorySystem.Services
         // over from another World (a hero load mid-Run) cannot freeze a Run it does not belong to.
         private bool paused;
 
-        public bool IsPaused => paused && Run.Phase == RunPhase.InField;
+        public bool IsPaused => paused && Run.Phase == RunPhase.Live;
 
         public event Action<bool> PausedChanged;
 
         public void SetPaused(bool value)
         {
             // Pausing needs a Run in the Field; resuming never does, so a stale flag can always be cleared.
-            if (value && Run.Phase != RunPhase.InField)
+            if (value && Run.Phase != RunPhase.Live)
                 return;
 
             if (paused == value)
@@ -214,15 +289,29 @@ namespace ToolSmiths.InventorySystem.Services
         // as found. Transient and read through the phase, like the Pause.
         private bool held;
 
-        public bool IsHeld => held && Run.Phase == RunPhase.InField;
+        public bool IsMenuFrozen => held && Run.Phase == RunPhase.Live;
 
-        public void SetHeld(bool value)
+        public void SetMenuFreeze(bool value)
         {
             // Holding needs a Run in the Field, so Town has nothing to hold; releasing never does.
-            if (value && Run.Phase != RunPhase.InField)
+            if (value && Run.Phase != RunPhase.Live)
                 return;
 
             held = value;
+        }
+
+        // The hero's trip (a walk to a Field Exit, a step out of a portal): a third freeze, transient and read
+        // through the phase like the others.
+        private bool inTransit;
+
+        public bool IsHeroInTransit => inTransit && Run.Phase == RunPhase.Live;
+
+        public void SetHeroInTransit(bool value)
+        {
+            if (value && Run.Phase != RunPhase.Live)
+                return;
+
+            inTransit = value;
         }
 
         // Real seconds of the Death slow-down still to run. Transient and the service's, not the sim
@@ -244,7 +333,7 @@ namespace ToolSmiths.InventorySystem.Services
         }
 
         public float SimDelta(float deltaSeconds) =>
-            IsPaused || IsHeld ? 0f : deltaSeconds * Mathf.Max(0f, session.Hero.Behaviour.SimSpeed) * ViewTimeFactor;
+            IsPaused || IsMenuFrozen || IsHeroInTransit ? 0f : deltaSeconds * Mathf.Max(0f, session.Hero.Behaviour.SimSpeed) * ViewTimeFactor;
 
         public float WalkDelta(float deltaSeconds) =>
             deltaSeconds * Mathf.Max(0f, session.Hero.Behaviour.SimSpeed);
@@ -255,7 +344,7 @@ namespace ToolSmiths.InventorySystem.Services
         public void Tick(float deltaSeconds)
         {
             // A frozen Run stands still whole: no regeneration, no Encounter.
-            if (IsPaused || IsHeld)
+            if (IsPaused || IsMenuFrozen || IsHeroInTransit)
                 return;
 
             var hero = session.Hero;
@@ -278,7 +367,7 @@ namespace ToolSmiths.InventorySystem.Services
                 hero.Regenerate(dt);
 
             var run = Run;
-            if (run.Phase != RunPhase.InField)
+            if (run.Phase != RunPhase.Live)
                 return;
 
             _ = run.Advance(dt);
@@ -294,8 +383,15 @@ namespace ToolSmiths.InventorySystem.Services
             RunState run = null;
 
             run = new RunState(profile => StartEncounter(world, profile, run),
-                new RunPenalty(config.XpLossFraction, config.CurrencyFeeFraction));
+                new RunPenalty(config.XpLossFraction, config.CurrencyFeeFraction), config.RecallOpeningSeconds);
             run.RunEnded += () => OnRunEnded(world, run);
+
+            // The Hero owns the portal a hold opens (ADR-0022): the Run is at the Location the Hero has selected.
+            run.PhaseChanged += phase =>
+            {
+                if (phase == RunPhase.Held)
+                    session.Hero.TownPortal = session.Hero.SelectedLocation;
+            };
 
             return run;
         }
@@ -362,8 +458,8 @@ namespace ToolSmiths.InventorySystem.Services
         }
 
         /// <summary>
-        /// Close a Run whose hero has been downed - <see cref="RunPhase.InField"/> to
-        /// <see cref="RunPhase.InTown"/> with the Death penalty (ADR-0009): the XP-loss and
+        /// Close a Run whose hero has been downed - <see cref="RunPhase.Live"/> to
+        /// <see cref="RunPhase.None"/> with the Death penalty (ADR-0009): the XP-loss and
         /// currency-fee fractions, the bag-to-Corpse hand-off and the XP subtraction.
         /// </summary>
         private void HandleHeroDeath(Hero hero, RunState run)
@@ -412,6 +508,7 @@ namespace ToolSmiths.InventorySystem.Services
             // Home is never paused or held, Return and Death alike.
             SetPaused(false);
             held = false;
+            inTransit = false;
 
             // Coming home by Return brings the shops new stock; a Death does not.
             if (run.LastResult is { Outcome: RunOutcome.Returned })

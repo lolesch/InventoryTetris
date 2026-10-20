@@ -10,8 +10,8 @@ namespace ToolSmiths.InventorySystem.Tests.Services
     /// <summary>
     /// Builds a <see cref="GameConfig"/> for a test. Every property has a private setter, so the
     /// fields are written through <see cref="SerializedObject"/>, which is also how the Inspector
-    /// writes them. The catalog, loot table and icons are the authored ones; the coin odds are the
-    /// test's own (copper and iron, one weight each), so a currency assertion does not move when
+    /// writes them. The catalog, loot table and icons are the authored ones; the coin odds and the starting
+    /// coins (none) are the test's own (copper and iron, one weight each), so a currency assertion does not move when
     /// the authored odds are retuned. Everything created goes into the caller's list to destroy.
     /// </summary>
     internal static class TestGameConfig
@@ -44,8 +44,15 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assign(so, "Catalog", authored.Catalog);
             Assign(so, "ItemCategoryDistribution", authored.ItemCategoryDistribution);
             Assign(so, "ItemRarityDistribution", authored.ItemRarityDistribution);
+            Assign(so, "ConsumableTypeDistribution", authored.ConsumableTypeDistribution);
             Assign(so, "CurrencyTypeDistribution", types);
             Assign(so, "CurrencyDropTable", amounts);
+
+            // A created hero starts with no coins unless a test grants some, so a balance assertion does
+            // not move when the authored starting coins are retuned.
+            var startingCoins = so.FindProperty("<StartingCoins>k__BackingField");
+            foreach (var denomination in new[] { "Iron", "Copper", "Silver", "Gold" })
+                startingCoins.FindPropertyRelative($"<{denomination}>k__BackingField").intValue = 0;
 
             var icons = so.FindProperty("currencyIcons");
             icons.arraySize = authored.CurrencyIcons.Count;

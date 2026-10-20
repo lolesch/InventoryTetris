@@ -38,7 +38,7 @@ namespace ToolSmiths.InventorySystem.Services
         public static Hero BuildHero(GameConfig config, HeroData data, IItemService items)
         {
             var hero = BuildPair(config, data, items).Hero;
-            StarterKit.Apply(hero, data, items);
+            StarterKit.Apply(hero, data, config, items);
 
             return hero;
         }

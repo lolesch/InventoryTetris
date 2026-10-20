@@ -27,11 +27,16 @@ namespace ToolSmiths.InventorySystem.Items
     {
         private readonly IItemCatalog catalog;
         private readonly IRollSource rolls;
+        private readonly IReadOnlyList<float> consumableTypeOdds;
 
-        public ItemGenerator(IItemCatalog catalog, IRollSource rolls)
+        /// <param name="consumableTypeOdds">Odds per <see cref="ConsumableType"/> in enum order, summing to 1.
+        /// A consumable drop draws its type by them, then a definition of that type; <c>null</c> draws
+        /// uniformly over every consumable definition.</param>
+        public ItemGenerator(IItemCatalog catalog, IRollSource rolls, IReadOnlyList<float> consumableTypeOdds = null)
         {
             this.catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
             this.rolls = rolls ?? throw new ArgumentNullException(nameof(rolls));
+            this.consumableTypeOdds = consumableTypeOdds;
         }
 
         /// <summary>
@@ -91,6 +96,10 @@ namespace ToolSmiths.InventorySystem.Items
             if (definition.Category == ItemCategory.Currency)
                 return ItemInstance.Coin(definition.Id, definition.CurrencyType);
 
+            // A consumable has no rarity: whichever path rolled one, every scroll of a type is the same item and stacks.
+            if (definition.Category == ItemCategory.Consumable)
+                rarity = ItemRarity.Common;
+
             var implicitStats = definition.ImplicitStats;
             var uniqueAffixes = definition.IsUnique ? definition.UniqueAffixes : null;
             var affixes = new List<CharacterStatModifier>(
@@ -148,18 +157,33 @@ namespace ToolSmiths.InventorySystem.Items
         };
 
         /// <summary>
+        /// Draws a <see cref="ConsumableType"/> by the Consumable Type Distribution this generator was built with, one
+        /// roll - the draw a consumable drop makes before it picks a definition, so a caller that rolls a consumable
+        /// outside a drop (the debug helpers) makes the same one. <see cref="ConsumableType.NONE"/> when the
+        /// generator has no odds: any consumable.
+        /// </summary>
+        public ConsumableType DrawConsumableType() => consumableTypeOdds == null
+            ? ConsumableType.NONE
+            : ProbabilityTable<ConsumableType>.Sample(consumableTypeOdds, rolls.Next());
+
+        /// <summary>
         /// Draws one definition of <paramref name="category"/> from the catalog by reservoir
-        /// sampling - uniform, and allocation-free over the catalog's own enumeration. The
-        /// per-type weighting the old distribution tree carried does not map onto
-        /// definitions one-to-one; a weighted draw waits on authored selection weights.
+        /// sampling - uniform, and allocation-free over the catalog's own enumeration. A
+        /// consumable first draws its <see cref="ConsumableType"/> by <c>consumableTypeOdds</c>, so
+        /// a type's share does not depend on how many definitions it has; other categories have
+        /// no per-type weighting.
         /// </summary>
         private ItemDefinition PickDefinition(ItemCategory category)
         {
+            var type = category == ItemCategory.Consumable ? DrawConsumableType() : ConsumableType.NONE;
             ItemDefinition chosen = null;
             var seen = 0;
 
             foreach (var candidate in catalog.OfCategory(category))
             {
+                if (type != ConsumableType.NONE && candidate.ConsumableType != type)
+                    continue;
+
                 seen++;
                 // Replace the reservoir with probability 1 / seen -> uniform. The roll is
                 // always drawn (one per candidate), but the `chosen is null` arm takes the
@@ -172,7 +196,9 @@ namespace ToolSmiths.InventorySystem.Items
             }
 
             if (chosen is null)
-                throw new InvalidOperationException($"the catalog has no item definitions in category {category}");
+                throw new InvalidOperationException(
+                    $"the catalog has no item definitions in category {category}" +
+                    (type == ConsumableType.NONE ? "" : $" of consumable type {type}"));
 
             return chosen;
         }

@@ -34,7 +34,7 @@ namespace ToolSmiths.InventorySystem.Services
         /// </summary>
         event Action ProgressionChanged;
 
-        /// <summary>The current World's Run FSM - <see cref="RunPhase.InTown"/> until a <see cref="Send"/>. Built on the first ask.</summary>
+        /// <summary>The current World's Run FSM - <see cref="RunPhase.None"/> until a <see cref="Send"/>. Built on the first ask.</summary>
         RunState Run { get; }
 
         /// <summary>
@@ -54,8 +54,8 @@ namespace ToolSmiths.InventorySystem.Services
         event Action<RunResult> RunSettled;
 
         /// <summary>
-        /// Send the hero to <paramref name="location"/>: <see cref="RunPhase.InTown"/> to
-        /// <see cref="RunPhase.InField"/>. Selects the Location on the Hero, opens the Run and, if the
+        /// Send the hero to <paramref name="location"/>: <see cref="RunPhase.None"/> to
+        /// <see cref="RunPhase.Live"/>. Selects the Location on the Hero, opens the Run and, if the
         /// Hero's Corpse is at exactly this Location, lays it back out (to the bag where it fits, else
         /// the ground). Throws while the hero is down: a Death leaves him so until <see cref="Respawn"/>;
         /// also for a Location that is not open to him. Nothing changes then.
@@ -76,6 +76,35 @@ namespace ToolSmiths.InventorySystem.Services
         /// </summary>
         void Relocate(LocationConfig location);
 
+        /// <summary>
+        /// Whether <see cref="Recall"/> will not refuse: a Run is live with its hero up and no portal opening, and
+        /// the hero's Inventory (not the Stash) holds a Portal Scroll. Also true after a Location's Complete.
+        /// </summary>
+        bool CanRecall { get; }
+
+        /// <summary>
+        /// The Run's half of <see cref="CanRecall"/>, with no Inventory scan: a live Run, its hero up, no portal opening
+        /// and the hero not on a trip. Cheap enough to read every frame beside a scroll count the caller keeps.
+        /// </summary>
+        bool RunAllowsRecall { get; }
+
+        /// <summary>
+        /// Open a Town Portal on the live Run (ADR-0022): takes one Portal Scroll from the hero's Inventory and
+        /// starts the Run's opening, after which the Run is <see cref="RunPhase.Held"/> and the
+        /// Hero's <c>TownPortal</c> is the Run's Location. Throws when <see cref="CanRecall"/> is false;
+        /// the Inventory is then unchanged. A Death in the opening is an ordinary Death and the scroll stays spent.
+        /// </summary>
+        void Recall();
+
+        /// <summary>The Portal Scrolls in the hero's Inventory, stacks summed; the Stash does not count. The number the Recall button shows.</summary>
+        int PortalScrollCount { get; }
+
+        /// <summary>
+        /// Resume the held Run exactly where it was and close the hero's Town Portal. Throws unless the Run is
+        /// <see cref="RunPhase.Held"/>. A Relocate from Held, a Send, a Return and a Death all leave the portal open.
+        /// </summary>
+        void Resume();
+
         /// <summary>Whether the Hero's Corpse lies at <paramref name="location"/>, selected or not.</summary>
         bool CorpseLiesAt(LocationConfig location);
 
@@ -85,13 +114,20 @@ namespace ToolSmiths.InventorySystem.Services
         /// <summary>Raised when the Hero's Corpse is buried, replaced or recovered.</summary>
         event Action CorpseChanged;
 
-        /// <summary>End the Run with everything kept. Refused once the hero is down - that ends in a Death.</summary>
+        /// <summary>
+        /// Whether <see cref="Return"/> will not refuse: a Run is live (not held) with its hero up and no portal
+        /// opening (ADR-0022). A caller that can be clicked in any of those states asks this instead of catching.
+        /// </summary>
+        bool CanReturn { get; }
+
+        /// <summary>End the Run with everything kept. Refused once the hero is down - that ends in a Death - and while a Recall's portal opens.</summary>
         RunResult Return();
 
         /// <summary>
         /// Ends a live Run so the game can close in Town: a Return, or the Death when the hero is already
         /// down, in that order of precedence the tick uses. Raises <see cref="RunSettled"/> like either
-        /// does. Nothing happens when no Run is in the Field.
+        /// does. A quit does not wait for a Recall's opening: the opening ends with the Run. Nothing happens when
+        /// no Run is in the Field.
         /// </summary>
         /// <returns>Whether a Run was ended.</returns>
         bool LeaveField();
@@ -129,18 +165,32 @@ namespace ToolSmiths.InventorySystem.Services
         /// the player's own: releasing the hold gives the Pause back as it was found. Like the Pause it can only
         /// be true while a Run is in the Field, so it is never true in Town and the Run's end clears it.
         /// </summary>
-        bool IsHeld { get; }
+        bool IsMenuFrozen { get; }
 
         /// <summary>
         /// Holds (<c>true</c>) or releases (<c>false</c>) the live Run for a menu. Holding is refused - nothing
         /// happens - unless a Run is in the Field; releasing is always allowed, and holding twice is one hold.
         /// Never changes <see cref="IsPaused"/> or raises <see cref="PausedChanged"/>.
         /// </summary>
-        void SetHeld(bool held);
+        void SetMenuFreeze(bool held);
 
         /// <summary>
-        /// The sim seconds <paramref name="deltaSeconds"/> of real time is worth: 0 while <see cref="IsPaused"/>
-        /// or <see cref="IsHeld"/>, otherwise scaled by the Behaviour Profile's sim speed. What <see cref="Tick"/>
+        /// Whether the live Run waits for the hero to get where he is going: he walks to a Field Exit before he
+        /// Returns, or comes out of a portal and walks clear of it before the fight starts. A third freeze beside
+        /// <see cref="IsPaused"/> and <see cref="IsMenuFrozen"/> and, like them, only true while a Run is in the Field.
+        /// A Recall is refused while it holds.
+        /// </summary>
+        bool IsHeroInTransit { get; }
+
+        /// <summary>
+        /// Holds (<c>true</c>) or releases (<c>false</c>) the live Run for the hero's trip. Holding is refused unless a
+        /// Run is in the Field; releasing is always allowed. Never changes <see cref="IsPaused"/> or <see cref="IsMenuFrozen"/>.
+        /// </summary>
+        void SetHeroInTransit(bool inTransit);
+
+        /// <summary>
+        /// The sim seconds <paramref name="deltaSeconds"/> of real time is worth: 0 while <see cref="IsPaused"/>,
+        /// <see cref="IsMenuFrozen"/> or <see cref="IsHeroInTransit"/>, otherwise scaled by the Behaviour Profile's sim speed. What <see cref="Tick"/>
         /// advances by, for views that animate on sim time (they scale with the speed slider and freeze with the Run).
         /// </summary>
         float SimDelta(float deltaSeconds);
@@ -181,7 +231,7 @@ namespace ToolSmiths.InventorySystem.Services
         /// regeneration (Town and Field alike), the Encounter while a Run is in the Field, and the
         /// Run's way home on a Death. Scaled by the
         /// Behaviour Profile's sim speed here, never through <c>Time.timeScale</c> (ADR-0008).
-        /// Does nothing while <see cref="IsPaused"/> or <see cref="IsHeld"/>.
+        /// Does nothing while <see cref="IsPaused"/> or <see cref="IsMenuFrozen"/>.
         /// </summary>
         void Tick(float deltaSeconds);
     }

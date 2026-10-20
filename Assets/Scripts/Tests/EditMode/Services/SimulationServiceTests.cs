@@ -163,7 +163,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             Assert.Throws<InvalidOperationException>(() => game.Send(ashfen), "Locked");
             Assert.Throws<InvalidOperationException>(() => game.Send(gravel), "Hidden");
-            Assert.That(game.Run.Phase, Is.EqualTo(RunPhase.InTown));
+            Assert.That(game.Run.Phase, Is.EqualTo(RunPhase.None));
             Assert.That(session.Hero.SelectedLocation, Is.Null);
 
             game.Send(thornwood);
@@ -232,7 +232,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.That(game.StateOf(thornwood), Is.EqualTo(UnlockState.Complete));
             Assert.That(game.StateOf(ashfen), Is.EqualTo(UnlockState.Active));
             Assert.That(changed, Is.EqualTo(1));
-            Assert.That(game.Run.Phase, Is.EqualTo(RunPhase.InField), "no Return needed");
+            Assert.That(game.Run.Phase, Is.EqualTo(RunPhase.Live), "no Return needed");
 
             game.Relocate(ashfen);
             Assert.That(session.Hero.SelectedLocation, Is.SameAs(ashfen));
@@ -270,7 +270,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             _ = game.Return();
 
-            Assert.That(game.Run.Phase, Is.EqualTo(RunPhase.InTown));
+            Assert.That(game.Run.Phase, Is.EqualTo(RunPhase.None));
             Assert.That(game.StateOf(thornwood), Is.EqualTo(UnlockState.Complete));
             Assert.That(game.StateOf(ashfen), Is.EqualTo(UnlockState.Active));
             Assert.That(changed, Is.EqualTo(0), "the Return changes no Unlock State");
@@ -289,7 +289,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             session.Hero.IsInvincible = false;
 
             session.Hero.GetResource(StatName.Health).DepleteCurrent();
-            for (var i = 0; i < 100 && game.Run.Phase == RunPhase.InField; i++)
+            for (var i = 0; i < 100 && game.Run.Phase == RunPhase.Live; i++)
                 game.Tick(0.5f);
 
             Assert.That(session.Hero.Corpse.Exists, Is.True, "premise: the hero died in Ashfen");
@@ -418,11 +418,11 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
-        public void TheRun_IsBuiltOnFirstAsk_ThenTheWorldsOwn_AndStartsInTown()
+        public void TheRun_IsBuiltOnFirstAsk_ThenTheWorldsOwn_AndStartsWithNoRun()
         {
             var run = service.Run;
 
-            Assert.That(run.Phase, Is.EqualTo(RunPhase.InTown));
+            Assert.That(run.Phase, Is.EqualTo(RunPhase.None));
             Assert.That(run.Encounter, Is.Null);
             Assert.That(session.World.Run, Is.SameAs(run));
             Assert.That(service.Run, Is.SameAs(run));
@@ -554,7 +554,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             service.Send(thornwood);
 
             Assert.That(session.Hero.SelectedLocation, Is.SameAs(thornwood));
-            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.InField));
+            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.Live));
             Assert.That(service.Run.Encounter, Is.Not.Null);
             Assert.That(service.LootFlow, Is.Not.Null);
             Assert.That(session.World.LootFlow, Is.SameAs(service.LootFlow));
@@ -658,7 +658,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             _ = service.Return();
 
-            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.InTown));
+            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.None));
             Assert.That(service.LootFlow, Is.Null);
             Assert.That(session.World.VendorSupply.StoredPackages, Is.Not.Empty, "a Return brings the shops new stock");
         }
@@ -681,7 +681,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             service.Relocate(ashfen);
 
-            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.InField));
+            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.Live));
             Assert.That(service.Run.Encounter, Is.Not.SameAs(before));
             Assert.That(session.Hero.SelectedLocation, Is.SameAs(ashfen));
         }
@@ -697,7 +697,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             service.Tick(1f);
 
-            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.InTown));
+            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.None));
             Assert.That(resource.CurrentValue, Is.GreaterThan(0f));
         }
 
@@ -753,7 +753,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             for (var i = 0; i < 100; i++)
                 service.Tick(0.5f);
 
-            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.InField), "a Run ends only by a Return or a Death");
+            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.Live), "a Run ends only by a Return or a Death");
         }
 
         [Test]
@@ -822,7 +822,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
 
             service.Send(thornwood);
             service.SetPaused(true);
-            service.SetHeld(true);
+            service.SetMenuFreeze(true);
 
             Assert.That(service.SimDelta(0.1f), Is.EqualTo(0f), "premise: the Run is frozen");
             Assert.That(service.WalkDelta(0.1f), Is.EqualTo(0.4f).Within(1e-5f), "a shown walk goes on");
@@ -853,18 +853,70 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             service.Tick(0.1f);
             var duration = service.Run.Encounter.Duration;
 
-            service.SetHeld(true);
+            service.SetMenuFreeze(true);
             service.Tick(0.1f);
 
-            Assert.That(service.IsHeld, Is.True);
+            Assert.That(service.IsMenuFrozen, Is.True);
             Assert.That(service.Run.Encounter.Duration, Is.EqualTo(duration), "the Encounter's clock froze");
             Assert.That(service.SimDelta(0.1f), Is.EqualTo(0f), "views on sim time freeze with it");
 
-            service.SetHeld(false);
+            service.SetMenuFreeze(false);
             service.Tick(0.1f);
 
-            Assert.That(service.IsHeld, Is.False);
+            Assert.That(service.IsMenuFrozen, Is.False);
             Assert.That(service.Run.Encounter.Duration, Is.GreaterThan(duration));
+        }
+
+        // ── the hero's trip ──────────────────────────────────────────────────
+
+        [Test]
+        public void ARunWaitingForTheHero_StandsStill_ThenGoesOnWhereItStopped()
+        {
+            service.Send(thornwood);
+            service.Tick(0.1f);
+            var duration = service.Run.Encounter.Duration;
+
+            service.SetHeroInTransit(true);
+            service.Tick(0.1f);
+
+            Assert.That(service.IsHeroInTransit, Is.True);
+            Assert.That(service.Run.Encounter.Duration, Is.EqualTo(duration), "the Encounter's clock froze");
+            Assert.That(service.SimDelta(0.1f), Is.EqualTo(0f));
+            Assert.That(service.IsPaused, Is.False, "it is not the player's Pause");
+            Assert.That(service.IsMenuFrozen, Is.False, "nor a menu's hold");
+
+            service.SetHeroInTransit(false);
+            service.Tick(0.1f);
+
+            Assert.That(service.Run.Encounter.Duration, Is.GreaterThan(duration));
+        }
+
+        [Test]
+        public void TheHeroInTransit_RefusesARecall_AndANewRunStartsFree()
+        {
+            session.Hero.IsInvincible = true;
+            GiveScrolls(session.Hero.Inventory, 2u);
+            service.Send(thornwood);
+            Assume.That(service.CanRecall, Is.True, "premise: a scroll and a live Run allow it");
+            service.SetHeroInTransit(true);
+
+            Assert.That(service.CanRecall, Is.False, "no scroll is spent while he is on a trip");
+
+            service.SetHeroInTransit(false);
+            service.SetHeroInTransit(true);
+            _ = service.Return();
+            service.Send(thornwood);
+
+            Assert.That(service.IsHeroInTransit, Is.False, "a stale hold does not freeze the next Run");
+        }
+
+        [Test]
+        public void HoldingTheHeroInTown_DoesNothing()
+        {
+            service.SetHeroInTransit(true);
+            service.Send(thornwood);
+
+            Assert.That(service.IsHeroInTransit, Is.False, "there is nothing to wait for in Town");
         }
 
         [Test]
@@ -873,14 +925,14 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             service.Send(thornwood);
             service.SetPaused(true);
 
-            service.SetHeld(true);
-            service.SetHeld(false);
+            service.SetMenuFreeze(true);
+            service.SetMenuFreeze(false);
 
             Assert.That(service.IsPaused, Is.True, "the player's own Pause is given back as found");
 
             service.SetPaused(false);
-            service.SetHeld(true);
-            service.SetHeld(false);
+            service.SetMenuFreeze(true);
+            service.SetMenuFreeze(false);
 
             Assert.That(service.IsPaused, Is.False);
             Assert.That(service.SimDelta(0.1f), Is.GreaterThan(0f));
@@ -893,15 +945,15 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             var raised = new List<bool>();
             service.PausedChanged += raised.Add;
 
-            service.SetHeld(true);
+            service.SetMenuFreeze(true);
             Assert.That(service.IsPaused, Is.False);
-            service.SetHeld(false);
+            service.SetMenuFreeze(false);
 
             service.SetPaused(true);
             raised.Clear();
-            service.SetHeld(true);
+            service.SetMenuFreeze(true);
             Assert.That(service.IsPaused, Is.True);
-            service.SetHeld(false);
+            service.SetMenuFreeze(false);
 
             Assert.That(raised, Is.Empty);
         }
@@ -909,15 +961,48 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         [Test]
         public void HoldingAndReleasingInTown_DoesNothingAndDoesNotThrow()
         {
-            Assert.DoesNotThrow(() => service.SetHeld(true));
-            Assert.That(service.IsHeld, Is.False, "there is nothing to hold in Town");
-            Assert.DoesNotThrow(() => service.SetHeld(false));
+            Assert.DoesNotThrow(() => service.SetMenuFreeze(true));
+            Assert.That(service.IsMenuFrozen, Is.False, "there is nothing to hold in Town");
+            Assert.DoesNotThrow(() => service.SetMenuFreeze(false));
 
-            service.SetHeld(true);
+            service.SetMenuFreeze(true);
             service.Send(thornwood);
 
-            Assert.That(service.IsHeld, Is.False, "a refused hold does not wait for the next Run");
+            Assert.That(service.IsMenuFrozen, Is.False, "a refused hold does not wait for the next Run");
             Assert.That(service.SimDelta(0.1f), Is.GreaterThan(0f));
+        }
+
+        [Test]
+        public void AHeldRun_RefusesThePauseAndTheMenuFreeze_AndReadsThemFalse()
+        {
+            service.Send(thornwood);
+            service.Run.Recall();
+            service.Run.Advance(60f);
+            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.Held), "setup: the Run is held");
+            var raised = new List<bool>();
+            service.PausedChanged += raised.Add;
+
+            service.SetPaused(true);
+            service.SetMenuFreeze(true);
+
+            Assert.That(service.IsPaused, Is.False, "a held Run is already frozen");
+            Assert.That(service.IsMenuFrozen, Is.False);
+            Assert.That(raised, Is.Empty);
+        }
+
+        [Test]
+        public void TickingAHeldRun_AdvancesNothing()
+        {
+            service.Send(thornwood);
+            service.Run.Recall();
+            service.Run.Advance(60f);
+            var frozenAt = service.Run.Encounter.Duration;
+
+            for (var i = 0; i < 20; i++)
+                service.Tick(0.1f);
+
+            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.Held));
+            Assert.That(service.Run.Encounter.Duration, Is.EqualTo(frozenAt));
         }
 
         [Test]
@@ -925,27 +1010,27 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         {
             service.Send(thornwood);
 
-            service.SetHeld(true);
-            service.SetHeld(true);
-            service.SetHeld(false);
+            service.SetMenuFreeze(true);
+            service.SetMenuFreeze(true);
+            service.SetMenuFreeze(false);
 
-            Assert.That(service.IsHeld, Is.False, "a second hold is the same hold");
+            Assert.That(service.IsMenuFrozen, Is.False, "a second hold is the same hold");
 
-            service.SetHeld(false);
+            service.SetMenuFreeze(false);
 
-            Assert.That(service.IsHeld, Is.False);
+            Assert.That(service.IsMenuFrozen, Is.False);
         }
 
         [Test]
         public void TheRunsEnd_ReleasesTheHold()
         {
             service.Send(thornwood);
-            service.SetHeld(true);
+            service.SetMenuFreeze(true);
 
             _ = service.Return();
             service.Send(thornwood);
 
-            Assert.That(service.IsHeld, Is.False, "a hold left over from the last Run does not freeze the next");
+            Assert.That(service.IsMenuFrozen, Is.False, "a hold left over from the last Run does not freeze the next");
         }
 
         [Test]
@@ -1053,10 +1138,10 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         // The hero first arrives (one spawn delay), then the fight finds it down.
         private void TickUntilHome()
         {
-            for (var i = 0; i < 100 && service.Run.Phase == RunPhase.InField; i++)
+            for (var i = 0; i < 100 && service.Run.Phase == RunPhase.Live; i++)
                 service.Tick(0.5f);
 
-            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.InTown), "the Run never ended");
+            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.None), "the Run never ended");
         }
 
         // ── the lifetime Kill count ──────────────────────────────────────────
@@ -1139,7 +1224,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             hero.GetResource(StatName.Health).DepleteCurrent();
             TickUntilHome();
 
-            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.InTown));
+            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.None));
             Assert.That(service.Run.LastResult?.Outcome, Is.EqualTo(RunOutcome.Died));
             Assert.That(hero.Corpse.Exists, Is.True);
             Assert.That(hero.Corpse.Items.Count, Is.EqualTo(1));
@@ -1238,7 +1323,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             Assert.Throws<InvalidOperationException>(() => service.Send(ashfen), "the hero is still down");
             service.Tick(0.5f);
 
-            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.InTown), "no new Run");
+            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.None), "no new Run");
             Assert.That(hero.SelectedLocation, Is.SameAs(thornwood), "the Location the Death was judged against");
             Assert.That(hero.Corpse.Items.Count, Is.EqualTo(corpseItems));
             Assert.That(hero.GetResource(StatName.Experience).CurrentValue, Is.EqualTo(experience));
@@ -1256,7 +1341,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             service.Respawn();
             service.Send(ashfen);
 
-            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.InField));
+            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.Live));
             Assert.That(session.Hero.SelectedLocation, Is.SameAs(ashfen));
         }
 
@@ -1549,6 +1634,489 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             stat.AddModifier(new StatModifier(new Vector2Int(0, 1000), 100f));
 
             Assert.That(service.HeroWalkingSpeed / before, Is.EqualTo((statBefore + 100f) / statBefore).Within(1e-4f));
+        }
+
+        // ── the Recall and the Town Portal (ADR-0022) ────────────────────────
+
+        private void GiveScrolls(AbstractDimensionalContainer into, uint amount)
+        {
+            var package = new Package(null, items.RollConsumable(ConsumableType.PortalScroll), amount);
+            Assert.That(into.TryAddToContainer(ref package), Is.True, "fixture: the scrolls fit");
+        }
+
+        private bool IsAScroll(ItemInstance item) =>
+            items.Catalog.Definition(item.DefinitionId).ConsumableType == ConsumableType.PortalScroll;
+
+        private int ScrollsIn(AbstractDimensionalContainer container) =>
+            container.StoredPackages.Values.Where(package => IsAScroll(package.Item)).Sum(package => (int)package.Amount);
+
+        private void TickUntilHeld()
+        {
+            for (var i = 0; i < 100 && service.Run.Phase == RunPhase.Live; i++)
+                service.Tick(0.1f);
+
+            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.Held), "the portal never opened");
+        }
+
+        private void RecallAndHold(LocationConfig at)
+        {
+            service.Send(at);
+            service.Recall();
+            TickUntilHeld();
+        }
+
+        [Test]
+        public void Recall_SpendsExactlyOnePortalScroll_AndOpensThePortalOverTheOpening()
+        {
+            session.Hero.IsInvincible = true;
+            GiveScrolls(session.Hero.Inventory, 3u);
+            service.Send(thornwood);
+            Assert.That(service.CanRecall, Is.True);
+
+            service.Recall();
+
+            Assert.That(ScrollsIn(session.Hero.Inventory), Is.EqualTo(2));
+            Assert.That(service.Run.IsRecalling, Is.True);
+            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.Live), "the hero keeps fighting through the opening");
+            Assert.That(session.Hero.TownPortal, Is.Null, "no portal until the Run is held");
+        }
+
+        [Test]
+        public void Recall_IsRefusedWithNoRun_AndSpendsNothing()
+        {
+            GiveScrolls(session.Hero.Inventory, 2u);
+
+            Assert.That(service.CanRecall, Is.False);
+            Assert.Throws<InvalidOperationException>(() => service.Recall());
+
+            Assert.That(ScrollsIn(session.Hero.Inventory), Is.EqualTo(2));
+        }
+
+        [Test]
+        public void Recall_IsRefusedWithoutAScrollInTheInventory_ScrollsInTheStashDoNotCount()
+        {
+            GiveScrolls(session.Hero.Stash, 2u);
+            service.Send(thornwood);
+
+            Assert.That(service.CanRecall, Is.False);
+            Assert.Throws<InvalidOperationException>(() => service.Recall());
+
+            Assert.That(ScrollsIn(session.Hero.Stash), Is.EqualTo(2));
+            Assert.That(service.Run.IsRecalling, Is.False);
+        }
+
+        [Test]
+        public void Recall_IsRefusedDuringAnOpening_AndTheSecondSpendsNothing()
+        {
+            session.Hero.IsInvincible = true;
+            GiveScrolls(session.Hero.Inventory, 3u);
+            service.Send(thornwood);
+            service.Recall();
+
+            Assert.That(service.CanRecall, Is.False);
+            Assert.Throws<InvalidOperationException>(() => service.Recall());
+
+            Assert.That(ScrollsIn(session.Hero.Inventory), Is.EqualTo(2), "only the first Recall paid");
+        }
+
+        [Test]
+        public void CanReturn_IsTrueOnlyForALiveRunWithItsHeroUpAndNoPortalOpening()
+        {
+            session.Hero.IsInvincible = true;
+            GiveScrolls(session.Hero.Inventory, 1u);
+            Assert.That(service.CanReturn, Is.False, "no Run");
+
+            service.Send(thornwood);
+            Assert.That(service.CanReturn, Is.True, "a live Run");
+
+            service.Recall();
+            Assert.That(service.CanReturn, Is.False, "the portal opens");
+
+            TickUntilHeld();
+            Assert.That(service.CanReturn, Is.False, "a held Run is walked away from, not Returned");
+        }
+
+        [Test]
+        public void ACallerThatAsksCanReturn_NeverMeetsTheRefusalOfAnOpening()
+        {
+            session.Hero.IsInvincible = true;
+            GiveScrolls(session.Hero.Inventory, 1u);
+            service.Send(thornwood);
+            service.Recall();
+
+            Assert.Throws<InvalidOperationException>(() => service.Return(), "the service itself still refuses");
+            Assert.That(service.CanReturn, Is.False, "so the button asks first");
+            Assert.That(service.Run.IsRecalling, Is.True, "and the opening runs on");
+        }
+
+        [Test]
+        public void LeaveField_DuringAnOpening_EndsTheRun_RaisesSettled_AndTheScrollStaysSpent()
+        {
+            session.Hero.IsInvincible = true;
+            GiveScrolls(session.Hero.Inventory, 2u);
+            service.Send(thornwood);
+            service.Recall();
+            RunResult? settled = null;
+            service.RunSettled += result => settled = result;
+
+            Assert.That(() => service.LeaveField(), Throws.Nothing);
+
+            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.None));
+            Assert.That(service.Run.IsRecalling, Is.False);
+            Assert.That(settled?.Outcome, Is.EqualTo(RunOutcome.Returned), "a quit keeps everything, like a Return");
+            Assert.That(ScrollsIn(session.Hero.Inventory), Is.EqualTo(1), "the Recall had paid");
+        }
+
+        [Test]
+        public void RecallGate_RefusesUnderAMenuFreeze_AndOtherwiseAsksCanRecall()
+        {
+            session.Hero.IsInvincible = true;
+            GiveScrolls(session.Hero.Inventory, 1u);
+            Assert.That(RecallGate.Allows(service), Is.False, "Town");
+
+            service.Send(thornwood);
+            Assert.That(RecallGate.Allows(service), Is.True);
+
+            service.SetMenuFreeze(true);
+            Assert.That(RecallGate.Allows(service), Is.False, "a menu holds the Run");
+
+            service.SetMenuFreeze(false);
+            Assert.That(RecallGate.Allows(service), Is.True);
+        }
+
+        [Test]
+        public void Recall_IsRefusedWhileTheHeroIsDown_AndSpendsNothing()
+        {
+            GiveScrolls(session.Hero.Inventory, 2u);
+            service.Send(thornwood);
+            session.Hero.GetResource(StatName.Health).DepleteCurrent();
+
+            Assert.That(service.CanRecall, Is.False);
+            Assert.Throws<InvalidOperationException>(() => service.Recall());
+
+            Assert.That(ScrollsIn(session.Hero.Inventory), Is.EqualTo(2));
+        }
+
+        [Test]
+        public void Recall_IsRefusedThroughTheDeathBeat_AndSpendsNothing()
+        {
+            service.Send(thornwood);
+            session.Hero.GetResource(StatName.Health).DepleteCurrent();
+            TickUntilHome();
+            GiveScrolls(session.Hero.Inventory, 1u);
+            Assert.That(service.DeathBeatPlaying, Is.True, "premise");
+
+            Assert.That(service.CanRecall, Is.False);
+            Assert.Throws<InvalidOperationException>(() => service.Recall());
+
+            Assert.That(ScrollsIn(session.Hero.Inventory), Is.EqualTo(1));
+        }
+
+        [Test]
+        public void ADeathInTheOpening_IsAnOrdinaryDeath_AndTheScrollIsSpent()
+        {
+            // An opening long enough for the Encounter to notice the fallen hero before the portal is open.
+            var so = new SerializedObject(config);
+            so.FindProperty("<RecallOpeningSeconds>k__BackingField").floatValue = 30f;
+            _ = so.ApplyModifiedPropertiesWithoutUndo();
+            GiveScrolls(session.Hero.Inventory, 3u);
+            service.Send(thornwood);
+            service.Recall();
+
+            session.Hero.GetResource(StatName.Health).DepleteCurrent();
+            TickUntilHome();
+
+            Assert.That(service.Run.LastResult?.Outcome, Is.EqualTo(RunOutcome.Died));
+            Assert.That(session.Hero.Corpse.Exists, Is.True);
+            Assert.That(session.Hero.Corpse.Entries.Where(entry => IsAScroll(entry.Item)).Sum(entry => (int)entry.Amount),
+                Is.EqualTo(2), "three bought, one spent on the Recall, two buried");
+            Assert.That(session.Hero.TownPortal, Is.Null, "the portal never opened");
+        }
+
+        [Test]
+        public void WhenTheRunGoesHeld_TheHeroOwnsAPortalAtTheRunsLocation()
+        {
+            session.Hero.IsInvincible = true;
+            GiveScrolls(session.Hero.Inventory, 1u);
+
+            RecallAndHold(thornwood);
+
+            Assert.That(session.Hero.TownPortal, Is.SameAs(thornwood));
+        }
+
+        [Test]
+        public void ALaterRecallElsewhere_ReplacesThePortal()
+        {
+            session.Hero.IsInvincible = true;
+            GiveScrolls(session.Hero.Inventory, 2u);
+            RecallAndHold(thornwood);
+            service.Relocate(ashfen);
+
+            service.Recall();
+            TickUntilHeld();
+
+            Assert.That(session.Hero.TownPortal, Is.SameAs(ashfen), "one portal, never several");
+        }
+
+        [Test]
+        public void Resume_ContinuesTheHeldRunAtItsEncounter_AndClosesThePortal()
+        {
+            session.Hero.IsInvincible = true;
+            GiveScrolls(session.Hero.Inventory, 1u);
+            RecallAndHold(thornwood);
+            var held = service.Run.Encounter;
+
+            service.Resume();
+
+            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.Live));
+            Assert.That(service.Run.Encounter, Is.SameAs(held));
+            Assert.That(session.Hero.TownPortal, Is.Null);
+        }
+
+        [Test]
+        public void Resume_IsRefusedUnlessTheRunIsHeld_AndLeavesThePortalAlone()
+        {
+            session.Hero.IsInvincible = true;
+            GiveScrolls(session.Hero.Inventory, 1u);
+            RecallAndHold(thornwood);
+            service.Relocate(ashfen);
+
+            Assert.Throws<InvalidOperationException>(() => service.Resume());
+
+            Assert.That(session.Hero.TownPortal, Is.SameAs(thornwood));
+        }
+
+        [Test]
+        public void ARelocateFromHeld_LeavesThePortalOpen_AtTheLocationItWasOpenedAt()
+        {
+            session.Hero.IsInvincible = true;
+            GiveScrolls(session.Hero.Inventory, 1u);
+            RecallAndHold(thornwood);
+
+            service.Relocate(ashfen);
+
+            Assert.That(service.Run.Phase, Is.EqualTo(RunPhase.Live));
+            Assert.That(session.Hero.SelectedLocation, Is.SameAs(ashfen));
+            Assert.That(session.Hero.TownPortal, Is.SameAs(thornwood), "it now leads to a fresh fight at its own Location");
+        }
+
+        [Test]
+        public void AReturn_AndALaterSend_LeaveThePortalOpen()
+        {
+            session.Hero.IsInvincible = true;
+            GiveScrolls(session.Hero.Inventory, 1u);
+            RecallAndHold(thornwood);
+            service.Relocate(ashfen);
+
+            _ = service.Return();
+            Assert.That(session.Hero.TownPortal, Is.SameAs(thornwood), "after the Return");
+
+            service.Send(ashfen);
+            Assert.That(session.Hero.TownPortal, Is.SameAs(thornwood), "after the Send");
+        }
+
+        [Test]
+        public void ADeath_LeavesThePortalOpen()
+        {
+            session.Hero.IsInvincible = true;
+            GiveScrolls(session.Hero.Inventory, 1u);
+            RecallAndHold(thornwood);
+            service.Relocate(ashfen);
+            session.Hero.IsInvincible = false;
+
+            session.Hero.GetResource(StatName.Health).DepleteCurrent();
+            TickUntilHome();
+
+            Assert.That(service.Run.LastResult?.Outcome, Is.EqualTo(RunOutcome.Died));
+            Assert.That(session.Hero.TownPortal, Is.SameAs(thornwood));
+        }
+
+        [Test]
+        public void AHeldRun_RegeneratesTheHero_WhereAPausedOrMenuFrozenRunDoesNot()
+        {
+            session.Hero.IsInvincible = true;
+            GiveScrolls(session.Hero.Inventory, 1u);
+            var resource = session.Hero.GetResource(StatName.Resource);
+            service.Send(thornwood);
+
+            _ = resource.RemoveFromCurrent(resource.TotalValue);
+            service.SetPaused(true);
+            service.Tick(1f);
+            Assert.That(resource.CurrentValue, Is.Zero, "paused");
+
+            service.SetPaused(false);
+            service.SetMenuFreeze(true);
+            service.Tick(1f);
+            Assert.That(resource.CurrentValue, Is.Zero, "menu-frozen");
+
+            service.SetMenuFreeze(false);
+            service.Recall();
+            TickUntilHeld();
+            _ = resource.RemoveFromCurrent(resource.TotalValue);
+
+            service.Tick(1f);
+
+            Assert.That(resource.CurrentValue, Is.GreaterThan(0f), "held");
+        }
+
+        [Test]
+        public void ARecallFromTheCompletePhase_SpendsAScroll_AndAResumeLandsInTheEmptiedLocation()
+        {
+            session.Hero.IsInvincible = true;
+            service.Send(thornwood);
+            TickUntilComplete(service);
+            GiveScrolls(session.Hero.Inventory, 1u);
+            Assert.That(service.CanRecall, Is.True, "a Recall after a Complete is allowed");
+
+            service.Recall();
+            TickUntilHeld();
+            Assert.That(ScrollsIn(session.Hero.Inventory), Is.Zero);
+            var held = service.Run.Encounter;
+
+            service.Resume();
+
+            Assert.That(service.Run.Encounter, Is.SameAs(held));
+            Assert.That(held.Phase, Is.EqualTo(SimulationPhase.Complete));
+            Assert.That(held.Enemies, Is.Empty, "the Location is still cleared");
+        }
+
+        // ── the Recall input: the key and the button's count ─────────────────
+
+        [Test]
+        public void PortalScrollCount_SumsTheInventorysStacks_AndLeavesTheStashOut()
+        {
+            Assert.That(service.PortalScrollCount, Is.Zero);
+
+            GiveScrolls(session.Hero.Inventory, 2u);
+            GiveScrolls(session.Hero.Stash, 5u);
+            Assert.That(service.PortalScrollCount, Is.EqualTo(2));
+
+            GiveScrolls(session.Hero.Inventory, 1u);
+            Assert.That(service.PortalScrollCount, Is.EqualTo(ScrollsIn(session.Hero.Inventory)));
+            Assert.That(service.PortalScrollCount, Is.EqualTo(3));
+        }
+
+        [Test]
+        public void PortalScrollCount_FallsByOne_ForARecall()
+        {
+            session.Hero.IsInvincible = true;
+            GiveScrolls(session.Hero.Inventory, 3u);
+            service.Send(thornwood);
+
+            service.Recall();
+
+            Assert.That(service.PortalScrollCount, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void TheRecallKey_RecallsOnce_AndSpendsOneScroll()
+        {
+            session.Hero.IsInvincible = true;
+            var input = new FakeInput();
+            _ = new RecallHotkey(service, input);
+            GiveScrolls(session.Hero.Inventory, 3u);
+            service.Send(thornwood);
+
+            input.Press(GameAction.Recall);
+            input.Press(GameAction.Recall);
+
+            Assert.That(service.Run.IsRecalling, Is.True);
+            Assert.That(ScrollsIn(session.Hero.Inventory), Is.EqualTo(2), "the second press found the portal opening");
+        }
+
+        [Test]
+        public void TheRecallKey_DoesNothingInTown_WithNoScroll_WhileTheHeroIsDown_AndOnAnotherAction()
+        {
+            var input = new FakeInput();
+            _ = new RecallHotkey(service, input);
+            GiveScrolls(session.Hero.Inventory, 2u);
+
+            input.Press(GameAction.Recall);
+            Assert.That(ScrollsIn(session.Hero.Inventory), Is.EqualTo(2), "Town has no Run to Recall");
+
+            service.Send(thornwood);
+            input.Press(GameAction.ShowDetails);
+            Assert.That(service.Run.IsRecalling, Is.False, "another action");
+
+            session.Hero.GetResource(StatName.Health).DepleteCurrent();
+            input.Press(GameAction.Recall);
+            Assert.That(ScrollsIn(session.Hero.Inventory), Is.EqualTo(2), "the hero is down");
+        }
+
+        [Test]
+        public void TheRecallKey_DoesNothingWithNoScrollInTheInventory()
+        {
+            var input = new FakeInput();
+            _ = new RecallHotkey(service, input);
+            GiveScrolls(session.Hero.Stash, 2u);
+            service.Send(thornwood);
+
+            Assert.That(() => input.Press(GameAction.Recall), Throws.Nothing);
+
+            Assert.That(service.Run.IsRecalling, Is.False);
+            Assert.That(ScrollsIn(session.Hero.Stash), Is.EqualTo(2));
+        }
+
+        [Test]
+        public void TheRecallKey_DoesNothingThroughTheDeathBeat()
+        {
+            var input = new FakeInput();
+            _ = new RecallHotkey(service, input);
+            service.Send(thornwood);
+            session.Hero.GetResource(StatName.Health).DepleteCurrent();
+            TickUntilHome();
+            GiveScrolls(session.Hero.Inventory, 1u);
+            Assert.That(service.DeathBeatPlaying, Is.True, "premise");
+
+            input.Press(GameAction.Recall);
+
+            Assert.That(ScrollsIn(session.Hero.Inventory), Is.EqualTo(1));
+        }
+
+        [Test]
+        public void TheRecallKey_DoesNothingWhileAMenuHoldsTheRun()
+        {
+            session.Hero.IsInvincible = true;
+            var input = new FakeInput();
+            _ = new RecallHotkey(service, input);
+            GiveScrolls(session.Hero.Inventory, 1u);
+            service.Send(thornwood);
+            service.SetMenuFreeze(true);
+
+            input.Press(GameAction.Recall);
+            Assert.That(ScrollsIn(session.Hero.Inventory), Is.EqualTo(1), "the menu's hold is not the player's to spend a scroll under");
+
+            service.SetMenuFreeze(false);
+            input.Press(GameAction.Recall);
+            Assert.That(service.Run.IsRecalling, Is.True, "the key works again once the menu is closed");
+        }
+
+        [Test]
+        public void TheRecallKey_IsLeftToATextFieldThatHasFocus()
+        {
+            session.Hero.IsInvincible = true;
+            var events = new GameObject("events").AddComponent<UnityEngine.EventSystems.EventSystem>();
+            SwitchEventSystem(events, "OnEnable");
+            var field = new GameObject("field", typeof(TextFieldStub));
+
+            try
+            {
+                var input = new FakeInput();
+                _ = new RecallHotkey(service, input);
+                GiveScrolls(session.Hero.Inventory, 1u);
+                service.Send(thornwood);
+
+                events.SetSelectedGameObject(field);
+                input.Press(GameAction.Recall);
+
+                Assert.That(service.Run.IsRecalling, Is.False, "the b went to the field");
+            }
+            finally
+            {
+                SwitchEventSystem(events, "OnDisable");
+                UnityEngine.Object.DestroyImmediate(events.gameObject);
+                UnityEngine.Object.DestroyImmediate(field);
+            }
         }
 
         // ── reaching it ──────────────────────────────────────────────────────
