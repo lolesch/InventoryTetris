@@ -106,7 +106,14 @@ immunity. Tier 3's "Consumable effects + potion belt" in entry 3 is the same wor
 
 - **Prior art:** AbilityCombat's `Pawns/Abilities/Effects/`: a command, an effect and a receiver
   per kind (damage, DoT, stat modifier, shield, root, immunity, drain and fill resource).
-  Read it before designing; do not port it, it is built on scene objects.
+  Read it before designing; do not port it, it is built on scene objects. (#297 found that path
+  does not exist; the nearest is `Interfaces/IEffect*.cs` in ARPG-Combat.)
+- **More prior art:** Ruadh2 (<https://github.com/SorcerersLab/Ruadh2>, private, at `ae6cea6`):
+  `Assets/Code/Runtime/Skills/AbilityObject.cs` re-applies an effect to each target in a shape on a per-target
+  `Timer` (`ApplyInterval`), ticked by the combat clock, and `Data/Effects/` has trigger-driven
+  `TemporaryTriggerEffect`s with a `Trigger` enum. Its trigger dispatch is unfinished, so treat it
+  as a list of triggers and pitfalls, not a base. It also has travelling projectiles and N-projectile
+  fan-out, which the sim here lacks (see #304, #347).
 - **Prerequisites:** stat-backed enemies (#210), so an effect can target the hero and an enemy the
   same way, and the typed hit event (#211).
 - **To decide:** the duration and tick model on the sim clock; stacking and refresh rules; what an
