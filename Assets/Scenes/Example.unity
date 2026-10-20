@@ -3697,7 +3697,6 @@ MonoBehaviour:
   scaleFrom: 1
   moveFrom: {x: -640, y: 0}
   inventoryContext: 5
-  upWithNoTownStop: 1
 --- !u!114 &235697931
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10361,7 +10360,6 @@ MonoBehaviour:
   scaleFrom: 1
   moveFrom: {x: -640, y: 0}
   inventoryContext: 3
-  upWithNoTownStop: 0
 --- !u!114 &630857823
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -21918,7 +21916,6 @@ MonoBehaviour:
   scaleFrom: 1
   moveFrom: {x: -640, y: 0}
   inventoryContext: 2
-  upWithNoTownStop: 0
 --- !u!114 &1525008108
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -22540,7 +22537,6 @@ MonoBehaviour:
   scaleFrom: 1
   moveFrom: {x: 640, y: 0}
   inventoryContext: 1
-  upWithNoTownStop: 0
 --- !u!114 &1561434729
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -31140,7 +31136,6 @@ MonoBehaviour:
   scaleFrom: 1
   moveFrom: {x: -640, y: 0}
   inventoryContext: 4
-  upWithNoTownStop: 0
 --- !u!114 &2069960141
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -32436,7 +32431,6 @@ MonoBehaviour:
   scaleFrom: 1
   moveFrom: {x: -640, y: 0}
   inventoryContext: 0
-  upWithNoTownStop: 0
 --- !u!1 &2124397352
 GameObject:
   m_ObjectHideFlags: 0

@@ -24,7 +24,7 @@ namespace ToolSmiths.InventorySystem.Inventories
 
         /// <summary>
         /// The panels <see cref="Active"/> derives: the Hero Panel for every non-<c>None</c>
-        /// context, plus that context's own Town Stop panel.
+        /// context, plus that context's own Town Stop panel, or the Ground Items panel where no Town Stop is open.
         /// </summary>
         public InventoryPanels Panels => PanelsFor(Active);
 
@@ -76,13 +76,6 @@ namespace ToolSmiths.InventorySystem.Inventories
             !onFieldMap || context is InventoryContext.None or InventoryContext.Hero or InventoryContext.Ground;
 
         /// <summary>
-        /// Whether a Town Stop's panel (Stash, Vendor or Healer) is the open one. The Ground Items panel is up in
-        /// every context but these, so closing a Town Stop brings it back with no request.
-        /// </summary>
-        public static bool TownStopOpen(InventoryContext context) =>
-            context is InventoryContext.Stash or InventoryContext.Vendor or InventoryContext.Healer;
-
-        /// <summary>
         /// The one panel a context names for itself: the Hero Panel for
         /// <see cref="InventoryContext.Hero"/>, that Town Stop's own panel otherwise, and
         /// nothing for <see cref="InventoryContext.None"/>. The single statement of "which
@@ -102,11 +95,15 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// <summary>
         /// The panels a context derives: <see cref="PanelFor"/> plus the Hero Panel, whose
         /// membership in every non-<c>None</c> context is stated here once rather than repeated
-        /// on each Town Stop panel or as a branch inside each one (issue #85).
+        /// on each Town Stop panel or as a branch inside each one (issue #85). The Ground Items panel is
+        /// up wherever no Town Stop is open - <c>None</c>, <c>Hero</c> and <c>Ground</c> - so closing a Town
+        /// Stop brings it back with no request.
         /// </summary>
-        public static InventoryPanels PanelsFor(InventoryContext context) =>
-            context == InventoryContext.None
-                ? InventoryPanels.None
-                : InventoryPanels.Hero | PanelFor(context);
+        public static InventoryPanels PanelsFor(InventoryContext context) => context switch
+        {
+            InventoryContext.None => InventoryPanels.Ground,
+            InventoryContext.Hero => InventoryPanels.Hero | InventoryPanels.Ground,
+            _ => InventoryPanels.Hero | PanelFor(context),
+        };
     }
 }
