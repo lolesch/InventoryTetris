@@ -35,9 +35,9 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         }
 
         [Test]
-        public void Panels_DefaultsToNone()
+        public void Panels_DefaultsToTheGroundItemsPanel()
         {
-            Assert.That(state.Panels, Is.EqualTo(InventoryPanels.None));
+            Assert.That(state.Panels, Is.EqualTo(InventoryPanels.Ground));
         }
 
         // ── Set ──────────────────────────────────────────────────────────
@@ -136,13 +136,13 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 
         // ── Derived panel set ────────────────────────────────────────────
 
-        [TestCase(InventoryContext.None, InventoryPanels.None)]
-        [TestCase(InventoryContext.Hero, InventoryPanels.Hero)]
+        [TestCase(InventoryContext.None, InventoryPanels.Ground)]
+        [TestCase(InventoryContext.Hero, InventoryPanels.Hero | InventoryPanels.Ground)]
         [TestCase(InventoryContext.Stash, InventoryPanels.Hero | InventoryPanels.Stash)]
         [TestCase(InventoryContext.Vendor, InventoryPanels.Hero | InventoryPanels.Vendor)]
         [TestCase(InventoryContext.Healer, InventoryPanels.Hero | InventoryPanels.Healer)]
         [TestCase(InventoryContext.Ground, InventoryPanels.Hero | InventoryPanels.Ground)]
-        public void Panels_IncludesHeroForEveryNonNoneContext(InventoryContext context, InventoryPanels expected)
+        public void Panels_IncludesHeroForEveryNonNoneContext_AndGroundWhereNoTownStopIsOpen(InventoryContext context, InventoryPanels expected)
         {
             state.Set(context);
 
@@ -192,8 +192,11 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         [TestCase(InventoryContext.Ground, InventoryPanels.Stash, false)]
         [TestCase(InventoryContext.Ground, InventoryPanels.Vendor, false)]
         [TestCase(InventoryContext.Ground, InventoryPanels.Healer, false)]
-        [TestCase(InventoryContext.Hero, InventoryPanels.Ground, false)]
+        [TestCase(InventoryContext.None, InventoryPanels.Ground, true)]
+        [TestCase(InventoryContext.Hero, InventoryPanels.Ground, true)]
         [TestCase(InventoryContext.Stash, InventoryPanels.Ground, false)]
+        [TestCase(InventoryContext.Vendor, InventoryPanels.Ground, false)]
+        [TestCase(InventoryContext.Healer, InventoryPanels.Ground, false)]
         public void PanelIsUp_ExactlyWhenTheActiveContextDerivesIt(InventoryContext active, InventoryPanels panel, bool expected)
         {
             state.Set(active);
@@ -262,26 +265,15 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 
         // ── The Ground Items panel ───────────────────────────────────────
 
-        [TestCase(InventoryContext.None, false)]
-        [TestCase(InventoryContext.Hero, false)]
-        [TestCase(InventoryContext.Ground, false)]
-        [TestCase(InventoryContext.Stash, true)]
-        [TestCase(InventoryContext.Vendor, true)]
-        [TestCase(InventoryContext.Healer, true)]
-        public void TownStopOpen_IsTrueForTheThreeTownStopsOnly(InventoryContext context, bool expected)
-        {
-            Assert.That(InventoryContextState.TownStopOpen(context), Is.EqualTo(expected));
-        }
-
         [Test]
-        public void ClosingATownStop_LeavesNoTownStopOpen()
+        public void ClosingATownStop_BringsTheGroundItemsPanelBack_WithNoRequest()
         {
             state.Set(InventoryContext.Vendor);
-            Assert.That(InventoryContextState.TownStopOpen(state.Active), Is.True);
+            Assert.That(state.Panels & InventoryPanels.Ground, Is.EqualTo(InventoryPanels.None));
 
             state.Close();
 
-            Assert.That(InventoryContextState.TownStopOpen(state.Active), Is.False);
+            Assert.That(state.Panels & InventoryPanels.Ground, Is.EqualTo(InventoryPanels.Ground));
         }
 
         [Test]

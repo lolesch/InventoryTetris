@@ -40,10 +40,6 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
                  "the same value. Must not be None.")]
         [SerializeField] private InventoryContext inventoryContext = InventoryContext.None;
 
-        [Tooltip("The Ground Items panel: also up while no Town Stop is open (on None and Hero), so closing a Town Stop " +
-                 "brings it back with no request. Its toggle and IsUpIn still follow inventoryContext alone.")]
-        [SerializeField] private bool upWithNoTownStop;
-
         /// <summary>The one Inventory Context this panel was authored with - what a display
         /// living inside the panel asks to learn which Town Stop it belongs to, rather than
         /// hard-coding one.</summary>
@@ -63,14 +59,6 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
         public bool IsUpIn(InventoryContext context) =>
             (InventoryContextState.PanelsFor(context) & InventoryContextState.PanelFor(inventoryContext))
             != InventoryPanels.None;
-
-        /// <summary>
-        /// Whether this panel is shown in <paramref name="context"/>: <see cref="IsUpIn"/>, and for the Ground Items
-        /// panel also whenever no Town Stop is open. Separate from <see cref="IsUpIn"/> because the Ground toggle's
-        /// pressed visual must not read pressed on <c>None</c>.
-        /// </summary>
-        private bool ShowsIn(InventoryContext context) =>
-            IsUpIn(context) || (upWithNoTownStop && !InventoryContextState.TownStopOpen(context));
 
         /// <summary>
         /// The visibility the last context application settled on. Tracked so a context that
@@ -105,7 +93,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
         private void OnContextChanged(InventoryContext context) => ApplyContext(context);
 
         /// <summary>
-        /// Shows or hides this panel for one context, from <see cref="ShowsIn"/>. A panel authored
+        /// Shows or hides this panel for one context, from <see cref="IsUpIn"/>. A panel authored
         /// with no context at all is left exactly as the scene has it: it has no role to derive
         /// and <see cref="OnValidate"/> is what complains about that, not this.
         /// </summary>
@@ -114,7 +102,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
             if (InventoryContextState.PanelFor(inventoryContext) == InventoryPanels.None)
                 return;
 
-            var shouldShow = ShowsIn(context);
+            var shouldShow = IsUpIn(context);
             if (shown == shouldShow)
                 return;
 
