@@ -18,8 +18,9 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 {
     /// <summary>
     /// The Field map's Location toggles on the real <c>Example</c> scene show the hero's Unlock States (issue #337,
-    /// ADR-0023): Hidden is not shown, Locked is shown greyed out and does nothing on click, Active and Complete
-    /// work. They follow a Location's Complete and a hero load. The toggles live in the predefined assembly, so they
+    /// ADR-0023): Locked is shown greyed out, Active works, and they follow a hero load. A click while a portal opens
+    /// or on the Location the Run is live at commands nothing. The states themselves are
+    /// <c>SimulationServiceTests</c>'. The toggles live in the predefined assembly, so they
     /// are read by type name; "shown" and "greyed out" are the alpha and raycast flags of the toggle's group, and
     /// "works" is a click that Sends or Relocates the hero there.
     /// </summary>
@@ -98,33 +99,11 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         }
 
         [UnityTest]
-        public IEnumerator AGreyedOutLocation_DoesNothingOnClick()
-        {
-            yield return null;
-
-            Assert.That(ClickGoesThrough(Ashfall), Is.False);
-            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.None));
-        }
-
-        [UnityTest]
         public IEnumerator AnActiveLocation_WorksOnClick()
         {
             yield return null;
 
             Assert.That(ClickGoesThrough(Thornwood), Is.True);
-        }
-
-        [UnityTest]
-        public IEnumerator CompletingThornwood_MakesAshfallUsable_WithoutLeavingTheFieldMap()
-        {
-            yield return null;
-            CompleteThornwood();
-            yield return null;
-
-            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.Live), "premise: still out in the Field");
-            Assert.That(IsGreyedOut(Ashfall), Is.False);
-            Assert.That(IconAlpha(Ashfall), Is.EqualTo(1f).Within(0.001f), "its icon is full once it opens");
-            Assert.That(ClickGoesThrough(Ashfall), Is.True);
         }
 
         [UnityTest]
@@ -147,18 +126,6 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             ToggleOf(id).GetType().GetMethod("SetToggle").Invoke(ToggleOf(id), new object[] { true });
 
         private static bool IsOn(string id) => (bool)ToggleOf(id).GetType().GetProperty("IsOn").GetValue(ToggleOf(id));
-
-        // A Run at Thornwood held by a Recall, as the Town portal leaves it.
-        private static void HoldARunAtThornwood()
-        {
-            Simulation.Send(GameBoot.Load().Locations.First(l => l.Id == Thornwood));
-            Simulation.Tick(0.5f);
-
-            GiveAScroll();
-            Simulation.Recall();
-            Simulation.Tick(1f);
-            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.Held), "premise: the Run is held");
-        }
 
         private static void GiveAScroll()
         {
@@ -201,33 +168,6 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 
             Assert.That(IsOn(Thornwood), Is.True, "the toggle shows it selected");
             Assert.That(Simulation.Run.Encounter, Is.SameAs(encounter), "no Relocate: the fight is the same one");
-        }
-
-        [UnityTest]
-        public IEnumerator ALocationClickWhileHeld_Relocates_AndTheTownPortalStaysOpen()
-        {
-            yield return null;
-            HoldARunAtThornwood();
-            var held = Simulation.Run.Encounter;
-
-            Select(Thornwood);
-
-            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.Live), "the Run is live again");
-            Assert.That(Simulation.Run.Encounter, Is.Not.SameAs(held), "at a fresh Encounter: the held fight is discarded");
-            Assert.That(Session.Instance.Hero.TownPortal?.Id, Is.EqualTo(Thornwood), "and the portal is still open");
-        }
-
-        [UnityTest]
-        public IEnumerator AHiddenLocation_IsNotShown_AndDoesNothing()
-        {
-            yield return null;
-
-            var toggle = ToggleOf(Ashfall);
-            toggle.GetType().GetMethod("Show", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                .Invoke(toggle, new object[] { UnlockState.Hidden });
-
-            Assert.That(IsSeen(Ashfall), Is.False);
-            Assert.That(ClickGoesThrough(Ashfall), Is.False);
         }
     }
 }

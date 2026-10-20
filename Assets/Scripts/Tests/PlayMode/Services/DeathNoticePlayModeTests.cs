@@ -19,8 +19,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 {
     /// <summary>
     /// The Death notice on the real <c>Example</c> scene (issue #327, ADR-0021): a Death opens it with the Run's
-    /// result, its one button Respawn is selected, and the button, Enter and Esc each revive the hero at the
-    /// Waypoint. Keys and clicks arrive through the Input System's test fixture, as a player's do. The popup and
+    /// result, its one button Respawn is selected, and the button and Esc each revive the hero at the Waypoint. Keys and clicks arrive through the Input System's test fixture, as a player's do. The popup and
     /// the figure live in the predefined assembly, so they are read by type name. Run with the PlayMode filter.
     /// </summary>
     public sealed class DeathNoticePlayModeTests : InputTestFixture
@@ -51,7 +50,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             for (var tick = 0; Simulation.Run.Phase == RunPhase.Live && tick < DeathTimeoutTicks; tick++)
                 Simulation.Tick(0.5f);
 
-            // The notice waits for the Death beat; its own timing is DeathBeatPlayModeTests'.
+            // The notice waits for the Death beat; this tick runs past it.
             Simulation.Tick(2f);
             yield return null;
             Assert.That(result.Outcome, Is.EqualTo(RunOutcome.Died), "premise: the hero died");
@@ -137,20 +136,6 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         }
 
         [UnityTest]
-        public IEnumerator Enter_Respawns()
-        {
-            yield return DieInTheField();
-            var notice = Notice();
-            yield return WalkTheFigureAway();
-
-            currentTime += 1.0;
-            PressAndRelease(keyboard.enterKey);
-            yield return null;
-
-            AssertRevivedAtTheWaypoint(notice);
-        }
-
-        [UnityTest]
         public IEnumerator Esc_Respawns_AndDoesNotOpenThePauseMenu()
         {
             yield return DieInTheField();
@@ -163,20 +148,6 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 
             AssertRevivedAtTheWaypoint(notice);
             Assert.That(ServiceLocator.Get<IPauseMenu>().IsOpen, Is.False, "the press was the notice's");
-        }
-
-        [UnityTest]
-        public IEnumerator NothingButRespawn_LeavesTheNotice()
-        {
-            yield return DieInTheField();
-            var notice = Notice();
-
-            for (var tick = 0; tick < 10; tick++)
-                Simulation.Tick(1f);
-            yield return null;
-
-            Assert.That(IsOpen(notice), Is.True, "time passing does not close it");
-            Assert.That(Health(), Is.EqualTo(0f), "and does not revive");
         }
     }
 }

@@ -25,11 +25,11 @@ using UnityEngine.TestTools;
 namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 {
     /// <summary>
-    /// The real scenes' Save &amp; Exit (issue #258): in Town it writes and loads the Main Menu with no popup; in
-    /// the Field it asks first, and on confirm Returns with the loot kept; Cancel leaves the Run untouched; a
-    /// failed write stays in the game with the cause, Retry works and Exit without saving has its own confirm.
-    /// Quit Game (issue #259) follows the same rule and then quits, through <see cref="GameExit.Quitter"/> so the
-    /// test run survives it, and is hidden in a WebGL build.
+    /// The real scenes' Save &amp; Exit (issue #258) wired to its popups: the Menu, Play, Run, Save &amp; Exit, Menu
+    /// round trip keeps the banked loot; the Field confirm's Cancel leaves the Run untouched; a failed write stays in
+    /// the game and Retry leaves; once the game is leaving neither exit button takes a click; the scene loader refuses
+    /// a second load and an unknown scene. Quit Game (issue #259) quits through <see cref="GameExit.Quitter"/> so the
+    /// test run survives it. The rules are <c>SaveAndExitTests</c>'.
     /// The saves are real files in a scratch folder. Boots again over the Input System fixture's isolation,
     /// like <see cref="PauseMenuPlayModeTests"/>.
     /// </summary>
@@ -170,22 +170,6 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         private static void SendToTheField() => Simulation.Send(GameBoot.Load().Locations.First(location => location.Id == "location.thornwood"));
 
         [UnityTest]
-        public IEnumerator InTown_SaveAndExit_WritesTheHeroAndLoadsTheMenu_WithNoPopup()
-        {
-            yield return Open("Example");
-            var savedBefore = Saves.List()[0].SavedAtUtc;
-            Menu.Open();
-            yield return null;
-
-            ClickSaveExit();
-
-            Assert.That(Popup().gameObject.activeSelf, Is.False, "Town asks nothing");
-            yield return WaitForScene("MainMenu");
-            Assert.That(Saves.List()[0].SavedAtUtc, Is.GreaterThan(savedBefore), "the hero was written");
-            Assert.That(Menu.IsOpen, Is.False);
-        }
-
-        [UnityTest]
         public IEnumerator InTheField_AConfirmAppears_AndCancelLeavesTheRunUntouched()
         {
             yield return Open("Example");
@@ -271,35 +255,6 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         }
 
         [UnityTest]
-        public IEnumerator ExitWithoutSaving_NeedsItsOwnConfirm_AndBackReturnsToTheFailure()
-        {
-            yield return Open("Example");
-            Menu.Open();
-            yield return null;
-            store.FailWrites = true;
-            LogAssert.Expect(LogType.Error, new Regex("Could not save hero"));
-
-            ClickSaveExit();
-            yield return null;
-
-            Assert.That(Popup().gameObject.activeSelf, Is.True, "Town went straight through, and the failure opened the popup");
-
-            ClickPopup("secondary");
-            yield return null;
-
-            Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("Example"), "asking is not leaving");
-            Assert.That(PopupText(), Is.EqualTo(SaveAndExit.DiscardQuestion));
-
-            Assert.That(ServiceLocator.Get<ICancelChain>().Cancel(), Is.True);
-            Assert.That(PopupText(), Does.StartWith("The hero was not saved."), "Cancel steps back to the failure");
-
-            ClickPopup("secondary");
-            ClickPopup("secondary");
-
-            yield return WaitForScene("MainMenu");
-        }
-
-        [UnityTest]
         public IEnumerator InTown_QuitGame_WritesTheHeroThenQuits_WithNoPopup()
         {
             yield return Open("Example");
@@ -316,107 +271,6 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         }
 
         [UnityTest]
-        public IEnumerator InTheField_QuitGame_AsksFirst_AndCancelQuitsNothing()
-        {
-            yield return Open("Example");
-            SendToTheField();
-            var helm = PutHelmInBag();
-            Menu.Open();
-            yield return null;
-
-            ClickQuitGame();
-
-            Assert.That(Popup().gameObject.activeSelf, Is.True);
-            Assert.That(PopupText(), Is.EqualTo(SaveAndExit.FieldQuestion));
-            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.Live), "asking ends nothing");
-            Assert.That(quits, Is.Zero);
-
-            ClickPopup("back");
-            yield return null;
-
-            Assert.That(Popup().gameObject.activeSelf, Is.False);
-            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.Live));
-            Assert.That(BagHolds(helm), Is.True);
-            Assert.That(quits, Is.Zero);
-        }
-
-        [UnityTest]
-        public IEnumerator InTheField_QuitGame_ReturnsAndSavesTheLoot_BeforeItQuits()
-        {
-            yield return Open("Example");
-            SendToTheField();
-            var helm = PutHelmInBag();
-            Menu.Open();
-            yield return null;
-            var savedBefore = Saves.List()[0].SavedAtUtc;
-
-            ClickQuitGame();
-            ClickPopup("primary");
-
-            Assert.That(Simulation.Run.Phase, Is.EqualTo(RunPhase.None), "the implicit Return");
-            Assert.That(Session.Hero.Corpse.Exists, Is.False, "no Death penalty");
-            Assert.That(quits, Is.EqualTo(1));
-            Assert.That(savedAtTheQuit, Is.GreaterThan(savedBefore), "written before the quit");
-
-            _ = Saves.Load(Saves.List()[0].Id);
-            Assert.That(BagHolds(helm), Is.True, "the Run's loot came back from the file");
-        }
-
-        [UnityTest]
-        public IEnumerator AFailedWriteOnQuitGame_StaysInTheGame_RetryQuitsOnceItWrites()
-        {
-            yield return Open("Example");
-            SendToTheField();
-            var helm = PutHelmInBag();
-            Menu.Open();
-            yield return null;
-            store.FailWrites = true;
-            LogAssert.Expect(LogType.Error, new Regex("Could not save hero"));
-            LogAssert.Expect(LogType.Error, new Regex("Could not save hero"));
-
-            ClickQuitGame();
-            ClickPopup("primary");
-            yield return null;
-
-            Assert.That(quits, Is.Zero, "a failed write quits nothing");
-            Assert.That(Popup().gameObject.activeSelf, Is.True);
-            Assert.That(PopupText(), Does.Contain(SaveResult.Failed(SaveFailure.StoreFailed).Reason));
-            Assert.That(BagHolds(helm), Is.True);
-
-            store.FailWrites = false;
-            ClickPopup("primary");
-
-            Assert.That(quits, Is.EqualTo(1));
-            Assert.That(Popup().gameObject.activeSelf, Is.False);
-        }
-
-        [UnityTest]
-        public IEnumerator AFailedWriteOnQuitGame_CanQuitWithoutSaving_BehindItsOwnConfirm()
-        {
-            yield return Open("Example");
-            Menu.Open();
-            yield return null;
-            store.FailWrites = true;
-            LogAssert.Expect(LogType.Error, new Regex("Could not save hero"));
-
-            ClickQuitGame();
-            ClickPopup("secondary");
-
-            Assert.That(PopupText(), Is.EqualTo(SaveAndExit.DiscardQuestion));
-            Assert.That(quits, Is.Zero, "asking is not quitting");
-
-            ClickPopup("secondary");
-
-            Assert.That(quits, Is.EqualTo(1));
-
-            // The real quit raises Application.quitting, whose save would write the hero the player just chose not to save.
-            store.FailWrites = false;
-            var savedBefore = Saves.List()[0].SavedAtUtc;
-            GameExit.SaveHero(Simulation, Saves);
-            Assert.That(Saves.List()[0].SavedAtUtc, Is.EqualTo(savedBefore), "the quit that follows Exit without saving writes nothing");
-        }
-
-        [UnityTest]
         public IEnumerator OnceTheGameIsLeaving_NeitherExitButtonTakesAClick()
         {
             yield return Open("Example");
@@ -427,24 +281,6 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 
             Assert.That(ExitButton("quitGame").interactable, Is.False);
             Assert.That(ExitButton("saveExit").interactable, Is.False);
-        }
-
-        [UnityTest]
-        public IEnumerator AnExitTheSceneLoaderRefuses_LeavesBothButtonsLive_SoTheNextClickCanLeave()
-        {
-            yield return Open("Example");
-            Menu.Open();
-            yield return null;
-            Assert.That(RequestScene("MainMenu"), Is.True, "premise: a load is already under way, as in the loader's fade");
-            LogAssert.Expect(LogType.Error, new Regex("while another is still loading"));
-
-            ClickSaveExit();
-
-            Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("Example"));
-            Assert.That(ExitButton("saveExit").interactable, Is.True, "the refused leave locked nothing");
-            Assert.That(ExitButton("quitGame").interactable, Is.True);
-
-            yield return WaitForScene("MainMenu");
         }
 
         [UnityTest]
@@ -481,20 +317,5 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             Member<Component>(Find("PauseMenuPopup"), field).GetComponent<UnityEngine.UI.Selectable>();
 
         private static bool RequestScene(string scene) => SceneProvider.Instance.LoadScene(scene);
-
-        [UnityTest]
-        public IEnumerator QuitGame_IsHiddenInAWebGLBuild_AndOfferedOnTheOthers()
-        {
-            yield return Open("Example");
-            var panel = Find("PauseMenuPopup");
-            var quitGame = Member<Component>(panel, "quitGame").gameObject;
-            var apply = panel.GetType().GetMethod("Apply")!;
-
-            _ = apply.Invoke(panel, new object[] { RuntimePlatform.WebGLPlayer });
-            Assert.That(quitGame.activeSelf, Is.False);
-
-            _ = apply.Invoke(panel, new object[] { RuntimePlatform.WindowsPlayer });
-            Assert.That(quitGame.activeSelf, Is.True);
-        }
     }
 }

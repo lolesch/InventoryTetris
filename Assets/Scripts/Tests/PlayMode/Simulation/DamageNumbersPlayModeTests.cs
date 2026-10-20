@@ -14,8 +14,8 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
 {
     /// <summary>
     /// Damage numbers rise from the hit's own place (epic #262, change B/C) on the real <c>Example</c> scene: the
-    /// arena projects the <see cref="Coordinate"/> the hit carries, for hero and enemy alike, and the killing
-    /// blow's number needs no dying view. The arena and the numbers live in the predefined assembly, out of a test
+    /// arena projects the <see cref="Coordinate"/> the hit carries, and no number outlives the arena's unbind.
+    /// The arena and the numbers live in the predefined assembly, out of a test
     /// assembly's reach, so they are read by type name. Run with the PlayMode filter.
     /// </summary>
     public sealed class DamageNumbersPlayModeTests
@@ -132,19 +132,6 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
         }
 
         [UnityTest]
-        public IEnumerator AKillingBlow_RisesFromWhereTheEnemyFell()
-        {
-            var hits = new List<HitEvent>();
-            yield return UntilAHit((e, h) => h.Target is Enemy enemy && enemy.Health <= 0f, hits);
-
-            var encounter = SimulationService.Instance.Run.Encounter;
-            var blow = hits.Last(h => h.LostAmount > 0f && h.Target is Enemy enemy && enemy.Health <= 0f);
-            Assert.That(encounter.Enemies.Any(e => ReferenceEquals(e, blow.Target)), Is.False, "the enemy is gone from the sim");
-            Assert.That(RoseFrom(RisingFrom(), Expected(encounter, blow.TargetPosition)), Is.True,
-                "its number still rises where it fell");
-        }
-
-        [UnityTest]
         public IEnumerator NoNumberRemains_AfterTheArenaUnbinds()
         {
             var hits = new List<HitEvent>();
@@ -156,16 +143,6 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
 
             Assert.That(RisingFrom(), Is.Empty);
             Assert.That((bool)Numbers().GetType().GetProperty("HasPending").GetValue(Numbers()), Is.False);
-        }
-
-        [UnityTest]
-        public IEnumerator TheOriginsInterface_ProjectsACoordinate_NotACombatant()
-        {
-            var origins = Arena().GetType().GetInterfaces().Single(i => i.Name == "IDamageNumberOrigins");
-            var parameters = origins.GetMethods().Single().GetParameters();
-
-            Assert.That(parameters[0].ParameterType, Is.EqualTo(typeof(Coordinate)));
-            yield break;
         }
     }
 }

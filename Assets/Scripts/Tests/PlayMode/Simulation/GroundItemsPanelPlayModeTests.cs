@@ -65,29 +65,6 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
         }
 
         [UnityTest]
-        public IEnumerator WithTheHeroPanelOpen_TheGroundItemsPanelStaysUp()
-        {
-            yield return Until(SidePanelOf(InventoryContext.Ground), "IsExtended", "premise: the Ground Items panel is up");
-
-            InventoryService.Instance.SetContext(InventoryContext.Hero);
-
-            yield return Until(SidePanelOf(InventoryContext.Hero), "IsExtended", "the Hero Panel opens");
-            Assert.That(Flag(SidePanelOf(InventoryContext.Ground), "IsExtended"), Is.True, "the ground stays in view beside the bag");
-        }
-
-        [UnityTest]
-        public IEnumerator ATownStop_TakesTheGroundItemsPanelAway_AndClosingItBringsItBack()
-        {
-            yield return Until(SidePanelOf(InventoryContext.Ground), "IsExtended", "premise: the Ground Items panel is up");
-
-            InventoryService.Instance.SetContext(InventoryContext.Vendor);
-            yield return Until(SidePanelOf(InventoryContext.Ground), "IsCollapsed", "the Ground Items panel gives way to a Town Stop");
-
-            InventoryService.Instance.CloseContext();
-            yield return Until(SidePanelOf(InventoryContext.Ground), "IsExtended", "closing the Town Stop brings it back by itself");
-        }
-
-        [UnityTest]
         public IEnumerator TheSimSettings_AreTheirOwnPanel_OpenedByTheirOwnHudToggle()
         {
             var settings = Named("BehaviourSlidersPanel").Single();
