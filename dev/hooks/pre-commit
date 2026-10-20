@@ -114,4 +114,12 @@ while IFS= read -r f; do
   done < <(grep -aE "$panel_decl" <<<"$diff")
 done < <(staged -- 'Assets/*.cs')
 
+# 10. A test waits on a duration or rescales time: it is timing an animation, which is feel, checked by playtest
+#     (coding-conventions.md, "Test level"). A PlayMode test Ticks the simulation and waits on a condition.
+while IFS= read -r f; do
+  if git diff --cached "$base" -U0 -- "$f" | grep -a '^+' | grep -aqE '\bWaitForSeconds(Realtime)?\b|\bTime\.timeScale[[:space:]]*=[^=]'; then
+    report "$f waits on a duration or sets Time.timeScale; test the rule at its service seam, and feel by playtest."
+  fi
+done < <(staged -- 'Assets/Scripts/Tests/*.cs')
+
 exit "$fail"

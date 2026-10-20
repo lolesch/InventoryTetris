@@ -16,6 +16,10 @@ compile errors, the totals and each failing test's message; its exit status is t
 EditMode suite ~90 s. It restores `ProjectSettings`, which every run rewrites, and sends a PlayMode
 run's saves to a scratch folder (`-savesFolder`, below).
 
+**Cadence.** During a ticket, run the EditMode filter for what you touched; the full PlayMode suite runs once,
+at the end. **A failing test you didn't cause gets an issue**, and your report cites it by number; a failure
+carried from session to session as "known" is how the PlayMode suite reached 14 red.
+
 It starts Unity through `dev/launch-detached.ps1` (WMI), never directly: a `Unity.exe` child of the
 foreground app takes keyboard focus for the whole boot even with `-batchmode -nographics`, so the user
 loses keystrokes mid-sentence. `-WindowStyle Hidden` does not prevent it. Launch any other Unity
