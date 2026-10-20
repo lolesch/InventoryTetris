@@ -2,6 +2,7 @@
 using TMPro;
 using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Simulation;
 using Submodules.Utility.Extensions;
 using Submodules.Utility.Tools;
 using Submodules.Utility.UI;
@@ -62,7 +63,9 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                 itemName.text = view.DisplayName.Colored(rarityColor);
 
             if (itemType)
-                itemType.text = view.DisplayName;
+                itemType.text = WeaponTypes.StrikeRange(view.Definition.EquipmentType) is { } reach
+                    ? $"{view.DisplayName}  ·  Strike Range {reach:0.#}"
+                    : view.DisplayName;
 
             if (icon)
                 icon.sprite = view.Icon;
