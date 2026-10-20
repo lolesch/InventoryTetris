@@ -43,7 +43,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// that fades or clips (the minimap's InFields).
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class EnemyArena : MonoBehaviour, IDamageNumberOrigins, IArenaSpace
+    public sealed partial class EnemyArena : MonoBehaviour, IDamageNumberOrigins, IArenaSpace
     {
         [SerializeField] private Figure prefab;
         [SerializeField, Tooltip("Where the figures live. Empty: this object's own RectTransform.")]
@@ -71,6 +71,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private ArenaDamageNumbers numbers;
         [SerializeField, Tooltip("Feedback: the sprite shakes on each hit. Independent of the others; off binds nothing.")]
         private bool hitShake = true;
+        [SerializeField, Tooltip("Debug: draw the Cast's shape, the ranges and every fighter's sim position as gizmos, through the same projection as the figures. Needs Gizmos on in the view.")]
+        private bool drawGizmos = true;
+        [SerializeField, Range(0.1f, 1f), Tooltip("Debug: real seconds a fired Cast's shape and each Strike's mark stay drawn.")]
+        private float gizmoSeconds = 1f;
+        [SerializeField, Range(0f, 1f), Tooltip("Debug: the hero's and the enemies' opacity while Draw Gizmos is on. Lower it to see the markers through the sprites.")]
+        private float figureAlphaWhileDebugging = 1f;
         [SerializeField, Tooltip("Feedback: a ring marks the target of the hero's latest Strike or Approach Intent. Independent of the others.")]
         private bool targetHighlight = true;
 
@@ -137,6 +143,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             SyncDamageNumbers();
 
             Place();
+            TrackCastForGizmos();
             MarkTarget(_bound?.HeroTarget);
             FadeDying(SimulationService.Instance.SimDelta(Time.deltaTime));
         }
@@ -150,6 +157,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             _bound = encounter;
             _bound.EnemySpawned += OnEnemySpawned;
             _bound.EnemyDefeated += OnEnemyDefeated;
+            _bound.HitLanded += MarkStrikeForGizmos;
 
             // The first Encounter's initial batch spawns inside the sim's constructor, before this
             // could listen - and a Send can land between frames with enemies already in. Seeding
@@ -165,7 +173,9 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             {
                 _bound.EnemySpawned -= OnEnemySpawned;
                 _bound.EnemyDefeated -= OnEnemyDefeated;
+                _bound.HitLanded -= MarkStrikeForGizmos;
                 _bound = null;
+                _strikeMarks.Clear();
             }
 
             // Fades already under way go back at once, so the ones started below are the only ones left.
@@ -379,7 +389,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             return moved;
         }
 
-        private float MapAlpha => map != null ? map.alpha : 1f;
+        private float MapAlpha => (map != null ? map.alpha : 1f) * DebugFigureAlpha;
+
+        /// <summary>The factor the figures' opacity is scaled by while the debug gizmos are on; the hero's figure applies it too.</summary>
+        internal float DebugFigureAlpha => drawGizmos ? figureAlphaWhileDebugging : 1f;
 
         private LocationConfig _selectedFor;
         private RectTransform _selectedAnchor;

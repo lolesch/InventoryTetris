@@ -161,6 +161,21 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <summary>How far from <see cref="HeroPosition"/> an enemy may stand to be aimed at by the Cast: the Cast definition's range.</summary>
         public float CastRange => _tuning.Cast.Range;
 
+        /// <summary>The Cast this Encounter plays on, for the arena's debug gizmos.</summary>
+        public CastDefinition Cast => _tuning.Cast;
+
+        /// <summary>The enemy a Cast fired this instant would be aimed at, or null when none would. A pure read for the arena's debug gizmos.</summary>
+        public Enemy CastAim => _arena.DensestCluster(_enemies, _tuning.Cast);
+
+        /// <summary>How many Casts the hero has fired; the arena's debug gizmos watch it to catch a new one.</summary>
+        public int CastsFired { get; private set; }
+
+        /// <summary>Where the hero stood when he fired his latest Cast.</summary>
+        public Coordinate LastCastFrom { get; private set; }
+
+        /// <summary>Where the latest Cast was aimed: the position of the enemy it was placed on.</summary>
+        public Coordinate LastCastAt { get; private set; }
+
         /// <summary>
         /// How far from <see cref="HeroPosition"/> the hero's Strike reaches: his weapon type's range, or the
         /// arena's unarmed range while he wields none. Read live, so re-gearing changes it on the spot.
@@ -517,6 +532,9 @@ namespace ToolSmiths.InventorySystem.Simulation
             var drains = !CanAffordCast(_hero.Resource - _hero.CastCost);
             _hero.SpendResource(drains ? _hero.Resource : _hero.CastCost);
             if (drains) _behaviour.ReleaseCastingRun();
+            CastsFired++;
+            LastCastFrom = HeroPosition;
+            LastCastAt = aim.Position;
             HeroCast?.Invoke();
 
             var targets = _arena.InShape(_enemies, _tuning.Cast, aim);

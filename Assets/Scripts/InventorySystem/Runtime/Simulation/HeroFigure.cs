@@ -245,7 +245,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 _visible = 1f;
 
             transform.localScale = Vector3.one * _visible;
-            Figure.SetAlpha(gone || _inPortal ? 0f : (map != null ? map.alpha : 1f) * _visible);
+            Figure.SetAlpha(gone || _inPortal ? 0f : (map != null ? map.alpha : 1f) * _visible * (arena != null ? arena.DebugFigureAlpha : 1f));
 
             // The Run waits only while he is on a trip; a hold nothing here owns is let go.
             var simulation = SimulationService.Instance;
