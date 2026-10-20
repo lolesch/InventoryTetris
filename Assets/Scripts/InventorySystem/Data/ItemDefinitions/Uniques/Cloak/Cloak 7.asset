@@ -18,11 +18,15 @@ MonoBehaviour:
   baseStackLimit: 1
   affixPool:
   - stat: 14
-    range: {x: 16, y: 25}
-    modifierType: 100
+    range: {x: 10, y: 30}
+    modifierType: 200
     weight: 1
   - stat: 3
-    range: {x: 13, y: 20}
+    range: {x: 1, y: 4}
+    modifierType: 100
+    weight: 1
+  - stat: 23
+    range: {x: 1, y: 3}
     modifierType: 100
     weight: 1
   implicitStats: []

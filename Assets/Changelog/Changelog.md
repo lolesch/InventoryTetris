@@ -38,6 +38,7 @@
 - The Healer always has two Portal Scrolls on offer, and a new hero starts with enough coins to buy a few.
 - The hero walks to the spot you click on a Town Stop or the Town Exit, and both Exits wait until he stands there before the map changes or the Run returns; a Run waits for him to step out of a portal and walk clear before the fight goes on.
 - Clearing a Location lets its toggle go, so you can send the hero to the same Location again, and he ends the fight by walking back to the middle of the arena. Coming back through a portal from a cleared Location leaves the toggle off.
+- Gear and hero stats are rebalanced: a new hero starts with less health and damage and no armor or magic resist, and items roll much smaller flat stats but more varied ones, such as Shield on boots, percent Armor on chests and Resource Regeneration on bracers and cloaks.
 
 ## 0.0.5_Alpha - 2026-09-25
 

@@ -19,24 +19,28 @@ MonoBehaviour:
   baseValue: 10
   affixPool:
   - stat: 11
-    range: {x: 100, y: 150}
+    range: {x: 30, y: 70}
     modifierType: 100
     weight: 1
   - stat: 12
-    range: {x: 67, y: 100}
-    modifierType: 200
+    range: {x: 2, y: 5}
+    modifierType: 100
     weight: 1
   - stat: 13
-    range: {x: 10, y: 15}
+    range: {x: 3, y: 7}
     modifierType: 100
     weight: 1
   - stat: 14
-    range: {x: 16, y: 25}
+    range: {x: 3, y: 7}
     modifierType: 100
     weight: 1
   - stat: 17
-    range: {x: 100, y: 200}
+    range: {x: 30, y: 120}
     modifierType: 100
+    weight: 1
+  - stat: 17
+    range: {x: 20, y: 50}
+    modifierType: 200
     weight: 1
   implicitStats: []
   requirementLevel: 0

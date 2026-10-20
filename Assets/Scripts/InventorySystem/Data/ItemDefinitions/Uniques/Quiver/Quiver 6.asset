@@ -17,17 +17,17 @@ MonoBehaviour:
   footprint: 13
   baseStackLimit: 1
   affixPool:
-  - stat: 2
-    range: {x: 6, y: 10}
+  - stat: 5
+    range: {x: 10, y: 30}
     modifierType: 100
     weight: 1
   - stat: 1
-    range: {x: 8, y: 12}
+    range: {x: 10, y: 30}
     modifierType: 200
     weight: 1
-  - stat: 4
-    range: {x: 8, y: 13}
-    modifierType: 200
+  - stat: 23
+    range: {x: 1, y: 3}
+    modifierType: 100
     weight: 1
   implicitStats: []
   requirementLevel: 0

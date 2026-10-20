@@ -19,30 +19,30 @@ MonoBehaviour:
   - <Stat>k__BackingField: 1
     <BaseValue>k__BackingField: 0.658
   - <Stat>k__BackingField: 2
-    <BaseValue>k__BackingField: 59
+    <BaseValue>k__BackingField: 1
   - <Stat>k__BackingField: 3
-    <BaseValue>k__BackingField: 0
+    <BaseValue>k__BackingField: 1
   - <Stat>k__BackingField: 4
-    <BaseValue>k__BackingField: 0
+    <BaseValue>k__BackingField: 1
   - <Stat>k__BackingField: 5
-    <BaseValue>k__BackingField: 0
+    <BaseValue>k__BackingField: 1
   - <Stat>k__BackingField: 12
-    <BaseValue>k__BackingField: 0
+    <BaseValue>k__BackingField: 1
   - <Stat>k__BackingField: 13
-    <BaseValue>k__BackingField: 26
+    <BaseValue>k__BackingField: 0
   - <Stat>k__BackingField: 14
-    <BaseValue>k__BackingField: 30
+    <BaseValue>k__BackingField: 0
   - <Stat>k__BackingField: 21
     <BaseValue>k__BackingField: 325
   - <Stat>k__BackingField: 23
     <BaseValue>k__BackingField: 7
   - <Stat>k__BackingField: 24
-    <BaseValue>k__BackingField: 0
+    <BaseValue>k__BackingField: 1
   - <Stat>k__BackingField: 25
-    <BaseValue>k__BackingField: 0
+    <BaseValue>k__BackingField: 1
   resources:
   - <Stat>k__BackingField: 11
-    <BaseValue>k__BackingField: 640
+    <BaseValue>k__BackingField: 400
   - <Stat>k__BackingField: 22
     <BaseValue>k__BackingField: 280
   - <Stat>k__BackingField: 17
