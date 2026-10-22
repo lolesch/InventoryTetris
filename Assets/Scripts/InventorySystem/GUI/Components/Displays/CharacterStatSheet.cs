@@ -79,7 +79,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
             var shown = 0;
 
             //TODO: extend prefabPool to support IDisplay<T> that update the Repaint(newData) before activating the object
-            foreach (var stat in _hero.Resources.Cast<CharacterStat>().Union(_hero.Stats))
+            foreach (var stat in _hero.Resources.Cast<CharacterStat>().Union(_hero.Stats).OrderBy(stat => stat.Stat))
             {
                 if (shown == _rows.Count)
                     _rows.Add(Instantiate(rowPrefab, rowPrefab.transform.parent));

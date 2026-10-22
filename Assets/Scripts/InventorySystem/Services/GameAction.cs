@@ -50,6 +50,8 @@ namespace ToolSmiths.InventorySystem.Services
 
         /// <summary>Recalls the live Run to Town through a Portal Scroll (ADR-0022).</summary>
         Recall = 12,
+
+        ToggleCharacterStats = 13,
     }
 
     /// <summary>The actions a rebinding screen offers.</summary>

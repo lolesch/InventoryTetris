@@ -344,10 +344,10 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         }
 
         [Test]
-        public void ACoinStackTheFullGroundPushesOut_BanksIntoTheWallet()
+        public void ACoinStackTheFullGroundPushesOut_IsDeleted()
         {
-            // The ground holds one cell. It starts with 3 iron; the sale's copper evicts them, and the
-            // bag's iron pile takes them back. 4x1 bag: belt (2 cells), helm, one iron.
+            // The ground holds one cell. It starts with 3 iron; the sale's copper evicts them. 4x1 bag:
+            // belt (2 cells), helm, one iron.
             var inventory = Inventory(4, 1);
             var wallet = WalletOver(inventory, groundWidth: 1, groundHeight: 1);
             SeedCash(wallet, CurrencyType.Iron, 1u);
@@ -362,7 +362,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
 
             Assert.That(Lying(CurrencyType.Copper), Is.EqualTo(4u), "the copper took the only ground cell");
             Assert.That(Lying(CurrencyType.Iron), Is.Zero);
-            Assert.That(wallet.Balance.Iron, Is.EqualTo(4u), "the evicted iron banked onto the pile in the bag");
+            Assert.That(wallet.Balance.Iron, Is.EqualTo(1u), "the evicted iron was deleted, not banked onto the pile in the bag");
         }
 
         [Test]

@@ -2,7 +2,10 @@
 
 ## Unreleased
 
+- Two more locations to venture into: Blackmire opens once Ashfall is cleared, and Stormcliff opens once Blackmire is cleared.
 - Press B in Town to walk the hero into an open Town Portal, the same as clicking it.
+- Press C to open the character stats. They open beside the hero panel without closing it, and take the Ground list's place on the left while they are open.
+- The sim settings now take the Ground list's place on the left while they are open, and closing them brings the Ground list back.
 
 ## 0.0.6_Alpha - 2026-10-21
 

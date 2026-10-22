@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d8db7f7c0ad2470abea0764beb817607, type: 3}
+  m_Name: Blackmire
+  m_EditorClassIdentifier: InventorySystem.Locations:ToolSmiths.InventorySystem.Locations.LocationConfig
+  id: location.blackmire
+  unlocksWhenActive: []
+  unlocksWhenComplete:
+  - {fileID: 11400000, guid: e25646877a6a4fa49a61bb6def799627, type: 2}
+  displayName: Blackmire
+  sourceLevel: 8
+  categoryDistribution: {fileID: 11400000, guid: 874122b1e2b2463787893da60a761334, type: 2}
+  rarityDistribution: {fileID: 11400000, guid: 58094a6aa4c34f3d98037e5e75849b8b, type: 2}
+  packed: 0
+  rosterBrute: {x: 12, y: 12}
+  rosterSkirmisher: {x: 14, y: 14}
+  population: {x: 5, y: 7}
+  packBatch: {x: 3, y: 4}
+  packedSpawnWeight: 0.6
+  spawnInterval: 3.0
+  spawnJitter: 0

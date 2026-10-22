@@ -68,13 +68,11 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
             var slider = Field(panel, "resourceReserveSlider");
             var changed = (System.Delegate)Field(slider, "OnValueChanged");
             var group = panel.GetComponent<CanvasGroup>();
-            var radio = Field(panel, "<RadioGroup>k__BackingField");
-            var active = radio?.GetType().GetProperty("ActiveMember")?.GetValue(radio) as Component;
             var bound = Field(panel, "_behaviour");
             return $"alpha={group.alpha} interactable={group.interactable} blocks={group.blocksRaycasts} "
                    + $"panelActiveInHierarchy={panel.gameObject.activeInHierarchy} _behaviour={(bound == null ? "null" : "set")} "
                    + $"sameAsHero={ReferenceEquals(bound, Session.Instance.Hero.Behaviour)} "
-                   + $"listeners={(changed == null ? 0 : changed.GetInvocationList().Length)} activeMember={(active ? active.name : "none")}";
+                   + $"listeners={(changed == null ? 0 : changed.GetInvocationList().Length)}";
         }
 
         private static void AssertEverySliderWritesTheLiveBehaviour(string when)

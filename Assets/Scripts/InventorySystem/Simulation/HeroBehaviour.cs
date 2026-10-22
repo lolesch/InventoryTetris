@@ -1,6 +1,7 @@
 using System;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
+using ToolSmiths.InventorySystem.Items;
 
 namespace ToolSmiths.InventorySystem.Simulation
 {
@@ -29,6 +30,9 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// with <see cref="AdmitsCoin"/> as its filter (issue #218).
         /// </summary>
         public bool AutoPickup { get; set; }
+
+        /// <summary>The item types <see cref="AdmitsKind"/> will pick up; every type until a toggle switches one off.</summary>
+        public LootKind AdmittedKinds { get; set; } = LootKind.All;
 
         /// <summary>
         /// How strongly home pulls against nearness when the hero picks a target, 0..1 (spatial-combat spec):
@@ -66,8 +70,12 @@ namespace ToolSmiths.InventorySystem.Simulation
         /// <summary>The loot filter for items: admits <paramref name="rarity"/> at or above <see cref="LootFilterMinimum"/>.</summary>
         public bool AdmitsItem(ItemRarity rarity) => rarity >= LootFilterMinimum;
 
-        /// <summary>The loot filter for coins: admits <paramref name="denomination"/> by its fixed Rarity on GLOSSARY.md's ladder.</summary>
-        public bool AdmitsCoin(CurrencyType denomination) => Currency.RarityOf(denomination) >= LootFilterMinimum;
+        /// <summary>The loot filter's type half: admits a <paramref name="kind"/> that is switched on. A <see cref="LootKind.None"/> item has no toggle, so it is never filtered out.</summary>
+        public bool AdmitsKind(LootKind kind) => kind == LootKind.None || (AdmittedKinds & kind) != 0;
+
+        /// <summary>The loot filter for coins: admits <paramref name="denomination"/> by its fixed Rarity on GLOSSARY.md's ladder, while the Currency type is on.</summary>
+        public bool AdmitsCoin(CurrencyType denomination) =>
+            Currency.RarityOf(denomination) >= LootFilterMinimum && AdmitsKind(LootKind.Currency);
 
         // ─── slider mapping helpers (issue #27) ─────────────────────────────
 

@@ -164,7 +164,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
-        public void ACoinStackPushedOffTheGround_BanksToTheWalletFirst()
+        public void ACoinStackPushedOffTheGround_IsDeleted()
         {
             Build(bagSize: new Vector2Int(6, 6), groundSize: new Vector2Int(1, 1));
             _ = desk.PlaceOnGround(new Package(null, wallet.MintCoin(CurrencyType.Copper), 3u));
@@ -172,7 +172,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
             _ = desk.PlaceOnGround(Pack(sword));
 
-            Assert.That(wallet.Balance.Copper, Is.EqualTo(3u));
+            Assert.That(wallet.Balance.Total, Is.Zero);
             Assert.That(Lying(ground), Is.EqualTo(new[] { sword }));
         }
     }

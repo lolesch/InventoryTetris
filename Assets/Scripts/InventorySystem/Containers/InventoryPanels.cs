@@ -16,5 +16,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         Vendor = 1 << 2,
         Healer = 1 << 3,
         Ground = 1 << 4,
+        CharacterStats = 1 << 5,
+        SimSettings = 1 << 6,
     }
 }

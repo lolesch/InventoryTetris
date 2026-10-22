@@ -17,7 +17,8 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
         public struct CharacterStatData
         {
             private CharacterStat stat;
-            public string displayText;
+            public string nameText;
+            public string valueText;
             public Sprite icon;
             public CharacterStatData(CharacterStat characterStat, Package[] compareTo = null)
             {
@@ -44,19 +45,22 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
                     ? $"overwritten by: implementStatModSource" //{overwriteMods.FirstOrDefault().Source}"
                     : $"({baseValue.ToString(NumberFormats.Stat)} + {flatAddModValue.ToString(NumberFormats.Stat)}) * {percentAddModValue.ToString(NumberFormats.Stat)} {percentMultModString}";
 
-                displayText = $"{stat.TotalValue.ToString(NumberFormats.Stat)}\t{modDetailText.Colored(UiColors.Muted)}"; //{statName}
+                nameText = stat.Stat.ToDescription();
+                valueText = $"{stat.TotalValue.ToString(NumberFormats.Stat)} {modDetailText.Colored(UiColors.Muted)}"; //{statName}
                 icon = ItemService.Instance.GetStatIcon(stat.Stat);
             }
         }
 
         [SerializeField] private Image icon;
 
-        [SerializeField] private TextMeshProUGUI text;
+        [SerializeField] private TextMeshProUGUI nameText;
+        [SerializeField] private TextMeshProUGUI valueText;
 
         public void Repaint(CharacterStatData newData)
         {
             icon.sprite = newData.icon;
-            text.text = newData.displayText;
+            nameText.text = newData.nameText;
+            valueText.text = newData.valueText;
         }
     }
 }

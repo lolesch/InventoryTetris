@@ -20,7 +20,7 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// on the spot instead, and only one that fails the filter or finds no room stays down.
     /// Separately rolls one coin Pile per kill and treats it the same way (issue #218): with auto-pickup on
     /// and <see cref="HeroBehaviour.AdmitsCoin"/> passing, the wallet takes what it can; the rest lies on
-    /// the ground as a coin stack, which banks to the wallet when it is evicted or clicked.
+    /// the ground as a coin stack, which banks to the wallet when it is clicked and is deleted when it is evicted.
     ///
     /// The roll itself is delegated entirely to its collaborators — <see cref="ItemGenerator"/>
     /// and <see cref="ICoinDropSource"/> each own their own randomness — so this class owns only
@@ -38,6 +38,9 @@ namespace ToolSmiths.InventorySystem.Simulation
         private readonly IItemReceiver _player;
         private readonly Wallet _wallet;
         private readonly GroundDesk _desk;
+
+        /// <summary>The first item this flow drops is a weapon, so a new hero has something to equip.</summary>
+        private bool _firstDropPending = true;
 
         public LootFlow(
             EncounterSimulation encounter,
@@ -103,7 +106,7 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         /// <summary>
         /// Raised with the base-unit total of the coins each time some bank to the Wallet - a picked-up
-        /// Pile, a clicked stack, or a stack pushed out by newer loot (it banks all the same, and the Death
+        /// Pile or a clicked stack (it banks all the same, and the Death
         /// fee is charged on it). The Run tracks the take this way — <see cref="RunState.CurrencyBanked"/>,
         /// the base the Death fee reads — so the engine-side driver feeds it
         /// <see cref="RunState.BankCurrency"/> per kill.
@@ -139,22 +142,29 @@ namespace ToolSmiths.InventorySystem.Simulation
             // misconfigured Location loot table throwing here must not propagate and abort the
             // rest of that tick. A kill's combat resolution is not allowed to depend on
             // itemization content being well-formed; treat a roll failure as "no items this kill".
-            IReadOnlyList<ItemInstance> drops;
+            List<ItemInstance> drops;
             try
             {
-                drops = _items.RollLoot(context, count);
+                drops = new List<ItemInstance>(count);
+                if (_firstDropPending)
+                    drops.Add(_items.RollWeapon(context));
+
+                drops.AddRange(_items.RollLoot(context, count - drops.Count));
             }
             catch (InvalidOperationException)
             {
                 return;
             }
 
+            _firstDropPending = false;
+
             for (var i = 0; i < drops.Count; i++)
             {
                 var item = drops[i];
 
                 // Picking up is the player's click (issue #63) unless the debug switch hands it back.
-                if (_behaviour.AutoPickup && _behaviour.AdmitsItem(item.Rarity) && TryPlace(item))
+                if (_behaviour.AutoPickup && _behaviour.AdmitsItem(item.Rarity) && _behaviour.AdmitsKind(_items.KindOf(item))
+                    && TryPlace(item))
                     continue; // equipped, or landed in the bag
 
                 _ = LandNew(item, 1u);

@@ -199,9 +199,8 @@ stay down. A coin Pile follows the same rule: with `AutoPickup` on and the filte
 denomination the Wallet takes what it can, and the rest — or the whole Pile, with `AutoPickup`
 off — lies on the ground as a stack of that denomination's coin, merging with the stack already
 there up to the item's stack limit and making it the newest; denominations never consolidate on
-their own. A coin stack pushed out by newer loot banks to the Wallet first and only what the
-Wallet cannot take is lost, and it does not count toward the **Run**'s take; clicking one banks
-it, and what the Wallet cannot take stays.
+their own. A coin stack pushed out by newer loot is deleted like any other **Drop**, and does not
+count toward the **Run**'s take; clicking one banks it, and what the Wallet cannot take stays.
 _Avoid_: pile (that is coins), ground loot, spill, cache
 
 **Ground**:
@@ -358,8 +357,9 @@ the source level, the loot table a Run there rolls against, which enemy **archet
 **Packs**, its **Roster** and **Spawn Profile**, and its **Population**. An **Unlockable**: it is
 **Complete** for a hero once the hero clears its whole Population in one Send. Its source level
 is fixed, never scaled to the hero: Locations form a difficulty ladder a geared hero outgrows.
-Two for the MVP — Thornwood (low source level, Brute-packed, a bag run) and Ashfall (high,
-Skirmisher-packed, a gear-gated step: clearable in gear of its level, survivable in part without it).
+Four so far, a chain each Completed one opens the next of — Thornwood (low source level, Brute-packed,
+a bag run), Ashfall (higher, Skirmisher-packed, a gear-gated step: clearable in gear of its level,
+survivable in part without it), Blackmire (Brute-packed swamp) and Stormcliff (Skirmisher-packed coast).
 _Avoid_: level, zone, area, stage, node, dungeon, map
 
 **Encounter**:

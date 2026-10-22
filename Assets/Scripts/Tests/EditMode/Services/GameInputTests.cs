@@ -66,6 +66,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         [TestCase(GameAction.Cancel, "<Keyboard>/escape")]
         [TestCase(GameAction.PeekTab, "<Keyboard>/tab")]
         [TestCase(GameAction.Recall, "<Keyboard>/b")]
+        [TestCase(GameAction.ToggleCharacterStats, "<Keyboard>/c")]
         public void TheDefaultKeys_AreTheShippedOnes(GameAction action, string path)
         {
             Assert.That(shipped.FindAction(action.ToString()).bindings.Select(binding => binding.path), Does.Contain(path));

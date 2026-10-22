@@ -101,7 +101,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Character
         // --- the template -------------------------------------------------------------------------
 
         [Test]
-        public void DefaultHeroData_ReproducesTheValuesTheScenePlayerSerialized()
+        public void DefaultHeroData_HasTheRebalancedBaseValues()
         {
             var data = AssetDatabase.LoadAssetAtPath<HeroData>(DefaultHeroPath);
             Assert.That(data, Is.Not.Null, DefaultHeroPath + " is missing");
@@ -111,17 +111,17 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Character
             var stats = new Dictionary<StatName, float>
             {
                 [StatName.AttackSpeed] = 0.658f,
-                [StatName.PhysicalDamage] = 59f,
-                [StatName.MagicalDamage] = 0f,
-                [StatName.ArmorPenetration] = 0f,
-                [StatName.MagicPenetration] = 0f,
-                [StatName.HealthRegeneration] = 0f,
-                [StatName.Armor] = 26f,
-                [StatName.MagicResist] = 30f,
+                [StatName.PhysicalDamage] = 1f,
+                [StatName.MagicalDamage] = 1f,
+                [StatName.ArmorPenetration] = 1f,
+                [StatName.MagicPenetration] = 1f,
+                [StatName.HealthRegeneration] = 1f,
+                [StatName.Armor] = 0f,
+                [StatName.MagicResist] = 0f,
                 [StatName.MovementSpeed] = 325f,
                 [StatName.ResourceRegeneration] = 7f,
-                [StatName.IncreasedItemRarity] = 0f,
-                [StatName.IncreasedItemQuantity] = 0f,
+                [StatName.IncreasedItemRarity] = 1f,
+                [StatName.IncreasedItemQuantity] = 1f,
             };
 
             foreach (var (stat, baseValue) in stats)
@@ -130,11 +130,11 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Character
                 Assert.That(hero.GetStat(stat).BaseValue, Is.EqualTo(baseValue).Within(0.0001f), stat.ToString());
             }
 
-            Assert.That(hero.Stats, Has.Count.EqualTo(stats.Count), "no stat beyond the ones the player serialized");
+            Assert.That(hero.Stats, Has.Count.EqualTo(stats.Count), "no stat beyond the ones the template lists");
 
             var resources = new Dictionary<StatName, float>
             {
-                [StatName.Health] = 640f,
+                [StatName.Health] = 400f,
                 [StatName.Resource] = 280f,
                 [StatName.Shield] = 0f,
                 [StatName.Experience] = 280f,
@@ -148,7 +148,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Character
 
             Assert.That(hero.Resources, Has.Count.EqualTo(resources.Count));
             Assert.That(hero.Level, Is.EqualTo(1u));
-            Assert.That(hero.GetResource(StatName.Health).CurrentValue, Is.EqualTo(640f), "built full");
+            Assert.That(hero.GetResource(StatName.Health).CurrentValue, Is.EqualTo(400f), "built full");
             Assert.That(hero.GetResource(StatName.Experience).CurrentValue, Is.Zero, "built with no XP");
         }
 
@@ -161,8 +161,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Character
 
             first.AddItemStats(new[] { On(StatName.Armor, Flat(10f)) });
 
-            Assert.That(first.GetStatValue(StatName.Armor), Is.EqualTo(36f));
-            Assert.That(second.GetStatValue(StatName.Armor), Is.EqualTo(26f));
+            Assert.That(first.GetStatValue(StatName.Armor), Is.EqualTo(10f));
+            Assert.That(second.GetStatValue(StatName.Armor), Is.Zero);
             Assert.That(data.Stats[0].BaseValue, Is.EqualTo(0.658f).Within(0.0001f), "the template is untouched");
         }
 
@@ -570,15 +570,15 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Character
         }
 
         [Test]
-        public void ANewHero_HasNoBaseHealthRegeneration_SoItDoesNotHealOverTicks()
+        public void ANewHero_HealsOverTicksFromItsTemplateHealthRegeneration()
         {
             var hero = new Hero(AssetDatabase.LoadAssetAtPath<HeroData>(DefaultHeroPath));
             Drain(hero, StatName.Health, 100f);
 
             hero.Regenerate(30f);
 
-            Assert.That(hero.GetStatValue(StatName.HealthRegeneration), Is.Zero);
-            Assert.That(hero.GetResource(StatName.Health).CurrentValue, Is.EqualTo(100f));
+            Assert.That(hero.GetStatValue(StatName.HealthRegeneration), Is.EqualTo(1f));
+            Assert.That(hero.GetResource(StatName.Health).CurrentValue, Is.EqualTo(130f), "100 + 1/s * 30s");
         }
 
         [Test]
@@ -590,7 +590,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Character
 
             hero.Regenerate(5f);
 
-            Assert.That(hero.GetResource(StatName.Health).CurrentValue, Is.EqualTo(110f), "100 + 2/s * 5s");
+            Assert.That(hero.GetResource(StatName.Health).CurrentValue, Is.EqualTo(115f), "100 + (1 base + 2 gear)/s * 5s");
         }
 
         [Test]

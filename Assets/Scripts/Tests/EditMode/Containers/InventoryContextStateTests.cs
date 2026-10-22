@@ -155,6 +155,8 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         [TestCase(InventoryContext.Vendor, InventoryPanels.Vendor)]
         [TestCase(InventoryContext.Healer, InventoryPanels.Healer)]
         [TestCase(InventoryContext.Ground, InventoryPanels.Ground)]
+        [TestCase(InventoryContext.CharacterStats, InventoryPanels.CharacterStats)]
+        [TestCase(InventoryContext.SimSettings, InventoryPanels.SimSettings)]
         public void PanelFor_NamesTheOnePanelAContextOwns(InventoryContext context, InventoryPanels expected)
         {
             Assert.That(InventoryContextState.PanelFor(context), Is.EqualTo(expected));
@@ -237,6 +239,158 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         public void Panels_IsAFlagsType_SoAContextCanNameTwoPanels()
         {
             Assert.That(Attribute.GetCustomAttribute(typeof(InventoryPanels), typeof(FlagsAttribute)), Is.Not.Null);
+        }
+
+        // ── Character Stats overlay ─────────────────────────────────────
+
+        [TestCase(InventoryContext.None, InventoryPanels.CharacterStats)]
+        [TestCase(InventoryContext.Hero, InventoryPanels.Hero | InventoryPanels.CharacterStats)]
+        [TestCase(InventoryContext.Ground, InventoryPanels.Hero | InventoryPanels.CharacterStats)]
+        [TestCase(InventoryContext.Stash, InventoryPanels.Hero | InventoryPanels.Stash | InventoryPanels.CharacterStats)]
+        public void CharacterStatsOpen_AddsItsPanel_TakesTheGroundItemsPanelDown_AndLeavesTheRestAlone(InventoryContext context, InventoryPanels expected)
+        {
+            state.Set(context);
+            state.SetOverlay(InventoryContext.CharacterStats, true);
+
+            Assert.That(state.Panels, Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void CharacterStats_DoesNotChangeTheContext_AndSurvivesHeroAndNone()
+        {
+            state.Set(InventoryContext.Hero);
+            state.SetOverlay(InventoryContext.CharacterStats, true);
+
+            Assert.That(state.Active, Is.EqualTo(InventoryContext.Hero));
+
+            state.Close();
+            Assert.That(state.Panels.HasFlag(InventoryPanels.CharacterStats), Is.True);
+
+            state.Set(InventoryContext.Hero);
+            Assert.That(state.Panels.HasFlag(InventoryPanels.CharacterStats), Is.True);
+        }
+
+        [TestCase(InventoryContext.None, InventoryContext.Stash, InventoryPanels.CharacterStats)]
+        [TestCase(InventoryContext.Hero, InventoryContext.Vendor, InventoryPanels.SimSettings)]
+        [TestCase(InventoryContext.Stash, InventoryContext.Healer, InventoryPanels.CharacterStats)]
+        public void OpeningATownStop_ClosesAnOverlay_AndClosingTheStopDoesNotBringItBack(InventoryContext before, InventoryContext stop, InventoryPanels overlay)
+        {
+            state.Set(before);
+            state.SetOverlay(overlay == InventoryPanels.CharacterStats ? InventoryContext.CharacterStats : InventoryContext.SimSettings, true);
+            var seen = 0;
+            state.Changed += _ => seen++;
+
+            state.Set(stop);
+
+            Assert.That(state.Panels.HasFlag(overlay), Is.False);
+            Assert.That(seen, Is.EqualTo(1));
+
+            state.Close();
+
+            Assert.That(state.Panels, Is.EqualTo(InventoryPanels.Ground));
+        }
+
+        [Test]
+        public void SetOverlay_CharacterStats_FiresChangedWithTheUnchangedContext_AndNotOnARestatement()
+        {
+            state.Set(InventoryContext.Hero);
+            var seen = new System.Collections.Generic.List<InventoryContext>();
+            state.Changed += seen.Add;
+
+            state.SetOverlay(InventoryContext.CharacterStats, true);
+            state.SetOverlay(InventoryContext.CharacterStats, true);
+            state.SetOverlay(InventoryContext.CharacterStats, false);
+
+            Assert.That(seen, Is.EqualTo(new[] { InventoryContext.Hero, InventoryContext.Hero }));
+        }
+
+        // ── Sim Settings overlay ────────────────────────────────────────
+
+        [TestCase(InventoryContext.None, InventoryPanels.SimSettings)]
+        [TestCase(InventoryContext.Hero, InventoryPanels.Hero | InventoryPanels.SimSettings)]
+        [TestCase(InventoryContext.Stash, InventoryPanels.Hero | InventoryPanels.Stash | InventoryPanels.SimSettings)]
+        public void SimSettingsOpen_AddsItsPanel_TakesTheGroundItemsPanelDown_AndNeverAddsTheHeroPanel(InventoryContext context, InventoryPanels expected)
+        {
+            state.Set(context);
+            state.SetOverlay(InventoryContext.SimSettings, true);
+
+            Assert.That(state.Panels, Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void ClosingSimSettings_BringsTheGroundItemsPanelBack()
+        {
+            state.SetOverlay(InventoryContext.SimSettings, true);
+            state.SetOverlay(InventoryContext.SimSettings, false);
+
+            Assert.That(state.Panels, Is.EqualTo(InventoryPanels.Ground));
+        }
+
+        [Test]
+        public void SimSettings_DoesNotChangeTheContext_AndSurvivesHeroAndNone()
+        {
+            state.SetOverlay(InventoryContext.SimSettings, true);
+
+            Assert.That(state.Active, Is.EqualTo(InventoryContext.None));
+
+            state.Set(InventoryContext.Hero);
+            state.Close();
+            Assert.That(state.Panels.HasFlag(InventoryPanels.SimSettings), Is.True);
+        }
+
+        [Test]
+        public void SimSettingsAndCharacterStats_ShareTheScreenSpace_SoOpeningOneClosesTheOther()
+        {
+            state.SetOverlay(InventoryContext.CharacterStats, true);
+            state.SetOverlay(InventoryContext.SimSettings, true);
+
+            Assert.That(state.Panels.HasFlag(InventoryPanels.CharacterStats), Is.False);
+            Assert.That(state.Panels, Is.EqualTo(InventoryPanels.SimSettings));
+
+            state.SetOverlay(InventoryContext.CharacterStats, true);
+
+            Assert.That(state.Panels.HasFlag(InventoryPanels.SimSettings), Is.False);
+            Assert.That(state.Panels, Is.EqualTo(InventoryPanels.CharacterStats));
+        }
+
+        [Test]
+        public void SetOverlay_SimSettings_FiresChangedWithTheUnchangedContext_AndNotOnARestatement()
+        {
+            state.Set(InventoryContext.Hero);
+            var seen = new System.Collections.Generic.List<InventoryContext>();
+            state.Changed += seen.Add;
+
+            state.SetOverlay(InventoryContext.SimSettings, true);
+            state.SetOverlay(InventoryContext.SimSettings, true);
+            state.SetOverlay(InventoryContext.SimSettings, false);
+
+            Assert.That(seen, Is.EqualTo(new[] { InventoryContext.Hero, InventoryContext.Hero }));
+        }
+
+        [TestCase(InventoryContext.None)]
+        [TestCase(InventoryContext.Ground)]
+        public void RequestingTheGroundContext_ClosesAnOverlay_SoTheGroundItemsPanelComesBack(InventoryContext before)
+        {
+            state.Set(before);
+            state.SetOverlay(InventoryContext.CharacterStats, true);
+            var seen = 0;
+            state.Changed += _ => seen++;
+
+            state.Set(InventoryContext.Ground);
+
+            Assert.That(state.Panels, Is.EqualTo(InventoryPanels.Hero | InventoryPanels.Ground));
+            Assert.That(seen, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void CloseOverlay_ClosesWhicheverIsUp_AndReportsWhetherOneWas()
+        {
+            Assert.That(state.CloseOverlay(), Is.False);
+
+            state.SetOverlay(InventoryContext.SimSettings, true);
+
+            Assert.That(state.CloseOverlay(), Is.True);
+            Assert.That(state.Panels, Is.EqualTo(InventoryPanels.Ground));
         }
 
         // ── Map reachability ───────────────────────────────────────────

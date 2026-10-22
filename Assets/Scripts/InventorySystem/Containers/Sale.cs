@@ -19,7 +19,7 @@ namespace ToolSmiths.InventorySystem.Inventories
     /// container never refuses a sale that can pay out; it discards its oldest instead
     /// (<see cref="OldestOutInventory.TryPlaceEvicting"/>). Neither does a full bag: the Wallet
     /// banks the payout highest denomination first and the coins it has no cell for lie on the
-    /// ground (<see cref="ILootGround"/>), where a stack the full ground pushes out banks first.</para>
+    /// ground (<see cref="ILootGround"/>), where a stack the full ground pushes out is deleted.</para>
     ///
     /// <para>It replaced the staged Sell Basket, which is deleted (issue #131). The shift-click sink calls <see cref="TrySell"/> (issue #128);
     /// the drop sale, <see cref="TrySellHeld"/>, is called by a Supply slot's drop (issue #129),

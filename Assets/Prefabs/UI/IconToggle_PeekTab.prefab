@@ -1,0 +1,175 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &7006772922679790725
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 6100000000000001, guid: 92d5acd2d5b844fd9dd9bd7467085317, type: 3}
+      propertyPath: m_Name
+      value: IconToggle_PeekTab
+      objectReference: {fileID: 0}
+    - target: {fileID: 6100000000000002, guid: 92d5acd2d5b844fd9dd9bd7467085317, type: 3}
+      propertyPath: m_Pivot.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6100000000000002, guid: 92d5acd2d5b844fd9dd9bd7467085317, type: 3}
+      propertyPath: m_Pivot.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6100000000000002, guid: 92d5acd2d5b844fd9dd9bd7467085317, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6100000000000002, guid: 92d5acd2d5b844fd9dd9bd7467085317, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6100000000000002, guid: 92d5acd2d5b844fd9dd9bd7467085317, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6100000000000002, guid: 92d5acd2d5b844fd9dd9bd7467085317, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6100000000000002, guid: 92d5acd2d5b844fd9dd9bd7467085317, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 60
+      objectReference: {fileID: 0}
+    - target: {fileID: 6100000000000002, guid: 92d5acd2d5b844fd9dd9bd7467085317, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 60
+      objectReference: {fileID: 0}
+    - target: {fileID: 6100000000000002, guid: 92d5acd2d5b844fd9dd9bd7467085317, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6100000000000002, guid: 92d5acd2d5b844fd9dd9bd7467085317, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6100000000000002, guid: 92d5acd2d5b844fd9dd9bd7467085317, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6100000000000002, guid: 92d5acd2d5b844fd9dd9bd7467085317, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6100000000000002, guid: 92d5acd2d5b844fd9dd9bd7467085317, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6100000000000002, guid: 92d5acd2d5b844fd9dd9bd7467085317, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6100000000000002, guid: 92d5acd2d5b844fd9dd9bd7467085317, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6100000000000002, guid: 92d5acd2d5b844fd9dd9bd7467085317, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6100000000000002, guid: 92d5acd2d5b844fd9dd9bd7467085317, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6100000000000002, guid: 92d5acd2d5b844fd9dd9bd7467085317, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6100000000000002, guid: 92d5acd2d5b844fd9dd9bd7467085317, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6100000000000002, guid: 92d5acd2d5b844fd9dd9bd7467085317, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6100000000000025, guid: 92d5acd2d5b844fd9dd9bd7467085317, type: 3}
+      propertyPath: toggle
+      value: 
+      objectReference: {fileID: 6063036367879696465}
+    m_RemovedComponents:
+    - {fileID: 6100000000000007, guid: 92d5acd2d5b844fd9dd9bd7467085317, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 6100000000000001, guid: 92d5acd2d5b844fd9dd9bd7467085317, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6063036367879696465}
+  m_SourcePrefab: {fileID: 100100000, guid: 92d5acd2d5b844fd9dd9bd7467085317, type: 3}
+--- !u!114 &7001027261004958849 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6100000000000004, guid: 92d5acd2d5b844fd9dd9bd7467085317, type: 3}
+  m_PrefabInstance: {fileID: 7006772922679790725}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7001027261004958852}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+--- !u!1 &7001027261004958852 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6100000000000001, guid: 92d5acd2d5b844fd9dd9bd7467085317, type: 3}
+  m_PrefabInstance: {fileID: 7006772922679790725}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &6063036367879696465
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7001027261004958852}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ae690ccf9f1fd33409d08f025a7b1217, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ToolSmiths.InventorySystem.GUI.Components.Toggles.SellingPanelPeekToggle
+  m_Navigation:
+    m_Mode: 3
+    m_WrapAround: 0
+    m_SelectOnUp: {fileID: 0}
+    m_SelectOnDown: {fileID: 0}
+    m_SelectOnLeft: {fileID: 0}
+    m_SelectOnRight: {fileID: 0}
+  m_Transition: 1
+  m_Colors:
+    m_NormalColor: {r: 1, g: 1, b: 1, a: 0.4}
+    m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0, a: 0.4}
+    m_PressedColor: {r: 1, g: 0.84313726, b: 0, a: 0.5019608}
+    m_SelectedColor: {r: 1, g: 1, b: 1, a: 0.4}
+    m_DisabledColor: {r: 0, g: 0, b: 0, a: 0.5019608}
+    m_ColorMultiplier: 1
+    m_FadeDuration: 0.1
+  m_SpriteState:
+    m_HighlightedSprite: {fileID: 0}
+    m_PressedSprite: {fileID: 0}
+    m_SelectedSprite: {fileID: 0}
+    m_DisabledSprite: {fileID: 0}
+  m_AnimationTriggers:
+    m_NormalTrigger: Normal
+    m_HighlightedTrigger: Highlighted
+    m_PressedTrigger: Pressed
+    m_SelectedTrigger: Selected
+    m_DisabledTrigger: Disabled
+  m_Interactable: 1
+  m_TargetGraphic: {fileID: 7001027261004958849}
+  staySelected: 0
+  hoverScale: 1.06
+  tooltip: 
+  tooltipLabel: {fileID: 0}
+  <IsOn>k__BackingField: 0
+  <RadioGroup>k__BackingField: {fileID: 0}
+  toggledOffSprite: {fileID: 0}
+  toggledOnSprite: {fileID: 0}
+  panelWhenOn: {fileID: 0}
+  panelWhenOff: {fileID: 0}
+  companionToggle: {fileID: 0}

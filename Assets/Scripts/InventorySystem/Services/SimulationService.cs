@@ -286,19 +286,21 @@ namespace ToolSmiths.InventorySystem.Services
         }
 
         // A menu's freeze, separate from the player's Pause so that releasing it gives the Pause back
-        // as found. Transient and read through the phase, like the Pause.
+        // as found. Transient and, unlike the Pause, held in Town too: the Hero regenerates there, and a
+        // menu stops that. The menu releases it when its scene is left, so no World outlives a stale flag.
         private bool held;
 
-        public bool IsMenuFrozen => held && Run.Phase == RunPhase.Live;
+        public bool IsMenuFrozen => held;
 
-        public void SetMenuFreeze(bool value)
-        {
-            // Holding needs a Run in the Field, so Town has nothing to hold; releasing never does.
-            if (value && Run.Phase != RunPhase.Live)
-                return;
+        public void SetMenuFreeze(bool value) => held = value;
 
-            held = value;
-        }
+        // The game is not being played (the Main Menu scene). Its own flag, so a menu closing as its scene
+        // is left cannot release it. Transient, like the other freezes.
+        private bool outOfGame;
+
+        public bool IsOutOfGame => outOfGame;
+
+        public void SetOutOfGame(bool value) => outOfGame = value;
 
         // The hero's trip (a walk to a Field Exit, a step out of a portal): a third freeze, transient and read
         // through the phase like the others.
@@ -333,7 +335,7 @@ namespace ToolSmiths.InventorySystem.Services
         }
 
         public float SimDelta(float deltaSeconds) =>
-            IsPaused || IsMenuFrozen || IsHeroInTransit ? 0f : deltaSeconds * Mathf.Max(0f, session.Hero.Behaviour.SimSpeed) * ViewTimeFactor;
+            IsPaused || IsMenuFrozen || IsOutOfGame || IsHeroInTransit ? 0f : deltaSeconds * Mathf.Max(0f, session.Hero.Behaviour.SimSpeed) * ViewTimeFactor;
 
         public float WalkDelta(float deltaSeconds) =>
             deltaSeconds * Mathf.Max(0f, session.Hero.Behaviour.SimSpeed);
@@ -343,8 +345,8 @@ namespace ToolSmiths.InventorySystem.Services
 
         public void Tick(float deltaSeconds)
         {
-            // A frozen Run stands still whole: no regeneration, no Encounter.
-            if (IsPaused || IsMenuFrozen || IsHeroInTransit)
+            // A frozen sim stands still whole: no regeneration, no Encounter.
+            if (IsPaused || IsMenuFrozen || IsOutOfGame || IsHeroInTransit)
                 return;
 
             var hero = session.Hero;

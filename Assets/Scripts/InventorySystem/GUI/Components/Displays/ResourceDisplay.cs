@@ -25,8 +25,6 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
         [SerializeField] private StatName resourceName = StatName.Health;
         [SerializeField] private StatName recoveryName = StatName.HealthRegeneration;
 
-        [SerializeField] private AnimationCurve globeVolume;
-
         private CharacterResource _resource;
         private CharacterStat _recovery;
         private bool _bound;
@@ -164,9 +162,7 @@ namespace ToolSmiths.InventorySystem.GUI.Displays
             _current = current;
             _total = total;
 
-            var fraction = 0 < total ? Mathf.Clamp01(current / total) : 0f;
-
-            _fraction = Mathf.Clamp01(0 < globeVolume.length ? globeVolume.Evaluate(fraction) : fraction);
+            _fraction = 0 < total ? Mathf.Clamp01(current / total) : 0f;
             ApplyFill();
             RefreshTexts();
         }

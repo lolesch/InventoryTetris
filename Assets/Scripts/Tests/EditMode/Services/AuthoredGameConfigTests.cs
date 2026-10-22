@@ -121,9 +121,9 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
-        public void Locations_AreTheTwoAuthoredAssets()
+        public void Locations_AreTheFourAuthoredAssets()
         {
-            Assert.That(config.Locations, Has.Count.EqualTo(2));
+            Assert.That(config.Locations, Has.Count.EqualTo(4));
 
             foreach (var location in config.Locations)
                 Assert.That(location, Is.Not.Null);
@@ -143,6 +143,26 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             hero.MarkCompleted("location.thornwood");
 
             Assert.That(registry.StateOf(ashfall, hero), Is.EqualTo(UnlockState.Active));
+        }
+
+        [Test]
+        public void TheLocationsChain_AshfallOpensBlackmire_BlackmireOpensStormcliff()
+        {
+            var registry = new ProgressionRegistry(config.Unlockables);
+            var blackmire = config.Locations.Single(location => location.Id == "location.blackmire");
+            var stormcliff = config.Locations.Single(location => location.Id == "location.stormcliff");
+            var hero = new Runtime.Character.Hero(config.DefaultHero);
+
+            hero.MarkCompleted("location.thornwood");
+            Assert.That(registry.StateOf(blackmire, hero), Is.EqualTo(UnlockState.Locked), "Ashfall is only Active");
+            Assert.That(registry.StateOf(stormcliff, hero), Is.EqualTo(UnlockState.Hidden), "nothing that names it is Active yet");
+
+            hero.MarkCompleted("location.ashfall");
+            Assert.That(registry.StateOf(blackmire, hero), Is.EqualTo(UnlockState.Active));
+            Assert.That(registry.StateOf(stormcliff, hero), Is.EqualTo(UnlockState.Locked));
+
+            hero.MarkCompleted("location.blackmire");
+            Assert.That(registry.StateOf(stormcliff, hero), Is.EqualTo(UnlockState.Active));
         }
 
         [Test]

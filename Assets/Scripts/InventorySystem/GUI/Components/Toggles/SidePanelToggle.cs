@@ -100,7 +100,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         /// </summary>
         protected override void OnToggle()
         {
-            if (IsOn && panel != null && ServiceLocator.IsArmed && !panel.IsUpIn(InventoryService.Instance.ActiveContext))
+            if (IsOn && panel != null && ServiceLocator.IsArmed && !panel.IsUpIn(InventoryService.Instance.ActivePanels))
                 panel.RequestContext(true);
         }
 
@@ -172,7 +172,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         {
             UnlockLook.Apply(this, SimulationService.Instance.StateOf(stop) >= UnlockState.Active);
 
-            if (!interactable && panel != null && ServiceLocator.IsArmed && panel.IsUpIn(InventoryService.Instance.ActiveContext))
+            if (!interactable && panel != null && ServiceLocator.IsArmed && panel.IsUpIn(InventoryService.Instance.ActivePanels))
                 _ = panel.RequestContext(false);
         }
 
@@ -190,12 +190,12 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
         /// <c>SyncToggle</c> on a sibling lands back here through that sibling's own event, finds
         /// nothing left to change, and stops.</para>
         /// </summary>
-        private void SyncToContext(InventoryContext context)
+        private void SyncToContext(InventoryContext _)
         {
             if (panel == null)
                 return;
 
-            var shouldBeOn = panel.IsUpIn(context);
+            var shouldBeOn = panel.IsUpIn(InventoryService.Instance.ActivePanels);
             if (IsOn != shouldBeOn)
                 SyncToggle(shouldBeOn);
         }
@@ -216,7 +216,7 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Toggles
             SetToggle(!wasOn);
             if (wasOn && !IsOn)
                 panel.RequestContext(false);
-            else if (!wasOn && IsOn && heroFigure != null && panel.IsUpIn(InventoryService.Instance.ActiveContext))
+            else if (!wasOn && IsOn && heroFigure != null && panel.IsUpIn(InventoryService.Instance.ActivePanels))
                 heroFigure.TravelToClickOr((RectTransform)transform, this.TravelPointOr(travelPoint));
         }
 
