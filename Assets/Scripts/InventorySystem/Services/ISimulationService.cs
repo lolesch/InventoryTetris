@@ -161,18 +161,27 @@ namespace ToolSmiths.InventorySystem.Services
         void SetPaused(bool paused);
 
         /// <summary>
-        /// Whether a menu holds the live Run still. A second freeze beside <see cref="IsPaused"/>, which stays
-        /// the player's own: releasing the hold gives the Pause back as it was found. Like the Pause it can only
-        /// be true while a Run is in the Field, so it is never true in Town and the Run's end clears it.
+        /// Whether a menu holds the simulation still. A second freeze beside <see cref="IsPaused"/>, which stays
+        /// the player's own: releasing the hold gives the Pause back as it was found. Unlike the Pause it holds in
+        /// Town too, where it stops the Hero's regeneration.
         /// </summary>
         bool IsMenuFrozen { get; }
 
         /// <summary>
-        /// Holds (<c>true</c>) or releases (<c>false</c>) the live Run for a menu. Holding is refused - nothing
-        /// happens - unless a Run is in the Field; releasing is always allowed, and holding twice is one hold.
-        /// Never changes <see cref="IsPaused"/> or raises <see cref="PausedChanged"/>.
+        /// Holds (<c>true</c>) or releases (<c>false</c>) the simulation for a menu, in Town or in the Field.
+        /// Holding twice is one hold. Never changes <see cref="IsPaused"/> or raises <see cref="PausedChanged"/>.
         /// </summary>
         void SetMenuFreeze(bool held);
+
+        /// <summary>
+        /// Whether the game is not being played: the Main Menu scene is the active one. <see cref="Tick"/> does
+        /// nothing and <see cref="SimDelta"/> is 0 while it is true, so the loaded hero does not regenerate out of
+        /// the game. Separate from <see cref="IsMenuFrozen"/>, which a menu closing on its way out cannot release.
+        /// </summary>
+        bool IsOutOfGame { get; }
+
+        /// <summary>Marks the game as left (<c>true</c>) or entered (<c>false</c>). Never changes <see cref="IsPaused"/> or <see cref="IsMenuFrozen"/>.</summary>
+        void SetOutOfGame(bool outOfGame);
 
         /// <summary>
         /// Whether the live Run waits for the hero to get where he is going: he walks to a Field Exit before he

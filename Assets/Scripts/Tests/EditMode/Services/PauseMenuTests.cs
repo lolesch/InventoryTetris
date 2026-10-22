@@ -2,6 +2,7 @@ using NUnit.Framework;
 using Submodules.Utility.Services;
 using System.Collections.Generic;
 using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Data.Enums;
 using ToolSmiths.InventorySystem.Inventories;
 using ToolSmiths.InventorySystem.Locations;
 using ToolSmiths.InventorySystem.Services;
@@ -19,6 +20,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
     public sealed class PauseMenuTests
     {
         private readonly List<Object> created = new();
+        private Session session;
         private SimulationService simulation;
         private PauseMenu menu;
         private LocationConfig thornwood;
@@ -31,7 +33,7 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             var config = TestGameConfig.Create(created);
             var rolls = new SessionBuilderTests.FixedRolls(0.5f);
             var items = new ItemService(config, rolls);
-            var session = SessionBuilder.Build(config, GameBoot.Load().DefaultHero, items);
+            session = SessionBuilder.Build(config, GameBoot.Load().DefaultHero, items);
             simulation = new SimulationService(session, items, new InventoryService(session, items), config, rolls);
             menu = new PauseMenu(simulation);
 
@@ -87,15 +89,24 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
-        public void InTown_TheMenuOpensAndCloses_WithNothingToHold()
+        public void InTown_TheMenuHoldsTheHeroStill_SoHeDoesNotRegenerate()
         {
+            var resource = session.Hero.GetResource(StatName.Resource);
+            _ = resource.RemoveFromCurrent(resource.TotalValue);
             menu.Open();
 
             Assert.That(menu.IsOpen, Is.True);
-            Assert.That(simulation.IsMenuFrozen, Is.False);
+            Assert.That(simulation.IsMenuFrozen, Is.True);
+
+            simulation.Tick(1f);
+            Assert.That(resource.CurrentValue, Is.Zero, "no regeneration behind an open menu");
 
             menu.Close();
             Assert.That(menu.IsOpen, Is.False);
+            Assert.That(simulation.IsMenuFrozen, Is.False);
+
+            simulation.Tick(1f);
+            Assert.That(resource.CurrentValue, Is.GreaterThan(0f), "regeneration resumes once it closes");
         }
 
         [Test]

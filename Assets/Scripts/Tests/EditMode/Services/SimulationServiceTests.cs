@@ -959,21 +959,51 @@ namespace ToolSmiths.InventorySystem.Tests.Services
         }
 
         [Test]
-        public void HoldingAndReleasingInTown_DoesNothingAndDoesNotThrow()
+        public void HoldingInTown_FreezesTheSim_AndReleasingResumesIt()
         {
-            Assert.DoesNotThrow(() => service.SetMenuFreeze(true));
-            Assert.That(service.IsMenuFrozen, Is.False, "there is nothing to hold in Town");
-            Assert.DoesNotThrow(() => service.SetMenuFreeze(false));
-
             service.SetMenuFreeze(true);
-            service.Send(thornwood);
 
-            Assert.That(service.IsMenuFrozen, Is.False, "a refused hold does not wait for the next Run");
+            Assert.That(service.IsMenuFrozen, Is.True, "a menu holds Town too: the hero does not regenerate behind it");
+            Assert.That(service.SimDelta(0.1f), Is.EqualTo(0f));
+
+            service.SetMenuFreeze(false);
+
+            Assert.That(service.IsMenuFrozen, Is.False);
             Assert.That(service.SimDelta(0.1f), Is.GreaterThan(0f));
         }
 
         [Test]
-        public void AHeldRun_RefusesThePauseAndTheMenuFreeze_AndReadsThemFalse()
+        public void OutOfTheGame_TheSimStandsStill_ThenResumesOnReturn()
+        {
+            var resource = session.Hero.GetResource(StatName.Resource);
+            _ = resource.RemoveFromCurrent(resource.TotalValue);
+
+            service.SetOutOfGame(true);
+            service.Tick(1f);
+
+            Assert.That(service.IsOutOfGame, Is.True);
+            Assert.That(service.IsMenuFrozen, Is.False, "not a menu's hold");
+            Assert.That(service.SimDelta(0.1f), Is.EqualTo(0f));
+            Assert.That(resource.CurrentValue, Is.Zero, "no regeneration out of the game");
+
+            service.SetOutOfGame(false);
+            service.Tick(1f);
+
+            Assert.That(resource.CurrentValue, Is.GreaterThan(0f));
+        }
+
+        [Test]
+        public void AMenuClosing_DoesNotReleaseTheOutOfGameHold()
+        {
+            service.SetOutOfGame(true);
+            service.SetMenuFreeze(true);
+            service.SetMenuFreeze(false);
+
+            Assert.That(service.SimDelta(0.1f), Is.EqualTo(0f));
+        }
+
+        [Test]
+        public void AHeldRun_RefusesThePause_AndReadsItFalse()
         {
             service.Send(thornwood);
             service.Run.Recall();
@@ -983,10 +1013,8 @@ namespace ToolSmiths.InventorySystem.Tests.Services
             service.PausedChanged += raised.Add;
 
             service.SetPaused(true);
-            service.SetMenuFreeze(true);
 
             Assert.That(service.IsPaused, Is.False, "a held Run is already frozen");
-            Assert.That(service.IsMenuFrozen, Is.False);
             Assert.That(raised, Is.Empty);
         }
 
