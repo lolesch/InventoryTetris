@@ -60,7 +60,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
                 List<AbstractSlotDisplay> DestroyInvalidSlotDisplays()
                 {
-                    var previous = GetComponentsInChildren<AbstractSlotDisplay>().ToList();
+                    var previous = GetComponentsInChildren<AbstractSlotDisplay>().Where(slot => slot.enabled).ToList(); // a variant's disabled base component is inert, its sibling is the slot
                     for (var i = previous.Count; i-- > Container?.Capacity;) // for (var i = previous.Count - 1; Container?.Capacity <= i; i--)
                     {
 #if UNITY_EDITOR

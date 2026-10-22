@@ -140,6 +140,34 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
         }
 
         [UnityTest]
+        public IEnumerator ARightClickOnGearInTheStash_MovesItToTheBag_NotOntoTheHero()
+        {
+            yield return OpenExample();
+
+            var hero = Session.Instance.Hero;
+            hero.Equipment.autoEquip = false;
+
+            var gear = new Package(null, ItemService.Instance.RollEquipment(EquipmentType.Helm, 0f), 1u);
+            Assert.That(hero.Stash.TryAddToContainer(ref gear), Is.True, "premise: the gear fits the Stash");
+
+            Press(keyboard.sKey);
+            yield return null;
+
+            var cell = hero.Stash.StoredPackages.Single().Key;
+            var slot = Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include)
+                .Where(c => c.GetType().Name == "StashSlotDisplay")
+                .Single(c => ReferenceEquals(Property(c, "Container"), hero.Stash) && (Vector2Int)Property(c, "Position") == cell);
+
+            ExecuteEvents.Execute(slot.gameObject, new PointerEventData(EventSystem.current) { button = PointerEventData.InputButton.Right },
+                ExecuteEvents.pointerClickHandler);
+            yield return null;
+
+            Assert.That(hero.Stash.StoredPackages, Is.Empty);
+            Assert.That(hero.Inventory.StoredPackages, Has.Count.EqualTo(1));
+            Assert.That(hero.Equipment.StoredPackages, Is.Empty, "retrieving is not equipping");
+        }
+
+        [UnityTest]
         public IEnumerator TheRecallKeyInTown_WalksTheHeroIntoTheOpenPortal()
         {
             yield return OpenExample();

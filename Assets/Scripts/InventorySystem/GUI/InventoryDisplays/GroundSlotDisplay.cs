@@ -9,9 +9,9 @@ using UnityEngine.EventSystems;
 namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 {
     /// <summary>
-    /// A cell of the ground grid (epic #214). It looks and hovers like a stash cell, but the ground lends
-    /// nothing to the cursor: a click takes the drop through the acquisition entry point, like a row of the
-    /// list, and a dropped item lands through the World's ground rather than into this cell. Older drops are
+    /// A cell of the ground grid (epic #214). It behaves like a stash cell: a click lifts the drop onto the
+    /// cursor, shift-click and right-click take it through the acquisition entry point (like a row of the
+    /// list), and a dropped item lands through the World's ground rather than into this cell. Older drops are
     /// drawn fainter, relative to the other drops and not to time.
     /// </summary>
     [System.Serializable]
@@ -33,6 +33,12 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         protected override void MoveItem(PointerEventData eventData, Vector2 pointerPosition)
         {
+            if (eventData.button != PointerEventData.InputButton.Right)
+            {
+                base.MoveItem(eventData, pointerPosition);
+                return;
+            }
+
             if (!TryBeginMove(out _, out var package))
                 return;
 

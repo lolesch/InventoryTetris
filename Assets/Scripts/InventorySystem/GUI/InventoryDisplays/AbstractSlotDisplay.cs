@@ -147,9 +147,7 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                     /// PickUpTransaction.Run - the player's acquisition entry point - instead
                     /// of a plain move, so a Package with an empty gear slot and auto-equip on
                     /// lands there instead of the Inventory.
-                    var hero = Session.Instance.Hero;
-
-                    _ = PickUpTransaction.Run(Container, position, hero, wallet: hero.Wallet);
+                    AcquireAt(position);
                     return true;
 
                 case QuickMoveIntentKind.MoveToContainer:
@@ -182,6 +180,18 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                     /// answer.
                     return true;
             }
+        }
+
+        /// <summary>
+        /// Retrieves the Package at <paramref name="position"/> of this container to the Hero: the one
+        /// statement of a Stash retrieval, shared by shift-click (<see cref="TryQuickMove"/>) and a Stash
+        /// slot's right-click.
+        /// </summary>
+        protected void AcquireAt(Vector2Int position)
+        {
+            var hero = Session.Instance.Hero;
+
+            _ = PickUpTransaction.Run(Container, position, hero, wallet: hero.Wallet);
         }
 
         /// <summary>
