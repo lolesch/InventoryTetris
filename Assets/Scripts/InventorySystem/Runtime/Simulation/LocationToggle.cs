@@ -1,4 +1,6 @@
+using Submodules.Utility.Extensions;
 using Submodules.Utility.Services;
+using Submodules.Utility.Tools.Tweening;
 using Submodules.Utility.UI;
 using ToolSmiths.InventorySystem.GUI.Components.Toggles;
 using ToolSmiths.InventorySystem.Locations;
@@ -28,7 +30,16 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         /// <summary>The rect whose centre is this Location on the map: the hero walks to it and the arena is drawn there.</summary>
         public RectTransform TravelPoint => this.TravelPointOr(travelPoint);
 
+        [SerializeField, Range(1f, 1.5f), Tooltip("How far the icon swells when this Location opens, to catch the eye.")]
+        private float unlockPunchScale = 1.25f;
+
+        [SerializeField, Tooltip("Seconds for each leg of the swell: up, then back.")]
+        private float unlockPunchDuration = 0.25f;
+
         private CanvasGroup group;
+
+        // Null until the first Show of a hero: a Location that is already open when the hero loads did not just unlock.
+        private UnlockState? shown;
 
         /// <summary>
         /// Subscribes in <see cref="OnEnable"/>, not <c>Awake</c>, which a scene object keeps across Play entries
@@ -39,22 +50,28 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         {
             base.OnEnable();
 
-            if (!Application.isPlaying || !Session.TrySubscribeHeroLoaded(Refresh))
+            if (!Application.isPlaying || !Session.TrySubscribeHeroLoaded(OnHeroLoaded))
                 return;
 
             SimulationService.Instance.ProgressionChanged -= Refresh;
             SimulationService.Instance.ProgressionChanged += Refresh;
-            Refresh();
+            OnHeroLoaded();
         }
 
         protected override void OnDisable()
         {
             base.OnDisable();
 
-            Session.UnsubscribeHeroLoaded(Refresh);
+            Session.UnsubscribeHeroLoaded(OnHeroLoaded);
 
             if (ServiceLocator.IsArmed)
                 SimulationService.Instance.ProgressionChanged -= Refresh;
+        }
+
+        private void OnHeroLoaded()
+        {
+            shown = null;
+            Refresh();
         }
 
         private void Refresh() => Show(SimulationService.Instance.StateOf(Location));
@@ -86,7 +103,37 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             group.alpha = state == UnlockState.Hidden ? 0f : 1f;
             group.blocksRaycasts = state != UnlockState.Hidden;
 
+            var opened = shown < UnlockState.Active && state >= UnlockState.Active;
+            shown = state;
+
             UnlockLook.Apply(this, state >= UnlockState.Active);
+
+            if (opened)
+                PunchOpen();
+        }
+
+        // A pointer already over the icon has grown it, and hover wins over the punch (see Interact).
+        private void PunchOpen()
+        {
+            if (!targetGraphic || currentSelectionState == SelectionState.Highlighted)
+                return;
+
+            var icon = targetGraphic.transform;
+            var rest = IsOn ? hoverScale : 1f;
+
+            Tween.Kill(icon);
+            icon.TweenScale(unlockPunchScale, unlockPunchDuration, Ease.OutQuad)
+                .OnComplete(() => icon.TweenScale(rest, unlockPunchDuration, Ease.InOutSine));
+        }
+
+        // Hover, press and release start their own scale tween, which would fight a running punch for the icon's
+        // scale; they cancel it and ease from wherever it got to.
+        protected override void Interact(SelectionState state, bool instant)
+        {
+            if (Application.isPlaying && targetGraphic)
+                Tween.Kill(targetGraphic.transform);
+
+            base.Interact(state, instant);
         }
 
         // A Relocate is refused while a Recall's portal opens (ADR-0022). Refused at the click, before the group moves

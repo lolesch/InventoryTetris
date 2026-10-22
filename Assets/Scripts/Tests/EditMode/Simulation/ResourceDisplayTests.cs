@@ -35,7 +35,6 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
             _display = _host.AddComponent(Type.GetType(TypeName, throwOnError: true));
             Set("fillMask", _mask);
-            Set("globeVolume", new AnimationCurve());
 
             _health = new CharacterResource(StatName.Health, 100f);
             _display.GetType().GetMethod("Bind").Invoke(_display, new object[] { _health, null });
