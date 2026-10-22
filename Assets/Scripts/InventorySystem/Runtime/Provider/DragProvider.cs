@@ -1,48 +1,188 @@
-using System;
-using System.Collections.Generic;
+using NaughtyAttributes;
+using Submodules.Utility.Provider;
+using Submodules.Utility.Services;
+using TMPro;
+using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Data;
-using ToolSmiths.InventorySystem.Data.Items;
-using ToolSmiths.InventorySystem.GUI.Displays;
+using ToolSmiths.InventorySystem.Geometry;
 using ToolSmiths.InventorySystem.GUI.InventoryDisplays;
-using ToolSmiths.InventorySystem.GUI.Panels;
+using ToolSmiths.InventorySystem.Inventories;
+using ToolSmiths.InventorySystem.Items;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace ToolSmiths.InventorySystem.Runtime.Provider
 {
+    /// <summary>
+    /// An <see cref="AbstractSceneSingleton{T}"/>, not a full <see cref="AbstractProvider{T}"/>:
+    /// the drag display must stay nested under the HUD Canvas to render at all
+    /// (<see cref="RequireComponent"/> RectTransform), but a provider's persistence promise
+    /// reparents a found instance to scene root to qualify for <c>DontDestroyOnLoad</c> -
+    /// which would silently pull this out from under the Canvas. This project has exactly one
+    /// scene, so there is nothing to survive a load for anyway.
+    /// </summary>
     [System.Serializable]
     [RequireComponent(typeof(RectTransform))]
-    public class DragProvider : AbstractProvider<DragProvider>
+    internal sealed class DragProvider : AbstractSceneSingleton<DragProvider>, ICursorSink
     {
-        [SerializeField] private SimplePanel itemPanel;
-        [SerializeField] private ItemDisplay itemDisplay;
+        public bool IsDragging => itemDisplay.gameObject.activeSelf;
 
+        [SerializeField] private RectTransform itemDisplay;
+        [SerializeField] private Image icon;
+        [SerializeField] private Image frame;
         [SerializeField] private Image background;
-        [SerializeField] private Color initialColor;
+        [Tooltip("The authored scrim colour the background returns to. Captured at Awake; the forbidden tint replaces it.")]
+        [SerializeField, ReadOnly] private Color initialColor;
+        [SerializeField] private TextMeshProUGUI amount;
+
+        [Tooltip("Pixels per inventory cell. Must match the GridLayoutGroup cellSize the slots are laid out with.")]
+        [SerializeField] private float slotSize = 60f;
+
+        //private Canvas rootCanvas;
+
+        public RectTransform ItemDisplay => itemDisplay;
 
         public AbstractSlotDisplay Origin { get; private set; }
         public AbstractSlotDisplay Hovered { get; private set; }
         public Package DraggingPackage { get; private set; }
+
         public Vector2Int PositionOffset { get; private set; }
 
-        public event Action<List<Vector2Int>> OnOverlapping;
-        public bool IsDragging => itemPanel.IsActive;
-        private RectTransform ItemTransform => itemDisplay.transform as RectTransform;
+        /// <summary>
+        /// The price, in base units, the vendor showed for the package now in hand, or null
+        /// when this is an ordinary pick-up. Set once at shelf pick-up for the length of the
+        /// drag and charged only when the item lands in a player container (issue #31). Making
+        /// it part of the drag hand is what lets a drop "pay the price shown at pick-up, even
+        /// across a restock" - the slot displays never re-read the price off the store.
+        /// </summary>
+        public float? PurchasePrice { get; private set; }
 
-        private void Start()
+        /// <summary>Whether the held Package is a purchase in progress - lifted off a shelf and not
+        /// yet paid for. A drop target asks this before it treats the Package as the player's own:
+        /// a purchase is never a sale (issue #129), it returns to its origin free.</summary>
+        public bool IsHoldingPurchase => PurchasePrice != null;
+
+        /// <summary>Whether the held item may land in <paramref name="target"/>: a purchase only in
+        /// the Hero's bag or on the Equipment, anything else unrestricted. The one question the
+        /// drop and the drop tint both ask (<see cref="PurchaseDrop.MayLandIn"/>).</summary>
+        public bool MayLandIn(AbstractDimensionalContainer target)
         {
-            /// anchor to BottomLeft to match screen/mouse coordinates
-            if (itemDisplay)
-            {
-                (itemDisplay.transform as RectTransform).anchorMin = Vector2.zero;
-                (itemDisplay.transform as RectTransform).anchorMax = Vector2.zero;
-            }
+            if (!ServiceLocator.IsArmed)
+                return false;
+
+            var hero = Session.Instance.Hero;
+
+            return PurchaseDrop.MayLandIn(IsHoldingPurchase, target, hero.Inventory, hero.Equipment);
+        }
+
+        /// <summary>
+        /// Where <see cref="CancelDrag"/> returns the package currently in hand -
+        /// <see cref="Origin"/>'s container and cell at pick-up, or the real container and
+        /// cell a mid-drag swap displaced the current package from
+        /// (<see cref="ReplacePackage"/>) - one <see cref="PackageOrigin"/> either way.
+        /// Deliberately separate from <see cref="Origin"/>,
+        /// which stays "where this drag interaction started" for the re-home-through target
+        /// the slot displays read off it.
+        /// </summary>
+        public PackageOrigin ReturnOrigin { get; private set; }
+
+        private float frameAlpha = 1f;
+
+        private void Awake()
+        {
+            //_ = transform.root.TryGetComponent(out rootCanvas);
+
+            itemDisplay?.gameObject.SetActive(false);
+
+            /// Rarity rides on the frame, which keeps its authored alpha. The background stays
+            /// the authored scrim - at alpha 0.2 a rarity tint there would say nothing, and the
+            /// display has to stay see-through over the grid it is covering.
+            if (frame)
+                frameAlpha = frame.color.a;
 
             if (background)
                 initialColor = background.color;
+        }
 
-            if (itemPanel)
-                itemPanel.FadeOut();
+        /// <summary>
+        /// Closing the Vendor with a shelf purchase in hand returns it to the shelf,
+        /// charge-free (issue #31) - the same return-to-origin a drop-back or an Escape
+        /// cancel uses. The drag side subscribes rather than the panel side calling in: the
+        /// rule is part of the drag lifecycle, so it lives with the drag, and the panels
+        /// only report that the context moved (#54, #85). Ordinary pick-ups are untouched -
+        /// <see cref="ReturnStorePurchaseToShelf"/> no-ops unless the hand holds an unpaid
+        /// purchase, so opening the Stash or closing every panel cannot strand or duplicate
+        /// one. Detach-before-attach, so a re-enable cannot subscribe twice (cf. da14ce2).
+        /// </summary>
+        private void OnEnable()
+        {
+            _ = InventoryService.TrySubscribeContextChanged(OnContextChanged, out _);
+            _ = Session.TrySubscribeHeroLoaded(OnHeroLoaded);
+            _ = HeroSaveService.TryAddBeforeSave(ReturnHeldToOrigin);
+
+            cancelLayer?.Dispose();
+            cancelLayer = CancelChain.TryRegister(CancelRank.Drag, CancelHeldPackage);
+        }
+
+        private void OnDisable()
+        {
+            InventoryService.UnsubscribeContextChanged(OnContextChanged);
+            Session.UnsubscribeHeroLoaded(OnHeroLoaded);
+            HeroSaveService.TryRemoveBeforeSave(ReturnHeldToOrigin);
+
+            cancelLayer?.Dispose();
+            cancelLayer = null;
+        }
+
+        private System.IDisposable cancelLayer;
+
+        // The top Cancel layer. A Package in hand takes the press even when it found no room to return to,
+        // so one press never both leaves it stuck and closes a panel.
+        private bool CancelHeldPackage()
+        {
+            if (!IsDragging)
+                return false;
+
+            _ = CancelDrag();
+            return true;
+        }
+
+        /// <summary>
+        /// A Return or a Death can fire while a drag is in progress, and the save that follows would not
+        /// find the held Package in any container. The save service runs this first: the drag ends as a
+        /// cancel does (<see cref="CancelDrag"/>) - back at its origin cell, or in the bag when that is
+        /// taken, never destroyed and never touching the Wallet. When it finds no room it throws, which
+        /// skips the save rather than writing a hero without the Package.
+        /// </summary>
+        private void ReturnHeldToOrigin()
+        {
+            // Throwing vetoes the save: a Package left on the cursor is in no container, so writing now would
+            // drop it from the file. The previous save still holds it.
+            if (IsDragging && !CancelDrag())
+                throw new System.InvalidOperationException("The Package in hand has no room at its origin or in the bag.");
+        }
+
+        /// <summary>
+        /// What is on the cursor came out of the discarded Hero's or World's container, and goes
+        /// with it (#114): a drop into the new Hero's bag would carry an item across the load.
+        /// </summary>
+        private void OnHeroLoaded()
+        {
+            if (IsDragging)
+                EndDrag();
+        }
+
+        /// <summary>
+        /// Any context other than the Vendor means the Vendor is no longer the one open, and a
+        /// purchase in flight has nowhere to belong. Reading it that way rather than as "the
+        /// Vendor closed" is what makes Send, Return, Death, Go Venture and closing the Hero
+        /// Panel each count, and it is why a Stash-to-Vendor handover is safe: that publishes one
+        /// change, to the Vendor, so an in-flight purchase stays on the cursor.
+        /// </summary>
+        private void OnContextChanged(InventoryContext context)
+        {
+            if (context != InventoryContext.Vendor)
+                _ = ReturnStorePurchaseToShelf();
         }
 
         private void Update()
@@ -53,110 +193,230 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
 
                 HighlightOverlappingSlots();
             }
+
+            void HighlightOverlappingSlots()
+            {
+                if (!background)
+                    return;
+
+                /// One rule, shared with the drop (issue #12): each slot display answers
+                /// WouldAcceptDrop exactly the way its own DropItem behaves - CanPlaceAt at
+                /// the pixel-derived cell for the inventory grid, the fixed type-specific
+                /// slot for the paper-doll equipment layout, always-yes for a container-less
+                /// sink (the ground, the sell slot). Red only while the cursor is over a real
+                /// slot that would turn the drop away; hovering nothing clears it.
+                var refused = Hovered != null && !Hovered.WouldAcceptDrop(DraggingPackage);
+
+                /// Assigned rather than multiplied so it stays red whatever the scrim is
+                /// tinted to; colour multiplication is component-wise and only lands on red
+                /// while the scrim happens to be white.
+                background.color = refused
+                    ? WithAlpha(UiColors.Forbidden, initialColor.a)
+                    : initialColor;
+            }
         }
 
-        private void SetToMousePosition() => ItemTransform.anchoredPosition = (Vector2)Input.mousePosition / ItemTransform.lossyScale;
-
-        private void HighlightOverlappingSlots()
+        /// <summary>
+        /// The container position the drag display currently covers. The single answer to
+        /// "where would this drop" - the overlap tint and every DropItem read it, so the
+        /// warning the player sees and the placement they get can never disagree.
+        /// </summary>
+        public bool TryGetDropPosition(AbstractSlotDisplay hovered, out Vector2Int position)
         {
-            if (Hovered == null || !DraggingPackage.IsValid)
-                return;
+            position = default;
 
-            /// The pivot is the mouse position within the items dimensions
-            var positionPivot = ItemTransform.pivot;
-            positionPivot *= AbstractItem.GetDimensions(DraggingPackage.Item.Dimensions);
+            if (hovered == null || hovered.Container == null || !DraggingPackage.IsValid)
+                return false;
 
-            var positionDiff = new Vector2Int(Mathf.FloorToInt(positionPivot.x), Mathf.FloorToInt(positionPivot.y));
-            positionDiff -= new Vector2Int(0, AbstractItem.GetDimensions(DraggingPackage.Item.Dimensions).y - 1);
-            positionDiff.y *= -1;
+            position = DragGeometry.DropPosition(
+                GameInput.PointerPosition / transform.lossyScale,
+                itemDisplay.pivot,
+                ItemService.Instance.View(DraggingPackage.Item).Dimensions,
+                (Vector2)hovered.transform.position / transform.lossyScale,
+                hovered.Position,
+                slotSize);
 
-            if (Hovered.Container == null)
-                return;
-
-            var positionToAdd = Hovered.Position - positionDiff;
-
-            var storedPositions = Hovered.Container?.GetStoredItemsAt(positionToAdd, AbstractItem.GetDimensions(DraggingPackage.Item.Dimensions));
-
-            if (background)
-                background.color = storedPositions.Count switch
-                {
-                    0 => initialColor,
-                    1 => initialColor * Color.yellow,
-                    _ => initialColor * Color.red,
-                };
-
-            OnOverlapping?.Invoke(storedPositions);
-            //TODO: invoke an event each time the drag display is entering new overlapping positions
-            // each slotDisplay will listen to this event and color its background based on the overlapping result
-
-            //var requiredPositions = Hovered.Container.CalculateRequiredPositions(positionToAdd, Package.Item.Dimensions);
-            //
-            //var usedPositions = new List<Vector2Int>();
-            //for (var i = 0; i < storedPositions.Count; i++)
-            //    for (var x = 0; x < Package.Item.Dimensions.x; x++)
-            //        for (var y = 0; y < Package.Item.Dimensions.y; y++)
-            //            usedPositions.Add(new Vector2Int(x, y));
-
-            //var emptyPositions = requiredPositions.Except(usedPositions);
-
-            //var overlappingPositions = requiredPositions.Intersect(usedPositions);
+            return true;
         }
 
-        public void SetPackage(AbstractSlotDisplay slot, Package package, Vector2Int positionOffset)
+        private static Color WithAlpha(Color color, float alpha)
+        {
+            color.a = alpha;
+
+            return color;
+        }
+
+        private void SetToMousePosition()
+        {
+            /// anchor to BottomLeft to match screen/mouse coordinates
+            itemDisplay.anchorMin = Vector2.zero;
+            itemDisplay.anchorMax = Vector2.zero;
+
+            itemDisplay.anchoredPosition = GameInput.PointerPosition / itemDisplay.lossyScale;
+        }
+
+        /// <param name="purchasePrice">The vendor price this package was lifted off the shelf
+        /// at, or null for an ordinary pick-up. Only the Store passes one; the drop reads it
+        /// back to know how much to charge (issue #31).</param>
+        public void SetPackage(AbstractSlotDisplay slot, Package package, Vector2Int positionOffset, Vector2 pointerPosition, float? purchasePrice = null)
         {
             Origin = slot;
-            Hovered = slot;
             DraggingPackage = package;
             PositionOffset = positionOffset;
+            PurchasePrice = purchasePrice;
+
+            ReturnOrigin = slot != null ? new PackageOrigin(slot.Container, slot.Position - positionOffset) : default;
 
             if (!DraggingPackage.IsValid)
             {
-                Debug.LogWarning($"Dragging package is invalid");
-                itemPanel.FadeOut();
+                PurchasePrice = null;
+                itemDisplay.gameObject.SetActive(false);
                 return;
             }
 
-            var dimensions = AbstractItem.GetDimensions(package.Item.Dimensions);
-            SetPosition(dimensions);
+            SetHoveredSlot(Origin);
 
+            var dimensions = ItemService.Instance.View(package.Item).Dimensions;
+
+            itemDisplay.sizeDelta = (Vector2)dimensions * slotSize;
+
+            /// Anchor the grip to where the pointer went down, not to Input.mousePosition
+            /// as it reads here - by OnBeginDrag time the cursor has already travelled the
+            /// 10px drag threshold, and pivoting to that is what let the item slip its grip.
+            itemDisplay.pivot = DragGeometry.GrabPivot(
+                pointerPosition / transform.lossyScale,
+                (Vector2)Origin.transform.position / transform.lossyScale,
+                dimensions,
+                positionOffset,
+                slotSize);
+
+            RefreshDisplay(package);
             SetToMousePosition();
-
-            itemDisplay.RefreshDisplay(package);
-
-            itemPanel.FadeIn();
         }
 
-        private void SetPosition(Vector2Int dimensions)
+        /// <summary>
+        /// A different package is now in hand - a swap handed the displaced item over. It is
+        /// centred on the cursor: the previous item's positionOffset describes a footprint
+        /// this one does not have, and reusing it left small items floating a fixed distance
+        /// from the pointer.
+        ///
+        /// <para><paramref name="from"/> is this swapped-in package's real home - not
+        /// wherever the drag itself started - so <see cref="CancelDrag"/> returns it there
+        /// instead of re-homing it against the original pick-up's cell (issue #29's
+        /// mid-drag-swap gap).</para>
+        /// </summary>
+        public void ReplacePackage(Package package, PackageOrigin from)
         {
-            ItemTransform.sizeDelta = dimensions * 60; // slotSize
+            if (!package.IsValid)
+            {
+                EndDrag();
+                return;
+            }
 
-            var pointerRelativeToOrigin = (Vector2)(Input.mousePosition - Origin.transform.position) / transform.lossyScale;
+            DraggingPackage = package;
+            PositionOffset = Vector2Int.zero;
+            PurchasePrice = null; // a displaced player item came to the hand, not a shelf purchase
 
-            /// pointerPosition is in pixelCoordinates anchored TopLeft
-            var pivot = pointerRelativeToOrigin / 60; // slotSize
-            /// convert to screenCoordinates anchored BottomLeft
-            pivot.y += 1;
-            /// scale to match item dimensions
-            pivot /= dimensions;
+            ReturnOrigin = from;
 
-            /// The positionOffset was calculated in InventorySpace (anchored TopLeft)
-            var positionOffset = PositionOffset;
-            positionOffset.y -= dimensions.y - 1;
-            /// convert to screenCoordinates anchored BottomLeft
-            positionOffset.y *= -1;
+            var dimensions = ItemService.Instance.View(package.Item).Dimensions;
 
-            var positionPivot = (Vector2)positionOffset;
-            positionPivot /= dimensions;
+            itemDisplay.sizeDelta = (Vector2)dimensions * slotSize;
+            itemDisplay.pivot = DragGeometry.HandOverPivot;
 
-            ItemTransform.pivot = pivot + positionPivot;
+            RefreshDisplay(package);
+            SetToMousePosition();
+        }
+
+        /// <summary>
+        /// The drag is over - the package landed, or a sink (sell slot, ground) consumed it.
+        /// Clears the hand and hides the display; the sinks used to hand an empty Package to
+        /// SetPackage purely to reach this.
+        /// </summary>
+        public void EndDrag()
+        {
+            DraggingPackage = default;
+            PositionOffset = Vector2Int.zero;
+            PurchasePrice = null;
+
+            ReturnOrigin = default;
+
+            itemDisplay.gameObject.SetActive(false);
+        }
+
+        /// Paints the drag display for the package now in hand - icon, rarity frame, stack
+        /// amount - then shows it. Size and pivot are the caller's: a grab keeps the grip it
+        /// was picked up by, a hand-over centres on the cursor.
+        private void RefreshDisplay(Package package)
+        {
+            if (icon)
+            {
+                icon.sprite = ItemService.Instance.View(package.Item).Icon;
+                icon.color = Color.white;
+            }
+
+            /// The drag display is an ItemDisplay instance but nothing repainted it, so a
+            /// dragged item lost its rarity for the length of the drag. The frame carries
+            /// rarity here, exactly as it does in a slot.
+            if (frame)
+                frame.color = WithAlpha(UiColors.Rarity(package.Item.Rarity), frameAlpha);
+
+            if (amount)
+                amount.text = 1 < package.Amount ? package.Amount.ToString() : string.Empty;
+
+            itemDisplay.gameObject.SetActive(true);
         }
 
         public void SetHoveredSlot(AbstractSlotDisplay slot) => Hovered = slot;
 
-        //public void ReturnToOrigin(Package package)
-        //{
-        //    // tell teh origin to add this package back to its position
-        //}
+        /// <summary>
+        /// Cancels the drag in progress and sends the held Package back where it came from
+        /// (issue #29): the exact origin cell if it is still free, the backpack if not, or -
+        /// with neither available - nowhere, leaving the item on the cursor exactly as it was.
+        /// Wired to Escape rather than right-click: a slot display already reads any click
+        /// during a drag as a drop attempt (<see cref="AbstractSlotDisplay.OnPointerClick"/>),
+        /// so reusing right-click here would race that path instead of replacing it.
+        ///
+        /// <para>The origin tracked for this is <see cref="ReturnOrigin"/>,
+        /// not <see cref="Origin"/>/<see cref="PositionOffset"/>: a mid-drag swap that hands a
+        /// different Package to the cursor (<see cref="ReplacePackage"/>) updates those to the
+        /// swapped-out Package's real container and cell, so a cancel right after a swap
+        /// re-equips it - or falls back to the backpack - correctly instead of against the
+        /// first pick-up's now-unrelated cell.</para>
+        /// </summary>
+        /// <returns>Whether the drag ended - the package found a home and the hand was
+        /// cleared. False when it is still on the cursor (nothing had room), so a caller can
+        /// decide whether to leave it there.</returns>
+        public bool CancelDrag()
+        {
+            if (!IsDragging || !DraggingPackage.IsValid || !ServiceLocator.IsArmed)
+                return false;
+
+            var fallback = PurchaseDrop.FallbackFor(IsHoldingPurchase, ReturnOrigin.Container, Session.Instance.Hero.Inventory);
+
+            var leftOnCursor = ReturnToOrigin.Return(DraggingPackage, ReturnOrigin.Container, ReturnOrigin.Cell, fallback);
+
+            if (leftOnCursor.IsValid)
+                return false;
+
+            EndDrag();
+            return true;
+        }
+
+        /// <summary>
+        /// Sends a held shelf purchase back to the shelf with no charge (issue #31) - what a
+        /// Store-origin cancel, a drop back onto the shelf, and closing the Vendor mid-drag
+        /// all want. No-op unless the hand actually holds a store purchase: an ordinary
+        /// pick-up being returned, or a non-drag state, must not be yanked by a panel change.
+        /// </summary>
+        /// <returns>Whether a purchase was in hand and the drag ended.</returns>
+        private bool ReturnStorePurchaseToShelf()
+        {
+            if (PurchasePrice == null)
+                return false;
+
+            return CancelDrag();
+        }
 
         //public void DropHere()
         //{
@@ -166,11 +426,11 @@ namespace ToolSmiths.InventorySystem.Runtime.Provider
         //}
 
         //public void OnEndDrag(PointerEventData eventData) =>
-        //    // raycast through center top position of drag display to check if over slotDisplay to add at, or to revert, or to drop item at floor
+        //    // raycast through center top position of drag display to check if over slotDisplay to add at, or to revert, or to drop item at ground
         //    throw new System.NotImplementedException();
 
         //public void OnPointerClick(PointerEventData eventData) =>
-        //    // raycast through center top position of drag display to check if over slotDisplay to add at, or to revert, or to drop item at floor
+        //    // raycast through center top position of drag display to check if over slotDisplay to add at, or to revert, or to drop item at ground
         //    throw new System.NotImplementedException();
     }
 }

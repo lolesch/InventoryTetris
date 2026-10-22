@@ -1,72 +1,223 @@
 using System.Collections;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using NaughtyAttributes;
 using TMPro;
+using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Data;
-using ToolSmiths.InventorySystem.Data.Items;
-using ToolSmiths.InventorySystem.Runtime.Inventories;
+using ToolSmiths.InventorySystem.Inventories;
+using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Runtime.Provider;
+using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-[assembly: InternalsVisibleTo("Tests")]
+[assembly: InternalsVisibleTo("InventorySystem.Containers.Tests")]
 
 namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 {
-    // TODO: inherit AbstractDisplay or rename this pattern
     [System.Serializable]
     [RequireComponent(typeof(RectTransform))]
-    public abstract class AbstractSlotDisplay : MonoBehaviour, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler, IPointerEnterHandler, IPointerExitHandler
+    internal abstract class AbstractSlotDisplay : MonoBehaviour, IPointerDownHandler, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler, IPointerEnterHandler, IPointerExitHandler
     {
         [field: SerializeField, ReadOnly] public AbstractDimensionalContainer Container { get; private set; }
         [field: SerializeField, ReadOnly] public Vector2Int Position { get; private set; }
         [Space]
-        [SerializeField] protected RectTransform itemDisplay;
+        [Tooltip("The item display's CanvasGroup: its alpha fades the whole item (icon, frame, background) at once.")]
+        [SerializeField] protected CanvasGroup itemGroup;
         [SerializeField] protected Image icon;
         [SerializeField] protected Image frame;
         [SerializeField] protected Image background;
         [SerializeField] protected TextMeshProUGUI amount;
-        [SerializeField] protected Image slotBackground;
 
-        [SerializeField] protected TextMeshProUGUI debugPosition;
+        [Space]
+        [Tooltip("Pixels the item frame grows outward on every side while hovered.")]
+        [SerializeField] protected float hoverExpand = 1f;
+        [Tooltip("How far the item background is lightened toward white while hovered. Equivalent to overlaying white at this alpha.")]
+        [SerializeField, Range(0f, 1f)] protected float hoverLighten = 0.25f;
 
-        private bool hovering;
+        /// The pending hover fade-in. A handle rather than a flag: a flag shared by every fade-in
+        /// lets a superseded one resume after a newer one re-raised it, and show the item it
+        /// captured before a swap (hover, then equip within the fade delay).
+        private Coroutine fadeIn;
 
-        private void OnEnable()
+        /// The container display that owns this slot; needed to reach the slot an item
+        /// actually renders on, which is its origin - not necessarily the hovered one.
+        private AbstractContainerDisplay owner;
+
+        /// The slot whose frame this slot lit up on enter, so exit can clear the same one.
+        private AbstractSlotDisplay highlighted;
+
+        /// Kept so the highlight can be re-applied after a refresh rebuilds the display.
+        private bool isHighlighted;
+
+        /// The item's untinted background color, as RefreshSlotDisplay derived it from rarity.
+        private Color baseBackgroundColor = Color.white;
+
+        protected virtual void OnDisable()
         {
-            if (debugPosition != null)
-                debugPosition.text = InventoryProvider.Instance.ShowDebugPositions ? Position.ToString() : "";
-
-            DragProvider.Instance.OnOverlapping -= SetBackgroundColor;
-            DragProvider.Instance.OnOverlapping += SetBackgroundColor;
+            ClearHighlight();
+            SetHighlighted(false);
         }
 
-        private void OnDisable() => DragProvider.Instance.OnOverlapping -= SetBackgroundColor;
-
-        public void SetupSlot(AbstractDimensionalContainer container, Vector2Int position)
+        public void SetupSlot(AbstractContainerDisplay containerDisplay, AbstractDimensionalContainer container, Vector2Int position)
         {
             name = $"{position.x} | {position.y}";
             Position = position;
             Container = container;
-
-            if (debugPosition != null)
-                debugPosition.text = InventoryProvider.Instance.ShowDebugPositions ? Position.ToString() : "";
+            owner = containerDisplay;
         }
+
+        /// Where the pointer went down on this slot. OnBeginDrag only fires once Unity's 10px
+        /// drag threshold is crossed, by which time the cursor can already be outside the item -
+        /// anchoring to that reading is what made the item jump away from the cursor on grab.
+        private Vector2 pressPosition;
+
+        /// A preview-only container (the main menu's hero display) keeps hover but swallows every
+        /// click, drag and drop. Gated here rather than by a CanvasGroup, which would drop hover too.
+        private bool PreviewOnly => owner && owner.PreviewOnly;
+
+        public void OnPointerDown(PointerEventData eventData) => pressPosition = eventData.position;
 
         public void OnPointerClick(PointerEventData eventData)
         {
+            if (PreviewOnly)
+                return;
+
             if (DragProvider.Instance.IsDragging)
-                DropItem(DragProvider.Instance.DraggingPackage);
+                Drop();
+            else if (eventData.button != PointerEventData.InputButton.Right && GameInput.IsHeld(GameAction.QuickMove) && TryQuickMove())
+                return;
             else
-                MoveItem(eventData);
+                MoveItem(eventData, pressPosition);
+        }
+
+        /// <summary>
+        /// The shift-click quick-move dispatch (issue #67), hoisted here so every slot
+        /// display gets it for free instead of hand-rolling the same preamble -
+        /// <see cref="QuickMoveResolver"/> read, <see cref="QuickMoveIntentKind"/> switched
+        /// on, move executed - four times with growing odds one copy is wrong or missing. <see cref="MoveItem"/>
+        /// is left with only the right-click and drag-pickup branches, which genuinely
+        /// differ per container.
+        /// </summary>
+        /// <returns>
+        /// Whether the click was a quick-move the resolver had an answer for. False leaves
+        /// the click to fall through to <see cref="MoveItem"/> - there was no item under the
+        /// cursor, so a normal click still gets its chance.
+        /// </returns>
+        private bool TryQuickMove()
+        {
+            if (Container == null)
+                return false;
+
+            var position = Position;
+
+            if (!Container.TryGetItemAt(ref position, out var package))
+                return false;
+
+            FadeOutPreview();
+
+            var intent = InventoryService.Instance.QuickMoveFor(Container);
+
+            switch (intent.Kind)
+            {
+                case QuickMoveIntentKind.Sell:
+                    /// The shift-click sale (#128): one transaction over this slot's container,
+                    /// the Sold container and the Wallet; coins the bag cannot hold lie on the
+                    /// ground. A sale that pays 0 is a silent no-op, the click absorbed like any
+                    /// other quick-move.
+                    var session = Session.Instance;
+
+                    _ = Sale.TrySell(session.World.Sold, session.Hero.Wallet, session.World.LootGround, Container, position);
+                    return true;
+
+                case QuickMoveIntentKind.Drop:
+                    /// The Hero context's ground row (issues #63, #285): the item leaves the bag for the
+                    /// World's ground, where the Ground Items List shows it.
+                    _ = DropTransaction.Run(Container, position, Session.Instance.World.LootGround);
+                    return true;
+
+                case QuickMoveIntentKind.PickUp:
+                    /// The Ground context's row: the same pick-up a plain click on a ground slot makes.
+                    _ = Session.Instance.World.LootGround.PickUpFromGround(package.Item);
+                    return true;
+
+                case QuickMoveIntentKind.Acquire:
+                    /// The Stash retrieval row (issue #86): routed through
+                    /// PickUpTransaction.Run - the player's acquisition entry point - instead
+                    /// of a plain move, so a Package with an empty gear slot and auto-equip on
+                    /// lands there instead of the Inventory.
+                    AcquireAt(position);
+                    return true;
+
+                case QuickMoveIntentKind.MoveToContainer:
+                    var target = intent.Target;
+                    var cursor = new CursorHolder(DragProvider.Instance);
+
+                    using (var transaction = new ItemTransaction(cursor, Container, target).ReHomeThrough(target))
+                    {
+                        _ = Container.RemoveAtPosition(position, package);
+                        _ = transaction.TryReHomeToContainerOrHand(ref package, new PackageOrigin(Container, position));
+
+                        transaction.Commit();
+                    }
+                    return true;
+
+                case QuickMoveIntentKind.Buy:
+                    /// The shelf's own shift-click is always a buy (issue #30). Unlike a
+                    /// drag-drop buy (InventorySlotDisplay/EquipmentSlotDisplay's DropItem,
+                    /// issue #31) - which lands in whatever slot the player dropped on and so
+                    /// never needs to decide equip-vs-bag - shift-click names no destination,
+                    /// so it has to route through the full acquisition entry point exactly
+                    /// like the Stash Acquire case above. This call used to omit player and
+                    /// equipment and so silently skipped auto-equip. Closed by #86.
+                    BuyAt(position, package);
+                    return true;
+
+                default:
+                    /// Nothing to do here - the click is still absorbed rather than falling
+                    /// through to a drag pickup, matching the resolver's "no panel open"
+                    /// answer.
+                    return true;
+            }
+        }
+
+        /// <summary>
+        /// Retrieves the Package at <paramref name="position"/> of this container to the Hero: the one
+        /// statement of a Stash retrieval, shared by shift-click (<see cref="TryQuickMove"/>) and a Stash
+        /// slot's right-click.
+        /// </summary>
+        protected void AcquireAt(Vector2Int position)
+        {
+            var hero = Session.Instance.Hero;
+
+            _ = PickUpTransaction.Run(Container, position, hero, wallet: hero.Wallet);
+        }
+
+        /// <summary>
+        /// Buys the whole <paramref name="package"/> at <paramref name="position"/> of this
+        /// Supply shelf: the one statement of an immediate buy, shared by shift-click
+        /// (<see cref="TryQuickMove"/>) and a Supply slot's right-click, its "use" (issue #121).
+        /// Goes through the full acquisition entry point rather than naming a destination, so
+        /// the item auto-equips or lands in the bag exactly as the Stash retrieval does.
+        /// </summary>
+        protected void BuyAt(Vector2Int position, Package package)
+        {
+            var hero = Session.Instance.Hero;
+            var price = VendorTransaction.BuyPrice(package.Item, ItemService.Instance.Catalog) * package.Amount;
+
+            _ = VendorTransaction.Buy(Container, position, package, hero.Wallet, price, hero);
         }
 
         public void OnPointerExit(PointerEventData eventData)
         {
-            DragProvider.Instance.SetHoveredSlot(null);
+            // The input module resets its pointers as the scene unloads, after the providers are gone.
+            if (DragProvider.TryGetAlive(out var drag))
+                drag.SetHoveredSlot(null);
 
             FadeOutPreview();
+
+            ClearHighlight();
         }
 
         public void OnPointerEnter(PointerEventData eventData)
@@ -74,14 +225,85 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
             DragProvider.Instance.SetHoveredSlot(this);
 
             FadeInPreview();
+
+            if (TryGetOriginSlot(out var origin))
+            {
+                highlighted = origin;
+                origin.SetHighlighted(true);
+            }
         }
+
+        /// The slot an item is drawn on is its origin, and one item can cover many slots.
+        /// Hovering any covered slot must light up that one item, not the sub-slot the
+        /// cursor happens to be over.
+        private bool TryGetOriginSlot(out AbstractSlotDisplay slot)
+        {
+            slot = null;
+
+            if (Container == null || owner == null)
+                return false;
+
+            var position = Position;
+
+            if (!Container.TryGetItemAt(ref position, out _))
+                return false;
+
+            return owner.TryGetSlotDisplayAt(position, out slot);
+        }
+
+        private void ClearHighlight()
+        {
+            if (highlighted)
+                highlighted.SetHighlighted(false);
+
+            highlighted = null;
+        }
+
+        /// Grows the item frame outward instead of overlaying a second image, so the
+        /// highlight covers exactly the item's own footprint however many slots it spans.
+        internal void SetHighlighted(bool highlight)
+        {
+            isHighlighted = highlight;
+
+            if (frame)
+            {
+                var expand = highlight ? hoverExpand : 0f;
+
+                frame.rectTransform.offsetMin = new Vector2(-expand, -expand);
+                frame.rectTransform.offsetMax = new Vector2(expand, expand);
+            }
+
+            RefreshBackground();
+        }
+
+        /// Single place the item background color is decided, so hover and any tint on top
+        /// of it (see VendorSlotDisplay) compose instead of overwriting each other.
+        protected void RefreshBackground()
+        {
+            if (background)
+                background.color = GetBackgroundColor();
+        }
+
+        protected virtual Color GetBackgroundColor() => Lighten(baseBackgroundColor);
+
+        /// The hover lift, applied to whatever colour the slot settled on, so a subclass
+        /// that *replaces* the colour still responds to hover instead of going flat.
+        /// Alpha lifts along with the colour: that is a no-op on an opaque background,
+        /// but a translucent tint (see VendorSlotDisplay) needs the opacity to move or
+        /// the hover barely registers against it.
+        protected Color Lighten(Color color) => isHighlighted
+            ? Color.Lerp(color, Color.white, hoverLighten)
+            : color;
 
         public void OnBeginDrag(PointerEventData eventData)
         {
+            if (PreviewOnly)
+                return;
+
             if (DragProvider.Instance.IsDragging)
-                DropItem(DragProvider.Instance.DraggingPackage);
+                Drop();
             else
-                MoveItem(eventData);
+                MoveItem(eventData, pressPosition);
         }
 
         /// required for OnBeginDrag() to work => #ThanksUnity
@@ -89,107 +311,252 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
 
         public void OnEndDrag(PointerEventData eventData) { }
 
-        public void OnDrop(PointerEventData eventData) => DropItem(DragProvider.Instance.DraggingPackage);
-
-        protected abstract void MoveItem(PointerEventData eventData);
-
-        protected void FadeInPreview()  // TODO move the delayed logic into the previewProvider
+        public void OnDrop(PointerEventData eventData)
         {
+            if (!PreviewOnly)
+                Drop();
+        }
+
+        /// <summary>
+        /// Right-click and drag-pickup, the two behaviors that genuinely differ per
+        /// container (consume / equip / unequip / buy). Shift-click no longer reaches this -
+        /// <see cref="TryQuickMove"/> handles it before <see cref="OnPointerClick"/> ever
+        /// calls here. Virtual with an empty default: a container with nothing of its own to
+        /// do on right-click or drag-pickup needs no override at all.
+        /// </summary>
+        protected virtual void MoveItem(PointerEventData eventData, Vector2 pointerPosition) { }
+
+        /// <summary>
+        /// The guard-clause prologue every <see cref="MoveItem"/> override starts with: no
+        /// container, or nothing at <see cref="Position"/>, and there is nothing to move; found
+        /// one, and the hover preview fades before anything changes underneath it. Where a
+        /// concrete slot actually diverges starts after this returns true.
+        /// </summary>
+        protected bool TryBeginMove(out Vector2Int position, out Package package)
+        {
+            position = Position;
+            package = default;
+
             if (Container == null)
-                return;
+                return false;
 
-            var position = Position;
+            if (!Container.TryGetItemAt(ref position, out package))
+                return false;
 
-            if (Container.TryGetItemAt(ref position, out var hoveredIten))
-                if (hoveredIten.IsValid)
-                    _ = StartCoroutine(FadeIn(hoveredIten));
+            FadeOutPreview();
 
-            IEnumerator FadeIn(Package package)
+            return true;
+        }
+
+        /// <summary>Whether a pick-up right now takes half the stack (<see cref="GameAction.HalveStack"/> held).</summary>
+        protected static bool HalvesOnPickUp => GameInput.IsHeld(GameAction.HalveStack);
+
+        /// <summary>
+        /// The "DRAG ITEM" tail every concrete slot falls through to once its own special-cases
+        /// (use, equip, buy, stage...) don't apply: pick <paramref name="package"/> up off
+        /// <paramref name="position"/> and hand it to the cursor. <paramref name="position"/> is
+        /// passed rather than re-read from <see cref="Position"/> because a multi-cell item's
+        /// origin is not necessarily the cell under the pointer - the offset between them is
+        /// what keeps the drag visual anchored to where it was grabbed instead of snapping to
+        /// the origin cell. <paramref name="unitPrice"/> is the Vendor shelf's per-unit
+        /// buy-on-drop price (issue #31); every other source leaves it unset.
+        ///
+        /// <para>Ctrl held takes half the stack, leaving the rest behind - the one pickup
+        /// modifier every source honors uniformly, because it lives here rather than being
+        /// hand-copied per display. It runs before <paramref name="unitPrice"/> is scaled, so
+        /// a half-stack picked up on the shelf is charged for half, not the whole stack.</para>
+        /// </summary>
+        protected void BeginDrag(Vector2Int position, Package package, Vector2 pointerPosition, float? unitPrice = null)
+        {
+            _ = package.ReduceAmount(package.Amount - package.PickUpAmount(HalvesOnPickUp));
+
+            _ = Container.RemoveAtPosition(position, package);
+
+            var positionOffset = Position - position;
+            var totalPrice = unitPrice.HasValue ? unitPrice.Value * package.Amount : (float?)null;
+
+            DragProvider.Instance.SetPackage(this, package, positionOffset, pointerPosition, totalPrice);
+        }
+
+        protected void FadeInPreview() => RefreshHoverPreview(clearStale: false);
+
+        /// <summary>
+        /// Bring the hover preview in line with the container cell the cursor rests over
+        /// (<see cref="Position"/>) after a swap this slot performed. The cursor has not
+        /// moved, so the cell may now hold the item the swap landed there - a drop follows
+        /// the drag visual and often lands a cell over; a right-click "swap in place"
+        /// re-homes the displaced item into the vacated cell, i.e. straight back under the
+        /// cursor - or be empty because its occupant went to the hand or another container.
+        /// Unlike the hover path this wipes a stale preview up front instead of leaving the
+        /// old item frozen there until a pointer-exit (issue #13, QA-2).
+        /// </summary>
+        protected void SyncPreviewAfterMove() => RefreshHoverPreview(clearStale: true);
+
+        /// <summary>
+        /// The one path that decides what the hover preview shows: whatever
+        /// <see cref="HoverPreview.Under"/> finds under <see cref="Position"/>, faded in the
+        /// same way a hover would so a rapid drag-drop-drag never flashes the panel. On a
+        /// plain hover the cell is only ever gaining an item; after a move
+        /// (<paramref name="clearStale"/>) it may instead have been vacated, so clear first.
+        /// </summary>
+        private void RefreshHoverPreview(bool clearStale)
+        {
+            CancelFadeIn();
+
+            if (clearStale)
+                PreviewProvider.Instance.RefreshPreviewDisplay(new Package(Container, null, 0), this);
+
+            var package = HoverPreview.Under(Container, Position);
+
+            if (package.IsValid)
+                fadeIn = StartCoroutine(FadeIn(package));
+
+            IEnumerator FadeIn(Package toShow)
             {
-                hovering = true;
+                yield return new WaitForSeconds(HoverPreview.Delay);
 
-                var timeStamp = Time.time;
+                fadeIn = null;
 
-                while (hovering)
-                {
-                    yield return null;
-
-                    var canFadeIn = PreviewProvider.Instance.FadeInDelay < Time.time - timeStamp;
-
-                    if (canFadeIn)// && hovering)
-                    {
-                        PreviewProvider.Instance.CompareDetails(package, this is not EquipmentSlotDisplay);
-                        hovering = false;
-                    }
-                }
+                PreviewProvider.Instance.RefreshPreviewDisplay(toShow, this);
             }
+        }
+
+        private void CancelFadeIn()
+        {
+            if (fadeIn != null)
+                StopCoroutine(fadeIn);
+
+            fadeIn = null;
         }
 
         protected void FadeOutPreview()
         {
-            hovering = false;
+            CancelFadeIn();
 
-            PreviewProvider.Instance.CompareDetails(new Package(), false);
+            if (PreviewProvider.TryGetAlive(out var preview))
+                preview.RefreshPreviewDisplay(new Package(Container, null, 0), this);
         }
 
         protected abstract void DropItem(Package package);
 
+        /// <summary>
+        /// Every drop enters here, before the display's own <see cref="DropItem"/>. A purchase in
+        /// progress - lifted off a Supply or the Sold tab, not yet paid for - only ever lands in
+        /// the Hero's bag or on the Equipment (issue #129 follow-up): released anywhere else, on
+        /// the Stash, another shelf, the world, it is cancelled and goes back where it came from,
+        /// free. It is never destroyed and never charged for a place it does not belong.
+        /// </summary>
+        private void Drop()
+        {
+            var drag = DragProvider.Instance;
+
+            if (!drag.MayLandIn(Container))
+            {
+                _ = CancelHeldDrag();
+                return;
+            }
+
+            DropItem(drag.DraggingPackage);
+        }
+
+        /// <summary>
+        /// Ends the drag by sending the held Package back to where the drag started
+        /// (<see cref="DragProvider.CancelDrag"/>), and repaints both ends. The one statement of
+        /// "this drop is turned away": a purchase released somewhere it cannot land, and a sale
+        /// the Sold container refused.
+        /// </summary>
+        /// <returns>Whether the item went back. False when neither its origin nor the bag had
+        /// room: it stays in hand, and the player is told so rather than left guessing.</returns>
+        protected bool CancelHeldDrag()
+        {
+            var drag = DragProvider.Instance;
+
+            var sentBack = drag.CancelDrag();
+
+            if (!sentBack)
+                Debug.LogWarning("Nothing had room for the item, so it stays in hand.");
+
+            Container?.InvokeRefresh();
+            drag.Origin?.Container?.InvokeRefresh();
+
+            if (Container != null)
+                SyncPreviewAfterMove();
+
+            return sentBack;
+        }
+
+        /// <summary>
+        /// Whether <see cref="DropItem"/> would place <paramref name="package"/> if the
+        /// player released it over this slot now - the exact predicate the drag display's
+        /// red "can't drop" tint shows, so the warning and the drop can never disagree
+        /// (issue #12). The base answers for a uniform grid, via
+        /// <see cref="DragProvider.TryGetDropPosition"/> +
+        /// <see cref="AbstractDimensionalContainer.CanPlaceAt"/>; a sink with no container
+        /// of its own (the ground, the sell slot) takes anything;
+        /// <see cref="EquipmentSlotDisplay"/> overrides it for the paper-doll layout.
+        /// </summary>
+        public virtual bool WouldAcceptDrop(Package package)
+        {
+            if (!package.IsValid)
+                return false;
+
+            // A purchase that cannot land here is cancelled on release, so it shows the same red.
+            if (!DragProvider.Instance.MayLandIn(Container))
+                return false;
+
+            if (Container == null)
+                return true;
+
+            return DragProvider.Instance.TryGetDropPosition(this, out var position)
+                && Container.CanPlaceAt(position, ItemService.Instance.View(package.Item).Dimensions);
+        }
+
         protected virtual void SetDisplaySize(RectTransform display, Package package) { }
 
-        public void RefreshSlotDisplay(Package package)
+        public virtual void RefreshSlotDisplay(Package package)
         {
-            if (itemDisplay)
+            if (itemGroup)
             {
                 if (package.Amount < 1)
                 {
-                    itemDisplay.gameObject.SetActive(false);
+                    SetHighlighted(false);
+                    itemGroup.gameObject.SetActive(false);
                     return;
                 }
 
                 SetDisplay(package);
 
-                itemDisplay.gameObject.SetActive(true);
+                // A stand-in (EquipmentSlotDisplay's two-hander ghost) fades the group; any real refresh restores it.
+                itemGroup.alpha = 1f;
+                itemGroup.gameObject.SetActive(true);
+
+                /// SetDisplay resets frame geometry; put the highlight back if we are still under the cursor.
+                SetHighlighted(isHighlighted);
 
                 void SetDisplay(Package package)
                 {
-                    SetDisplaySize(itemDisplay, package);
+                    SetDisplaySize((RectTransform)itemGroup.transform, package);
 
                     if (icon)
                     {
-                        icon.sprite = package.Item.Icon;
+                        icon.sprite = ItemService.Instance.View(package.Item).Icon;
                         icon.color = Color.white;
                     }
 
                     if (amount)
                         amount.text = 1 < package.Amount ? package.Amount.ToString() : string.Empty;
 
-                    var rarityColor = AbstractItem.GetRarityColor(package.Item.Rarity);
+                    var rarityColor = UiColors.Rarity(package.Item.Rarity);
 
                     if (frame)
                         frame.color = rarityColor;
 
                     if (background)
-                        background.color = rarityColor * Color.gray * Color.gray;
+                    {
+                        baseBackgroundColor = UiColors.SlotBackground(rarityColor);
+                        background.color = baseBackgroundColor;
+                    }
                 }
-            }
-        }
-
-        public void SetBackgroundColor(List<Vector2Int> overlappingPositions)
-        {
-            if (slotBackground)
-            {
-                var alpha = slotBackground.color.a;
-
-                if (0 <= overlappingPositions.Count) // OR if not containing any item
-                    slotBackground.color = Color.white;
-                else
-                {
-                    foreach (var item in overlappingPositions)
-                        if (item == Position)
-                            slotBackground.color = (overlappingPositions.Count == 1) ? Color.yellow : Color.red;
-                }
-
-                slotBackground.color *= new Vector4(1, 1, 1, alpha);
             }
         }
     }

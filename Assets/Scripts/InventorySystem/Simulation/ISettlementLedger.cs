@@ -1,0 +1,19 @@
+namespace ToolSmiths.InventorySystem.Simulation
+{
+    /// <summary>
+    /// The hero's wallet and character sheet as <see cref="RunSettlement"/> needs to touch them
+    /// on a Death (ADR-0009): the currency fee and the forfeited XP. The engine
+    /// binds this to the live <c>Wallet</c> and <c>Hero</c>; a test records the calls.
+    /// </summary>
+    public interface ISettlementLedger
+    {
+        /// <summary>
+        /// Withdraw the Death fee - <paramref name="baseUnits"/> iron-equivalent (<c>GLOSSARY.md</c>
+        /// <i>Base Unit</i>) - from the Wallet. Never takes more than is there.
+        /// </summary>
+        void ChargeFee(long baseUnits);
+
+        /// <summary>Subtract <paramref name="xp"/> from the hero's progress toward the next level.</summary>
+        void ForfeitXp(int xp);
+    }
+}

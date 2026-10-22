@@ -1,0 +1,3 @@
+[submodule "Assets/Submodules/Utility"]
+	path = Assets/Submodules/Utility
+	url = https://github.com/lolesch/Utility.git

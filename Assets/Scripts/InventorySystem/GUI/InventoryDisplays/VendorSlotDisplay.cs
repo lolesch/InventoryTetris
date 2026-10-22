@@ -1,0 +1,197 @@
+using Submodules.Utility.Services;
+using ToolSmiths.InventorySystem.Services;
+using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Inventories;
+using ToolSmiths.InventorySystem.Items;
+using ToolSmiths.InventorySystem.Runtime.Provider;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
+
+namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
+{
+    internal sealed class VendorSlotDisplay : AbstractSlotDisplay
+    {
+        private GridLayoutGroup gridLayout;
+
+        /// The displayed package's whole price in base units, or <c>null</c> for an empty slot.
+        /// Taken once when the package changes, so a wallet change can re-tint without waiting
+        /// for a container refresh and a repaint (hover, a wallet change, the un-highlight in
+        /// OnDisable) never prices the item again through the catalog.
+        private float? displayedPrice;
+
+        // The Wallet this slot is subscribed to, held so a hero load (#114) can let go of the old
+        // Hero's Wallet, which CurrentWallet no longer names by then.
+        private Wallet watched;
+
+        private void OnEnable()
+        {
+            _ =Session.TrySubscribeHeroLoaded(WatchWallet);
+
+            WatchWallet();
+        }
+
+        protected override void OnDisable()
+        {
+            // Before the base runs: it repaints, and a repaint that throws must not leave this
+            // slot subscribed to a Wallet that outlives it.
+            Session.UnsubscribeHeroLoaded(WatchWallet);
+
+            Unwatch();
+
+            base.OnDisable();
+        }
+
+        /// <summary>Follows the current Hero's Wallet, and repaints: the tint is the new Hero's affordability.</summary>
+        private void WatchWallet()
+        {
+            Unwatch();
+
+            watched = CurrentWallet();
+
+            if (watched != null)
+            {
+                watched.OnBalanceChanged += OnWalletChanged;
+                RefreshBackground();
+            }
+        }
+
+        private void Unwatch()
+        {
+            if (watched == null)
+                return;
+
+            watched.OnBalanceChanged -= OnWalletChanged;
+            watched = null;
+        }
+
+        /// Cached before the base runs, because refreshing the display repaints the
+        /// background and that has to price the incoming item, not the outgoing one.
+        public override void RefreshSlotDisplay(Package package)
+        {
+            displayedPrice = package.IsValid
+                ? VendorTransaction.BuyPrice(package.Item, ItemService.Instance.Catalog) * package.Amount
+                : null;
+
+            base.RefreshSlotDisplay(package);
+        }
+
+        private void OnWalletChanged(Currency _) => RefreshBackground();
+
+        protected override Color GetBackgroundColor() => CanAffordDisplayed()
+            ? base.GetBackgroundColor()
+            : Lighten(UiColors.Unaffordable);
+
+        /// An empty slot has nothing to price, so it never reads as unaffordable - which
+        /// also clears the tint for free on the slot an item was just bought out of.
+        private bool CanAffordDisplayed()
+        {
+            if (displayedPrice is not { } price)
+                return true;
+
+            var wallet = CurrentWallet();
+
+            return wallet == null || VendorTransaction.CanAffordBuy(wallet, price);
+        }
+
+        // Null while nothing is armed: a repaint can run in Edit Mode, after the services are cleared.
+        private static Wallet CurrentWallet() =>
+            ServiceLocator.IsArmed ? Session.Instance.Hero.Wallet : null;
+
+        protected override void SetDisplaySize(RectTransform display, Package package)
+        {
+            base.SetDisplaySize(display, package);
+
+            if (!gridLayout)
+                gridLayout = GetComponentInParent<GridLayoutGroup>();
+            if (gridLayout)
+            {
+                var itemDimensions = ItemService.Instance.View(package.Item).Dimensions;
+                var additionalSpacing = gridLayout.spacing * new Vector2(itemDimensions.x - 1, itemDimensions.y - 1);
+
+                display.sizeDelta = gridLayout.cellSize * itemDimensions + additionalSpacing;
+            }
+
+            display.anchoredPosition = new Vector2(display.sizeDelta.x * .5f, display.sizeDelta.y * -.5f);
+            display.pivot = new Vector2(.5f, .5f);
+            display.anchorMin = new Vector2(0, 1);
+            display.anchorMax = new Vector2(0, 1);
+        }
+
+        protected override void MoveItem(PointerEventData eventData, Vector2 pointerPosition)
+        {
+            if (!TryBeginMove(out var position, out var package))
+                return;
+
+            // Right-click is a Supply's "use": it buys the item (issue #121), the same
+            // immediate buy as shift-click. Drag-and-drop below stays the other way to buy.
+            // This class serves every Supply shelf - the Vendor's and the Healer's.
+            if (eventData.button == PointerEventData.InputButton.Right)
+            {
+                BuyAt(position, package);
+                return;
+            }
+
+            // An item the player cannot afford stays on the shelf: priced for the amount this
+            // pick-up would take, so Ctrl-half of a red stack still lifts when the half is
+            // affordable (issue #125). The drop keeps its own gate as the transaction-level guarantee.
+            if (!VendorTransaction.CanAffordPickUp(CurrentWallet(), package, HalvesOnPickUp, ItemService.Instance.Catalog))
+                return;
+
+            var unitPrice = VendorTransaction.BuyPrice(package.Item, ItemService.Instance.Catalog);
+
+            // Drag: a pick-up, not a completed move - nothing is charged, and the price is
+            // read once and held on the cursor for the length of the drag (issue #31),
+            // scaled to the amount actually picked up (BeginDrag). It is paid only when the
+            // package lands in a player container; dropping it back on the shelf, cancelling
+            // (Esc) or closing the Store returns it with no charge.
+            BeginDrag(position, package, pointerPosition, unitPrice);
+        }
+
+        /// <summary>
+        /// A Supply slot is a drop target that sells (issue #129), and the Sold tab's slots are the
+        /// same slots. It accepts a purchase in progress - from any shelf - as a free return to
+        /// its origin, never a sale: nobody is paid for something not yet owned. It accepts a
+        /// player-owned Package as a sale, and refuses it, which shows the forbidden tint, when
+        /// the payout would be 0 or the item is currency (<see cref="Sale.CanSellHeld"/>);
+        /// releasing on that tint sends the item back to its origin.
+        /// </summary>
+        public override bool WouldAcceptDrop(Package package)
+        {
+            if (!package.IsValid || !ServiceLocator.IsArmed)
+                return false;
+
+            if (DragProvider.Instance.IsHoldingPurchase)
+                return true;
+
+            return Sale.CanSellHeld(Session.Instance.World.Sold, package);
+        }
+
+        protected override void DropItem(Package package)
+        {
+            if (!package.IsValid || !ServiceLocator.IsArmed)
+                return;
+
+            /// A purchase in progress never reaches here: AbstractSlotDisplay.Drop sends it back
+            /// to its origin free (issues #31, #129), on this shelf or any other place that is not
+            /// the Hero's bag or equipment. What arrives is a player-owned Package, and it is a
+            /// sale: the one Sale statement, over the Sold container and the Wallet - the source
+            /// was vacated at pick-up. A sale that cannot pay out is turned away like any refused
+            /// drop: the item goes back where it came from, not under the cursor.
+            var session = Session.Instance;
+
+            if (!Sale.TrySellHeld(session.World.Sold, session.Hero.Wallet, session.World.LootGround, package))
+            {
+                _ = CancelHeldDrag();
+                return;
+            }
+
+            DragProvider.Instance.EndDrag();
+
+            Container?.InvokeRefresh();
+            DragProvider.Instance.Origin?.Container?.InvokeRefresh();
+
+            SyncPreviewAfterMove();
+        }
+    }
+}

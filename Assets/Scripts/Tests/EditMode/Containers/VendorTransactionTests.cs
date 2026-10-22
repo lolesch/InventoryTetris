@@ -1,0 +1,630 @@
+using System.Collections.Generic;
+using System.Linq;
+using NUnit.Framework;
+using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Data.Enums;
+using ToolSmiths.InventorySystem.Inventories;
+using ToolSmiths.InventorySystem.Items;
+using UnityEngine;
+
+namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
+{
+    /// <summary>
+    /// The vendor rows of the movement matrix (issue #11): <see cref="VendorTransaction"/>
+    /// routes selling and buying through <see cref="ItemTransaction"/> so the coin mint /
+    /// payment only lands on commit. A sale banks exactly the sell value; a purchase pays
+    /// the price exactly and places the item, or - with no inventory room - rolls back with
+    /// the item still on the shelf and nothing charged. Assertions are on wallet value and
+    /// container contents, never on how many refreshes fired.
+    /// </summary>
+    [TestFixture]
+    public sealed class VendorTransactionTests
+    {
+        private const string SwordId = "test.sword";
+        private const string TwoHandedSwordId = "test.twohanded.sword"; // a 2×2 purchase for the no-room tests
+        private const string ArrowId = "test.arrow"; // a cheap restock filler for the fixed-price test
+        private const string BookId = "test.book"; // no affixes, so it prices at its base value alone (#122)
+        private const float BookBaseValue = 5f;
+        private const string CopperId = "test.copper";
+        private const string IronId = "test.iron";
+        private const string SilverId = "test.silver";
+        private const string GoldId = "test.gold";
+
+        private static TestCatalog catalog;
+        private FakeCurrencyMinter minter;
+
+        [SetUp]
+        public void SetCatalog()
+        {
+            catalog = new TestCatalog()
+                .With(new TestDefinition { Id = SwordId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Sword, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u })
+                .With(new TestDefinition { Id = TwoHandedSwordId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.TWOHANDEDWEAPONS, Footprint = ItemSize.TwoByTwo, BaseStackLimit = 1u })
+                .With(new TestDefinition { Id = ArrowId, Category = ItemCategory.Consumable, ConsumableType = ConsumableType.PortalScroll, Footprint = ItemSize.OneByOne, BaseStackLimit = 20u })
+                .With(new TestDefinition { Id = BookId, Category = ItemCategory.Consumable, ConsumableType = ConsumableType.Book, Footprint = ItemSize.OneByOne, BaseStackLimit = 10u, BaseValue = BookBaseValue })
+                .With(new TestDefinition { Id = CopperId, Category = ItemCategory.Currency, CurrencyType = CurrencyType.Copper, Footprint = ItemSize.OneByOne, BaseStackLimit = 999u })
+                .With(new TestDefinition { Id = IronId, Category = ItemCategory.Currency, CurrencyType = CurrencyType.Iron, Footprint = ItemSize.OneByOne, BaseStackLimit = 999u })
+                .With(new TestDefinition { Id = SilverId, Category = ItemCategory.Currency, CurrencyType = CurrencyType.Silver, Footprint = ItemSize.OneByOne, BaseStackLimit = 999u })
+                .With(new TestDefinition { Id = GoldId, Category = ItemCategory.Currency, CurrencyType = CurrencyType.Gold, Footprint = ItemSize.OneByOne, BaseStackLimit = 999u });
+
+            minter = new FakeCurrencyMinter(catalog);
+        }
+
+        [TearDown]
+        public void ClearCatalog() => catalog = null;
+
+        // ── fixtures ────────────────────────────────────────────────────────
+
+        private static CharacterStatModifier Affix(StatName stat, float value) =>
+            new(stat, new StatModifier(new Vector2Int(0, 100), value, StatModifierType.FlatAdd));
+
+        /// A Rare sword whose single PhysicalDamage affix values it at 6 * 35 = 210 base units.
+        private static ItemInstance Sword() => new(SwordId, ItemRarity.Rare, 7, new[] { Affix(StatName.PhysicalDamage, 6f) });
+
+        private const float SwordSellValue = 6f * 35f;                       // 210
+        private static readonly float SwordBuyPrice = SwordSellValue * VendorTransaction.Markup; // 315
+
+        /// A 2×2 greatsword that cannot fit into a wallet whose every cell is already coin-filled.
+        private static ItemInstance TwoHandedSword() => new(TwoHandedSwordId, ItemRarity.Rare, 7, new[] { Affix(StatName.PhysicalDamage, 6f) });
+
+        private Wallet NewWallet(int width = 4, int height = 4) =>
+            new(new CharacterInventory(new Vector2Int(width, height), catalog), minter);
+
+        private void SeedCash(Wallet wallet, CurrencyType type, uint count)
+        {
+            var package = new Package(wallet.Container, minter.MintCurrency(type), count);
+            _ = wallet.Container.TryAddToContainer(ref package);
+        }
+
+        /// The wallet's total spendable value in base units.
+        private static uint WalletValue(Wallet wallet) => wallet.Balance.Total;
+
+        private static bool Holds(AbstractDimensionalContainer container, ItemInstance instance) =>
+            container.StoredPackages.Values.Any(package => ReferenceEquals(package.Item, instance));
+
+        // ── Sell ────────────────────────────────────────────────────────────
+
+        [Test]
+        public void Sell_MintsCoinsWorthTheSellValue_IntoTheWallet()
+        {
+            var wallet = NewWallet();
+
+            VendorTransaction.Sell(new Package(null, Sword(), 1u), wallet);
+
+            Assert.That(WalletValue(wallet), Is.EqualTo((uint)SwordSellValue));
+        }
+
+        [Test]
+        public void Sell_AffixlessBook_PaysItsBaseValue()
+        {
+            var wallet = NewWallet();
+
+            VendorTransaction.Sell(new Package(null, new ItemInstance(BookId, ItemRarity.Common, 1, null), 1u), wallet);
+
+            Assert.That(WalletValue(wallet), Is.EqualTo((uint)BookBaseValue));
+        }
+
+        [Test]
+        public void Sell_AddsToTheCashAlreadyInTheWallet()
+        {
+            var wallet = NewWallet();
+            SeedCash(wallet, CurrencyType.Gold, 1u); // 1200
+
+            VendorTransaction.Sell(new Package(null, Sword(), 1u), wallet);
+
+            Assert.That(WalletValue(wallet), Is.EqualTo(1200u + (uint)SwordSellValue));
+        }
+
+        [Test]
+        public void Sell_PricesTheWholeStack()
+        {
+            var wallet = NewWallet();
+            // A five-copper pile: sell value is the denomination value (5) times the amount.
+            var pile = new Package(null, minter.MintCurrency(CurrencyType.Copper), 5u);
+
+            VendorTransaction.Sell(pile, wallet);
+
+            Assert.That(WalletValue(wallet), Is.EqualTo(5u * (uint)Currency.ironToCopper));
+        }
+
+        [Test]
+        public void Sell_AnInvalidPackage_BanksNothing()
+        {
+            var wallet = NewWallet();
+
+            VendorTransaction.Sell(default, wallet);
+
+            Assert.That(WalletValue(wallet), Is.Zero);
+        }
+
+        // ── Buy ─────────────────────────────────────────────────────────────
+
+        [Test]
+        public void Buy_PaysThePriceExactly_AndPlacesTheItem()
+        {
+            var wallet = NewWallet();
+            SeedCash(wallet, CurrencyType.Gold, 1u); // 1200
+            var store = new CharacterInventory(new Vector2Int(4, 4), catalog);
+            var onShelf = new Package(store, Sword(), 1u);
+            _ = store.AddAtPosition(new Vector2Int(0, 0), onShelf);
+            var instance = store.StoredPackages[new Vector2Int(0, 0)].Item;
+
+            var bought = VendorTransaction.Buy(store, new Vector2Int(0, 0),
+                store.StoredPackages[new Vector2Int(0, 0)], wallet, SwordBuyPrice, new BagOnlyReceiver(wallet.Container));
+
+            Assert.That(bought, Is.True);
+            Assert.That(store.StoredPackages, Is.Empty, "the shelf no longer holds it");
+            Assert.That(Holds(wallet.Container, instance), Is.True, "the bought item is in the bag");
+            Assert.That(WalletValue(wallet), Is.EqualTo(1200u - (uint)SwordBuyPrice), "the price was paid exactly");
+        }
+
+        [Test]
+        public void Buy_WithNoInventoryRoom_RollsBack_AndChargesNothing()
+        {
+            var wallet = NewWallet(1, 1);
+            SeedCash(wallet, CurrencyType.Gold, 1u); // fills the wallet's only cell
+            var store = new CharacterInventory(new Vector2Int(4, 4), catalog);
+            var onShelf = new Package(store, Sword(), 1u);
+            _ = store.AddAtPosition(new Vector2Int(0, 0), onShelf);
+            var instance = store.StoredPackages[new Vector2Int(0, 0)].Item;
+
+            var bought = VendorTransaction.Buy(store, new Vector2Int(0, 0),
+                store.StoredPackages[new Vector2Int(0, 0)], wallet, SwordBuyPrice, new BagOnlyReceiver(wallet.Container));
+
+            Assert.That(bought, Is.False);
+            Assert.That(Holds(store, instance), Is.True, "the item stayed on the shelf");
+            Assert.That(Holds(wallet.Container, instance), Is.False, "nothing landed in the full bag");
+            Assert.That(WalletValue(wallet), Is.EqualTo(1200u), "no charge on a rolled-back buy");
+        }
+
+        [Test]
+        public void Buy_WhenTheWalletCannotAfford_DoesNothing()
+        {
+            var wallet = NewWallet();
+            SeedCash(wallet, CurrencyType.Iron, 100u); // 100 < 315
+            var store = new CharacterInventory(new Vector2Int(4, 4), catalog);
+            var onShelf = new Package(store, Sword(), 1u);
+            _ = store.AddAtPosition(new Vector2Int(0, 0), onShelf);
+            var instance = store.StoredPackages[new Vector2Int(0, 0)].Item;
+
+            var bought = VendorTransaction.Buy(store, new Vector2Int(0, 0),
+                store.StoredPackages[new Vector2Int(0, 0)], wallet, SwordBuyPrice, new BagOnlyReceiver(wallet.Container));
+
+            Assert.That(bought, Is.False);
+            Assert.That(Holds(store, instance), Is.True);
+            Assert.That(WalletValue(wallet), Is.EqualTo(100u));
+        }
+
+        /// Like <see cref="PickUpTransactionTests.FakePlayer"/>: the player's placement
+        /// (<see cref="ItemAcquisition"/>) without the MonoBehaviour or the provider singleton, so a
+        /// shift-click buy's real path - through <see cref="IItemReceiver"/>, not the
+        /// bag-add receiver every other Buy test above exercises - is covered too.
+        private sealed class FakePlayer : IItemReceiver
+        {
+            private readonly CharacterEquipment equipment;
+            private readonly CharacterInventory inventory;
+
+            public FakePlayer(CharacterEquipment equipment, CharacterInventory inventory)
+            {
+                this.equipment = equipment;
+                this.inventory = inventory;
+            }
+
+            public IReadOnlyList<AbstractDimensionalContainer> ReceivingContainers => new AbstractDimensionalContainer[] { equipment, inventory };
+
+            public bool PickUpItem(ItemInstance item, uint amount)
+            {
+                var package = new Package(null, item, amount);
+                return ItemAcquisition.TryPlace(ref package, equipment, inventory);
+            }
+        }
+
+        [Test]
+        public void Buy_ThroughAPlayer_RoutesViaPickUpItem_AndAutoEquips()
+        {
+            var wallet = NewWallet();
+            SeedCash(wallet, CurrencyType.Gold, 1u); // 1200
+            var store = new CharacterInventory(new Vector2Int(4, 4), catalog);
+            _ = store.AddAtPosition(new Vector2Int(0, 0), new Package(store, Sword(), 1u));
+            var instance = store.StoredPackages[new Vector2Int(0, 0)].Item;
+
+            var equipment = new CharacterEquipment(new Vector2Int(14, 1), catalog, null);
+            var inventory = new CharacterInventory(new Vector2Int(4, 4), catalog);
+            var player = new FakePlayer(equipment, inventory);
+
+            var bought = VendorTransaction.Buy(store, new Vector2Int(0, 0),
+                store.StoredPackages[new Vector2Int(0, 0)], wallet, SwordBuyPrice, player);
+
+            Assert.That(bought, Is.True);
+            Assert.That(store.StoredPackages, Is.Empty, "the shelf no longer holds it");
+            Assert.That(Holds(equipment, instance), Is.True, "auto-equip placed it, not a plain bag add");
+            Assert.That(WalletValue(wallet), Is.EqualTo(1200u - (uint)SwordBuyPrice), "the price was paid exactly");
+        }
+
+        [Test]
+        public void Buy_ThroughAPlayer_WithNoRoomAnywhere_RollsBack_AndChargesNothing()
+        {
+            var inventory = new CharacterInventory(new Vector2Int(1, 1), catalog);
+            var wallet = new Wallet(inventory, minter);
+            SeedCash(wallet, CurrencyType.Gold, 1u); // fills the inventory's only cell
+            var store = new CharacterInventory(new Vector2Int(4, 4), catalog);
+            _ = store.AddAtPosition(new Vector2Int(0, 0), new Package(store, Sword(), 1u));
+            var instance = store.StoredPackages[new Vector2Int(0, 0)].Item;
+
+            var equipment = new CharacterEquipment(new Vector2Int(14, 1), catalog, null) { autoEquip = false };
+            var player = new FakePlayer(equipment, inventory);
+
+            var bought = VendorTransaction.Buy(store, new Vector2Int(0, 0),
+                store.StoredPackages[new Vector2Int(0, 0)], wallet, SwordBuyPrice, player);
+
+            Assert.That(bought, Is.False);
+            Assert.That(Holds(store, instance), Is.True, "the item stayed on the shelf");
+            Assert.That(WalletValue(wallet), Is.EqualTo(1200u), "no charge on a rolled-back buy");
+        }
+
+        [Test]
+        public void Buy_LeavesTheStoreAndWalletEnrollableAgain()
+        {
+            var wallet = NewWallet();
+            SeedCash(wallet, CurrencyType.Gold, 1u);
+            var store = new CharacterInventory(new Vector2Int(4, 4), catalog);
+            _ = store.AddAtPosition(new Vector2Int(0, 0), new Package(store, Sword(), 1u));
+
+            _ = VendorTransaction.Buy(store, new Vector2Int(0, 0),
+                store.StoredPackages[new Vector2Int(0, 0)], wallet, SwordBuyPrice, new BagOnlyReceiver(wallet.Container));
+
+            Assert.That(() => new ItemTransaction(store, wallet.Container).Dispose(), Throws.Nothing);
+        }
+
+        // ── buy on drop (issue #31) ────────────────────────────────────────
+        // A drag buy is a pick-up (uncharged) followed by a drop into a player container
+        // whose placement transaction queues the payment. These fixture helpers drive the
+        // exact primitives the slot displays run (issue #9 #10 #11): the pick-up removes the
+        // package off the shelf; the drop places it in an ItemTransaction and queues the
+        // payment as a commit-time effect; the return sends it back through ReturnToOrigin.
+
+        /// Drag pick-up: the slot display removes the item off the shelf onto the cursor. Uncharged.
+        private static Package shelfPickUp(CharacterInventory shelf, Vector2Int at)
+        {
+            Assert.That(shelf.TryGetPackageAt(at, out var stored), Is.True, $"nothing stored at {at}");
+            _ = shelf.RemoveAtPosition(at, stored);
+            return stored;
+        }
+
+        /// The drop, exactly as <c>InventorySlotDisplay</c> / <c>EquipmentSlotDisplay</c> run it
+        /// (issue #31): an unaffordable or unplaceable purchase is rejected before the drop
+        /// (item stays in hand, nothing charged); otherwise the placement runs in a
+        /// transaction with the payment queued as a commit-time effect.
+        private static bool DragDrop(AbstractDimensionalContainer bag, Vector2Int at, ref Package inHand,
+            Wallet wallet, float price)
+        {
+            if (!bag.CanPlaceAt(at, ItemView.Resolve(inHand.Item, catalog).Dimensions))
+                return false; // no room - nothing lands, nothing charged
+
+            var cursor = new CursorHolder(null);
+            using var transaction = new ItemTransaction(cursor, bag);
+
+            if (!VendorTransaction.TryQueuePurchase(transaction, wallet, price))
+                return false; // can't afford - dispose rolls back, nothing lands, nothing charged
+
+            var displaced = bag.AddAtPosition(at, inHand);
+            if (displaced.IsValid)
+                _ = transaction.TryReHomeToHandOrContainer(ref displaced, new PackageOrigin(bag, at));
+            transaction.Commit();
+            return true;
+        }
+
+        [Test]
+        public void DragBuy_PickingUpOffTheShelf_ChargesNothing()
+        {
+            var wallet = NewWallet();
+            SeedCash(wallet, CurrencyType.Gold, 1u); // 1200
+            var shelf = new CharacterInventory(new Vector2Int(4, 4), catalog);
+            _ = shelf.AddAtPosition(new Vector2Int(0, 0), new Package(shelf, Sword(), 1u));
+
+            var inHand = shelfPickUp(shelf, new Vector2Int(0, 0));
+
+            Assert.That(inHand.IsValid, Is.True, "the item is on the cursor");
+            Assert.That(shelf.StoredPackages, Is.Empty, "it left the shelf");
+            Assert.That(WalletValue(wallet), Is.EqualTo(1200u), "nothing was charged at pick-up");
+        }
+
+        [Test]
+        public void DragBuy_DropIntoTheBag_ChargesExactlyThePickUpPrice_AndPlacesTheItem()
+        {
+            var wallet = NewWallet();
+            SeedCash(wallet, CurrencyType.Gold, 1u); // 1200
+            var shelf = new CharacterInventory(new Vector2Int(4, 4), catalog);
+            _ = shelf.AddAtPosition(new Vector2Int(0, 0), new Package(shelf, Sword(), 1u));
+            var instance = shelf.StoredPackages[new Vector2Int(0, 0)].Item;
+            var inHand = shelfPickUp(shelf, new Vector2Int(0, 0));
+
+            var price = VendorTransaction.BuyPrice(instance, catalog);
+            var placed = DragDrop(wallet.Container, new Vector2Int(1, 1), ref inHand, wallet, price);
+
+            Assert.That(placed, Is.True);
+            Assert.That(Holds(wallet.Container, instance), Is.True, "the bought item landed in the bag");
+            Assert.That(WalletValue(wallet), Is.EqualTo(1200u - (uint)SwordBuyPrice), "the price was paid exactly on landing");
+        }
+
+        [Test]
+        public void DragBuy_WhereTheItemCannotFit_RejectsTheDrop_ChargesNothing_TheItemStaysInHand()
+        {
+            // A 2×2 wallet, every cell filled with a gold pile: the 2×2 greatsword has no
+            // place to land, so the drop is refused exactly as the slot display refuses a
+            // blocked footprint.
+            var wallet = NewWallet(2, 2);
+            for (var y = 0; y < 2; y++)
+                for (var x = 0; x < 2; x++)
+                    _ = wallet.Container.AddAtPosition(new Vector2Int(x, y),
+                        new Package(wallet.Container, minter.MintCurrency(CurrencyType.Gold), 1u));
+            var before = WalletValue(wallet); // 4 × 1200 = 4800
+
+            var shelf = new CharacterInventory(new Vector2Int(4, 4), catalog);
+            _ = shelf.AddAtPosition(new Vector2Int(0, 0), new Package(shelf, TwoHandedSword(), 1u));
+            var instance = shelf.StoredPackages[new Vector2Int(0, 0)].Item;
+            var inHand = shelfPickUp(shelf, new Vector2Int(0, 0));
+
+            var placed = DragDrop(wallet.Container, new Vector2Int(0, 0), ref inHand, wallet, VendorTransaction.BuyPrice(instance, catalog));
+
+            Assert.That(placed, Is.False, "the drop could not land - the item stays in hand");
+            Assert.That(Holds(wallet.Container, instance), Is.False, "nothing landed in the full bag");
+            Assert.That(WalletValue(wallet), Is.EqualTo(before), "no charge - the buy never landed");
+            Assert.That(inHand.IsValid, Is.True, "the item is still on the cursor, ready to return");
+        }
+
+        [Test]
+        public void DragBuy_WhenTheWalletCannotAfford_RejectsTheDrop_AndChargesNothing()
+        {
+            var wallet = NewWallet();
+            SeedCash(wallet, CurrencyType.Iron, 100u); // 100 < 315
+            var shelf = new CharacterInventory(new Vector2Int(4, 4), catalog);
+            _ = shelf.AddAtPosition(new Vector2Int(0, 0), new Package(shelf, Sword(), 1u));
+            var instance = shelf.StoredPackages[new Vector2Int(0, 0)].Item;
+            var inHand = shelfPickUp(shelf, new Vector2Int(0, 0));
+
+            var placed = DragDrop(wallet.Container, new Vector2Int(0, 0), ref inHand, wallet, VendorTransaction.BuyPrice(instance, catalog));
+
+            Assert.That(placed, Is.False, "the drop was rejected before placing anything");
+            Assert.That(Holds(wallet.Container, instance), Is.False, "nothing landed");
+            Assert.That(WalletValue(wallet), Is.EqualTo(100u), "nothing was charged");
+        }
+
+        [Test]
+        public void DragBuy_DroppingBackOnTheShelf_ReturnsItNoCharge()
+        {
+            var wallet = NewWallet();
+            SeedCash(wallet, CurrencyType.Gold, 1u);
+            var shelf = new CharacterInventory(new Vector2Int(4, 4), catalog);
+            _ = shelf.AddAtPosition(new Vector2Int(0, 0), new Package(shelf, Sword(), 1u));
+            var instance = shelf.StoredPackages[new Vector2Int(0, 0)].Item;
+            var inHand = shelfPickUp(shelf, new Vector2Int(0, 0));
+            var backpack = wallet.Container;
+
+            // Dropping back onto the shelf is a return to origin - the same ReturnToOrigin
+            // the cancel and panel-close paths use.
+            var leftOnCursor = ReturnToOrigin.Return(inHand, shelf, new Vector2Int(0, 0), backpack);
+
+            Assert.That(leftOnCursor.IsValid, Is.False, "the package found its home on the shelf");
+            Assert.That(Holds(shelf, instance), Is.True, "the item is back on the shelf");
+            Assert.That(WalletValue(wallet), Is.EqualTo(1200u), "dropping it back charged nothing");
+        }
+
+        [Test]
+        public void DragBuy_PriceIsFixedAtPickUp_EvenAfterARestock()
+        {
+            var wallet = NewWallet();
+            SeedCash(wallet, CurrencyType.Gold, 1u); // 1200
+            var shelf = new CharacterInventory(new Vector2Int(4, 4), catalog);
+            _ = shelf.AddAtPosition(new Vector2Int(0, 0), new Package(shelf, Sword(), 1u));
+            var instance = shelf.StoredPackages[new Vector2Int(0, 0)].Item;
+            var priceAtPickUp = VendorTransaction.BuyPrice(instance, catalog); // 315
+            var inHand = shelfPickUp(shelf, new Vector2Int(0, 0));
+
+            // The store restocks while the drag is live - the shelf now sells a cheap arrow.
+            _ = shelf.AddAtPosition(new Vector2Int(0, 0), new Package(shelf, new ItemInstance(ArrowId, ItemRarity.Common, 0, null), 1u));
+
+            var placed = DragDrop(wallet.Container, new Vector2Int(1, 1), ref inHand, wallet, priceAtPickUp);
+
+            Assert.That(placed, Is.True);
+            Assert.That(WalletValue(wallet), Is.EqualTo(1200u - (uint)SwordBuyPrice),
+                "the price paid is the pick-up price (315), never the restocked arrow's");
+        }
+
+        // ── the pick-up gate (issue #125) ──────────────────────────────────
+        // One affordability predicate is read by the shelf tint, the grab and the drop, and it
+        // prices the amount actually lifted: Ctrl takes half the stack (the larger half of an
+        // odd one), so a red whole stack can still be taken by halves.
+
+        /// A Rare arrow worth 2 * 35 = 70 base units, 105 on the shelf.
+        private static ItemInstance Arrow() => new(ArrowId, ItemRarity.Rare, 7, new[] { Affix(StatName.PhysicalDamage, 2f) });
+
+        private const float ArrowBuyPrice = 2f * 35f * VendorTransaction.Markup; // 105
+
+        private static Package ArrowStack(uint amount) => new(null, Arrow(), amount);
+
+        [Test]
+        public void PickUpAmount_Whole_IsTheStack()
+        {
+            Assert.That(ArrowStack(4u).PickUpAmount(false), Is.EqualTo(4u));
+        }
+
+        [TestCase(4u, 2u)]
+        [TestCase(3u, 2u)]
+        [TestCase(2u, 1u)]
+        [TestCase(1u, 1u)]
+        public void PickUpAmount_Halved_IsTheLargerHalf_AndNeverLessThanOne(uint stack, uint expected)
+        {
+            Assert.That(ArrowStack(stack).PickUpAmount(true), Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void CanAffordPickUp_WholeStack_IsPricedForTheWholeStack()
+        {
+            var wallet = NewWallet();
+            SeedCash(wallet, CurrencyType.Iron, 400u); // 400 < 4 * 105
+
+            Assert.That(VendorTransaction.CanAffordPickUp(wallet, ArrowStack(4u), false, catalog), Is.False);
+        }
+
+        [Test]
+        public void CanAffordPickUp_CtrlHalf_IsPricedForTheHalf()
+        {
+            var wallet = NewWallet();
+            SeedCash(wallet, CurrencyType.Iron, 400u); // the whole is out of reach, the half (210) is not
+
+            Assert.That(VendorTransaction.CanAffordPickUp(wallet, ArrowStack(4u), true, catalog), Is.True);
+        }
+
+        [Test]
+        public void CanAffordPickUp_CtrlHalf_IsStillRefusedWhenTheHalfIsOutOfReach()
+        {
+            var wallet = NewWallet();
+            SeedCash(wallet, CurrencyType.Iron, 209u); // one under 2 * 105
+
+            Assert.That(VendorTransaction.CanAffordPickUp(wallet, ArrowStack(4u), true, catalog), Is.False);
+        }
+
+        [Test]
+        public void CanAffordPickUp_CtrlHalfOfAnOddStack_PricesWhatTheGrabActuallyTakes()
+        {
+            var wallet = NewWallet();
+            SeedCash(wallet, CurrencyType.Iron, 209u); // 3 halves to 2 on the cursor: 210
+
+            Assert.That(VendorTransaction.CanAffordPickUp(wallet, ArrowStack(3u), true, catalog), Is.False,
+                "the half left behind (1) is not the half lifted (2)");
+        }
+
+        [Test]
+        public void CanAffordPickUp_IsTrueAtTheExactPrice()
+        {
+            var wallet = NewWallet();
+            SeedCash(wallet, CurrencyType.Iron, 210u);
+
+            Assert.That(VendorTransaction.CanAffordPickUp(wallet, ArrowStack(2u), false, catalog), Is.True);
+        }
+
+        [Test]
+        public void CanAffordPickUp_CtrlOnASingleItem_PricesTheItem()
+        {
+            var wallet = NewWallet();
+            SeedCash(wallet, CurrencyType.Iron, 100u); // 100 < 105
+
+            Assert.That(VendorTransaction.CanAffordPickUp(wallet, ArrowStack(1u), true, catalog), Is.False,
+                "Ctrl cannot split a single item into something cheaper");
+        }
+
+        [Test]
+        public void CanAffordPickUp_WithoutAWallet_IsFalse()
+        {
+            Assert.That(VendorTransaction.CanAffordPickUp(null, ArrowStack(1u), false, catalog), Is.False);
+        }
+
+        [Test]
+        public void CanAffordPickUp_AndThePickUpPrice_AgreeWithTheDropGate()
+        {
+            var wallet = NewWallet();
+            SeedCash(wallet, CurrencyType.Iron, 210u);
+            var package = ArrowStack(4u);
+            var price = VendorTransaction.PickUpPrice(package, true, catalog);
+
+            Assert.That(price, Is.EqualTo(2f * ArrowBuyPrice), "the price held on the cursor is the half's");
+            Assert.That(VendorTransaction.CanAffordPickUp(wallet, package, true, catalog), Is.True);
+
+            using var transaction = new ItemTransaction(wallet.Container);
+
+            Assert.That(VendorTransaction.TryQueuePurchase(transaction, wallet, price), Is.True,
+                "what the grab allowed, the drop allows");
+        }
+
+        // ── the markup rule ────────────────────────────────────────────────
+
+        [Test]
+        public void BuyPrice_IsTheSellValueTimesTheMarkup()
+        {
+            var sword = Sword();
+
+            Assert.That(VendorTransaction.BuyPrice(sword, catalog), Is.EqualTo(SwordSellValue * VendorTransaction.Markup));
+        }
+
+        [Test]
+        public void BuyPrice_AffixlessBook_IsAboveZero()
+        {
+            var book = new ItemInstance(BookId, ItemRarity.Common, 1, null);
+
+            Assert.That(VendorTransaction.BuyPrice(book, catalog), Is.EqualTo(BookBaseValue * VendorTransaction.Markup));
+        }
+
+        // ── the check-then-queue protocol (TF#4) ───────────────────────────
+        // TryQueuePurchase is the whole ordering rule: affordability is checked before the
+        // charge is queued, so a queued payment can never fail at commit. These pin the
+        // three answers a drop target needs - not a purchase, affordable, unaffordable.
+
+        [Test]
+        public void TryQueuePurchase_NoPrice_LetsAnOrdinaryDropThrough_AndChargesNothing()
+        {
+            var wallet = NewWallet();
+            SeedCash(wallet, CurrencyType.Gold, 1u);
+            var before = WalletValue(wallet);
+
+            using var transaction = new ItemTransaction(wallet.Container);
+            var mayProceed = VendorTransaction.TryQueuePurchase(transaction, wallet, null);
+            transaction.Commit();
+
+            Assert.That(mayProceed, Is.True, "an ordinary drop is not a purchase - nothing to check");
+            Assert.That(WalletValue(wallet), Is.EqualTo(before), "nothing was queued, so nothing is charged");
+        }
+
+        [Test]
+        public void TryQueuePurchase_Affordable_QueuesTheChargeForCommit()
+        {
+            var wallet = NewWallet();
+            SeedCash(wallet, CurrencyType.Gold, 1u);
+            var before = WalletValue(wallet);
+
+            using var transaction = new ItemTransaction(wallet.Container);
+            var mayProceed = VendorTransaction.TryQueuePurchase(transaction, wallet, 100f);
+
+            Assert.That(mayProceed, Is.True);
+            Assert.That(WalletValue(wallet), Is.EqualTo(before), "queued, not charged - the effect waits for commit");
+
+            transaction.Commit();
+
+            Assert.That(WalletValue(wallet), Is.EqualTo(before - 100u), "commit charges exactly the queued price");
+        }
+
+        [Test]
+        public void TryQueuePurchase_Unaffordable_RefusesTheDrop_AndQueuesNothing()
+        {
+            var wallet = NewWallet();
+            SeedCash(wallet, CurrencyType.Copper, 1u);
+            var before = WalletValue(wallet);
+
+            using var transaction = new ItemTransaction(wallet.Container);
+            var mayProceed = VendorTransaction.TryQueuePurchase(transaction, wallet, before + 1_000f);
+            transaction.Commit();
+
+            Assert.That(mayProceed, Is.False, "the caller must abandon the drop");
+            Assert.That(WalletValue(wallet), Is.EqualTo(before),
+                "committing anyway charges nothing - the unaffordable price was never queued");
+        }
+    }
+
+    /// <summary>
+    /// A receiver that only adds to its bag, so shelf and payment logic can be exercised through
+    /// <see cref="PickUpTransaction.Run"/> without auto-equip.
+    /// </summary>
+    internal sealed class BagOnlyReceiver : IItemReceiver
+    {
+        private readonly AbstractDimensionalContainer bag;
+
+        public BagOnlyReceiver(AbstractDimensionalContainer bag) => this.bag = bag;
+
+        public IReadOnlyList<AbstractDimensionalContainer> ReceivingContainers => new[] { bag };
+
+        public bool PickUpItem(ItemInstance item, uint amount)
+        {
+            var package = new Package(bag, item, amount);
+            return bag.TryAddToContainer(ref package);
+        }
+    }
+}

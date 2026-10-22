@@ -1,174 +1,144 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
+using Submodules.Utility.Provider;
+using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Data;
-using ToolSmiths.InventorySystem.Data.Items;
+using ToolSmiths.InventorySystem.Data.Enums;
+using ToolSmiths.InventorySystem.GUI;
 using ToolSmiths.InventorySystem.GUI.Displays;
-using ToolSmiths.InventorySystem.GUI.Panels;
-using ToolSmiths.InventorySystem.Runtime.Inventories;
-using ToolSmiths.InventorySystem.Utility.Extensions;
+using ToolSmiths.InventorySystem.GUI.InventoryDisplays;
+using ToolSmiths.InventorySystem.Inventories;
+using ToolSmiths.InventorySystem.Items;
+using Submodules.Utility.Extensions;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace ToolSmiths.InventorySystem.Runtime.Provider
 {
+    /// <summary>
+    /// An <see cref="AbstractSceneSingleton{T}"/>, not a full <see cref="AbstractProvider{T}"/>:
+    /// it reads <c>transform.root</c> for the Canvas its own hover/compare displays render
+    /// under, so it must stay nested under the HUD Canvas exactly like <see cref="DragProvider"/>
+    /// - see that class's doc comment for why a provider that cannot function outside its
+    /// authored parent does not promise cross-scene persistence.
+    /// </summary>
     [System.Serializable]
     [RequireComponent(typeof(RectTransform))]
-    public class PreviewProvider : AbstractProvider<PreviewProvider>
+    internal sealed class PreviewProvider : AbstractSceneSingleton<PreviewProvider>
     {
-        [field: SerializeField, Range(0f, 1f)] public float FadeInDelay { get; private set; } = .5f;
+        [SerializeField] private PreviewDisplay hoveredItem;
+        [SerializeField] private HorizontalOrVerticalLayoutGroup compareGroup;
+        [SerializeField] private PreviewDisplay comparedItem1;
+        [SerializeField] private PreviewDisplay comparedItem2;
 
-        [SerializeField] private ItemDetailsDisplay previewDisplay;
-        [SerializeField] private SimplePanel previewPanel;
-        private RectTransform previewTransform;
-
-        //[SerializeField] private SimplePanel comparePanel1;
-        //[SerializeField] private SimplePanel comparePanel2;
-        [SerializeField] private RectTransform compareTransform;
-        [SerializeField] private ItemDetailsDisplay compareDisplay1;
-        [SerializeField] private ItemDetailsDisplay compareDisplay2;
-
+        private RectTransform compareTransform;
+        private Canvas rootCanvas;
         private bool showLeft;
+        private float pivotX;
 
-        private float OffsetX => showLeft ? +10 : -10;
+        // What the tooltip last showed, so a Shift press or release while it is up can re-run it.
+        private Package lastPackage;
+        private AbstractSlotDisplay lastSlot;
+        private bool lastSecondSlot;
+        private bool lastDetails;
+
+        private const float OffestDisplayToMouse = 15f;
+        private float OffsetX => showLeft ? OffestDisplayToMouse : -OffestDisplayToMouse;
 
         private void Awake()
         {
-            previewTransform = previewPanel.transform as RectTransform;
-            previewTransform.anchorMin = Vector2.zero;
-            previewTransform.anchorMax = Vector2.zero;
+            transform.root.TryGetComponent(out rootCanvas);
 
-            //compareTransform = comparePanel1.transform as RectTransform;
-
-            previewPanel.FadeOut();
-            //comparePanel1.FadeOut();
-            //comparePanel2.FadeOut();
+            compareTransform = (RectTransform)compareGroup.transform;
+            compareTransform.anchorMin = Vector2.zero;
+            compareTransform.anchorMax = Vector2.zero;
         }
 
         private void Update()
         {
-            // should this be a movable panel class that internaly handles setting the position?
-            if (previewPanel.IsActive)
-                previewTransform.anchoredPosition = (Vector2)Input.mousePosition / previewTransform.lossyScale + new Vector2(OffsetX, 0f);
+            if (hoveredItem.IsCollapsed) 
+                return;
+            
+            var mousePos = GameInput.PointerPosition / rootCanvas.scaleFactor;
+            compareTransform.anchoredPosition = new Vector2(mousePos.x + OffsetX, mousePos.y);
+
+            // One read of each per frame: every GameInput call is a service lookup.
+            var secondSlot = GameInput.IsHeld(GameAction.SecondSlot);
+            var details = GameInput.IsHeld(GameAction.ShowDetails);
+
+            if (secondSlot != lastSecondSlot || details != lastDetails)
+                RefreshPreviewDisplay(lastPackage, lastSlot);
         }
 
-        public void CompareDetails(Package hoveredPackage, bool compareToEquipment)
+        public void RefreshPreviewDisplay(Package package, AbstractSlotDisplay slot)
         {
-            if (!hoveredPackage.IsValid)
+            var pointer = GameInput.PointerPosition;
+
+            if (!package.Equals(lastPackage))
             {
-                previewPanel.FadeOut();
-                return;
+                showLeft = pointer.x < (Screen.width * 0.5);
+                pivotX = showLeft ? 0 : 1;
+
+                comparedItem1.gameObject.SetActive(false);
+                comparedItem2.gameObject.SetActive(false);
             }
 
-            /// pivot pointing towards center of screen
-            showLeft = Input.mousePosition.x < (Screen.width * 0.5);
-            var pivotX = showLeft ? 0 : 1;
-            var pivotY = Input.mousePosition.y.MapTo01(0, Screen.height);
-            previewTransform.pivot = new Vector2(pivotX, pivotY);
+            lastPackage = package;
+            lastSlot = slot;
+            lastSecondSlot = GameInput.IsHeld(GameAction.SecondSlot);
+            lastDetails = GameInput.IsHeld(GameAction.ShowDetails);
 
-            //previewTransform.anchoredPosition = (Vector2)Input.mousePosition / previewTransform.lossyScale + new Vector2(OffsetX, 0f);
+            var pivotY = pointer.y.MapTo01(0, Screen.height);
+            var mousePos = pointer / rootCanvas.scaleFactor;
 
-            //comparePanel1.FadeOut(0);
-            //comparePanel2.FadeOut(0);
+            compareTransform.pivot = new Vector2(pivotX, pivotY);
+            compareTransform.anchoredPosition = new Vector2(mousePos.x + OffsetX, mousePos.y);
 
-            compareDisplay1.gameObject.SetActive(false);
-            compareDisplay2.gameObject.SetActive(false);
-
-            if (hoveredPackage.Item is not EquipmentItem || !compareToEquipment)
-                previewDisplay.RefreshDisplay(hoveredPackage);
+            if (slot is EquipmentSlotDisplay)
+                hoveredItem.Repaint(package);
             else
             {
-                var equippedItems = new List<Package>();
+                // Shift = the second slot, the same key that equips there (InventorySlotDisplay).
+                IReadOnlyList<Package> shown = System.Array.Empty<Package>();
+                IReadOnlyList<Package> against = null;
 
-                var possiblePositions = CharacterEquipment.GetTypeSpecificPositions((hoveredPackage.Item as EquipmentItem).EquipmentType);
+                if (package.IsValid && 
+                    ItemService.Instance.View(package.Item).Definition.Category == ItemCategory.Equipment)
+                    (shown, against) = Session.Instance.Hero.Equipment.CompareTargets(package.Item, lastSecondSlot);
 
-                var equipmentType = (hoveredPackage.Item as EquipmentItem).EquipmentType;
-                var dimensions = CharacterEquipment.IsTwoHandedWeapon(equipmentType)
-                    ? new Vector2Int(2, 1)
-                    : new Vector2Int(1, 1);
+                // Only a shelf prices differently (the buy price); every other slot shows the stack's sell value.
+                var priceOverride = slot is VendorSlotDisplay && package.IsValid
+                    ? VendorTransaction.BuyPrice(package.Item, ItemService.Instance.Catalog) * package.Amount
+                    : -1f;
 
-                var occupiedPositions = InventoryProvider.Instance.Equipment.GetStoredItemsAt(possiblePositions, dimensions);
+                hoveredItem.Repaint(package, against, priceOverride);
 
-                for (var i = 0; i < occupiedPositions.Count; i++)
-                    if (InventoryProvider.Instance.Equipment.StoredPackages.TryGetValue(occupiedPositions[i], out var other))
-                        equippedItems.Add(other);
+                // A worn item the equip would not displace (the bow beside a free off-hand) is only listed.
+                var displaced = against ?? System.Array.Empty<Package>();
+                
+                var show1 = 0 < shown.Count;
+                var show2 = 1 < shown.Count;
+                
+                comparedItem1.gameObject.SetActive(show1);
+                comparedItem1.RepaintWorn(show1 ? shown[0] : default, package, show1 && IsDisplaced(shown[0]));
 
-                // foreach (var position in possiblePositions)
-                // {
-                //     var occupiedPositions = InventoryProvider.Instance.Equipment.GetStoredItemsAt(position, dimensions);
-                //
-                //     for (var i = 0; i < occupiedPositions.Count; i++)
-                //         InventoryProvider.Instance.Equipment.StoredPackages.TryGetValue(occupiedPositions[i], out equippedItems[i]);
-                // }
+                // Only a two-hander has a second worn item to list (CompareTargets).
+                comparedItem2.gameObject.SetActive(show2);
+                comparedItem2.RepaintWorn(show2 ? shown[1] : default, package, show2 && IsDisplaced(shown[1]));
 
-                if (equippedItems.Count == 0)
-                    previewDisplay.RefreshDisplay(hoveredPackage);
-                else if (equippedItems.Count == 1)
+                compareGroup.reverseArrangement = !showLeft;
+                compareGroup.childAlignment = showLeft ? TextAnchor.UpperRight : TextAnchor.UpperLeft;
+                
+                return;
+
+                bool IsDisplaced(Package worn)
                 {
-                    previewDisplay.RefreshDisplay((hoveredPackage, equippedItems[0].Item.Affixes));
+                    foreach (var other in displaced)
+                        if (other.Item == worn.Item)
+                            return true;
 
-                    if (equippedItems[0].IsValid)
-                    {
-                        compareDisplay1.RefreshDisplay((equippedItems[0], hoveredPackage.Item.Affixes));
-                        compareDisplay1.gameObject.SetActive(true);
-                        //comparePanel1.FadeIn();
-                    }
+                    return false;
                 }
-                else if (equippedItems.Count == 2)
-                {
-                    if (possiblePositions.Length == 2)
-                    {
-                        var index = Input.GetKey(KeyCode.LeftControl) && equippedItems[1].IsValid ? 1 : 0;
-                        previewDisplay.RefreshDisplay((hoveredPackage, equippedItems[index].Item.Affixes));
-                    }
-                    else if (possiblePositions.Length == 1)
-                    {
-                        var combinedAffixes = AbstractItem.CombineAffixesOfSameType(equippedItems[0].Item.Affixes.Concat(equippedItems[1].Item.Affixes).ToList());
-                        previewDisplay.RefreshDisplay((hoveredPackage, combinedAffixes));
-                    }
-
-                    if (equippedItems[0].IsValid)
-                    {
-                        compareDisplay1.RefreshDisplay((equippedItems[0], hoveredPackage.Item.Affixes));
-                        compareDisplay1.gameObject.SetActive(true);
-                        //comparePanel1.FadeIn();
-
-                        if (equippedItems[1].IsValid)
-                        {
-                            compareDisplay2.RefreshDisplay((equippedItems[1], hoveredPackage.Item.Affixes));
-                            compareDisplay2.gameObject.SetActive(true);
-                            //comparePanel2.FadeIn();
-                        }
-                    }
-                    else if (equippedItems[1].IsValid)
-                    {
-                        compareDisplay1.RefreshDisplay((equippedItems[1], hoveredPackage.Item.Affixes));
-                        compareDisplay1.gameObject.SetActive(true);
-                        //comparePanel1.FadeIn();
-                    }
-                }
-
-                (compareDisplay1.transform as RectTransform).pivot = showLeft ? Vector2.up : Vector2.one;
-                (compareDisplay2.transform as RectTransform).pivot = showLeft ? Vector2.up : Vector2.one;
-
-                var showTop = Input.mousePosition.y < (Screen.height * 0.5);
-                var compPivotY = showTop ? 0 : 1;
-
-                compareTransform.GetComponent<VerticalLayoutGroup>().childAlignment = showTop
-                    ? (showLeft ? TextAnchor.LowerRight
-                                : TextAnchor.LowerLeft)
-                    : (showLeft ? TextAnchor.UpperRight
-                                : TextAnchor.UpperLeft);
-
-                compareTransform.pivot = new Vector2(pivotX, compPivotY);
-
-                compareTransform.anchorMin = new Vector2(showLeft ? 1 : 0, showTop ? 0 : 1);
-                compareTransform.anchorMax = new Vector2(showLeft ? 1 : 0, showTop ? 0 : 1);
-
-                compareTransform.anchoredPosition = new Vector2(OffsetX, 0);
             }
-
-            previewPanel.FadeIn();
         }
     }
 }

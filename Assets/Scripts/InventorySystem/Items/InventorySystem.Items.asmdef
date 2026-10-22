@@ -1,0 +1,17 @@
+{
+    "name": "InventorySystem.Items",
+    "rootNamespace": "",
+    "references": [
+        "InventorySystem.Data",
+        "InventorySystem.Probability"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

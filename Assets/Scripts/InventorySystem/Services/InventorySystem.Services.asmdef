@@ -1,0 +1,29 @@
+{
+    "name": "InventorySystem.Services",
+    "rootNamespace": "",
+    "references": [
+        "Utility",
+        "Utility.UI",
+        "Utility.Persistence",
+        "Utility.Bindings",
+        "Unity.InputSystem",
+        "InventorySystem.Data",
+        "InventorySystem.Items",
+        "InventorySystem.Distributions",
+        "InventorySystem.Locations",
+        "InventorySystem.Probability",
+        "InventorySystem.Containers",
+        "InventorySystem.Simulation",
+        "InventorySystem.Characters",
+        "InventorySystem.Persistence"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

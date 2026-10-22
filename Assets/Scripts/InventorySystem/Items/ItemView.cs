@@ -1,0 +1,163 @@
+using System;
+using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Data.Enums;
+using UnityEngine;
+
+namespace ToolSmiths.InventorySystem.Items
+{
+    /// <summary>
+    /// The runtime reads a display needs about a stored item - footprint, stack limit,
+    /// name, rarity colour, icon, sell value - resolved from an <see cref="ItemInstance"/>
+    /// plus the catalog its definition lives in. The scattered <c>static</c> switches on
+    /// <c>AbstractItem</c> (<c>GetRarityColor</c>, <c>GetDimensions</c>, <c>CalculateValue</c>)
+    /// collapsed onto this one type when <c>AbstractItem</c> was deleted in the cutover
+    /// (issue #8).
+    ///
+    /// This type deals in <see cref="Color"/>, <see cref="Vector2Int"/> and
+    /// <see cref="Sprite"/> because it exists to feed the displays - the roll path
+    /// (<see cref="ItemDefinition"/>, <see cref="ItemInstance"/>, the generator) does not
+    /// go through here.
+    /// </summary>
+    public readonly struct ItemView
+    {
+        private readonly ItemInstance instance;
+        private readonly ItemDefinition definition;
+
+        private ItemView(ItemInstance instance, ItemDefinition definition)
+        {
+            this.instance = instance;
+            this.definition = definition;
+        }
+
+        /// <summary>
+        /// Pairs an instance with its definition from <paramref name="catalog"/> - the container core
+        /// holds the one it was built with, the Unity edge reads <c>ItemService.Instance.View</c>. Throws
+        /// <see cref="System.Collections.Generic.KeyNotFoundException"/> (via the catalog)
+        /// when the instance's definition id is not in the catalog - a stored item whose
+        /// template was deleted fails here, loudly, instead of rendering as a blank.
+        /// </summary>
+        public static ItemView Resolve(ItemInstance instance, IItemCatalog catalog)
+        {
+            if (instance is null)
+                throw new ArgumentNullException(nameof(instance));
+            if (catalog is null)
+                throw new ArgumentNullException(nameof(catalog));
+
+            return new ItemView(instance, catalog.Definition(instance.DefinitionId));
+        }
+
+        /// <summary>The instance this view resolves.</summary>
+        public ItemInstance Instance => instance;
+
+        /// <summary>The definition the instance was rolled from.</summary>
+        public ItemDefinition Definition => definition;
+
+        /// <summary>The grid shape the item occupies, from its definition.</summary>
+        public ItemSize Footprint => definition.Footprint;
+
+        /// <summary>The footprint as a width/height cell count.</summary>
+        public Vector2Int Dimensions => DimensionsOf(definition.Footprint);
+
+        /// <summary>How many fit in one cell, from the definition.</summary>
+        public uint StackLimit => definition.BaseStackLimit;
+
+        /// <summary>The instance's rarity tier.</summary>
+        public ItemRarity Rarity => instance.Rarity;
+
+        /// <summary>The tint a display draws the item's name and border in.</summary>
+        public Color RarityColor => UiColors.Rarity(instance.Rarity);
+
+        /// <summary>A human-readable label - rarity plus the category-specific type.</summary>
+        public string DisplayName => NameOf(instance, definition);
+
+        /// <summary>
+        /// The item's art. Lives on the authored adapter only - the roll-path
+        /// <see cref="ItemDefinition"/> interface names no <see cref="Sprite"/> - so a test
+        /// fake resolves to <c>null</c> here.
+        /// </summary>
+        public Sprite Icon => (definition as ItemDefinitionAsset)?.Icon;
+
+        /// <summary>
+        /// What a vendor pays for the instance, in base units. Carried verbatim from
+        /// <c>AbstractItem.CalculateValue</c> / <c>CurrencyItem.CalculateValue</c>: a coin is
+        /// worth its denomination, everything else is the definition's <c>BaseValue</c> plus the sum
+        /// of <c>|value * goldRatio|</c> over its affixes, so no item is worth nothing. User story 14
+        /// (a value model resting on a pinned affix system) is still deferred - this is the switch it
+        /// replaces, moved not redesigned.
+        /// </summary>
+        public float SellValue => IsCurrency
+            ? Currency.ValueOf(definition.CurrencyType)
+            : definition.BaseValue + AffixValueOf(instance);
+
+        /// <summary>Whether the item is a coin: it has a face value and is spent, never sold or stored as loot.</summary>
+        public bool IsCurrency => definition.Category == ItemCategory.Currency;
+
+        /// <summary>The cell count for a footprint. Was <c>AbstractItem.GetDimensions</c>.</summary>
+        public static Vector2Int DimensionsOf(ItemSize size) => size switch
+        {
+            ItemSize.NONE => Vector2Int.zero,
+
+            ItemSize.OneByOne => new Vector2Int(1, 1),
+            ItemSize.OneByTwo => new Vector2Int(1, 2),
+            ItemSize.OneByThree => new Vector2Int(1, 3),
+            ItemSize.OneByFour => new Vector2Int(1, 4),
+
+            ItemSize.TwoByOne => new Vector2Int(2, 1),
+            ItemSize.TwoByTwo => new Vector2Int(2, 2),
+            ItemSize.TwoByThree => new Vector2Int(2, 3),
+            ItemSize.TwoByFour => new Vector2Int(2, 4),
+
+            _ => Vector2Int.zero,
+        };
+
+        private static string NameOf(ItemInstance instance, ItemDefinition definition) => definition.Category switch
+        {
+            ItemCategory.Equipment => $"{instance.Rarity} {definition.EquipmentType}",
+            ItemCategory.Consumable => $"{instance.Rarity} {definition.ConsumableType}",
+            ItemCategory.Currency => definition.CurrencyType.ToString(),
+            _ => definition.Id,
+        };
+
+        /// <summary>
+        /// The affix-derived value. Was <c>AbstractItem.CalculateValue</c> - the
+        /// per-<see cref="StatName"/> gold ratios and the <see cref="Mathf.Abs"/> are
+        /// unchanged; a <c>NOTE</c> in the original says the ratios should vary by modifier
+        /// type, which they still do not.
+        /// </summary>
+        private static float AffixValueOf(ItemInstance instance)
+        {
+            var amount = 0f;
+
+            foreach (var affix in instance.Affixes)
+            {
+                var goldRatio = affix.Stat switch
+                {
+                    StatName.AttackSpeed => 25f,
+                    StatName.PhysicalDamage => 35f,
+                    StatName.MagicalDamage => 21.75f,
+                    StatName.Health => 2.67f,
+                    StatName.HealthRegeneration => 3f,
+                    StatName.Armor => 20f,
+                    StatName.MagicResist => 18f,
+                    StatName.MovementSpeed => 12,
+                    StatName.Resource => 1.4f,
+                    StatName.ResourceRegeneration => 5f,
+
+                    StatName.ArmorPenetration => 41.67f,
+                    StatName.MagicPenetration => 54.33f,
+
+                    StatName.Shield => 2.67f,
+                    StatName.IncreasedItemRarity => 0f,
+                    StatName.IncreasedItemQuantity => 0f,
+
+                    StatName.Experience => 0f,
+                    _ => 0f,
+                };
+
+                amount += Mathf.Abs(affix.Modifier.Value * goldRatio);
+            }
+
+            return amount;
+        }
+    }
+}

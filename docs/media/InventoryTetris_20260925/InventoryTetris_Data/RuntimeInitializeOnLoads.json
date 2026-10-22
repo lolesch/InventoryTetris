@@ -1,0 +1,1 @@
+{"root":[{"assemblyName":"Unity.AI.Tracing","nameSpace":"Unity.AI.Tracing","className":"ConsoleSink","methodName":"CaptureMainThreadId","loadTypes":1,"isUnityClass":true},{"assemblyName":"Utility","nameSpace":"Submodules.Utility.Tools.Timer","className":"TimerBootstrapper","methodName":"Initialize","loadTypes":0,"isUnityClass":false}]}

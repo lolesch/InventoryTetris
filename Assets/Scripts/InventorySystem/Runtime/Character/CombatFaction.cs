@@ -1,9 +1,11 @@
 ﻿using UnityEngine;
 
+using ToolSmiths.InventorySystem.Data;
+
 namespace ToolSmiths.InventorySystem.Runtime.Character
 {
-    [CreateAssetMenu(menuName = "Inventory System/Combat/Faction")]
-    public class CombatFaction : ScriptableObject
+    [CreateAssetMenu(menuName = AssetMenus.Combat + "Faction")]
+    public sealed class CombatFaction : ScriptableObject
     {
         public CombatFaction[] EnemyFactions;
         public CombatFaction[] AllyFactions;

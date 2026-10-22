@@ -1,44 +1,66 @@
-﻿using System;
+﻿using System.Linq;
+using TMPro;
 using ToolSmiths.InventorySystem.Data;
-using ToolSmiths.InventorySystem.Runtime.Character;
-using ToolSmiths.InventorySystem.Utility.Extensions;
+using ToolSmiths.InventorySystem.Data.Enums;
+using ToolSmiths.InventorySystem.Inventories;
+using ToolSmiths.InventorySystem.Services;
+using Submodules.Utility.Extensions;
+using Submodules.Utility.UI;
 using UnityEngine;
 using UnityEngine.UI;
+using static ToolSmiths.InventorySystem.GUI.Displays.CharacterStatDisplay;
 
 namespace ToolSmiths.InventorySystem.GUI.Displays
 {
-    [Serializable]
-    public class CharacterStatDisplay : ShowAltTextOnHover, IDisplay<CharacterStatData>
+    public sealed class CharacterStatDisplay : MonoBehaviour, IDisplay<CharacterStatData>
     {
-        [SerializeField] protected Image icon;
-
-        [SerializeField] protected CharacterStat stat;
-
-        private void OnDisable() => stat.TotalHasChanged -= UpdateDisplay;
-
-        private void OnEnable()
+        public struct CharacterStatData
         {
-            stat.TotalHasChanged -= UpdateDisplay;
-            stat.TotalHasChanged += UpdateDisplay;
-        }
-
-        public void RefreshDisplay(CharacterStatData newData)
-        {
-            icon.sprite = newData.icon;
-            label.text = newData.displayText;
-            stat = newData.stat;
-
-            if (altText == string.Empty)
+            private CharacterStat stat;
+            public string nameText;
+            public string valueText;
+            public Sprite icon;
+            public CharacterStatData(CharacterStat characterStat, Package[] compareTo = null)
             {
-                var statName = stat.Stat.SplitCamelCase();
+                stat = characterStat;
+
+                var statName = stat.Stat.ToDescription();
 
                 if (statName.Contains("Percent"))
                     statName = statName.Replace(" Percent", "");
 
-                altText = statName;
+                var overwriteMods = stat.StatModifiers.Where(x => x.Type == StatModifierType.Overwrite).OrderByDescending(x => x.Value);
+
+                var baseValue = stat.BaseValue;
+                var flatAddModValue = stat.StatModifiers.Where(x => x.Type == StatModifierType.FlatAdd).Sum(x => x.Value);
+                var percentAddModValue = 1 + stat.StatModifiers.Where(x => x.Type == StatModifierType.PercentAdd).Sum(x => x.Value / 100);
+
+                var percentMultMods = stat.StatModifiers.Where(x => x.Type == StatModifierType.PercentMult);
+                var percentMultModString = "";
+                foreach (var mod in percentMultMods)
+                    percentMultModString += $"* {1 + mod.Value / 100} "; // add source?
+
+                // TODO: implement statModifier source
+                var modDetailText = overwriteMods.Any()
+                    ? $"overwritten by: implementStatModSource" //{overwriteMods.FirstOrDefault().Source}"
+                    : $"({baseValue.ToString(NumberFormats.Stat)} + {flatAddModValue.ToString(NumberFormats.Stat)}) * {percentAddModValue.ToString(NumberFormats.Stat)} {percentMultModString}";
+
+                nameText = stat.Stat.ToDescription();
+                valueText = $"{stat.TotalValue.ToString(NumberFormats.Stat)} {modDetailText.Colored(UiColors.Muted)}"; //{statName}
+                icon = ItemService.Instance.GetStatIcon(stat.Stat);
             }
         }
 
-        public void UpdateDisplay(float ignoreMe = 0) => RefreshDisplay(new(stat));
+        [SerializeField] private Image icon;
+
+        [SerializeField] private TextMeshProUGUI nameText;
+        [SerializeField] private TextMeshProUGUI valueText;
+
+        public void Repaint(CharacterStatData newData)
+        {
+            icon.sprite = newData.icon;
+            nameText.text = newData.nameText;
+            valueText.text = newData.valueText;
+        }
     }
 }

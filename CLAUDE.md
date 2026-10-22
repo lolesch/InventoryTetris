@@ -1,0 +1,86 @@
+# InventoryTetris
+
+Unity inventory/loot prototype. Source lives under `Assets/`; there is no `src/`.
+
+## Specs and tickets
+
+Design specs go in `dev/specs/YYYY-MM-DD-<topic>-design.md`, committed with a `docs:`
+prefix and a body paragraph summarizing the decision. If `/to-spec` — or any skill —
+defaults to writing the spec somewhere else (an issue body, a `docs/` subfolder), put
+it in `dev/specs/` instead.
+
+Implementation work flows spec -> `/to-tickets` (GitHub Issues) -> `/implement #N`, one issue at a
+time -> `/code-review`.
+
+- Execute inline by default. Starting subagents needs the user's decision each time, including
+  `/implement-spec`, which runs implementer and merger subagents: ask before spawning, state what
+  would run and what running it inline costs, and wait for a clear yes. One approval covers that one run, never later ones.
+- Subagent model: set `model` on every `Agent` call, sized to the task. Only `haiku` or `sonnet`; never
+  `opus` or `fable`, whatever the task. `haiku` for work with no judgment in it: exploration and search,
+  a merger with no conflicts, running a test or build and reporting the result, a mechanical rename or
+  doc edit. `sonnet` for everything that writes code: an implementer, a ticket that designs a seam or
+  refactors across files, the code-review fix agent, a merger resolving conflicts. When unsure, `sonnet`.
+- Search with `Grep` (`head_limit`, `files_with_matches` first) and read with `Read` `offset`/`limit`;
+  a hook (`dev/claude-hooks/read-limit.py`) rejects a `Read` of a long `.cs` file that has no `limit`. A Bash `grep`, `cat` or `sed -n` result stays in context for every later turn of the run.
+- Before `/implement #N`, run `python dev/frontier.py`. `ready-for-agent` means the spec is
+  written, not that the dependencies are closed. If `#N` isn't the frontier, surface that and stop.
+  The frontier is derived from each issue's **Blocked by**, so a PR carries no tracker commit.
+- An epic that swaps a mechanism rather than adding one: settle the replacement with `/rederive`
+  before the spec, then `/drift-review` twice, over the existing slice once the swap is named and
+  over the new ticket slice before `/implement`. It catches a stranded fix: a ticket fixing the
+  mechanism a sibling ticket is about to replace.
+- The issue is the unit of work; there is no per-phase implementation-plan document. An issue too
+  big for one context window splits into more issues.
+- Closing an issue-epic walks the spec's numbered user stories one by one: each needs a closed ticket
+  or a named test. The uncovered ones go to the user as gaps; none uncovered closes the epic. A story
+  that dropped out between spec and tickets is the usual gap. Never delete an issue: commits, specs
+  and ADRs cite them by number.
+- After a PR merges successfully, clean up: delete its branch (local and remote), its worktree, and
+  the submodule branch if the PR bumped `Utility`. Skip any branch that isn't merged. Leave stashes alone.
+
+## Changelog
+
+`docs/agents/changelog.md` — open it when a change is player-visible, fixes a Known Issue, ships a
+Roadmap item, bumps a version, or touches `Assets/Changelog/Changelog.md`.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in this repo's GitHub Issues (`lolesch/InventoryTetris`), driven by the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `GLOSSARY.md` at the repo root plus `docs/adr/`, both created lazily. See `docs/agents/domain.md`.
+
+### Coding conventions
+
+Read before writing or editing any C# or script, and during `/code-review`/`/simplify`.
+`docs/agents/coding-conventions.md`.
+
+### Unity verification
+
+`docs/agents/unity-verification.md` — read before a test run, a compile check, or scene authoring on a
+worktree. `dotnet build` lies; `dev/run-tests.sh [EditMode|PlayMode] [filter]` is the verdict and shadows
+the project by itself while the Editor is open.
+
+`docs/agents/unity-bridge.md` — read only before a `Unity_*` bridge call (`Unity_RunCommand`, Play Mode by
+hand). A bridge run waits on `dev/wait-editmode.sh` (a bare `sleep` is rejected). It also covers the
+scene-save modal.
+
+### Codebase notes
+
+`docs/agents/codebase-notes.md` — the index of topic notes; open it before editing through a shell or
+python script (`Edit` keeps CRLF + UTF-8; `perl -pi` mojibakes it), changing an asmdef, hitting a Play
+Mode reload surprise or a `.cs.meta` error, reading a key or the pointer (`Input.*` throws here; use
+`GameInput`), starting work on a checkout that has uncommitted changes (open a worktree), and committing
+in the `Utility` submodule (`dev/bump-utility.sh` pushes it, then pins it). To enable the pre-commit hook:
+`git config core.hooksPath dev/hooks`.
+
+## GitHub Pages: keep `docs/agents/` and `docs/adr/` out of `GitPage`
+
+`docs/agents/github-pages.md` — open it before a `main` -> `GitPage` merge or an edit to `docs/_config.yml`.

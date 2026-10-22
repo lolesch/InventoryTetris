@@ -1,0 +1,12 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read",
+        "hooks": [
+          { "type": "command", "command": "f=\"$CLAUDE_PROJECT_DIR/dev/claude-hooks/read-limit.py\"; [ -f \"$f\" ] || exit 0; python \"$f\"" }
+        ]
+      }
+    ]
+  }
+}

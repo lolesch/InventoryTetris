@@ -1,104 +1,95 @@
-﻿using System.Linq;
+using System.Collections.Generic;
+using ToolSmiths.InventorySystem.Probability;
 using UnityEngine;
 
 namespace ToolSmiths.InventorySystem.Data.Distributions
 {
-    public abstract class AbstractProbabilityDistribution<T> : ScriptableObject where T : System.Enum
+    /// <summary>
+    /// Non-generic root so a single <c>[CustomEditor(typeof(AbstractProbabilityDistribution), true)]</c>
+    /// can draw every closed distribution — Unity cannot target an open generic. All
+    /// behaviour lives in <see cref="AbstractProbabilityDistribution{T}"/>.
+    /// </summary>
+    public abstract class AbstractProbabilityDistribution : ScriptableObject
+    {
+        /// <summary>Outcome names in enum-declaration order — row labels for the inspector.</summary>
+        public abstract IReadOnlyList<string> OutcomeNames { get; }
+
+        /// <summary>The current probability vector, enum order, summing to 1. Derived, never serialized.</summary>
+        public abstract IReadOnlyList<float> Probabilities { get; }
+
+        /// <summary>Rolls once against <paramref name="roll"/> in [0,1]; returns the outcome's name — inspector sample preview.</summary>
+        public abstract string SampleName(float roll);
+    }
+
+    public abstract class AbstractProbabilityDistribution<T> : AbstractProbabilityDistribution where T : System.Enum
     {
         [System.Serializable]
         public struct EnumerationQuantity
         {
             [HideInInspector, SerializeField] public string name;
             [HideInInspector, SerializeField] public T Enumeration;
-            [SerializeField] public uint Quantity;
+            [SerializeField, Min(0)] public uint Quantity;
 
             public EnumerationQuantity(T enumeration, uint quantity)
             {
                 Enumeration = enumeration;
-                name = Enumeration.ToString();
+                name = enumeration.ToString();
                 Quantity = quantity;
             }
         }
 
-        [System.Serializable]
-        public struct EnumerationProbability
-        {
-            [HideInInspector, SerializeField] public string name;
-            [HideInInspector, SerializeField] public T Enumeration;
-            [SerializeField, Range(0f, 1f)] public float Probability;
+        private static readonly T[] Values = (T[])System.Enum.GetValues(typeof(T));
 
-            public EnumerationProbability(T enumeration, Vector2 fraction) => this = new EnumerationProbability(enumeration, fraction.x / fraction.y);
-            public EnumerationProbability(T enumeration, float fraction)
-            {
-                Enumeration = enumeration;
-                name = Enumeration.ToString();
-                Probability = fraction;
-            }
+        [SerializeField, UnityEngine.Serialization.FormerlySerializedAs("failQuantity")]
+        private uint failWeight = 0;
+        [SerializeField] private EnumerationQuantity[] quantities = FreshQuantities();
+
+        [System.NonSerialized] private ProbabilityTable<T> _table;
+        private ProbabilityTable<T> Table => _table ??= BuildTable();
+
+        private ProbabilityTable<T> BuildTable()
+        {
+            var weights = new float[Values.Length];
+            for (var i = 0; i < weights.Length && i < quantities.Length; i++)
+                weights[i] = quantities[i].Quantity;
+
+            return new ProbabilityTable<T>(weights, failWeight, GetFailExponent());
         }
 
-        [SerializeField] private uint failQuantity = 0;
-        [SerializeField] private EnumerationQuantity[] quantities = new EnumerationQuantity[System.Enum.GetValues(typeof(T)).Length];
-        [SerializeField, ReadOnly, Range(0f, 1f)] private float successProbability;
-        [SerializeField, ReadOnly] private EnumerationProbability[] probabilities;
+        // ── inspector surface: all derived, nothing serialized ──
+        public override IReadOnlyList<string> OutcomeNames => System.Array.ConvertAll(Values, v => v.ToString());
+        public override IReadOnlyList<float> Probabilities => Table.Probabilities;
+        public override string SampleName(float roll) => Table.Sample(roll).ToString();
 
-        [SerializeField, ReadOnly] private T[] exampleResults = new T[10];
+        public float ProbabilityOf(T outcome) => Table.ProbabilityOf(outcome);
 
-        private uint SuccessQuantity => (uint)(quantities.Sum(x => x.Quantity) - quantities[0].Quantity);
-        private uint AllySensitiveFailQuantity => (uint)(SuccessQuantity / (1f / Mathf.Pow((float)failQuantity / (failQuantity + SuccessQuantity), GetFailExponent()) - 1f));
-        private float QuantitySum => SuccessQuantity + AllySensitiveFailQuantity;
-        public EnumerationProbability[] Probabilities
-        {
-            get
-            {
-                var array = new EnumerationProbability[quantities.Length];
+        /// <summary>The ally-scaling exponent on the fail probability. 1 on the generic base.</summary>
+        protected virtual float GetFailExponent() => 1f;
 
-                for (var i = 0; i < quantities.Length; i++)
-                {
-                    var fraction = quantities[i].Quantity / Mathf.Max(1, QuantitySum);
-                    array[i] = new EnumerationProbability(quantities[i].Enumeration, fraction);
-                }
-                probabilities = array.OrderBy(x => x.Probability).ToArray();
-
-                return probabilities;
-            }
-        }
+        /// <summary>Rolls one outcome from the authored table.</summary>
+        public T Roll() => Table.Sample(UnityEngine.Random.Range(0f, 1f));
 
         private void OnValidate()
         {
-            if (quantities.Length != System.Enum.GetValues(typeof(T)).Length)
-                quantities = new EnumerationQuantity[System.Enum.GetValues(typeof(T)).Length];
-
-            for (var i = 0; i < quantities.Length; i++)
-                quantities[i] = new EnumerationQuantity((System.Enum.GetValues(typeof(T)) as T[])[i], quantities[i].Quantity);
-
-            quantities[0] = new EnumerationQuantity(quantities[0].Enumeration, AllySensitiveFailQuantity);
-            successProbability = Mathf.Clamp01(Probabilities.Sum(x => x.Probability) - Probabilities[0].Probability) / 1f;
-
-            for (var i = 0; i < exampleResults.Length; i++)
-                exampleResults[i] = GetRandomEnumerator();
-
-            exampleResults = exampleResults.OrderBy(x => x).ToArray();
+            quantities = Migrate(quantities);
+            _table = null; // rebuilt lazily against the new data — never baked into a field
         }
 
-        protected virtual int GetFailExponent() => 1;
+        private static EnumerationQuantity[] FreshQuantities() =>
+            System.Array.ConvertAll(Values, v => new EnumerationQuantity(v, 0u));
 
-        public T GetRandomEnumerator(float externalProbabilityIncrease = 0f)
+        private static EnumerationQuantity[] Migrate(EnumerationQuantity[] current)
         {
-            var randomRoll = Random.Range(0f, 1f);
+            current ??= System.Array.Empty<EnumerationQuantity>();
 
-            for (var i = 0; i < Probabilities.Length; i++)
-            {
-                var threshold = 0f;
+            var oldOutcomes = System.Array.ConvertAll(current, q => q.Enumeration);
+            var oldWeights = System.Array.ConvertAll(current, q => (float)q.Quantity);
+            var remapped = WeightMigration.Remap(oldOutcomes, oldWeights, Values);
 
-                for (var j = 0; j <= i + externalProbabilityIncrease / 100; j++)
-                    threshold += Probabilities[j].Probability;
-
-                if (randomRoll <= threshold)
-                    return Probabilities[i].Enumeration;
-            }
-
-            Debug.LogWarning($"Oh oh.. something is wron with {Probabilities[0].Enumeration.GetType().Name}");
-            return default;
+            var next = new EnumerationQuantity[Values.Length];
+            for (var i = 0; i < Values.Length; i++)
+                next[i] = new EnumerationQuantity(Values[i], (uint)System.Math.Max(0, System.Math.Round(remapped[i])));
+            return next;
         }
     }
 }

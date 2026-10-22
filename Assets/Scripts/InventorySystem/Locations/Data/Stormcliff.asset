@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d8db7f7c0ad2470abea0764beb817607, type: 3}
+  m_Name: Stormcliff
+  m_EditorClassIdentifier: InventorySystem.Locations:ToolSmiths.InventorySystem.Locations.LocationConfig
+  id: location.stormcliff
+  unlocksWhenActive: []
+  unlocksWhenComplete: []
+  displayName: Stormcliff
+  sourceLevel: 12
+  categoryDistribution: {fileID: 11400000, guid: e1ff83123aff48c796f1de97056210a6, type: 2}
+  rarityDistribution: {fileID: 11400000, guid: 50662494780a48b185c5284c436e532c, type: 2}
+  packed: 1
+  rosterBrute: {x: 14, y: 14}
+  rosterSkirmisher: {x: 20, y: 20}
+  population: {x: 6, y: 8}
+  packBatch: {x: 4, y: 6}
+  packedSpawnWeight: 0.7
+  spawnInterval: 2.8
+  spawnJitter: 0

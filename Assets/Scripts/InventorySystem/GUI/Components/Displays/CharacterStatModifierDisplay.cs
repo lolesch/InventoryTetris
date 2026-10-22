@@ -2,65 +2,85 @@
 using TMPro;
 using ToolSmiths.InventorySystem.Data;
 using ToolSmiths.InventorySystem.Data.Enums;
-using ToolSmiths.InventorySystem.Runtime.Provider;
-using ToolSmiths.InventorySystem.Utility.Extensions;
+using ToolSmiths.InventorySystem.Inventories;
+using ToolSmiths.InventorySystem.Items;
+using ToolSmiths.InventorySystem.Services;
+using Submodules.Utility.Extensions;
+using Submodules.Utility.UI;
 using UnityEngine;
 using UnityEngine.UI;
 using static ToolSmiths.InventorySystem.GUI.Displays.CharacterStatModifierDisplay;
 
 namespace ToolSmiths.InventorySystem.GUI.Displays
 {
-    public class CharacterStatModifierDisplay : MonoBehaviour, IDisplay<CharacterStatModifierData>
+    public sealed class CharacterStatModifierDisplay : MonoBehaviour, IDisplay<CharacterStatModifierData>
     {
         public struct CharacterStatModifierData
         {
+            private const float MinFontSize = 18f;
+            private const float MaxFontSize = 24f;
+
             private CharacterStatModifier statMod;
             public string displayText;
             public float displayFontSize;
             public Sprite icon;
 
-            public CharacterStatModifierData(CharacterStatModifier characterStatModifier, List<CharacterStatModifier> compareTo)
+            public CharacterStatModifierData(CharacterStatModifier characterStatModifier)
+                : this(characterStatModifier, (StatComparison?)null) { }
+
+            /// <param name="compareTo">The worn items an equip would displace, compared as a whole - a hovered
+            /// two-hander is measured against its weapon and off-hand together. Empty: a free slot, so the row
+            /// shows the full effect of equipping it.</param>
+            /// <param name="earlier">The hovered item's affixes drawn above this one, so rows that share a stat do not
+            /// each take the displaced modifiers off again.</param>
+            public CharacterStatModifierData(CharacterStatModifier characterStatModifier, IReadOnlyList<Package> compareTo,
+                IReadOnlyList<CharacterStatModifier> earlier = null)
+                : this(characterStatModifier, EquipEffect(characterStatModifier, compareTo, earlier)) { }
+
+            /// <summary>A row of worn gear the hovered item displaces: only a stat the hovered item lacks gets a
+            /// difference, the cost of the unequip alone.</summary>
+            public CharacterStatModifierData(CharacterStatModifier characterStatModifier, ItemInstance displacedBy)
+                : this(characterStatModifier, UnequipEffect(characterStatModifier, displacedBy)) { }
+
+            private CharacterStatModifierData(CharacterStatModifier characterStatModifier, StatComparison? comparison)
             {
                 statMod = characterStatModifier;
-                icon = ItemProvider.Instance.ItemTypeData.GetStatIcon(statMod.Stat);
-                displayFontSize = statMod.Modifier.Value.Map(statMod.Modifier.Range, 18, 24);
 
-                var difference = GetStatDifference(statMod, compareTo);
+                var comparisonColor = comparison.HasValue ? UiColors.Of(comparison.Value.Verdict) : UiColors.Neutral;
 
-                var comparisonColor = difference < 0 ? Color.red : Color.green;
+                // Show-details trades the comparison for the roll range: the range only while it is held, the
+                // difference the rest of the time.
+                var detailsHeld = GameInput.IsHeld(GameAction.ShowDetails);
+                var difference = detailsHeld ? string.Empty : comparison?.Format() ?? string.Empty;
+                var range = detailsHeld ? $" {statMod.Modifier.Range.ToString().Colored(UiColors.Muted)}" : string.Empty;
 
-                var differenceString = difference == 0
-                    ? string.Empty
-                    : statMod.Modifier.Type switch
-                    {
-                        StatModifierType.Overwrite => $"={difference:+ 0.###;- 0.###;0.###}",
-                        StatModifierType.FlatAdd => $"{difference:+ 0.###;- 0.###;0.###}",
-                        StatModifierType.PercentAdd => $"{difference:+ 0.###;- 0.###;0.###}%",
-                        StatModifierType.PercentMult => $"*{difference:+ 0.###;- 0.###;0.###}%",
-
-                        _ => $"?? {difference:+ #.###;- #.###;#.###}",
-                    };
-
-                displayText = $"{statMod.Modifier} {statMod.Modifier.Range.ToString().Colored(Color.gray)} {differenceString.Colored(comparisonColor)}";
-
-                static float GetStatDifference(CharacterStatModifier stat, List<CharacterStatModifier> compareTo)
-                {
-                    if (compareTo != null)
-                        for (var i = 0; i < compareTo.Count; i++)   // foreach stat of the other item
-                            if (compareTo[i].Stat == stat.Stat)     // find a corresponding stat
-                                                                    // if (compareTo.Item.Affixes[i].Modifier.Type == stat.Modifier.Type) // find a corresponding mod type
-                                return CharacterProvider.Instance.Player.CompareStatModifiers(stat, compareTo[i].Modifier);
-
-                    return stat.Modifier.Value;
-                }
+                icon = ItemService.Instance.GetStatIcon(statMod.Stat);
+                displayText = $"{statMod.Modifier}{range}"
+                    + (difference.Length == 0 ? string.Empty : $" {difference.Colored(comparisonColor)}");
+                displayFontSize = RollQuality.FontSize(statMod.Modifier, MinFontSize, MaxFontSize);
             }
+
+            private static StatComparison? EquipEffect(CharacterStatModifier row, IReadOnlyList<Package> compareTo,
+                IReadOnlyList<CharacterStatModifier> earlier)
+            {
+                var worn = new List<CharacterStatModifier>();
+
+                foreach (var package in compareTo)
+                    if (package.IsValid)
+                        worn.AddRange(package.Item.Affixes);
+
+                return StatComparison.Of(row, worn, Session.Instance.Hero.CompareStatModifiers, earlier);
+            }
+
+            private static StatComparison? UnequipEffect(CharacterStatModifier row, ItemInstance displacedBy) =>
+                displacedBy == null ? null : StatComparison.OfLoss(row, displacedBy.Affixes, Session.Instance.Hero.CompareStatModifiers);
         }
 
-        [SerializeField] protected Image icon;
+        [SerializeField] private Image icon;
 
-        [SerializeField] protected TextMeshProUGUI text;
+        [SerializeField] private TextMeshProUGUI text;
 
-        public void RefreshDisplay(CharacterStatModifierData newData)
+        public void Repaint(CharacterStatModifierData newData)
         {
             icon.sprite = newData.icon;
             text.text = newData.displayText;

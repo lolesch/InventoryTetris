@@ -1,0 +1,571 @@
+using System.Linq;
+using NUnit.Framework;
+using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Data.Enums;
+using ToolSmiths.InventorySystem.Inventories;
+using ToolSmiths.InventorySystem.Items;
+using UnityEngine;
+
+namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
+{
+    /// <summary>
+    /// The wallet module (foundational-rework Phase 3, issue #14): currency logic lifted off
+    /// <see cref="CharacterInventory"/> onto a <see cref="Wallet"/> that is backed by a
+    /// container but owns the balance. Assertions are on <see cref="Wallet.Balance"/> and on
+    /// what renders in the grid, never on package identity or event counts.
+    ///
+    /// <para>Acceptance criteria under test: <see cref="Wallet.TryPay"/> spends smallest
+    /// denomination first and nets to exactly the price; <see cref="Wallet.Consolidate"/> is
+    /// value-preserving; a deposit then a pay of the same amount returns to the start
+    /// balance; coins still render in grid cells.</para>
+    /// </summary>
+    [TestFixture]
+    public sealed class WalletTests
+    {
+        private const string IronId = "test.iron";
+        private const string CopperId = "test.copper";
+        private const string SilverId = "test.silver";
+        private const string GoldId = "test.gold";
+        private const string HelmId = "test.helm";
+
+        private FakeCurrencyMinter minter;
+
+        private static IItemCatalog catalog;
+
+        [SetUp]
+        public void SetCatalog()
+        {
+            catalog = new TestCatalog()
+                .With(Coin(IronId, CurrencyType.Iron))
+                .With(Coin(CopperId, CurrencyType.Copper))
+                .With(Coin(SilverId, CurrencyType.Silver))
+                .With(Coin(GoldId, CurrencyType.Gold))
+                .With(new TestDefinition { Id = HelmId, Category = ItemCategory.Equipment, EquipmentType = EquipmentType.Helm, Footprint = ItemSize.OneByOne, BaseStackLimit = 1u });
+
+            minter = new FakeCurrencyMinter(catalog);
+
+            static TestDefinition Coin(string id, CurrencyType type) => new()
+            {
+                Id = id,
+                Category = ItemCategory.Currency,
+                CurrencyType = type,
+                Footprint = ItemSize.OneByOne,
+                BaseStackLimit = 999u,
+            };
+        }
+
+        [TearDown]
+        public void ClearCatalog() => catalog = null;
+
+        // ── fixtures ────────────────────────────────────────────────────────
+
+        private Wallet NewWallet(int width = 6, int height = 6) =>
+            new(new CharacterInventory(new Vector2Int(width, height), catalog), minter);
+
+        private void Seed(Wallet wallet, CurrencyType type, uint count)
+        {
+            var package = new Package(wallet.Container, minter.MintCurrency(type), count);
+            _ = wallet.Container.TryAddToContainer(ref package);
+        }
+
+        /// The denominations in the grid, one entry per cell, in the order the container fills its cells.
+        private static CurrencyType[] CoinsInCellOrder(Wallet wallet) => wallet.Container.StoredPackages
+            .OrderBy(entry => entry.Key.x).ThenBy(entry => entry.Key.y)
+            .Select(entry => ItemView.Resolve(entry.Value.Item, catalog).Definition.CurrencyType)
+            .ToArray();
+
+        private static bool HoldsCurrency(Wallet wallet) => wallet.Container.StoredPackages.Values
+            .Any(package => ItemView.Resolve(package.Item, catalog).Definition.Category == ItemCategory.Currency);
+
+        // ── MintCurrency rarities (GLOSSARY.md "Denomination") ───────────────
+        // A minted coin carries its denomination's fixed Rarity, so a silver Pile tints Rare
+        // and a gold Pile tints Unique instead of everything coming back Common.
+
+        [Test]
+        public void Mint_EachDenomination_CarriesItsLadderRarity()
+        {
+            Assert.That(minter.MintCurrency(CurrencyType.Iron).Rarity, Is.EqualTo(ItemRarity.Common));
+            Assert.That(minter.MintCurrency(CurrencyType.Copper).Rarity, Is.EqualTo(ItemRarity.Magic));
+            Assert.That(minter.MintCurrency(CurrencyType.Silver).Rarity, Is.EqualTo(ItemRarity.Rare));
+            Assert.That(minter.MintCurrency(CurrencyType.Gold).Rarity, Is.EqualTo(ItemRarity.Unique));
+        }
+
+        // ── Balance ─────────────────────────────────────────────────────────
+
+        [Test]
+        public void Balance_SumsTheCoinsInTheBackingContainer()
+        {
+            var wallet = NewWallet();
+            Seed(wallet, CurrencyType.Gold, 2u);
+            Seed(wallet, CurrencyType.Silver, 3u);
+
+            Assert.That(wallet.Balance.Gold, Is.EqualTo(2u));
+            Assert.That(wallet.Balance.Silver, Is.EqualTo(3u));
+            Assert.That(wallet.Balance.Total, Is.EqualTo(2u * Currency.ironToGold + 3u * Currency.ironToSilver));
+        }
+
+        [Test]
+        public void Balance_OfAnEmptyWallet_IsZero()
+        {
+            Assert.That(NewWallet().Balance.Total, Is.Zero);
+        }
+
+        // ── CanAfford ───────────────────────────────────────────────────────
+
+        [Test]
+        public void CanAfford_IsTrueAtExactBalance_FalseOneOver()
+        {
+            var wallet = NewWallet();
+            Seed(wallet, CurrencyType.Silver, 3u); // 180
+
+            Assert.That(wallet.CanAfford(new Currency(180u)), Is.True);
+            Assert.That(wallet.CanAfford(new Currency(181u)), Is.False);
+        }
+
+        // ── TryPay ──────────────────────────────────────────────────────────
+
+        [Test]
+        public void TryPay_SpendsTheSmallestDenominationFirst_LeavingLargerCoins()
+        {
+            var wallet = NewWallet();
+            Seed(wallet, CurrencyType.Silver, 4u); // 240
+            Seed(wallet, CurrencyType.Gold, 1u);   // 1200
+
+            var paid = wallet.TryPay(new Currency(3u * Currency.ironToSilver)); // 180 = 3 silver
+
+            Assert.That(paid, Is.True);
+            Assert.That(wallet.Balance.Gold, Is.EqualTo(1u), "the gold was not broken");
+            Assert.That(wallet.Balance.Total, Is.EqualTo(1200u + 60u));
+        }
+
+        [Test]
+        public void TryPay_BreakingALargeCoin_NetsExactlyThePrice_BankingTheChange()
+        {
+            var wallet = NewWallet();
+            Seed(wallet, CurrencyType.Gold, 1u); // 1200, and no smaller coins to pay 180 with
+
+            var paid = wallet.TryPay(new Currency(180u));
+
+            Assert.That(paid, Is.True);
+            Assert.That(wallet.Balance.Gold, Is.EqualTo(0u), "the gold was broken");
+            Assert.That(wallet.Balance.Total, Is.EqualTo(1200u - 180u), "change banked - the wallet lost exactly the price");
+        }
+
+        [Test]
+        public void TryPay_FromLooseIronAcrossPackages_CoversASilverPrice()
+        {
+            var wallet = NewWallet();
+            Seed(wallet, CurrencyType.Iron, 40u);
+            Seed(wallet, CurrencyType.Copper, 30u); // 40 + 150 = 190 total
+
+            var paid = wallet.TryPay(new Currency(Currency.ironToSilver)); // 60
+
+            Assert.That(paid, Is.True);
+            Assert.That(wallet.Balance.Total, Is.EqualTo(190u - 60u));
+        }
+
+        [Test]
+        public void TryPay_WhenTheBalanceIsShort_ReturnsFalse_AndSpendsNothing()
+        {
+            var wallet = NewWallet();
+            Seed(wallet, CurrencyType.Silver, 2u); // 120
+
+            var paid = wallet.TryPay(new Currency(180u));
+
+            Assert.That(paid, Is.False);
+            Assert.That(wallet.Balance.Total, Is.EqualTo(120u));
+        }
+
+        [Test]
+        public void TryPay_AZeroPrice_ReturnsTrue_AndSpendsNothing()
+        {
+            var wallet = NewWallet();
+            Seed(wallet, CurrencyType.Iron, 5u);
+
+            var paid = wallet.TryPay(new Currency(0u));
+
+            Assert.That(paid, Is.True);
+            Assert.That(wallet.Balance.Total, Is.EqualTo(5u));
+        }
+
+        [Test]
+        public void TryPay_TheWholeBalance_LeavesNoCoinsInTheGrid()
+        {
+            var wallet = NewWallet();
+            Seed(wallet, CurrencyType.Silver, 2u); // 120
+
+            _ = wallet.TryPay(new Currency(120u));
+
+            Assert.That(HoldsCurrency(wallet), Is.False);
+            Assert.That(wallet.Balance.Total, Is.Zero);
+        }
+
+        // ── Deposit ─────────────────────────────────────────────────────────
+
+        [Test]
+        public void Deposit_MintsCoinsThatRenderInGridCells()
+        {
+            var wallet = NewWallet();
+
+            wallet.Deposit(new Currency(65u)); // 13 copper
+
+            Assert.That(HoldsCurrency(wallet), Is.True, "the coins are packages in the grid");
+            Assert.That(wallet.Balance.Total, Is.EqualTo(65u));
+        }
+
+        [Test]
+        public void DepositThenPayTheSameAmount_ReturnsToTheStartingBalance()
+        {
+            var wallet = NewWallet();
+            Seed(wallet, CurrencyType.Gold, 1u); // start at 1200
+
+            wallet.Deposit(new Currency(333u));
+            var paid = wallet.TryPay(new Currency(333u));
+
+            Assert.That(paid, Is.True);
+            Assert.That(wallet.Balance.Total, Is.EqualTo(1200u));
+        }
+
+        // ── Deposit ─────────────────────────────────────────────────────────
+
+        [Test]
+        public void Deposit_MintsTheLargestDenominationFirst()
+        {
+            var recorder = new RecordingMinter(minter);
+            var wallet = new Wallet(new CharacterInventory(new Vector2Int(6, 6), catalog), recorder);
+
+            wallet.Deposit(new Currency(iron: 1u, copper: 1u, silver: 1u, gold: 1u));
+
+            Assert.That(recorder.Minted, Is.EqualTo(new[]
+            {
+                CurrencyType.Gold, CurrencyType.Silver, CurrencyType.Copper, CurrencyType.Iron,
+            }));
+        }
+
+        [Test]
+        public void Deposit_IntoAnEmptyWallet_LaysGoldSilverCopperIronInCellOrder()
+        {
+            var wallet = NewWallet();
+
+            wallet.Deposit(new Currency(iron: 1u, copper: 1u, silver: 1u, gold: 1u));
+
+            Assert.That(CoinsInCellOrder(wallet), Is.EqualTo(new[]
+            {
+                CurrencyType.Gold, CurrencyType.Silver, CurrencyType.Copper, CurrencyType.Iron,
+            }));
+        }
+
+        [Test]
+        public void Deposit_FoldsTheCoinsIntoTheLargestDenominations()
+        {
+            var wallet = NewWallet();
+            Seed(wallet, CurrencyType.Iron, 4u);
+
+            wallet.Deposit(Currency.Of(CurrencyType.Iron, 7u)); // 11 iron
+
+            Assert.That(wallet.Balance.Copper, Is.EqualTo(2u));
+            Assert.That(wallet.Balance.Iron, Is.EqualTo(1u));
+        }
+
+        [Test]
+        public void Deposit_WhoseFoldedCoinsNeedMoreCellsThanThereAre_KeepsEveryCoin()
+        {
+            var wallet = NewWallet(1, 1);
+            Seed(wallet, CurrencyType.Iron, 990u);
+
+            wallet.Deposit(Currency.Of(CurrencyType.Iron, 9u)); // 999 iron folds to 199 copper + 4 iron: two cells
+
+            Assert.That(wallet.Balance.Total, Is.EqualTo(999u));
+        }
+
+        [Test]
+        public void Deposit_ThatFits_ReturnsNothing()
+        {
+            var wallet = NewWallet();
+
+            var unplaced = wallet.Deposit(new Currency(iron: 1u, copper: 1u, silver: 1u, gold: 1u));
+
+            Assert.That(unplaced.Total, Is.EqualTo(0u));
+            Assert.That(wallet.Balance.Total, Is.EqualTo(1266u), "1 + 5 + 60 + 1200");
+        }
+
+        [Test]
+        public void Deposit_IntoAFullWallet_ReturnsTheCoinsThatFoundNoCell()
+        {
+            var wallet = NewWallet(1, 1);
+            Seed(wallet, CurrencyType.Gold, 1u);
+
+            var unplaced = wallet.Deposit(Currency.Of(CurrencyType.Copper, 3u));
+
+            Assert.That(unplaced.CountOf(CurrencyType.Copper), Is.EqualTo(3u));
+            Assert.That(unplaced.Total, Is.EqualTo(Currency.ValueOf(CurrencyType.Copper) * 3u));
+            Assert.That(wallet.Balance.Total, Is.EqualTo(Currency.ValueOf(CurrencyType.Gold)), "nothing of the copper banked");
+        }
+
+        [Test]
+        public void Deposit_WithTooFewCells_BanksTheHighestDenominationsAndReturnsTheRest()
+        {
+            var wallet = NewWallet(2, 1);
+
+            var unplaced = wallet.Deposit(new Currency(iron: 1u, copper: 1u, silver: 1u, gold: 1u));
+
+            Assert.That(wallet.Balance.Gold, Is.EqualTo(1u));
+            Assert.That(wallet.Balance.Silver, Is.EqualTo(1u));
+            Assert.That(wallet.Balance.Copper + wallet.Balance.Iron, Is.EqualTo(0u));
+            Assert.That(unplaced.Gold + unplaced.Silver, Is.EqualTo(0u));
+            Assert.That(unplaced.Copper, Is.EqualTo(1u));
+            Assert.That(unplaced.Iron, Is.EqualTo(1u));
+        }
+
+        [Test]
+        public void Deposit_OntoAnExistingPile_NeedsNoFreeCell()
+        {
+            var wallet = NewWallet(1, 1);
+            Seed(wallet, CurrencyType.Gold, 1u);
+
+            var unplaced = wallet.Deposit(Currency.Of(CurrencyType.Gold, 3u));
+
+            Assert.That(unplaced.Total, Is.EqualTo(0u));
+            Assert.That(wallet.Balance.Gold, Is.EqualTo(4u));
+        }
+
+        // ── Consolidate ─────────────────────────────────────────────────────
+
+        [Test]
+        public void Consolidate_PreservesTotalValue()
+        {
+            var wallet = NewWallet();
+            Seed(wallet, CurrencyType.Iron, 8u);
+            Seed(wallet, CurrencyType.Copper, 13u);
+            var before = wallet.Balance.Total;
+
+            wallet.Consolidate();
+
+            Assert.That(wallet.Balance.Total, Is.EqualTo(before));
+        }
+
+        [Test]
+        public void Consolidate_FoldsLooseCoinsIntoTheLargestDenominationThatFits()
+        {
+            var wallet = NewWallet();
+            Seed(wallet, CurrencyType.Iron, 15u); // 15 iron -> 3 copper
+
+            wallet.Consolidate();
+
+            Assert.That(wallet.Balance.Iron, Is.EqualTo(0u));
+            Assert.That(wallet.Balance.Copper, Is.EqualTo(3u));
+            Assert.That(wallet.Balance.Total, Is.EqualTo(15u));
+        }
+
+        [Test]
+        public void Consolidate_LeavesTheRemainderLoose()
+        {
+            var wallet = NewWallet();
+            Seed(wallet, CurrencyType.Iron, 14u); // 14 iron -> 2 copper + 4 iron
+
+            wallet.Consolidate();
+
+            Assert.That(wallet.Balance.Copper, Is.EqualTo(2u));
+            Assert.That(wallet.Balance.Iron, Is.EqualTo(4u));
+        }
+
+        [Test]
+        public void Consolidate_PlacesTheLargerDenominationInTheGridsFirstCell()
+        {
+            var probe = NewWallet();
+            Seed(probe, CurrencyType.Gold, 1u);
+            var firstCell = probe.Container.StoredPackages.Keys.Single(); // where an empty grid puts its first coin
+
+            var wallet = NewWallet();
+            Seed(wallet, CurrencyType.Iron, 14u); // -> 2 copper + 4 iron
+
+            wallet.Consolidate();
+
+            var copperCell = wallet.Container.StoredPackages
+                .Single(entry => ItemView.Resolve(entry.Value.Item, catalog).Definition.CurrencyType == CurrencyType.Copper).Key;
+            Assert.That(copperCell, Is.EqualTo(firstCell), "copper sits ahead of the loose iron");
+        }
+
+        [Test]
+        public void Consolidate_LeavesTheCoinsGoldFirstIronLast_WhateverOrderTheyLay()
+        {
+            var wallet = NewWallet();
+            Seed(wallet, CurrencyType.Iron, 4u);
+            Seed(wallet, CurrencyType.Silver, 1u);
+            Seed(wallet, CurrencyType.Copper, 2u);
+            Seed(wallet, CurrencyType.Gold, 1u);
+
+            wallet.Consolidate();
+
+            Assert.That(CoinsInCellOrder(wallet), Is.EqualTo(new[]
+            {
+                CurrencyType.Gold, CurrencyType.Silver, CurrencyType.Copper, CurrencyType.Iron,
+            }));
+            Assert.That(wallet.Balance.Total, Is.EqualTo(1200u + 60u + 10u + 4u));
+        }
+
+        [Test]
+        public void Consolidate_AnAlreadyCanonicalWallet_DoesNothing()
+        {
+            var wallet = NewWallet();
+            Seed(wallet, CurrencyType.Gold, 2u);
+            var positionsBefore = wallet.Container.StoredPackages.Keys.OrderBy(p => p.x).ThenBy(p => p.y).ToList();
+
+            wallet.Consolidate();
+
+            Assert.That(wallet.Container.StoredPackages.Keys.OrderBy(p => p.x).ThenBy(p => p.y), Is.EqualTo(positionsBefore));
+            Assert.That(wallet.Balance.Gold, Is.EqualTo(2u));
+        }
+
+        // ── RelayIfCoin ─────────────────────────────────────────────────────
+        // A coin the player moved into the bag (a drop, a shift-click) leaves the bag's coins gold
+        // first, iron last. Unlike Consolidate it folds nothing: the coins the player holds stay the
+        // coins they hold.
+
+        [Test]
+        public void RelayIfCoin_ACoinThatLandedBehindLowerOnes_LeavesTheCoinsGoldFirstIronLast()
+        {
+            var wallet = NewWallet();
+            Seed(wallet, CurrencyType.Iron, 4u);
+            Seed(wallet, CurrencyType.Silver, 1u);
+            Seed(wallet, CurrencyType.Gold, 1u); // the coin that just moved in lands in the first free cell
+
+            wallet.RelayIfCoin(minter.MintCurrency(CurrencyType.Gold));
+
+            Assert.That(CoinsInCellOrder(wallet), Is.EqualTo(new[]
+            {
+                CurrencyType.Gold, CurrencyType.Silver, CurrencyType.Iron,
+            }));
+            Assert.That(wallet.Balance.Total, Is.EqualTo(1200u + 60u + 4u));
+        }
+
+        [Test]
+        public void RelayIfCoin_FoldsNothing()
+        {
+            var wallet = NewWallet();
+            Seed(wallet, CurrencyType.Iron, 15u);
+            Seed(wallet, CurrencyType.Gold, 1u);
+
+            wallet.RelayIfCoin(minter.MintCurrency(CurrencyType.Gold));
+
+            Assert.That(wallet.Balance.Iron, Is.EqualTo(15u), "15 iron stay iron");
+            Assert.That(wallet.Balance.Copper, Is.Zero);
+            Assert.That(wallet.Balance.Gold, Is.EqualTo(1u));
+        }
+
+        [Test]
+        public void RelayIfCoin_AnItemThatIsNotACoin_LeavesTheCoinsWhereTheyLie()
+        {
+            var wallet = NewWallet();
+            Seed(wallet, CurrencyType.Iron, 4u);
+            Seed(wallet, CurrencyType.Gold, 1u); // hand-placed behind the iron
+
+            wallet.RelayIfCoin(new ItemInstance(HelmId, ItemRarity.Common, 1, null));
+
+            Assert.That(CoinsInCellOrder(wallet), Is.EqualTo(new[] { CurrencyType.Iron, CurrencyType.Gold }));
+        }
+
+        [Test]
+        public void RelayIfCoin_IntoAFullBag_LosesNoCoin()
+        {
+            var wallet = NewWallet(2, 1);
+            Seed(wallet, CurrencyType.Iron, 3u);
+            Seed(wallet, CurrencyType.Copper, 1u);
+            Seed(wallet, CurrencyType.Copper, 2u); // the coin that moved in stacks onto the copper pile: the bag is full
+
+            wallet.RelayIfCoin(minter.MintCurrency(CurrencyType.Copper));
+
+            Assert.That(CoinsInCellOrder(wallet), Is.EqualTo(new[] { CurrencyType.Copper, CurrencyType.Iron }));
+            Assert.That(wallet.Balance.Copper, Is.EqualTo(3u));
+            Assert.That(wallet.Balance.Iron, Is.EqualTo(3u));
+        }
+
+        // ── RelayIfCoinLandedIn ─────────────────────────────────────────────
+        // A drag-drop lands in whichever container the slot belongs to; only the bag's coins re-lay.
+
+        [Test]
+        public void RelayIfCoinLandedIn_TheBag_LeavesTheCoinsGoldFirstIronLast()
+        {
+            var wallet = NewWallet();
+            Seed(wallet, CurrencyType.Iron, 4u);
+            Seed(wallet, CurrencyType.Gold, 1u); // hand-placed behind the iron
+
+            wallet.RelayIfCoinLandedIn(wallet.Container, minter.MintCurrency(CurrencyType.Gold));
+
+            Assert.That(CoinsInCellOrder(wallet), Is.EqualTo(new[] { CurrencyType.Gold, CurrencyType.Iron }));
+            Assert.That(wallet.Balance.Total, Is.EqualTo(1200u + 4u));
+        }
+
+        [Test]
+        public void RelayIfCoinLandedIn_AnotherContainer_LeavesTheBagsCoinsWhereTheyLie()
+        {
+            var wallet = NewWallet();
+            var stash = new CharacterInventory(new Vector2Int(6, 6), catalog);
+            Seed(wallet, CurrencyType.Iron, 4u);
+            Seed(wallet, CurrencyType.Gold, 1u); // hand-placed behind the iron
+
+            wallet.RelayIfCoinLandedIn(stash, minter.MintCurrency(CurrencyType.Gold));
+
+            Assert.That(CoinsInCellOrder(wallet), Is.EqualTo(new[] { CurrencyType.Iron, CurrencyType.Gold }));
+        }
+
+        // ── OnBalanceChanged ────────────────────────────────────────────────
+
+        [Test]
+        public void OnBalanceChanged_FiresWithTheNewBalance_AfterADeposit()
+        {
+            var wallet = NewWallet();
+            Currency? seen = null;
+            wallet.OnBalanceChanged += balance => seen = balance;
+
+            wallet.Deposit(new Currency(60u));
+
+            Assert.That(seen.HasValue, Is.True);
+            Assert.That(seen.Value.Total, Is.EqualTo(60u));
+        }
+
+        [Test]
+        public void OnBalanceChanged_FiresAfterAPayment()
+        {
+            var wallet = NewWallet();
+            Seed(wallet, CurrencyType.Silver, 3u); // 180
+            var fired = 0;
+            wallet.OnBalanceChanged += _ => fired++;
+
+            _ = wallet.TryPay(new Currency(60u));
+
+            Assert.That(fired, Is.GreaterThan(0));
+            Assert.That(wallet.Balance.Total, Is.EqualTo(120u));
+        }
+
+        [Test]
+        public void OnBalanceChanged_DoesNotFire_ForAValuePreservingConsolidate()
+        {
+            var wallet = NewWallet();
+            Seed(wallet, CurrencyType.Iron, 15u);
+            var fired = 0;
+            wallet.OnBalanceChanged += _ => fired++;
+
+            wallet.Consolidate();
+
+            Assert.That(fired, Is.Zero, "the net balance never changed");
+        }
+
+        [Test]
+        public void OnBalanceChanged_FiresWhenThePlayerDragsACoinOutOfTheGrid()
+        {
+            var wallet = NewWallet();
+            Seed(wallet, CurrencyType.Gold, 2u);
+            Currency? seen = null;
+            wallet.OnBalanceChanged += balance => seen = balance;
+
+            // A drag pulls one coin straight off the backing container.
+            var position = wallet.Container.StoredPackages.Keys.First();
+            var stored = wallet.Container.StoredPackages[position];
+            _ = wallet.Container.RemoveAtPosition(position, new Package(wallet.Container, stored.Item, 1u));
+
+            Assert.That(seen.HasValue, Is.True);
+            Assert.That(seen.Value.Gold, Is.EqualTo(1u));
+        }
+    }
+}

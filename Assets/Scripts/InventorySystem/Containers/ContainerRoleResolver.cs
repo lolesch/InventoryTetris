@@ -1,0 +1,27 @@
+namespace ToolSmiths.InventorySystem.Inventories
+{
+    /// <summary>
+    /// Which container a <see cref="ContainerRole"/> names: the pure half of how a display binds
+    /// itself (<c>IInventoryService.ContainerFor</c>). Held apart from the service so the
+    /// mapping is tested at the container seam - a missing arm leaves a display unbound with no
+    /// error, because an unresolved role just returns no container.
+    /// </summary>
+    public static class ContainerRoleResolver
+    {
+        public static AbstractDimensionalContainer Resolve(ContainerRole role,
+            AbstractDimensionalContainer equipment, AbstractDimensionalContainer inventory,
+            AbstractDimensionalContainer stash, AbstractDimensionalContainer store,
+            AbstractDimensionalContainer healerSupply, AbstractDimensionalContainer sold,
+            AbstractDimensionalContainer ground) => role switch
+        {
+            ContainerRole.Equipment => equipment,
+            ContainerRole.Inventory => inventory,
+            ContainerRole.Stash => stash,
+            ContainerRole.VendorSupply => store,
+            ContainerRole.HealerSupply => healerSupply,
+            ContainerRole.Sold => sold,
+            ContainerRole.Ground => ground,
+            _ => null,
+        };
+    }
+}

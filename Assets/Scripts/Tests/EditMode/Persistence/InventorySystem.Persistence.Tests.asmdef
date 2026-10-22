@@ -1,0 +1,29 @@
+{
+    "name": "InventorySystem.Persistence.Tests",
+    "rootNamespace": "",
+    "references": [
+        "InventorySystem.Persistence",
+        "InventorySystem.Characters",
+        "InventorySystem.Containers",
+        "InventorySystem.Data",
+        "InventorySystem.Items",
+        "InventorySystem.Items.Tests",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

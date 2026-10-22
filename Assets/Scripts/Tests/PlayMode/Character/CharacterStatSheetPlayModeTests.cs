@@ -1,0 +1,159 @@
+using System.Collections;
+using System.Linq;
+using NUnit.Framework;
+using Submodules.Utility.Services;
+using TMPro;
+using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Data.Enums;
+using ToolSmiths.InventorySystem.Runtime.Character;
+using ToolSmiths.InventorySystem.Services;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+using UnityEngine;
+using UnityEngine.TestTools;
+
+namespace ToolSmiths.InventorySystem.Tests.PlayMode.Character
+{
+    /// <summary>
+    /// The stat sheet's life cycle (issues #111, #114), on the real <c>PLAYER</c> prefab. <c>CharacterStatSheet</c>
+    /// lives in the predefined assembly, out of a test assembly's reach, so it is read by name; the boot's
+    /// <c>ItemService</c> is what draws the rows' icons and its Session holds the hero, so this needs Play Mode.
+    /// Run with the PlayMode filter; <c>Run All</c> in the EditMode tab does not include it.
+    /// </summary>
+    public sealed class CharacterStatSheetPlayModeTests
+    {
+        private GameObject _player;
+        private MonoBehaviour _sheet;
+        private Hero _hero;
+
+        private static readonly CharacterStatModifier[] Gear =
+        {
+            new(StatName.Armor, new StatModifier(new Vector2Int(0, 1000), 10f)),
+        };
+
+        [UnitySetUp]
+        public IEnumerator SetUp()
+        {
+#if UNITY_EDITOR
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/PLAYER.prefab");
+            _player = Object.Instantiate(prefab);
+#else
+            Assert.Ignore("the PLAYER prefab is loaded by path, which only the Editor can do");
+#endif
+
+            _sheet = Named("CharacterStatSheet");
+            _hero = Session.Instance.Hero;
+
+            yield return null;
+        }
+
+        [TearDown]
+        public void TearDown() => Object.Destroy(_player);
+
+        private MonoBehaviour Named(string typeName) =>
+            System.Array.Find(_player.GetComponentsInChildren<MonoBehaviour>(true), c => c != null && c.GetType().Name == typeName);
+
+        private MonoBehaviour[] RowComponents(bool includeInactive) =>
+            _sheet.GetComponentsInChildren<MonoBehaviour>(includeInactive).Where(c => c != null && c.GetType().Name == "CharacterStatDisplay").ToArray();
+
+        private string Sheet() =>
+            string.Join("\n", RowComponents(false).Select(row => row.GetComponentInChildren<TextMeshProUGUI>(true).text));
+
+        private int Rows(bool includeInactive) => RowComponents(includeInactive).Length;
+
+        [UnityTest]
+        public IEnumerator TheSheet_FollowsTheHero_AndLetsGoOfItWhileDisabled()
+        {
+            var before = Sheet();
+            Assert.That(Rows(false), Is.EqualTo(_hero.Resources.Count + _hero.Stats.Count), "one row per stat and resource");
+
+            _hero.AddItemStats(Gear);
+            yield return null;
+            var worn = Sheet();
+            Assert.That(worn, Is.Not.EqualTo(before), "equipping updates the sheet");
+
+            _hero.RemoveItemStats(Gear);
+            yield return null;
+            Assert.That(Sheet(), Is.EqualTo(before), "unequipping updates it back");
+
+            _sheet.enabled = false;
+            _hero.AddItemStats(Gear);
+            yield return null;
+            Assert.That(Sheet(), Is.EqualTo(before), "a disabled sheet is not listening");
+
+            _sheet.enabled = true;
+            Assert.That(Sheet(), Is.EqualTo(worn), "enabling rebuilds from the hero as it is now");
+
+            // The second Play entry of a session: disable, enable, again.
+            _sheet.enabled = false;
+            _sheet.enabled = true;
+            _hero.RemoveItemStats(Gear);
+            yield return null;
+            Assert.That(Sheet(), Is.EqualTo(before), "re-enabling subscribed again, once");
+        }
+
+        [UnityTest]
+        public IEnumerator TheSheet_ReplacesRowsAPreviousSessionDestroyed_InsteadOfAddingBeside()
+        {
+            var made = Rows(true);
+
+            // What a Play exit does to runtime-made rows while the sheet itself survives.
+            foreach (var row in RowComponents(false))
+                Object.Destroy(row.gameObject);
+
+            yield return null;
+            _sheet.enabled = false;
+            _sheet.enabled = true;
+
+            Assert.That(Rows(false), Is.EqualTo(_hero.Resources.Count + _hero.Stats.Count));
+            Assert.That(Rows(true), Is.EqualTo(made), "the lost rows are made again, not made on top of a growing list");
+        }
+
+        [UnityTest]
+        public IEnumerator TheSheet_FollowsTheHeroTheNextPlayEntryBoots_AndNoLongerTheOldOne()
+        {
+            var old = _hero;
+
+            // The next Play entry: the boot builds a new Session, then the surviving sheet is enabled again.
+            _sheet.enabled = false;
+            ServiceLocator.Reset();
+            GameBoot.Arm(GameBoot.Load());
+            _sheet.enabled = true;
+
+            var current = Session.Instance.Hero;
+            Assert.That(current, Is.Not.SameAs(old), "the boot built a new hero");
+
+            var before = Sheet();
+            current.AddItemStats(Gear);
+            yield return null;
+            var worn = Sheet();
+            Assert.That(worn, Is.Not.EqualTo(before), "the new hero's change updates the sheet");
+
+            old.AddItemStats(Gear);
+            yield return null;
+            Assert.That(Sheet(), Is.EqualTo(worn), "the old hero is no longer listened to");
+        }
+
+        [UnityTest]
+        public IEnumerator TheSheet_RebindsWhenAHeroLoads()
+        {
+            var old = _hero;
+
+            Assert.That(Session.Instance.TryLoad(GameBoot.Load().DefaultHero), Is.True, "a Town session accepts a hero load");
+
+            var current = Session.Instance.Hero;
+            Assert.That(current, Is.Not.SameAs(old), "the load replaced the hero");
+
+            var before = Sheet();
+            current.AddItemStats(Gear);
+            yield return null;
+            var worn = Sheet();
+            Assert.That(worn, Is.Not.EqualTo(before), "the loaded hero's change updates the sheet");
+
+            old.AddItemStats(Gear);
+            yield return null;
+            Assert.That(Sheet(), Is.EqualTo(worn), "the replaced hero is no longer listened to");
+        }
+    }
+}

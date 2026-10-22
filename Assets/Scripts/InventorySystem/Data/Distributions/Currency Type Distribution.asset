@@ -12,38 +12,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d97357581286afe49a98b0af6d551045, type: 3}
   m_Name: Currency Type Distribution
   m_EditorClassIdentifier: 
-  failQuantity: 0
+  failWeight: 0
   quantities:
   - name: NONE
     Enumeration: 0
     Quantity: 0
-  - name: Iron
-    Enumeration: 1
-    Quantity: 8
   - name: Copper
+    Enumeration: 1
+    Quantity: 40
+  - name: Iron
     Enumeration: 2
-    Quantity: 4
+    Quantity: 40
   - name: Silver
     Enumeration: 3
-    Quantity: 2
+    Quantity: 8
   - name: Gold
     Enumeration: 4
     Quantity: 1
-  successProbability: 1
-  probabilities:
-  - name: NONE
-    Enumeration: 0
-    Probability: 0
-  - name: Iron
-    Enumeration: 1
-    Probability: 0.53333336
-  - name: Copper
-    Enumeration: 2
-    Probability: 0.26666668
-  - name: Silver
-    Enumeration: 3
-    Probability: 0.13333334
-  - name: Gold
-    Enumeration: 4
-    Probability: 0.06666667
-  exampleResults: 01000000010000000100000001000000010000000100000001000000010000000200000003000000

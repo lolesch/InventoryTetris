@@ -1,0 +1,58 @@
+using System.Collections.Generic;
+using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Data.Enums;
+using ToolSmiths.InventorySystem.Items;
+using ToolSmiths.InventorySystem.Runtime.Character;
+using UnityEngine;
+
+namespace ToolSmiths.InventorySystem.Services
+{
+    /// <summary>
+    /// Places the authored starter kit on a newly created hero: each item is made by the item generator
+    /// and placed the way a Drop is (auto-equip into an empty slot, else the Inventory), then the coins
+    /// are banked in the Wallet: the template's own plus the config's starting coins. Nothing in the kit
+    /// is required: an empty kit does nothing, an unknown
+    /// definition or an item with no room is logged and skipped, and the hero stays valid either way.
+    /// </summary>
+    public static class StarterKit
+    {
+        public static void Apply(Hero hero, HeroData data, GameConfig config, IItemService items)
+        {
+            if (hero == null || data == null || config == null || items == null)
+                return;
+
+            foreach (var starter in data.StarterItems)
+                Place(hero, starter, items);
+
+            // Gear raises the maximums but not the current values, so a new hero is topped up after the
+            // kit is worn, and starts at full Health and Resource.
+            hero.Heal();
+
+            // The game-wide starting coins and the template's own, banked as one amount.
+            var coins = new Currency(config.StartingCoins.Total + data.StarterCoins.Total);
+            if (coins.Total == 0u)
+                return;
+
+            if (0u < hero.Wallet.Deposit(coins).Total)
+                Debug.LogWarning($"{nameof(StarterKit)}: the Inventory has no room for all the starter coins; the hero starts without the rest.");
+        }
+
+        private static void Place(Hero hero, HeroData.StarterItem starter, IItemService items)
+        {
+            ItemInstance item;
+
+            try
+            {
+                item = items.Create(starter.DefinitionId, starter.Rarity == default ? ItemRarity.Common : starter.Rarity);
+            }
+            catch (KeyNotFoundException)
+            {
+                Debug.LogWarning($"{nameof(StarterKit)}: the catalog has no item '{starter.DefinitionId}'; it is left out of the kit.");
+                return;
+            }
+
+            if (!hero.PickUpItem(item, starter.Amount == 0u ? 1u : starter.Amount))
+                Debug.LogWarning($"{nameof(StarterKit)}: there is no room for '{starter.DefinitionId}'; the hero starts without it.");
+        }
+    }
+}

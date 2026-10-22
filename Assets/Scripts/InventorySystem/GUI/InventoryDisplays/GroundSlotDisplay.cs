@@ -1,0 +1,68 @@
+using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Inventories;
+using ToolSmiths.InventorySystem.Runtime.Provider;
+using ToolSmiths.InventorySystem.Services;
+using ToolSmiths.InventorySystem.Simulation;
+using UnityEngine;
+using UnityEngine.EventSystems;
+
+namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
+{
+    /// <summary>
+    /// A cell of the ground grid (epic #214). It behaves like a stash cell: a click lifts the drop onto the
+    /// cursor, shift-click and right-click take it through the acquisition entry point (like a row of the
+    /// list), and a dropped item lands through the World's ground rather than into this cell. Older drops are
+    /// drawn fainter, relative to the other drops and not to time.
+    /// </summary>
+    [System.Serializable]
+    internal sealed class GroundSlotDisplay : InventorySlotDisplay
+    {
+        private GroundFadeSettings _fade; // the config is read-only, so the first load stands
+
+        public override void RefreshSlotDisplay(Package package)
+        {
+            base.RefreshSlotDisplay(package);
+
+            if (!package.IsValid || Container is not GroundContainer ground)
+                return;
+
+            var cells = ground.CellsOldestFirst();
+            _fade ??= GameBoot.Load().GroundFade;
+            itemGroup.alpha = _fade.AlphaOf(cells.Count - 1 - cells.IndexOf(Position));
+        }
+
+        protected override void MoveItem(PointerEventData eventData, Vector2 pointerPosition)
+        {
+            if (eventData.button != PointerEventData.InputButton.Right)
+            {
+                base.MoveItem(eventData, pointerPosition);
+                return;
+            }
+
+            if (!TryBeginMove(out _, out var package))
+                return;
+
+            _ = Session.Instance.World.LootGround.PickUpFromGround(package.Item);
+
+            SyncPreviewAfterMove();
+        }
+
+        protected override void DropItem(Package package)
+        {
+            if (!package.IsValid)
+                return;
+
+            if (!DropTransaction.Place(package, Session.Instance.World.LootGround))
+            {
+                _ = CancelHeldDrag();
+                return;
+            }
+
+            DragProvider.Instance.EndDrag();
+
+            DragProvider.Instance.Origin.Container?.InvokeRefresh();
+        }
+
+        public override bool WouldAcceptDrop(Package package) => package.IsValid && base.WouldAcceptDrop(package);
+    }
+}

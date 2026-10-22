@@ -1,0 +1,157 @@
+using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Items;
+using UnityEngine;
+
+namespace ToolSmiths.InventorySystem.Inventories
+{
+    /// <summary>
+    /// The vendor rows of the movement matrix (issue #11), as commit-or-rollback moves on
+    /// top of <see cref="ItemTransaction"/>. A sale banks the item's sell value into the
+    /// wallet; a purchase places the bought item on the transaction's working copies and
+    /// queues the exact payment. The currency effect runs only on
+    /// <see cref="ItemTransaction.Commit"/>, so a purchase that finds no inventory room
+    /// rolls back leaving the item on the shelf and nothing charged - the player can never
+    /// be charged with no item, or paid with the item still on the shelf.
+    ///
+    /// <para><c>VendorSlotDisplay</c> and <c>SellItemSlotDisplay</c> both route through here
+    /// rather than each carrying a near-identical remove / add / coin-mint block. The
+    /// <c>Store</c> is still a <see cref="CharacterInventory"/>; the <see cref="Wallet"/>
+    /// module owns the money (issue #14), and a dedicated vendor container is later work
+    /// (the foundational-rework spec).</para>
+    /// </summary>
+    public static class VendorTransaction
+    {
+        /// <summary>The vendor sells for <see cref="Markup"/>× what it buys back at.</summary>
+        public const float Markup = 1.5f;
+
+        /// <summary>What the vendor charges for <paramref name="item"/>, in base units.</summary>
+        public static float BuyPrice(ItemInstance item, IItemCatalog catalog) =>
+            ItemView.Resolve(item, catalog).SellValue * Markup;
+
+        /// <summary>
+        /// Banks the proceeds of a sale. <paramref name="soldItem"/> has already left every
+        /// container - a drag sink consumed it - so this only mints its sell value into
+        /// <paramref name="wallet"/>, as a commit-time effect on a transaction scoped to the
+        /// wallet's backing container.
+        /// </summary>
+        public static void Sell(Package soldItem, Wallet wallet)
+        {
+            if (wallet == null || !soldItem.IsValid)
+                return;
+
+            var proceeds = new Currency(wallet.Container.ViewOf(soldItem.Item).SellValue * soldItem.Amount);
+
+            if (0u == proceeds.Total)
+                return;
+
+            using var transaction = new ItemTransaction(wallet.Container);
+
+            transaction.QueueEffect(() => wallet.Deposit(proceeds));
+
+            transaction.Commit();
+        }
+
+        /// <summary>
+        /// Whether <paramref name="wallet"/> can pay <paramref name="price"/> base units.
+        /// The shared gate for the atomic buy and the dragging buy's drop - a purchase is
+        /// only ever made when the price is payable, whatever the input that brought the
+        /// item this far (issue #31).
+        /// </summary>
+        public static bool CanAffordBuy(Wallet wallet, float price) =>
+            wallet != null && wallet.CanAfford(new Currency(price));
+
+        /// <summary>
+        /// What lifting <paramref name="package"/> off a Supply shelf costs: the unit price
+        /// times the amount the pick-up actually takes (<see cref="Package.PickUpAmount"/>),
+        /// which is the half with <paramref name="half"/> (Ctrl). The price held on the cursor
+        /// for the drop.
+        /// </summary>
+        public static float PickUpPrice(Package package, bool half, IItemCatalog catalog) =>
+            BuyPrice(package.Item, catalog) * package.PickUpAmount(half);
+
+        /// <summary>
+        /// Whether <paramref name="wallet"/> can pay for lifting <paramref name="package"/>,
+        /// priced for the amount lifted. The one affordability predicate behind the shelf's
+        /// tint, the grab (an unaffordable item stays on the shelf) and, through
+        /// <see cref="CanAffordBuy"/>, the drop's transaction-level gate (issue #125).
+        /// </summary>
+        public static bool CanAffordPickUp(Wallet wallet, Package package, bool half, IItemCatalog catalog) =>
+            CanAffordBuy(wallet, PickUpPrice(package, half, catalog));
+
+        /// <summary>
+        /// Queues the payment for a shelf purchase on <paramref name="transaction"/> - to
+        /// run exactly on commit and be dropped on rollback. Buying by drag reads the price
+        /// once at pick-up and pays that exact amount here, so the charge lands only when
+        /// the item is actually placed and a restock mid-drag cannot change the deal (issue
+        /// #31). Shared with the atomic <see cref="Buy"/> so the two buy paths queue the
+        /// same effect.
+        /// </summary>
+        /// <param name="transaction">The transaction placing the item. Null-safely ignored.</param>
+        /// <param name="wallet">The buyer's wallet; the charge runs against it on commit.</param>
+        /// <param name="price">The price shown at pick-up, in base units.</param>
+        private static void QueuePurchasePayment(ItemTransaction transaction, Wallet wallet, float price)
+        {
+            if (transaction == null || wallet == null)
+                return;
+
+            transaction.QueueEffect(() => _ = wallet.TryPay(new Currency(price)));
+        }
+
+        /// <summary>
+        /// Whether a drop carrying <paramref name="price"/> may proceed - and, if it is a
+        /// purchase that can be paid for, queues the payment on
+        /// <paramref name="transaction"/> at the same time.
+        ///
+        /// <para>Checking affordability and queueing the charge are one protocol with an
+        /// ordering rule: check first, so the queued payment cannot fail at commit and
+        /// strand an unpaid item in the bag. That rule used to live in a comment, restated
+        /// at each drop target, with nothing stopping a third one from queueing without
+        /// checking. Here the wrong order is unexpressible.</para>
+        ///
+        /// <para><paramref name="price"/> is null for an ordinary drop - not a purchase, so
+        /// there is nothing to check or charge and the drop proceeds untouched.</para>
+        /// </summary>
+        /// <returns>
+        /// False only when this is a purchase the wallet cannot pay for; the caller must
+        /// then abandon the drop, leaving the item in hand and nothing charged.
+        /// </returns>
+        public static bool TryQueuePurchase(ItemTransaction transaction, Wallet wallet, float? price)
+        {
+            if (price is not float amount)
+                return true;
+
+            if (!CanAffordBuy(wallet, amount))
+                return false;
+
+            QueuePurchasePayment(transaction, wallet, amount);
+            return true;
+        }
+
+        /// <summary>
+        /// Buys the package at <paramref name="position"/> out of <paramref name="store"/>
+        /// for <paramref name="price"/> base units, routing the item through
+        /// <see cref="PickUpTransaction.Run"/> - the player's acquisition entry point - so
+        /// auto-equip, else the bag, applies. The payment is queued as
+        /// that same transaction's commit-time effect, so a pick-up that finds no room
+        /// anywhere rolls the whole move back: the item stays on the shelf, nothing is
+        /// charged. This is the shift-click buy's only path (issue #30); a drag-drop buy
+        /// (<c>InventorySlotDisplay</c>/<c>EquipmentSlotDisplay</c>'s <c>DropItem</c>, issue
+        /// #31) lands in the player-chosen slot directly and never calls here - it has a
+        /// destination already, so there is nothing for <paramref name="player"/> to decide.
+        /// Right-click on the shelf is a no-op (<c>VendorSlotDisplay.MoveItem</c>).
+        /// </summary>
+        /// <param name="player">Decides placement via <see cref="IItemReceiver.PickUpItem"/>; the
+        /// containers it declares are enrolled, and must include the <paramref name="wallet"/>'s
+        /// so the payment rolls back with the move (the Hero's Inventory is both, as <c>SessionBuilder</c> builds it).</param>
+        /// <returns>Whether the purchase went through.</returns>
+        public static bool Buy(AbstractDimensionalContainer store, Vector2Int position, Package onShelf,
+            Wallet wallet, float price, IItemReceiver player)
+        {
+            if (store == null || wallet == null || !onShelf.IsValid || !CanAffordBuy(wallet, price))
+                return false;
+
+            return PickUpTransaction.Run(store, position, player,
+                transaction => QueuePurchasePayment(transaction, wallet, price));
+        }
+    }
+}

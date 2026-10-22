@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1448423e6f580f44c91b64f2e5640d0e, type: 3}
   m_Name: Weapon Category Distribution
   m_EditorClassIdentifier: 
-  failQuantity: 0
+  failWeight: 0
   quantities:
   - name: NONE
     Enumeration: 0
@@ -26,18 +26,3 @@ MonoBehaviour:
   - name: Offhand
     Enumeration: 300
     Quantity: 2
-  successProbability: 1
-  probabilities:
-  - name: NONE
-    Enumeration: 0
-    Probability: 0
-  - name: Weapon_1H
-    Enumeration: 100
-    Probability: 0.5
-  - name: Weapon_2H
-    Enumeration: 200
-    Probability: 0.25
-  - name: Offhand
-    Enumeration: 300
-    Probability: 0.25
-  exampleResults: 640000006400000064000000640000006400000064000000c80000002c0100002c0100002c010000

@@ -1,0 +1,116 @@
+using System;
+using TMPro;
+using ToolSmiths.InventorySystem.Data;
+using ToolSmiths.InventorySystem.Geometry;
+using ToolSmiths.InventorySystem.Services;
+using ToolSmiths.InventorySystem.Simulation;
+using UnityEngine;
+
+namespace ToolSmiths.InventorySystem.Runtime.Simulation
+{
+    /// <summary>
+    /// One rising damage figure (issue #181), pooled by <see cref="ArenaDamageNumbers"/>. It is not a child
+    /// of any <see cref="Figure"/>: a figure fades with its death and is pooled with its enemy, and the
+    /// number of the killing blow has to outlive both. It lives in the arena's space, drives itself on
+    /// <i>sim</i> time (faster at x8, frozen on pause) and hands itself back when its life is over or when
+    /// the arena dismisses it when the Encounter it was born in is gone (Return, hero death, Relocate: the Run ended,
+    /// so nothing lingers).
+    /// <para>
+    /// <see cref="Show"/> sets every field - text, font size, tint, position, timers - and <see cref="Reset"/>
+    /// clears them, so a pooled number carries nothing of its last use.
+    /// </para>
+    /// </summary>
+    [DisallowMultipleComponent]
+    public sealed class DamageNumber : MonoBehaviour
+    {
+        [SerializeField] private TextMeshProUGUI label;
+
+        private RectTransform _rect;
+        private Vector2 _origin;
+        private float _elapsed;
+        private float _duration;
+        private float _height;
+        private float _hold;
+        private Action<DamageNumber> _done;
+
+        private RectTransform Rect => _rect ? _rect : _rect = (RectTransform)transform;
+
+        /// <summary>Sim seconds this number has lived.</summary>
+        public float Elapsed => _elapsed;
+
+        /// <summary>
+        /// Start rising from <paramref name="origin"/> (the arena's anchored space) showing
+        /// <paramref name="amount"/> at the size and tint <paramref name="style"/> gives. <paramref name="done"/> is called once, when the life ends or
+        /// the owner <see cref="Dismiss"/>es it.
+        /// </summary>
+        public void Show(Vector2 origin, float amount, DamageNumberStyle style, float duration, float height, float hold,
+            Action<DamageNumber> done)
+        {
+            _origin = origin;
+            _elapsed = 0f;
+            _duration = duration;
+            _height = height;
+            _hold = hold;
+            _done = done;
+
+            label.text = DamageNumberMotion.Label(amount);
+            label.fontSize = style.FontSize;
+            label.color = style.Tint;
+            Rect.SetAsLastSibling();
+            Apply();
+        }
+
+        /// <summary>Clear the state a pooled number must not keep.</summary>
+        public void Reset()
+        {
+            _origin = default;
+            _elapsed = 0f;
+            _duration = 0f;
+            _height = 0f;
+            _hold = 0f;
+            _done = null;
+
+            if (label != null)
+            {
+                label.text = string.Empty;
+                label.color = Color.clear;
+            }
+        }
+
+        private void Update()
+        {
+            if (_done == null)
+                return;
+
+            _elapsed += SimulationService.Instance.SimDelta(Time.deltaTime);
+
+            if (DamageNumberMotion.IsFinished(_elapsed, _duration))
+            {
+                Finish();
+                return;
+            }
+
+            Apply();
+        }
+
+        /// <summary>End this number's life now (the arena unbound): <c>done</c> is called once. Does nothing when idle.</summary>
+        public void Dismiss()
+        {
+            if (_done != null)
+                Finish();
+        }
+
+        private void Finish()
+        {
+            var done = _done;
+            Reset();
+            done?.Invoke(this);
+        }
+
+        private void Apply()
+        {
+            Rect.anchoredPosition = _origin + new Vector2(0f, DamageNumberMotion.Rise(_elapsed, _duration, _height));
+            label.alpha = DamageNumberMotion.Alpha(_elapsed, _duration, _hold);
+        }
+    }
+}

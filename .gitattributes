@@ -1,0 +1,8 @@
+# Source and docs are LF in the index and CRLF in the working tree, whatever core.autocrlf says.
+*.cs text eol=crlf
+*.md text eol=crlf
+# Hooks run under bash: a CRLF shebang breaks them.
+dev/hooks/* text eol=lf
+
+# Scripts run under bash: a CRLF shebang breaks them.
+dev/*.sh text eol=lf

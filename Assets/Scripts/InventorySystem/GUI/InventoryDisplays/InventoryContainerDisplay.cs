@@ -8,9 +8,9 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
     [RequireComponent(typeof(GridLayoutGroup))]
 
     [System.Serializable]
-    public class InventoryContainerDisplay : AbstractContainerDisplay
+    internal sealed class InventoryContainerDisplay : AbstractContainerDisplay
     {
-        [SerializeField] protected InventorySlotDisplay slotDisplayPrefab;
+        [SerializeField] private AbstractSlotDisplay slotDisplayPrefab;
 
         //private void Awake()
         //{
@@ -30,16 +30,18 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 InstantiateNewSlots(slotDisplayPrefab);
 
             var gridLayout = GetComponent<GridLayoutGroup>();
-            if (gridLayout)
-            {
-                gridLayout.startAxis = GridLayoutGroup.Axis.Vertical;
-                gridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-                gridLayout.constraintCount = Container.Dimensions.x;
-            }
+            if (!gridLayout) 
+                return;
+            
+            gridLayout.startAxis = GridLayoutGroup.Axis.Vertical;
+            gridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            gridLayout.constraintCount = Container.Dimensions.x;
 
-            void InstantiateNewSlots(InventorySlotDisplay slot)
+            return;
+
+            void InstantiateNewSlots(AbstractSlotDisplay slot)
             {
-                var slotDisplays = DestroyInvalidSlotDisplays();
+                var existing = DestroyInvalidSlotDisplays();
 
                 var current = 0;
                 containerSlotDisplays.Clear();
@@ -47,28 +49,28 @@ namespace ToolSmiths.InventorySystem.GUI.InventoryDisplays
                 for (var x = 0; x < Container?.Dimensions.x; x++)
                     for (var y = 0; y < Container?.Dimensions.y; y++, current++)
                     {
-                        if (current < slotDisplays.Count)
-                            containerSlotDisplays.Add(slotDisplays[current]);
-                        else
-                            containerSlotDisplays.Add(Instantiate(slot, transform));
+                        containerSlotDisplays.Add(current < existing.Count
+                            ? existing[current]
+                            : Instantiate(slot, transform));
 
-                        containerSlotDisplays[current].SetupSlot(Container, new(x, y));
+                        containerSlotDisplays[current].SetupSlot(this, Container, new(x, y));
                     }
 
-                List<InventorySlotDisplay> DestroyInvalidSlotDisplays()
-                {
-                    var slotDisplays = GetComponentsInChildren<InventorySlotDisplay>().ToList();
+                return;
 
-                    for (var i = slotDisplays.Count - 1; Container?.Capacity <= i; i--)
+                List<AbstractSlotDisplay> DestroyInvalidSlotDisplays()
+                {
+                    var previous = GetComponentsInChildren<AbstractSlotDisplay>().Where(slot => slot.enabled).ToList(); // a variant's disabled base component is inert, its sibling is the slot
+                    for (var i = previous.Count; i-- > Container?.Capacity;) // for (var i = previous.Count - 1; Container?.Capacity <= i; i--)
                     {
 #if UNITY_EDITOR
-                        DestroyImmediate(slotDisplays[i].gameObject);
+                        DestroyImmediate(previous[i].gameObject);
 #else
-                        Destroy(slotDisplays[i].gameObject);
+                        Destroy(previous[i].gameObject);
 #endif
-                        slotDisplays.RemoveAt(i);
+                        previous.RemoveAt(i);
                     }
-                    return slotDisplays;
+                    return previous;
                 }
             }
         }

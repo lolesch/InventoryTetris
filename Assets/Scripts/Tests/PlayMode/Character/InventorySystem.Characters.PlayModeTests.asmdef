@@ -1,0 +1,26 @@
+{
+    "name": "InventorySystem.Characters.PlayModeTests",
+    "rootNamespace": "",
+    "references": [
+        "InventorySystem.Characters",
+        "InventorySystem.Data",
+        "InventorySystem.Services",
+        "Utility",
+        "Unity.TextMeshPro",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

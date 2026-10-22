@@ -1,0 +1,410 @@
+fileFormatVersion: 2
+guid: 96426b6de6b6a624cbb12815e5d18ef9
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 7259246426022816756
+    second: Fantasy RPG Character Lineup_0
+  - first:
+      213: -6012147654789889726
+    second: Fantasy RPG Character Lineup_1
+  - first:
+      213: 2733489793196045361
+    second: Fantasy RPG Character Lineup_2
+  - first:
+      213: 3915146199173802971
+    second: Fantasy RPG Character Lineup_3
+  - first:
+      213: 1666319981472608621
+    second: Fantasy RPG Character Lineup_4
+  - first:
+      213: 765113817782244827
+    second: Fantasy RPG Character Lineup_5
+  - first:
+      213: -8846046234353459795
+    second: Fantasy RPG Character Lineup_6
+  - first:
+      213: 8886337973754244062
+    second: Fantasy RPG Character Lineup_7
+  - first:
+      213: 6154127645145842050
+    second: Fantasy RPG Character Lineup_8
+  - first:
+      213: 5380681435114306899
+    second: Fantasy RPG Character Lineup_9
+  - first:
+      213: 3454381449747386845
+    second: Fantasy RPG Character Lineup_10
+  - first:
+      213: 8958578186349261523
+    second: Fantasy RPG Character Lineup_11
+  - first:
+      213: 549531316112088836
+    second: Fantasy RPG Character Lineup_12
+  - first:
+      213: 3197505573200671408
+    second: Fantasy RPG Character Lineup_13
+  - first:
+      213: -3660461598120404765
+    second: Fantasy RPG Character Lineup_14
+  - first:
+      213: -8748985679102396577
+    second: Fantasy RPG Character Lineup_15
+  - first:
+      213: -2111917168233270785
+    second: Fantasy RPG Character Lineup_16
+  - first:
+      213: -8625906840985186567
+    second: Fantasy RPG Character Lineup_17
+  - first:
+      213: -7570843998142879328
+    second: Fantasy RPG Character Lineup_18
+  - first:
+      213: 6053697027157479843
+    second: Fantasy RPG Character Lineup_19
+  - first:
+      213: 8421595262173115945
+    second: Fantasy RPG Character Lineup_20
+  - first:
+      213: 2187917265694158899
+    second: Fantasy RPG Character Lineup_21
+  - first:
+      213: 5656924425898632473
+    second: Fantasy RPG Character Lineup_22
+  - first:
+      213: 691690327144262608
+    second: Fantasy RPG Character Lineup_23
+  - first:
+      213: 7154760105400321865
+    second: Fantasy RPG Character Lineup_24
+  - first:
+      213: 5357624546723647045
+    second: Fantasy RPG Character Lineup_25
+  - first:
+      213: 5120496688700416171
+    second: Fantasy RPG Character Lineup_26
+  - first:
+      213: 6598536680570663591
+    second: Fantasy RPG Character Lineup_27
+  - first:
+      213: -8995097668901064679
+    second: Fantasy RPG Character Lineup_28
+  - first:
+      213: -6921151399665926453
+    second: Fantasy RPG Character Lineup_29
+  - first:
+      213: -5474242880070603428
+    second: Fantasy RPG Character Lineup_30
+  - first:
+      213: 6497159792360584468
+    second: Fantasy RPG Character Lineup_31
+  - first:
+      213: -6054706354440612323
+    second: Fantasy RPG Character Lineup_32
+  - first:
+      213: 7646991204384466842
+    second: Fantasy RPG Character Lineup_33
+  - first:
+      213: 1022378533713561982
+    second: Fantasy RPG Character Lineup_34
+  - first:
+      213: 4186309855275006874
+    second: Fantasy RPG Character Lineup_35
+  - first:
+      213: 3525349082467064697
+    second: Fantasy RPG Character Lineup_36
+  - first:
+      213: -5661899636739620205
+    second: Fantasy RPG Character Lineup_37
+  - first:
+      213: 8581041872694351024
+    second: Fantasy RPG Character Lineup_38
+  - first:
+      213: 4605276381161186556
+    second: Fantasy RPG Character Lineup_39
+  - first:
+      213: -2726439030921353698
+    second: Fantasy RPG Character Lineup_40
+  - first:
+      213: 7215859223557253387
+    second: Fantasy RPG Character Lineup_41
+  - first:
+      213: -8978209203971341856
+    second: Fantasy RPG Character Lineup_42
+  - first:
+      213: 2787075856473226171
+    second: Fantasy RPG Character Lineup_43
+  - first:
+      213: 2991757000243150373
+    second: Fantasy RPG Character Lineup_44
+  - first:
+      213: 9136536074848947095
+    second: Fantasy RPG Character Lineup_45
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Fantasy RPG Character Lineup_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 512
+        width: 512
+        height: 512
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4fb2d10d9260eb460800000000000000
+      internalID: 7259246426022816756
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Fantasy RPG Character Lineup_1
+      rect:
+        serializedVersion: 2
+        x: 512
+        y: 512
+        width: 512
+        height: 512
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2410d0bcf8f809ca0800000000000000
+      internalID: -6012147654789889726
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Fantasy RPG Character Lineup_2
+      rect:
+        serializedVersion: 2
+        x: 1024
+        y: 512
+        width: 512
+        height: 512
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1343b98fb7e4fe520800000000000000
+      internalID: 2733489793196045361
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Fantasy RPG Character Lineup_3
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 512
+        height: 512
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bdba97d89b4655630800000000000000
+      internalID: 3915146199173802971
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Fantasy RPG Character Lineup_4
+      rect:
+        serializedVersion: 2
+        x: 512
+        y: 0
+        width: 512
+        height: 512
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d617fc1d135ff1710800000000000000
+      internalID: 1666319981472608621
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Fantasy RPG Character Lineup_5
+      rect:
+        serializedVersion: 2
+        x: 1024
+        y: 0
+        width: 512
+        height: 512
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bd557a9a6fa3e9a00800000000000000
+      internalID: 765113817782244827
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: b7c9727ed6d0b924ebd76fab8e4ef184
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries:
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":3.0,"y":2.0},"gridSpriteSize":{"x":512.0,"y":512.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":2,"keepEmptyRects":false,"isAlternate":false}'
+    nameFileIdTable:
+      Fantasy RPG Character Lineup_0: 7259246426022816756
+      Fantasy RPG Character Lineup_1: -6012147654789889726
+      Fantasy RPG Character Lineup_2: 2733489793196045361
+      Fantasy RPG Character Lineup_3: 3915146199173802971
+      Fantasy RPG Character Lineup_4: 1666319981472608621
+      Fantasy RPG Character Lineup_5: 765113817782244827
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

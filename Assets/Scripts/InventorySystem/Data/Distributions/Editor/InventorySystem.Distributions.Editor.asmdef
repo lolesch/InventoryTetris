@@ -1,0 +1,19 @@
+{
+    "name": "InventorySystem.Distributions.Editor",
+    "rootNamespace": "",
+    "references": [
+        "InventorySystem.Distributions",
+        "InventorySystem.Data"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,20 @@
+{
+    "name": "InventorySystem.Characters",
+    "rootNamespace": "",
+    "references": [
+        "InventorySystem.Data",
+        "InventorySystem.Items",
+        "InventorySystem.Locations",
+        "InventorySystem.Containers",
+        "InventorySystem.Simulation"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,125 @@
+#!/usr/bin/env bash
+# Rejects the commit mistakes docs/agents/codebase-notes.md and coding-conventions.md used to warn about in prose.
+# Enable once per clone:  git config core.hooksPath dev/hooks
+# Bypass a deliberate case:  git commit --no-verify   (or put `allow-scratch-runner` in the file)
+
+fail=0
+base="${PRECOMMIT_BASE:-HEAD}"   # tests point this at the empty tree to scan a whole index as "added"
+report() { echo "pre-commit: $1" >&2; fail=1; }
+
+staged() { git diff --cached "$base" --name-only --diff-filter=AM -z "$@" | tr '\0' '\n'; }
+
+# 1. Scratch runners: bridge / -executeMethod scripts that end the Editor or drive the test runner.
+#    Tests, the Utility submodule and files marked `allow-scratch-runner` are exempt.
+while IFS= read -r f; do
+  case "$f" in Assets/Scripts/Tests/*|Assets/Submodules/*) continue ;; esac
+  blob=$(git show ":$f")
+  grep -q 'allow-scratch-runner' <<<"$blob" && continue
+  if grep -qE 'EditorApplication\.Exit\(|TestRunnerApi|DELIBERATE_SENTINEL_ERROR' <<<"$blob"; then
+    report "$f looks like a scratch runner (Exit / TestRunnerApi / sentinel). Delete it and its .meta, or add 'allow-scratch-runner'."
+  fi
+done < <(staged -- 'Assets/*.cs')
+
+# 2. Editor backup files and their stray metas.
+while IFS= read -r f; do
+  report "$f is a backup file; delete it before committing."
+done < <(staged | grep -E '\.bak(\.meta)?$')
+
+# 3. Cut .cs.meta: opens the MonoImporter block and stops mid-line, so Unity ignores the script.
+while IFS= read -r f; do
+  blob=$(git show ":$f")
+  if grep -q MonoImporter <<<"$blob" && [ -n "$(git show ":$f" | tail -c1)" ]; then
+    report "$f is a cut .meta (no trailing newline); see codebase-notes/meta-files.md."
+  fi
+done < <(staged -- '*.cs.meta')
+
+# 4. Mojibake in added lines of source and docs (UTF-8 re-read as Latin-1: em dash becomes 'â€”').
+moji=$'\xc3\xa2\xe2\x82\xac'
+while IFS= read -r f; do
+  if git diff --cached "$base" -U0 -- "$f" | grep -a '^+' | grep -aqF "$moji"; then
+    report "$f has mojibake in added lines (a stream editor re-encoded UTF-8); use the Edit tool."
+  fi
+done < <(staged -- '*.cs' '*.md')
+
+# 5. A `using UnityEditor;` outside Editor/Tests folders sits under `#if UNITY_EDITOR`
+#    (a player build has no UnityEditor.dll, so a bare using fails with CS0246).
+while IFS= read -r f; do
+  case "$f" in */Editor/*|Assets/Scripts/Tests/*) continue ;; esac
+  git show ":$f" | tr -d '\r' | awk '
+    /^[[:space:]]*$/ { next }
+    /^using UnityEditor/ && prev !~ /^#if UNITY_EDITOR/ { bad = 1 }
+    { prev = $0 }
+    END { exit bad }' || report "$f has a bare 'using UnityEditor;'; wrap it in #if UNITY_EDITOR."
+done < <(staged -- 'Assets/*.cs')
+
+# 6. A concrete class is `sealed` unless some class in Assets inherits it (coding-conventions.md).
+decl='^\+[[:space:]]*(\[[^]]*\][[:space:]]*)*((public|internal|protected|private|unsafe)[[:space:]]+)*class[[:space:]]+[A-Za-z_]'
+while IFS= read -r f; do
+  while IFS= read -r line; do
+    grep -qE '\b(sealed|abstract|static|partial)\b' <<<"$line" && continue
+    name=$(sed -E 's/.*\bclass[[:space:]]+([A-Za-z_0-9]+).*/\1/' <<<"$line")
+    grep -rEqs --include='*.cs' "class[[:space:]]+[A-Za-z_0-9]+(<[^>]*>)?[[:space:]]*:[^{]*\b$name\b" Assets \
+      || report "$f: class $name has no subclass; make it sealed."
+  done < <(git diff --cached "$base" -U0 -- "$f" | grep -aE "$decl")
+done < <(staged -- 'Assets/*.cs')
+
+# 7. A serialized rename fixes the scenes instead of adding [FormerlySerializedAs] (coding-conventions.md).
+#    Matches any staged .cs, so it also fits a hooksPath set inside the Utility submodule.
+while IFS= read -r f; do
+  if git diff --cached "$base" -U0 -- "$f" | grep -a '^+' | grep -aq 'FormerlySerializedAs'; then
+    report "$f adds [FormerlySerializedAs]; rewrite the old name in the scenes/prefabs instead."
+  fi
+done < <(staged -- '*.cs')
+
+# 8. No read of the legacy Input class: Active Input Handling is the Input System package, so a read throws
+#    in Play. Keys and the pointer go through IInputService<GameAction> (GameInput, from a view).
+while IFS= read -r f; do
+  if git diff --cached "$base" -U0 -- "$f" | grep -a '^+' | grep -aqE '\bInput\.(Get[A-Za-z]*|mouse[A-Za-z]*|any[A-Za-z]*|touch[A-Za-z]*|inputString)\b'; then
+    report "$f reads the legacy Input class; use IInputService<GameAction> (GameInput) instead."
+  fi
+done < <(staged -- '*.cs')
+
+# 9. A class named *Panel is a SimplePanel (GLOSSARY.md, "Panel"): it derives SimplePanel directly or
+#    through a base that does. A name that claims the role without the fade-and-stay-enabled behaviour is
+#    renamed to what it is (View, List, Sheet, Popup...). Only a newly declared class is checked: an edited
+#    declaration line (a `-` twin names the same class) is left to the rename that fixes it.
+panel_yes=" "; panel_no=" "   # resolved class names, so each is looked up in Assets once
+derives_simple_panel() {   # $1 = class name, $2 = depth
+  local name=$1 depth=$2 file header bases b
+  [ "$name" = SimplePanel ] && return 0
+  [[ $panel_yes == *" $name "* ]] && return 0
+  [[ $panel_no == *" $name "* ]] && return 1
+  [ "$depth" -gt 6 ] && return 1
+  bases=
+  file=$(grep -rEls --include='*.cs' "class[[:space:]]+$name\b" Assets | head -n 1)
+  if [ -n "$file" ]; then   # the header runs to `{`, so a base list on the next line is read too
+    header=$(tr -d '\r' < "$file" | tr '\n' ' ' | grep -oE "class[[:space:]]+$name\b[^{;]*" | head -n 1)
+    bases=$(sed -E ':a; s/<[^<>]*>//g; ta; s/\([^)]*\)//g; s/[[:space:]]where[[:space:]].*//' <<<"$header" \
+      | sed -nE 's/^[^:]*:(.*)$/\1/p' | sed -E 's/[A-Za-z_0-9:]*\.//g' | tr ',' ' ')
+  fi
+  for b in $bases; do
+    if derives_simple_panel "$b" $((depth + 1)); then panel_yes+="$name "; return 0; fi
+  done
+  panel_no+="$name "
+  return 1
+}
+panel_decl='^\+[^/]*\bclass[[:space:]]+[A-Za-z_0-9]*Panel\b'
+while IFS= read -r f; do
+  diff=$(git diff --cached "$base" -U0 -- "$f")
+  while IFS= read -r line; do
+    name=$(sed -E 's/.*\bclass[[:space:]]+([A-Za-z_0-9]*Panel)\b.*/\1/' <<<"$line")
+    grep -aqE "^-[^/]*\bclass[[:space:]]+$name\b" <<<"$diff" && continue
+    derives_simple_panel "$name" 0 \
+      || report "$f: class $name is named *Panel but does not derive SimplePanel; rename it to what it is."
+  done < <(grep -aE "$panel_decl" <<<"$diff")
+done < <(staged -- 'Assets/*.cs')
+
+# 10. A test waits on a duration or rescales time: it is timing an animation, which is feel, checked by playtest
+#     (coding-conventions.md, "Test level"). A PlayMode test Ticks the simulation and waits on a condition.
+while IFS= read -r f; do
+  if git diff --cached "$base" -U0 -- "$f" | grep -a '^+' | grep -aqE '\bWaitForSeconds(Realtime)?\b|\bTime\.timeScale[[:space:]]*=[^=]'; then
+    report "$f waits on a duration or sets Time.timeScale; test the rule at its service seam, and feel by playtest."
+  fi
+done < <(staged -- 'Assets/Scripts/Tests/*.cs')
+
+exit "$fail"
