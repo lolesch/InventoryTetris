@@ -357,8 +357,9 @@ the source level, the loot table a Run there rolls against, which enemy **archet
 **Packs**, its **Roster** and **Spawn Profile**, and its **Population**. An **Unlockable**: it is
 **Complete** for a hero once the hero clears its whole Population in one Send. Its source level
 is fixed, never scaled to the hero: Locations form a difficulty ladder a geared hero outgrows.
-Two for the MVP — Thornwood (low source level, Brute-packed, a bag run) and Ashfall (high,
-Skirmisher-packed, a gear-gated step: clearable in gear of its level, survivable in part without it).
+Four so far, a chain each Completed one opens the next of — Thornwood (low source level, Brute-packed,
+a bag run), Ashfall (higher, Skirmisher-packed, a gear-gated step: clearable in gear of its level,
+survivable in part without it), Blackmire (Brute-packed swamp) and Stormcliff (Skirmisher-packed coast).
 _Avoid_: level, zone, area, stage, node, dungeon, map
 
 **Encounter**:

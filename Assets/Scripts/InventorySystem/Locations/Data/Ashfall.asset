@@ -13,6 +13,9 @@ MonoBehaviour:
   m_Name: Ashfall
   m_EditorClassIdentifier: InventorySystem.Locations:ToolSmiths.InventorySystem.Locations.LocationConfig
   id: location.ashfall
+  unlocksWhenActive: []
+  unlocksWhenComplete:
+  - {fileID: 11400000, guid: f99a64037e064b9c9a5b12343bd7744e, type: 2}
   displayName: Ashfall
   sourceLevel: 5
   categoryDistribution: {fileID: 11400000, guid: cbc5775f9eef424aa06c7db5d3140581, type: 2}
