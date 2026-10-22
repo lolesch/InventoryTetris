@@ -199,9 +199,8 @@ stay down. A coin Pile follows the same rule: with `AutoPickup` on and the filte
 denomination the Wallet takes what it can, and the rest — or the whole Pile, with `AutoPickup`
 off — lies on the ground as a stack of that denomination's coin, merging with the stack already
 there up to the item's stack limit and making it the newest; denominations never consolidate on
-their own. A coin stack pushed out by newer loot banks to the Wallet first and only what the
-Wallet cannot take is lost, and it does not count toward the **Run**'s take; clicking one banks
-it, and what the Wallet cannot take stays.
+their own. A coin stack pushed out by newer loot is deleted like any other **Drop**, and does not
+count toward the **Run**'s take; clicking one banks it, and what the Wallet cannot take stays.
 _Avoid_: pile (that is coins), ground loot, spill, cache
 
 **Ground**:

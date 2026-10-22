@@ -261,7 +261,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             Assert.That(sim.EnemiesDefeated, Is.EqualTo(1), "the kill itself still resolves");
             Assert.That(lootFlow.GroundDrops, Has.Count.EqualTo(1), "the Drop is not lost");
             Assert.That(reported, Is.SameAs(boom), "the failure is reported, not swallowed");
-            Assert.That(wallet.Balance.Iron, Is.EqualTo(7u), "the kill's coin Pile still banks");
+            Assert.That(wallet.Balance.Total, Is.EqualTo(7u), "the kill's coin Pile still banks");
         }
 
         [Test]
@@ -341,7 +341,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
             sim.Advance(0.1f);
 
-            Assert.That(wallet.Balance.Iron, Is.EqualTo(7u));
+            Assert.That(wallet.Balance.Total, Is.EqualTo(7u));
         }
 
         [Test]
@@ -857,7 +857,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
             var lootFlow = KillForPiles(Admitting(ItemRarity.Common), wallet, NewGround(), (CurrencyType.Iron, 7u));
 
-            Assert.That(wallet.Balance.Iron, Is.EqualTo(7u));
+            Assert.That(wallet.Balance.Total, Is.EqualTo(7u));
             Assert.That(lootFlow.GroundDrops, Is.Empty);
         }
 
@@ -907,7 +907,7 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
-        public void EvictingACoinStack_BanksItToTheWallet_FirstAndInFull_AndCountsAsTheRunsTake()
+        public void EvictingACoinStack_DeletesIt_AndBanksNothing()
         {
             var wallet = NewWallet();
             var lootFlow = KillForPiles(NotAutoPickingUp(), wallet, NewGround(1, 1), (CurrencyType.Iron, 5u));
@@ -917,22 +917,9 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
             _ = lootFlow.PlaceOnGround(Pack(sword));
 
-            Assert.That(wallet.Balance.Iron, Is.EqualTo(5u));
             Assert.That(lootFlow.GroundDrops.Select(drop => drop.Item), Is.EqualTo(new[] { sword }));
-            Assert.That(banked, Is.EqualTo(5L), "the coins reached the Wallet, so the Death fee's base grows with them");
-        }
-
-        [Test]
-        public void EvictingACoinStack_TheWalletCannotFullyTake_BanksWhatFits_AndDeletesTheRest()
-        {
-            var wallet = WalletHolding(996u);
-            var lootFlow = KillForPiles(NotAutoPickingUp(), wallet, NewGround(1, 1), (CurrencyType.Iron, 5u));
-            var sword = Sword();
-
-            _ = lootFlow.PlaceOnGround(Pack(sword));
-
-            Assert.That(wallet.Balance.Iron, Is.EqualTo(999u), "3 of the 5 fit");
-            Assert.That(lootFlow.GroundDrops.Select(drop => drop.Item), Is.EqualTo(new[] { sword }), "the other 2 are gone");
+            Assert.That(wallet.Balance.Total, Is.Zero);
+            Assert.That(banked, Is.Zero, "the coins never reached the Wallet, so the Death fee's base does not grow with them");
         }
 
         [Test]
@@ -950,15 +937,13 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
         }
 
         [Test]
-        public void ARefusedPackage_DoesNotBankTheStackItWouldHaveEvicted()
+        public void ARefusedPackage_DoesNotEvictTheStackItWouldHavePushedOut()
         {
-            var wallet = NewWallet();
-            var lootFlow = KillForPiles(NotAutoPickingUp(), wallet, NewGround(1, 1), (CurrencyType.Iron, 5u));
+            var lootFlow = KillForPiles(NotAutoPickingUp(), NewWallet(), NewGround(1, 1), (CurrencyType.Iron, 5u));
 
             Assert.That(lootFlow.PlaceOnGround(Pack(new ItemInstance(HugeId, ItemRarity.Common, 1, null))), Is.False);
 
-            Assert.That(wallet.Balance.Total, Is.Zero, "the eviction was rolled back, so nothing was banked");
-            Assert.That(CoinsOnTheGround(lootFlow), Is.EqualTo(new[] { (CurrencyType.Iron, 5u) }));
+            Assert.That(CoinsOnTheGround(lootFlow), Is.EqualTo(new[] { (CurrencyType.Iron, 5u) }), "the eviction was rolled back");
         }
 
         [Test]

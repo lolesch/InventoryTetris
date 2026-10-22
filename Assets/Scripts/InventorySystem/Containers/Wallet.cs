@@ -100,8 +100,8 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// <summary>
         /// Banks <paramref name="amount"/> as minted coins, largest denomination first, so a
         /// container short of cells keeps the highest. A denomination over its stack limit spills
-        /// into further cells. Re-consolidates afterwards when the backing container asks for it
-        /// (<see cref="AbstractDimensionalContainer.AutoConsolidate"/>).
+        /// into further cells. Consolidates afterwards, so every coin that goes through the
+        /// wallet - loot, change, sale proceeds - ends up folded into the largest denominations.
         /// </summary>
         /// <returns>The coins that found no cell; the caller decides where they go.</returns>
         public Currency Deposit(Currency amount)
@@ -114,8 +114,7 @@ namespace ToolSmiths.InventorySystem.Inventories
                 foreach (var type in Currency.Denominations)
                     unplaced = unplaced.With(type, AddCoins(type, amount.CountOf(type)));
 
-                if (coins.AutoConsolidate)
-                    Consolidate();
+                Consolidate();
             }
             finally
             {
@@ -144,8 +143,7 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// loose, and re-lays coins that sit out of order gold first, iron last. Value-preserving:
         /// <see cref="Balance"/> is the same before and after, so no
         /// <see cref="OnBalanceChanged"/> is raised - only the grid repaints. The re-entrancy
-        /// guard is because an <see cref="AbstractDimensionalContainer.AutoConsolidate"/>
-        /// container re-enters this through <see cref="Deposit"/>.
+        /// guard is because <see cref="Deposit"/> consolidates and this re-enters it.
         /// </summary>
         public void Consolidate()
         {
@@ -203,7 +201,15 @@ namespace ToolSmiths.InventorySystem.Inventories
             {
                 RemoveCoins(current);
 
-                _ = Deposit(fold ? new Currency(current.Total) : current);
+                var unplaced = Deposit(fold ? new Currency(current.Total) : current);
+
+                // Folded coins can need more cells than the stacks they came from (999 iron is 199 copper
+                // and 4 iron): when they do not fit, the coins go back as they were.
+                if (0u < unplaced.Total)
+                {
+                    RemoveCoins(CalculateCash());
+                    _ = Deposit(current);
+                }
             }
             finally
             {

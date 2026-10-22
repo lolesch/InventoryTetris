@@ -20,7 +20,7 @@ namespace ToolSmiths.InventorySystem.Simulation
     /// on the spot instead, and only one that fails the filter or finds no room stays down.
     /// Separately rolls one coin Pile per kill and treats it the same way (issue #218): with auto-pickup on
     /// and <see cref="HeroBehaviour.AdmitsCoin"/> passing, the wallet takes what it can; the rest lies on
-    /// the ground as a coin stack, which banks to the wallet when it is evicted or clicked.
+    /// the ground as a coin stack, which banks to the wallet when it is clicked and is deleted when it is evicted.
     ///
     /// The roll itself is delegated entirely to its collaborators — <see cref="ItemGenerator"/>
     /// and <see cref="ICoinDropSource"/> each own their own randomness — so this class owns only
@@ -103,7 +103,7 @@ namespace ToolSmiths.InventorySystem.Simulation
 
         /// <summary>
         /// Raised with the base-unit total of the coins each time some bank to the Wallet - a picked-up
-        /// Pile, a clicked stack, or a stack pushed out by newer loot (it banks all the same, and the Death
+        /// Pile or a clicked stack (it banks all the same, and the Death
         /// fee is charged on it). The Run tracks the take this way — <see cref="RunState.CurrencyBanked"/>,
         /// the base the Death fee reads — so the engine-side driver feeds it
         /// <see cref="RunState.BankCurrency"/> per kill.

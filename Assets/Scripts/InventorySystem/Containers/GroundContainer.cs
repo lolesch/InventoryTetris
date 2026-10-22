@@ -20,25 +20,19 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// <summary>
         /// Lands all of <paramref name="package"/>, evicting the oldest Packages until it fits. A
         /// Package that merges into a stack makes that stack the newest. False, with the ground exactly
-        /// as it was, for an empty Package or one larger than the whole grid.
+        /// as it was, for an empty Package or one larger than the whole grid. What is pushed out is deleted.
         /// </summary>
-        /// <param name="onEvicted">Called with each Package pushed out, once the landing is committed -
-        /// never for a landing that was refused. The ground deletes them; this is the caller's chance to
-        /// save something first.</param>
-        public bool TryLand(Package package, Action<Package> onEvicted = null)
+        public bool TryLand(Package package)
         {
             if (!package.IsValid)
                 return false;
 
             using var transaction = new ItemTransaction(this);
 
-            if (!TryPlaceEvicting(package, out var landed, out var order, out var evicted))
+            if (!TryPlaceEvicting(package, out var landed, out var order, out _))
                 return false;
 
             transaction.QueueEffect(() => NoteLanded(order, landed));
-
-            if (onEvicted != null)
-                transaction.QueueEffect(() => evicted.ForEach(onEvicted));
             transaction.Commit();
 
             // The commit announces the change before the age order adopts the landing, and a display fades by

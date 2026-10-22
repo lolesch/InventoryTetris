@@ -256,6 +256,29 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Containers
         }
 
         [Test]
+        public void Deposit_FoldsTheCoinsIntoTheLargestDenominations()
+        {
+            var wallet = NewWallet();
+            Seed(wallet, CurrencyType.Iron, 4u);
+
+            wallet.Deposit(Currency.Of(CurrencyType.Iron, 7u)); // 11 iron
+
+            Assert.That(wallet.Balance.Copper, Is.EqualTo(2u));
+            Assert.That(wallet.Balance.Iron, Is.EqualTo(1u));
+        }
+
+        [Test]
+        public void Deposit_WhoseFoldedCoinsNeedMoreCellsThanThereAre_KeepsEveryCoin()
+        {
+            var wallet = NewWallet(1, 1);
+            Seed(wallet, CurrencyType.Iron, 990u);
+
+            wallet.Deposit(Currency.Of(CurrencyType.Iron, 9u)); // 999 iron folds to 199 copper + 4 iron: two cells
+
+            Assert.That(wallet.Balance.Total, Is.EqualTo(999u));
+        }
+
+        [Test]
         public void Deposit_ThatFits_ReturnsNothing()
         {
             var wallet = NewWallet();
