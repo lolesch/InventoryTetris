@@ -26,6 +26,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
     public sealed class RecallInputPlayModeTests : InputTestFixture
     {
         private LocationConfig location;
+        private Keyboard keyboard;
 
         private static ISimulationService Simulation => ServiceLocator.Get<ISimulationService>();
 
@@ -35,6 +36,7 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
             GameBoot.Arm(GameBoot.Load());
 
             _ = InputSystem.AddDevice<Mouse>();
+            keyboard = InputSystem.AddDevice<Keyboard>();
             location = GameBoot.Load().Locations.First(l => l.Id == "location.thornwood");
 
             yield return SceneManager.LoadSceneAsync("Example");
@@ -135,6 +137,22 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Services
 
             Assert.That(Simulation.Run.IsRecalling, Is.True);
             Assert.That(ScrollsInTheBag, Is.EqualTo(1), "one scroll spent");
+        }
+
+        [UnityTest]
+        public IEnumerator TheRecallKeyInTown_WalksTheHeroIntoTheOpenPortal()
+        {
+            yield return OpenExample();
+            Session.Instance.Hero.TownPortal = location;
+            yield return null;
+            yield return null;
+
+            Assert.That(Property(TheScene("TownHeroFigure"), "IsEnteringPortal"), Is.False, "premise: he stands in Town");
+
+            Press(keyboard.bKey);
+            yield return null;
+
+            Assert.That(Property(TheScene("TownHeroFigure"), "IsEnteringPortal"), Is.True);
         }
 
         private static object Property(object target, string name) => target.GetType().GetProperty(name).GetValue(target);

@@ -1,5 +1,9 @@
 # Patch Notes
 
+## Unreleased
+
+- Press B in Town to walk the hero into an open Town Portal, the same as clicking it.
+
 ## 0.0.6_Alpha - 2026-10-21
 
 - Locations now open as you progress: Thornwood is open from the start and clears the way to Ashfall, and the Vendor opens once you free the merchant. A Location ends after its encounters, and the screen shows how far along you are (for example "Encounter 3 of 5").

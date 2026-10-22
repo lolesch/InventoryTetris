@@ -48,6 +48,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             if (Application.isPlaying && fieldFigure)
                 fieldFigure.PortalEntered += OnHeroCameThrough;
+
+            // Detach first, so a re-enable cannot subscribe twice.
+            GameInput.Performed -= OnAction;
+            GameInput.Performed += OnAction;
         }
 
         protected override void OnDisable()
@@ -56,7 +60,16 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (fieldFigure)
                 fieldFigure.PortalEntered -= OnHeroCameThrough;
 
+            GameInput.Performed -= OnAction;
+
             base.OnDisable();
+        }
+
+        // The Recall key in Town walks the hero into the open portal, as a click on it does.
+        private void OnAction(GameAction action)
+        {
+            if (action == GameAction.Recall && IsInteractable())
+                OnClick();
         }
 
         // The Town map is about to come up with him on it: the portal starts shut and grows once it is up.
