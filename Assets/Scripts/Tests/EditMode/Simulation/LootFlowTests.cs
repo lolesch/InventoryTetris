@@ -135,6 +135,28 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             return stored.Item.Rarity;
         }
 
+        [Test]
+        public void TheFirstItemDropped_IsAWeapon_AndTheOnesAfterRollAsUsual()
+        {
+            catalog = new InMemoryItemCatalog(
+                new FakeItemDefinition { Id = "fake.helm", EquipmentType = EquipmentType.Helm },
+                new FakeItemDefinition { Id = "fake.greatsword", EquipmentType = EquipmentType.GreatSword });
+            var hero = OneShotHero();
+            hero.IncreasedItemQuantity = 100f; // 2 drops from the one kill
+            var location = Profiles.Solo(EnemyArchetype.Skirmisher,
+                table: FakeLootTable.Fixed(ItemCategory.Equipment, ItemRarity.Common));
+            var sim = NewEncounter(hero, location);
+            // 0.99 keeps the reservoir on the first candidate it sees: the helm, for an unfiltered pick.
+            var lootFlow = new LootFlow(sim, NotAutoPickingUp(), new ItemGenerator(catalog, new ConstantRollSource(0.99f)),
+                new FakeCoinDropSource(), new BagItemReceiver(new CharacterInventory(new Vector2Int(10, 10), catalog)),
+                NewWallet(), NewGround());
+
+            sim.Advance(0.1f);
+
+            Assert.That(lootFlow.GroundDrops.Select(drop => drop.Item.DefinitionId),
+                Is.EqualTo(new[] { "fake.greatsword", "fake.helm" }));
+        }
+
         // ─── AC: filter + fit decide bag vs ground ───────────────────────────
 
         [Test]
@@ -171,6 +193,28 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
 
             Assert.That(bag.StoredPackages, Is.Empty);
             Assert.That(lootFlow.GroundDrops, Has.Count.EqualTo(1));
+        }
+
+        [TestCase(LootKind.All, 1, 0)]
+        [TestCase(LootKind.All & ~LootKind.Helmet, 0, 1)]
+        public void AnItem_OfAnItemTypeSwitchedOff_StaysOnTheGround_EvenWhenItsRarityPasses(LootKind admitted, int inBag, int onGround)
+        {
+            catalog = new InMemoryItemCatalog(new FakeItemDefinition { Id = "fake.helm", EquipmentType = EquipmentType.Helm });
+            var location = Profiles.Solo(EnemyArchetype.Skirmisher,
+                table: FakeLootTable.Fixed(ItemCategory.Equipment, ItemRarity.Common));
+            var sim = NewEncounter(OneShotHero(), location);
+            var items = new ItemGenerator(catalog, new ConstantRollSource(0f));
+            var bag = new CharacterInventory(new Vector2Int(10, 10), catalog);
+            var behaviour = Admitting(ItemRarity.Common);
+            behaviour.AdmittedKinds = admitted;
+
+            var lootFlow = new LootFlow(sim, behaviour, items,
+                new FakeCoinDropSource(), new BagItemReceiver(bag), NewWallet(), NewGround());
+
+            sim.Advance(0.1f);
+
+            Assert.That(bag.StoredPackages, Has.Count.EqualTo(inBag));
+            Assert.That(lootFlow.GroundDrops, Has.Count.EqualTo(onGround));
         }
 
         [Test]

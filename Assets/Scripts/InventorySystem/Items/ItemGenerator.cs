@@ -39,6 +39,9 @@ namespace ToolSmiths.InventorySystem.Items
             this.consumableTypeOdds = consumableTypeOdds;
         }
 
+        /// <summary>The <see cref="LootKind"/> of a rolled <paramref name="item"/>, from its definition in this catalog.</summary>
+        public LootKind KindOf(ItemInstance item) => LootKinds.Of(catalog.Definition(item.DefinitionId));
+
         /// <summary>
         /// Rolls one item. What the roll produces and keeps is the returned instance and
         /// its affix list - the affix pick runs over a stack-allocated mask and a single
@@ -125,6 +128,22 @@ namespace ToolSmiths.InventorySystem.Items
         }
 
         /// <summary>
+        /// Rolls one weapon (<see cref="LootKind.Weapon1H"/> or <see cref="LootKind.Weapon2H"/>): the category pick is
+        /// skipped, the definition is drawn among the weapons, and the rarity comes from the table as in <see cref="Roll(RollContext)"/>.
+        /// A catalog with no weapon rolls as <see cref="Roll(RollContext)"/> does.
+        /// </summary>
+        public ItemInstance RollWeapon(RollContext context)
+        {
+            const LootKind weapons = LootKind.Weapon1H | LootKind.Weapon2H;
+
+            foreach (var candidate in catalog.OfCategory(ItemCategory.Equipment))
+                if ((LootKinds.Of(candidate) & weapons) != 0)
+                    return Roll(PickDefinition(ItemCategory.Equipment, weapons), context);
+
+            return Roll(context);
+        }
+
+        /// <summary>
         /// Rolls <paramref name="count"/> items against the same context. Returns exactly
         /// that many - the bonus-drop maths (an <c>IncreasedItemQuantity</c> multiplier on
         /// the count) belongs to whatever decides how much loot an Encounter yields, not
@@ -171,9 +190,9 @@ namespace ToolSmiths.InventorySystem.Items
         /// sampling - uniform, and allocation-free over the catalog's own enumeration. A
         /// consumable first draws its <see cref="ConsumableType"/> by <c>consumableTypeOdds</c>, so
         /// a type's share does not depend on how many definitions it has; other categories have
-        /// no per-type weighting.
+        /// no per-type weighting. <paramref name="kinds"/> narrows the draw to definitions of those kinds.
         /// </summary>
-        private ItemDefinition PickDefinition(ItemCategory category)
+        private ItemDefinition PickDefinition(ItemCategory category, LootKind kinds = LootKind.All)
         {
             var type = category == ItemCategory.Consumable ? DrawConsumableType() : ConsumableType.NONE;
             ItemDefinition chosen = null;
@@ -182,6 +201,8 @@ namespace ToolSmiths.InventorySystem.Items
             foreach (var candidate in catalog.OfCategory(category))
             {
                 if (type != ConsumableType.NONE && candidate.ConsumableType != type)
+                    continue;
+                if (kinds != LootKind.All && (LootKinds.Of(candidate) & kinds) == 0)
                     continue;
 
                 seen++;

@@ -39,6 +39,9 @@ namespace ToolSmiths.InventorySystem.Simulation
         private readonly Wallet _wallet;
         private readonly GroundDesk _desk;
 
+        /// <summary>The first item this flow drops is a weapon, so a new hero has something to equip.</summary>
+        private bool _firstDropPending = true;
+
         public LootFlow(
             EncounterSimulation encounter,
             HeroBehaviour behaviour,
@@ -139,22 +142,29 @@ namespace ToolSmiths.InventorySystem.Simulation
             // misconfigured Location loot table throwing here must not propagate and abort the
             // rest of that tick. A kill's combat resolution is not allowed to depend on
             // itemization content being well-formed; treat a roll failure as "no items this kill".
-            IReadOnlyList<ItemInstance> drops;
+            List<ItemInstance> drops;
             try
             {
-                drops = _items.RollLoot(context, count);
+                drops = new List<ItemInstance>(count);
+                if (_firstDropPending)
+                    drops.Add(_items.RollWeapon(context));
+
+                drops.AddRange(_items.RollLoot(context, count - drops.Count));
             }
             catch (InvalidOperationException)
             {
                 return;
             }
 
+            _firstDropPending = false;
+
             for (var i = 0; i < drops.Count; i++)
             {
                 var item = drops[i];
 
                 // Picking up is the player's click (issue #63) unless the debug switch hands it back.
-                if (_behaviour.AutoPickup && _behaviour.AdmitsItem(item.Rarity) && TryPlace(item))
+                if (_behaviour.AutoPickup && _behaviour.AdmitsItem(item.Rarity) && _behaviour.AdmitsKind(_items.KindOf(item))
+                    && TryPlace(item))
                     continue; // equipped, or landed in the bag
 
                 _ = LandNew(item, 1u);

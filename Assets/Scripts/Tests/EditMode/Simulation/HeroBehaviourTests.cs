@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using ToolSmiths.InventorySystem.Data.Enums;
+using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Simulation;
 
 namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
@@ -112,6 +113,34 @@ namespace ToolSmiths.InventorySystem.Tests.EditMode.Simulation
             var behaviour = new HeroBehaviour { LootFilterMinimum = minimum };
 
             Assert.That(behaviour.AdmitsCoin(denomination), Is.EqualTo(admitted));
+        }
+
+        [Test]
+        public void LootFilter_AdmitsEveryItemType_UntilOneIsSwitchedOff()
+        {
+            var behaviour = new HeroBehaviour();
+            Assert.That(behaviour.AdmitsKind(LootKind.Helmet), Is.True);
+
+            behaviour.AdmittedKinds &= ~LootKind.Helmet;
+
+            Assert.That(behaviour.AdmitsKind(LootKind.Helmet), Is.False);
+            Assert.That(behaviour.AdmitsKind(LootKind.Ring), Is.True);
+        }
+
+        [Test]
+        public void LootFilter_NeverFiltersOut_AnItemWithNoTypeToggle()
+        {
+            var behaviour = new HeroBehaviour { AdmittedKinds = LootKind.None };
+
+            Assert.That(behaviour.AdmitsKind(LootKind.None), Is.True);
+        }
+
+        [Test]
+        public void LootFilter_SkipsCoins_WhileTheCurrencyTypeIsSwitchedOff()
+        {
+            var behaviour = new HeroBehaviour { LootFilterMinimum = ItemRarity.Common, AdmittedKinds = LootKind.All & ~LootKind.Currency };
+
+            Assert.That(behaviour.AdmitsCoin(CurrencyType.Gold), Is.False);
         }
 
         // ─── sim-speed slider mapping (issue #27) ──────────────────────────
