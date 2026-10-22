@@ -22,26 +22,38 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// <summary>The context currently active, or <see cref="InventoryContext.None"/>.</summary>
         public InventoryContext Active { get; private set; } = InventoryContext.None;
 
-        /// <summary>
-        /// The panels <see cref="Active"/> derives: the Hero Panel for every non-<c>None</c>
-        /// context, plus that context's own Town Stop panel, or the Ground Items panel where no Town Stop is open.
-        /// </summary>
-        public InventoryPanels Panels => PanelsFor(Active);
+        /// <summary>The open overlays (Character Stats, Sim Settings): panels beside the context, so opening or closing one never changes the context. Only a toggle opens one, and only a Town Stop or the Ground Items panel taking the screen closes it (see <see cref="Set"/>); closing never brings one back.</summary>
+        private InventoryPanels overlays;
+
+        private const InventoryPanels SharedSpace = InventoryPanels.CharacterStats | InventoryPanels.SimSettings;
 
         /// <summary>
-        /// Raised with the new context whenever <see cref="Active"/> actually changes - never
-        /// on a no-op <see cref="Set"/>. A handover between two Town Stop contexts fires this
-        /// exactly once, with no intermediate <see cref="InventoryContext.None"/>.
+        /// The panels <see cref="Active"/> and the open overlays derive together (see <see cref="PanelsFor"/>).
+        /// </summary>
+        public InventoryPanels Panels => PanelsFor(Active, overlays);
+
+        /// <summary>
+        /// Raised with the current context whenever <see cref="Active"/> actually changes - never
+        /// on a no-op <see cref="Set"/> - and whenever an overlay changes, with the
+        /// context unchanged: a subscriber re-reads <see cref="Panels"/>. A handover between two Town Stop
+        /// contexts fires this exactly once, with no intermediate <see cref="InventoryContext.None"/>.
         /// </summary>
         public event Action<InventoryContext> Changed;
 
         /// <summary>
         /// Requests <paramref name="context"/>, replacing whatever was active. Requesting the
-        /// already-active context is a no-op.
+        /// already-active context is a no-op, except that asking for <see cref="InventoryContext.Ground"/>
+        /// or a Town Stop closes an overlay: the Ground Items panel's screen space is taken back, and a Town
+        /// Stop leaves no room for one. The overlay stays closed when the context closes.
         /// </summary>
         public void Set(InventoryContext context)
         {
-            if (Active == context)
+            var overlayClosed = context is InventoryContext.Ground or InventoryContext.Stash or InventoryContext.Vendor or InventoryContext.Healer
+                && (overlays & SharedSpace) != InventoryPanels.None;
+            if (overlayClosed)
+                overlays &= ~SharedSpace;
+
+            if (Active == context && !overlayClosed)
                 return;
 
             Active = context;
@@ -54,6 +66,33 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// <see cref="InventoryContext.None"/>.
         /// </summary>
         public void Close() => Set(InventoryContext.None);
+
+        /// <summary>Whether <paramref name="context"/> names an overlay - the Character Stats or Sim Settings panel - rather than a context.</summary>
+        public static bool IsOverlay(InventoryContext context) =>
+            context is InventoryContext.CharacterStats or InventoryContext.SimSettings;
+
+        /// <summary>Opens or closes an overlay (see <see cref="IsOverlay"/>). Restating the current state is a no-op.</summary>
+        public void SetOverlay(InventoryContext overlay, bool open)
+        {
+            var bit = PanelFor(overlay);
+            if (!IsOverlay(overlay) || ((overlays & bit) != InventoryPanels.None) == open)
+                return;
+
+            // The overlays share the Ground Items panel's screen space, so only one is up at a time.
+            overlays = open ? (overlays & ~SharedSpace) | bit : overlays & ~bit;
+            Changed?.Invoke(Active);
+        }
+
+        /// <summary>Closes whichever overlay is up. <c>false</c> when none was.</summary>
+        public bool CloseOverlay()
+        {
+            if ((overlays & SharedSpace) == InventoryPanels.None)
+                return false;
+
+            overlays &= ~SharedSpace;
+            Changed?.Invoke(Active);
+            return true;
+        }
 
         /// <summary>
         /// Applies the map that just came up: a map that leaves <see cref="Active"/> unreachable drops it
@@ -89,6 +128,8 @@ namespace ToolSmiths.InventorySystem.Inventories
             InventoryContext.Vendor => InventoryPanels.Vendor,
             InventoryContext.Healer => InventoryPanels.Healer,
             InventoryContext.Ground => InventoryPanels.Ground,
+            InventoryContext.CharacterStats => InventoryPanels.CharacterStats,
+            InventoryContext.SimSettings => InventoryPanels.SimSettings,
             _ => InventoryPanels.None,
         };
 
@@ -97,13 +138,23 @@ namespace ToolSmiths.InventorySystem.Inventories
         /// membership in every non-<c>None</c> context is stated here once rather than repeated
         /// on each Town Stop panel or as a branch inside each one (issue #85). The Ground Items panel is
         /// up wherever no Town Stop is open - <c>None</c>, <c>Hero</c> and <c>Ground</c> - so closing a Town
-        /// Stop brings it back with no request.
+        /// Stop brings it back with no request. The Character Stats and Sim Settings overlays, when open, add their own panel and
+        /// take the Ground Items panel's screen space (so only one of them is up at a time), so that panel is down
+        /// whatever the context; the Hero Panel and the Town Stop panel are untouched. Closing the overlay brings it back.
         /// </summary>
-        public static InventoryPanels PanelsFor(InventoryContext context) => context switch
+        public static InventoryPanels PanelsFor(InventoryContext context, InventoryPanels overlays = InventoryPanels.None)
         {
-            InventoryContext.None => InventoryPanels.Ground,
-            InventoryContext.Hero => InventoryPanels.Hero | InventoryPanels.Ground,
-            _ => InventoryPanels.Hero | PanelFor(context),
-        };
+            var panels = context switch
+            {
+                InventoryContext.None => InventoryPanels.Ground,
+                InventoryContext.Hero => InventoryPanels.Hero | InventoryPanels.Ground,
+                _ => InventoryPanels.Hero | PanelFor(context),
+            };
+
+            if ((overlays & SharedSpace) != InventoryPanels.None)
+                panels &= ~InventoryPanels.Ground;
+
+            return panels | overlays;
+        }
     }
 }

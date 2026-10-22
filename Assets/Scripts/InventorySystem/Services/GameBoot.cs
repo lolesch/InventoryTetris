@@ -51,6 +51,7 @@ namespace ToolSmiths.InventorySystem.Services
             ContinueLastHero(createFirstHero);
             GameExit.Install(ServiceLocator.Get<ISimulationService>(), ServiceLocator.Get<IHeroSaveService>());
             GameEntryGuard.Install(builtPlayer);
+            MenuSceneHold.Install(ServiceLocator.Get<ISimulationService>());
         }
 
         /// <summary>The <c>PlayerPrefs</c> key of the player's key rebindings: per machine, like <see cref="Data.UserSettings"/>.</summary>
@@ -218,6 +219,9 @@ namespace ToolSmiths.InventorySystem.Services
 
             _ = chain.Register(CancelRank.Context, () =>
             {
+                if (inventory.CloseOverlay())
+                    return true;
+
                 if (inventory.ActiveContext == InventoryContext.None)
                     return false;
 

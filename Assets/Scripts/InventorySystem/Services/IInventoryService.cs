@@ -17,7 +17,8 @@ namespace ToolSmiths.InventorySystem.Services
         /// <summary>
         /// The Inventory Context's change event, stable across a hero load: it follows whichever World
         /// is current, so a panel or toggle that subscribes once is still subscribed after a swap. It
-        /// fires for every change of the current World's context, and once more on a load with the new
+        /// fires for every change of the current World's context - and, with the context unchanged, for every
+        /// overlay opened or closed (re-read <see cref="ActivePanels"/>) - and once more on a load with the new
         /// World's starting context (<see cref="InventoryContext.None"/>), so a panel that was up for
         /// the discarded World comes down. The discarded World's context reaches no one.
         /// </summary>
@@ -25,6 +26,15 @@ namespace ToolSmiths.InventorySystem.Services
 
         /// <summary>The current World's active Inventory Context.</summary>
         InventoryContext ActiveContext { get; }
+
+        /// <summary>The panels the active context and the open overlay derive together (see <see cref="InventoryContextState.Panels"/>).</summary>
+        InventoryPanels ActivePanels { get; }
+
+        /// <summary>Opens or closes an overlay (Character Stats, Sim Settings), leaving the active context as it is (see <see cref="InventoryContextState.SetOverlay"/>).</summary>
+        void SetOverlay(InventoryContext overlay, bool open);
+
+        /// <summary>Closes whichever overlay is up; <c>false</c> when none was (see <see cref="InventoryContextState.CloseOverlay"/>).</summary>
+        bool CloseOverlay();
 
         /// <summary>Requests <paramref name="context"/> on the current World (issue #84) - the entry-point side of <see cref="InventoryContextState.Set"/>.</summary>
         void SetContext(InventoryContext context);

@@ -46,8 +46,8 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
         public InventoryContext Context => inventoryContext;
 
         /// <summary>
-        /// Whether this panel is up in <paramref name="context"/>: <see cref="InventoryContextState.PanelsFor"/>
-        /// against the one panel this component owns, <see cref="InventoryContextState.PanelFor"/>
+        /// Whether this panel is up among <paramref name="panels"/> (the service's <c>ActivePanels</c>): the one
+        /// panel this component owns, <see cref="InventoryContextState.PanelFor"/>
         /// of its authored <see cref="inventoryContext"/>. The one statement of the derivation,
         /// which <see cref="ToolSmiths.InventorySystem.GUI.Components.Toggles.SidePanelToggle"/>
         /// asks rather than recomputing - it needs the same answer for its own pressed visual and
@@ -56,9 +56,8 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
         /// <para>Also false for a panel authored with no context, which owns no panel bit and can
         /// therefore never be derived by anything.</para>
         /// </summary>
-        public bool IsUpIn(InventoryContext context) =>
-            (InventoryContextState.PanelsFor(context) & InventoryContextState.PanelFor(inventoryContext))
-            != InventoryPanels.None;
+        public bool IsUpIn(InventoryPanels panels) =>
+            (panels & InventoryContextState.PanelFor(inventoryContext)) != InventoryPanels.None;
 
         /// <summary>
         /// The visibility the last context application settled on. Tracked so a context that
@@ -79,8 +78,8 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
         /// </summary>
         private void OnEnable()
         {
-            if (InventoryService.TrySubscribeContextChanged(OnContextChanged, out var activeContext))
-                ApplyContext(activeContext);
+            if (InventoryService.TrySubscribeContextChanged(OnContextChanged, out _))
+                ApplyPanels(InventoryService.Instance.ActivePanels);
         }
 
         protected override void OnDisable()
@@ -90,19 +89,19 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
             InventoryService.UnsubscribeContextChanged(OnContextChanged);
         }
 
-        private void OnContextChanged(InventoryContext context) => ApplyContext(context);
+        private void OnContextChanged(InventoryContext _) => ApplyPanels(InventoryService.Instance.ActivePanels);
 
         /// <summary>
-        /// Shows or hides this panel for one context, from <see cref="IsUpIn"/>. A panel authored
+        /// Shows or hides this panel for one derived panel set, from <see cref="IsUpIn"/>. A panel authored
         /// with no context at all is left exactly as the scene has it: it has no role to derive
         /// and <see cref="OnValidate"/> is what complains about that, not this.
         /// </summary>
-        private void ApplyContext(InventoryContext context)
+        private void ApplyPanels(InventoryPanels panels)
         {
             if (InventoryContextState.PanelFor(inventoryContext) == InventoryPanels.None)
                 return;
 
-            var shouldShow = IsUpIn(context);
+            var shouldShow = IsUpIn(panels);
             if (shown == shouldShow)
                 return;
 
@@ -130,7 +129,10 @@ namespace ToolSmiths.InventorySystem.GUI.Components.Panels
 
             var inventory = InventoryService.Instance;
 
-            if (open)
+            // The overlays are no context: requesting one leaves the context, and the Hero Panel, alone.
+            if (InventoryContextState.IsOverlay(inventoryContext))
+                inventory.SetOverlay(inventoryContext, open);
+            else if (open)
                 inventory.SetContext(inventoryContext);
             else
                 inventory.CloseContext();

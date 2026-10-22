@@ -1,4 +1,6 @@
+using System;
 using Submodules.Utility.UI;
+using ToolSmiths.InventorySystem.Items;
 using ToolSmiths.InventorySystem.Services;
 using ToolSmiths.InventorySystem.Simulation;
 using UnityEngine;
@@ -15,19 +17,19 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
     /// or faster.
     ///
     /// <see cref="lootFilterSlider"/> offers the <see cref="HeroBehaviour.RaritySteps"/> members
-    /// (Common, Magic, Rare, Unique) as four snapping positions.
+    /// (Common, Magic, Rare, Unique) as four snapping positions; <see cref="lootKinds"/> narrow the
+    /// pick-up to the item types switched on.
     ///
-    /// Lives on the Combat Panel, a child of the Field face. Its own visibility is derived from the
-    /// Inventory Context by its <see cref="ToolSmiths.InventorySystem.GUI.Components.Panels.SidePanel"/>, never from the
-    /// Run: it is up on <c>None</c> and <c>Ground</c>, including during the Go Venture preview. Subscribes
-    /// to slider events on enable and again in <see cref="SimplePanel.BeforeAppear"/>, so they are live
-    /// as soon as the panel becomes visible - including a panel the scene authors as already up.
+    /// The Sim Settings panel's content. The panel itself is the <see cref="ToolSmiths.InventorySystem.GUI.Components.Panels.SidePanel"/>
+    /// on the same object, authored with <c>InventoryContext.SimSettings</c>, which owns its visibility; this
+    /// only wires the sliders. Subscribes to slider events on enable and stays subscribed while the panel is
+    /// faded out (a fade never deactivates the object).
     ///
     /// The live-encounter and last-run readouts that used to live here moved to
     /// <see cref="EncounterStatsText"/> (issue #61), as its own sibling section between this
     /// panel and the enemy HP bar pool.
     /// </summary>
-    public sealed class BehaviourSlidersPanel : SimplePanel
+    public sealed class BehaviourSlidersPanel : MonoBehaviour
     {
         [Header("Hero behaviour sliders")]
         [SerializeField] private ValueSlider resourceReserveSlider;
@@ -37,20 +39,19 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         [SerializeField] private SimSpeedSlider simSpeedSlider;
         [SerializeField, Tooltip("Debug (issue #63): on picks up what the filter admits, off leaves every item on the ground.")]
         private EventToggle autoPickupToggle;
+        [SerializeField, Tooltip("One toggle per item type the loot filter picks up, next to the rarity slider's minimum.")]
+        private LootKindEntry[] lootKinds;
+
+        [Serializable]
+        private struct LootKindEntry
+        {
+            public EventToggle toggle;
+            public LootKind kind;
+        }
 
         private HeroBehaviour _behaviour;
 
-        // A panel authored as its PanelGroup's active member is up from Awake without ever appearing
-        // (the group refuses to deactivate it, so nothing calls BeforeAppear): enabling must wire the
-        // sliders too, or they show the saved values and write nothing.
         private void OnEnable() => Attach();
-
-        protected override void BeforeAppear()
-        {
-            base.BeforeAppear();
-
-            Attach();
-        }
 
         private void Attach()
         {
@@ -62,8 +63,7 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
 
             BindBehaviour();
 
-            // Enable and every fade-in both land here and the panel stays enabled between fade-ins,
-            // so detach before attach: a second listener would write the behaviour once per
+            // Detach before attach: a second listener would write the behaviour once per
             // duplicate on each drag.
             SetSliderListeners(add: false);
             SetSliderListeners(add: true);
@@ -90,6 +90,12 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
                 if (add) autoPickupToggle.Toggled += ToggleAutoPickup;
             }
 
+            foreach (var entry in lootKinds)
+            {
+                entry.toggle.Toggled -= ChangeLootKinds;
+                if (add) entry.toggle.Toggled += ChangeLootKinds;
+            }
+
             static void Wire(AbstractSlider slider, System.Action<float> handler, bool add)
             {
                 if (slider == null) return;
@@ -98,10 +104,8 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             }
         }
 
-        protected override void OnDisable()
+        private void OnDisable()
         {
-            base.OnDisable();
-
             SetSliderListeners(add: false);
             Session.UnsubscribeHeroLoaded(BindBehaviour);
 
@@ -117,6 +121,10 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
             if (lootFilterSlider != null) lootFilterSlider.SetStepIndexWithoutNotify(HeroBehaviour.RarityIndex(_behaviour.LootFilterMinimum));
             if (simSpeedSlider != null) simSpeedSlider.SetSimSpeedWithoutNotify(_behaviour.SimSpeed);
             if (autoPickupToggle != null) autoPickupToggle.SyncToggle(_behaviour.AutoPickup);
+
+            // The scene authors the type filter, not the Hero: the toggles' state goes into the behaviour, so a hero load
+            // starts with the filter as set up here instead of resetting the toggles to the behaviour's default.
+            WriteLootKinds();
         }
 
         private void ChangeCastThreshold(float value)
@@ -132,6 +140,20 @@ namespace ToolSmiths.InventorySystem.Runtime.Simulation
         private void ChangeLootFilter(float value)
         {
             if (_behaviour != null) _behaviour.LootFilterMinimum = lootFilterSlider.Selected;
+        }
+
+        private void ChangeLootKinds(bool _) => WriteLootKinds();
+
+        // Any toggle flipping rewrites the whole mask from the toggles' own state, so none can drift from it.
+        private void WriteLootKinds()
+        {
+            if (_behaviour == null) return;
+
+            var kinds = LootKind.None;
+            foreach (var entry in lootKinds)
+                if (entry.toggle.IsOn) kinds |= entry.kind;
+
+            _behaviour.AdmittedKinds = kinds;
         }
 
         private void ToggleAutoPickup(bool on)

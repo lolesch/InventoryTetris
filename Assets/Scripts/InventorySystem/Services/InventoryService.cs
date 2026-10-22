@@ -71,6 +71,12 @@ namespace ToolSmiths.InventorySystem.Services
 
         public InventoryContext ActiveContext => session.World.Context.Active;
 
+        public InventoryPanels ActivePanels => session.World.Context.Panels;
+
+        public void SetOverlay(InventoryContext overlay, bool open) => session.World.Context.SetOverlay(overlay, open);
+
+        public bool CloseOverlay() => session.World.Context.CloseOverlay();
+
         public void SetContext(InventoryContext context) => session.World.Context.Set(context);
 
         public void CloseContext() => session.World.Context.Close();

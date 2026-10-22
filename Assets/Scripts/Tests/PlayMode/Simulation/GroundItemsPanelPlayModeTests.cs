@@ -65,20 +65,25 @@ namespace ToolSmiths.InventorySystem.Tests.PlayMode.Simulation
         }
 
         [UnityTest]
-        public IEnumerator TheSimSettings_AreTheirOwnPanel_OpenedByTheirOwnHudToggle()
+        public IEnumerator TheSimSettings_TakeTheGroundItemsPanelsPlace_OpenedByTheirOwnHudToggle()
         {
-            var settings = Named("BehaviourSlidersPanel").Single();
-            var toggle = Named("PanelToggle").Single(t => t.name == "SimSettingsToggle");
+            var settings = SidePanelOf(InventoryContext.SimSettings);
+            var ground = SidePanelOf(InventoryContext.Ground);
+            var toggle = Named("SidePanelToggle").Single(t => t.name == "SimSettings");
             yield return Until(settings, "IsCollapsed", "premise: the settings start closed");
+            yield return Until(ground, "IsExtended", "premise: the Ground Items panel is up");
 
             ((IPointerClickHandler)toggle).OnPointerClick(
                 new PointerEventData(EventSystem.current) { button = PointerEventData.InputButton.Left });
             yield return Until(settings, "IsExtended", "the toggle opens the sim settings");
+            yield return Until(ground, "IsCollapsed", "in the Ground Items panel's place");
             Assert.That(InventoryService.Instance.ActiveContext, Is.EqualTo(InventoryContext.None), "without any Inventory Context");
+            Assert.That(Flag(SidePanelOf(InventoryContext.Hero), "IsCollapsed"), Is.True, "and without the Hero Panel");
 
             ((IPointerClickHandler)toggle).OnPointerClick(
                 new PointerEventData(EventSystem.current) { button = PointerEventData.InputButton.Left });
             yield return Until(settings, "IsCollapsed", "and closes them again");
+            yield return Until(ground, "IsExtended", "which brings the Ground Items panel back");
         }
     }
 }
