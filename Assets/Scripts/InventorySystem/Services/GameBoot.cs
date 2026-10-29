@@ -84,10 +84,20 @@ namespace ToolSmiths.InventorySystem.Services
 
         /// <summary>
         /// The store a Play entry boots over: the saves folder, or - for Start Fresh - an empty in-memory
-        /// one, so the entry reads no file, builds a new hero with its starter kit, and writes nothing.
+        /// one, so the entry reads no file, builds a new hero with its starter kit, and writes nothing. In a
+        /// browser the folder is also synced to IndexedDB after each write, or a refresh would lose it.
         /// </summary>
-        public static ISaveStore SaveStoreForPlay(bool startFresh) =>
-            startFresh ? new InMemorySaveStore() : new FileSaveStore(SaveLocation.Folder());
+        public static ISaveStore SaveStoreForPlay(bool startFresh)
+        {
+            if (startFresh)
+                return new InMemorySaveStore();
+
+            var files = new FileSaveStore(SaveLocation.Folder());
+
+            return Application.platform == RuntimePlatform.WebGLPlayer
+                ? new WebGlSyncingSaveStore(files, WebGlSyncingSaveStore.FlushToBrowser)
+                : files;
+        }
 
         // Pressing Play, or launching, continues the last-selected hero. A save that cannot be read must not
         // stop the game booting: the template hero plays on, and nothing is written over the files (the
